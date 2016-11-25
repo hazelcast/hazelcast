@@ -16,54 +16,34 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.io.Pair;
-
+import com.hazelcast.jet.AbstractProcessor;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.function.Function;
 
-public class DistinctProcessor<T> extends AbstractStreamProcessor<T, T> {
+public class DistinctProcessor<T> extends AbstractProcessor {
 
     private Iterator<T> iterator;
     private final Map<T, Boolean> map = new HashMap<>();
 
-    public DistinctProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper) {
-        super(inputMapper, outputMapper);
-
+    public DistinctProcessor() {
     }
 
     @Override
-    protected boolean process(InputChunk<T> input, OutputCollector<T> output) throws Exception {
-        for (T t : input) {
-            map.put(t, true);
-        }
+    protected boolean process(int ordinal, Object item) {
+        map.put((T) item, true);
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<T> output, final int chunkSize) throws Exception {
+    public boolean complete() {
         if (iterator == null) {
             iterator = map.keySet().iterator();
         }
-        int i = 0;
         while (iterator.hasNext()) {
             T key = iterator.next();
-            output.collect(key);
-
-            if (chunkSize == ++i) {
-                return false;
-            }
+            emit(key);
         }
         return true;
     }
-
-    @Override
-    public void after() {
-        this.iterator = null;
-        this.map.clear();
-    }
-
 }

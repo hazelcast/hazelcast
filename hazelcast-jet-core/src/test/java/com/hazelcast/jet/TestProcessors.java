@@ -16,25 +16,19 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
+public class TestProcessors {
 
-public abstract class TestProcessors {
-
-    public static class Noop implements Processor {
-        private TaskContext taskContext;
-
+    public static class Identity extends AbstractProcessor {
         @Override
-        public void before(TaskContext taskContext) {
-            this.taskContext = taskContext;
+        protected boolean process(int ordinal, Object item) {
+            emit(item);
+            return true;
         }
+    }
 
+    public static class BlockingIdentity extends Identity {
         @Override
-        public boolean process(InputChunk input,
-                               OutputCollector output,
-                               String sourceName) throws Exception {
-            output.collect(input);
+        public boolean isBlocking() {
             return true;
         }
     }

@@ -16,52 +16,16 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.counters.Accumulator;
-import com.hazelcast.jet.impl.statemachine.job.JobState;
-import java.util.Map;
 import java.util.concurrent.Future;
 
 /**
- * Represents abstract job
+ * Javadoc pending
  */
-public interface Job extends DistributedObject {
+public interface Job {
 
     /**
-     * @return state for the job's state-machine
+     * Executes the job
      */
-    JobState getJobState();
+    Future<Void> execute();
 
-    /**
-     * @return Returns name for the job
-     */
-    String getName();
-
-    /**
-     * Execute job
-     *
-     * @return Future which will return execution's result
-     */
-    Future execute();
-
-    /**
-     * Interrupts job
-     *
-     * @return Future which will return interruption's result
-     */
-    Future interrupt();
-
-    /**
-     * Returns map with statistic counters info for the certain job
-     *
-     * @return map with accumulators
-     */
-    Map<String, Accumulator> getAccumulators();
-
-
-    /**
-     * @return Hazelcast instance corresponding for job
-     */
-    HazelcastInstance getHazelcastInstance();
 }

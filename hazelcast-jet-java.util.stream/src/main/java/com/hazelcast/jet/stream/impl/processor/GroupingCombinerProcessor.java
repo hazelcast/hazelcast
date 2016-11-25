@@ -16,75 +16,48 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.Processor;
-
+import com.hazelcast.jet.AbstractProcessor;
+import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collector;
 
-public class GroupingCombinerProcessor<K, V, A, R> implements Processor<Pair<K, A>, Pair<K, R>> {
+public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor {
 
     private final Map<K, A> cache = new HashMap<>();
     private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> finalizationIterator;
-    private int chunkSize;
+    private Iterator<Map.Entry<K, A>> iterator;
 
     public GroupingCombinerProcessor(Collector<V, A, R> collector) {
         this.collector = collector;
     }
 
-    @Override
-    public void before(TaskContext context) {
-        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
-    }
 
     @Override
-    public boolean process(InputChunk<Pair<K, A>> inputChunk,
-                           OutputCollector<Pair<K, R>> output,
-                           String sourceName) throws Exception {
-        for (Pair<K, A> input : inputChunk) {
-            A value = cache.get(input.getKey());
-            if (value == null) {
-                value = collector.supplier().get();
-                cache.put(input.getKey(), value);
-            }
-            collector.combiner().apply(value, input.getValue());
+    protected boolean process(int ordinal, Object item) {
+        Map.Entry<K, A> entry = (Map.Entry) item;
+        A value = cache.get(entry.getKey());
+        if (value == null) {
+            value = collector.supplier().get();
+            cache.put(entry.getKey(), value);
         }
+        collector.combiner().apply(value, entry.getValue());
         return true;
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<K, R>> output) throws Exception {
-        boolean finalized = false;
-        try {
-            if (finalizationIterator == null) {
-                finalizationIterator = cache.entrySet().iterator();
-            }
-
-            int idx = 0;
-            while (finalizationIterator.hasNext()) {
-                Map.Entry<K, A> next = finalizationIterator.next();
-                K key = next.getKey();
-                R value = collector.finisher().apply(next.getValue());
-                output.collect(new JetPair<>(key, value));
-                if (idx == chunkSize - 1) {
-                    break;
-                }
-                idx++;
-            }
-            finalized = !finalizationIterator.hasNext();
-        } finally {
-            if (finalized) {
-                finalizationIterator = null;
-                cache.clear();
-            }
+    public boolean complete() {
+        if (iterator == null) {
+            iterator = cache.entrySet().iterator();
         }
-        return finalized;
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
+            Map.Entry<K, A> next = iterator.next();
+            K key = next.getKey();
+            R value = collector.finisher().apply(next.getValue());
+            emit(new AbstractMap.SimpleImmutableEntry<>(key, value));
+        }
+        return !iterator.hasNext();
     }
+
 }

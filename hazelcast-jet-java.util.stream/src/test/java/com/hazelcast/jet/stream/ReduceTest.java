@@ -13,44 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class ReduceTest extends JetStreamTestSupport {
+public class ReduceTest extends AbstractStreamTest {
 
     @Test
     public void testReduceWithIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int result = map.stream()
-                .map(e -> e.getValue())
-                .reduce(0, (left, right) -> left + right);
+                        .map(Entry::getValue)
+                        .reduce(0, (left, right) -> left + right);
 
-        assertEquals((COUNT-1)*(COUNT)/2, result);
+        assertEquals((COUNT - 1) * (COUNT) / 2, result);
     }
 
     @Test
     public void testReduceWithNoIdentity() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int result = map.stream()
-                .map(Map.Entry::getValue)
-                .reduce((left, right) -> left + right).get();
+                        .map(Map.Entry::getValue)
+                        .reduce((left, right) -> left + right).get();
 
-        assertEquals((COUNT-1)*(COUNT)/2, result);
+        assertEquals((COUNT - 1) * (COUNT) / 2, result);
     }
 
 }

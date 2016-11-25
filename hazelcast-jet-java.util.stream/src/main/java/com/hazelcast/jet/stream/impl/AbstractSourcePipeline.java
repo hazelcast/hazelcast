@@ -16,32 +16,28 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.DEFAULT_TASK_COUNT;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
-
-public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> implements SourcePipeline<E_OUT> {
+public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
 
     public AbstractSourcePipeline(StreamContext context) {
         super(context);
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<E_OUT, Pair> toPairMapper) {
-        if (downstreamVertex == null) {
-            downstreamVertex = vertexBuilder(PassthroughProcessor.class)
-                    .addToDAG(dag)
-                    .args(fromPairMapper(), toPairMapper)
-                    .taskCount(isOrdered() ? 1 : DEFAULT_TASK_COUNT)
-                    .build();
+    public Vertex buildDAG(DAG dag) {
+        Vertex vertex = new Vertex(getName(), getProducer());
+        if (isOrdered()) {
+            vertex.parallelism(1);
         }
-        downstreamVertex.addSource(getSourceTap());
-        return downstreamVertex;
+        dag.addVertex(vertex);
+        return vertex;
     }
+
+    protected abstract ProcessorMetaSupplier getProducer();
+
+    protected abstract String getName();
 }

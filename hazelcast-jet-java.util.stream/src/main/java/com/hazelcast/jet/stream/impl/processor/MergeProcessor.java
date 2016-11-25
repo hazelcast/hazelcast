@@ -16,73 +16,57 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.AbstractProcessor;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BinaryOperator;
+import java.util.function.Function;
 
-public class MergeProcessor<K, V> implements Processor<Pair<K, V>, Pair<K, V>> {
+public class MergeProcessor<T, K, V> extends AbstractProcessor {
 
+    private final Function<? super T, ? extends K> keyMapper;
+    private final Function<? super T, ? extends V> valueMapper;
     private final BinaryOperator<V> merger;
     private final Map<K, V> cache = new HashMap<>();
-    private Iterator<Map.Entry<K, V>> finalizationIterator;
-    private int chunkSize;
+    private Iterator<Map.Entry<K, V>> iterator;
 
-    public MergeProcessor(BinaryOperator<V> merger) {
+    public MergeProcessor(Function<? super T, ? extends K> keyMapper,
+                          Function<? super T, ? extends V> valueMapper, BinaryOperator<V> merger) {
+        this.keyMapper = keyMapper;
+        this.valueMapper = valueMapper;
         this.merger = merger;
     }
 
     @Override
-    public void before(TaskContext context) {
-        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
-    }
-
-    @Override
-    public boolean process(InputChunk<Pair<K, V>> inputChunk,
-                           OutputCollector<Pair<K, V>> output,
-                           String sourceName) throws Exception {
-        for (Pair<K, V> input : inputChunk) {
-            V value = cache.get(input.getKey());
-            if (value == null) {
-                cache.put(input.getKey(), input.getValue());
-            } else {
-                cache.put(input.getKey(), merger.apply(value, input.getValue()));
-            }
+    protected boolean process(int ordinal, Object item) {
+        Map.Entry<K, V> entry;
+        if (keyMapper == null || valueMapper == null) {
+            entry = (Map.Entry<K, V>) item;
+        } else {
+            entry = new SimpleImmutableEntry<>(keyMapper.apply((T) item), valueMapper.apply((T) item));
+        }
+        V value = cache.get(entry.getKey());
+        if (value == null) {
+            cache.put(entry.getKey(), entry.getValue());
+        } else {
+            cache.put(entry.getKey(), merger.apply(value, entry.getValue()));
         }
         return true;
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<K, V>> output) throws Exception {
-        boolean finalized = false;
-        try {
-            if (finalizationIterator == null) {
-                finalizationIterator = cache.entrySet().iterator();
-            }
-
-            int idx = 0;
-            while (this.finalizationIterator.hasNext()) {
-                Map.Entry<K, V> next = finalizationIterator.next();
-                output.collect(new JetPair<>(next.getKey(), next.getValue()));
-                if (idx == chunkSize - 1) {
-                    break;
-                }
-                idx++;
-            }
-            finalized = !finalizationIterator.hasNext();
-        } finally {
-            if (finalized) {
-                finalizationIterator = null;
-                cache.clear();
-            }
+    public boolean complete() {
+        if (iterator == null) {
+            iterator = cache.entrySet().iterator();
         }
-        return finalized;
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
+            Map.Entry<K, V> next = iterator.next();
+            emit(new SimpleImmutableEntry<>(next.getKey(), next.getValue()));
+        }
+        return !iterator.hasNext();
     }
+
 }

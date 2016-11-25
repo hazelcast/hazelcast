@@ -35,7 +35,6 @@ import com.hazelcast.jet.stream.impl.pipeline.TransformPipeline;
 import com.hazelcast.jet.stream.impl.pipeline.UnorderedPipeline;
 import com.hazelcast.jet.stream.impl.terminal.Matcher;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
-
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;

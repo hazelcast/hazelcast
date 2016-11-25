@@ -417,7 +417,6 @@ public class CascadePlatformTest extends PlatformTestCase
     }
 
   @Test(expected = CascadeException.class)
-  @Ignore //TODO: Splits
   public void testPlannerFailureDuplicateSinks() throws IOException
     {
     getPlatform().copyFromLocal( inputFileIps );

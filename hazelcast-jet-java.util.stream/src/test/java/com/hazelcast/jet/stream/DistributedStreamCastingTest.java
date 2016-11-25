@@ -17,12 +17,8 @@
 package com.hazelcast.jet.stream;
 
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Comparator;
 import java.util.List;
@@ -32,15 +28,13 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class DistributedStreamCastingTest extends JetStreamTestSupport {
+public class DistributedStreamCastingTest extends AbstractStreamTest {
 
     private Stream<Integer> stream;
 
     @Before
     public void setUp() {
-        List<Integer> list = getStreamList(instance);
+        List<Integer> list = getStreamList();
         stream = list.stream();
     }
 

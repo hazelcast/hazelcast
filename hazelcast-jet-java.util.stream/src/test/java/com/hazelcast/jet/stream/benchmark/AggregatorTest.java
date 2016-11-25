@@ -13,45 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream.benchmark;
 
 import com.hazelcast.jet.stream.IStreamMap;
-import com.hazelcast.jet.stream.JetStreamTestSupport;
+import com.hazelcast.jet.stream.AbstractStreamTest;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.Map;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
 @Ignore
-public class AggregatorTest extends JetStreamTestSupport implements Serializable {
+public class AggregatorTest extends AbstractStreamTest implements Serializable {
 
     private static final int COUNT = 100_000;
-    private static IStreamMap<String, Integer> map;
+    private IStreamMap<String, Integer> map;
 
-    @BeforeClass
-    public static void setUp() {
-        map = getStreamMap(instance);
+    @Before
+    public void setUp() {
+        map = getStreamMap();
         fillMap(map, COUNT);
     }
 
-    @Test @Ignore
+    @Test
+    @Ignore
     public void testAggregator() throws Exception {
         long start = System.currentTimeMillis();
         long sum = map.aggregate(Supplier.all(new PropertyExtractor<Integer, Long>() {
             @Override
             public Long extract(Integer integer) {
-                return (long)integer;
+                return (long) integer;
             }
         }), Aggregations.longSum());
         System.out.println("aggregations: sum=" + sum + " totalTime=" + (System.currentTimeMillis() - start));

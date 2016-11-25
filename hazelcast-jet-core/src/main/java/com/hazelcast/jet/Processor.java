@@ -16,51 +16,58 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
+import javax.annotation.Nonnull;
 
 /**
- * A processor is the basic unit of execution in Jet. It consumes multiple inputs supplied by
- * {@link InputChunk}s and produces output to a {@link OutputCollector}.
- *
- * @param <I> Type of the input object
- * @param <O> Type of the output object
+ * Does the computation needed to transform zero or more named input data streams into one
+ * output stream.
+ * <p>
+ * The processing methods should limit the amount of processing time and data they output per
+ * one invocation. A method should return <code>false</code> to signal it's not done with the
+ * current step/item. When the caller is ready to invoke the method again, it will invoke it with
+ * the same arguments as the previous time.
  */
-public interface Processor<I, O> {
+public interface Processor {
 
     /**
-     * Invoked before the first call to process. Typically used to set up internal state
-     * for the processor
+     * Initialize the processor with an {@link Outbox} that
+     * can accept processing results. This method will be called exactly once and strictly before any
+     * calls to {@link #process(int, Inbox)} or {@link #complete(int)}.
      */
-    default void before(TaskContext taskContext) {
-    }
+    void init(@Nonnull Outbox outbox);
 
     /**
-     * Process the next chunk of input data
+     * Processes some items in the supplied inbox. Removes the items it's done with.
      *
-     * @return true if the current chunk is processed, false if not. The method will be called with the same
-     * input chunk if false is returned.
-     * @throws Exception when exception during processing
+     * @param ordinal ordinal of the input where the item originates from
+     * @param inbox   the inbox containing the pending items
      */
-    default boolean process(InputChunk<I> input, OutputCollector<O> output, String source)
-            throws Exception {
+    void process(int ordinal, Inbox inbox);
+
+    /**
+     * Called after the input with the supplied <code>ordinal</code> is exhausted.
+     *
+     * @return <code>true</code> if completing this input is now done, <code>false</code> otherwise.
+     */
+    default boolean complete(int ordinal) {
         return true;
     }
 
     /**
-     * Complete data processing. This method is called after all the input data is exhausted.
+     * Called after all the inputs are exhausted.
      *
-     * @return true if data processing is complete. If false, the method will be called again later.
-     * @throws Exception when exception during processing
+     * @return <code>true</code> if the completing is now done, <code>false</code> otherwise.
      */
-    default boolean complete(OutputCollector<O> output) throws Exception {
+    default boolean complete() {
         return true;
     }
 
     /**
-     * Invoked after the processor is completed. Typically used to cleanup state.
+     * Tells whether this processor performs any blocking operations
+     * (such as using a blocking I/O). By returning <code>false</code> the processor promises
+     * not to spend any time waiting for a blocking operation to complete.
      */
-    default void after() {
+    default boolean isBlocking() {
+        return false;
     }
 }

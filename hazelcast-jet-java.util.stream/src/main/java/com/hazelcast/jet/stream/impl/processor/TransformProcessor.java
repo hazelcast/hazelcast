@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.io.Pair;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
+import com.hazelcast.jet.AbstractProcessor;
 
 import java.util.Iterator;
 import java.util.List;
@@ -28,49 +25,44 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class TransformProcessor extends AbstractStreamProcessor<Object, Object> {
+public class TransformProcessor extends AbstractProcessor {
 
     private final TransformOperation[] operations;
 
-    public TransformProcessor(Function<Pair, Object> inputMapper, Function<Object, Pair> outputMapper,
-                              List<TransformOperation> operations) {
-        super(inputMapper, outputMapper);
+    public TransformProcessor(List<TransformOperation> operations) {
         this.operations = operations.toArray(new TransformOperation[operations.size()]);
     }
 
     @Override
-    protected boolean process(InputChunk<Object> inputChunk,
-                              OutputCollector<Object> output) throws Exception {
-        for (Object input : inputChunk) {
-            processInputs(input, output, 0);
-        }
+    protected boolean process(int ordinal, Object item) {
+        processItem(item, 0);
         return true;
     }
 
-    private void processInputs(Object input, OutputCollector<Object> output, int startIndex) throws Exception {
-        for (int i = startIndex; i < operations.length; i++) {
+    private void processItem(Object item, int operatorIndex) {
+        for (int i = operatorIndex; i < operations.length; i++) {
             TransformOperation operation = operations[i];
             switch (operation.getType()) {
                 case FILTER:
-                    if (!((Predicate) operation.getFunction()).test(input)) {
+                    if (!((Predicate) operation.getFunction()).test(item)) {
                         return;
                     }
                     break;
                 case MAP:
-                    input = ((Function) operation.getFunction()).apply(input);
+                    item = ((Function) operation.getFunction()).apply(item);
                     break;
                 case FLAT_MAP:
-                    Stream stream = (Stream) ((Function) operation.getFunction()).apply(input);
+                    Stream stream = (Stream) ((Function) operation.getFunction()).apply(item);
                     Iterator iterator = stream.iterator();
                     while (iterator.hasNext()) {
-                        processInputs(iterator.next(), output, i + 1);
+                        processItem(iterator.next(), i + 1);
                     }
                     stream.close();
                     return;
                 default:
-                    throw new JetException("Unknown case: " + operation.getType());
+                    throw new IllegalArgumentException("Unknown case: " + operation.getType());
             }
         }
-        output.collect(input);
+        emit(item);
     }
 }

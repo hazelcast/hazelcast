@@ -21,47 +21,59 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Represents vertex of the Direct Acyclic Graph
+ * Javadoc pending
  */
 public class Vertex implements IdentifiedDataSerializable {
-    private String name;
-    private String processorClass;
-    private Object[] processorArgs;
-    private int parallelism = 1;
-    private List<Sink> sinks = new ArrayList<Sink>();
-    private List<Source> sources = new ArrayList<Source>();
 
+    private ProcessorMetaSupplier supplier;
+    private String name;
+    private int parallelism = -1;
 
     Vertex() {
-
     }
 
     /**
-     * Constructs a new vertex
-     *
-     * @param name           name of the vertex
-     * @param processorClass class name of the processor
-     * @param processorArgs  constructor arguments of the processor
+     * Javadoc pending
      */
-    public Vertex(String name, Class<? extends Processor> processorClass, Object... processorArgs) {
-        checkNotNull(name);
+    public Vertex(String name, SimpleProcessorSupplier processorSupplier) {
+        checkNotNull(name, "name");
+        checkNotNull(processorSupplier, "supplier");
+
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
         this.name = name;
-        this.processorClass = processorClass.getName();
-        this.processorArgs = processorArgs.clone();
+    }
+
+    /**
+     * Javadoc pending
+     */
+    public Vertex(String name, ProcessorSupplier processorSupplier) {
+        checkNotNull(name, "name");
+        checkNotNull(processorSupplier, "supplier");
+
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
+        this.name = name;
+    }
+
+    /**
+     * Javadoc pending
+     */
+    public Vertex(String name, ProcessorMetaSupplier supplier) {
+        checkNotNull(name, "name");
+        checkNotNull(supplier, "supplier");
+
+        this.supplier = supplier;
+        this.name = name;
     }
 
     /**
      * @return name of the vertex
      */
     public String getName() {
-        return this.name;
+        return name;
     }
 
     /**
@@ -83,122 +95,29 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return constructor arguments for the processor
+     * @return the processor supplier
      */
-    public Object[] getProcessorArgs() {
-        return processorArgs.clone();
-    }
-
-    /**
-     * @return name of the processor class
-     */
-    public String getProcessorClass() {
-        return processorClass;
-    }
-
-    /**
-     * Add abstract source source object to the vertex
-     *
-     * @param source corresponding source
-     */
-    public Vertex addSource(Source source) {
-        this.sources.add(source);
-        return this;
-    }
-
-    /**
-     * Add abstract sink object to the vertex
-     *
-     * @param sink corresponding sink
-     */
-    public Vertex addSink(Sink sink) {
-        this.sinks.add(sink);
-        return this;
-    }
-
-    /**
-     * @return list of the input sources
-     */
-    public List<Source> getSources() {
-        return Collections.unmodifiableList(this.sources);
-    }
-
-    /**
-     * @return list of the output sinks
-     */
-    public List<Sink> getSinks() {
-        return Collections.unmodifiableList(this.sinks);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Vertex vertex = (Vertex) o;
-        return !(this.name != null ? !this.name.equals(vertex.name) : vertex.name != null);
-    }
-
-    @Override
-    public int hashCode() {
-        return this.name != null ? this.name.hashCode() : 0;
+    public ProcessorMetaSupplier getSupplier() {
+        return supplier;
     }
 
     @Override
     public String toString() {
-        return "Vertex{"
-                + "name='" + name + '\''
-                + '}';
+        return "Vertex{name='" + name + '\'' + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeUTF(processorClass);
-        out.writeInt(processorArgs.length);
-        for (Object processorArg : processorArgs) {
-            out.writeObject(processorArg);
-        }
-
+        out.writeObject(supplier);
         out.writeInt(parallelism);
-
-        out.writeInt(sources.size());
-        for (Source source : sources) {
-            out.writeObject(source);
-        }
-
-        out.writeInt(sinks.size());
-        for (Sink sink : sinks) {
-            out.writeObject(sink);
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        processorClass = in.readUTF();
-        processorArgs = new Object[in.readInt()];
-
-        for (int i = 0; i < processorArgs.length; i++) {
-            processorArgs[i] = in.readObject();
-        }
-
+        supplier = in.readObject();
         parallelism = in.readInt();
-
-        int count = in.readInt();
-        for (int i = 0; i < count; i++) {
-            sources.add(in.readObject());
-        }
-
-        count = in.readInt();
-        for (int i = 0; i < count; i++) {
-            sinks.add(in.readObject());
-        }
     }
 
     @Override
@@ -210,4 +129,5 @@ public class Vertex implements IdentifiedDataSerializable {
     public int getId() {
         return JetDataSerializerHook.VERTEX;
     }
+
 }

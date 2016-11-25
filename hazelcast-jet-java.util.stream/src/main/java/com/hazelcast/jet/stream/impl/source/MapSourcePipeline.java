@@ -17,14 +17,11 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.source.MapSource;
-import com.hazelcast.jet.Source;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
 
-import java.util.AbstractMap;
 import java.util.Map;
 
 
@@ -38,13 +35,15 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
     }
 
     @Override
-    public Source getSourceTap() {
-        return new MapSource(map.getName());
+    protected ProcessorMetaSupplier getProducer() {
+        return Processors.mapReader(map.getName());
     }
 
     @Override
-    public Distributed.Function<Pair, Map.Entry<K, V>> fromPairMapper() {
-        return t -> new AbstractMap.SimpleEntry<>(((Pair<K, V>) t).getKey(), ((Pair<K, V>) t).getValue());
+    protected String getName() {
+        return "map-reader-" + map.getName();
     }
+
+
 }
 

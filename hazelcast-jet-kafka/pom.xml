@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <name>hazelcast-jet-kafka</name>
+    <description>Kafka producer/consumer support for Hazelcast Jet</description>
+    <url>http://www.hazelcast.com/</url>
+
+    <parent>
+        <groupId>com.hazelcast.jet</groupId>
+        <artifactId>hazelcast-jet-root</artifactId>
+        <version>0.3-SNAPSHOT</version>
+    </parent>
+
+    <properties>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
+
+    <artifactId>hazelcast-jet-kafka</artifactId>
+    <version>0.3-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <version>${hazelcast.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_2.10</artifactId>
+            <version>0.10.0.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>3.5.1-alpha</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-log4j12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${hazelcast.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.github.charithe</groupId>
+            <artifactId>kafka-junit</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.21</version>
+            <scope>test</scope>
+        </dependency>
+
+
+    </dependencies>
+
+</project>

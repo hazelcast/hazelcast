@@ -16,49 +16,34 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
-
+import com.hazelcast.jet.AbstractProcessor;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class CollectorCombinerProcessor<T> extends AbstractStreamProcessor<T, T> {
+public class CollectorCombinerProcessor<T> extends AbstractProcessor {
 
     private final BiConsumer<T, T> combiner;
     private T result;
 
-    public CollectorCombinerProcessor(Function<Pair, T> inputMapper,
-                                      Function<T, Pair> outputMapper,
-                                      BiConsumer<T, T> combiner,
+    public CollectorCombinerProcessor(BiConsumer<T, T> combiner,
                                       Function ignored) {
-        super(inputMapper, outputMapper);
         this.combiner = combiner;
     }
 
     @Override
-    public void before(TaskContext taskContext) {
-        result = null;
-    }
-
-    @Override
-    protected boolean process(InputChunk<T> inputChunk, OutputCollector<T> output)
-            throws Exception {
-        for (T input : inputChunk) {
-            if (result != null) {
-                combiner.accept(result, input);
-            } else {
-                result = input;
-            }
+    protected boolean process(int ordinal, Object item) {
+        if (result != null) {
+            combiner.accept(result, (T) item);
+        } else {
+            result = (T) item;
         }
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<T> output, int chunkSize) throws Exception {
+    public boolean complete() {
         if (result != null) {
-            output.collect(result);
+            emit(result);
         }
         return true;
     }

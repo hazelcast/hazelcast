@@ -16,72 +16,49 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.runtime.TaskContext;
+import com.hazelcast.jet.AbstractProcessor;
 
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
-public class GroupingAccumulatorProcessor<K, V, A, R> implements Processor<Pair<K, V>, Pair<K, A>> {
+public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcessor {
 
     private final Map<K, A> cache = new HashMap<>();
+    private final Function<? super T, ? extends K> classifier;
     private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> finalizationIterator;
-    private int chunkSize;
+    private Iterator<Map.Entry<K, A>> iterator;
 
-    public GroupingAccumulatorProcessor(Collector<V, A, R> collector) {
+    public GroupingAccumulatorProcessor(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
+        this.classifier = classifier;
         this.collector = collector;
     }
 
     @Override
-    public void before(TaskContext context) {
-        chunkSize = context.getJobContext().getJobConfig().getChunkSize();
-    }
-
-    @Override
-    public boolean process(InputChunk<Pair<K, V>> inputChunk,
-                           OutputCollector<Pair<K, A>> output,
-                           String sourceName) throws Exception {
-        for (Pair<K, V> input : inputChunk) {
-            A value = this.cache.get(input.getKey());
-            if (value == null) {
-                value = collector.supplier().get();
-                this.cache.put(input.getKey(), value);
-            }
-            collector.accumulator().accept(value, input.getValue());
+    protected boolean process(int ordinal, Object item) {
+        Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
+        A value = this.cache.get(entry.getKey());
+        if (value == null) {
+            value = collector.supplier().get();
+            this.cache.put(entry.getKey(), value);
         }
+        collector.accumulator().accept(value, entry.getValue());
         return true;
     }
 
     @Override
-    public boolean complete(OutputCollector<Pair<K, A>> output) throws Exception {
-        boolean finalized = false;
-        try {
-            if (finalizationIterator == null) {
-                this.finalizationIterator = this.cache.entrySet().iterator();
-            }
-            int idx = 0;
-            while (this.finalizationIterator.hasNext()) {
-                Map.Entry<K, A> next = this.finalizationIterator.next();
-                output.collect(new JetPair<>(next.getKey(), next.getValue()));
-                if (idx == chunkSize - 1) {
-                    break;
-                }
-                idx++;
-            }
-            finalized = !this.finalizationIterator.hasNext();
-        } finally {
-            if (finalized) {
-                this.finalizationIterator = null;
-                this.cache.clear();
-            }
+    public boolean complete() {
+        if (iterator == null) {
+            iterator = cache.entrySet().iterator();
         }
-        return finalized;
+        while (iterator.hasNext() && !getOutbox().isHighWater()) {
+            Map.Entry<K, A> next = iterator.next();
+            emit(new SimpleImmutableEntry<>(next.getKey(), next.getValue()));
+        }
+        return !iterator.hasNext();
     }
+
 }

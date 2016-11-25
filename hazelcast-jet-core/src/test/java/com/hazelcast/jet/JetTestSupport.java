@@ -21,45 +21,21 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.After;
+
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import com.hazelcast.util.UuidUtil;
-import org.apache.log4j.Level;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
-import static com.hazelcast.jet.impl.util.JetUtil.unchecked;
-
 public class JetTestSupport extends HazelcastTestSupport {
 
-    protected static TestHazelcastFactory hazelcastInstanceFactory;
-    protected static final int PARALLELISM = 8;
+    protected TestHazelcastFactory factory;
 
-    @BeforeClass
-    public static void setUpFactory() {
-        setLogLevel(Level.INFO);
-        hazelcastInstanceFactory = new TestHazelcastFactory();
-    }
-
-    @AfterClass
-    public static void tearDownFactory() {
-        hazelcastInstanceFactory.shutdownAll();
-    }
-
-    protected static HazelcastInstance createCluster(TestHazelcastInstanceFactory factory, int nodeCount) {
-        HazelcastInstance instance = null;
-        for (int i = 0; i < nodeCount; i++) {
-            instance = factory.newHazelcastInstance();
+    @After
+    public void after() {
+        if (factory != null) {
+            factory.shutdownAll();
         }
-        return instance;
-    }
-
-    protected static HazelcastInstance createCluster(int nodeCount) {
-        return createCluster(hazelcastInstanceFactory, nodeCount);
     }
 
     protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {
@@ -81,43 +57,4 @@ public class JetTestSupport extends HazelcastTestSupport {
         return instance.getList(randomName());
     }
 
-    public static Vertex createVertex(String name, Class<? extends Processor> processorClass, int parallelism) {
-        return new Vertex(name, processorClass).parallelism(parallelism);
-    }
-
-    public static Vertex createVertex(String name, Class<? extends Processor> processorClass) {
-        return createVertex(name, processorClass, PARALLELISM);
-    }
-
-    public static void execute(Job job) throws ExecutionException, InterruptedException {
-        Throwable failure = null;
-        try {
-            job.execute().get();
-        } catch (Throwable t) {
-            failure = t;
-            throw t;
-        } finally {
-            try {
-                job.destroy();
-            } catch (Throwable t) {
-                if (failure == null) {
-                    throw t;
-                }
-            }
-        }
-    }
-
-    public static void executeSafely(Job job) {
-        try {
-            job.execute().get();
-        } catch (InterruptedException | ExecutionException e) {
-            throw unchecked(e);
-        } finally {
-            job.destroy();
-        }
-    }
-
-    protected static String randomJobName() {
-        return UuidUtil.newUnsecureUuidString().replaceAll("-", "");
-    }
 }

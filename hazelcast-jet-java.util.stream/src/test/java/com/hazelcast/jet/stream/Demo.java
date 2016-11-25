@@ -28,11 +28,11 @@ import java.util.Map;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 @Ignore
-public class Demo extends JetStreamTestSupport {
+public class Demo extends AbstractStreamTest {
 
     @Test
     public void testFilterSquares() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> list = map.stream()
@@ -48,7 +48,7 @@ public class Demo extends JetStreamTestSupport {
 
     @Test
     public void testSumAllValues() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Integer sum = map.stream()
@@ -61,7 +61,7 @@ public class Demo extends JetStreamTestSupport {
 
     @Test
     public void testDistinctValues() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         IList<Integer> distinct = map.stream()

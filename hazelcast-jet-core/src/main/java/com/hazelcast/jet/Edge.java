@@ -16,33 +16,29 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.jet.strategy.SerializedHashingStrategy;
-import com.hazelcast.jet.strategy.HashingStrategy;
-import com.hazelcast.jet.strategy.MemberDistributionStrategy;
-import com.hazelcast.jet.strategy.RoutingStrategy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 /**
  * Represents an edge between two vertices in a DAG
  */
 public class Edge implements IdentifiedDataSerializable {
 
-    private String name;
+    private String source;
+    private int outputOrdinal;
+    private String destination;
+    private int inputOrdinal;
 
-    private Vertex from;
-    private Vertex to;
+    private int priority = Integer.MAX_VALUE;
 
-    private boolean isLocal = true;
-    private HashingStrategy hashingStrategy = SerializedHashingStrategy.INSTANCE;
-    private MemberDistributionStrategy memberDistributionStrategy;
-    private RoutingStrategy routingStrategy = RoutingStrategy.ROUND_ROBIN;
-    private PartitioningStrategy partitioningStrategy = StringAndPartitionAwarePartitioningStrategy.INSTANCE;
+    private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
+    private Partitioner partitioner;
+    private boolean isDistributed;
 
     Edge() {
 
@@ -51,295 +47,184 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Creates an edge between two vertices.
      *
-     * @param name name of the edge
-     * @param from the origin vertex
-     * @param to   the destination vertex
+     * @param source      the source vertex
+     * @param destination the destination vertex
      */
-    public Edge(String name,
-                Vertex from,
-                Vertex to) {
-        this.to = to;
-        this.name = name;
-        this.from = from;
+    public Edge(Vertex source,
+                Vertex destination) {
+        this(source, 0, destination, 0);
     }
 
     /**
-     * @return output vertex of edge
-     */
-    public Vertex getOutputVertex() {
-        return this.to;
-    }
-
-    /**
-     * Returns if the edge is local
-     */
-    public boolean isLocal() {
-        return isLocal;
-    }
-
-    /**
-     * @return name of the edge
-     */
-    public String getName() {
-        return this.name;
-    }
-
-    /**
-     * @return input vertex of edge
-     */
-    public Vertex getInputVertex() {
-        return this.from;
-    }
-
-    /**
-     * @return the member distribution strategy for the edge
-     */
-    public MemberDistributionStrategy getMemberDistributionStrategy() {
-        return memberDistributionStrategy;
-    }
-
-    /**
-     * @return the routing strategy for the edge
-     */
-    public RoutingStrategy getRoutingStrategy() {
-        return routingStrategy;
-    }
-
-    /**
-     * @return the partitioning strategy for the edge
-     */
-    public PartitioningStrategy getPartitioningStrategy() {
-        return partitioningStrategy;
-    }
-
-    /**
-     * @return the hashing strategy for the edge
-     */
-    public HashingStrategy getHashingStrategy() {
-        return hashingStrategy;
-    }
-
-    /**
-     * Sets the edge to be distributed. The output of the producers will be consumed by consumers on other
-     * members. When a {@link MemberDistributionStrategy} is not provided, the record will be consumed by the
-     * member which is the owner of the partition the record belongs to.
-     * If there are several consumers in the target member, the consumer will be determined by
-     * {@link RoutingStrategy}
-     */
-    public Edge distributed() {
-        isLocal = false;
-        return this;
-    }
-
-    /**
-     * Sets the edge to be local only. The output of the producers will only be consumed by consumers on the same
-     * member.
-     * The specific consumer instance will be determined by {@link RoutingStrategy}
-     */
-    public Edge local() {
-        isLocal = true;
-        return this;
-    }
-
-    /**
-     * Sets the edge to be distributed. The output of the producers will be consumed by consumers on other
-     * members. The member or members to consume will be determined by the {@link MemberDistributionStrategy}.
-     * If there are several consumers in the target member(s), the consumer will be determined by
-     * {@link RoutingStrategy}
+     * Creates an edge between two vertices.
      *
-     * @see com.hazelcast.jet.strategy.SingleMemberDistributionStrategy
+     * @param source        the source vertex
+     * @param outputOrdinal ordinal at the source
+     * @param destination   the destination vertex
+     * @param inputOrdinal  ordinal at the destination
      */
-    public Edge distributed(MemberDistributionStrategy distributionStrategy) {
-        this.isLocal = false;
-        this.memberDistributionStrategy = distributionStrategy;
+    public Edge(Vertex source, int outputOrdinal,
+                Vertex destination, int inputOrdinal) {
+        this.source = source.getName();
+        this.outputOrdinal = outputOrdinal;
+
+        this.destination = destination.getName();
+        this.inputOrdinal = inputOrdinal;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public String getSource() {
+        return source;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public int getOutputOrdinal() {
+        return outputOrdinal;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public String getDestination() {
+        return destination;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public int getInputOrdinal() {
+        return inputOrdinal;
+    }
+
+    /**
+     * Sets the priority number for the edge.
+     * The edges with the lower priority number will be processed before all others.
+     */
+    public Edge priority(int priority) {
+        this.priority = priority;
         return this;
     }
 
     /**
-     * Sets the {@link RoutingStrategy} for the edge to broadcast.
-     * The output of the producer vertex will be available to all instances of the consumer vertex.
-     *
-     * @link RoutingStrategy.BROADCAST
-     */
-    public Edge broadcast() {
-        this.routingStrategy = RoutingStrategy.BROADCAST;
-        return this;
-    }
-
-    /**
-     * Sets the {@link RoutingStrategy} for the edge to partitioned.
-     * The output of the producer vertex will be partitioned and the partitions will be allocated
-     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
-     *
-     * @link RoutingStrategy.PARTITIONED
+     * Partition the edge with the default {@link Partitioner}
      */
     public Edge partitioned() {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Default();
         return this;
     }
 
     /**
-     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom partitioning strategy.
-     * <p/>
-     * The output of the producer vertex will be partitioned and the partitions will be allocated
-     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
-     *
-     * @link RoutingStrategy.PARTITIONED
+     * Partition the edge with the given {@link Partitioner}
      */
-    public Edge partitioned(PartitioningStrategy partitioningStrategy) {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
-        this.partitioningStrategy = partitioningStrategy;
+    public Edge partitioned(Partitioner partitioner) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = partitioner;
         return this;
     }
 
     /**
-     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom hashing strategy.
-     * <p/>
-     * The output of the producer vertex will be partitioned and the partitions will be allocated
-     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
-     *
-     * @link RoutingStrategy.PARTITIONED
-     * @see HashingStrategy
+     * Partition the edge with the default {@link Partitioner}
+     * and applies the provided function before partitioning
      */
-    public Edge partitioned(HashingStrategy hashingStrategy) {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
-        this.hashingStrategy = hashingStrategy;
+    public Edge partitioned(KeyExtractor extractor) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = new Keyed(extractor);
         return this;
     }
 
     /**
-     * Sets the {@link RoutingStrategy} for the edge to partitioned with a custom partitioning and hashing strategy.
-     * <p/>
-     * The output of the producer vertex will be partitioned and the partitions will be allocated
-     * between instances of the consumer vertex, with the same consumer always receiving the same partitions.
-     *
-     * @link RoutingStrategy.PARTITIONED
-     * @see HashingStrategy
-     * @see PartitioningStrategy
+     * Forward the edge to a single point
      */
-    public Edge partitioned(PartitioningStrategy partitioningStrategy, HashingStrategy hashingStrategy) {
-        this.routingStrategy = RoutingStrategy.PARTITIONED;
-        this.partitioningStrategy = partitioningStrategy;
-        this.hashingStrategy = hashingStrategy;
+    public Edge allToOne() {
+        return partitioned(new Single());
+    }
+
+
+    /**
+     * Javadoc pending
+     */
+    public Edge broadcast() {
+        forwardingPattern = ForwardingPattern.BROADCAST;
         return this;
     }
 
-
-    @Override
-    @SuppressWarnings({
-            "checkstyle:npathcomplexity",
-            "checkstyle:cyclomaticcomplexity"
-    })
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        Edge edge = (Edge) o;
-
-        if (isLocal != edge.isLocal) {
-            return false;
-        }
-
-        if (to != null
-                ? !to.equals(edge.to)
-                : edge.to != null) {
-            return false;
-        }
-
-        if (name != null
-                ? !name.equals(edge.name)
-                : edge.name != null) {
-            return false;
-        }
-
-        if (from != null
-                ? !from.equals(edge.from)
-                : edge.from != null) {
-            return false;
-        }
-
-        if (hashingStrategy != null
-                ?
-                !hashingStrategy.getClass().equals(edge.hashingStrategy.getClass())
-                :
-                edge.hashingStrategy != null) {
-            return false;
-        }
-
-        if (memberDistributionStrategy != null
-                ?
-                !memberDistributionStrategy.equals(edge.memberDistributionStrategy)
-                :
-                edge.memberDistributionStrategy != null) {
-            return false;
-        }
-
-        if (routingStrategy != edge.routingStrategy) {
-            return false;
-        }
-
-        return partitioningStrategy != null
-                ?
-                partitioningStrategy.getClass().equals(edge.partitioningStrategy.getClass())
-                :
-                edge.partitioningStrategy == null;
-
+    /**
+     * Javadoc pending
+     */
+    public Edge distributed() {
+        isDistributed = true;
+        return this;
     }
 
-    @Override
-    @SuppressWarnings({
-            "checkstyle:npathcomplexity"
-    })
-    public int hashCode() {
-        int result = to != null ? to.hashCode() : 0;
-        result = 31 * result + (name != null ? name.hashCode() : 0);
-        result = 31 * result + (from != null ? from.hashCode() : 0);
-        result = 31 * result + (isLocal ? 1 : 0);
-        result = 31 * result + (hashingStrategy != null ? hashingStrategy.getClass().hashCode() : 0);
-        result = 31 * result + (memberDistributionStrategy != null ? memberDistributionStrategy.hashCode() : 0);
-        result = 31 * result + (routingStrategy != null ? routingStrategy.getClass().hashCode() : 0);
-        result = 31 * result + (partitioningStrategy != null ? partitioningStrategy.getClass().hashCode() : 0);
-        return result;
+    /**
+     * @return the partitioned for the edge
+     */
+    public Partitioner getPartitioner() {
+        return partitioner;
+    }
+
+    /**
+     * @return the {@link ForwardingPattern} for the edge
+     */
+    public ForwardingPattern getForwardingPattern() {
+        return forwardingPattern;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public boolean isDistributed() {
+        return isDistributed;
+    }
+
+    /**
+     * @return the priority for the edge
+     */
+    public int getPriority() {
+        return priority;
     }
 
     @Override
     public String toString() {
         return "Edge{"
-                + "name='" + name + '\''
-                + ", from=" + from
-                + ", to=" + to
+                + "source=" + source
+                + ", destination=" + destination
                 + '}';
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeObject(from);
-        out.writeObject(to);
-        out.writeBoolean(isLocal);
+        out.writeUTF(source);
+        out.writeInt(outputOrdinal);
 
-        out.writeObject(hashingStrategy);
-        out.writeObject(memberDistributionStrategy);
-        out.writeObject(routingStrategy);
-        out.writeObject(partitioningStrategy);
+        out.writeUTF(destination);
+        out.writeInt(inputOrdinal);
+
+        out.writeInt(priority);
+        out.writeBoolean(isDistributed);
+
+        out.writeObject(forwardingPattern);
+        out.writeObject(partitioner);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        from = in.readObject();
-        to = in.readObject();
-        isLocal = in.readBoolean();
+        source = in.readUTF();
+        outputOrdinal = in.readInt();
 
-        hashingStrategy = in.readObject();
-        memberDistributionStrategy = in.readObject();
-        routingStrategy = in.readObject();
-        partitioningStrategy = in.readObject();
+        destination = in.readUTF();
+        inputOrdinal = in.readInt();
+
+        priority = in.readInt();
+        isDistributed = in.readBoolean();
+
+        forwardingPattern = in.readObject();
+        partitioner = in.readObject();
     }
 
     @Override
@@ -350,5 +235,81 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetDataSerializerHook.EDGE;
+    }
+
+
+    /**
+     * Javadoc pending
+     */
+    public enum ForwardingPattern implements Serializable {
+
+        /**
+         * Output of the source tasklet is only available to a single destination tasklet,
+         * but not necessarily always the same one
+         */
+        ALTERNATING_SINGLE,
+
+        /**
+         * Output of the source tasklet is only available to the destination tasklet with the partition id
+         * given by the {@link Partitioner}
+         */
+        PARTITIONED,
+
+        /**
+         * Output of the source tasklet is available to all destination tasklets.
+         */
+        BROADCAST
+    }
+
+    private static class Default implements Partitioner {
+        private static final long serialVersionUID = 1L;
+
+        protected transient PartitionLookup lookup;
+
+        @Override
+        public void init(PartitionLookup lookup) {
+            this.lookup = lookup;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return lookup.getPartition(item);
+        }
+    }
+
+    private static class Keyed extends Default {
+        private KeyExtractor extractor;
+
+        Keyed(KeyExtractor extractor) {
+            this.extractor = extractor;
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return lookup.getPartition(extractor.extract(item));
+        }
+    }
+
+    private static class Single implements Partitioner {
+
+        private static final long serialVersionUID = 1L;
+
+        private final String key;
+        private int partition;
+
+        Single() {
+            key = UuidUtil.newUnsecureUuidString();
+        }
+
+
+        @Override
+        public void init(PartitionLookup service) {
+            partition = service.getPartition(key);
+        }
+
+        @Override
+        public int getPartition(Object item, int numPartitions) {
+            return partition;
+        }
     }
 }

@@ -45,8 +45,6 @@ public class JetHashJoinGate extends MemorySpliceGate {
     private Collection<Tuple>[] collections;
     private List<Tuple> streamedCollection;
 
-    private List<Tuple> lhsBuffer = new ArrayList<>();
-
     public JetHashJoinGate(FlowProcess flowProcess, HashJoin join) {
         super(flowProcess, join);
     }
@@ -95,7 +93,6 @@ public class JetHashJoinGate extends MemorySpliceGate {
         Tuple incomingTuple = incomingEntry.getTupleCopy();
         // view in incomingTuple
         Tuple keyTuple = keyBuilder[pos].makeResult(incomingTuple, null);
-
         keyTuple = getDelegatedTuple(keyTuple);
 
         if (pos != 0) {
@@ -104,7 +101,9 @@ public class JetHashJoinGate extends MemorySpliceGate {
             return;
         }
 
-        lhsBuffer.add(incomingTuple);
+        keys.remove(keyTuple);
+        streamedCollection.set(0, incomingTuple); // no need to copy, temp setting
+        performJoinWith(keyTuple);
     }
 
     private void performJoinWith(Tuple keyTuple) {
@@ -133,21 +132,9 @@ public class JetHashJoinGate extends MemorySpliceGate {
             return;
         }
 
-        for (Tuple tuple : lhsBuffer) {
-            // view in incomingTuple
-            Tuple keyTuple = keyBuilder[0].makeResult(tuple, null);
-            keyTuple = getDelegatedTuple(keyTuple);
-            // no need to copy, temp setting
-            streamedCollection.set(0, tuple);
-            performJoinWith(keyTuple);
-            keys.remove(keyTuple);
-        }
-
         collections[0] = Collections.EMPTY_LIST;
 
-        for (Tuple keyTuple : keys) {
-            performJoinWith(keyTuple);
-        }
+        keys.forEach(this::performJoinWith);
 
         keys = createKeySet();
         keyValues = createKeyValuesArray();

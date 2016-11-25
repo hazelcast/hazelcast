@@ -16,48 +16,40 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
-
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.AbstractProcessor;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
-public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractStreamProcessor<IN, OUT> {
+public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractProcessor {
 
     private final BiConsumer<OUT, IN> accumulator;
     private final Supplier<OUT> supplier;
     private OUT result;
 
 
-    public CollectorAccumulatorProcessor(Function<Pair, IN> inputMapper,
-                                         Function<OUT, Pair> outputMapper,
-                                         BiConsumer<OUT, IN> accumulator,
+    public CollectorAccumulatorProcessor(BiConsumer<OUT, IN> accumulator,
                                          Supplier<OUT> supplier) {
-        super(inputMapper, outputMapper);
         this.accumulator = accumulator;
         this.supplier = supplier;
     }
 
     @Override
-    public void before(TaskContext taskContext) {
+    public void init(@Nonnull Outbox outbox) {
+        super.init(outbox);
         result = supplier.get();
     }
 
     @Override
-    protected boolean process(InputChunk<IN> inputChunk, OutputCollector<OUT> output)
-            throws Exception {
-        for (IN input : inputChunk) {
-            accumulator.accept(result, input);
-        }
+    protected boolean process(int ordinal, Object item) {
+        accumulator.accept(result, (IN) item);
         return true;
     }
 
     @Override
-    protected boolean finalize(OutputCollector<OUT> output, int chunkSize) throws Exception {
-        output.collect(result);
+    public boolean complete() {
+        emit(result);
         return true;
     }
 }

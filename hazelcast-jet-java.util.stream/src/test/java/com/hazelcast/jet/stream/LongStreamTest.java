@@ -13,15 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,23 +36,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class LongStreamTest extends JetStreamTestSupport {
+public class LongStreamTest extends AbstractStreamTest {
 
     private IStreamMap<String, Long> map;
     private DistributedLongStream stream;
 
     @Before
     public void setupMap() {
-        map = getStreamMap(instance);
+        map = getStreamMap();
         fillMapLongs(map);
         stream = map.stream().mapToLong(Map.Entry::getValue);
     }
 
     private long fillMapLongs(IStreamMap<String, Long> map) {
         for (int i = 0; i < COUNT; i++) {
-            map.put("key-" + i, (long)i);
+            map.put("key-" + i, (long) i);
         }
         return COUNT;
     }
@@ -65,9 +60,9 @@ public class LongStreamTest extends JetStreamTestSupport {
         long[] values = map.stream().flatMapToLong(e -> LongStream.of(e.getValue(), e.getValue())).toArray();
         Arrays.sort(values);
 
-        for (int i = 0; i < COUNT*2; i += 2) {
-            assertEquals(i/2, values[i]);
-            assertEquals(i/2, values[i+1]);
+        for (int i = 0; i < COUNT * 2; i += 2) {
+            assertEquals(i / 2, values[i]);
+            assertEquals(i / 2, values[i + 1]);
         }
     }
 
@@ -120,11 +115,11 @@ public class LongStreamTest extends JetStreamTestSupport {
 
     @Test
     public void testCollect() {
-        Long[] sum = stream.collect(() -> new Long[] { 0L } ,
+        Long[] sum = stream.collect(() -> new Long[]{0L},
                 (a, b) -> a[0] += b,
                 (a, b) -> a[0] += b[0]);
 
-        assertEquals(COUNT * (COUNT - 1) / 2, (long)sum[0]);
+        assertEquals(COUNT * (COUNT - 1) / 2, (long) sum[0]);
     }
 
     @Test
@@ -154,7 +149,7 @@ public class LongStreamTest extends JetStreamTestSupport {
 
         for (int i = 0; i < repetitions; i++) {
             for (int j = 0; j < repetitions; j++) {
-                assertEquals(i, longs[i*repetitions+j]);
+                assertEquals(i, longs[i * repetitions + j]);
             }
         }
     }
@@ -220,7 +215,7 @@ public class LongStreamTest extends JetStreamTestSupport {
         stream.sorted().forEachOrdered(values::add);
 
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (long)values.get(i));
+            assertEquals(i, (long) values.get(i));
         }
     }
 
@@ -275,14 +270,14 @@ public class LongStreamTest extends JetStreamTestSupport {
 
     @Test
     public void testMapToObj() {
-        IList<Long> list = stream.mapToObj(m -> (Long)m).collect(DistributedCollectors.toIList());
+        IList<Long> list = stream.mapToObj(m -> (Long) m).collect(DistributedCollectors.toIList());
 
         Object[] array = list.toArray();
         Arrays.sort(array);
         assertEquals(COUNT, array.length);
 
         for (int i = 0; i < array.length; i++) {
-            assertEquals((long)i, array[i]);
+            assertEquals((long) i, array[i]);
         }
     }
 
@@ -376,7 +371,7 @@ public class LongStreamTest extends JetStreamTestSupport {
         assertEquals(COUNT, list.size());
         assertEquals(COUNT, longs.length);
         for (int i = 0; i < list.size(); i++) {
-            assertEquals(i, (long)list.get(i));
+            assertEquals(i, (long) list.get(i));
             assertEquals(i, longs[i]);
         }
     }
@@ -401,7 +396,7 @@ public class LongStreamTest extends JetStreamTestSupport {
         LongSummaryStatistics longSummaryStatistics = stream.summaryStatistics();
 
         assertEquals(COUNT, longSummaryStatistics.getCount());
-        assertEquals(COUNT-1, longSummaryStatistics.getMax());
+        assertEquals(COUNT - 1, longSummaryStatistics.getMax());
         assertEquals(0, longSummaryStatistics.getMin());
         assertEquals(COUNT * (COUNT - 1) / 2, longSummaryStatistics.getSum());
         assertEquals((COUNT - 1) / 2.0, longSummaryStatistics.getAverage(), 0.0);

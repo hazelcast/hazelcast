@@ -34,27 +34,26 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>conjars.org</id>
-            <url>http://conjars.org/repo</url>
-        </repository>
-    </repositories>
-
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
-                    <!--<dependenciesToScan>-->
-                        <!--<dependency>cascading:cascading-platform</dependency>-->
-                    <!--</dependenciesToScan>-->
+                    <!-- Running cascading tests in parallel is not supported -->
+                    <forkCount>1</forkCount>
                 </configuration>
             </plugin>
         </plugins>
     </build>
+
+
+    <repositories>
+        <repository>
+            <id>conjars.org</id>
+            <url>http://conjars.org/repo</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -114,18 +113,5 @@
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
-        <!--<dependency>-->
-            <!--<groupId>org.codehaus.janino</groupId>-->
-            <!--<artifactId>commons-compiler-jdk</artifactId>-->
-            <!--<version>2.7.8</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
-
-        <!--<dependency>-->
-            <!--<groupId>org.codehaus.janino</groupId>-->
-            <!--<artifactId>janino</artifactId>-->
-            <!--<version>2.5.16</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
     </dependencies>
 </project>

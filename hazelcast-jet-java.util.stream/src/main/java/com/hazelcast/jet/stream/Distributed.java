@@ -1492,6 +1492,8 @@ public final class Distributed {
      * ({@code ==}), identity hash code, or synchronization) on instances of
      * {@code Optional} may have unpredictable results and should be avoided.
      *
+     * @param <T> The type of the contained value
+     *
      */
     public static final class Optional<T> implements Serializable {
         /**

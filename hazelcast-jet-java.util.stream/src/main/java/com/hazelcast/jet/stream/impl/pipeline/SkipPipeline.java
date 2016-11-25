@@ -16,22 +16,14 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
+import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
+import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.processor.SkipProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
-import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
-import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.SourcePipeline;
-import com.hazelcast.jet.stream.impl.processor.PassthroughProcessor;
-import com.hazelcast.jet.stream.impl.processor.SkipProcessor;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long skip;
@@ -42,40 +34,20 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
-        Vertex vertex = vertexBuilder(SkipProcessor.class)
-                .name("skip")
-                .addToDAG(dag)
-                .args(defaultFromPairMapper(), toPairMapper, skip)
-                .taskCount(1)
-                .build();
+    public Vertex buildDAG(DAG dag) {
+        Vertex previous = upstream.buildDAG(dag);
+        // required final for lambda variable capture
+        final long skip = this.skip;
+        Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipProcessor(skip)).parallelism(1);
+        dag.addVertex(skipVertex);
 
-        Vertex previous = getPreviousVertex(dag, vertex);
-
-
-        Edge edge = newEdge(previous, vertex);
+        Edge edge = new Edge(previous, skipVertex);
 
         // if upstream is not ordered, we need to shuffle data to one node
         if (!upstream.isOrdered()) {
-            edge = edge.distributed(singlePartition(randomName()));
+            edge = edge.distributed().allToOne();
         }
         dag.addEdge(edge);
-        return vertex;
-    }
-
-    private Vertex getPreviousVertex(DAG dag, Vertex vertex) {
-        Vertex previous;
-        if (upstream instanceof SourcePipeline) {
-            SourcePipeline<T> upstream = (SourcePipeline<T>) this.upstream;
-            Vertex passthrough = vertexBuilder(PassthroughProcessor.class)
-                    .name("passthrough")
-                    .addToDAG(dag)
-                    .args(upstream.fromPairMapper(), toPairMapper())
-                    .build();
-            previous = this.upstream.buildDAG(dag, passthrough, toPairMapper());
-        } else {
-            previous = this.upstream.buildDAG(dag, vertex, toPairMapper());
-        }
-        return previous;
+        return skipVertex;
     }
 }

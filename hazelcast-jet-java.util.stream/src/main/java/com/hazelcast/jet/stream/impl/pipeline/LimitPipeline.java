@@ -16,20 +16,14 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.LimitProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Vertex;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long limit;
@@ -40,31 +34,24 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
-        Vertex first = vertexBuilder(LimitProcessor.class)
-                .addToDAG(dag)
-                .args(getPairMapper(upstream, defaultFromPairMapper()), toPairMapper(), limit)
-                .taskCount(1)
-                .build();
-
-        Vertex previous = upstream.buildDAG(dag, first, toPairMapper());
-
-        if (first != previous) {
-            dag.addEdge(newEdge(previous, first));
-        }
+    public Vertex buildDAG(DAG dag) {
+        Vertex previous = upstream.buildDAG(dag);
+        // required final for lambda variable capture
+        final long lim = limit;
+        Vertex first = new Vertex(randomName(), () -> new LimitProcessor(lim)).parallelism(1);
+        dag.addVertex(first)
+                .addEdge(new Edge(previous, first));
 
         if (upstream.isOrdered()) {
             return first;
         }
 
-        Vertex second = vertexBuilder(LimitProcessor.class)
-                .addToDAG(dag)
-                .args(defaultFromPairMapper(), toPairMapper, limit)
-                .taskCount(1)
-                .build();
-
-        dag.addEdge(newEdge(first, second)
-                .distributed(singlePartition(randomName())));
+        Vertex second = new Vertex(randomName(), () -> new LimitProcessor(lim)).parallelism(1);
+        dag.addVertex(second)
+                .addEdge(new Edge(first, second)
+                        .distributed()
+                        .allToOne()
+                );
 
         return second;
     }

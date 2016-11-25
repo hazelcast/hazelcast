@@ -17,25 +17,23 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.sink.MapSink;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Vertex;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector<T, A, IMap<K, D>> {
 
@@ -58,32 +56,23 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
     @Override
     public IMap<K, D> collect(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, D> target = context.getHazelcastInstance().getMap(mapName);
+
         DAG dag = new DAG();
-        Vertex merger = vertexBuilder(GroupingAccumulatorProcessor.class)
-                .addToDAG(dag)
-                .args(collector)
-                .build();
+        Vertex previous = upstream.buildDAG(dag);
+        Vertex merger = new Vertex("grouping-accumulator-" + randomName(),
+                () -> new GroupingAccumulatorProcessor<>(classifier, collector));
+        Vertex combiner = new Vertex("grouping-combiner-" + randomName(),
+                () -> new GroupingCombinerProcessor<>(collector));
+        Vertex writer = new Vertex("map-writer-" + mapName, Processors.mapWriter(mapName));
 
-        Vertex previous = upstream.buildDAG(dag, null, toPairMapper());
-        if (previous != merger) {
-            dag.addEdge(newEdge(previous, merger).partitioned());
-        }
-
-        Vertex combiner = vertexBuilder(GroupingCombinerProcessor.class)
-                .addToDAG(dag)
-                .args(collector)
-                .build();
-
-        dag.addEdge(newEdge(merger, combiner)
-                .distributed()
-                .partitioned());
-
-        combiner.addSink(new MapSink(mapName));
+        dag.addVertex(merger)
+           .addVertex(combiner)
+           .addVertex(writer)
+           .addEdge(new Edge(previous, merger).partitioned(item -> classifier.apply((T) item)))
+           .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
+           .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;
     }
 
-    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return v -> new JetPair<>(classifier.apply(v), v);
-    }
 }

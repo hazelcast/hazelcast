@@ -17,7 +17,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <name>hazelcast-jet</name>
+    <name>hazelcast-jet-core</name>
     <artifactId>hazelcast-jet-core</artifactId>
     <packaging>jar</packaging>
     <version>0.3-SNAPSHOT</version>
@@ -52,15 +52,14 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-client-protocol</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.hazelcast.jet</groupId>
-            <artifactId>hazelcast-jet-io</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <!--TEST DEPENDENCIES-->
@@ -71,8 +70,6 @@
             <version>${hazelcast.version}</version>
             <classifier>tests</classifier>
         </dependency>
-
-
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-client</artifactId>

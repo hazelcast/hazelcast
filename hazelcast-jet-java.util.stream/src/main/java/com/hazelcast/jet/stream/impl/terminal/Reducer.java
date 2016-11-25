@@ -17,30 +17,24 @@
 package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.sink.ListSink;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AccumulatorProcessor;
 import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.SimpleProcessorSupplier;
+import com.hazelcast.jet.Vertex;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
-import static com.hazelcast.jet.strategy.MemberDistributionStrategy.singlePartition;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
 
 public class Reducer {
 
@@ -61,34 +55,35 @@ public class Reducer {
     }
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
-        Vertex combinerVertex = vertexBuilder(CombinerProcessor.class)
-                .addToDAG(dag)
-                .args(defaultFromPairMapper(), toPairMapper())
-                .args(combiner, Distributed.Function.<T>identity())
-                .taskCount(1)
-                .build();
-        dag.addEdge(newEdge(accumulatorVertex, combinerVertex)
-                .distributed(singlePartition(randomName())));
+        SimpleProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
+        Vertex combinerVertex = new Vertex(randomName(), supplier).parallelism(1);
+        dag.addVertex(combinerVertex);
+        dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
+                .distributed()
+                .allToOne()
+        );
         return combinerVertex;
     }
 
     public <T> Optional<T> reduce(Pipeline<T> upstream, BinaryOperator<T> operator) {
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, Optional.empty());
+        Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, null);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
         return this.<T>execute(dag, combinerVertex);
     }
 
     public <T> T reduce(Pipeline<T> upstream, T identity, BinaryOperator<T> accumulator) {
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, Optional.of(identity));
+        Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, identity);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
         return this.<T>execute(dag, combinerVertex).get();
     }
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
-        IList<T> list = context.getHazelcastInstance().getList(randomName(LIST_PREFIX));
-        combiner.addSink(new ListSink(list));
+        String listName = randomName(LIST_PREFIX);
+        Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
+        dag.addVertex(writer).addEdge(new Edge(combiner, writer));
+        IList<T> list = context.getHazelcastInstance().getList(listName);
         executeJob(context, dag);
         if (list.isEmpty()) {
             list.destroy();
@@ -100,55 +95,42 @@ public class Reducer {
     }
 
 
-    private <T, U> Vertex buildMappingAccumulator(
-            DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
-    ) {
-        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
-        Vertex accumulatorVertex = vertexBuilder(AccumulatorProcessor.class)
-                .addToDAG(dag)
-                .args(fromPairMapper, toPairMapper())
-                .args(accumulator, identity)
-                .build();
+    private <T, U> Vertex buildMappingAccumulator(DAG dag,
+                                                  Pipeline<? extends T> upstream, U identity,
+                                                  BiFunction<U, ? super T, U> accumulator) {
 
-        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
+
+        Vertex accumulatorVertex = new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity));
+        dag.addVertex(accumulatorVertex);
+        Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
-            dag.addEdge(newEdge(previous, accumulatorVertex));
+            dag.addEdge(new Edge(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }
 
     private <T> Vertex buildAccumulator(
-            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, Optional<T> identity
+            DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, T identity
     ) {
-        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
-        Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity, fromPairMapper);
+        Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity);
         dag.addVertex(accumulatorVertex);
 
-        Vertex previous = upstream.buildDAG(dag, accumulatorVertex, toPairMapper());
+        Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
-            dag.addEdge(newEdge(previous, accumulatorVertex));
+            dag.addEdge(new Edge(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }
 
     private <T> Vertex getAccumulatorVertex(
-            BinaryOperator<T> accumulator, Optional<T> identity, Function<Pair, ? extends T> fromPairMapper
+            BinaryOperator<T> accumulator, T identity
     ) {
-        return identity.isPresent()
+        return identity != null
                 ?
-                vertexBuilder(AccumulatorProcessor.class)
-                        .args(fromPairMapper, toPairMapper())
-                        .args(accumulator, identity.get())
-                        .build()
+                new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity))
                 :
-                vertexBuilder(CombinerProcessor.class)
-                        .args(fromPairMapper, toPairMapper())
-                        .args(accumulator, Distributed.Function.<T>identity())
-                        .build();
+                new Vertex(randomName(), () -> new CombinerProcessor<>(accumulator, Distributed.Function.identity()));
     }
 
-    private <T, U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return o -> new JetPair<Object, T>(0, o);
-    }
 }
 

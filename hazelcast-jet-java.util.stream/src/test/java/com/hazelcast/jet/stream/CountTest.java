@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class CountTest extends JetStreamTestSupport {
+public class CountTest extends AbstractStreamTest {
 
     @Test
     public void testCount_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         long result = map.stream().count();
@@ -40,14 +35,13 @@ public class CountTest extends JetStreamTestSupport {
 
     @Test
     public void testCount_whenSourceList() throws Exception {
-        IList<Integer> list = getStreamList(instance);
+        IList<Integer> list = getStreamList();
         fillList(list);
 
         long result = list.stream().count();
 
         assertEquals(COUNT, result);
     }
-
 
 
 }

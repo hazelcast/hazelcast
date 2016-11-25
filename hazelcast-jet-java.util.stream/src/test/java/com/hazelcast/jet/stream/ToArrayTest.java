@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class ToArrayTest extends JetStreamTestSupport {
+public class ToArrayTest extends AbstractStreamTest {
 
     @Test
     public void testToArray_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Object[] objects = map.stream().toArray();
@@ -46,7 +41,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArrayWithGenerator_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Map.Entry[] entries = map.stream().toArray(Map.Entry[]::new);
@@ -59,7 +54,7 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArray_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Object[] objects = list.stream().toArray();
@@ -72,14 +67,14 @@ public class ToArrayTest extends JetStreamTestSupport {
 
     @Test
     public void testToArrayWithGenerator_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Integer[] elements = list.stream().toArray(Integer[]::new);
 
         assertEquals(COUNT, elements.length);
         for (int i = 0; i < COUNT; i++) {
-            assertEquals(i, (int)elements[i]);
+            assertEquals(i, (int) elements[i]);
         }
     }
 

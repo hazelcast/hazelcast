@@ -16,41 +16,24 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.runtime.InputChunk;
-import com.hazelcast.jet.runtime.OutputCollector;
-import com.hazelcast.jet.runtime.TaskContext;
-import com.hazelcast.jet.io.Pair;
+import com.hazelcast.jet.AbstractProcessor;
 
-import java.util.Iterator;
-import java.util.function.Function;
-
-public class LimitProcessor<T> extends AbstractStreamProcessor<T, T> {
+public class LimitProcessor extends AbstractProcessor {
 
     private final long limit;
     private long index;
 
-    public LimitProcessor(Function<Pair, T> inputMapper, Function<T, Pair> outputMapper, Long limit) {
-        super(inputMapper, outputMapper);
+    public LimitProcessor(Long limit) {
         this.limit = limit;
     }
 
     @Override
-    public void before(TaskContext context) {
-        super.before(context);
-        index = 0;
-    }
-
-    @Override
-    protected boolean process(InputChunk<T> inputChunk,
-                              OutputCollector<T> output) throws Exception {
+    protected boolean process(int ordinal, Object item) {
         if (index >= limit) {
             return true;
         }
-
-        for (Iterator<T> iterator = inputChunk.iterator(); iterator.hasNext() && index < limit; index++) {
-            logger.info("process: " + index);
-            output.collect(iterator.next());
-        }
+        index++;
+        emit(item);
         return true;
     }
 }

@@ -15,7 +15,6 @@
  */
 
 /**
- * Provides JET API
+ * Javadoc pending
  */
-
 package com.hazelcast.jet;

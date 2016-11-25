@@ -13,42 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class ForEachTest extends JetStreamTestSupport {
+public class ForEachTest extends AbstractStreamTest {
 
     @Test
     public void testForEach_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
         map.stream().forEach(e -> runningTotal.addAndGet(e.getValue()));
 
-        assertEquals((COUNT-1)*(COUNT)/2, runningTotal.get());
+        assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
     }
 
     @Test
     public void testForEach_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         final AtomicInteger runningTotal = new AtomicInteger(0);
-        list.stream().forEach(delta -> runningTotal.addAndGet(delta));
+        list.stream().forEach(runningTotal::addAndGet);
 
-        assertEquals((COUNT-1)*(COUNT)/2, runningTotal.get());
+        assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
     }
 
 }

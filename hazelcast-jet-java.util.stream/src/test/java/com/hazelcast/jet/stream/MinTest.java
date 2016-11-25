@@ -13,41 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+
+import java.util.Map.Entry;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class MinTest extends JetStreamTestSupport {
+public class MinTest extends AbstractStreamTest {
 
     @Test
     public void testMin_whenSourceMap() throws Exception {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int result = map.stream()
-                .map(e -> e.getValue())
-                .min((o1, o2) -> o1.compareTo(o2))
-                .get();
+                        .map(Entry::getValue)
+                        .min(Integer::compareTo)
+                        .get();
 
         assertEquals(0, result);
     }
 
     @Test
     public void testMin_whenSourceList() throws Exception {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         long result = list
                 .stream()
-                .min((o1, o2) -> o1.compareTo(o2))
+                .min(Integer::compareTo)
                 .get();
 
         assertEquals(0, result);

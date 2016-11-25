@@ -17,12 +17,10 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.source.ListSource;
-import com.hazelcast.jet.Source;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
 
 public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
 
@@ -34,13 +32,13 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    public Source getSourceTap() {
-        return new ListSource(list.getName());
+    protected ProcessorMetaSupplier getProducer() {
+        return Processors.listReader(list.getName());
     }
 
     @Override
-    public Distributed.Function<Pair, E> fromPairMapper() {
-        return t -> (E) t.getValue();
+    protected String getName() {
+        return "list-reader-" + list.getName();
     }
 
     @Override

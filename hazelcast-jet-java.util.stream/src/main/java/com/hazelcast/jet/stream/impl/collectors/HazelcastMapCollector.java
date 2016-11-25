@@ -18,11 +18,9 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.sink.MapSink;
-import com.hazelcast.jet.Sink;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
+
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
@@ -53,13 +51,18 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected <U extends T> Distributed.Function<U, Pair> toPairMapper() {
-        return v -> new JetPair<>(keyMapper.apply(v), valueMapper.apply(v));
+    protected ProcessorMetaSupplier getConsumer() {
+        return Processors.mapWriter(mapName);
     }
 
     @Override
-    protected Sink getSinkTap() {
-        return new MapSink(mapName);
+    protected int parallelism() {
+        return -1;
+    }
+
+    @Override
+    protected String getName() {
+        return mapName;
     }
 
 }

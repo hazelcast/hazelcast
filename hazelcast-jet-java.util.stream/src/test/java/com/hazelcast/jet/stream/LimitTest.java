@@ -13,32 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class LimitTest extends JetStreamTestSupport {
+public class LimitTest extends AbstractStreamTest {
 
     @Test
     public void testLimit_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int limit = 10;
         IList list = map.stream()
-                .limit(limit)
-                .collect(DistributedCollectors.toIList());
+                        .limit(limit)
+                        .collect(DistributedCollectors.toIList());
 
 
         assertEquals(limit, list.size());
@@ -46,14 +41,14 @@ public class LimitTest extends JetStreamTestSupport {
 
     @Test
     public void testLimit_whenIntermediateOperation() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         int limit = 10;
         IList list = map.stream()
-                .map(Map.Entry::getValue)
-                .limit(limit)
-                .collect(DistributedCollectors.toIList());
+                        .map(Map.Entry::getValue)
+                        .limit(limit)
+                        .collect(DistributedCollectors.toIList());
 
 
         assertEquals(limit, list.size());
@@ -61,13 +56,13 @@ public class LimitTest extends JetStreamTestSupport {
 
     @Test
     public void testLimit_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         int limit = 10;
         IList<Integer> result = list.stream()
-                .limit(limit)
-                .collect(DistributedCollectors.toIList());
+                                    .limit(limit)
+                                    .collect(DistributedCollectors.toIList());
 
         assertEquals(limit, result.size());
     }

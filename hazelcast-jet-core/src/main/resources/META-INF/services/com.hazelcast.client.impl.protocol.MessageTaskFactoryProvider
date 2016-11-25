@@ -1,1 +1,1 @@
-com.hazelcast.client.impl.protocol.JetMessageTaskFactoryProvider
+com.hazelcast.jet.impl.client.JetMessageTaskFactoryProvider

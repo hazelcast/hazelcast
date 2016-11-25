@@ -16,68 +16,45 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.config.DeploymentConfig;
-import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.impl.job.JobProxy;
-import com.hazelcast.jet.impl.job.JobService;
-import com.hazelcast.jet.impl.job.client.ClientJobProxy;
-import com.hazelcast.jet.impl.statemachine.job.JobState;
-
-import java.util.Set;
-
-import static com.hazelcast.jet.impl.util.JetUtil.checkJobName;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.jet.impl.JetEngineProxyImpl;
+import com.hazelcast.jet.impl.client.ClientJetEngineProxy;
 
 /**
- * Utility class for creating new Jet Jobs
+ * Javadoc pending
  */
-public final class JetEngine {
-    private JetEngine() {
+public interface JetEngine extends DistributedObject {
+
+    /**
+     * @return a new {@link Job} with the given DAG
+     */
+    Job newJob(DAG dag);
+
+    /**
+     * @return the {@code JetEngine} with the given name
+     */
+    static JetEngine get(HazelcastInstance instance, String name) {
+        return get(instance, name, new JetEngineConfig());
     }
 
     /**
-     * Create a new job given a Hazelcast instance and name
-     *
-     * @param hazelcastInstance Hazelcast instance to use
-     * @param name              name of the job
-     * @param dag               Direct acyclic graph, which describes calculation flow
-     * @return a new Jet job
+     * @return the {@code JetEngine} with the given name
      */
-    public static Job getJob(HazelcastInstance hazelcastInstance, String name, DAG dag) {
-        return getJob(hazelcastInstance, name, dag, new JobConfig());
-    }
-
-    /**
-     * Create a new job given a Hazelcast instance, name and job configuration
-     *
-     * @param hazelcastInstance Hazelcast instance to use
-     * @param name              name of the job
-     * @param dag               Direct acyclic graph, which describes calculation flow
-     * @param jobConfig         configuration for the job
-     * @return a new Jet job
-     */
-    public static Job getJob(HazelcastInstance hazelcastInstance, String name, DAG dag, JobConfig jobConfig) {
-        checkJobName(name);
-        checkNotNull(dag, "DAG cannot be null");
-
-        Job job = hazelcastInstance.getDistributedObject(JobService.SERVICE_NAME, name);
-
-        Set<DeploymentConfig> deploymentConfigs = jobConfig.getDeploymentConfigs();
-
-        // TODO: job init should be done in createDistributedObject
-        if (job.getJobState() == JobState.NEW) {
-            if (job instanceof JobProxy) {
-                JobProxy jobProxy = (JobProxy) job;
-                jobProxy.init(jobConfig);
-                jobProxy.submit(dag, deploymentConfigs);
-            } else {
-                ClientJobProxy clientJobProxy = (ClientJobProxy) job;
-                clientJobProxy.init(jobConfig);
-                clientJobProxy.submit(dag, deploymentConfigs);
-            }
+    static JetEngine get(HazelcastInstance instance, String name, JetEngineConfig config) {
+        if (instance instanceof HazelcastInstanceImpl) {
+            return JetEngineProxyImpl.createEngine(name, config, (HazelcastInstanceImpl) instance);
         }
-
-        return job;
+        if (instance instanceof HazelcastInstanceProxy) {
+            return JetEngineProxyImpl.createEngine(name, config, ((HazelcastInstanceProxy) instance).getOriginal());
+        }
+        if (instance instanceof HazelcastClientInstanceImpl) {
+            return ClientJetEngineProxy.createEngine(name, config, (HazelcastClientInstanceImpl) instance);
+        }
+        return ClientJetEngineProxy.createEngine(name, config, ((HazelcastClientProxy) instance).client);
     }
 }

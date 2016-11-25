@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.stream;
 
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.Optional;
@@ -29,13 +26,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-public class FindAnyTest extends JetStreamTestSupport {
+public class FindAnyTest extends AbstractStreamTest {
 
     @Test
     public void testFindAny_whenSourceMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
         fillMap(map);
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findAny();
@@ -49,7 +44,7 @@ public class FindAnyTest extends JetStreamTestSupport {
 
     @Test
     public void findAny_whenSourceEmptyMap() {
-        IStreamMap<String, Integer> map = getStreamMap(instance);
+        IStreamMap<String, Integer> map = getStreamMap();
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findAny();
 
@@ -58,7 +53,7 @@ public class FindAnyTest extends JetStreamTestSupport {
 
     @Test
     public void testFindAny_whenSourceList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
         fillList(list);
 
         Optional<Integer> first = list.stream().findFirst();
@@ -69,7 +64,7 @@ public class FindAnyTest extends JetStreamTestSupport {
 
     @Test
     public void findAny_whenSourceEmptyList() {
-        IStreamList<Integer> list = getStreamList(instance);
+        IStreamList<Integer> list = getStreamList();
 
         Optional<Integer> first = list.stream().findAny();
 

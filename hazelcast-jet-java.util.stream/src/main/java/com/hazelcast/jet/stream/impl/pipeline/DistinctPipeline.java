@@ -16,19 +16,14 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.runtime.JetPair;
-import com.hazelcast.jet.io.Pair;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.DistinctProcessor;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Vertex;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.defaultFromPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.newEdge;
-import static com.hazelcast.jet.stream.impl.StreamUtil.getPairMapper;
-import static com.hazelcast.jet.stream.impl.StreamUtil.vertexBuilder;
+import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
@@ -37,42 +32,25 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     }
 
     @Override
-    public Vertex buildDAG(DAG dag, Vertex downstreamVertex, Distributed.Function<T, Pair> toPairMapper) {
-        Distributed.Function<T, Pair> keyMapper = m -> new JetPair<>(m, m);
-        Distributed.Function<Pair, ? extends T> fromPairMapper = getPairMapper(upstream, defaultFromPairMapper());
+    public Vertex buildDAG(DAG dag) {
         if (upstream.isOrdered()) {
-            Vertex distinct = vertexBuilder(DistinctProcessor.class)
-                    .addToDAG(dag)
-                    .args(fromPairMapper, keyMapper)
-                    .taskCount(1)
-                    .build();
-            Vertex previous = upstream.buildDAG(dag, distinct, keyMapper);
-            if (previous != distinct) {
-                dag.addEdge(newEdge(previous, distinct));
-            }
+            Vertex previous = upstream.buildDAG(dag);
+            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).parallelism(1);
+            dag.addVertex(distinct)
+                    .addEdge(new Edge(previous, distinct));
+
             return distinct;
         }
 
-        Vertex distinct = vertexBuilder(DistinctProcessor.class)
-                .addToDAG(dag)
-                .args(fromPairMapper, keyMapper)
-                .build();
+        Vertex previous = upstream.buildDAG(dag);
+        Vertex distinct = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
+        Vertex combiner = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
 
-        Vertex previous = upstream.buildDAG(dag, distinct, keyMapper);
-
-        if (previous != distinct) {
-            dag.addEdge(newEdge(previous, distinct)
-                    .partitioned());
-        }
-
-        Vertex combiner = vertexBuilder(DistinctProcessor.class)
-                .addToDAG(dag)
-                .args(defaultFromPairMapper(), toPairMapper)
-                .build();
-
-        dag.addEdge(newEdge(distinct, combiner)
-                .partitioned()
-                .distributed());
+        dag
+                .addVertex(distinct)
+                .addVertex(combiner)
+                .addEdge(new Edge(previous, distinct).partitioned())
+                .addEdge(new Edge(distinct, combiner).partitioned().distributed());
 
         return combiner;
     }
