@@ -217,7 +217,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                  * as well so that these invocations will not wait forever. If connection close on heartbeatFailed logic changes
                  * we can change this line.
                  */
-                if (isHeartbeating || !connection.isClosed()) {
+                if (isHeartbeating || (!isAlive && !connection.isClosed())) {
                     continue;
                 }
 
@@ -259,7 +259,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
              * the connection.isHeartBeating also checks for isAlive as well.
              */
             if (!isAlive) {
-                ex = new TargetDisconnectedException(connection.getRemoteEndpoint());
+                ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             } else {
                 ex = newTargetDisconnectedExceptionCausedByHeartbeat(
                         connection.getRemoteEndpoint(),
