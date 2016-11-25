@@ -28,6 +28,7 @@ import java.util.Collection;
 
 /**
  * Contains the result of the evaluation of an aggregation on a specific Partition or Node.
+ *
  * At the end of the aggregation execution path all AggregationResults are merged into one AggregationResult.
  */
 public class AggregationResult implements Result<AggregationResult>, IdentifiedDataSerializable {
@@ -46,6 +47,7 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
         return aggregator;
     }
 
+    @Override
     public Collection<Integer> getPartitionIds() {
         return partitionIds;
     }
@@ -66,6 +68,7 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
         }
     }
 
+    @Override
     public void setPartitionIds(Collection<Integer> partitionIds) {
         this.partitionIds = new ArrayList<Integer>(partitionIds);
     }
