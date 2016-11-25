@@ -117,7 +117,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         };
         node.multicastService.addMulticastListener(listener);
-        node.multicastService.send(node.createJoinRequest(false));
+        node.multicastService.send(node.createSplitBrainJoinMessage());
         try {
             SplitBrainJoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
