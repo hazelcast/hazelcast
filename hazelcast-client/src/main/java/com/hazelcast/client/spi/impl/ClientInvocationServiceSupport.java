@@ -208,7 +208,16 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 boolean isAlive = connection.isAlive();
                 boolean isHeartbeating = connection.isHeartBeating();
 
-                if (isHeartbeating || (!isAlive && !connection.isCloseCompleted())) {
+                /**
+                 * We could just use !connection.isClosed()condition if all connections were being closed when heartbeat fails
+                 * but as seen at
+                 * @see ClusterListenerSupport#heartbeatStopped(Connection)
+                 * @see ClientConnectionManagerImpl.Heartbeat#run()
+                 * non-owner connections are not closed but we want to set waiting invocation responses for these connections
+                 * as well so that these invocations will not wait forever. If connection close on heartbeatFailed logic changes
+                 * we can change this line.
+                 */
+                if (isHeartbeating || !connection.isClosed()) {
                     continue;
                 }
 
@@ -243,7 +252,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
 
         private void notifyException(ClientInvocation invocation, ClientConnection connection, boolean isAlive) {
-            Exception ex = null;
+            Exception ex;
             /**
              * Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
              * heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since

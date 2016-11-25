@@ -60,7 +60,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     @Probe
     protected final int connectionId;
     private final AtomicBoolean alive = new AtomicBoolean(true);
-    private final AtomicBoolean closeCompeleted = new AtomicBoolean(false);
+    private volatile boolean closed;
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
@@ -283,11 +283,11 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
 
         client.getMetricsRegistry().discardMetrics(this);
 
-        closeCompeleted.set(true);
+        closed = true;
     }
 
-    public boolean isCloseCompleted() {
-        return closeCompeleted.get();
+    public boolean isClosed() {
+        return closed;
     }
 
     protected void innerClose() throws IOException {
