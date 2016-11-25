@@ -39,20 +39,20 @@ import java.math.BigInteger;
 import java.util.Set;
 
 /**
- * A utility class to create basic {@link com.hazelcast.aggregation.Aggregator} instances. <br/>
+ * A utility class to create basic {@link com.hazelcast.aggregation.Aggregator} instances.
  *
  * Min/Max/Average aggregators are type specific, so an integerAvg() aggregator expects all elements to be integers.
- * There's no conversion executed while accumulating, so if there's any other type met an exception will be thrown.
+ * There is no conversion executed while accumulating, so if there is any other type met an exception will be thrown.
  *
  * In order to operate on a generic Number type use the fixedPointSum(), floatingPointSum() and numberAvg() aggregators.
  * All of them will convert the given number to either Long or Double during the accumulation phase.
  * It will result in a lot of allocations since each number has to be converted, but it enables the user
- * to operate on the whole family of numbers. It's especially useful if the numbers given to the aggregators
+ * to operate on the whole family of numbers. It is especially useful if the numbers given to the aggregators
  * may not be of one type only.
  *
  * The attributePath given in the factory method allows the aggregator to operate on the value extracted by navigating
  * to the given attributePath on each object that has been returned from a query.
- * The atribute path may be simple, e.g. "name", or nested "address.city".
+ * The attribute path may be simple, e.g. "name", or nested "address.city".
  *
  * @since 3.8
  */
@@ -79,7 +79,7 @@ public final class Aggregators {
     }
 
     //
-    // average aggregators:
+    // average aggregators
     //
     public static <K, V> Aggregator<BigDecimal, K, V> bigDecimalAvg() {
         return new BigDecimalAverageAggregator<K, V>();
@@ -289,5 +289,4 @@ public final class Aggregators {
     public static <K, V> Aggregator<Double, K, V> floatingPointSum(String attributePath) {
         return new FloatingPointSumAggregator<K, V>(attributePath);
     }
-
 }
