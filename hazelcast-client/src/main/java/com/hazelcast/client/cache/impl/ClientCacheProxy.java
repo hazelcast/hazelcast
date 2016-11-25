@@ -20,7 +20,6 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
-import com.hazelcast.cache.impl.InternalCacheEntryListenerRegisterer;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -44,7 +43,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
-
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -77,8 +75,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <V> value type
  */
 public class ClientCacheProxy<K, V>
-        extends AbstractClientCacheProxy<K, V>
-        implements InternalCacheEntryListenerRegisterer {
+        extends AbstractClientCacheProxy<K, V> {
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
@@ -325,21 +322,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
-        ensureOpen();
-        if (cacheEntryListenerConfiguration == null) {
-            throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
-        }
-        CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this,
-                cacheEntryListenerConfiguration,
-                clientContext.getSerializationService(),
-                clientContext.getHazelcastInstance());
-        EventHandler handler = createHandler(adaptor);
-        String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
-        if (regId != null) {
-            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-            addListenerLocally(regId, cacheEntryListenerConfiguration);
-            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
-        }
+        registerCacheEntryListener(cacheEntryListenerConfiguration, true);
     }
 
     @Override

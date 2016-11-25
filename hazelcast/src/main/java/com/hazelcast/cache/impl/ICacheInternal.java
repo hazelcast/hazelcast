@@ -18,6 +18,8 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
 
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+
 /**
  * Internal API for {@link com.hazelcast.cache.ICache} implementations.
  *
@@ -37,4 +39,11 @@ public interface ICacheInternal<K, V>
      */
     void open();
 
+    /**
+     * Registers the provided listener configuration.
+     * @param cacheEntryListenerConfiguration The cache configuration to be used for registering the entry listener
+     * @param addToConfig If true, the configuration is added to the existing listeners in the cache config.
+     */
+    void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration, boolean addToConfig)
+            throws IllegalArgumentException;
 }

@@ -421,7 +421,7 @@ public abstract class AbstractHazelcastCacheManager
                 cacheConfig.getCacheEntryListenerConfigurations().iterator();
         while (iterator.hasNext()) {
             CacheEntryListenerConfiguration<K, V> listenerConfig = iterator.next();
-            ((InternalCacheEntryListenerRegisterer<K, V>) source).registerCacheEntryListener(listenerConfig, false);
+            ((ICacheInternal<K, V>) source).registerCacheEntryListener(listenerConfig, false);
         }
     }
 
