@@ -1,5 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.nio.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -7,7 +8,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.VersionAwareConstructorFunction;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -63,7 +64,7 @@ public class ArrayDataSerializableFactoryTest {
         constructorFunctions[0] = function;
 
         ArrayDataSerializableFactory factory = new ArrayDataSerializableFactory(constructorFunctions);
-        Version version = Version.of(3, 6, 0);
+        Version version = MemberVersion.of(3, 6, 0).asSerializationVersion();
         factory.create(0, version);
 
         verify(function, times(0)).createNew(0);

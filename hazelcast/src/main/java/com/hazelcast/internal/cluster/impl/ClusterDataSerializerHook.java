@@ -49,7 +49,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
@@ -88,12 +89,13 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int JOIN_MESSAGE = 29;
     public static final int JOIN_REQUEST = 30;
     public static final int MIGRATION_INFO = 31;
-    public static final int VERSION = 32;
+    public static final int NODE_VERSION = 32;
     public static final int CLUSTER_STATE_CHANGE = 33;
     public static final int SPLIT_BRAIN_JOIN_MESSAGE = 34;
     public static final int SEND_EXCLUDED_MEMBER_UUIDS = 35;
+    public static final int CLUSTER_VERSION = 36;
 
-    private static final int LEN = SEND_EXCLUDED_MEMBER_UUIDS + 1;
+    private static final int LEN = CLUSTER_VERSION + 1;
 
     @Override
     public int getFactoryId() {
@@ -264,9 +266,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new MigrationInfo();
             }
         };
-        constructors[VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[NODE_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Version();
+                return new MemberVersion();
             }
         };
         constructors[CLUSTER_STATE_CHANGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -282,6 +284,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[SEND_EXCLUDED_MEMBER_UUIDS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SendExcludedMemberUuidsOperation();
+            }
+        };
+        constructors[CLUSTER_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClusterVersion();
             }
         };
 

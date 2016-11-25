@@ -23,12 +23,12 @@ import java.util.Comparator;
  * Version comparator that disregards patch version, comparing versions on their major & minor versions only.
  */
 @SuppressWarnings("checkstyle:magicnumber")
-class MajorMinorVersionComparator implements Comparator<Version>, Serializable {
+class MajorMinorVersionComparator implements Comparator<MemberVersion>, Serializable {
 
     private static final long serialVersionUID = 364570099633468810L;
 
     @Override
-    public int compare(Version o1, Version o2) {
+    public int compare(MemberVersion o1, MemberVersion o2) {
         int thisVersion = (o1.getMajor() << 8 & 0xff00) | (o1.getMinor() & 0xff);
         int thatVersion = (o2.getMajor() << 8 & 0xff00) | (o2.getMinor() & 0xff);
         if (thisVersion > thatVersion) {

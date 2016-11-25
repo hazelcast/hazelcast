@@ -14,7 +14,8 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,23 +56,22 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_nodeVersionCompatibleWith_otherPatchVersion() {
-        Version currentVersion = getNode(hazelcastInstance).getVersion();
-        Version patchPlusOne = new Version(currentVersion.getMajor(), currentVersion.getMinor(), currentVersion.getPatch() + 1);
-        assertTrue(nodeExtension.isNodeVersionCompatibleWith(patchPlusOne));
+    public void test_nodeVersionCompatibleWith_ownClusterVersion() {
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
+        assertTrue(nodeExtension.isNodeVersionCompatibleWith(currentVersion.asClusterVersion()));
     }
 
     @Test
     public void test_nodeVersionNotCompatibleWith_otherMinorVersion() {
-        Version currentVersion = getNode(hazelcastInstance).getVersion();
-        Version minorMinusOne = new Version(currentVersion.getMajor(), currentVersion.getMinor() - 1, currentVersion.getPatch());
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
+        ClusterVersion minorMinusOne = new ClusterVersion(currentVersion.getMajor(), currentVersion.getMinor() - 1);
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(minorMinusOne));
     }
 
     @Test
-    public void test_nodeVersionCompatibleWith_otherMajorVersion() {
-        Version currentVersion = getNode(hazelcastInstance).getVersion();
-        Version majorPlusOne = new Version(currentVersion.getMajor() + 1, currentVersion.getMinor(), currentVersion.getPatch());
+    public void test_nodeVersionNotCompatibleWith_otherMajorVersion() {
+        MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
+        ClusterVersion majorPlusOne = new ClusterVersion(currentVersion.getMajor() + 1, currentVersion.getMinor());
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(majorPlusOne));
     }
 
@@ -86,7 +86,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestAllowed_whenOtherPatchVersion()
             throws UnknownHostException {
-        Version otherPatchVersion = Version
+        MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor(), node.getVersion().getMinor(), node.getVersion().getPatch() + 1);
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
@@ -96,7 +96,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestFails_whenOtherMinorVersion()
             throws UnknownHostException {
-        Version otherPatchVersion = Version
+        MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor(), node.getVersion().getMinor() + 1, node.getVersion().getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
@@ -107,7 +107,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_joinRequestFails_whenOtherMajorVersion()
             throws UnknownHostException {
-        Version otherPatchVersion = Version
+        MemberVersion otherPatchVersion = MemberVersion
                 .of(node.getVersion().getMajor() + 1, node.getVersion().getMinor(), node.getVersion().getPatch());
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, BUILD_INFO.getBuildNumber(), otherPatchVersion,
                 new Address("127.0.0.1", 9999), UuidUtil.newUnsecureUuidString(), false, null, null, null, null);
@@ -121,7 +121,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(1);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(Version newVersion) {
+            public void onClusterVersionChange(ClusterVersion newVersion) {
                 latch.countDown();
             }
         };
@@ -149,8 +149,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final AtomicBoolean failed = new AtomicBoolean(false);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(Version newVersion) {
-                if (!newVersion.equals(node.getVersion())) {
+            public void onClusterVersionChange(ClusterVersion newVersion) {
+                if (!newVersion.equals(node.getVersion().asClusterVersion())) {
                     failed.set(true);
                 }
                 latch.countDown();
@@ -168,8 +168,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final AtomicBoolean failed = new AtomicBoolean(false);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(Version newVersion) {
-                if (!newVersion.equals(Version.of("2.1.7"))) {
+            public void onClusterVersionChange(ClusterVersion newVersion) {
+                if (!newVersion.equals(ClusterVersion.of("2.1.7"))) {
                     failed.set(true);
                 }
                 latch.countDown();
@@ -206,7 +206,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void onClusterVersionChange(Version newVersion) {
+        public void onClusterVersionChange(ClusterVersion newVersion) {
 
         }
 

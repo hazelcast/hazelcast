@@ -29,7 +29,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
@@ -284,5 +284,5 @@ public interface NodeEngine {
      * @see Cluster#getClusterVersion()
      * @since 3.8
      */
-    Version getVersion();
+    MemberVersion getVersion();
 }

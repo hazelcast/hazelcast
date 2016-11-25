@@ -19,27 +19,30 @@ package com.hazelcast.version;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.StringUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Comparator;
 
 /**
- * Determines the Hazelcast version.
+ * Determines the Hazelcast codebase version in terms of major.minor.patch version.
  */
 @SuppressWarnings("checkstyle:magicnumber")
-public final class Version implements IdentifiedDataSerializable, Comparable<Version>, Serializable {
+public final class MemberVersion
+        implements IdentifiedDataSerializable, Serializable, Comparable<MemberVersion> {
 
     /**
      * UNKNOWN version.
      */
-    public static final Version UNKNOWN = new Version(0, 0, 0);
+    public static final MemberVersion UNKNOWN = new MemberVersion(0, 0, 0);
 
     /**
      * Version comparator that takes into account only major & minor version, disregarding patch version number.
      */
-    public static final transient Comparator<Version> MAJOR_MINOR_VERSION_COMPARATOR = new MajorMinorVersionComparator();
+    public static final transient Comparator<MemberVersion> MAJOR_MINOR_VERSION_COMPARATOR = new MajorMinorVersionComparator();
 
     private static final String UNKNOWN_VERSION_STRING = "0.0.0";
     private static final long serialVersionUID = 2603770920931610781L;
@@ -48,32 +51,27 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
     private byte minor;
     private byte patch;
 
-    public Version() {
+    public MemberVersion() {
     }
 
-    public Version(int major, int minor, int patch) {
+    public MemberVersion(int major, int minor, int patch) {
         this.major = (byte) major;
         this.minor = (byte) minor;
         this.patch = (byte) patch;
     }
 
-    public Version(String version) {
+    public MemberVersion(String version) {
         parse(version);
     }
 
     // populate this Version's major, minor, patch from given String
     private void parse(String version) {
-        String[] tokens = version.split("\\.");
+        String[] tokens = StringUtil.tokenizeVersionString(version);
         this.major = Byte.valueOf(tokens[0]);
-        this.minor = Byte.valueOf(stripPostfix(tokens[1]));
-        if (tokens.length > 2) {
-            this.patch = Byte.valueOf(stripPostfix(tokens[2]));
+        this.minor = Byte.valueOf(tokens[1]);
+        if (tokens.length > 3 && tokens[3] != null) {
+            this.patch = Byte.valueOf(tokens[3]);
         }
-    }
-
-    private static String stripPostfix(String token) {
-        int hyphenIndex = token.indexOf("-");
-        return hyphenIndex >= 0 ? token.substring(0, hyphenIndex) : token;
     }
 
     public byte getMajor() {
@@ -100,7 +98,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        Version that = (Version) o;
+        MemberVersion that = (MemberVersion) o;
         if (major != that.major) {
             return false;
         }
@@ -108,10 +106,6 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
             return false;
         }
         return patch == that.patch;
-    }
-
-    public String asString() {
-        return major + "." + minor + "." + patch;
     }
 
     @Override
@@ -122,6 +116,7 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         return result;
     }
 
+    // this method is used when serializing the MemberVersion inside JSON response for Management Center
     @Override
     public String toString() {
         return major + "." + minor + "." + patch;
@@ -141,19 +136,19 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         this.patch = in.readByte();
     }
 
-    public static Version of(int major, int minor, int patch) {
+    public static MemberVersion of(int major, int minor, int patch) {
         if (major == 0 && minor == 0 && patch == 0) {
-            return Version.UNKNOWN;
+            return MemberVersion.UNKNOWN;
         } else {
-            return new Version(major, minor, patch);
+            return new MemberVersion(major, minor, patch);
         }
     }
 
-    public static Version of(String version) {
+    public static MemberVersion of(String version) {
         if (version == null || version.startsWith(UNKNOWN_VERSION_STRING)) {
-            return Version.UNKNOWN;
+            return MemberVersion.UNKNOWN;
         } else {
-            return new Version(version);
+            return new MemberVersion(version);
         }
     }
 
@@ -164,12 +159,12 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.VERSION;
+        return ClusterDataSerializerHook.NODE_VERSION;
     }
 
     @Override
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
-    public int compareTo(Version otherVersion) {
+    public int compareTo(MemberVersion otherVersion) {
         // pack major-minor-patch to 3 least significant bytes of integer, then compare the integers
         // even though major, minor & patch are not expected to be negative, masking makes sure we avoid sign extension
         int thisVersion = (major << 16 & 0xff0000) | ((minor << 8) & 0xff00) | (patch & 0xff);
@@ -180,5 +175,19 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         } else {
             return thisVersion == thatVersion ? 0 : -1;
         }
+    }
+
+    /**
+     * @return a {@link ClusterVersion} initialized with this {@code MemberVersion}'s major.minor version.
+     */
+    public ClusterVersion asClusterVersion() {
+        return new ClusterVersion(major, minor);
+    }
+
+    /**
+     * @return the minor version of this {@code MemberVersion} as a {@link Version} object.
+     */
+    public Version asSerializationVersion() {
+        return new Version(minor);
     }
 }

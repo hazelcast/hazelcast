@@ -24,7 +24,7 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -165,15 +165,15 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = res.replace("${STATUS}", "forbidden");
                 res = res.replace("${VERSION}", "null");
             } else {
-                Version version;
+                ClusterVersion version;
                 try {
-                    version = Version.of(versionParam);
+                    version = ClusterVersion.of(versionParam);
                     clusterService.changeClusterVersion(version);
                     res = res.replace("${STATUS}", "success");
-                    res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+                    res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
                 } catch (Exception ex) {
                     res = res.replace("${STATUS}", "fail");
-                    res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+                    res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
                 }
             }
         } catch (Throwable throwable) {
@@ -198,7 +198,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = res.replace("${VERSION}", "null");
             } else {
                 res = res.replace("${STATUS}", "success");
-                res = res.replace("${VERSION}", clusterService.getClusterVersion().asString());
+                res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
             }
         } catch (Throwable throwable) {
             res = res.replace("${STATUS}", "fail");

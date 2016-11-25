@@ -6,7 +6,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +40,7 @@ public class MemberSelectingIteratorTest {
     @Before
     public void before()
             throws Exception {
-        Version version = new Version(BuildInfoProvider.BUILD_INFO.getVersion());
+        MemberVersion version = new MemberVersion(BuildInfoProvider.BUILD_INFO.getVersion());
         thisMember = new MemberImpl(new Address("localhost", 5701), version, true, true);
         matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, true);
         matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, true);

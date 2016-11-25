@@ -59,7 +59,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -915,18 +915,18 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public Version getClusterVersion() {
+    public ClusterVersion getClusterVersion() {
         return clusterStateManager.getClusterVersion();
     }
 
     @Override
-    public void changeClusterVersion(Version version) {
+    public void changeClusterVersion(ClusterVersion version) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion, false);
     }
 
     @Override
-    public void changeClusterVersion(Version version, TransactionOptions options) {
+    public void changeClusterVersion(ClusterVersion version, TransactionOptions options) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion,
                 false);
@@ -987,7 +987,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         hazelcastInstance.getLifecycleService().shutdown();
     }
 
-    public void initialClusterState(ClusterState clusterState, Version version) {
+    public void initialClusterState(ClusterState clusterState, ClusterVersion version) {
         if (node.joined()) {
             throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
         }

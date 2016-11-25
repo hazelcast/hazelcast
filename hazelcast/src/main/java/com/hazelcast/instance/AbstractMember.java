@@ -25,7 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -44,24 +44,25 @@ public abstract class AbstractMember implements Member {
     protected Address address;
     protected String uuid;
     protected boolean liteMember;
-    protected Version version;
+    protected MemberVersion version;
 
     protected AbstractMember() {
     }
 
-    protected AbstractMember(Address address, Version version) {
+    protected AbstractMember(Address address, MemberVersion version) {
         this(address, version, null, null);
     }
 
-    protected AbstractMember(Address address, Version version, String uuid) {
+    protected AbstractMember(Address address, MemberVersion version, String uuid) {
         this(address, version, uuid, null);
     }
 
-    protected AbstractMember(Address address, Version version, String uuid, Map<String, Object> attributes) {
+    protected AbstractMember(Address address, MemberVersion version, String uuid, Map<String, Object> attributes) {
         this(address, version, uuid, attributes, false);
     }
 
-    protected AbstractMember(Address address, Version version, String uuid, Map<String, Object> attributes, boolean liteMember) {
+    protected AbstractMember(Address address, MemberVersion version, String uuid, Map<String, Object> attributes,
+                             boolean liteMember) {
         this.address = address;
         this.version = version;
         this.uuid = uuid;
@@ -154,7 +155,7 @@ public abstract class AbstractMember implements Member {
     }
 
     @Override
-    public Version getVersion() {
+    public MemberVersion getVersion() {
         return version;
     }
 

@@ -19,7 +19,8 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,14 +31,14 @@ import java.util.Collection;
  */
 public class SplitBrainJoinMessage extends JoinMessage {
 
-    protected Version clusterVersion;
+    protected ClusterVersion clusterVersion;
 
     public SplitBrainJoinMessage() {
     }
 
-    public SplitBrainJoinMessage(byte packetVersion, int buildNumber, Version version, Address address, String uuid,
+    public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
                                  boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses,
-                                 int dataMemberCount, Version clusterVersion) {
+                                 int dataMemberCount, ClusterVersion clusterVersion) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, memberAddresses, dataMemberCount);
         this.clusterVersion = clusterVersion;
     }
@@ -81,7 +82,7 @@ public class SplitBrainJoinMessage extends JoinMessage {
         return ClusterDataSerializerHook.SPLIT_BRAIN_JOIN_MESSAGE;
     }
 
-    public Version getClusterVersion() {
+    public ClusterVersion getClusterVersion() {
         return clusterVersion;
     }
 }

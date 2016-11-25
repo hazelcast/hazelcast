@@ -28,7 +28,8 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -59,7 +60,8 @@ public class ClusterStateManagerTest {
 
     private static final String TXN = "txn";
     private static final String ANOTHER_TXN = "another-txn";
-    private static final Version CURRENT_NODE_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final ClusterVersion CURRENT_CLUSTER_VERSION = ClusterVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
@@ -72,7 +74,7 @@ public class ClusterStateManagerTest {
     public void setup() {
         NodeExtension nodeExtension = mock(NodeExtension.class);
         when(nodeExtension.isStartCompleted()).thenReturn(true);
-        when(nodeExtension.isNodeVersionCompatibleWith(Matchers.any(Version.class))).thenReturn(true);
+        when(nodeExtension.isNodeVersionCompatibleWith(Matchers.any(ClusterVersion.class))).thenReturn(true);
 
         when(node.getPartitionService()).thenReturn(partitionService);
         when(node.getClusterService()).thenReturn(clusterService);
@@ -90,32 +92,32 @@ public class ClusterStateManagerTest {
 
     @Test
     public void test_initialClusterState_ACTIVE() {
-        clusterStateManager.initialClusterState(ACTIVE, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(ACTIVE, CURRENT_CLUSTER_VERSION);
         assertEquals(ACTIVE, clusterStateManager.getState());
-        assertEquals(CURRENT_NODE_VERSION, clusterStateManager.getClusterVersion());
+        assertEquals(CURRENT_CLUSTER_VERSION, clusterStateManager.getClusterVersion());
     }
 
     @Test
     public void test_initialClusterState_FROZEN() {
-        clusterStateManager.initialClusterState(FROZEN, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
         assertEquals(FROZEN, clusterStateManager.getState());
-        assertEquals(CURRENT_NODE_VERSION, clusterStateManager.getClusterVersion());
+        assertEquals(CURRENT_CLUSTER_VERSION, clusterStateManager.getClusterVersion());
     }
 
     @Test
     public void test_initialClusterState_PASSIVE() {
-        clusterStateManager.initialClusterState(PASSIVE, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(PASSIVE, CURRENT_CLUSTER_VERSION);
         assertEquals(PASSIVE, clusterStateManager.getState());
-        assertEquals(CURRENT_NODE_VERSION, clusterStateManager.getClusterVersion());
+        assertEquals(CURRENT_CLUSTER_VERSION, clusterStateManager.getClusterVersion());
     }
 
     @Test
     public void test_initialClusterState_rejected() {
-        clusterStateManager.initialClusterState(FROZEN, CURRENT_NODE_VERSION);
-        clusterStateManager.initialClusterState(ACTIVE, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
+        clusterStateManager.initialClusterState(ACTIVE, CURRENT_CLUSTER_VERSION);
 
         assertEquals(FROZEN, clusterStateManager.getState());
-        assertEquals(CURRENT_NODE_VERSION, clusterStateManager.getClusterVersion());
+        assertEquals(CURRENT_CLUSTER_VERSION, clusterStateManager.getClusterVersion());
     }
 
     @Test(expected = NullPointerException.class)
@@ -169,7 +171,7 @@ public class ClusterStateManagerTest {
     @Test(expected = IllegalStateException.class)
     public void test_lockClusterState_forActiveState_whenHasOnGoingMigration() throws Exception {
         when(partitionService.hasOnGoingMigrationLocal()).thenReturn(true);
-        clusterStateManager.initialClusterState(FROZEN, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
 
         Address initiator = newAddress();
         final ClusterStateChange newState = ClusterStateChange.from(ACTIVE);
@@ -181,7 +183,7 @@ public class ClusterStateManagerTest {
     @Test(expected = IllegalStateException.class)
     public void test_lockClusterState_forPassiveState_whenHasOnGoingMigration() throws Exception {
         when(partitionService.hasOnGoingMigrationLocal()).thenReturn(true);
-        clusterStateManager.initialClusterState(FROZEN, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
 
         Address initiator = newAddress();
         final ClusterStateChange newState = ClusterStateChange.from(PASSIVE);
@@ -311,7 +313,7 @@ public class ClusterStateManagerTest {
     public void changeLocalClusterState_shouldRemoveMembersDeadWhileFrozen_whenStateBecomes_ACTIVE() throws Exception {
         final ClusterStateChange newState = ClusterStateChange.from(ACTIVE);
         final Address initiator = newAddress();
-        clusterStateManager.initialClusterState(FROZEN, CURRENT_NODE_VERSION);
+        clusterStateManager.initialClusterState(FROZEN, CURRENT_CLUSTER_VERSION);
         clusterStateManager.lockClusterState(newState, initiator, TXN, 10000, 0);
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 

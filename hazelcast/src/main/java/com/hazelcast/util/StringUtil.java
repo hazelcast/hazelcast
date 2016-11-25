@@ -21,6 +21,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility class for Strings.
@@ -42,6 +44,12 @@ public final class StringUtil {
      * {@code java.util.Locale.US} (US English).
      */
     public static final Locale LOCALE_INTERNAL = Locale.US;
+
+    /**
+     * Pattern used to tokenize version strings.
+     */
+    private static final Pattern VERSION_PATTERN
+            = Pattern.compile("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(-[\\w]+)?(-SNAPSHOT)?$");
 
     private StringUtil() {
     }
@@ -214,5 +222,29 @@ public final class StringUtil {
      */
     public static int lastIndexOf(String input, char ch) {
         return lastIndexOf(input, ch, 0);
+    }
+
+    /**
+     * Tokenizes a version string and returns the tokens with the following grouping:
+     * (1) major version, eg "3"
+     * (2) minor version, eg "8"
+     * (3) patch version prefixed with ".", if exists, otherwise null (eg ".0")
+     * (4) patch version, eg "0"
+     * (5) 1st -qualifier, if exists
+     * (6) -SNAPSHOT qualifier, if exists
+     * @param version
+     * @return
+     */
+    public static String[] tokenizeVersionString(String version) {
+        Matcher matcher = VERSION_PATTERN.matcher(version);
+        if (matcher.matches()) {
+            String[] tokens = new String[matcher.groupCount()];
+            for (int i = 0; i < matcher.groupCount(); i++) {
+                tokens[i] = matcher.group(i + 1);
+            }
+            return tokens;
+        } else {
+            return null;
+        }
     }
 }

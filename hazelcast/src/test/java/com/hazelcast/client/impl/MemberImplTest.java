@@ -5,7 +5,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberImplTest extends HazelcastTestSupport {
 
-    private static final Version VERSION = Version.of("1.3.2");
+    private static final MemberVersion VERSION = MemberVersion.of("1.3.2");
     private static Address address;
 
     @BeforeClass

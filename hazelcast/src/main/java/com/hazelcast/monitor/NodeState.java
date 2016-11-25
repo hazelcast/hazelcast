@@ -18,7 +18,8 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 public interface NodeState extends JsonSerializable {
 
@@ -35,12 +36,12 @@ public interface NodeState extends JsonSerializable {
     /**
      * @return the current version of the Cluster
      */
-    Version getClusterVersion();
+    ClusterVersion getClusterVersion();
 
     /**
      * @return the codebase version of the Node
      */
-    Version getNodeVersion();
+    MemberVersion getMemberVersion();
 
     /**
      * @return true if rolling upgrade is enabled

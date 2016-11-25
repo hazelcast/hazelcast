@@ -24,7 +24,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,7 +131,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
     @Test
     public void testCachePartitionEventData() throws UnknownHostException {
         Address address = new Address("127.0.0.1", 5701);
-        Member member = new MemberImpl(address, Version.UNKNOWN, true, false);
+        Member member = new MemberImpl(address, MemberVersion.UNKNOWN, true, false);
         CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("test", 1, member);
         CachePartitionEventData deserialized = service.toObject(cachePartitionEventData);
         assertEquals(cachePartitionEventData, deserialized);

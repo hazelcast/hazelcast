@@ -22,7 +22,7 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -76,7 +76,7 @@ public class ClientClusterProxy implements Cluster {
     }
 
     @Override
-    public Version getClusterVersion() {
+    public ClusterVersion getClusterVersion() {
         throw new UnsupportedOperationException();
     }
 

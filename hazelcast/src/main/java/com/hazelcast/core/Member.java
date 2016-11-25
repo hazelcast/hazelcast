@@ -18,7 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -265,9 +265,9 @@ public interface Member extends DataSerializable, Endpoint {
      * existing cluster. See the documentation for {@link Cluster#getClusterVersion()} for a more thorough discussion
      * of {@code Cluster} and {@code Member} / {@code Node} version.
      *
-     * @return the {@link Version} of this member.
+     * @return the {@link MemberVersion} of this member.
      * @since 3.8
      */
-    Version getVersion();
+    MemberVersion getVersion();
 
 }
