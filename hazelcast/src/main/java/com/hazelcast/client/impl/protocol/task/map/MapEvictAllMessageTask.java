@@ -62,8 +62,6 @@ public class MapEvictAllMessageTask
             Address thisAddress = mapServiceContext.getNodeEngine().getThisAddress();
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapEventPublisher.publishMapEvent(thisAddress, parameters.name, EVICT_ALL, evictedTotal);
-
-            sendNearCacheClearEvent(parameters.name);
         }
 
         return null;

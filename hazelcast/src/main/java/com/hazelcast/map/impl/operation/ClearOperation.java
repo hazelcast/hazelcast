@@ -52,6 +52,7 @@ public class ClearOperation extends MapOperation implements BackupAwareOperation
     @Override
     public void afterRun() throws Exception {
         super.afterRun();
+        invalidateAllKeysInNearCaches();
         hintMapEvent();
     }
 

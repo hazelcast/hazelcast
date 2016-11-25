@@ -122,10 +122,26 @@ public final class Preconditions {
     }
 
     /**
+     * Tests if a value is not negative.
+     *
+     * @param value              the  value tested to see if it is not negative.
+     * @param errorMessageFormat the message format
+     * @param param              param for the message format
+     * @return the value
+     * @throws java.lang.IllegalArgumentException if the value is negative.
+     */
+    public static int checkNotNegative2(int value, String paramName) {
+        if (value < 0) {
+            throw new IllegalArgumentException(format("%s cannot be < 0 but found %d", paramName, value));
+        }
+        return value;
+    }
+
+    /**
      * Tests if a long value is not negative.
      *
      * @param value        the long value tested to see if it is not negative.
-     * @param errorMessage the message
+     * @param errorMessage the message format
      * @return the value
      * @throws java.lang.IllegalArgumentException if the value is negative.
      */

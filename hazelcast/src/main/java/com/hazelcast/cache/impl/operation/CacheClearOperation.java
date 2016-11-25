@@ -18,13 +18,17 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import javax.cache.CacheException;
+
+import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 
 /**
  * Cache Clear will clear all internal cache data without sending any event
@@ -59,6 +63,18 @@ public class CacheClearOperation
         } catch (CacheException e) {
             response = new CacheClearResponse(e);
         }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
+        if (partitionService.getPartitionId(name) == getPartitionId()) {
+            CacheService cacheService = getService();
+            cacheService.sendInvalidationEvent(name, null, SOURCE_NOT_AVAILABLE);
+        }
+
     }
 
     @Override

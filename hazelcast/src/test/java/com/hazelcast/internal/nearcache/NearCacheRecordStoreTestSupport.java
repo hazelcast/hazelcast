@@ -64,10 +64,6 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         }
 
         assertEquals(0, nearCacheRecordStore.size());
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            assertNull(nearCacheRecordStore.get(i));
-        }
     }
 
     protected void statsCalculated(InMemoryFormat inMemoryFormat) {

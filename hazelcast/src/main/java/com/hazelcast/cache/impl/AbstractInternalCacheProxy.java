@@ -192,10 +192,10 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Operation operation;
         if (isGet) {
             operation = operationProvider.createGetAndReplaceOperation(keyData, newValueData,
-                                                                       expiryPolicy, IGNORE_COMPLETION);
+                    expiryPolicy, IGNORE_COMPLETION);
         } else {
             operation = operationProvider.createReplaceOperation(keyData, oldValueData, newValueData,
-                                                                 expiryPolicy, IGNORE_COMPLETION);
+                    expiryPolicy, IGNORE_COMPLETION);
         }
         return invoke(operation, keyData, withCompletionEvent);
     }
@@ -208,7 +208,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
         final Operation op = operationProvider.createPutOperation(keyData, valueData, expiryPolicy,
-                                                                  isGet, IGNORE_COMPLETION);
+                isGet, IGNORE_COMPLETION);
         return invoke(op, keyData, withCompletionEvent);
     }
 
@@ -221,7 +221,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         final Data keyData = serializationService.toData(key);
         final Data valueData = serializationService.toData(value);
         Operation operation = operationProvider.createPutIfAbsentOperation(keyData, valueData,
-                                                                           expiryPolicy, IGNORE_COMPLETION);
+                expiryPolicy, IGNORE_COMPLETION);
         return invoke(operation, keyData, withCompletionEvent);
     }
 
@@ -241,9 +241,6 @@ abstract class AbstractInternalCacheProxy<K, V>
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
-        } finally {
-            // send single invalidation event
-            cacheService.sendInvalidationEvent(nameWithPrefix, null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
         }
     }
 
@@ -334,7 +331,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         // notify waiting sync listeners
         Collection<CountDownLatch> latches = syncLocks.values();
         Iterator<CountDownLatch> iterator = latches.iterator();
-        while (iterator.hasNext())  {
+        while (iterator.hasNext()) {
             CountDownLatch latch = iterator.next();
             iterator.remove();
             while (latch.getCount() > 0) {
@@ -427,7 +424,7 @@ abstract class AbstractInternalCacheProxy<K, V>
         } else if (listenerConfig.getClassName() != null) {
             try {
                 return ClassLoaderUtil.newInstance(getNodeEngine().getConfigClassLoader(),
-                                                   listenerConfig.getClassName());
+                        listenerConfig.getClassName());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);
             }

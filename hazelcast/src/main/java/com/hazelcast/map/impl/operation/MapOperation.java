@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -103,19 +104,40 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
             return;
         }
 
-        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        Invalidator invalidator = getNearCacheInvalidator();
+
         for (Data key : keys) {
-            mapNearCacheManager.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
+            invalidator.invalidateKey(key, name, getCallerUuid());
         }
     }
 
+    // TODO improve here it is possible that client cannot manage to attach listener
     protected final void invalidateNearCache(Data key) {
         if (!mapContainer.hasInvalidationListener() || key == null) {
             return;
         }
 
+        Invalidator invalidator = getNearCacheInvalidator();
+        invalidator.invalidateKey(key, name, getCallerUuid());
+    }
+
+    /**
+     * This method helps to add clearing near-cache event only from one-partition
+     * which matches partition-id of the map-name.
+     */
+    protected final void invalidateAllKeysInNearCaches() {
+        if (!mapContainer.hasInvalidationListener()
+                || getPartitionId() != getNodeEngine().getPartitionService().getPartitionId(name)) {
+            return;
+        }
+
+        Invalidator invalidator = getNearCacheInvalidator();
+        invalidator.invalidateAllKeys(name, getCallerUuid());
+    }
+
+    private Invalidator getNearCacheInvalidator() {
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        mapNearCacheManager.getNearCacheInvalidator().invalidate(key, name, getCallerUuid());
+        return mapNearCacheManager.getInvalidator();
     }
 
     protected void evict(Data excludedKey) {

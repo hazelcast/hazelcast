@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
-import com.hazelcast.cache.impl.AbstractCacheRecordStore;
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
@@ -64,22 +63,15 @@ public class CacheClearMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        try {
-            for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-                if (entry.getValue() == null) {
-                    continue;
-                }
-                final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
-                final Object response = cacheClearResponse.getResponse();
-                if (response instanceof CacheException) {
-                    throw (CacheException) response;
-                }
+        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
+            if (entry.getValue() == null) {
+                continue;
             }
-        } finally {
-            // send the cache invalidation event regardless if any actually cleared or not
-            // (no need to know how many actually cleared)
-            final CacheService cacheService = getService(CacheService.SERVICE_NAME);
-            cacheService.sendInvalidationEvent(getDistributedObjectName(), null, AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE);
+            final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
+            final Object response = cacheClearResponse.getResponse();
+            if (response instanceof CacheException) {
+                throw (CacheException) response;
+            }
         }
 
         return null;

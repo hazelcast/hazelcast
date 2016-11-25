@@ -69,6 +69,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
     private void testNoLostInvalidations(boolean strict) throws Exception {
         // configure Near Cache
         ClientConfig clientConfig = getClientConfig(MAP_NAME);
+        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
 
         // create Hazelcast instance
         member = Hazelcast.newHazelcastInstance();

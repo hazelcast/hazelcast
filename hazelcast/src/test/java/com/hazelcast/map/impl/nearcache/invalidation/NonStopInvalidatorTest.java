@@ -1,8 +1,11 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -15,7 +18,7 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NonStopInvalidatorTest {
+public class NonStopInvalidatorTest extends HazelcastTestSupport {
 
     private Data key;
     private NonStopInvalidator invalidator;
@@ -24,31 +27,21 @@ public class NonStopInvalidatorTest {
     public void setUp() {
         key = mock(Data.class);
 
-        NodeEngine nodeEngine = mock(NodeEngine.class);
-        invalidator = new NonStopInvalidator(nodeEngine);
+        HazelcastInstance hz = createHazelcastInstance();
+        MapService service = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
+        MapServiceContext mapServiceContext = service.getMapServiceContext();
+        invalidator = new NonStopInvalidator(mapServiceContext);
     }
 
     @RequireAssertEnabled
     @Test(expected = AssertionError.class)
     public void testInvalidate_withInvalidMapName() {
-        invalidator.invalidate(key, null, "anySourceUuid");
-    }
-
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
-    public void testInvalidate_withInvalidSourceUuid() {
-        invalidator.invalidate(key, "anyMapName", null);
+        invalidator.invalidateKey(key, null, null);
     }
 
     @RequireAssertEnabled
     @Test(expected = AssertionError.class)
     public void testClear_withInvalidMapName() {
-        invalidator.clear(null, "anySourceUuid");
-    }
-
-    @RequireAssertEnabled
-    @Test(expected = AssertionError.class)
-    public void testClear_withInvalidSourceUuid() {
-        invalidator.clear("anyMapName", null);
+        invalidator.invalidateAllKeys(null, null);
     }
 }

@@ -17,9 +17,12 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadWriteDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
+
+import java.util.UUID;
 
 /**
  * {@link NearCacheRecordStore} is the contract point to store keys and values as
@@ -45,6 +48,16 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @param value the value that will be associated with the key.
      */
     void put(K key, V value);
+
+    /**
+     * Puts (associates) a value with the given {@code key}.
+     *
+     * @param key      the key to which the given value will be associated.
+     * @param value    the value that will be associated with the key.
+     * @param uuid     the  uuid
+     * @param sequence the sequence
+     */
+    void putIdentified(K key, V value, UUID uuid, long sequence);
 
     /**
      * Removes the value associated with the given {@code key}.
@@ -112,4 +125,15 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * Persists the key set of the Near Cache.
      */
     void storeKeys();
+
+    /**
+     * @see StaleReadWriteDetector
+     */
+
+    void setStaleReadWriteDetector(StaleReadWriteDetector detector);
+
+    /**
+     * @see StaleReadWriteDetector
+     */
+    StaleReadWriteDetector getStaleReadWriteDetector();
 }

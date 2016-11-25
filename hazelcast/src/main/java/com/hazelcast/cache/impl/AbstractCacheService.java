@@ -688,4 +688,7 @@ public abstract class AbstractCacheService
         return cacheSplitBrainHandler.prepareMergeRunnable();
     }
 
+    public CacheEventHandler getCacheEventHandler() {
+        return cacheEventHandler;
+    }
 }

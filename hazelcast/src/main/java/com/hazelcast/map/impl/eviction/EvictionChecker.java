@@ -233,9 +233,11 @@ public class EvictionChecker {
         }
 
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        NearCache nearCache = mapNearCacheManager.getOrCreateNearCache(mapName);
+        NearCache nearCache = mapNearCacheManager.getNearCache(mapName);
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-        return heapCost + nearCacheStats.getOwnedEntryMemoryCost();
+        heapCost += nearCacheStats.getOwnedEntryMemoryCost();
+
+        return heapCost;
     }
 
     protected int getRecordStoreSize(String mapName, PartitionContainer partitionContainer) {

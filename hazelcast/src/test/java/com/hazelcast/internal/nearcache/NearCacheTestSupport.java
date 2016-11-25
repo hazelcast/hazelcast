@@ -4,6 +4,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadWriteDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.ExecutionService;
@@ -13,6 +14,7 @@ import org.junit.Before;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.config.NearCacheConfig.DEFAULT_MEMORY_FORMAT;
 import static com.hazelcast.internal.nearcache.NearCache.DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS;
@@ -256,6 +258,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected volatile boolean doEvictionIfRequiredCalled;
         protected volatile boolean doExpirationCalled;
 
+        protected volatile StaleReadWriteDetector staleReadWriteDetector = StaleReadWriteDetector.ALWAYS_FRESH;
+
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
         }
@@ -284,6 +288,11 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             expectedKeyValueMappings.put(key, value);
             latestKeyOnPut = key;
             latestValueOnPut = value;
+        }
+
+        @Override
+        public void putIdentified(Integer key, String value, UUID uuid, long sequence) {
+            put(key, value);
         }
 
         @Override
@@ -359,12 +368,22 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             }
         }
 
+
         @Override
         public void storeKeys() {
         }
 
         @Override
         public void loadKeys(DataStructureAdapter adapter) {
+        }
+
+        public void setStaleReadWriteDetector(StaleReadWriteDetector detector) {
+            staleReadWriteDetector = detector;
+        }
+
+        @Override
+        public StaleReadWriteDetector getStaleReadWriteDetector() {
+            return staleReadWriteDetector;
         }
     }
 }

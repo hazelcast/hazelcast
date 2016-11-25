@@ -69,6 +69,10 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         return recordStores.get(name);
     }
 
+    public ICacheService getCacheService() {
+        return cacheService;
+    }
+
     public void deleteRecordStore(String name, boolean destroy) {
         ICacheRecordStore store;
         if (destroy) {
