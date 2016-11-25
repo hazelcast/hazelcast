@@ -322,6 +322,11 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public void registerCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        registerCacheEntryListener(cacheEntryListenerConfiguration, true);
+    }
+
+    @Override
+    public void registerCacheEntryListener(CacheEntryListenerConfiguration cacheEntryListenerConfiguration, boolean addToConfig) {
         ensureOpen();
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
@@ -334,9 +339,13 @@ public class ClientCacheProxy<K, V>
         EventHandler handler = createHandler(adaptor);
         String regId = clientContext.getListenerService().registerListener(createCacheEntryListenerCodec(), handler);
         if (regId != null) {
-            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            if (addToConfig) {
+                cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            }
             addListenerLocally(regId, cacheEntryListenerConfiguration);
-            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
+            if (addToConfig) {
+                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, true);
+            }
         }
     }
 

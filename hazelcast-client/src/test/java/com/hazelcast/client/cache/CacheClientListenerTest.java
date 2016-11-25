@@ -23,20 +23,27 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CacheClientListenerTest extends CacheListenerTest {
-
     @Before
     @After
     public void cleanup() {
@@ -61,5 +68,55 @@ public class CacheClientListenerTest extends CacheListenerTest {
         hazelcastInstance = HazelcastClient.newHazelcastClient(clientConfig);
 
         return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
+    }
+
+    @Test
+    public void testEntryListenerUsingMemberConfig() {
+        System.setProperty("hazelcast.config", "classpath:hazelcast-cache-entrylistener-test.xml");
+        Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().addAddress("127.0.0.1");
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        HazelcastClientCachingProvider cachingProvider = HazelcastClientCachingProvider.createCachingProvider(client);
+
+        CacheManager cacheManager = cachingProvider.getCacheManager();
+
+        Cache<String, String> cache = cacheManager.getCache("entrylistenertestcache");
+
+        cache.put("foo", "bar");
+
+        HazelcastInstance client2 = HazelcastClient.newHazelcastClient(clientConfig);
+
+        HazelcastClientCachingProvider cachingProvider2 = HazelcastClientCachingProvider.createCachingProvider(client2);
+
+        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+
+        Cache<String, String> cache2 = cacheManager2.getCache("entrylistenertestcache");
+
+        client.shutdown();
+
+        // sleep enough so that the put entry is expired
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Trigger expiry event
+        cache2.get("foo");
+
+        final CountDownLatch expiredLatch = ClientCacheEntryExpiredLatchCountdownListener.getExpiredLatch();
+        assertCountEventually("The expired event should only be received one time", 1, expiredLatch, 3);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals("Expired event is received more than once", 1, expiredLatch.getCount());
+            }
+        }, 3);
     }
 }
