@@ -19,6 +19,7 @@ package com.hazelcast.jet2.impl.client;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.MessageTaskFactoryProvider;
+import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetCompleteResourceCodec;
 import com.hazelcast.client.impl.protocol.codec.JetCreateEngineIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
@@ -41,6 +42,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
     public void initFactories() {
         factories[JetCreateEngineIfAbsentCodec.RequestParameters.TYPE.id()] = toFactory(JetCreateEngineIfAbsentMessageTask::new);
         factories[JetExecuteJobCodec.RequestParameters.TYPE.id()] = toFactory(JetExecuteJobMessageTask::new);
+        factories[JetCancelJobCodec.RequestParameters.TYPE.id()] = toFactory(JetCancelJobMessageTask::new);
         factories[JetUpdateResourceCodec.RequestParameters.TYPE.id()] = toFactory(JetUpdateResourceMessageTask::new);
         factories[JetCompleteResourceCodec.RequestParameters.TYPE.id()] = toFactory(JetCompleteResourceMessageTask::new);
     }

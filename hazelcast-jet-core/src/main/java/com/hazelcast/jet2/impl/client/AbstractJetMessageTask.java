@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet2.impl.EngineContext;
 import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -70,4 +71,10 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
         return nodeEngine.getOperationService().createInvocationBuilder(JetService.SERVICE_NAME,
                 operation, nodeEngine.getThisAddress());
     }
+
+    protected EngineContext getEngineContext(String engineName) {
+        JetService service = getService(JetService.SERVICE_NAME);
+        return service.getEngineContext(engineName);
+    }
+
 }

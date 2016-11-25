@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -63,8 +64,13 @@ public final class Util {
         return e;
     }
 
-    public static CompletableFuture<Object> allOf(Collection<ICompletableFuture> futures) {
+    public static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures) {
         final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
+        compositeFuture.whenComplete((r, e) -> {
+            if (e instanceof CancellationException) {
+                futures.forEach(f -> f.cancel(true));
+            }
+        });
         final AtomicInteger completionLatch = new AtomicInteger(futures.size());
         for (ICompletableFuture future : futures) {
             future.andThen(new ExecutionCallback() {

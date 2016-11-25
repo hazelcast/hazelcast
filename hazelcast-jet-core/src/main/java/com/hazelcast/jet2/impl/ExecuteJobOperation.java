@@ -36,6 +36,7 @@ public class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
     private long executionId;
+    private volatile CompletableFuture<Object> executePlanFuture;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
@@ -53,7 +54,7 @@ public class ExecuteJobOperation extends AsyncOperation {
         EngineContext engineContext = service.getEngineContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(executionId, dag);
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
-                .thenCompose(x ->
+                .thenCompose(x -> executePlanFuture =
                         invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
                 .exceptionally(Util::peel)
                 .thenAccept(this::doSendResponse);
@@ -71,6 +72,13 @@ public class ExecuteJobOperation extends AsyncOperation {
                                        JetService.SERVICE_NAME, func.apply(e.getValue()), e.getKey().getAddress())
                                .invoke());
         return allOf(futures.collect(toList()));
+    }
+
+    @Override
+    void cancel() {
+        if (executePlanFuture != null) {
+            executePlanFuture.cancel(true);
+        }
     }
 
     @Override

@@ -31,8 +31,11 @@ public interface JetCodecTemplate {
     void executeJob(String engineName, long executionId, Data dag);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
-    void updateResource(String engineName, Data resourcePart);
+    void cancelJob(String engineName, long executionId);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
+    void updateResource(String engineName, Data resourcePart);
+
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
     void completeResource(String engineName, Data resourceDescriptor);
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet2.impl;
 
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.Edge;
@@ -27,6 +28,7 @@ import com.hazelcast.jet2.Vertex;
 import com.hazelcast.jet2.impl.deployment.JetClassLoader;
 import com.hazelcast.jet2.impl.deployment.ResourceStore;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -35,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.stream.Collectors.toList;
@@ -52,6 +55,9 @@ public class EngineContext {
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
     private ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
+    // keeps track of active invocations from client for cancellation support
+    private ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
+
     public EngineContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
         this.nodeEngine = nodeEngine;
@@ -62,7 +68,44 @@ public class EngineContext {
         this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config, cl);
     }
 
-    public Map<Member, ExecutionPlan> newExecutionPlan(long executionId, DAG dag) {
+    public String getName() {
+        return name;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
+
+    public ResourceStore getResourceStore() {
+        return resourceStore;
+    }
+
+    public JetEngineConfig getConfig() {
+        return config;
+    }
+
+    public void registerClientInvocation(long executionId, ICompletableFuture<Object> invocation) {
+        if (clientInvocations.putIfAbsent(executionId, invocation) != null) {
+            throw new IllegalStateException("Execution with id " + executionId + " is already registered.");
+        }
+        invocation.andThen(new SimpleExecutionCallback<Object>() {
+            @Override
+            public void notify(Object o) {
+                clientInvocations.remove(executionId);
+            }
+        });
+    }
+
+    public void cancelClientInvocation(long executionId) {
+        Optional.of(clientInvocations.get(executionId)).ifPresent(f -> f.cancel(true));
+    }
+
+    public void destroy() {
+        resourceStore.destroy();
+        executionService.shutdown();
+    }
+
+    Map<Member, ExecutionPlan> newExecutionPlan(long executionId, DAG dag) {
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
         final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m ->
@@ -101,37 +144,16 @@ public class EngineContext {
         return plans;
     }
 
-    public void createAndRegisterExecutionContext(ExecutionPlan plan) {
+    void createAndRegisterExecutionContext(ExecutionPlan plan) {
         executionContexts.computeIfAbsent(plan.getId(), k -> new ExecutionContext(this, plan));
     }
 
-    public ExecutionContext getExecutionContext(long id) {
+    ExecutionContext getExecutionContext(long id) {
         return executionContexts.get(id);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
-
-    public ExecutionService getExecutionService() {
+    ExecutionService getExecutionService() {
         return executionService;
-    }
-
-    public ResourceStore getResourceStore() {
-        return resourceStore;
-    }
-
-    public JetEngineConfig getConfig() {
-        return config;
-    }
-
-    public void destroy() {
-        resourceStore.destroy();
-        executionService.shutdown();
     }
 
     private boolean isDistributed(Edge edge) {

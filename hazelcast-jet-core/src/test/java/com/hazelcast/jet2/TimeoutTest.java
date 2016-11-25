@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet2.impl.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -35,7 +36,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet2.Util.executeAndPeel;
 
 @Category(QuickTest.class)
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class TimeoutTest extends HazelcastTestSupport {
 
     private static final int TIMEOUT_MILLIS = 1000;

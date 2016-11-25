@@ -20,8 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec.RequestParameters;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet2.impl.EngineContext;
 import com.hazelcast.jet2.impl.ExecuteJobOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
@@ -33,6 +36,18 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
     @Override
     protected Operation prepareOperation() {
         return new ExecuteJobOperation(parameters.engineName, parameters.executionId, toObject(parameters.dag));
+    }
+
+    @Override
+    protected void processMessage() {
+        Operation op = this.prepareOperation();
+        op.setCallerUuid(getEndpoint().getUuid());
+        InvocationBuilder builder = this.getInvocationBuilder(op).setResultDeserialized(false);
+        EngineContext engineContext = getEngineContext(parameters.engineName);
+
+        InternalCompletableFuture<Object> invocation = builder.invoke();
+        engineContext.registerClientInvocation(parameters.executionId, invocation);
+        invocation.andThen(this);
     }
 
     @Override
@@ -48,5 +63,15 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
     @Override
     public Object[] getParameters() {
         return new Object[]{parameters.dag};
+    }
+
+    @Override
+    public void onResponse(Object response) {
+        super.onResponse(response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        super.onFailure(t);
     }
 }

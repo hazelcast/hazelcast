@@ -37,7 +37,7 @@ public abstract class AsyncOperation extends EngineOperation {
 
     @Override
     public void beforeRun() throws Exception {
-        this.<JetService>getService().registerOperation(getCallerAddress(), getCallId());
+        this.<JetService>getService().registerOperation(this);
     }
 
     @Override
@@ -50,13 +50,15 @@ public abstract class AsyncOperation extends EngineOperation {
         }
     }
 
+    abstract void cancel();
+
     protected abstract void doRun() throws Exception;
 
     protected final void doSendResponse(Object value) {
         try {
             sendResponse(value);
         } finally {
-            this.<JetService>getService().deregisterOperation(getCallerAddress(), getCallId());
+            this.<JetService>getService().deregisterOperation(this);
         }
     }
 }

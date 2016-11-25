@@ -18,6 +18,7 @@ package com.hazelcast.jet2.impl.client;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetCompleteResourceCodec;
 import com.hazelcast.client.impl.protocol.codec.JetCreateEngineIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
@@ -25,6 +26,7 @@ import com.hazelcast.client.impl.protocol.codec.JetUpdateResourceCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.jet2.DAG;
 import com.hazelcast.jet2.JetEngine;
@@ -36,6 +38,7 @@ import com.hazelcast.jet2.impl.JetService;
 import com.hazelcast.jet2.impl.JobImpl;
 import com.hazelcast.jet2.impl.Util;
 import com.hazelcast.jet2.impl.deployment.ResourceIterator;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
@@ -51,6 +54,8 @@ import static com.hazelcast.jet2.impl.JetEngineProxyImpl.ID_GENERATOR_PREFIX;
 
 public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy {
     private IdGenerator idGenerator;
+    private int partitionId;
+    private ILogger logger;
 
     public ClientJetEngineProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -59,7 +64,12 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
     @Override
     protected void onInitialize() {
         super.onInitialize();
+        logger = getClient().getLoggingService().getLogger(getClass());
         idGenerator = getClient().getIdGenerator(ID_GENERATOR_PREFIX + name);
+
+        // execution and cancellation  messages should go to the same member - so we use a fixed
+        // partition id here
+        partitionId = this.getContext().getPartitionService().getPartitionId(getPartitionKey());
     }
 
     @Override
@@ -70,9 +80,11 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
     @Override
     public Future<Void> execute(JobImpl job) {
         Data dag = toData(job.getDag());
-        ClientInvocation invocation =
-                new ClientInvocation(getClient(), JetExecuteJobCodec.encodeRequest(name, idGenerator.newId(), dag));
-        return new JobExecutionFuture(invocation.invoke());
+        long executionId = idGenerator.newId();
+
+        ClientInvocation invocation = new ClientInvocation(getClient(),
+                JetExecuteJobCodec.encodeRequest(name, executionId, dag), partitionId);
+        return new ExecutionFuture(invocation.invoke(), executionId);
     }
 
     private void deployResources(JetEngineConfig config) {
@@ -109,22 +121,40 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
                      .map(Util::uncheckedGet).collect(Collectors.toList());
     }
 
-    private static final class JobExecutionFuture implements Future<Void> {
+    private final class ExecutionFuture implements Future<Void> {
 
         private final ClientInvocationFuture future;
+        private final long executionId;
 
-        private JobExecutionFuture(ClientInvocationFuture future) {
+        private ExecutionFuture(ClientInvocationFuture future, long executionId) {
             this.future = future;
+            this.executionId = executionId;
         }
 
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
+            boolean cancelled = future.cancel(true);
+            if (!cancelled) {
+                return false;
+            }
+            new ClientInvocation(getClient(), JetCancelJobCodec.encodeRequest(getName(), executionId), partitionId)
+                    .invoke().andThen(new ExecutionCallback<ClientMessage>() {
+                @Override
+                public void onResponse(ClientMessage clientMessage) {
+                    //ignored
+                }
+
+                @Override
+                public void onFailure(Throwable throwable) {
+                    logger.warning("Error cancelling job with id " + executionId, throwable);
+                }
+            });
+            return true;
         }
 
         @Override
         public boolean isCancelled() {
-            return false;
+            return future.isCancelled();
         }
 
         @Override

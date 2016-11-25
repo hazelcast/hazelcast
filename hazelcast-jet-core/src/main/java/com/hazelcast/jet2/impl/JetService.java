@@ -21,6 +21,7 @@ import com.hazelcast.jet2.JetEngineConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
@@ -31,10 +32,11 @@ import com.hazelcast.spi.impl.PacketHandler;
 
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker {
+public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker, CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final Charset CHARSET = Charset.forName("ISO-8859-1");
@@ -44,7 +46,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
     private ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Address, Map<Long, Boolean>> liveOperations = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -137,16 +139,24 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return engineContexts.get(name);
     }
 
-    void registerOperation(Address caller, long callId) {
-        Map<Long, Boolean> callIds = liveOperations.computeIfAbsent(caller, (key) -> new ConcurrentHashMap<>());
-        if (callIds.putIfAbsent(callId, true) != null) {
-            throw new IllegalStateException("Duplicate operation for caller=" + caller + " callId=" + callId);
+    void registerOperation(AsyncOperation operation) {
+        Map<Long, AsyncOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
+                (key) -> new ConcurrentHashMap<>());
+        if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
+            throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
         }
     }
 
-    void deregisterOperation(Address caller, long callId) {
-        if (!liveOperations.get(caller).remove(callId)) {
-            throw new IllegalStateException("Missing operation for caller=" + caller + " callId=" + callId);
+    void deregisterOperation(AsyncOperation operation) {
+        if (liveOperations.get(operation.getCallerAddress()).remove(operation.getCallId()) == null) {
+            throw new IllegalStateException("Missing operation during de-registration of operation=" + operation);
         }
+    }
+
+    @Override
+    public boolean cancelOperation(Address caller, long callId) {
+        Optional<AsyncOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
+        operation.ifPresent(AsyncOperation::cancel);
+        return operation.isPresent();
     }
 }

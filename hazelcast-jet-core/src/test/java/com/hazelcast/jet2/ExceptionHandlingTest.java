@@ -17,12 +17,12 @@
 package com.hazelcast.jet2;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,18 +32,18 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet2.Util.executeAndPeel;
 
 @Category(QuickTest.class)
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 public class ExceptionHandlingTest extends HazelcastTestSupport {
 
-    private static TestHazelcastInstanceFactory factory;
+    private TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
     private HazelcastInstance instance;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @BeforeClass
-    public static void setupFactory() {
+    @Before
+    public void setupFactory() {
         factory = new TestHazelcastInstanceFactory();
     }
 

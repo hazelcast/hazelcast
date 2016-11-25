@@ -20,10 +20,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.concurrent.CompletionStage;
 
 class ExecutePlanOperation extends AsyncOperation {
 
     private long planId;
+    private volatile CompletionStage<Void> executionFuture;
 
     ExecutePlanOperation(String engineName, long planId) {
         super(engineName);
@@ -35,12 +37,18 @@ class ExecutePlanOperation extends AsyncOperation {
     }
 
     @Override
+    void cancel() {
+        if (executionFuture != null) {
+            executionFuture.toCompletableFuture().cancel(true);
+        }
+    }
+
+    @Override
     protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        engineContext.getExecutionContext(planId)
-                     .execute()
-                     .whenComplete((r, error) -> doSendResponse(error != null ? error : null));
+        executionFuture = engineContext.getExecutionContext(planId).execute();
+        executionFuture.whenComplete((r, error) -> doSendResponse(error != null ? error : null));
     }
 
     @Override
