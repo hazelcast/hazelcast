@@ -34,6 +34,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.io.IOException;
@@ -203,7 +204,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 if (connection == null) {
                     continue;
                 }
-                if (connection.isHeartBeating()) {
+
+                boolean isAlive = connection.isAlive();
+                boolean isHeartbeating = connection.isHeartBeating();
+
+                if (isHeartbeating || (!isAlive && !connection.isCloseCompleted())) {
                     continue;
                 }
 
@@ -221,6 +226,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 }
 
                 iter.remove();
+
+                notifyException(invocation, connection, isAlive);
                 Exception ex = newTargetDisconnectedExceptionCausedByHeartbeat(
                         connection.getRemoteEndpoint(),
                         connection.toString(),
@@ -233,6 +240,28 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (expiredConnections != null) {
                 logExpiredConnections(expiredConnections);
             }
+        }
+
+        private void notifyException(ClientInvocation invocation, ClientConnection connection, boolean isAlive) {
+            Exception ex = null;
+            /**
+             * Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
+             * heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
+             * the connection.isHeartBeating also checks for isAlive as well.
+             */
+            if (!isAlive) {
+                ex = new TargetDisconnectedException(connection.getRemoteEndpoint());
+            } else {
+                ex = newTargetDisconnectedExceptionCausedByHeartbeat(
+                        connection.getRemoteEndpoint(),
+                        connection.toString(),
+                        connection.getLastHeartbeatRequestedMillis(),
+                        connection.getLastHeartbeatReceivedMillis(),
+                        connection.lastReadTimeMillis(),
+                        connection.getCloseCause());
+            }
+
+            invocation.notifyException(ex);
         }
 
         private void logExpiredConnections(Collection<ClientConnection> expiredConnections) {

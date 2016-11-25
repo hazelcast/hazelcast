@@ -7,6 +7,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -16,10 +18,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
+import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
 import static com.hazelcast.test.HazelcastTestSupport.warmUpPartitions;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -34,9 +45,9 @@ public class ClientClusterStateTest {
     @Before
     public void before() {
         factory = new TestHazelcastFactory();
-        instances = factory.newInstances(new Config(), 3);
+        instances = factory.newInstances(new Config(), 4);
         for (HazelcastInstance instance : instances) {
-            assertClusterSizeEventually(3, instance);
+            assertClusterSizeEventually(4, instance);
         }
         instance = instances[instances.length - 1];
     }
@@ -115,5 +126,71 @@ public class ClientClusterStateTest {
         HazelcastInstance client = factory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
         map.put(1, 1);
+    }
+
+    @Test
+    public void testClusterShutdownDuringMapPutAll() {
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
+
+        HazelcastInstance client = factory.newHazelcastClient();
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        final HashMap values = new HashMap<Double, Double>();
+        for (int i = 0; i < 1000; i++) {
+            double value = Math.random();
+            values.put(value, value);
+        }
+
+        final int numThreads = 10;
+        final CountDownLatch threadsFinished = new CountDownLatch(numThreads);
+        final CountDownLatch threadsStarted = new CountDownLatch(numThreads);
+
+        ExecutorService executor = Executors.newCachedThreadPool();
+        for (int i = 0; i < numThreads; i++) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    ILogger logger = Logger.getLogger(getClass());
+                    boolean finished = false;
+                    threadsStarted.countDown();
+                    logger.info("putAll thread started");
+                    while (!finished) {
+                        try {
+                            map.putAll(values);
+                            Thread.sleep(100);
+                        } catch (IllegalStateException e) {
+                           logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
+                            finished = true;
+                        } catch (InterruptedException e) {
+                            // do nothing
+                        }
+                    }
+                    threadsFinished.countDown();
+                    logger.info("putAll thread finishing. Current finished thread count is:" + (numThreads - threadsFinished
+                            .getCount()));
+                }
+            });
+        }
+
+        try {
+            assertTrue("All threads could not be started", threadsStarted.await(1, TimeUnit.MINUTES));
+        } catch (InterruptedException e) {
+            fail("All threads could not be started due to InterruptedException. Could not start " + threadsStarted.getCount()
+                    + " threads out of " + numThreads);
+        }
+
+        instance.getCluster().shutdown();
+
+        executor.shutdown();
+
+        try {
+            assertTrue("All threads could not be finished", threadsFinished.await(2, TimeUnit.MINUTES));
+        } catch (InterruptedException e) {
+            fail("All threads could not be finished due to InterruptedException. Could not finish " + threadsFinished.getCount()
+                    + " threads out of " + numThreads);
+        } finally {
+            executor.shutdownNow();
+        }
     }
 }
