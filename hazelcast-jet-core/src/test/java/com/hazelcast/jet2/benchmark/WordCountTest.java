@@ -241,7 +241,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         @Override
-        public void combine(com.hazelcast.aggregation.Aggregator aggregator) {
+        public void combine(Aggregator aggregator) {
             Map<String, Long> counts = ((WordCountAggregator) aggregator).counts;
             for (Entry<String, Long> entry : counts.entrySet()) {
                 accumulate(entry.getKey(), entry.getValue());
@@ -249,12 +249,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         private void accumulate(String key, long addition) {
-            Long value = this.counts.get(key);
-            if (value == null) {
-                this.counts.put(key, addition);
-            } else {
-                this.counts.put(key, value + addition);
-            }
+            counts.compute(key, (k, v) -> v == null ? addition : v + addition);
         }
 
         @Override
@@ -285,12 +280,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         @Override
         public boolean process(int ordinal, Object item) {
             Map.Entry<String, Long> entry = (Map.Entry<String, Long>) item;
-            Long value = this.counts.get(entry.getKey());
-            if (value == null) {
-                counts.put(entry.getKey(), entry.getValue());
-            } else {
-                counts.put(entry.getKey(), value + entry.getValue());
-            }
+            counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
             return true;
         }
 
@@ -330,12 +320,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         private void accumulate(String key, long addition) {
-            Long value = this.counts.get(key);
-            if (value == null) {
-                this.counts.put(key, addition);
-            } else {
-                this.counts.put(key, value + addition);
-            }
+            counts.compute(key, (k, v) -> v == null ? addition : v + addition);
         }
     }
 
@@ -359,12 +344,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         private void accumulate(String key, long addition) {
-            Long value = this.counts.get(key);
-            if (value == null) {
-                this.counts.put(key, addition);
-            } else {
-                this.counts.put(key, value + addition);
-            }
+            counts.compute(key, (k, v) -> v == null ? addition : v + addition);
         }
     }
 
