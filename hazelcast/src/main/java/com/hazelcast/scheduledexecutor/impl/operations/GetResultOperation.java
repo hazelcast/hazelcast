@@ -16,48 +16,63 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorWaitNotifyKey;
+import com.hazelcast.spi.BlockingOperation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Thomas Kountis.
  */
 public class GetResultOperation<V>
-        extends AbstractSchedulerOperation {
+        extends AbstractSchedulerOperation implements BlockingOperation {
 
     private String taskName;
 
-    private long timeout;
+    private ScheduledTaskHandler handler;
 
-    private TimeUnit timeUnit;
-
-    private V response;
+    private V result;
 
     public GetResultOperation() {
     }
 
-    public GetResultOperation(ScheduledTaskHandler descriptor, long timeout, TimeUnit timeUnit) {
-        super(descriptor.getSchedulerName());
-        this.taskName = descriptor.getTaskName();
-        this.timeout = timeout;
-        this.timeUnit = timeUnit;
-        setPartitionId(descriptor.getPartitionId());
+    public GetResultOperation(ScheduledTaskHandler handler) {
+        super(handler.getSchedulerName());
+        this.taskName = handler.getTaskName();
+        this.handler = handler;
+        setPartitionId(handler.getPartitionId());
     }
 
     @Override
     public void run()
             throws Exception {
-        response = (V) getContainer().get(taskName);
+        result = (V) getContainer().get(taskName);
     }
 
     @Override
     public V getResponse() {
-        return response;
+        return result;
+    }
+
+    @Override
+    public WaitNotifyKey getWaitKey() {
+        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toURN());
+    }
+
+    @Override
+    public boolean shouldWait() {
+        return getContainer().isPendingOrStashed(taskName);
+    }
+
+    @Override
+    public void onWaitExpire() {
+        sendResponse(new HazelcastException());
     }
 
     @Override
@@ -70,8 +85,7 @@ public class GetResultOperation<V>
             throws IOException {
         super.writeInternal(out);
         out.writeUTF(taskName);
-        out.writeLong(timeout);
-        out.writeUTF(timeUnit.name());
+        out.writeUTF(handler.toURN());
     }
 
     @Override
@@ -79,7 +93,6 @@ public class GetResultOperation<V>
             throws IOException {
         super.readInternal(in);
         this.taskName = in.readUTF();
-        this.timeout = in.readLong();
-        this.timeUnit = TimeUnit.valueOf(in.readUTF());
+        this.handler = ScheduledTaskHandler.of(in.readUTF());
     }
 }

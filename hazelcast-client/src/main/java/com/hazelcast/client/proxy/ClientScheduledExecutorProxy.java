@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledCodec;
@@ -29,14 +28,14 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
-import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
-import com.hazelcast.scheduledexecutor.IdentifiedRunnable;
+import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledFutureProxy;
+import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -65,7 +64,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Proxy implementation of {@link CardinalityEstimator}.
+ * Client proxy implementation of {@link IScheduledExecutorService}.
  */
 @SuppressWarnings("unchecked")
 public class ClientScheduledExecutorProxy
@@ -108,40 +107,26 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         return schedule(adapter, delay, unit);
     }
 
     @Override
-    public IScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
-        return schedule(name, adapter, delay, unit);
-    }
-
-    @Override
     public <V> IScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit) {
-        return schedule(UuidUtil.newUnsecureUuidString(), command, delay, unit);
-    }
-
-    @Override
-    public <V> IScheduledFuture<V> schedule(String name, Callable<V> command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
+        String name = extractNameOrGenerateOne(command);
         TaskDefinition<V> definition = new TaskDefinition<V>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
         return scheduleOnPartition(name, definition);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduleWithRepetition(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay, long period,
+    public IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period,
                                                       TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        String name = extractNameOrGenerateOne(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
                 initialDelay, 0, period, unit);
 
@@ -150,41 +135,27 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit) {
-        return scheduleOnMember(UuidUtil.newUnsecureUuidString(), command, member, delay, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnMember(String name, Runnable command, Member member, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
-        return scheduleOnMember(name, adapter, member, delay, unit);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        return scheduleOnMember(adapter, member, delay, unit);
     }
 
     @Override
     public <V> IScheduledFuture<V> scheduleOnMember(Callable<V> command, Member member, long delay, TimeUnit unit) {
-        return scheduleOnMember(UuidUtil.newUnsecureUuidString(), command, member, delay, unit);
-    }
-
-    @Override
-    public <V> IScheduledFuture<V> scheduleOnMember(String name, Callable<V> command, Member member, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
+        String name = extractNameOrGenerateOne(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command,
                 delay, unit);
         return scheduleOnMember(name, member, definition);
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay, long period,
-                                                              TimeUnit unit) {
-        return scheduleOnMemberWithRepetition(UuidUtil.newUnsecureUuidString(), command, member, initialDelay, period, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnMemberWithRepetition(String name, Runnable command, Member member, long initialDelay,
+    public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay,
                                                               long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        String name = extractNameOrGenerateOne(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
                 initialDelay, 0, period, unit);
         return scheduleOnMember(name, member, definition);
@@ -192,24 +163,15 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object key, long delay, TimeUnit unit) {
-        return scheduleOnKeyOwner(UuidUtil.newUnsecureUuidString(), command, key, delay, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnKeyOwner(String name, Runnable command, Object key, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
-        return scheduleOnKeyOwner(name, adapter, key, delay, unit);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        return scheduleOnKeyOwner(adapter, key, delay, unit);
     }
 
     @Override
     public <V> IScheduledFuture<V> scheduleOnKeyOwner(Callable<V> command, Object key, long delay, TimeUnit unit) {
-        return scheduleOnKeyOwner(UuidUtil.newUnsecureUuidString(), command, key, delay, unit);
-    }
-
-    @Override
-    public <V> IScheduledFuture<V> scheduleOnKeyOwner(String name, Callable<V> command, Object key, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
+        String name = extractNameOrGenerateOne(command);
         int partitionId = getContext().getPartitionService().getPartitionId(key);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command,
                 delay, unit);
@@ -217,18 +179,13 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay, long period,
-                                                                TimeUnit unit) {
-        return scheduleOnKeyOwnerWithRepetition(UuidUtil.newUnsecureUuidString(), command, key, initialDelay, period, unit);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(String name, Runnable command, Object key, long initialDelay,
+    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay,
                                                                 long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
 
+        String name = extractNameOrGenerateOne(command);
         int partitionId = getContext().getPartitionService().getPartitionId(key);
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
                 initialDelay, 0, period, unit);
         return scheduleOnPartition(name, definition, partitionId);
@@ -236,18 +193,14 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         return scheduleOnAllMembers(adapter, delay, unit);
     }
 
     @Override
-    public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay, TimeUnit unit) {
-        return scheduleOnAllMembers(UuidUtil.newUnsecureUuidString(), command, delay, unit);
-    }
-
-    @Override
-    public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(String name, Callable<V> command, long delay,
+    public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay,
                                                                      TimeUnit unit) {
+        String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
         for (Member member : getContext().getClusterService().getMemberList()) {
             TaskDefinition<V> definition = new TaskDefinition<V>(
@@ -260,21 +213,10 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(String name, Runnable command, long delay, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
-        return scheduleOnAllMembers(name, adapter, delay, unit);
-    }
-
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period,
-                                                                               TimeUnit unit) {
-        return scheduleOnAllMembersWithRepetition(UuidUtil.newUnsecureUuidString(), command, initialDelay, period, unit);
-    }
-
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(String name, Runnable command, long initialDelay,
+    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay,
                                                                                long period, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        String name = extractNameOrGenerateOne(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
         for (Member member : getContext().getClusterService().getMemberList()) {
             TaskDefinition definition = new TaskDefinition(
@@ -288,15 +230,10 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public Map<Member, IScheduledFuture> scheduleOnMembers(Runnable command, Collection<Member> members, long delay,
-                                                           TimeUnit unit) {
-        return scheduleOnMembers(UuidUtil.newUnsecureUuidString(), command, members, delay, unit);
-    }
-
-    @Override
-    public Map<Member, IScheduledFuture> scheduleOnMembers(String name, Runnable command, Collection<Member> members, long delay,
-                                                           TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
+    public Map<Member, IScheduledFuture<?>> scheduleOnMembers(Runnable command, Collection<Member> members, long delay,
+                                                              TimeUnit unit) {
+        String name = extractNameOrGenerateOne(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture> futures = new HashMap<Member, IScheduledFuture>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
@@ -309,14 +246,9 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(Callable<V> command, Collection<Member> members, long delay,
-                                                                  TimeUnit unit) {
-        return scheduleOnMembers(UuidUtil.newUnsecureUuidString(), command, members, delay, unit);
-    }
-
-    @Override
-    public <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(String name, Callable<V> command, Collection<Member> members,
+    public <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(Callable<V> command, Collection<Member> members,
                                                                   long delay, TimeUnit unit) {
+        String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
@@ -329,16 +261,11 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members,
-                                                                            long initialDelay, long period, TimeUnit unit) {
-        return scheduleOnMembersWithRepetition(UuidUtil.newUnsecureUuidString(), command, members, initialDelay, period, unit);
-    }
-
-    @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(String name, Runnable command,
+    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command,
                                                                             Collection<Member> members, long initialDelay,
                                                                             long period, TimeUnit unit) {
-        RunnableAdapter adapter = new RunnableAdapter(command);
+        String name = extractNameOrGenerateOne(command);
+        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
         Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
@@ -435,25 +362,13 @@ public class ClientScheduledExecutorProxy
         waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
     }
 
-    @Override
-    public List<IdentifiedRunnable> shutdownNow() {
-        return null;
-    }
+    private String extractNameOrGenerateOne(Object command) {
+        String name = null;
+        if (command instanceof NamedTask) {
+            name = ((NamedTask) command).getName();
+        }
 
-    @Override
-    public boolean isShutdown() {
-        return false;
-    }
-
-    @Override
-    public boolean isTerminated() {
-        return false;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit)
-            throws InterruptedException {
-        return false;
+        return name != null ? name : UuidUtil.newUnsecureUuidString();
     }
 
     private <V> IScheduledFuture<V> scheduleOnPartition(String name, TaskDefinition definition) {

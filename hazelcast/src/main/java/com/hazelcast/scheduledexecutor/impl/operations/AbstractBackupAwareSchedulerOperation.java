@@ -25,8 +25,6 @@ public abstract class AbstractBackupAwareSchedulerOperation
         extends AbstractSchedulerOperation
         implements BackupAwareOperation {
 
-    private static final int DURABILITY = 1;
-
     AbstractBackupAwareSchedulerOperation() { }
 
     AbstractBackupAwareSchedulerOperation(String schedulerName) {
@@ -40,7 +38,7 @@ public abstract class AbstractBackupAwareSchedulerOperation
 
     @Override
     public int getSyncBackupCount() {
-        return DURABILITY;
+        return getContainer().getDurability();
     }
 
     @Override

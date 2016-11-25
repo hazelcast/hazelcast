@@ -31,6 +31,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsCanceledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.IsDoneOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
@@ -45,31 +46,36 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
             SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
     public static final int TASK_DESCRIPTOR = 0;
-    public static final int BACKUP_DESCRIPTOR = 3;
-    public static final int RUNNABLE_DEFINITION = 19;
+    public static final int TASK_HANDLER = 23;
+    public static final int BACKUP_DESCRIPTOR = 1;
+    public static final int RUNNABLE_DEFINITION = 2;
 
-    public static final int SCHEDULE_OP = 1;
-    public static final int SCHEDULE_BACKUP_OP = 2;
+    public static final int RUNNABLE_ADAPTER = 3;
+    public static final int NAMED_TASK_DECORATOR = 4;
+
+    public static final int SCHEDULE_OP = 5;
+    public static final int SCHEDULE_BACKUP_OP = 6;
 
     public static final int SCHEDULED_FUTURE = 7;
 
     public static final int CANCEL_OP = 8;
     public static final int CANCEL_BACKUP_OP = 9;
 
-    public static final int GET_RESULT = 21;
-    public static final int GET_DELAY_OP = 10;
-    public static final int COMPARE_TO_OP = 11;
-    public static final int IS_DONE_OP = 12;
-    public static final int IS_CANCELED_OP = 13;
-    public static final int GET_STATS_OP = 14;
-    public static final int TASK_STATS = 15;
+    public static final int GET_RESULT = 10;
+    public static final int PUBLISH_RESULT = 11;
+    public static final int GET_DELAY_OP = 12;
+    public static final int COMPARE_TO_OP = 13;
+    public static final int IS_DONE_OP = 14;
+    public static final int IS_CANCELED_OP = 15;
+    public static final int GET_STATS_OP = 16;
+    public static final int TASK_STATS = 17;
 
-    public static final int SYNC_STATE_OP = 16;
-    public static final int REPLICATION = 17;
+    public static final int SYNC_STATE_OP = 18;
+    public static final int REPLICATION = 19;
 
-    public static final int DESTROY_TASK_OP = 18;
+    public static final int DESTROY_TASK_OP = 20;
 
-    public static final int GET_ALL_SCHEDULED = 20;
+    public static final int GET_ALL_SCHEDULED = 21;
 
     public static final int SHUTDOWN = 22;
 
@@ -86,10 +92,16 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                 switch (typeId) {
                     case TASK_DESCRIPTOR:
                         return new ScheduledTaskDescriptor();
+                    case TASK_HANDLER:
+                        return new ScheduledTaskHandlerImpl();
                     case BACKUP_DESCRIPTOR:
                         return new BackupTaskDescriptor();
                     case RUNNABLE_DEFINITION:
                         return new TaskDefinition();
+                    case RUNNABLE_ADAPTER:
+                        return new ScheduledRunnableAdapter();
+                    case NAMED_TASK_DECORATOR:
+                        return new NamedTaskDecorator();
                     case SCHEDULED_FUTURE:
                         return new ScheduledFutureProxy();
                     case GET_DELAY_OP:
@@ -122,6 +134,8 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                         return new GetAllScheduledOperation();
                     case GET_RESULT:
                         return new GetResultOperation();
+                    case PUBLISH_RESULT:
+                        return new ResultReadyNotifyOperation();
                     case SHUTDOWN:
                         return new ShutdownOperation();
                     default:

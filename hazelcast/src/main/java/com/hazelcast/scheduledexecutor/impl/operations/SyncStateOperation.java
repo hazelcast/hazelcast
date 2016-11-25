@@ -21,9 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Created by Thomas Kountis.
@@ -33,12 +33,12 @@ public class SyncStateOperation
 
     private String taskName;
 
-    private Map state;
+    private ConcurrentMap state;
 
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state) {
+    public SyncStateOperation(String schedulerName, String taskName, ConcurrentMap state) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
@@ -75,7 +75,7 @@ public class SyncStateOperation
         super.readInternal(in);
         this.taskName = in.readUTF();
         int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
+        this.state = new ConcurrentHashMap(stateSize);
         for (int i = 0; i < stateSize; i++) {
             this.state.put(in.readObject(), in.readObject());
         }

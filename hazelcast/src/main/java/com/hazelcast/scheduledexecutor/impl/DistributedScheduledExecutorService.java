@@ -24,6 +24,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.Collections;
@@ -96,11 +97,11 @@ public class DistributedScheduledExecutorService
     @Override
     public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
-        nodeEngine.getExecutionService().shutdownExecutor(name);
+        ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
     }
 
     public void shutdownExecutor(String name) {
-        nodeEngine.getExecutionService().shutdownExecutor(name);
+        ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
         shutdownExecutors.add(name);
     }
 

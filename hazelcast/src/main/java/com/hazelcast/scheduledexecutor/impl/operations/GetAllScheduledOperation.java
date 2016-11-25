@@ -53,17 +53,28 @@ public class GetAllScheduledOperation
 
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            ScheduledExecutorPartition partition = service.getPartition(i);
-            Collection<ScheduledExecutorContainer> containers = partition.getContainers();
-            for (ScheduledExecutorContainer container : containers) {
-                Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
-                for (ScheduledTaskDescriptor task : tasks) {
-                    handlers.add(ScheduledTaskHandler.of(i, getSchedulerName(), task.getDefinition().getName()));
+            populateScheduledForPartition(handlers, service, i);
+        }
+
+        // Member partition
+        populateScheduledForPartition(handlers, service, -1);
+        response = handlers;
+    }
+
+    private void populateScheduledForPartition(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
+                                               int partitionId) {
+        ScheduledExecutorPartition partition = service.getPartition(partitionId);
+        Collection<ScheduledExecutorContainer> containers = partition.getContainers();
+        for (ScheduledExecutorContainer container : containers) {
+            Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
+            for (ScheduledTaskDescriptor task : tasks) {
+                if (partitionId == -1) {
+                    handlers.add(ScheduledTaskHandler.of(getNodeEngine().getThisAddress(), getSchedulerName(), task.getDefinition().getName()));
+                } else {
+                    handlers.add(ScheduledTaskHandler.of(partitionId, getSchedulerName(), task.getDefinition().getName()));
                 }
             }
         }
-
-        response = handlers;
     }
 
     @Override

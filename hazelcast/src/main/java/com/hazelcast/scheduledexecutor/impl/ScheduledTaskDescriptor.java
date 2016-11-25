@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -36,13 +36,13 @@ public class ScheduledTaskDescriptor
 
     private AmendableScheduledTaskStatistics stats;
 
-    private Map state;
+    private ConcurrentMap state;
 
     public ScheduledTaskDescriptor() {
     }
 
     public ScheduledTaskDescriptor(TaskDefinition definition, ScheduledFuture<?> scheduledFuture,
-                                   Map taskState, AmendableScheduledTaskStatistics stats) {
+                                   ConcurrentMap taskState, AmendableScheduledTaskStatistics stats) {
         this.definition = definition;
         this.scheduledFuture = scheduledFuture;
         this.stats = stats;
@@ -65,7 +65,7 @@ public class ScheduledTaskDescriptor
         return stats;
     }
 
-    public Map getState() {
+    public ConcurrentMap getState() {
         return state;
     }
 

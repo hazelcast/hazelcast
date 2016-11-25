@@ -16,6 +16,8 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -34,8 +36,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ScheduledExecutorPartition {
 
-    //TODO tkountis - Configurable ?
-    private final static int DURABILITY = 1;
+    private final ILogger logger;
 
     private final int partitionId;
 
@@ -48,11 +49,13 @@ public class ScheduledExecutorPartition {
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, DURABILITY);
+                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability());
                 }
             };
 
     public ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
+        this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
         this.nodeEngine = nodeEngine;
     }
@@ -61,10 +64,13 @@ public class ScheduledExecutorPartition {
         checkNotNull(name, "Name can't be null");
         checkNotNull(backup, "Backup info can't be null");
 
-        //TODO tkountis - Configuration based
+        if (logger.isFineEnabled()) {
+            logger.fine("Creating Scheduled Executor partition with name: " + name);
+        }
 
+        ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         ScheduledExecutorContainer container =
-                new ScheduledExecutorContainer(name, partitionId, nodeEngine, DURABILITY, backup);
+                new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(), backup);
         containers.put(name, container);
     }
 

@@ -17,110 +17,38 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.spi.annotation.Beta;
 
-import java.net.UnknownHostException;
-
 @Beta
-public class ScheduledTaskHandler {
+public abstract class ScheduledTaskHandler
+        implements IdentifiedDataSerializable {
 
-    private final static String URN_BASE = "urn:hzScheduledTaskHandler:";
+    public abstract Address getAddress();
 
-    private final static char DESC_SEP = '\0';
+    public abstract int getPartitionId();
 
-    private final Address address;
+    public abstract String getSchedulerName();
 
-    private final int partitionId;
+    public abstract String getTaskName();
 
-    private final String schedulerName;
+    public abstract boolean isAssignedToPartition();
 
-    private final String taskName;
+    public abstract boolean isAssignedToMember();
 
-    private ScheduledTaskHandler(int partitionId, String schedulerName, String taskName) {
-        this.partitionId = partitionId;
-        this.schedulerName = schedulerName;
-        this.taskName = taskName;
-        this.address = null;
-    }
-
-    private ScheduledTaskHandler(Address addr, String schedulerName, String taskName) {
-        this.partitionId = -1;
-        this.schedulerName = schedulerName;
-        this.taskName = taskName;
-        this.address = addr;
-    }
-
-    public Address getAddress() {
-        return address;
-    }
-
-    public final int getPartitionId() {
-        return partitionId;
-    }
-
-    public final String getSchedulerName() {
-        return schedulerName;
-    }
-
-    public final String getTaskName() {
-        return taskName;
-    }
-
-    public final String toURN() {
-        //TODO tkountis - Better naming than URN ?
-        return URN_BASE
-                + (address == null
-                        ? "-"
-                        : (address.getHost() + ":" + String.valueOf(address.getPort()))) + DESC_SEP
-                + String.valueOf(partitionId) + DESC_SEP
-                + schedulerName + DESC_SEP
-                + taskName;
-    }
-
-    @Override
-    public String toString() {
-        return "ScheduledTaskHandler{" + "address=" + address + ", partitionId=" + partitionId + ", schedulerName='"
-                + schedulerName + '\'' + ", taskName='" + taskName + '\'' + '}';
-    }
+    public abstract String toURN();
 
     public static ScheduledTaskHandler of(Address addr, String schedulerName, String taskName) {
-        return new ScheduledTaskHandler(addr, schedulerName, taskName);
+        return ScheduledTaskHandlerImpl.of(addr, schedulerName, taskName);
     }
 
     public static ScheduledTaskHandler of(int partitionId, String schedulerName, String taskName) {
-        return new ScheduledTaskHandler(partitionId, schedulerName, taskName);
+        return ScheduledTaskHandlerImpl.of(partitionId, schedulerName, taskName);
     }
 
     public static ScheduledTaskHandler of(String URN) {
-        if (!URN.startsWith(URN_BASE)) {
-            throw new IllegalArgumentException("Wrong URN format.");
-        }
-
-        // Get rid of URN base
-        URN = URN.replace(URN_BASE, "");
-
-        String[] parts = URN.split(String.valueOf(DESC_SEP));
-        if (parts.length != 4) {
-            throw new IllegalArgumentException("Wrong URN format.");
-        }
-
-        Address addr = null;
-        if (!"-".equals(parts[0])) {
-            String[] hostParts = parts[0].split(":");
-            try {
-                addr = new Address(hostParts[0], Integer.parseInt(hostParts[1]));
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException("Wrong URN format.", e);
-            }
-        }
-
-        int partitionId = Integer.parseInt(parts[1]);
-        String scheduler = parts[2];
-        String task = parts[3];
-
-        return addr != null
-                ? new ScheduledTaskHandler(addr, scheduler, task)
-                : new ScheduledTaskHandler(partitionId, scheduler, task);
+        return ScheduledTaskHandlerImpl.of(URN);
     }
 
 }

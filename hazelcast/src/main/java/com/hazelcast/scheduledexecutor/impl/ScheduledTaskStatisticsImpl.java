@@ -18,7 +18,6 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -29,32 +28,29 @@ public class ScheduledTaskStatisticsImpl
 
     private final static TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 
-    private final long createdAtMonotonic = System.nanoTime();
+    private volatile long runs;
 
-    private long runs;
+    private volatile long createdAt = System.nanoTime();
 
-    private long createdAt = Clock.currentTimeMillis();
+    private volatile long firstRunStart;
 
-    private long firstRunStart;
+    private volatile long lastRunStart;
 
-    private long lastRunStart;
+    private volatile long lastRunEnd;
 
-    private long lastRunEnd;
+    private volatile long lastIdleTime;
 
-    private long lastIdleTime;
+    private volatile long totalRunTime;
 
-    private long totalRunTime;
-
-    private long totalIdleTime;
+    private volatile long totalIdleTime;
 
     public ScheduledTaskStatisticsImpl() {
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long createdAt, long firstRunStartNanos, long lastRunStartNanos,
+    public ScheduledTaskStatisticsImpl(long runs, long firstRunStartNanos, long lastRunStartNanos,
                                        long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
                                        long totalIdleTimeNanos) {
         this.runs = runs;
-        this.createdAt = createdAt;
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
         this.lastRunEnd = lastRunEndNanos;
@@ -74,13 +70,13 @@ public class ScheduledTaskStatisticsImpl
     }
 
     @Override
-    public long getFirstRunStart(TimeUnit unit) {
-        return unit.convert(firstRunStart, MEASUREMENT_UNIT);
+    public long getFirstRunStart() {
+        return firstRunStart;
     }
 
     @Override
-    public long getLastRunStart(TimeUnit unit) {
-        return unit.convert(lastRunStart, MEASUREMENT_UNIT);
+    public long getLastRunStart() {
+        return lastRunStart;
     }
 
     @Override
@@ -150,7 +146,7 @@ public class ScheduledTaskStatisticsImpl
     public void onBeforeRun() {
         long now = System.nanoTime();
         this.lastRunStart = now;
-        this.lastIdleTime = now - (lastRunEnd != 0L ? lastRunEnd : createdAtMonotonic);
+        this.lastIdleTime = now - (lastRunEnd != 0L ? lastRunEnd : createdAt);
         this.totalIdleTime += lastIdleTime;
 
         if (this.firstRunStart == 0L) {
@@ -172,7 +168,7 @@ public class ScheduledTaskStatisticsImpl
 
     @Override
     public String toString() {
-        return "ScheduledTaskStatisticsImpl{" + "createdAtMonotonic=" + createdAtMonotonic + ", runs=" + runs + ", createdAt="
+        return "ScheduledTaskStatisticsImpl{ runs=" + runs + ", createdAt="
                 + createdAt + ", firstRunStart=" + firstRunStart + ", lastRunStart=" + lastRunStart + ", lastRunEnd=" + lastRunEnd
                 + ", lastIdleTime=" + lastIdleTime + ", totalRunTime=" + totalRunTime + ", totalIdleTime=" + totalIdleTime + '}';
     }

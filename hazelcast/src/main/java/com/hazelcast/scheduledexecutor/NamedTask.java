@@ -14,20 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduleexecutor;
-
-import java.util.concurrent.ScheduledFuture;
+package com.hazelcast.scheduledexecutor;
 
 /**
  * Created by Thomas Kountis.
  */
-public interface IScheduledFuture<V>
-        extends ScheduledFuture<V> {
+public interface NamedTask {
 
-    ScheduledTaskHandler getHandler();
-
-    ScheduledTaskStatistics getStats();
-
-    void destroy();
+    String getName();
 
 }

@@ -19,6 +19,7 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -48,7 +49,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by Thomas Kountis.
  */
-public class ScheduledFutureProxy<V>
+public final class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>,
                    IdentifiedDataSerializable, HazelcastInstanceAware,
                    PartitionLostListener/*, MembershipListener*/ {
@@ -87,7 +88,8 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new GetStatisticsOperation(handler);
-        return this.<ScheduledTaskStatistics>invokeOnPartition(op).join();
+
+        return this.<ScheduledTaskStatistics>invoke(op).join();
     }
 
     @Override
@@ -96,7 +98,7 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new GetDelayOperation(handler, unit);
-        return this.<Long>invokeOnPartition(op).join();
+        return this.<Long>invoke(op).join();
     }
 
     @Override
@@ -105,7 +107,7 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new CompareToOperation(handler, o);
-        return this.<Integer>invokeOnPartition(op).join();
+        return this.<Integer>invoke(op).join();
     }
 
     @Override
@@ -114,7 +116,7 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
-        return this.<Boolean>invokeOnPartition(op).join();
+        return this.<Boolean>invoke(op).join();
     }
 
     @Override
@@ -123,7 +125,7 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new IsCanceledOperation(handler);
-        return this.<Boolean>invokeOnPartition(op).join();
+        return this.<Boolean>invoke(op).join();
     }
 
     @Override
@@ -132,7 +134,7 @@ public class ScheduledFutureProxy<V>
         checkAccessibleHandler();
 
         Operation op = new IsDoneOperation(handler);
-        return this.<Boolean>invokeOnPartition(op).join();
+        return this.<Boolean>invoke(op).join();
     }
 
     @Override
@@ -140,8 +142,8 @@ public class ScheduledFutureProxy<V>
             throws InterruptedException, ExecutionException {
         checkAccessiblePartition();
         checkAccessibleHandler();
-        Operation op = new GetResultOperation<V>(handler, 0, TimeUnit.NANOSECONDS);
-        return this.<V>invokeOnPartition(op).join();
+        Operation op = new GetResultOperation<V>(handler);
+        return this.<V>invoke(op).join();
     }
 
     @Override
@@ -149,8 +151,8 @@ public class ScheduledFutureProxy<V>
             throws InterruptedException, ExecutionException, TimeoutException {
         checkAccessiblePartition();
         checkAccessibleHandler();
-        Operation op = new GetResultOperation<V>(handler, timeout, unit);
-        return this.<V>invokeOnPartition(op).get(timeout, unit);
+        Operation op = new GetResultOperation<V>(handler);
+        return this.<V>invoke(op).get(timeout, unit);
     }
 
     @Override
@@ -183,7 +185,7 @@ public class ScheduledFutureProxy<V>
         unRegisterPartitionListenerIfExists();
 
         Operation op = new DestroyTaskOperation(handler);
-        invokeOnPartition(op);
+        invoke(op);
 
         handler = null;
     }
@@ -220,11 +222,28 @@ public class ScheduledFutureProxy<V>
         }
     }
 
+    private <V> InternalCompletableFuture<V> invoke(Operation op) {
+        if (handler.isAssignedToPartition()) {
+            op.setPartitionId(handler.getPartitionId());
+            return invokeOnPartition(op);
+        } else {
+            return invokeOnAddress(op, handler.getAddress());
+        }
+    }
+
     private <V> InternalCompletableFuture<V> invokeOnPartition(Operation op) {
         OperationService opService = ((HazelcastInstanceImpl) instance).node
                 .getNodeEngine()
                 .getOperationService();
 
         return opService.invokeOnPartition(op);
+    }
+
+    private <V> InternalCompletableFuture<V> invokeOnAddress(Operation op, Address address) {
+        OperationService opService = ((HazelcastInstanceImpl) instance).node
+                .getNodeEngine()
+                .getOperationService();
+
+        return opService.invokeOnTarget(op.getServiceName(), op, address);
     }
 }

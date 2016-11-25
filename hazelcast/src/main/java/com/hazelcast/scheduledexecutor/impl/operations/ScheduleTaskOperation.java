@@ -49,7 +49,6 @@ public class ScheduleTaskOperation
     @Override
     public void run()
             throws Exception {
-        System.err.println("Run: " + toString());
         getContainer().schedule((TaskDefinition) definition);
     }
 
@@ -59,12 +58,13 @@ public class ScheduleTaskOperation
     }
 
     @Override
-    public Operation getBackupOperation() {
+    public boolean shouldBackup() {
         boolean isMemberOperation = getPartitionId() == -1;
-        if (isMemberOperation) {
-            return null;
-        }
+        return !isMemberOperation;
+    }
 
+    @Override
+    public Operation getBackupOperation() {
         return new ScheduleTaskBackupOperation(schedulerName, (TaskDefinition) definition);
     }
 

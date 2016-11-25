@@ -14,70 +14,67 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduleexecutor.impl.operations;
+package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.scheduleexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorWaitNotifyKey;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * Created by Thomas Kountis.
  */
-public class SyncStateOperation
-        extends AbstractSchedulerOperation {
+public class ResultReadyNotifyOperation<V>
+        extends AbstractSchedulerOperation implements Notifier {
 
-    private String taskName;
+    private ScheduledTaskHandler handler;
 
-    private Map state;
-
-    public SyncStateOperation() {
+    public ResultReadyNotifyOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state) {
-        super(schedulerName);
-        this.taskName = taskName;
-        this.state = state;
+    public ResultReadyNotifyOperation(ScheduledTaskHandler handler) {
+        super(handler.getSchedulerName());
+        this.handler = handler;
+        setPartitionId(handler.getPartitionId());
     }
 
     @Override
     public void run()
             throws Exception {
-        getContainer().syncState(taskName, state);
+        // Ignore - Plain Notifier OP
+    }
+
+    @Override
+    public boolean shouldNotify() {
+        return true;
+    }
+
+    @Override
+    public WaitNotifyKey getNotifiedKey() {
+        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toURN());
     }
 
     @Override
     public int getId() {
-        return ScheduledExecutorDataSerializerHook.SYNC_STATE_OP;
+        return ScheduledExecutorDataSerializerHook.PUBLISH_RESULT;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(taskName);
-        out.writeInt(state.size());
-        Iterator it = state.keySet().iterator();
-        while (it.hasNext()) {
-            Object key = it.next();
-            out.writeObject(key);
-            out.writeObject(state.get(key));
-        }
+        out.writeUTF(handler.toURN());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in)
             throws IOException {
         super.readInternal(in);
-        this.taskName = in.readUTF();
-        int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
-        for (int i = 0; i < stateSize; i++) {
-            this.state.put(in.readObject(), in.readObject());
-        }
+        this.handler = ScheduledTaskHandler.of(in.readUTF());
     }
 }

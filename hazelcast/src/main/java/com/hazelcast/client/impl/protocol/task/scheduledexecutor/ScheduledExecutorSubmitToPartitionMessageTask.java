@@ -38,7 +38,6 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        System.err.println("Partition ID: " + getPartitionId());
         Operation op = new ScheduleTaskOperation(parameters.schedulerName, parameters.taskDefinition);
         op.setPartitionId(getPartitionId());
         return op;

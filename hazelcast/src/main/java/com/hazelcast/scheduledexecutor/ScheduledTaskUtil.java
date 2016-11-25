@@ -16,12 +16,23 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.scheduledexecutor.impl.NamedTaskDecorator;
+import com.hazelcast.spi.annotation.Beta;
+
+import java.util.concurrent.Callable;
+
 /**
  * Created by Thomas Kountis.
  */
-public interface IdentifiedRunnable<V>
-        extends Runnable {
+@Beta
+public class ScheduledTaskUtil {
 
-    String getName();
+    public static Runnable named(final String name, final Runnable runnable) {
+        return NamedTaskDecorator.named(name, runnable);
+    }
+
+    public static <V> Callable<V> named(final String name, final Callable<V> callable) {
+        return NamedTaskDecorator.named(name, callable);
+    }
 
 }

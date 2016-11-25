@@ -31,78 +31,39 @@ public interface IScheduledExecutorService extends DistributedObject {
 
     IScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-    IScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit);
-
     <V> IScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit);
-
-    <V> IScheduledFuture<V> schedule(String name, Callable<V> command, long delay, TimeUnit unit);
 
     IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
                                                long period, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay,
-                                               long period, TimeUnit unit);
-
     IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnMember(String name, Runnable command, Member member, long delay, TimeUnit unit);
 
     <V> IScheduledFuture<V> scheduleOnMember(Callable<V> command, Member member, long delay, TimeUnit unit);
 
-    <V> IScheduledFuture<V> scheduleOnMember(String name, Callable<V> command, Member member, long delay, TimeUnit unit);
-
     IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnMemberWithRepetition(String name, Runnable command, Member member, long initialDelay, long period, TimeUnit unit);
 
     IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object Key, long delay, TimeUnit unit);
 
-    IScheduledFuture<?> scheduleOnKeyOwner(String name, Runnable command, Object Key, long delay, TimeUnit unit);
-
     <V> IScheduledFuture<V> scheduleOnKeyOwner(Callable<V> command, Object Key, long delay, TimeUnit unit);
 
-    <V> IScheduledFuture<V> scheduleOnKeyOwner(String name, Callable<V> command, Object Key, long delay, TimeUnit unit);
-
     IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
-
-    IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(String name, Runnable command, Object key, long initialDelay, long period, TimeUnit unit);
 
     Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit);
 
     <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay, TimeUnit unit);
 
-    <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(String name, Callable<V> command, long delay, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(String name, Runnable command, long delay, TimeUnit unit);
-
     Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
-
-    Map<Member, IScheduledFuture> scheduleOnMembers(Runnable command, Collection<Member> members, long delay, TimeUnit unit);
-
-    Map<Member, IScheduledFuture> scheduleOnMembers(String name, Runnable command, Collection<Member> members, long delay, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnMembers(Runnable command, Collection<Member> members, long delay, TimeUnit unit);
 
     <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(Callable<V> command, Collection<Member> members, long delay, TimeUnit unit);
 
-    <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(String name, Callable<V> command, Collection<Member> members, long delay, TimeUnit unit);
-
     Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
-
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(String name, Runnable command, Collection<Member> members, long initialDelay, long period, TimeUnit unit);
 
     <V> IScheduledFuture<V> getScheduled(ScheduledTaskHandler handler);
 
     Map<Member, List<IScheduledFuture<?>>> getAllScheduled();
 
     void shutdown();
-
-    List<IdentifiedRunnable> shutdownNow();
-
-    boolean isShutdown();
-
-    boolean isTerminated();
-
-    boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException;
 
 }

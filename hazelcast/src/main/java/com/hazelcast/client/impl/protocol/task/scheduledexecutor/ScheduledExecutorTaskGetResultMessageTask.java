@@ -31,6 +31,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class ScheduledExecutorTaskGetResultMessageTask
         extends AbstractInvocationMessageTask<ScheduledExecutorGetResultTimeoutCodec.RequestParameters> {
@@ -51,9 +52,10 @@ public class ScheduledExecutorTaskGetResultMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Operation op = new GetResultOperation(parameters.handler, parameters.timeout, parameters.timeUnit);
+        Operation op = new GetResultOperation(parameters.handler);
         op.setPartitionId(getPartitionId());
         op.setCallerUuid(endpoint.getUuid());
+        op.setWaitTimeout(TimeUnit.MILLISECONDS.convert(parameters.timeout, parameters.timeUnit));
         return op;
     }
 

@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduleexecutor.impl;
+package com.hazelcast.scheduledexecutor;
 
-import com.hazelcast.scheduleexecutor.ScheduledTaskStatistics;
+import java.util.Map;
 
 /**
  * Created by Thomas Kountis.
  */
-public interface AmendableScheduledTaskStatistics extends ScheduledTaskStatistics {
+public interface StatefulTask<K, V> {
 
-    void onBeforeRun();
+    void saveState(Map<K, V> state);
 
-    void onAfterRun();
+    void loadState(Map<K, V> state);
+
 }

@@ -26,6 +26,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Created by Thomas Kountis.
@@ -56,11 +57,17 @@ public abstract class AbstractSchedulerOperation
         return ScheduledExecutorDataSerializerHook.F_ID;
     }
 
-    //TODO tkountis - Check if shutdown before any OP
-
     public ScheduledExecutorContainer getContainer() {
+        checkNotShutdown();
         DistributedScheduledExecutorService service = getService();
         return service.getPartition(getPartitionId()).getOrCreateContainer(schedulerName);
+    }
+
+    private void checkNotShutdown() {
+        DistributedScheduledExecutorService service = getService();
+        if (service.isShutdown(getSchedulerName())) {
+            throw new RejectedExecutionException("Executor is shut down.");
+        }
     }
 
     @Override

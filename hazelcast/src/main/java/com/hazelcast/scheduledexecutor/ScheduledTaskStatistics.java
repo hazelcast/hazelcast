@@ -29,9 +29,9 @@ public interface ScheduledTaskStatistics extends IdentifiedDataSerializable {
 
     long getCreatedAt();
 
-    long getFirstRunStart(TimeUnit unit);
+    long getFirstRunStart();
 
-    long getLastRunStart(TimeUnit unit);
+    long getLastRunStart();
 
     long getLastRunEnd(TimeUnit unit);
 
