@@ -31,7 +31,7 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
     @Ignore("needs 10G of heap to run")
     public void doubleAvg_10millionValues_1node_primitiveValue() {
         IMap<Long, Double> map = getMapWithNodeCount(1);
-        //  map.addIndex("__VALUE", true);
+        //map.addIndex("__VALUE", true);
 
         System.err.println("Initialising");
 
@@ -73,14 +73,13 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
             System.err.println("\nFinished avg in " + (stop - start) + " millis avg=" + avg);
             System.err.println("------------------------------------------");
         }
-
     }
 
     @Test
     @Ignore("needs 10G of heap to run")
     public void doubleAvg_10millionValues_1node_objectValue() {
         IMap<Long, Person> map = getMapWithNodeCount(1);
-        // map.addIndex("age", true);
+        //map.addIndex("age", true);
 
         System.err.println("Initialising");
 
@@ -114,7 +113,6 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
             System.gc();
         }
 
-
         for (int i = 0; i < 10; i++) {
             System.err.println("Executing aggregation");
             long start = System.currentTimeMillis();
@@ -123,7 +121,6 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
             System.err.println("\nFinished avg in " + (stop - start) + " millis avg=" + avg);
             System.err.println("------------------------------------------");
         }
-
     }
 
     private <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
@@ -133,9 +130,8 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
-
         Config config = new Config();
-        // config.setProperty("hazelcast.partition.count", "3");
+        //config.setProperty("hazelcast.partition.count", "3");
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("aggr");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -154,7 +150,6 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
         public double age;
 
         public Person() {
-
         }
 
         public Person(double age) {
@@ -171,6 +166,4 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
             age = in.readDouble();
         }
     }
-
-
 }

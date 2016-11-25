@@ -36,7 +36,6 @@ public class CountAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() throws Exception {
-
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         long expectation = values.size();
 

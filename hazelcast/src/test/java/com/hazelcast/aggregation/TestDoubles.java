@@ -11,7 +11,11 @@ import java.util.List;
 import java.util.Map;
 
 final class TestDoubles {
-    public static final int NUMBER_OF_SAMPLE_VALUES = 10000;
+
+    private static final int NUMBER_OF_SAMPLE_VALUES = 10000;
+
+    private TestDoubles() {
+    }
 
     static <T> Map.Entry<T, T> createEntryWithValue(T value) {
         return new MapEntrySimple<T, T>(value, value);
@@ -70,16 +74,12 @@ final class TestDoubles {
         });
     }
 
-    public static List<String> sampleStrings() {
+    static List<String> sampleStrings() {
         String loremIpsum = "Lorem ipsum dolor sit amet consectetur adipiscing elit";
         return Arrays.asList(loremIpsum.split(" "));
     }
 
-    private TestDoubles() {
-        // Utility class
-    }
-
-    public static Collection<Float> sampleFloats() {
+    static Collection<Float> sampleFloats() {
         return sampleValues(new RandomNumberSupplier<Float>() {
             @Override
             protected Float mapFrom(Number value) {

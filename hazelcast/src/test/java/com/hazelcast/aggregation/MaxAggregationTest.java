@@ -41,11 +41,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalMax() throws Exception {
-
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         Collections.sort(values);
 
-        BigDecimal expectation = values.get(values.size()-1);
+        BigDecimal expectation = values.get(values.size() - 1);
 
         Aggregator<BigDecimal, BigDecimal, BigDecimal> aggregation = Aggregators.bigDecimalMax();
         for (BigDecimal value : values) {
@@ -58,11 +57,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerMax() throws Exception {
-
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
         Collections.sort(values);
 
-        BigInteger expectation = values.get(values.size()-1);
+        BigInteger expectation = values.get(values.size() - 1);
 
         Aggregator<BigInteger, BigInteger, BigInteger> aggregation = Aggregators.bigIntegerMax();
         for (BigInteger value : values) {
@@ -75,11 +73,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleMax() throws Exception {
-
         List<Double> values = TestDoubles.sampleDoubles();
         Collections.sort(values);
 
-        double expectation = values.get(values.size()-1);
+        double expectation = values.get(values.size() - 1);
 
         Aggregator<Double, Double, Double> aggregation = Aggregators.doubleMax();
         for (Double value : values) {
@@ -92,11 +89,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerMax() throws Exception {
-
         List<Integer> values = TestDoubles.sampleIntegers();
         Collections.sort(values);
 
-        long expectation = values.get(values.size()-1);
+        long expectation = values.get(values.size() - 1);
 
         Aggregator<Integer, Integer, Integer> aggregation = Aggregators.integerMax();
         for (Integer value : values) {
@@ -109,11 +105,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongMax() throws Exception {
-
         List<Long> values = TestDoubles.sampleLongs();
         Collections.sort(values);
 
-        long expectation = values.get(values.size()-1);
+        long expectation = values.get(values.size() - 1);
 
         Aggregator<Long, Long, Long> aggregation = Aggregators.longMax();
         for (Long value : values) {
@@ -126,11 +121,10 @@ public class MaxAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testComparableMax() throws Exception {
-
         List<String> values = TestDoubles.sampleStrings();
         Collections.sort(values);
 
-        String expectation = values.get(values.size()-1);
+        String expectation = values.get(values.size() - 1);
 
         Aggregator<String, String, String> aggregation = Aggregators.comparableMax();
         for (String value : values) {

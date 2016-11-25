@@ -16,10 +16,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import static java.util.Collections.singletonList;
 
 @Ignore("Run manually only")
 public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport {
@@ -28,21 +29,16 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
     private static final String MAP_NAME = "articles";
 
-    public static void main(String[] args)
-            throws Exception {
-
-        // Prepare Hazelcast cluster
+    public static void main(String[] args) throws Exception {
         HazelcastInstance hazelcastInstance = buildCluster(3);
 
         try {
-            // Read data
             System.out.println("Filling map...");
             for (int i = 0; i < 20 * 8; i++) {
-                //  fillMapWithDataEachLineNewEntry(hazelcastInstance);
+                //fillMapWithDataEachLineNewEntry(hazelcastInstance);
                 fillMapWithData(hazelcastInstance);
             }
             IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
-
 
             System.out.println("Garbage collecting...");
             for (int i = 0; i < 10; i++) {
@@ -60,20 +56,17 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
                 System.err.println("---------------------------------------------");
                 System.gc();
             }
-
-
         } finally {
-            // Shutdown cluster
             Hazelcast.shutdownAll();
         }
     }
 
-    public static HazelcastInstance buildCluster(int memberCount) {
+    private static HazelcastInstance buildCluster(int memberCount) {
         Config config = new Config();
         NetworkConfig networkConfig = config.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(false);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(true);
-        networkConfig.getJoin().getTcpIpConfig().setMembers(Arrays.asList(new String[]{"127.0.0.1"}));
+        networkConfig.getJoin().getTcpIpConfig().setMembers(singletonList("127.0.0.1"));
 
         MapConfig mapConfig = new MapConfig();
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -85,7 +78,6 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         config.setProperty("hazelcast.aggregation.accumulation.parallel.evaluation", "true");
         config.setProperty("hazelcast.logging.type", "log4j");
 
-
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[memberCount];
         for (int i = 0; i < memberCount; i++) {
             hazelcastInstances[i] = Hazelcast.newHazelcastInstance(config);
@@ -93,8 +85,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         return hazelcastInstances[0];
     }
 
-    private static void fillMapWithData(HazelcastInstance hazelcastInstance)
-            throws Exception {
+    private static void fillMapWithData(HazelcastInstance hazelcastInstance) throws Exception {
 
         IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
         for (String file : DATA_RESOURCES_TO_LOAD) {
@@ -113,8 +104,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         }
     }
 
-    private static void fillMapWithDataEachLineNewEntry(HazelcastInstance hazelcastInstance)
-            throws Exception {
+    private static void fillMapWithDataEachLineNewEntry(HazelcastInstance hazelcastInstance) throws Exception {
 
         IMap<String, String> map = hazelcastInstance.getMap(MAP_NAME);
         for (String file : DATA_RESOURCES_TO_LOAD) {
@@ -123,8 +113,8 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
             int batchSize = 10000;
             int batchSizeCount = 0;
-            Map batch = new HashMap(batchSize);
-            String line = null;
+            Map<String, String> batch = new HashMap<String, String>(batchSize);
+            String line;
             while ((line = reader.readLine()) != null) {
                 batch.put(UuidUtil.newSecureUuidString(), line);
                 batchSizeCount++;
@@ -132,7 +122,6 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
                     map.putAll(batch);
                     batchSizeCount = 0;
                     batch.clear();
-
                 }
             }
 
@@ -146,8 +135,8 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         }
     }
 
-
     private static class MutableInt implements Serializable {
+
         private int value = 0;
 
         @Override
@@ -156,7 +145,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         }
     }
 
-    public static String cleanWord(String word) {
+    private static String cleanWord(String word) {
         return word.replaceAll("[^A-Za-z0-9]", "");
     }
 
@@ -164,7 +153,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
         Map<String, MutableInt> result = new HashMap<String, MutableInt>(1000);
 
-        public void accumulate(String value, int times) {
+        void accumulate(String value, int times) {
             StringTokenizer tokenizer = new StringTokenizer(value);
 
             while (tokenizer.hasMoreTokens()) {
@@ -192,7 +181,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
             }
         }
 
-        public void doCombine(Map.Entry<String, MutableInt> toCombine) {
+        private void doCombine(Map.Entry<String, MutableInt> toCombine) {
             String word = toCombine.getKey();
             MutableInt count = result.get(word);
             if (count == null) {
@@ -206,7 +195,5 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         public Map<String, MutableInt> aggregate() {
             return result;
         }
-
     }
-
 }

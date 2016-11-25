@@ -38,7 +38,6 @@ public class DistinctAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() throws Exception {
-
         List<String> values = repeatTimes(3, TestDoubles.sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 

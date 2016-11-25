@@ -41,7 +41,6 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalAvg() throws Exception {
-
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values);
         expectation = expectation.divide(BigDecimal.valueOf(values.size()));
@@ -57,7 +56,6 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerAvg() throws Exception {
-
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
 
         BigDecimal expectation = new BigDecimal(Sums.sumBigIntegers(values))
@@ -74,7 +72,6 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleAvg() throws Exception {
-
         List<Double> values = TestDoubles.sampleDoubles();
 
         double expectation = Sums.sumDoubles(values) / (double) values.size();
@@ -90,7 +87,6 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerAvg() throws Exception {
-
         List<Integer> values = TestDoubles.sampleIntegers();
 
         double expectation = (double) Sums.sumIntegers(values) / (double) values.size();
@@ -106,7 +102,6 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongAvg() throws Exception {
-
         List<Long> values = TestDoubles.sampleLongs();
 
         double expectation = (double) Sums.sumLongs(values) / (double) values.size();
@@ -122,13 +117,12 @@ public class AvgAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testGenericAvg() throws Exception {
-
         List<Number> values = new ArrayList<Number>();
         values.addAll(TestDoubles.sampleLongs());
         values.addAll(TestDoubles.sampleDoubles());
         values.addAll(TestDoubles.sampleIntegers());
 
-        double expectation = (double) Sums.sumFloatingPointNumbers(values) / (double) values.size();
+        double expectation = Sums.sumFloatingPointNumbers(values) / (double) values.size();
 
         Aggregator<Double, Number, Number> aggregation = Aggregators.numberAvg();
         for (Number value : values) {
@@ -138,5 +132,4 @@ public class AvgAggregationTest {
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
-
 }

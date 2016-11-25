@@ -41,7 +41,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalSum() throws Exception {
-
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values);
 
@@ -56,7 +55,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerSum() throws Exception {
-
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
         BigInteger expectation = Sums.sumBigIntegers(values);
 
@@ -71,7 +69,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleSum() throws Exception {
-
         List<Double> values = TestDoubles.sampleDoubles();
         double expectation = Sums.sumDoubles(values);
 
@@ -86,7 +83,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerSum() throws Exception {
-
         List<Integer> values = TestDoubles.sampleIntegers();
         long expectation = Sums.sumIntegers(values);
 
@@ -101,7 +97,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongSum() throws Exception {
-
         List<Long> values = TestDoubles.sampleLongs();
         long expectation = Sums.sumLongs(values);
 
@@ -116,7 +111,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFixedPointSum() throws Exception {
-
         List<Number> values = new ArrayList<Number>();
         values.addAll(TestDoubles.sampleLongs());
         values.addAll(TestDoubles.sampleIntegers());
@@ -134,7 +128,6 @@ public class SumAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFloatingPointSum() throws Exception {
-
         List<Number> values = new ArrayList<Number>();
         values.addAll(TestDoubles.sampleDoubles());
         values.addAll(TestDoubles.sampleFloats());

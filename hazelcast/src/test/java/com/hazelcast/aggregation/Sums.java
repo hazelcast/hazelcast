@@ -5,8 +5,8 @@ import java.math.BigInteger;
 import java.util.List;
 
 final class Sums {
+
     private Sums() {
-        // Utility class
     }
 
     static BigDecimal sumBigDecimals(List<BigDecimal> values) {
@@ -49,7 +49,7 @@ final class Sums {
         return sum;
     }
 
-    public static double sumFloatingPointNumbers(List<? extends Number> values) {
+    static double sumFloatingPointNumbers(List<? extends Number> values) {
         double sum = 0L;
         for (Number value : values) {
             sum += value.doubleValue();
@@ -57,7 +57,7 @@ final class Sums {
         return sum;
     }
 
-    public static long sumFixedPointNumbers(List<? extends Number> values) {
+    static long sumFixedPointNumbers(List<? extends Number> values) {
         long sum = 0L;
         for (Number value : values) {
             sum += value.longValue();

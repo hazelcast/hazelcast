@@ -41,7 +41,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalMin() throws Exception {
-
         List<BigDecimal> values = TestDoubles.sampleBigDecimals();
         Collections.sort(values);
 
@@ -58,7 +57,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerMin() throws Exception {
-
         List<BigInteger> values = TestDoubles.sampleBigIntegers();
         Collections.sort(values);
 
@@ -75,7 +73,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleMin() throws Exception {
-
         List<Double> values = TestDoubles.sampleDoubles();
         Collections.sort(values);
 
@@ -92,7 +89,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerMin() throws Exception {
-
         List<Integer> values = TestDoubles.sampleIntegers();
         Collections.sort(values);
 
@@ -109,7 +105,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongMin() throws Exception {
-
         List<Long> values = TestDoubles.sampleLongs();
         Collections.sort(values);
 
@@ -126,7 +121,6 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testComparableMin() throws Exception {
-
         List<String> values = TestDoubles.sampleStrings();
         Collections.sort(values);
 
