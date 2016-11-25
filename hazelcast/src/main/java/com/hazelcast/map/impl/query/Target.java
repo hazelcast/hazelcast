@@ -27,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Target for a query.
- * <p>
+ *
  * Possible options:
  * - all nodes
  * - local node only
@@ -68,8 +68,7 @@ public class Target implements IdentifiedDataSerializable {
         return target.equals(TargetFlag.PARTITION_OWNER);
     }
 
-
-    private enum TargetFlag {
+    enum TargetFlag {
         LOCAL_NODE,
         ALL_NODES,
         PARTITION_OWNER
@@ -95,7 +94,6 @@ public class Target implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         this.partitionId = in.readInt();
         this.target = TargetFlag.valueOf(in.readUTF());
-
     }
 
     public static TargetBuilder of() {
@@ -103,6 +101,7 @@ public class Target implements IdentifiedDataSerializable {
     }
 
     public static final class TargetBuilder {
+
         private TargetFlag target;
         private Integer partitionId;
 
@@ -120,8 +119,8 @@ public class Target implements IdentifiedDataSerializable {
         }
 
         public TargetBuilder partitionOwner(int partitionId) {
-            this.partitionId = partitionId;
             this.target = TargetFlag.PARTITION_OWNER;
+            this.partitionId = partitionId;
             return this;
         }
 
