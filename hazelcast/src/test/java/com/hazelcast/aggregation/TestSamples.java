@@ -99,12 +99,67 @@ final class TestSamples {
         return personList;
     }
 
+    static List<NumberContainer> sampleNumberContainers(NumberContainer.ValueType valueType) {
+        List<NumberContainer> containerList = new ArrayList<NumberContainer>(NUMBER_OF_SAMPLE_VALUES);
+        switch (valueType) {
+            case INTEGER:
+                for (int intValue : sampleIntegers()) {
+                    containerList.add(new NumberContainer(intValue));
+                }
+                break;
+            case LONG:
+                for (long longValue : sampleLongs()) {
+                    containerList.add(new NumberContainer(longValue));
+                }
+                break;
+            case FLOAT:
+                for (float floatValue : sampleFloats()) {
+                    containerList.add(new NumberContainer(floatValue));
+                }
+                break;
+            case DOUBLE:
+                for (double doubleValue : sampleDoubles()) {
+                    containerList.add(new NumberContainer(doubleValue));
+                }
+                break;
+            case BIG_DECIMAL:
+                for (BigDecimal bigDecimal : sampleBigDecimals()) {
+                    containerList.add(new NumberContainer(bigDecimal));
+                }
+                break;
+            case BIG_INTEGER:
+                for (BigInteger bigInteger : sampleBigIntegers()) {
+                    containerList.add(new NumberContainer(bigInteger));
+                }
+                break;
+            case NUMBER:
+                new ArrayList<NumberContainer>();
+                for (Long longValue : sampleLongs()) {
+                    createNumberContainer(containerList, longValue);
+                }
+                for (Double doubleValue : sampleDoubles()) {
+                    createNumberContainer(containerList, doubleValue);
+                }
+                for (Integer intValue : sampleIntegers()) {
+                    createNumberContainer(containerList, intValue);
+                }
+                break;
+        }
+        return containerList;
+    }
+
     private static <T extends Number> List<T> sampleValues(RandomNumberSupplier<T> randomNumberSupplier) {
         List<T> numbers = new ArrayList<T>();
         for (int i = 0; i < NUMBER_OF_SAMPLE_VALUES; i++) {
             numbers.add(randomNumberSupplier.get());
         }
         return numbers;
+    }
+
+    private static void createNumberContainer(List<NumberContainer> values, Number value) {
+        NumberContainer container = new NumberContainer();
+        container.numberValue = value;
+        values.add(container);
     }
 
     private static final class ExtractableEntry<K, V> extends QueryableEntry<K, V> {
