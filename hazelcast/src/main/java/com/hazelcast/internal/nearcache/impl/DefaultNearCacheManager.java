@@ -17,15 +17,24 @@
 package com.hazelcast.internal.nearcache.impl;
 
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DefaultNearCacheManager implements NearCacheManager {
 
@@ -33,8 +42,11 @@ public class DefaultNearCacheManager implements NearCacheManager {
     protected final ExecutionService executionService;
     protected final ClassLoader classLoader;
 
+    private final Queue<ScheduledFuture> preloadTaskFutures = new ConcurrentLinkedQueue<ScheduledFuture>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final Object mutex = new Object();
+
+    private volatile ScheduledFuture storageTaskFuture;
 
     public DefaultNearCacheManager(SerializationService ss, ExecutionService es, ClassLoader classLoader) {
         assert ss != null;
@@ -46,12 +58,21 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <K, V> NearCache<K, V> getNearCache(String name) {
         return nearCacheMap.get(name);
     }
 
     @Override
     public <K, V> NearCache<K, V> getOrCreateNearCache(String name, NearCacheConfig nearCacheConfig) {
+        return getOrCreateNearCache(name, nearCacheConfig, null);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public <K, V> NearCache<K, V> getOrCreateNearCache(String name,
+                                                       NearCacheConfig nearCacheConfig,
+                                                       DataStructureAdapter dataStructureAdapter) {
         NearCache<K, V> nearCache = nearCacheMap.get(name);
         if (nearCache == null) {
             synchronized (mutex) {
@@ -61,6 +82,11 @@ public class DefaultNearCacheManager implements NearCacheManager {
                     nearCache.initialize();
 
                     nearCacheMap.put(name, nearCache);
+
+                    if (nearCache.getPreloaderConfig().isEnabled()) {
+                        createAndSchedulePreloadTask(nearCache, dataStructureAdapter);
+                        createAndScheduleStorageTask();
+                    }
                 }
             }
         }
@@ -106,6 +132,88 @@ public class DefaultNearCacheManager implements NearCacheManager {
         for (NearCache nearCache : new HashSet<NearCache>(nearCacheMap.values())) {
             nearCacheMap.remove(nearCache.getName());
             nearCache.destroy();
+        }
+        for (ScheduledFuture preloadTaskFuture : preloadTaskFutures) {
+            preloadTaskFuture.cancel(true);
+        }
+
+        if (storageTaskFuture != null) {
+            storageTaskFuture.cancel(true);
+        }
+    }
+
+    private void createAndSchedulePreloadTask(NearCache nearCache, DataStructureAdapter adapter) {
+        if (adapter != null) {
+            PreloadTask preloadTask = new PreloadTask(nearCache, adapter);
+            ScheduledFuture<?> scheduledFuture = executionService.schedule(preloadTask, 3, SECONDS);
+            preloadTask.scheduledFuture = scheduledFuture;
+
+            preloadTaskFutures.add(scheduledFuture);
+        }
+    }
+
+    private void createAndScheduleStorageTask() {
+        if (storageTaskFuture == null) {
+            StorageTask storageTask = new StorageTask();
+            storageTaskFuture = executionService.scheduleWithRepetition(storageTask, 0, 1, SECONDS);
+        }
+    }
+
+    private class PreloadTask implements Runnable {
+
+        private final NearCache nearCache;
+        private final DataStructureAdapter adapter;
+
+        private volatile ScheduledFuture<?> scheduledFuture;
+
+        PreloadTask(NearCache nearCache, DataStructureAdapter adapter) {
+            this.nearCache = nearCache;
+            this.adapter = adapter;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public void run() {
+            nearCache.preload(adapter);
+            ScheduledFuture<?> future = scheduledFuture;
+            if (future != null) {
+                preloadTaskFutures.remove(future);
+            }
+        }
+    }
+
+    private class StorageTask implements Runnable {
+
+        private final long started = System.currentTimeMillis();
+
+        @Override
+        public void run() {
+            long now = System.currentTimeMillis();
+            for (NearCache nearCache : nearCacheMap.values()) {
+                if (!isScheduled(nearCache, now)) {
+                    continue;
+                }
+                nearCache.storeKeys();
+            }
+        }
+
+        private boolean isScheduled(NearCache nearCache, long now) {
+            NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
+            NearCachePreloaderConfig preloaderConfig = nearCache.getPreloaderConfig();
+            if (nearCacheStats.getLastPersistenceTime() == 0) {
+                // check initial delay seconds for first persistence
+                long runningSeconds = MILLISECONDS.toSeconds(now - started);
+                if (runningSeconds < preloaderConfig.getStoreInitialDelaySeconds()) {
+                    return false;
+                }
+            } else {
+                // check interval seconds for all other persistences
+                long elapsedSeconds = MILLISECONDS.toSeconds(now - nearCacheStats.getLastPersistenceTime());
+                if (elapsedSeconds < preloaderConfig.getStoreIntervalSeconds()) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

@@ -19,9 +19,13 @@ package com.hazelcast.internal.nearcache.impl.store;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheMaxSizeChecker;
+import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
@@ -31,9 +35,16 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
-    public BaseHeapNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+    private final NearCachePreloader<K> nearCachePreloader;
+
+    public BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
-        super(nearCacheConfig, serializationService, classLoader);
+            super(nearCacheConfig, serializationService, classLoader);
+
+        NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
+        this.nearCachePreloader = preloaderConfig.isEnabled()
+                ? new NearCachePreloader<K>(name, preloaderConfig, nearCacheStats, serializationService)
+                : null;
     }
 
     @Override
@@ -97,6 +108,21 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
                 remove(key);
                 onExpire(key, value);
             }
+        }
+    }
+
+    @Override
+    public void loadKeys(DataStructureAdapter<Data, ?> adapter) {
+        if (nearCachePreloader != null) {
+            nearCachePreloader.loadKeys(adapter);
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void storeKeys() {
+        if (nearCachePreloader != null) {
+            nearCachePreloader.storeKeys(records);
         }
     }
 }

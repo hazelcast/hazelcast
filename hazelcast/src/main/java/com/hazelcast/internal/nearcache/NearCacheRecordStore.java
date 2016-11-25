@@ -16,7 +16,9 @@
 
 package com.hazelcast.internal.nearcache;
 
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -100,4 +102,14 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * in {@link com.hazelcast.config.NearCacheConfig} regardless from the max-size policy.
      */
     void doEviction();
+
+    /**
+     * Loads the keys into the Near Cache.
+     */
+    void loadKeys(DataStructureAdapter<Data, ?> adapter);
+
+    /**
+     * Persists the key set of the Near Cache.
+     */
+    void storeKeys();
 }

@@ -73,4 +73,39 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return number of TTL and max-idle expirations of Near Cache entries owned by this member.
      */
     long getExpirations();
+
+    /**
+     * Returns the number of Near Cache key persistences (when the pre-load feature is enabled).
+     *
+     * @return the number of Near Cache key persistences
+     */
+    long getPersistenceCount();
+
+    /**
+     * Returns the timestamp of the last Near Cache key persistence (when the pre-load feature is enabled).
+     *
+     * @return the timestamp of the last Near Cache key persistence
+     */
+    long getLastPersistenceTime();
+
+    /**
+     * Returns the duration in milliseconds of the last Near Cache key persistence (when the pre-load feature is enabled).
+     *
+     * @return the duration of the last Near Cache key persistence (in milliseconds)
+     */
+    long getLastPersistenceDuration();
+
+    /**
+     * Returns the written bytes of the last Near Cache key persistence (when the pre-load feature is enabled).
+     *
+     * @return the written bytes of the last Near Cache key persistence
+     */
+    long getLastPersistenceWrittenBytes();
+
+    /**
+     * Returns the number of persisted keys of the last Near Cache key persistence (when the pre-load feature is enabled).
+     *
+     * @return the number of persisted keys of the last Near Cache key persistence
+     */
+    long getLastPersistenceKeyCount();
 }

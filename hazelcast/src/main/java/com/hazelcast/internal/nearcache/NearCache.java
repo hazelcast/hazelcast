@@ -17,7 +17,10 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
 /**
@@ -99,6 +102,13 @@ public interface NearCache<K, V> extends InitializingObject {
     InMemoryFormat getInMemoryFormat();
 
     /**
+     * Gets the {@link com.hazelcast.config.NearCachePreloaderConfig} of this Near Cache.
+     *
+     * @return the {@link NearCachePreloaderConfig} of this Near Cache
+     */
+    NearCachePreloaderConfig getPreloaderConfig();
+
+    /**
      * Get the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store.
      *
      * @return the {@link com.hazelcast.monitor.NearCacheStats} instance to monitor this store
@@ -119,4 +129,21 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return the count of stored records
      */
     int size();
+
+    /**
+     * Executes the Near Cache pre-loader on the given {@link DataStructureAdapter}.
+     */
+    void preload(DataStructureAdapter<Data, ?> adapter);
+
+    /**
+     * Stores the keys of the Near Cache.
+     */
+    void storeKeys();
+
+    /**
+     * Checks if the pre-loading of the Near Cache is done.
+     *
+     * @return {@code true} if the pre-loading is done, {@code false} otherwise.
+     */
+    boolean isPreloadDone();
 }

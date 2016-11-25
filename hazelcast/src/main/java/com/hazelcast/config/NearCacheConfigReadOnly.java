@@ -89,4 +89,14 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     public EvictionConfig getEvictionConfig() {
         return super.getEvictionConfig().getAsReadOnly();
     }
+
+    @Override
+    public NearCacheConfig setPreloaderConfig(NearCachePreloaderConfig preloaderConfig) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public NearCachePreloaderConfig getPreloaderConfig() {
+        return super.getPreloaderConfig().getAsReadOnly();
+    }
 }
