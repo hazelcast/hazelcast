@@ -28,6 +28,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
@@ -219,6 +220,7 @@ public class AvgAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testGenericAvg_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(NUMBER);
+        addValues(values, DOUBLE);
         double expectation = (Double) Sums.sumValueContainer(values, NUMBER) / (double) values.size();
 
         Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.numberAvg("numberValue");

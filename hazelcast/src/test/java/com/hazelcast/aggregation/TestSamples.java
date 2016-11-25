@@ -137,9 +137,6 @@ final class TestSamples {
                 for (Long longValue : sampleLongs()) {
                     createNumberContainer(containerList, longValue);
                 }
-                for (Double doubleValue : sampleDoubles()) {
-                    createNumberContainer(containerList, doubleValue);
-                }
                 for (Integer intValue : sampleIntegers()) {
                     createNumberContainer(containerList, intValue);
                 }
@@ -151,6 +148,21 @@ final class TestSamples {
                 break;
         }
         return containerList;
+    }
+
+    static void addValues(List<ValueContainer> containerList, ValueContainer.ValueType valueType) {
+        switch (valueType) {
+            case DOUBLE:
+                for (Double doubleValue : sampleDoubles()) {
+                    createNumberContainer(containerList, doubleValue);
+                }
+                break;
+            case BIG_INTEGER:
+                for (BigInteger bigInteger : sampleBigIntegers()) {
+                    createNumberContainer(containerList, bigInteger);
+                }
+                break;
+        }
     }
 
     private static <T extends Number> List<T> sampleValues(RandomNumberSupplier<T> randomNumberSupplier) {

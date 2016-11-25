@@ -28,13 +28,22 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
 import static com.hazelcast.aggregation.TestSamples.sampleBigIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleDoubles;
 import static com.hazelcast.aggregation.TestSamples.sampleFloats;
 import static com.hazelcast.aggregation.TestSamples.sampleIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleLongs;
+import static com.hazelcast.aggregation.TestSamples.sampleValueContainers;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -61,6 +70,20 @@ public class SumAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testBigDecimalSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(BIG_DECIMAL);
+        BigDecimal expectation = Sums.sumValueContainer(values, BIG_DECIMAL);
+
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> aggregation = Aggregators.bigDecimalSum("bigDecimal");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+        BigDecimal result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerSum() {
         List<BigInteger> values = sampleBigIntegers();
         BigInteger expectation = Sums.sumBigIntegers(values);
@@ -68,6 +91,20 @@ public class SumAggregationTest {
         Aggregator<BigInteger, BigInteger, BigInteger> aggregation = Aggregators.bigIntegerSum();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
+        }
+        BigInteger result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testBigIntegerSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(BIG_INTEGER);
+        BigInteger expectation = Sums.sumValueContainer(values, BIG_INTEGER);
+
+        Aggregator<BigInteger, ValueContainer, ValueContainer> aggregation = Aggregators.bigIntegerSum("bigInteger");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         BigInteger result = aggregation.aggregate();
 
@@ -89,6 +126,20 @@ public class SumAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testDoubleSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(DOUBLE);
+        double expectation = Sums.sumValueContainer(values, DOUBLE);
+
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.doubleSum("doubleValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+        double result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerSum() {
         List<Integer> values = sampleIntegers();
         long expectation = Sums.sumIntegers(values);
@@ -103,6 +154,20 @@ public class SumAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testIntegerSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(INTEGER);
+        long expectation = Sums.sumValueContainer(values, INTEGER);
+
+        Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.integerSum("intValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+        long result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongSum() {
         List<Long> values = sampleLongs();
         long expectation = Sums.sumLongs(values);
@@ -110,6 +175,20 @@ public class SumAggregationTest {
         Aggregator<Long, Long, Long> aggregation = Aggregators.longSum();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
+        }
+        long result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testLongSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(LONG);
+        long expectation = Sums.sumValueContainer(values, LONG);
+
+        Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.longSum("longValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         long result = aggregation.aggregate();
 
@@ -134,6 +213,21 @@ public class SumAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testFixedPointSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(NUMBER);
+        addValues(values, BIG_INTEGER);
+        double expectation = Sums.sumValueContainer(values, NUMBER);
+
+        Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.fixedPointSum("numberValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+        double result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFloatingPointSum() {
         List<Number> values = new ArrayList<Number>();
         values.addAll(sampleDoubles());
@@ -144,6 +238,21 @@ public class SumAggregationTest {
         Aggregator<Double, Number, Number> aggregation = Aggregators.floatingPointSum();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
+        }
+        double result = aggregation.aggregate();
+
+        assertThat(result, is(closeTo(expectation, ERROR)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testFloatingPointSum_withAttributePath() {
+        List<ValueContainer> values = sampleValueContainers(NUMBER);
+        addValues(values, DOUBLE);
+        double expectation = Sums.sumValueContainer(values, NUMBER);
+
+        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.floatingPointSum("numberValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
         }
         double result = aggregation.aggregate();
 
