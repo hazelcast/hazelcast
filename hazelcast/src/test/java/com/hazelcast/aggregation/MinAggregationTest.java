@@ -28,6 +28,13 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
+import static com.hazelcast.aggregation.TestSamples.sampleBigIntegers;
+import static com.hazelcast.aggregation.TestSamples.sampleDoubles;
+import static com.hazelcast.aggregation.TestSamples.sampleIntegers;
+import static com.hazelcast.aggregation.TestSamples.sampleLongs;
+import static com.hazelcast.aggregation.TestSamples.sampleStrings;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -41,14 +48,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigDecimalMin() {
-        List<BigDecimal> values = TestDoubles.sampleBigDecimals();
+        List<BigDecimal> values = sampleBigDecimals();
         Collections.sort(values);
 
         BigDecimal expectation = values.get(0);
 
         Aggregator<BigDecimal, BigDecimal, BigDecimal> aggregation = Aggregators.bigDecimalMin();
         for (BigDecimal value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         BigDecimal result = aggregation.aggregate();
 
@@ -57,14 +64,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerMin() {
-        List<BigInteger> values = TestDoubles.sampleBigIntegers();
+        List<BigInteger> values = sampleBigIntegers();
         Collections.sort(values);
 
         BigInteger expectation = values.get(0);
 
         Aggregator<BigInteger, BigInteger, BigInteger> aggregation = Aggregators.bigIntegerMin();
         for (BigInteger value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         BigInteger result = aggregation.aggregate();
 
@@ -73,14 +80,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleMin() {
-        List<Double> values = TestDoubles.sampleDoubles();
+        List<Double> values = sampleDoubles();
         Collections.sort(values);
 
         double expectation = values.get(0);
 
         Aggregator<Double, Double, Double> aggregation = Aggregators.doubleMin();
         for (Double value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         Double result = aggregation.aggregate();
 
@@ -89,14 +96,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerMin() {
-        List<Integer> values = TestDoubles.sampleIntegers();
+        List<Integer> values = sampleIntegers();
         Collections.sort(values);
 
         long expectation = values.get(0);
 
         Aggregator<Integer, Integer, Integer> aggregation = Aggregators.integerMin();
         for (Integer value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         long result = aggregation.aggregate();
 
@@ -105,14 +112,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongMin() {
-        List<Long> values = TestDoubles.sampleLongs();
+        List<Long> values = sampleLongs();
         Collections.sort(values);
 
         long expectation = values.get(0);
 
         Aggregator<Long, Long, Long> aggregation = Aggregators.longMin();
         for (Long value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         long result = aggregation.aggregate();
 
@@ -121,14 +128,14 @@ public class MinAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testComparableMin() {
-        List<String> values = TestDoubles.sampleStrings();
+        List<String> values = sampleStrings();
         Collections.sort(values);
 
         String expectation = values.get(0);
 
         Aggregator<String, String, String> aggregation = Aggregators.comparableMin();
         for (String value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         String result = aggregation.aggregate();
 

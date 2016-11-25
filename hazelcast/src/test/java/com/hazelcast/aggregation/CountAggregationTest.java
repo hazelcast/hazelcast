@@ -26,6 +26,9 @@ import org.junit.runner.RunWith;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
+import static com.hazelcast.aggregation.TestSamples.samplePersons;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -36,12 +39,26 @@ public class CountAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() {
-        List<BigDecimal> values = TestDoubles.sampleBigDecimals();
+        List<BigDecimal> values = sampleBigDecimals();
         long expectation = values.size();
 
         Aggregator<Long, BigDecimal, BigDecimal> aggregation = Aggregators.count();
         for (BigDecimal value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
+        }
+        long result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testCountAggregator_withAttributePath() {
+        List<Person> values = samplePersons();
+        long expectation = values.size();
+
+        Aggregator<Long, Person, Person> aggregation = Aggregators.count("age");
+        for (Person person : values) {
+            aggregation.accumulate(createEntryWithValue(person));
         }
         long result = aggregation.aggregate();
 

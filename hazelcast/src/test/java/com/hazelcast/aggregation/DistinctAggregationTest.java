@@ -24,10 +24,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.sampleStrings;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -38,20 +42,36 @@ public class DistinctAggregationTest {
 
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator() {
-        List<String> values = repeatTimes(3, TestDoubles.sampleStrings());
+        List<String> values = repeatTimes(3, sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 
         Aggregator<Set<String>, String, String> aggregation = Aggregators.distinct();
         for (String value : values) {
-            aggregation.accumulate(TestDoubles.createEntryWithValue(value));
+            aggregation.accumulate(createEntryWithValue(value));
         }
         Set<String> result = aggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
 
-    private List<String> repeatTimes(int times, List<String> values) {
-        List<String> repeatedValues = new ArrayList<String>();
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testCountAggregator_withAttributePath() {
+        Person[] people = {new Person(5.1), new Person(3.3)};
+        Double[] ages = {5.1, 3.3};
+        List<Person> values = repeatTimes(3, Arrays.asList(people));
+        Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
+
+        Aggregator<Set<Double>, Person, Person> aggregation = Aggregators.distinct("age");
+        for (Person value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+        Set<Double> result = aggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    private <T> List<T> repeatTimes(int times, List<T> values) {
+        List<T> repeatedValues = new ArrayList<T>();
         for (int i = 0; i < times; i++) {
             repeatedValues.addAll(values);
         }
