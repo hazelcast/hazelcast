@@ -614,7 +614,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 completeWhenRetryRejected(e);
             }
         } else {
-            context.logger.info("*****************************Didn't retry operation " + op + "\n\n");
+            context.logger.warning("*****************************Didn't retry operation " + op + "\n\n");
         }
     }
 
@@ -628,11 +628,11 @@ public abstract class Invocation implements OperationResponseHandler {
     private void resetAndReInvoke() {
         if (!context.invocationRegistry.deregister(this)) {
             // another thread already did something else with this invocation
-            context.logger.info("************ Reset and re-invoke entered, but failed to derigster. Returning."
+            context.logger.warning("************ Reset and re-invoke entered, but failed to derigster. Returning."
                     + " Operation is " + op + "\n\n");
             return;
         }
-        context.logger.info("************ Reset and re-invoke " + op + "\n\n");
+        context.logger.warning("************ Reset and re-invoke " + op + "\n\n");
         invokeCount = 0;
         pendingResponse = VOID;
         pendingResponseReceivedMillis = -1;
