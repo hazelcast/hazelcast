@@ -125,7 +125,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean isJoinMessage(Object msg) {
-        return msg != null && msg instanceof JoinMessage;
+        return msg != null && msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
     }
 
     private boolean isValidJoinMessage(Object msg) {
