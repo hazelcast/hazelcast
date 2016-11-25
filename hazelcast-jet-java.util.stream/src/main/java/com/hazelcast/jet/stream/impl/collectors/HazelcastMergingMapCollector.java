@@ -20,10 +20,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.Processors;
-import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Vertex;
 
 import java.util.Map;
 import java.util.function.BinaryOperator;

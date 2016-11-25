@@ -23,7 +23,7 @@ import cascading.flow.stream.graph.StreamGraph;
 import cascading.pipe.Splice;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.Outbox;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 

@@ -1,1 +1,1 @@
-com.hazelcast.jet2.JetDataSerializerHook
+com.hazelcast.jet.JetDataSerializerHook

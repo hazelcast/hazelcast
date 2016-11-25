@@ -22,7 +22,7 @@ import cascading.flow.FlowException;
 import cascading.flow.FlowProcess;
 import cascading.flow.planner.PlatformInfo;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import java.io.IOException;

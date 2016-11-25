@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.jet2.impl.JetSerializerHook$MapEntry
+com.hazelcast.jet.impl.JetSerializerHook$MapEntry

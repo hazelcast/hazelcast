@@ -22,10 +22,10 @@ import cascading.management.state.ClientState;
 import cascading.stats.FlowNodeStats;
 import cascading.stats.FlowStepStats;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.JetEngine;
-import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Job;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Job;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;

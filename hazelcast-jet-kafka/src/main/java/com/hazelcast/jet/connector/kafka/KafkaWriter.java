@@ -17,11 +17,11 @@
 package com.hazelcast.jet.connector.kafka;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.jet2.AbstractProcessor;
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.Processor;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.ProcessorSupplier;
+import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;

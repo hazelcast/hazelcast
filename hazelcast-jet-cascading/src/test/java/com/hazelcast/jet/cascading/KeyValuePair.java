@@ -25,8 +25,8 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.io.ValueTuple;
-import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
 import java.util.AbstractMap;

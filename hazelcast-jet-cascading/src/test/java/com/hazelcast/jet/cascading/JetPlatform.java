@@ -35,7 +35,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.cascading.runtime.TupleSerializer;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 
 import java.io.File;
 import java.io.FileInputStream;

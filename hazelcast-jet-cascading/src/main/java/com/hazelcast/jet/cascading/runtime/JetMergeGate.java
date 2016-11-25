@@ -30,8 +30,8 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.io.ValueTuple;
 import cascading.util.Util;
-import com.hazelcast.jet2.Inbox;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.Outbox;
 import java.util.AbstractMap;
 import java.util.Map;
 

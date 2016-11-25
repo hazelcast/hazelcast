@@ -19,8 +19,8 @@ package com.hazelcast.jet.stream.impl.source;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.impl.AbstractSourcePipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.Processors;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
 
 import java.util.Map;
 

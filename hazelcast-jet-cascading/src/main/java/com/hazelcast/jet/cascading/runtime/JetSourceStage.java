@@ -25,7 +25,7 @@ import cascading.flow.stream.element.SourceStage;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.TupleEntryIterator;
-import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet.Inbox;
 
 import java.util.Iterator;
 import java.util.Map;

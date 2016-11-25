@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.cascading.runtime;
 
-import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet.Inbox;
 
 interface ProcessorInputSource {
 

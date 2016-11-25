@@ -29,7 +29,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.cascading.tap.SettableTupleEntryCollector;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.Outbox;
 import java.io.IOException;
 
 public class JetSinkStage extends SinkStage {

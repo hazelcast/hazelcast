@@ -31,7 +31,7 @@ import cascading.pipe.GroupBy;
 import cascading.pipe.HashJoin;
 import cascading.pipe.Merge;
 import cascading.tap.Tap;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.Outbox;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;

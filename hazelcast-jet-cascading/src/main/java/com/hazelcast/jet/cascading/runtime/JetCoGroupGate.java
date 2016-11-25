@@ -25,7 +25,7 @@ import cascading.pipe.Splice;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.Tuples;
-import com.hazelcast.jet2.Inbox;
+import com.hazelcast.jet.Inbox;
 
 import java.util.ArrayList;
 import java.util.Collection;

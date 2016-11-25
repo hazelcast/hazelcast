@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.AbstractProcessor;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.AbstractProcessor;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;

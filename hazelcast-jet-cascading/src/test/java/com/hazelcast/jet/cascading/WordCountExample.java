@@ -29,7 +29,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 

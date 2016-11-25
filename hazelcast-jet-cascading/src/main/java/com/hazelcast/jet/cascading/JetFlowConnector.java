@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.planner.JetFlowPlanner;
 import com.hazelcast.jet.cascading.planner.rule.tez.HashJoinHadoop2TezRuleRegistry;
 import com.hazelcast.jet.cascading.planner.rule.tez.NoHashJoinHadoop2TezRuleRegistry;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 
 public class JetFlowConnector extends FlowConnector {
 

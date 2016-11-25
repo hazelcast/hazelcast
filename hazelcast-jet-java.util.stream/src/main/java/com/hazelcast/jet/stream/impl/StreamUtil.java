@@ -21,9 +21,9 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.JetEngine;
-import com.hazelcast.jet2.Job;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.Job;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.UuidUtil;
@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet2.impl.Util.unchecked;
+import static com.hazelcast.jet.impl.Util.unchecked;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {

@@ -18,8 +18,8 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.Processors;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;

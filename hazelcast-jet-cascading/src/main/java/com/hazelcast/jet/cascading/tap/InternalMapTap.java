@@ -31,10 +31,10 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.Processors;
+import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.map.impl.MapService;
 
 import java.io.IOException;

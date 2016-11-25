@@ -26,8 +26,8 @@ import cascading.scheme.SourceCall;
 import cascading.tap.TapException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
-import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Outbox;
+import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
 import java.util.Iterator;

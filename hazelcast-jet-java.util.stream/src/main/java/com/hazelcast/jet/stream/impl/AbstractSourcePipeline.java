@@ -17,9 +17,9 @@
 package com.hazelcast.jet.stream.impl;
 
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
-import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.Vertex;
 
 public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
 

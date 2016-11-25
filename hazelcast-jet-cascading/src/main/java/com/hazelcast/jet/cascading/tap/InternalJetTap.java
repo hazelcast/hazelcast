@@ -20,9 +20,9 @@ import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.util.CloseableIterator;
-import com.hazelcast.jet2.JetEngineConfig;
-import com.hazelcast.jet2.Outbox;
-import com.hazelcast.jet2.ProcessorMetaSupplier;
+import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.ProcessorMetaSupplier;
 
 import java.io.Closeable;
 import java.io.IOException;

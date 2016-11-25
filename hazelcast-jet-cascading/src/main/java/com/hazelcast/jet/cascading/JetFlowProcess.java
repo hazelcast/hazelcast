@@ -21,7 +21,7 @@ import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;

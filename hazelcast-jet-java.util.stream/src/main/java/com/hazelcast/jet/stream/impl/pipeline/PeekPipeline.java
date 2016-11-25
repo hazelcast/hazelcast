@@ -20,10 +20,10 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet2.DAG;
-import com.hazelcast.jet2.Edge;
-import com.hazelcast.jet2.Processors;
-import com.hazelcast.jet2.Vertex;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Vertex;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 

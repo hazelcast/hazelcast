@@ -33,7 +33,7 @@ import cascading.pipe.Boundary;
 import cascading.tap.Tap;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cascading.JetFlow;
-import com.hazelcast.jet2.JetEngineConfig;
+import com.hazelcast.jet.JetEngineConfig;
 
 public class JetFlowPlanner extends FlowPlanner<JetFlow, JetEngineConfig> {
 
