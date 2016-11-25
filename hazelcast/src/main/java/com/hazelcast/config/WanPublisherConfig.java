@@ -16,13 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Configuration object for WAN publishers.
  */
-public class WanPublisherConfig {
+public class WanPublisherConfig implements DataSerializable {
 
     private static final int DEFAULT_QUEUE_CAPACITY = 10000;
     private static final WANQueueFullBehavior DEFAULT_QUEUE_FULL_BEHAVIOR = WANQueueFullBehavior.DISCARD_AFTER_MUTATION;
@@ -98,5 +103,33 @@ public class WanPublisherConfig {
                 + ", queueCapacity=" + queueCapacity
                 + ", queueFullBehavior=" + queueFullBehavior
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(groupName);
+        out.writeInt(queueCapacity);
+        out.writeInt(queueFullBehavior.getId());
+        int size = properties.size();
+        out.writeInt(size);
+        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+        out.writeUTF(className);
+        out.writeObject(implementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        groupName = in.readUTF();
+        queueCapacity = in.readInt();
+        queueFullBehavior =  WANQueueFullBehavior.getByType(in.readInt());
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            properties.put(in.readUTF(), (Comparable) in.readObject());
+        }
+        className = in.readUTF();
+        implementation = in.readObject();
     }
 }

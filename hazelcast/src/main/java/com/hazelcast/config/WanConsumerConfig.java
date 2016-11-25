@@ -16,13 +16,18 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Config to be used by WanReplicationConsumer instances. (EE only)
  */
-public class WanConsumerConfig {
+public class WanConsumerConfig implements DataSerializable {
 
     private Map<String, Comparable> properties = new HashMap<String, Comparable>();
     private String className;
@@ -62,5 +67,27 @@ public class WanConsumerConfig {
                 + ", className='" + className + '\''
                 + ", implementation=" + implementation
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        int size = properties.size();
+        out.writeInt(size);
+        for (Map.Entry<String, Comparable> entry : properties.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+        out.writeUTF(className);
+        out.writeObject(implementation);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            properties.put(in.readUTF(), (Comparable) in.readObject());
+        }
+        className = in.readUTF();
+        implementation = in.readObject();
     }
 }

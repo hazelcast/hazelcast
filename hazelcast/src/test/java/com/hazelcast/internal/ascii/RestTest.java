@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -29,6 +30,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -319,6 +321,14 @@ public class RestTest extends HazelcastTestSupport {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         String result = communicator.wanClearQueues("atob", "b");
+        assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
+    }
+
+    public void addWanConfig() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
+        String result = communicator.addWanConfig(dto.toJson().asString());
         assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
     }
 }
