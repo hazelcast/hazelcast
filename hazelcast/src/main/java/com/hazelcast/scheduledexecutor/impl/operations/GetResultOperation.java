@@ -62,7 +62,7 @@ public class GetResultOperation<V>
 
     @Override
     public WaitNotifyKey getWaitKey() {
-        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toURN());
+        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toUrn());
     }
 
     @Override
@@ -85,7 +85,7 @@ public class GetResultOperation<V>
             throws IOException {
         super.writeInternal(out);
         out.writeUTF(taskName);
-        out.writeUTF(handler.toURN());
+        out.writeUTF(handler.toUrn());
     }
 
     @Override

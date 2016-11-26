@@ -62,7 +62,7 @@ public class ScheduledExecutorTaskIsCancelledMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorIsCancelledCodec.encodeResponse((Boolean)response);
+        return ScheduledExecutorIsCancelledCodec.encodeResponse((Boolean) response);
     }
 
     @Override

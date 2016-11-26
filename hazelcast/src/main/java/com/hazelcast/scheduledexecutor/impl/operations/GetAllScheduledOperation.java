@@ -69,7 +69,8 @@ public class GetAllScheduledOperation
             Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
             for (ScheduledTaskDescriptor task : tasks) {
                 if (partitionId == -1) {
-                    handlers.add(ScheduledTaskHandler.of(getNodeEngine().getThisAddress(), getSchedulerName(), task.getDefinition().getName()));
+                    handlers.add(ScheduledTaskHandler.of(getNodeEngine().getThisAddress(),
+                            getSchedulerName(), task.getDefinition().getName()));
                 } else {
                     handlers.add(ScheduledTaskHandler.of(partitionId, getSchedulerName(), task.getDefinition().getName()));
                 }

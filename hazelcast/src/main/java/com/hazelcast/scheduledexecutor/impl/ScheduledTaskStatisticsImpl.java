@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class ScheduledTaskStatisticsImpl
         implements AmendableScheduledTaskStatistics {
 
-    private final static TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
+    private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 
     private volatile long runs;
 

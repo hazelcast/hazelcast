@@ -295,7 +295,7 @@ public class ScheduledExecutorContainer {
         }
 
         private void init() {
-            if (original instanceof StatefulTask) {
+            if (original instanceof StatefulTask && !state.isEmpty()) {
                 ((StatefulTask) original).loadState(state);
             }
         }
@@ -358,7 +358,8 @@ public class ScheduledExecutorContainer {
             OperationService operationService = nodeEngine.getOperationService();
 
             InvocationBuilder builder;
-            if (partitionId == -1) { // Member partition
+            if (partitionId == -1) {
+                // Member partition
                 builder = operationService.createInvocationBuilder(SERVICE_NAME, op, nodeEngine.getThisAddress());
             } else {
                 builder = operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId);
@@ -380,12 +381,12 @@ public class ScheduledExecutorContainer {
             }
 
             if (logger.isFinestEnabled()) {
-                logger.finest("[Scheduler: " + name + "][Partition: "+ partitionId + "][Task: " + taskName + "] "
+                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
                             + "Publishing state, to replicas. State: " + state);
             }
 
 
-            for (int i = 1; i < getDurability() + 1; i++ ) {
+            for (int i = 1; i < getDurability() + 1; i++) {
                 Operation op = new SyncStateOperation(getName(), taskName, state);
                 createInvocationBuilder(op)
                         .setReplicaIndex(i)

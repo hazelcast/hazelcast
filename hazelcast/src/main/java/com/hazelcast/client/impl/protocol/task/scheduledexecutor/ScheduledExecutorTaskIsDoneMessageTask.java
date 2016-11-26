@@ -62,7 +62,7 @@ public class ScheduledExecutorTaskIsDoneMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorIsDoneCodec.encodeResponse((Boolean)response);
+        return ScheduledExecutorIsDoneCodec.encodeResponse((Boolean) response);
     }
 
     @Override

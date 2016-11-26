@@ -37,7 +37,8 @@ public interface InternalExecutionService extends ExecutionService {
 
     <V> ScheduledFuture<V> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit);
 
-    ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command, long initialDelay, long period, TimeUnit unit);
+    ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command,
+                                                     long initialDelay, long period, TimeUnit unit);
 
     void shutdownDurableExecutor(String name);
 }

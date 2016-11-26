@@ -30,9 +30,9 @@ import java.net.UnknownHostException;
 public final class ScheduledTaskHandlerImpl
         extends ScheduledTaskHandler {
 
-    private final static String URN_BASE = "urn:hzScheduledTaskHandler:";
-
-    private final static char DESC_SEP = '\0';
+    private static final String URN_BASE = "urn:hzScheduledTaskHandler:";
+    private static final char DESC_SEP = '\0';
+    private static final int URN_PARTS = 4;
 
     private Address address;
 
@@ -67,32 +67,32 @@ public final class ScheduledTaskHandlerImpl
     }
 
     @Override
-    public final int getPartitionId() {
+    public int getPartitionId() {
         return partitionId;
     }
 
     @Override
-    public final String getSchedulerName() {
+    public String getSchedulerName() {
         return schedulerName;
     }
 
     @Override
-    public final String getTaskName() {
+    public String getTaskName() {
         return taskName;
     }
 
     @Override
-    public final boolean isAssignedToPartition() {
+    public boolean isAssignedToPartition() {
         return address == null;
     }
 
     @Override
-    public final boolean isAssignedToMember() {
+    public boolean isAssignedToMember() {
         return address != null;
     }
 
     @Override
-    public final String toURN() {
+    public String toUrn() {
         return URN_BASE
                 + (address == null
                         ? "-"
@@ -115,7 +115,7 @@ public final class ScheduledTaskHandlerImpl
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
-        out.writeUTF(toURN());
+        out.writeUTF(toUrn());
     }
 
     @Override
@@ -142,17 +142,17 @@ public final class ScheduledTaskHandlerImpl
         return new ScheduledTaskHandlerImpl(partitionId, schedulerName, taskName);
     }
 
-    public static ScheduledTaskHandler of(String URN) {
-        if (!URN.startsWith(ScheduledTaskHandlerImpl.URN_BASE)) {
-            throw new IllegalArgumentException("Wrong URN format.");
+    public static ScheduledTaskHandler of(String urn) {
+        if (!urn.startsWith(ScheduledTaskHandlerImpl.URN_BASE)) {
+            throw new IllegalArgumentException("Wrong urn format.");
         }
 
-        // Get rid of URN base
-        URN = URN.replace(ScheduledTaskHandlerImpl.URN_BASE, "");
+        // Get rid of urn base
+        urn = urn.replace(ScheduledTaskHandlerImpl.URN_BASE, "");
 
-        String[] parts = URN.split(String.valueOf(ScheduledTaskHandlerImpl.DESC_SEP));
-        if (parts.length != 4) {
-            throw new IllegalArgumentException("Wrong URN format.");
+        String[] parts = urn.split(String.valueOf(ScheduledTaskHandlerImpl.DESC_SEP));
+        if (parts.length != URN_PARTS) {
+            throw new IllegalArgumentException("Wrong urn format.");
         }
 
         Address addr = null;
@@ -161,7 +161,7 @@ public final class ScheduledTaskHandlerImpl
             try {
                 addr = new Address(hostParts[0], Integer.parseInt(hostParts[1]));
             } catch (UnknownHostException e) {
-                throw new IllegalArgumentException("Wrong URN format.", e);
+                throw new IllegalArgumentException("Wrong urn format.", e);
             }
         }
 

@@ -123,5 +123,4 @@ public class ScheduledRunnableAdapter<V>
         return "ScheduledRunnableAdapter" + "{task=" + task + '}';
     }
 
-
 }

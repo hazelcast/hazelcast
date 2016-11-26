@@ -56,7 +56,7 @@ public class ResultReadyNotifyOperation<V>
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toURN());
+        return new ScheduledExecutorWaitNotifyKey(getSchedulerName(), handler.toUrn());
     }
 
     @Override
@@ -68,7 +68,7 @@ public class ResultReadyNotifyOperation<V>
     protected void writeInternal(ObjectDataOutput out)
             throws IOException {
         super.writeInternal(out);
-        out.writeUTF(handler.toURN());
+        out.writeUTF(handler.toUrn());
     }
 
     @Override

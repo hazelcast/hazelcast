@@ -35,7 +35,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,14 +45,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.durableexecutor.impl.DistributedDurableExecutorService.SERVICE_NAME;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -229,66 +225,67 @@ public class ScheduledExecutorServiceProxy
 
     @Override
     public Map<Member, List<IScheduledFuture<?>>> getAllScheduled() {
-        //TODO tkountis - Consider extra flavour with Executor provided as arg
-        ManagedExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
-
-        //TODO tkountis - Consider extra flavour with timeout as arg
+//        //TODO tkountis - Consider extra flavour with Executor provided as arg
+//        ManagedExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ASYNC_EXECUTOR);
+//
+//        //TODO tkountis - Consider extra flavour with timeout as arg
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
 
-        Future<Map<Member, List<IScheduledFuture<?>>>> future =
-                executor.submit(new Callable<Map<Member, List<IScheduledFuture<?>>>>() {
-            @Override
-            public Map<Member, List<IScheduledFuture<?>>> call()
-                    throws Exception {
+//        Future<Map<Member, List<IScheduledFuture<?>>>> future =
+//                executor.submit(new Callable<Map<Member, List<IScheduledFuture<?>>>>() {
+//            @Override
+//            public Map<Member, List<IScheduledFuture<?>>> call()
+//                    throws Exception {
 
-                Map<Member, List<IScheduledFuture<?>>> tasks =
-                        new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
+        Map<Member, List<IScheduledFuture<?>>> tasks =
+                new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
 
-                List<Member> members = new ArrayList<Member>(getNodeEngine().getClusterService().getMembers());
-                List<Future<List<ScheduledTaskHandler>>> futures = new ArrayList<Future<List<ScheduledTaskHandler>>>();
-                for (Member member : members) {
-                    Address address = member.getAddress();
+        List<Member> members = new ArrayList<Member>(getNodeEngine().getClusterService().getMembers());
+        List<Future<List<ScheduledTaskHandler>>> futures = new ArrayList<Future<List<ScheduledTaskHandler>>>();
+        for (Member member : members) {
+            Address address = member.getAddress();
 
-                    ICompletableFuture<List<ScheduledTaskHandler>> future =
-                            getOperationService().invokeOnTarget(getServiceName(), new GetAllScheduledOperation(getName()), address);
+            ICompletableFuture<List<ScheduledTaskHandler>> future =
+                    getOperationService().invokeOnTarget(getServiceName(),
+                            new GetAllScheduledOperation(getName()), address);
 
-                    futures.add(future);
-                }
-
-                // TODO unit test - returnWithDeadline returns a Collection, currently in the same order, but
-                // there is no contract to guarantee so for the future.
-                List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
-                        returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
-
-                for (int i = 0; i < resolvedFutures.size(); i++) {
-                    Member member = members.get(i);
-                    List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
-                    List<IScheduledFuture<?>> scheduledFutures = new ArrayList<IScheduledFuture<?>>();
-
-                    for (ScheduledTaskHandler handler : handlers) {
-                        ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
-                        attachHazelcastInstance(proxy);
-                        scheduledFutures.add(proxy);
-                    }
-
-                    if (!scheduledFutures.isEmpty()) {
-                        tasks.put(member, scheduledFutures);
-                    }
-                }
-
-                return tasks;
-            }
-        });
-
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            sneakyThrow(e);
-        } catch (ExecutionException e) {
-            sneakyThrow(e);
+            futures.add(future);
         }
 
-        return null;
+        // TODO unit test - returnWithDeadline returns a Collection, currently in the same order, but
+        // there is no contract to guarantee so for the future.
+        List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
+                returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
+
+        for (int i = 0; i < resolvedFutures.size(); i++) {
+            Member member = members.get(i);
+            List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
+            List<IScheduledFuture<?>> scheduledFutures = new ArrayList<IScheduledFuture<?>>();
+
+            for (ScheduledTaskHandler handler : handlers) {
+                ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
+                attachHazelcastInstance(proxy);
+                scheduledFutures.add(proxy);
+            }
+
+            if (!scheduledFutures.isEmpty()) {
+                tasks.put(member, scheduledFutures);
+            }
+        }
+
+        return tasks;
+//            }
+//        });
+//
+//        try {
+//            return future.get();
+//        } catch (InterruptedException e) {
+//            sneakyThrow(e);
+//        } catch (ExecutionException e) {
+//            sneakyThrow(e);
+//        }
+//
+//        return null;
     }
 
     @Override
@@ -309,15 +306,6 @@ public class ScheduledExecutorServiceProxy
         }
 
         waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
-    }
-
-    private String extractNameOrGenerateOne(Object command) {
-        String name = null;
-        if (command instanceof NamedTask) {
-            name = ((NamedTask) command).getName();
-        }
-
-        return name != null ? name : UuidUtil.newUnsecureUuidString();
     }
 
     private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {
@@ -361,6 +349,15 @@ public class ScheduledExecutorServiceProxy
         }
 
         return getKeyPartitionId(key);
+    }
+
+    private String extractNameOrGenerateOne(Object command) {
+        String name = null;
+        if (command instanceof NamedTask) {
+            name = ((NamedTask) command).getName();
+        }
+
+        return name != null ? name : UuidUtil.newUnsecureUuidString();
     }
 
     // TODO tkountis - Document that OPs are sync to avoid race-conditions;

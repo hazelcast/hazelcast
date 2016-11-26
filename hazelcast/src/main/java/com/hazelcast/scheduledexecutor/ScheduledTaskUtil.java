@@ -25,7 +25,10 @@ import java.util.concurrent.Callable;
  * Created by Thomas Kountis.
  */
 @Beta
-public class ScheduledTaskUtil {
+public final class ScheduledTaskUtil {
+
+    private ScheduledTaskUtil() {
+    }
 
     public static Runnable named(final String name, final Runnable runnable) {
         return NamedTaskDecorator.named(name, runnable);

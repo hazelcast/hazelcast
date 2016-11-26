@@ -37,7 +37,7 @@ public abstract class ScheduledTaskHandler
 
     public abstract boolean isAssignedToMember();
 
-    public abstract String toURN();
+    public abstract String toUrn();
 
     public static ScheduledTaskHandler of(Address addr, String schedulerName, String taskName) {
         return ScheduledTaskHandlerImpl.of(addr, schedulerName, taskName);
@@ -47,8 +47,8 @@ public abstract class ScheduledTaskHandler
         return ScheduledTaskHandlerImpl.of(partitionId, schedulerName, taskName);
     }
 
-    public static ScheduledTaskHandler of(String URN) {
-        return ScheduledTaskHandlerImpl.of(URN);
+    public static ScheduledTaskHandler of(String urn) {
+        return ScheduledTaskHandlerImpl.of(urn);
     }
 
 }

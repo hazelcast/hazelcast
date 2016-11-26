@@ -61,7 +61,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorGetAllScheduledCodec.encodeResponse((List< ScheduledTaskHandler>) response);
+        return ScheduledExecutorGetAllScheduledCodec.encodeResponse((List<ScheduledTaskHandler>) response);
     }
 
     @Override

@@ -58,7 +58,7 @@ public final class ScheduledFutureProxy<V>
 
     private transient String partitionLostRegistration;
 
-    private transient boolean partitionLost = false;
+    private transient boolean partitionLost;
 
     private ScheduledTaskHandler handler;
 
