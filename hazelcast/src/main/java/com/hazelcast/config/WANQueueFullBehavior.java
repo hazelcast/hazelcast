@@ -29,7 +29,13 @@ public enum WANQueueFullBehavior {
     /**
      * Instruct WAN repl. impl to throw an exception and doesn't allow further processing.
      */
-    THROW_EXCEPTION(1);
+    THROW_EXCEPTION(1),
+
+    /**
+     * Similar to {@link #THROW_EXCEPTION} but only throws exception when WAN replication is active.
+     * Discards the new events if WAN replication is stopped.
+     */
+    THROW_EXCEPTION_ONLY_IF_REPLICATION_ACTIVE(2);
 
     private final int id;
 

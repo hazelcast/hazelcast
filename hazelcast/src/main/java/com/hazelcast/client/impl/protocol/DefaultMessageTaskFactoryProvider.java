@@ -18,6 +18,10 @@ import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecut
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
@@ -1510,6 +1514,26 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapFetchEntriesMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapAggregateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapAggregateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapAggregateWithPredicateMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapProjectCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapProjectionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new MapProjectionWithPredicateMessageTask(clientMessage, node, connection);
             }
         };
 //endregion

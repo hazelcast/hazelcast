@@ -26,9 +26,11 @@ import com.hazelcast.util.Clock;
 public class NearCacheObjectRecordStore<K, V>
         extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
 
-    public NearCacheObjectRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
+    public NearCacheObjectRecordStore(String name,
+                                      NearCacheConfig nearCacheConfig,
+                                      SerializationService serializationService,
                                       ClassLoader classLoader) {
-        super(nearCacheConfig, serializationService, classLoader);
+        super(name, nearCacheConfig, serializationService, classLoader);
     }
 
     @Override

@@ -40,4 +40,5 @@ public final class QueryResultUtils {
             return new QueryResultCollection(ss, iterationType, false, unique, queryResult);
         }
     }
+
 }

@@ -5,6 +5,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberImplTest extends HazelcastTestSupport {
 
+    private static final Version VERSION = Version.of("1.3.2");
     private static Address address;
 
     @BeforeClass
@@ -41,7 +43,7 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withAddress() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
 
         assertBasicMemberImplFields(member);
         assertFalse(member.isLiteMember());
@@ -49,7 +51,7 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withAddressAndUUid() {
-        MemberImpl member = new MemberImpl(address, "uuid2342");
+        MemberImpl member = new MemberImpl(address, VERSION, "uuid2342");
 
         assertBasicMemberImplFields(member);
         assertEquals("uuid2342", member.getUuid());
@@ -69,7 +71,7 @@ public class MemberImplTest extends HazelcastTestSupport {
         attributes.put("floatKey", Float.MAX_VALUE);
         attributes.put("doubleKey", Double.MAX_VALUE);
 
-        MemberImpl member = new MemberImpl(address, "uuid2342", attributes, true);
+        MemberImpl member = new MemberImpl(address, VERSION, "uuid2342", attributes, true);
 
         assertBasicMemberImplFields(member);
         assertEquals("uuid2342", member.getUuid());
@@ -113,62 +115,62 @@ public class MemberImplTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor_withMemberImpl() {
-        MemberImpl member = new MemberImpl(new MemberImpl(address));
+        MemberImpl member = new MemberImpl(new MemberImpl(address, VERSION));
 
         assertBasicMemberImplFields(member);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetStringAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setStringAttribute("stringKey", "stringValue");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetBooleanAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setBooleanAttribute("booleanKeyTrue", true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetByteAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setByteAttribute("byteKey", Byte.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetShortAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setShortAttribute("shortKey", Short.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetIntAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setIntAttribute("intKey", Integer.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetLongAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setLongAttribute("longKey", Long.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetFloatAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setFloatAttribute("floatKey", Float.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testSetDoubleAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.setDoubleAttribute("doubleKey", Double.MAX_VALUE);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testRemoveAttribute() {
-        MemberImpl member = new MemberImpl(address);
+        MemberImpl member = new MemberImpl(address, VERSION);
         member.removeAttribute("removeKey");
     }
 
@@ -178,5 +180,8 @@ public class MemberImplTest extends HazelcastTestSupport {
         assertEquals("127.0.0.1", member.getInetAddress().getHostAddress());
         assertNull(member.getLogger());
         assertFalse(member.localMember());
+        assertEquals(1, member.getVersion().getMajor());
+        assertEquals(3, member.getVersion().getMinor());
+        assertEquals(2, member.getVersion().getPatch());
     }
 }

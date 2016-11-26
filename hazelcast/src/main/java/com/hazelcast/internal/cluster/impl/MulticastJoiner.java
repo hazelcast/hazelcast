@@ -105,11 +105,11 @@ public class MulticastJoiner extends AbstractJoiner {
 
     @Override
     public void searchForOtherClusters() {
-        final BlockingQueue<JoinMessage> q = new LinkedBlockingQueue<JoinMessage>();
+        final BlockingQueue<SplitBrainJoinMessage> q = new LinkedBlockingQueue<SplitBrainJoinMessage>();
         MulticastListener listener = new MulticastListener() {
             public void onMessage(Object msg) {
-                if (msg != null && msg instanceof JoinMessage) {
-                    JoinMessage joinRequest = (JoinMessage) msg;
+                if (msg != null && msg instanceof SplitBrainJoinMessage) {
+                    SplitBrainJoinMessage joinRequest = (SplitBrainJoinMessage) msg;
                     if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
                         q.add(joinRequest);
                     }
@@ -117,9 +117,9 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         };
         node.multicastService.addMulticastListener(listener);
-        node.multicastService.send(node.createJoinRequest(false));
+        node.multicastService.send(node.createSplitBrainJoinMessage());
         try {
-            JoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
+            SplitBrainJoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
             if (joinInfo != null) {
                 if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
                     if (logger.isFineEnabled()) {
@@ -135,7 +135,7 @@ public class MulticastJoiner extends AbstractJoiner {
                     Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
                 }
 
-                JoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
+                SplitBrainJoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
                 if (shouldMerge(response)) {
                     logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
                     startClusterMerge(joinInfo.getAddress());

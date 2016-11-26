@@ -16,7 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.ISet;
@@ -25,8 +24,8 @@ import com.hazelcast.mapreduce.impl.ListKeyValueSource;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Closeable;
 import java.util.Collection;
@@ -42,8 +41,9 @@ import java.util.Map;
  * @param <K> key type
  * @param <V> value type
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 @BinaryInterface
 public abstract class KeyValueSource<K, V>
         implements Closeable {

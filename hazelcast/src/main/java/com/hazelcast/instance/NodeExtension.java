@@ -18,17 +18,22 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.internal.networking.ReadHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.networking.ReadHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.internal.networking.WriteHandler;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.version.Version;
 
 import java.util.Map;
 import java.util.Set;
@@ -38,6 +43,7 @@ import java.util.Set;
  * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
  */
 @PrivateApi
+@SuppressWarnings({"checkstyle:methodcount"})
 public interface NodeExtension {
 
     /**
@@ -165,14 +171,12 @@ public interface NodeExtension {
     MemoryStats getMemoryStats();
 
      /**
-     * Called before a new node is joining to cluster,
-     * executed if node is the master node before join event.
-     * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager} calls this method,
-     * when handleJoinRequest method is called. By this way, we can check the logic we want
-     * by implementing this method. Implementation should throw required exception, with a valid
-     * message which explains rejection reason.
-     */
-    void validateJoinRequest();
+      * Executed on the master node before allowing a new member to join from
+      * {@link com.hazelcast.internal.cluster.impl.ClusterJoinManager#handleJoinRequest(JoinRequest, Connection)}.
+      * Implementation should check if the {@code JoinMessage} should be allowed to proceed, otherwise throw an exception
+      * with a message explaining rejection reason.
+      */
+    void validateJoinRequest(JoinMessage joinMessage);
 
     /**
      * Called when cluster state is changed
@@ -189,7 +193,21 @@ public interface NodeExtension {
     void onPartitionStateChange();
 
     /**
-     * Registers given register if it's a known type.
+     * Called after cluster version is changed.
+     *
+     * @param newVersion the new version at which the cluster operates.
+     */
+    void onClusterVersionChange(Version newVersion);
+
+    /**
+     * Check if this node's codebase version is compatible with given cluster version.
+     * @param clusterVersion the cluster version to check against
+     * @return {@code true} if compatible, otherwise false.
+     */
+    boolean isNodeVersionCompatibleWith(Version clusterVersion);
+
+    /**
+     * Registers given listener if it's a known type.
      * @param listener listener instance
      * @return true if listener is registered, false otherwise
      */
@@ -243,4 +261,10 @@ public interface NodeExtension {
      * @param excludedMemberUuids uuids of the members that have been excluded during the cluster start
      */
     void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids);
+
+    /**
+     * Returns latest Hot Restart status as Management Center DTO. An empty status object will
+     * be returned if Hot Restart is not available (not EE) or not enabled.
+     */
+    ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus();
 }

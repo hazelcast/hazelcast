@@ -3,6 +3,7 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.ExecutionService;
@@ -356,6 +357,14 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             if (expectedKeyValueMappings == null) {
                 throw new IllegalStateException("Near-Cache is already destroyed");
             }
+        }
+
+        @Override
+        public void storeKeys() {
+        }
+
+        @Override
+        public void loadKeys(DataStructureAdapter adapter) {
         }
     }
 }

@@ -16,11 +16,13 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,6 +43,8 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberMapTest {
+
+    private static final Version VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
 
     @Test
     public void createEmpty() throws Exception {
@@ -106,7 +110,7 @@ public class MemberMapTest {
     @Test(expected = IllegalArgumentException.class)
     public void create_failsWithDuplicateUuid() throws Exception {
         MemberImpl member1 = newMember(5000);
-        MemberImpl member2 = new MemberImpl(newAddress(5001), false, member1.getUuid(), null);
+        MemberImpl member2 = new MemberImpl(newAddress(5001), VERSION, false, member1.getUuid(), null);
         MemberMap.createNew(member1, member2);
     }
 
@@ -118,8 +122,8 @@ public class MemberMapTest {
         }
 
         MemberImpl exclude0 = members[0];
-        MemberImpl exclude1 = new MemberImpl(newAddress(6000), false, members[1].getUuid(), null);
-        MemberImpl exclude2 = new MemberImpl(members[2].getAddress(), false, newUnsecureUuidString(), null);
+        MemberImpl exclude1 = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
+        MemberImpl exclude2 = new MemberImpl(members[2].getAddress(), VERSION, false, newUnsecureUuidString(), null);
 
         MemberMap map = MemberMap.cloneExcluding(MemberMap.createNew(members), exclude0, exclude1, exclude2);
 
@@ -198,7 +202,7 @@ public class MemberMapTest {
             members[i] = newMember(5000 + i);
         }
 
-        MemberImpl member = new MemberImpl(newAddress(6000), false, members[1].getUuid(), null);
+        MemberImpl member = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
         MemberMap.cloneAdding(MemberMap.createNew(members), member);
     }
 
@@ -243,7 +247,7 @@ public class MemberMapTest {
     }
 
     private MemberImpl newMember(int port) throws UnknownHostException {
-        return new MemberImpl(newAddress(port), false, newUnsecureUuidString(), null);
+        return new MemberImpl(newAddress(port), VERSION, false, newUnsecureUuidString(), null);
     }
 
     private Address newAddress(int port) throws UnknownHostException {

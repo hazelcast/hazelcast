@@ -18,83 +18,19 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
 /**
- * Collections per member the callIds of all live operations.
- *
- * The Trace is not thread-safe and is recycled.
- *
- * This data-structure can be optimized to generate less litter. Instead of using an ArrayList for Long objects,
- * use an array for primitive longs. Also the lists don't need to be recreated every time the
- * {@link LiveOperationsTracker#populate(LiveOperations)} method is called; they could be recycled. This would be easy
- * to do since the {@link LiveOperations} is not used by a single thread.
+ * {@link InvocationMonitor} passes instances of this type to each {@link LiveOperationsTracker}
+ * so it can contribute the call IDs of invocations it is responsible for.
+ * The object is not thread-safe and is recycled.
  */
-public final class LiveOperations {
-
-    private final Address localAddress;
-    private final Map<Address, List<Long>> callIdsByMember = new HashMap<Address, List<Long>>();
-
-    public LiveOperations(Address localAddress) {
-        this.localAddress = checkNotNull(localAddress, "local address can't be null");
-    }
-
-    public void add(Address address, long callId) {
-        if (callId == 0) {
-            // it is an unregistered operation
-            return;
-        }
-
-        if (address == null) {
-            address = localAddress;
-        }
-
-        List<Long> callIds = callIdsByMember.get(address);
-        if (callIds == null) {
-            callIds = new ArrayList<Long>();
-            callIdsByMember.put(address, callIds);
-        }
-
-        callIds.add(callId);
-    }
-
-    public Set<Address> addresses() {
-        return callIdsByMember.keySet();
-    }
-
-    public long[] callIds(Address address) {
-        List<Long> callIdList = callIdsByMember.get(address);
-        if (callIdList == null) {
-            throw new IllegalArgumentException("unknown address");
-        }
-
-        long[] array = new long[callIdList.size()];
-        for (int k = 0; k < array.length; k++) {
-            array[k] = callIdList.get(k);
-        }
-
-        return array;
-    }
-
-    public void clear() {
-        callIdsByMember.clear();
-    }
+public interface LiveOperations {
 
     /**
-     * Makes sure that a list of counters is created for a member.
+     * Registers an invocation with this object.
      *
-     * This method exists to ensure that an operation-heartbeat is always sent, even if there are no running operations.
-     *
-     * @param address the address of the member.
+     * @param address address of the sender of the operation
+     * @param callId call ID of the operation
      */
-    public void initMember(Address address) {
-        callIdsByMember.put(address, new LinkedList<Long>());
-    }
+    void add(Address address, long callId);
+
 }

@@ -16,23 +16,24 @@
 
 package com.hazelcast.console;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
- * Echoes to screen
+ * Echoes to screen.
  */
 @BinaryInterface
 public class Echo implements Callable<String>, DataSerializable, HazelcastInstanceAware {
 
     String input;
+
     private transient HazelcastInstance hz;
 
     public Echo(String input) {

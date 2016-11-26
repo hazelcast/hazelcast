@@ -26,8 +26,6 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
@@ -52,14 +50,11 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.String.format;
-import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -148,42 +143,6 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
             }
         }
         return nearCacheTestContext;
-    }
-
-    protected void whenEmptyMapThenPopulatedNearCacheShouldReturnNullNeverNULL_OBJECT(InMemoryFormat inMemoryFormat) {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
-        NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            // populate Near Cache
-            assertNull(nearCacheTestContext.cache.get(i));
-            // fetch value from Near Cache
-            assertNull(nearCacheTestContext.cache.get(i));
-        }
-    }
-
-    protected void whenCacheIsFullPutOnSameKeyShouldUpdateValue_withEvictionPolicyIsNONE(InMemoryFormat inMemoryFormat,
-                                                                                         LocalUpdatePolicy localUpdatePolicy) {
-        int maxSize = DEFAULT_RECORD_COUNT / 2;
-
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
-                .setLocalUpdatePolicy(localUpdatePolicy)
-                .setEvictionConfig(new EvictionConfig(maxSize, ENTRY_COUNT, EvictionPolicy.NONE));
-        NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheTestContext.cache.put(i, "value-" + i);
-            // populate Near Cache
-            nearCacheTestContext.cache.get(i);
-        }
-
-        assertEquals(maxSize, nearCacheTestContext.nearCache.size());
-        assertEquals("value-1", nearCacheTestContext.cache.get(1));
-
-        nearCacheTestContext.cache.put(1, "newValue");
-
-        assertEquals("newValue", nearCacheTestContext.cache.get(1));
-        assertEquals("newValue", nearCacheTestContext.cache.get(1));
     }
 
     protected void putAndGetFromCacheAndThenGetFromClientNearCache(InMemoryFormat inMemoryFormat) {
@@ -580,43 +539,6 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected void testNearCacheEviction(InMemoryFormat inMemoryFormat) {
-        int size = 100;
-        int expectedEvictions = 1;
-
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
-                .setEvictionConfig(new EvictionConfig(size, ENTRY_COUNT, EvictionPolicy.LRU));
-
-        NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-
-        // populate map with an extra entry
-        for (int i = 0; i < size + 1; i++) {
-            context.cache.put(i, "value-" + i);
-        }
-
-        // populate Near Caches
-        for (int i = 0; i < size; i++) {
-            context.cache.get(i);
-        }
-
-        NearCacheStats statsBeforeEviction = getNearCacheStats(context.cache);
-
-        // trigger eviction via fetching the extra entry
-        context.cache.get(size);
-
-        waitForNearCacheEvictions(context.cache, expectedEvictions);
-
-        // we expect (size + the extra entry - the expectedEvictions) entries in the Near Cache
-        int expectedOwnedEntryCount = size + 1 - expectedEvictions;
-
-        NearCacheStats stats = getNearCacheStats(context.cache);
-        assertEquals("got the wrong ownedEntryCount", expectedOwnedEntryCount, stats.getOwnedEntryCount());
-        assertEquals("got the wrong eviction count", expectedEvictions, stats.getEvictions());
-        assertEquals("got the wrong expiration count", 0, stats.getExpirations());
-        assertEquals("we expect the same hits", statsBeforeEviction.getHits(), stats.getHits());
-        assertEquals("we expect the same misses", statsBeforeEviction.getMisses(), stats.getMisses());
-    }
-
     protected void testNearCacheExpiration_withTTL(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setTimeToLiveSeconds(MAX_TTL_SECONDS);
@@ -666,61 +588,8 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
         });
     }
 
-    protected void testNearCacheMemoryCostCalculation(InMemoryFormat inMemoryFormat, int threadCount) {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
-        final NearCacheTestContext context = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            context.cache.put(i, "value-" + i);
-        }
-
-        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
-        Runnable task = new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-                    context.cache.get(i);
-                }
-                countDownLatch.countDown();
-            }
-        };
-
-        ExecutorService executorService = newFixedThreadPool(threadCount);
-        for (int i = 0; i < threadCount; i++) {
-            executorService.execute(task);
-        }
-        assertOpenEventually(countDownLatch);
-
-        // the Near Cache is filled, we should see some memory costs now
-        long memoryCosts = context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost();
-        if (inMemoryFormat == InMemoryFormat.OBJECT) {
-            assertEquals("There should be no Near Cache heap costs calculated for InMemoryFormat.OBJECT", 0, memoryCosts);
-        } else {
-            assertTrue("The Near Cache is filled, there should be some heap costs", memoryCosts > 0);
-        }
-
-        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            context.cache.remove(i);
-        }
-
-        // the Near Cache is empty, we shouldn't see memory costs anymore
-        assertEquals("The Near Cache is empty, there should be no heap costs", 0,
-                context.cache.getLocalCacheStatistics().getNearCacheStatistics().getOwnedEntryMemoryCost());
-    }
-
     protected NearCacheStats getNearCacheStats(ICache cache) {
         return cache.getLocalCacheStatistics().getNearCacheStatistics();
-    }
-
-    protected void waitForNearCacheEvictions(final ICache cache, final int evictionCount) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                long evictions = getNearCacheStats(cache).getEvictions();
-                assertTrue(
-                        format("Near Cache eviction count didn't reach the desired value (%d vs. %d)", evictions, evictionCount),
-                        evictions >= evictionCount);
-            }
-        });
     }
 
     public static class TestCacheLoader implements CacheLoader<Integer, String> {

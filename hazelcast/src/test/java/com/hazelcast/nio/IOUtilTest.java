@@ -20,9 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.test.AbstractTestOperation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -52,7 +49,6 @@ import static com.hazelcast.nio.IOUtil.compress;
 import static com.hazelcast.nio.IOUtil.decompress;
 import static com.hazelcast.nio.IOUtil.delete;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
-import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
 import static com.hazelcast.nio.IOUtil.newInputStream;
 import static com.hazelcast.nio.IOUtil.newOutputStream;
@@ -102,28 +98,6 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test
     public void testConstructor() {
         assertUtilityConstructor(IOUtil.class);
-    }
-
-    @Test
-    public void testExtractOperationCallId() throws Exception {
-        IoUtilTestOperation operation = new IoUtilTestOperation(1);
-        OperationAccessor.setCallId(operation, 2342);
-        Data data = serializationService.toData(operation);
-
-        long callId = extractOperationCallId(data, serializationService);
-
-        assertEquals(2342, callId);
-    }
-
-    @Test
-    public void testExtractOperationCallId_withIdentifiedOperation() throws Exception {
-        IdentifiedIoUtilTestOperation operation = new IdentifiedIoUtilTestOperation(1);
-        OperationAccessor.setCallId(operation, 4223);
-        Data data = serializationService.toData(operation);
-
-        long callId = extractOperationCallId(data, serializationService);
-
-        assertEquals(4223, callId);
     }
 
     @Test
@@ -544,32 +518,4 @@ public class IOUtilTest extends HazelcastTestSupport {
         getFileFromResources("doesNotExist");
     }
 
-    private static class IoUtilTestOperation extends AbstractTestOperation {
-
-        IoUtilTestOperation(int partitionId) {
-            super(partitionId);
-        }
-
-        @Override
-        protected Object doRun() {
-            return null;
-        }
-    }
-
-    private static class IdentifiedIoUtilTestOperation extends IoUtilTestOperation implements IdentifiedDataSerializable {
-
-        IdentifiedIoUtilTestOperation(int partitionId) {
-            super(partitionId);
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 23;
-        }
-
-        @Override
-        public int getId() {
-            return 42;
-        }
-    }
 }

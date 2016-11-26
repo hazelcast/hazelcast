@@ -71,7 +71,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         if (node.isMaster()) {
-            JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(),
+            JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(), node.getVersion(),
                     node.getThisAddress(), node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
         } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
@@ -125,7 +125,7 @@ public class NodeMulticastListener implements MulticastListener {
     }
 
     private boolean isJoinMessage(Object msg) {
-        return msg != null && msg instanceof JoinMessage;
+        return msg != null && msg instanceof JoinMessage && !(msg instanceof SplitBrainJoinMessage);
     }
 
     private boolean isValidJoinMessage(Object msg) {

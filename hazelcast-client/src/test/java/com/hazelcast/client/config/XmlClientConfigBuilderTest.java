@@ -241,13 +241,13 @@ public class XmlClientConfigBuilderTest {
     }
 
     @Test
-    public void testNearCacheConfigWithEvictionConfig() throws IOException {
+    public void testNearCacheConfig_withEvictionConfig_withPreloaderConfig() throws IOException {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-test.xml");
         ClientConfig clientConfig = new XmlClientConfigBuilder(schemaResource).build();
 
-        assertEquals("MyName", clientConfig.getInstanceName());
+        assertEquals("MyInstanceName", clientConfig.getInstanceName());
         
-        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("nearCacheWithEviction");
+        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("nearCacheWithEvictionAndPreloader");
         
         assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
@@ -259,6 +259,12 @@ public class XmlClientConfigBuilderTest {
         assertEquals(100, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(EvictionConfig.MaxSizePolicy.ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getMaximumSizePolicy());
         assertEquals(EvictionPolicy.LFU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
+
+        assertNotNull(nearCacheConfig.getPreloaderConfig());
+        assertTrue(nearCacheConfig.getPreloaderConfig().isEnabled());
+        assertEquals("myNearCache.store", nearCacheConfig.getPreloaderConfig().getFileName());
+        assertEquals(2342, nearCacheConfig.getPreloaderConfig().getStoreInitialDelaySeconds());
+        assertEquals(4223, nearCacheConfig.getPreloaderConfig().getStoreIntervalSeconds());
     }
 
     @Test

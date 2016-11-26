@@ -41,6 +41,8 @@ public class NearCacheStatsImpl implements NearCacheStats {
             newUpdater(NearCacheStatsImpl.class, "evictions");
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> EXPIRATIONS =
             newUpdater(NearCacheStatsImpl.class, "expirations");
+    private static final AtomicLongFieldUpdater<NearCacheStatsImpl> PERSISTENCE_COUNT =
+            newUpdater(NearCacheStatsImpl.class, "persistenceCount");
 
     private volatile long creationTime;
     private volatile long ownedEntryCount;
@@ -49,6 +51,12 @@ public class NearCacheStatsImpl implements NearCacheStats {
     private volatile long misses;
     private volatile long evictions;
     private volatile long expirations;
+
+    private volatile long persistenceCount;
+    private volatile long lastPersistenceTime;
+    private volatile long lastPersistenceDuration;
+    private volatile long lastPersistenceWrittenBytes;
+    private volatile long lastPersistenceKeyCount;
 
     public NearCacheStatsImpl() {
         this.creationTime = Clock.currentTimeMillis();
@@ -139,11 +147,6 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return evictions;
     }
 
-    // just for testing
-    void setEvictions(long evictions) {
-        EVICTIONS.set(this, evictions);
-    }
-
     public void incrementEvictions() {
         EVICTIONS.incrementAndGet(this);
     }
@@ -153,13 +156,41 @@ public class NearCacheStatsImpl implements NearCacheStats {
         return expirations;
     }
 
-    // just for testing
-    void setExpirations(long expirations) {
-        EXPIRATIONS.set(this, expirations);
-    }
-
     public void incrementExpirations() {
         EXPIRATIONS.incrementAndGet(this);
+    }
+
+    @Override
+    public long getPersistenceCount() {
+        return persistenceCount;
+    }
+
+    public void addPersistence(long duration, int writtenBytes, int keyCount) {
+        PERSISTENCE_COUNT.incrementAndGet(this);
+        lastPersistenceTime = Clock.currentTimeMillis();
+        lastPersistenceDuration = duration;
+        lastPersistenceWrittenBytes = writtenBytes;
+        lastPersistenceKeyCount = keyCount;
+    }
+
+    @Override
+    public long getLastPersistenceTime() {
+        return lastPersistenceTime;
+    }
+
+    @Override
+    public long getLastPersistenceDuration() {
+        return lastPersistenceDuration;
+    }
+
+    @Override
+    public long getLastPersistenceWrittenBytes() {
+        return lastPersistenceWrittenBytes;
+    }
+
+    @Override
+    public long getLastPersistenceKeyCount() {
+        return lastPersistenceKeyCount;
     }
 
     @Override
@@ -172,6 +203,11 @@ public class NearCacheStatsImpl implements NearCacheStats {
         root.add("misses", misses);
         root.add("evictions", evictions);
         root.add("expirations", expirations);
+        root.add("persistenceCount", persistenceCount);
+        root.add("lastPersistenceTime", lastPersistenceTime);
+        root.add("lastPersistenceDuration", lastPersistenceDuration);
+        root.add("lastPersistenceWrittenBytes", lastPersistenceWrittenBytes);
+        root.add("lastPersistenceKeyCount", lastPersistenceKeyCount);
         return root;
     }
 
@@ -184,6 +220,11 @@ public class NearCacheStatsImpl implements NearCacheStats {
         misses = getLong(json, "misses", -1L);
         evictions = getLong(json, "evictions", -1L);
         expirations = getLong(json, "expirations", -1L);
+        persistenceCount = getLong(json, "persistenceCount", -1L);
+        lastPersistenceTime = getLong(json, "lastPersistenceTime", -1L);
+        lastPersistenceDuration = getLong(json, "lastPersistenceDuration", -1L);
+        lastPersistenceWrittenBytes = getLong(json, "lastPersistenceWrittenBytes", -1L);
+        lastPersistenceKeyCount = getLong(json, "lastPersistenceKeyCount", -1L);
     }
 
     @Override
@@ -197,6 +238,11 @@ public class NearCacheStatsImpl implements NearCacheStats {
                 + ", ratio=" + String.format("%.1f%%", getRatio())
                 + ", evictions=" + evictions
                 + ", expirations=" + expirations
+                + ", lastPersistenceTime=" + lastPersistenceTime
+                + ", persistenceCount=" + persistenceCount
+                + ", lastPersistenceDuration=" + lastPersistenceDuration
+                + ", lastPersistenceWrittenBytes=" + lastPersistenceWrittenBytes
+                + ", lastPersistenceKeyCount=" + lastPersistenceKeyCount
                 + '}';
     }
 }

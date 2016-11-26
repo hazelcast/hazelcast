@@ -29,6 +29,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -268,6 +269,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 nearCacheConfig.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.valueOf(value));
             } else if ("eviction".equals(nodeName)) {
                 nearCacheConfig.setEvictionConfig(getEvictionConfig(child));
+            } else if ("preloader".equals(nodeName)) {
+                nearCacheConfig.setPreloaderConfig(getNearCachePreloaderConfig(child));
             }
         }
         clientConfig.addNearCacheConfig(nearCacheConfig);
@@ -290,6 +293,28 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             );
         }
         return evictionConfig;
+    }
+
+    private NearCachePreloaderConfig getNearCachePreloaderConfig(Node node) {
+        NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
+        String enabled = getAttribute(node, "enabled");
+        String fileName = getAttribute(node, "file-name");
+        String storeInitialDelaySeconds = getAttribute(node, "store-initial-delay-seconds");
+        String storeIntervalSeconds = getAttribute(node, "store-interval-seconds");
+        if (enabled != null) {
+            preloaderConfig.setEnabled(getBooleanValue(enabled));
+        }
+        if (fileName != null) {
+            preloaderConfig.setFileName(fileName);
+        }
+        if (storeInitialDelaySeconds != null) {
+            preloaderConfig.setStoreInitialDelaySeconds(getIntegerValue("storage-initial-delay-seconds",
+                    storeInitialDelaySeconds));
+        }
+        if (storeIntervalSeconds != null) {
+            preloaderConfig.setStoreIntervalSeconds(getIntegerValue("storage-interval-seconds", storeIntervalSeconds));
+        }
+        return preloaderConfig;
     }
 
     private void handleLoadBalancer(Node node) {

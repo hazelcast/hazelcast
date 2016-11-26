@@ -49,7 +49,7 @@ public abstract class AbstractInvocationFuture_AbstractTest extends HazelcastTes
         }
 
         @Override
-        protected Object resolveAndThrow(Object state) throws ExecutionException, InterruptedException {
+        protected Object resolveAndThrowIfException(Object state) throws ExecutionException, InterruptedException {
             if (state instanceof Throwable) {
                 if (state instanceof Error) {
                     throw (Error) state;

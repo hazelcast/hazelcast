@@ -234,7 +234,7 @@ public class ClientScheduledExecutorProxy
                                                               TimeUnit unit) {
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture> futures = new HashMap<Member, IScheduledFuture>();
+        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.SINGLE_RUN, name, adapter, delay, unit);

@@ -33,6 +33,7 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
+import com.hazelcast.monitor.NodeState;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class MemberStateImpl implements MemberState {
 
     private String address;
@@ -60,6 +62,7 @@ public class MemberStateImpl implements MemberState {
     private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
+    private NodeState nodeState = new NodeStateImpl();
 
     public MemberStateImpl() {
     }
@@ -195,6 +198,15 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public NodeState getNodeState() {
+        return nodeState;
+    }
+
+    public void setNodeState(NodeState nodeState) {
+        this.nodeState = nodeState;
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("address", address);
@@ -252,6 +264,7 @@ public class MemberStateImpl implements MemberState {
         root.add("memoryStats", memoryStats.toJson());
         root.add("operationStats", operationStats.toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
+        root.add("nodeState", nodeState.toJson());
         return root;
     }
 
@@ -323,7 +336,13 @@ public class MemberStateImpl implements MemberState {
             memberPartitionState = new MemberPartitionStateImpl();
             memberPartitionState.fromJson(jsonMemberPartitionState);
         }
+        JsonObject jsonNodeState = getObject(json, "nodeState", null);
+        if (jsonNodeState != null) {
+            nodeState = new NodeStateImpl();
+            nodeState.fromJson(jsonNodeState);
+        }
     }
+
     //CHECKSTYLE:ON
     @Override
     public String toString() {
@@ -340,6 +359,7 @@ public class MemberStateImpl implements MemberState {
                 + ", memoryStats=" + memoryStats
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
+                + ", nodeState=" + nodeState
                 + '}';
     }
 }

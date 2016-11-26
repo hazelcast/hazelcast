@@ -38,11 +38,17 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.impl.listener.ClientListenerServiceImpl;
+import com.hazelcast.client.spi.properties.ClientProperty;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -50,10 +56,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -85,6 +87,8 @@ import static com.hazelcast.spi.properties.GroupProperty.SOCKET_CLIENT_BUFFER_DI
  */
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientConnectionManagerImpl implements ClientConnectionManager {
+
+    private static final int DEFAULT_SSL_THREAD_COUNT = 3;
 
     protected final AtomicInteger connectionIdGen = new AtomicInteger();
 
@@ -150,16 +154,37 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void initIOThreads(HazelcastClientInstanceImpl client) {
-        boolean directBuffer = client.getProperties().getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+        HazelcastProperties properties = client.getProperties();
+        boolean directBuffer = properties.getBoolean(SOCKET_CLIENT_BUFFER_DIRECT);
+
+        SSLConfig sslConfig = client.getClientConfig().getNetworkConfig().getSSLConfig();
+        boolean sslEnabled = sslConfig != null && sslConfig.isEnabled();
+
+        int configuredInputThreads = properties.getInteger(ClientProperty.IO_INPUT_THREAD_COUNT);
+        int configuredOutputThreads = properties.getInteger(ClientProperty.IO_OUTPUT_THREAD_COUNT);
+
+        int inputThreads;
+        if (configuredInputThreads == -1) {
+            inputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+        } else {
+            inputThreads = configuredInputThreads;
+        }
+
+        int outputThreads;
+        if (configuredOutputThreads == -1) {
+            outputThreads = sslEnabled ? DEFAULT_SSL_THREAD_COUNT : 1;
+        } else {
+            outputThreads = configuredOutputThreads;
+        }
 
         ioThreadingModel = new NonBlockingIOThreadingModel(
                 client.getLoggingService(),
                 client.getMetricsRegistry(),
                 new HazelcastThreadGroup(client.getName(), logger, client.getClientConfig().getClassLoader()),
                 outOfMemoryHandler,
-                1,
-                1,
-                0,
+                inputThreads,
+                outputThreads,
+                properties.getInteger(ClientProperty.IO_BALANCER_INTERVAL_SECONDS),
                 new ClientSocketWriterInitializer(getBufferSize(), directBuffer),
                 new ClientSocketReaderInitializer(getBufferSize(), directBuffer));
     }
@@ -578,7 +603,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     private void authenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = connections.put(connection.getRemoteEndpoint(), connection);
+        ClientConnection oldConnection = connections.put(addressTranslator.translate(connection.getRemoteEndpoint()), connection);
         if (oldConnection == null) {
             fireConnectionAddedEvent(connection);
         }

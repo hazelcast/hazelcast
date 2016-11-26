@@ -106,6 +106,8 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      */
     private EvictionConfig evictionConfig = new EvictionConfig();
 
+    private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
+
     public NearCacheConfig() {
     }
 
@@ -149,6 +151,10 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         // EvictionConfig is not allowed to be null
         if (config.evictionConfig != null) {
             this.evictionConfig = config.evictionConfig;
+        }
+        // NearCachePreloaderConfig is not allowed to be null
+        if (config.preloaderConfig != null) {
+            this.preloaderConfig = config.preloaderConfig;
         }
     }
 
@@ -422,6 +428,15 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         return this;
     }
 
+    public NearCachePreloaderConfig getPreloaderConfig() {
+        return preloaderConfig;
+    }
+
+    public NearCacheConfig setPreloaderConfig(NearCachePreloaderConfig preloaderConfig) {
+        this.preloaderConfig = checkNotNull(preloaderConfig, "NearCachePreloaderConfig cannot be null!");
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
@@ -433,6 +448,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         out.writeInt(inMemoryFormat.ordinal());
         out.writeInt(localUpdatePolicy.ordinal());
         out.writeObject(evictionConfig);
+        out.writeObject(preloaderConfig);
     }
 
     @Override
@@ -446,6 +462,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         inMemoryFormat = InMemoryFormat.values()[in.readInt()];
         localUpdatePolicy = LocalUpdatePolicy.values()[in.readInt()];
         evictionConfig = in.readObject();
+        preloaderConfig = in.readObject();
     }
 
     @Override
@@ -460,6 +477,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
                 + ", cacheLocalEntries=" + cacheLocalEntries
                 + ", localUpdatePolicy=" + localUpdatePolicy
                 + ", evictionConfig=" + evictionConfig
+                + ", preloaderConfig=" + preloaderConfig
                 + '}';
     }
 

@@ -34,7 +34,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class MapValuesMessageTask
-        extends AbstractMapQueryMessageTask<MapValuesCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapValuesCodec.RequestParameters> {
 
     public MapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

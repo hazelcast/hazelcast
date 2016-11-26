@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MapEntrySetMessageTask
-        extends AbstractMapQueryMessageTask<MapEntrySetCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapEntrySetCodec.RequestParameters> {
 
     public MapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

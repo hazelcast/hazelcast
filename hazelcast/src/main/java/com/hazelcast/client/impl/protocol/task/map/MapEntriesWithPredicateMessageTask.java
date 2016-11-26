@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 public class MapEntriesWithPredicateMessageTask
-        extends AbstractMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
 
     public MapEntriesWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

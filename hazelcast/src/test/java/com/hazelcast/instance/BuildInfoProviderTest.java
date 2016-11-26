@@ -93,6 +93,14 @@ public class BuildInfoProviderTest {
         assertEquals(109900, BuildInfo.calculateVersion("10.99-RC1"));
     }
 
+    @Test
+    public void testOverrideBuildVersion() {
+        System.setProperty("hazelcast.version", "99.99.99");
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        assertEquals("99.99.99", buildInfo.getVersion());
+        System.clearProperty("hazelcast.version");
+    }
+
     @After
     public void cleanup() {
         System.clearProperty("hazelcast.build");

@@ -34,7 +34,7 @@ import java.util.Collection;
 import java.util.List;
 
 public class MapKeySetMessageTask
-        extends AbstractMapQueryMessageTask<MapKeySetCodec.RequestParameters> {
+        extends DefaultMapQueryMessageTask<MapKeySetCodec.RequestParameters> {
 
     public MapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

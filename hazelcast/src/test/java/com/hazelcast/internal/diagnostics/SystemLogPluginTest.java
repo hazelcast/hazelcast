@@ -20,10 +20,10 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
-    private Config config;
-    private TestHazelcastInstanceFactory hzFactory;
-    private HazelcastInstance hz;
-    private SystemLogPlugin plugin;
+    protected Config config;
+    protected TestHazelcastInstanceFactory hzFactory;
+    protected HazelcastInstance hz;
+    protected SystemLogPlugin plugin;
 
     @Before
     public void setup() {

@@ -25,7 +25,7 @@ import java.nio.ByteOrder;
 /**
  * Provides serialization methods for arrays of primitive types
  */
-public interface ObjectDataInput extends DataInput {
+public interface ObjectDataInput extends DataInput, VersionAware {
 
     /**
      * @return the byte array read
@@ -87,6 +87,20 @@ public interface ObjectDataInput extends DataInput {
      * @throws IOException if it reaches end of file before finish reading
      */
     <T> T readObject() throws IOException;
+
+    /**
+     * Reads to stored Data as an object instead of a Data instance.
+     *
+     * The reason this method exists is that in some cases 'Data' is stored on serialization, but on deserialization the
+     * actual object instance is needed. Getting access to the Data is easy by calling the {@link #readData()} method. But
+     * deserializing the Data to an object instance is impossible because there is no reference to the
+     * {@link com.hazelcast.spi.serialization.SerializationService}.
+     *
+     * @param <T>
+     * @return the read Object
+     * @throws IOException if it reaches end of file before finish reading
+     */
+    <T> T readDataAsObject() throws IOException;
 
     /**
      * @param <T> type of the object in array to be read

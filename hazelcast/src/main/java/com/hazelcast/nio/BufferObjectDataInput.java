@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -74,4 +75,6 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
     void clear();
 
     void init(byte[] data, int offset);
+
+    void setVersion(Version version);
 }

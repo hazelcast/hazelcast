@@ -81,7 +81,7 @@ public final class GroupProperty {
      * The number of priority generic operation handler threads per Member.
      * <p/>
      * The default is 1.
-     *
+     * <p>
      * Having at least 1 priority generic operation thread helps to improve cluster stability since a lot of the cluster
      * operations are generic priority operations and they should get executed as soon as possible. If there is a dedicated
      * generic operation thread, than these operations don't get delayed because the generic threads are busy executing regular
@@ -538,6 +538,18 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.query.predicate.parallel.evaluation", false);
 
     /**
+     * Run aggregation accumulation for multiple entries in parallel.
+     * <p/>
+     * Each Hazelcast member executes the accumulation stage of an aggregation using a single thread by default.
+     * In most cases it pays off to do it in parallel.
+     * <p/>
+     * The default is true.
+     */
+    public static final HazelcastProperty AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION
+            = new HazelcastProperty("hazelcast.aggregation.accumulation.parallel.evaluation", true);
+
+
+    /**
      * Result size limit for query operations on maps.
      * <p/>
      * This value defines the maximum number of returned elements for a single query result. If a query exceeds this number of
@@ -625,6 +637,21 @@ public final class GroupProperty {
     public static final HazelcastProperty SERIALIZATION_VERSION
             = new HazelcastProperty("hazelcast.serialization.version",
             BuildInfoProvider.getBuildInfo().getSerializationVersion());
+
+    /**
+     * Override cluster version to use while node is not yet member of a cluster. The cluster version assumed before joining
+     * a cluster may affect the serialization format of cluster discovery & join operations and its compatibility with members
+     * of a cluster running on different Hazelcast codebase versions. The default is to use the node's codebase version. You may
+     * need to override it for your node to join a cluster running on a previous cluster version.
+     */
+    public static final HazelcastProperty INIT_CLUSTER_VERSION
+            = new HazelcastProperty("hazelcast.init.cluster.version");
+
+    /**
+     * Allows enabling rolling upgrades support. Enterprise only feature.
+     */
+    public static final HazelcastProperty ROLLING_UPGRADE_ENABLED
+            = new HazelcastProperty("hazelcast.rolling.upgrade.enabled", false);
 
     private GroupProperty() {
     }

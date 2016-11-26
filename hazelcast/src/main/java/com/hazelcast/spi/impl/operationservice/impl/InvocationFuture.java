@@ -61,8 +61,8 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
 
     @Override
     protected TimeoutException newTimeoutException(long timeout, TimeUnit unit) {
-        return new TimeoutException(invocation.op.getClass().getSimpleName() + " failed to complete within "
-                + timeout + " " + unit + ". " + invocation);
+        return new TimeoutException(String.format("%s failed to complete within %d %s. %s",
+                invocation.op.getClass().getSimpleName(), timeout, unit, invocation));
     }
 
     @Override
@@ -71,7 +71,7 @@ final class InvocationFuture<E> extends AbstractInvocationFuture<E> {
     }
 
     @Override
-    protected E resolveAndThrow(Object unresolved) throws ExecutionException, InterruptedException {
+    protected E resolveAndThrowIfException(Object unresolved) throws ExecutionException, InterruptedException {
         Object value = resolve(unresolved);
 
         if (value == null || !(value instanceof Throwable)) {

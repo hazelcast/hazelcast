@@ -23,7 +23,7 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -516,7 +516,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             return;
         }
         for (Address address : possibleAddresses) {
-            JoinMessage response = sendSplitBrainJoinMessage(address);
+            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
             if (shouldMerge(response)) {
                 logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
                 setTargetAddress(address);

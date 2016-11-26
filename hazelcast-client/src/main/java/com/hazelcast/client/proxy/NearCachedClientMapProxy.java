@@ -28,6 +28,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.logging.ILogger;
@@ -84,7 +85,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         ClientContext context = getContext();
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
         NearCacheManager nearCacheManager = context.getNearCacheManager();
-        NearCache<Data, Object> clientNearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
+        NearCache<Data, Object> clientNearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig,
+                new IMapDataStructureAdapter<K, V>(this));
 
         int partitionCount = context.getPartitionService().getPartitionCount();
         nearCache = asStaleReadPreventerNearCache(clientNearCache, partitionCount);
@@ -107,6 +109,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected V getInternal(Data key) {
         Object cached = nearCache.get(key);
         if (cached != null) {
@@ -278,6 +281,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
         Map<Data, Boolean> markers = EMPTY_MAP;
 
@@ -294,7 +298,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                     if (markers == EMPTY_MAP) {
                         markers = new HashMap<Data, Boolean>();
                     }
-
                     markers.put(key, keyStateMarker.tryMark(key));
                 }
             }
@@ -313,7 +316,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 } else if (!invalidateOnChange) {
                     nearCache.put(key, value);
                 }
-
             }
         }
         return responses;
@@ -492,8 +494,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         @Override
         public void handle(Data key) {
-            // null key means Near Cache has to remove all entries in it.
-            // see MapAddNearCacheEntryListenerMessageTask.
+            // null key means Near Cache has to remove all entries in it (see MapAddNearCacheEntryListenerMessageTask)
             if (key == null) {
                 nearCache.clear();
             } else {

@@ -45,11 +45,11 @@ import java.util.concurrent.ConcurrentMap;
 public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
-    private volatile Connection conn;
-    private ConcurrentMap<String, TransactionContext> transactionContextMap
+    private final Connection conn;
+    private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
-    private volatile SocketAddress socketAddress;
+    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
+    private final SocketAddress socketAddress;
 
     private LoginContext loginContext;
     private ClientPrincipal principal;
@@ -61,20 +61,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
-        setConnection(conn);
-        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
-        this.clientVersionString = "Unknown";
-    }
-
-    @Override
-    public void setConnection(Connection connection) {
-        this.conn = connection;
-        if (connection instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
+        this.conn = conn;
+        if (conn instanceof TcpIpConnection) {
+            TcpIpConnection tcpIpConnection = (TcpIpConnection) conn;
             socketAddress = tcpIpConnection.getSocketChannel().socket().getRemoteSocketAddress();
         } else {
             socketAddress = null;
         }
+        this.clientVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
+        this.clientVersionString = "Unknown";
     }
 
     @Override
@@ -89,7 +84,15 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public boolean isAlive() {
-        return conn.isAlive();
+        if (conn.isAlive()) {
+            return true;
+        }
+        String clientUuid = getUuid();
+        if (null != clientUuid) {
+            Connection connection = clientEngine.getEndpointManager().findLiveConnectionFor(clientUuid);
+            return null != connection;
+        }
+        return false;
     }
 
     @Override
@@ -232,6 +235,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             }
         }
         removeListenerActions.clear();
+    }
+
+    @Override
+    public boolean resourcesExist() {
+        return !removeListenerActions.isEmpty() || !transactionContextMap.isEmpty();
     }
 
     public void destroy() throws LoginException {

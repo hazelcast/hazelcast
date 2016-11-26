@@ -17,10 +17,9 @@
 package com.hazelcast.console;
 
 /**
- * Reads a line of input
+ * Reads a line of input.
  */
 public interface LineReader {
 
     String readLine() throws Exception;
-
 }

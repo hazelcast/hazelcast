@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * <p>
  * The abstract Combiner class is used to build combiners for the {@link Job}.<br>
@@ -75,8 +73,9 @@ import com.hazelcast.spi.annotation.Beta;
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public abstract class Combiner<ValueIn, ValueOut> {
 
     /**

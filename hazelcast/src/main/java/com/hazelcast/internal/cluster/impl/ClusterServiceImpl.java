@@ -59,6 +59,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -386,7 +387,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
         if (!isMaster()) {
-             return;
+            return;
         }
 
         if (getClusterState() == ClusterState.ACTIVE) {
@@ -394,7 +395,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
 
         if (!node.getNodeExtension().isStartCompleted()) {
-             return;
+            return;
         }
 
         Address address = member.getAddress();
@@ -405,7 +406,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 assert !isMemberRemovedWhileClusterIsNotActive(address);
 
                 logger.warning(member + " is returning with a new address. Old one was: " + oldAddress
-                    + ". Will update partition table with the new address.");
+                        + ". Will update partition table with the new address.");
                 InternalPartitionServiceImpl partitionService = node.partitionService;
                 partitionService.replaceAddress(oldAddress, address);
             }
@@ -728,7 +729,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private MemberImpl createMember(MemberInfo memberInfo, String ipV6ScopeId) {
         Address address = memberInfo.getAddress();
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), memberInfo.getUuid(),
+        return new MemberImpl(address, memberInfo.getVersion(), thisAddress.equals(address), memberInfo.getUuid(),
                 (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), memberInfo.getAttributes(), memberInfo.isLiteMember());
     }
 
@@ -896,7 +897,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void changeClusterState(ClusterState newState, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), partitionStateVersion, isTransient);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), partitionStateVersion,
+                isTransient);
     }
 
     @Override
@@ -906,7 +908,26 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void changeClusterState(ClusterState newState, TransactionOptions options, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(newState, getMembers(), options, partitionStateVersion, isTransient);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), options, partitionStateVersion,
+                isTransient);
+    }
+
+    @Override
+    public Version getClusterVersion() {
+        return clusterStateManager.getClusterVersion();
+    }
+
+    @Override
+    public void changeClusterVersion(Version version) {
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion, false);
+    }
+
+    @Override
+    public void changeClusterVersion(Version version, TransactionOptions options) {
+        int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion,
+                false);
     }
 
     void addMembersRemovedInNotActiveState(Collection<MemberImpl> members) {
@@ -964,11 +985,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         hazelcastInstance.getLifecycleService().shutdown();
     }
 
-    public void initialClusterState(ClusterState clusterState) {
+    public void initialClusterState(ClusterState clusterState, Version version) {
         if (node.joined()) {
             throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
         }
-        clusterStateManager.initialClusterState(clusterState);
+        clusterStateManager.initialClusterState(clusterState, version);
     }
 
     public ClusterStateManager getClusterStateManager() {

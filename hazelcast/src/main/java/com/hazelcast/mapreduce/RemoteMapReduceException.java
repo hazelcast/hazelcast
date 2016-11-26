@@ -24,7 +24,9 @@ import java.util.List;
  * This exception class is used to show stack traces of multiple failed
  * remote operations at once. This can happen if the {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation}
  * fails to retrieve values for some reason.
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
+@Deprecated
 public class RemoteMapReduceException
         extends HazelcastException {
 

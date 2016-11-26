@@ -29,8 +29,10 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.CallsPerMember;
+import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
+import com.hazelcast.spi.OperationControl;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -38,8 +40,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -130,7 +131,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         registry.scanAndRegister(this, "operation.invocations");
     }
 
-    private ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
+    private static ScheduledExecutorService newScheduler(final HazelcastThreadGroup threadGroup) {
         // the scheduler is configured with a single thread; so prevent concurrency problems.
         return new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
             @Override
@@ -183,7 +184,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
 
     @Override
     public void handle(Packet packet) {
-        scheduler.execute(new ProcessOperationHeartbeatsTask(packet));
+        scheduler.execute(new ProcessOperationControlTask(packet));
     }
 
     public void start() {
@@ -191,10 +192,10 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         scheduler.scheduleAtFixedRate(
                 monitorInvocationsTask, 0, monitorInvocationsTask.periodMillis, MILLISECONDS);
 
-        BroadcastOperationHeartbeatsTask broadcastOperationHeartbeatsTask
-                = new BroadcastOperationHeartbeatsTask(heartbeatBroadcastPeriodMillis);
+        BroadcastOperationControlTask broadcastOperationControlTask
+                = new BroadcastOperationControlTask(heartbeatBroadcastPeriodMillis);
         scheduler.scheduleAtFixedRate(
-                broadcastOperationHeartbeatsTask, 0, broadcastOperationHeartbeatsTask.periodMillis, MILLISECONDS);
+                broadcastOperationControlTask, 0, broadcastOperationControlTask.periodMillis, MILLISECONDS);
     }
 
     public void shutdown() {
@@ -286,18 +287,9 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
             int normalTimeouts = 0;
             int invocationCount = 0;
 
-            Set<Map.Entry<Long, Invocation>> invocations = invocationRegistry.entrySet();
-            Iterator<Map.Entry<Long, Invocation>> iterator = invocations.iterator();
-            while (iterator.hasNext()) {
+            for (Entry<Long, Invocation> e : invocationRegistry.entrySet()) {
                 invocationCount++;
-                Map.Entry<Long, Invocation> entry = iterator.next();
-                Long callId = entry.getKey();
-                Invocation inv = entry.getValue();
-
-                if (duplicate(inv, callId, iterator)) {
-                    continue;
-                }
-
+                Invocation inv = e.getValue();
                 try {
                     if (inv.detectAndHandleTimeout(invocationTimeoutMillis)) {
                         normalTimeouts++;
@@ -313,38 +305,6 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(normalTimeouts);
             log(invocationCount, backupTimeouts, normalTimeouts);
-        }
-
-        /**
-         * The reason for the following if check is a workaround for the problem explained below.
-         *
-         * Problematic scenario :
-         * If an invocation with callId 1 is retried twice for any reason,
-         * two new innovations created and registered to invocation registry with callId’s 2 and 3 respectively.
-         * Both new invocations are sharing the same operation
-         * When one of the new invocations, say the one with callId 2 finishes, it de-registers itself from the
-         * invocation registry.
-         * When doing the de-registration it sets the shared operation’s callId to 0.
-         * After that when the invocation with the callId 3 completes, it tries to de-register itself from
-         * invocation registry
-         * but fails to do so since the invocation callId and the callId on the operation is not matching anymore
-         * When InvocationMonitor thread kicks in, it sees that there is an invocation in the registry,
-         * and asks whether invocation is finished or not.
-         * Even if the remote node replies with invocation is timed out,
-         * It can’t be de-registered from the registry because of aforementioned non-matching callId scenario.
-         *
-         * Workaround:
-         * When InvocationMonitor kicks in, it will do a check for invocations that are completed
-         * but their callId's are not matching with their operations. If any invocation found for that type,
-         * it is removed from the invocation registry.
-         */
-        private boolean duplicate(Invocation inv, long callId, Iterator iterator) {
-            if (callId != inv.op.getCallId() && inv.future.isDone()) {
-                iterator.remove();
-                return true;
-            }
-
-            return false;
         }
 
         private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
@@ -392,32 +352,45 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
     }
 
-    private final class ProcessOperationHeartbeatsTask extends MonitorTask {
-        // either a packet or a long-array.
-        private Object callIds;
+    private final class ProcessOperationControlTask extends MonitorTask {
+        // either OperationControl or Packet that contains it
+        private final Object payload;
+        private final Address sender;
 
-        private ProcessOperationHeartbeatsTask(Object callIds) {
-            this.callIds = callIds;
+        ProcessOperationControlTask(OperationControl payload) {
+            this.payload = payload;
+            this.sender = thisAddress;
+        }
+
+        ProcessOperationControlTask(Packet payload) {
+            this.payload = payload;
+            this.sender = payload.getConn().getEndPoint();
         }
 
         @Override
         public void run0() {
             heartbeatPacketsReceived.inc();
             long timeMillis = Clock.currentTimeMillis();
-
             updateMemberHeartbeat(timeMillis);
-
-            for (long callId : (long[]) serializationService.toObject(callIds)) {
+            final OperationControl opControl = serializationService.toObject(payload);
+            for (long callId : opControl.runningOperations()) {
                 updateHeartbeat(callId, timeMillis);
+            }
+            for (CanCancelOperations service : serviceManager.getServices(CanCancelOperations.class)) {
+                final long[] opsToCancel = opControl.operationsToCancel();
+                for (int i = 0; i < opsToCancel.length; i++) {
+                    if (opsToCancel[i] != -1 && service.cancelOperation(sender, opsToCancel[i])) {
+                        opsToCancel[i] = -1;
+                    }
+                }
             }
         }
 
         private void updateMemberHeartbeat(long timeMillis) {
-            Address address = callIds instanceof Packet ? ((Packet) callIds).getConn().getEndPoint() : thisAddress;
-            AtomicLong lastMemberHeartbeat = lastHeartbeatPerMember.get(address);
+            AtomicLong lastMemberHeartbeat = lastHeartbeatPerMember.get(sender);
             if (lastMemberHeartbeat == null) {
                 lastMemberHeartbeat = new AtomicLong();
-                lastHeartbeatPerMember.put(address, lastMemberHeartbeat);
+                lastHeartbeatPerMember.put(sender, lastMemberHeartbeat);
             }
 
             lastMemberHeartbeat.set(timeMillis);
@@ -434,50 +407,51 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         }
     }
 
-    private final class BroadcastOperationHeartbeatsTask extends FixedRateMonitorTask {
-        private final LiveOperations liveOperations = new LiveOperations(thisAddress);
+    private final class BroadcastOperationControlTask extends FixedRateMonitorTask {
+        private final CallsPerMember calls = new CallsPerMember(thisAddress);
 
-        private BroadcastOperationHeartbeatsTask(long periodMillis) {
+        private BroadcastOperationControlTask(long periodMillis) {
             super(periodMillis);
         }
 
         @Override
         public void run0() {
-            LiveOperations result = populate();
-            Set<Address> addresses = result.addresses();
-
+            CallsPerMember calls = populate();
+            Set<Address> addresses = calls.addresses();
             if (logger.isFinestEnabled()) {
-                logger.finest("Broadcasting operation heartbeats to: " + addresses.size() + " members");
+                logger.finest("Broadcasting operation control packets to: " + addresses.size() + " members");
             }
-
             for (Address address : addresses) {
-                sendHeartbeats(address, result.callIds(address));
+                sendOpControlPacket(address, calls.toOpControl(address));
             }
         }
 
-        private LiveOperations populate() {
-            liveOperations.clear();
+        private CallsPerMember populate() {
+            calls.clear();
 
             ClusterService clusterService = nodeEngine.getClusterService();
-            liveOperations.initMember(thisAddress);
+            calls.ensureMember(thisAddress);
             for (Member member : clusterService.getMembers()) {
-                liveOperations.initMember(member.getAddress());
+                calls.ensureMember(member.getAddress());
             }
-
             for (LiveOperationsTracker tracker : serviceManager.getServices(LiveOperationsTracker.class)) {
-                tracker.populate(liveOperations);
+                tracker.populate(calls);
             }
-
-            return liveOperations;
+            for (Invocation invocation : invocationRegistry) {
+                if (invocation.future.isCancelled()) {
+                    calls.addOpToCancel(invocation.invTarget, invocation.op.getCallId());
+                }
+            }
+            return calls;
         }
 
-        private void sendHeartbeats(Address address, long[] callIds) {
+        private void sendOpControlPacket(Address address, OperationControl opControl) {
             heartbeatPacketsSend.inc();
 
             if (address.equals(thisAddress)) {
-                scheduler.execute(new ProcessOperationHeartbeatsTask(callIds));
+                scheduler.execute(new ProcessOperationControlTask(opControl));
             } else {
-                Packet packet = new Packet(serializationService.toBytes(callIds))
+                Packet packet = new Packet(serializationService.toBytes(opControl))
                         .setAllFlags(FLAG_OP | FLAG_OP_CONTROL | FLAG_URGENT);
                 nodeEngine.getNode().getConnectionManager().transmit(packet, address);
             }

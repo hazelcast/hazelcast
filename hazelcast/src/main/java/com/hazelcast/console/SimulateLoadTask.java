@@ -23,7 +23,7 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 
 /**
- * A simulated load test
+ * A simulated load test.
  */
 public final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
 
@@ -55,7 +55,7 @@ public final class SimulateLoadTask implements Callable, Serializable, Hazelcast
         }
 
         hz.getCountDownLatch(latchId).countDown();
-        System.out.println("Finished task:" + taskId);
+        System.out.println("Finished task: " + taskId);
         return null;
     }
 }

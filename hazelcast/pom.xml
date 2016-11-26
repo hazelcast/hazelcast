@@ -212,6 +212,7 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
+                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <includes>
                                     <include>com.eclipsesource.minimal-json:minimal-json</include>

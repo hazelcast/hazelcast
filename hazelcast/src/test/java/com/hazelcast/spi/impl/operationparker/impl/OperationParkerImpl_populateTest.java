@@ -3,7 +3,7 @@ package com.hazelcast.spi.impl.operationparker.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BlockingOperation;
-import com.hazelcast.spi.LiveOperations;
+import com.hazelcast.spi.CallsPerMember;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -38,11 +38,11 @@ public class OperationParkerImpl_populateTest extends HazelcastTestSupport {
         setCallId(blockingOperation, 100);
         operationParker.park(blockingOperation);
 
-        LiveOperations liveOperations = new LiveOperations(thisAddress);
-        operationParker.populate(liveOperations);
+        CallsPerMember callsPerMember = new CallsPerMember(thisAddress);
+        operationParker.populate(callsPerMember);
 
-        assertEquals(singleton(thisAddress), liveOperations.addresses());
-        assertArrayEquals(new long[]{100}, liveOperations.callIds(thisAddress));
+        assertEquals(singleton(thisAddress), callsPerMember.addresses());
+        assertArrayEquals(new long[]{100}, callsPerMember.toOpControl(thisAddress).runningOperations());
     }
 
     @Test
@@ -61,11 +61,11 @@ public class OperationParkerImpl_populateTest extends HazelcastTestSupport {
         setCallId(blockingOperation, 100);
         operationParker.park(blockingOperation);
 
-        LiveOperations liveOperations = new LiveOperations(thisAddress);
-        operationParker.populate(liveOperations);
+        CallsPerMember callsPerMember = new CallsPerMember(thisAddress);
+        operationParker.populate(callsPerMember);
 
-        assertEquals(singleton(thatAddress), liveOperations.addresses());
-        assertArrayEquals(new long[]{100},  liveOperations.callIds(thatAddress));
+        assertEquals(singleton(thatAddress), callsPerMember.addresses());
+        assertArrayEquals(new long[]{100},  callsPerMember.toOpControl(thatAddress).runningOperations());
     }
 
     private static class WaitNotifyKeyImpl implements WaitNotifyKey {

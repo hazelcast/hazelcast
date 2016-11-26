@@ -75,4 +75,14 @@ public class NearCacheConfigReadOnlyTest {
     public void setCacheLocalEntriesOnReadOnlyNearCacheConfigShouldFail() {
         getReadOnlyConfig().setCacheLocalEntries(true);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setPreloaderConfigOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setPreloaderConfig(new NearCachePreloaderConfig());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void getPreloaderConfigOnReadOnlyNearCacheConfigShouldReturnReadOnly() {
+        getReadOnlyConfig().getPreloaderConfig().setEnabled(true);
+    }
 }

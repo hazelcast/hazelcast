@@ -257,7 +257,7 @@ class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
     }
 
     private void memCopy(final Object dest, final long destOffset, final int length, final int indexScale)
-    throws EOFException {
+            throws EOFException {
         if (length < 0) {
             throw new NegativeArraySizeException("Destination length is negative: " + length);
         }

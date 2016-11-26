@@ -27,8 +27,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 
-import java.util.logging.Level;
-
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -94,8 +92,12 @@ public class ClientHeartbeatMonitor implements Runnable {
                 String message = "Client heartbeat is timed out, closing connection to " + connection
                         + ". Now: " + timeToString(currentTimeMillis)
                         + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
-                logger.log(Level.WARNING, message);
                 connection.close(message, null);
+                if (clientEndpoint.resourcesExist()) {
+                    return;
+                }
+
+                clientEndpointManager.removeEndpoint(clientEndpoint, true, message);
             }
         }
     }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * This enum class is used to define how a map reduce job behaves
  * if the job owner recognizes a topology changed event.<br/>
@@ -34,8 +32,9 @@ import com.hazelcast.spi.annotation.Beta;
  * returns null for the requested job id.
  *
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public enum TopologyChangedStrategy {
 
     /**

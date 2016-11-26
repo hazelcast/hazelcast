@@ -101,11 +101,14 @@ import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
 import com.hazelcast.map.impl.operation.WriteBehindStateHolder;
+import com.hazelcast.map.impl.query.AggregationResult;
+import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
+import com.hazelcast.map.impl.query.Target;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
@@ -194,7 +197,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_FROM_LOAD_ALL = 57;
     public static final int PUT_FROM_LOAD_ALL_BACKUP = 58;
     public static final int QUERY_PARTITION = 59;
-    public static final int QUERY = 60;
+    public static final int QUERY_OPERATION = 60;
     public static final int PUT_TRANSIENT = 61;
     public static final int REPLACE_IF_SAME = 62;
     public static final int TRY_PUT = 63;
@@ -249,8 +252,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int VERSIONED_VALUE = 112;
     public static final int MAP_REPLICATION_STATE_HOLDER = 113;
     public static final int WRITE_BEHIND_STATE_HOLDER = 114;
+    public static final int AGGREGATION_RESULT = 115;
+    public static final int QUERY = 116;
+    public static final int TARGET = 117;
 
-    private static final int LEN = WRITE_BEHIND_STATE_HOLDER + 1;
+    private static final int LEN = TARGET + 1;
 
     @Override
     public int getFactoryId() {
@@ -551,7 +557,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new QueryPartitionOperation();
             }
         };
-        constructors[QUERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[QUERY_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryOperation();
             }
@@ -834,6 +840,21 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[WRITE_BEHIND_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new WriteBehindStateHolder();
+            }
+        };
+        constructors[AGGREGATION_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AggregationResult();
+            }
+        };
+        constructors[QUERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new Query();
+            }
+        };
+        constructors[TARGET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new Target();
             }
         };
 

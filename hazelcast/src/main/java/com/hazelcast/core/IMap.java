@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.QueryResultSizeExceededException;
@@ -26,6 +27,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.properties.GroupProperty;
 
@@ -77,7 +79,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * No atomicity guarantees are given. It could be that in case of failure some of the key/value-pairs get written, while
      * others are not.
      */
@@ -313,10 +315,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param   key the key of the map entry.
-     * @return  ICompletableFuture from which the value of the key can be retrieved.
-     * @throws  NullPointerException if the specified key is null.
-     * @see     ICompletableFuture
+     * @param key the key of the map entry.
+     * @return ICompletableFuture from which the value of the key can be retrieved.
+     * @throws NullPointerException if the specified key is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<V> getAsync(K key);
 
@@ -362,11 +364,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param   key   the key of the map entry.
-     * @param   value the new value of the map entry.
-     * @return  ICompletableFuture from which the old value of the key can be retrieved.
-     * @throws  NullPointerException if the specified key or value is null.
-     * @see     ICompletableFuture
+     * @param key   the key of the map entry.
+     * @param value the new value of the map entry.
+     * @return ICompletableFuture from which the old value of the key can be retrieved.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<V> putAsync(K key, V value);
 
@@ -417,14 +419,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      *
-     * @param   key      the key of the map entry.
-     * @param   value    the new value of the map entry.
-     * @param   ttl      maximum time for this entry to stay in the map.
-     *                   0 means infinite.
-     * @param   timeunit time unit for the ttl.
-     * @return  ICompletableFuture from which the old value of the key can be retrieved.
-     * @throws  NullPointerException if the specified key or value is null.
-     * @see     ICompletableFuture
+     * @param key      the key of the map entry.
+     * @param value    the new value of the map entry.
+     * @param ttl      maximum time for this entry to stay in the map.
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl.
+     * @return ICompletableFuture from which the old value of the key can be retrieved.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -473,12 +475,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * defined in the <tt>key</tt>'s class.
      * <p/>
      *
-     * @param   key   the key of the map entry.
-     * @param   value the new value of the map entry.
-     * @return  ICompletableFuture on which to block waiting for the operation to complete or
-     *          register an {@link ExecutionCallback} to be invoked upon completion.
-     * @throws  NullPointerException if the specified key or value is null.
-     * @see     ICompletableFuture
+     * @param key   the key of the map entry.
+     * @param value the new value of the map entry.
+     * @return ICompletableFuture on which to block waiting for the operation to complete or
+     * register an {@link ExecutionCallback} to be invoked upon completion.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value);
 
@@ -530,16 +532,16 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p><b>Warning 2:</b></p>
      * Time resolution for TTL is seconds. The given TTL value is rounded to the next closest second value.
      *
-     * @param   key      the key of the map entry.
-     * @param   value    the new value of the map entry.
-     * @param   ttl      maximum time for this entry to stay in the map.
-     *                   0 means infinite.
-     * @param   timeunit time unit for the ttl.
-     * @return  ICompletableFuture on which client code can block waiting for the operation to
-     *                            complete or provide an {@link ExecutionCallback} to be invoked
-     *                            upon set operation completion.
-     * @throws  NullPointerException if the specified key or value is null.
-     * @see     ICompletableFuture
+     * @param key      the key of the map entry.
+     * @param value    the new value of the map entry.
+     * @param ttl      maximum time for this entry to stay in the map.
+     *                 0 means infinite.
+     * @param timeunit time unit for the ttl.
+     * @return ICompletableFuture on which client code can block waiting for the operation to
+     * complete or provide an {@link ExecutionCallback} to be invoked
+     * upon set operation completion.
+     * @throws NullPointerException if the specified key or value is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<Void> setAsync(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -553,11 +555,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param   key The key of the map entry to remove.
-     * @return  {@link ICompletableFuture} from which the value removed from the map can be
-     *          retrieved.
-     * @throws  NullPointerException if the specified key is null.
-     * @see     ICompletableFuture
+     * @param key The key of the map entry to remove.
+     * @return {@link ICompletableFuture} from which the value removed from the map can be
+     * retrieved.
+     * @throws NullPointerException if the specified key is null.
+     * @see ICompletableFuture
      */
     ICompletableFuture<V> removeAsync(K key);
 
@@ -1544,7 +1546,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * <p/>
      *
      * @return result of entry process.
-     * @throws NullPointerException if the specified key is null.
+     * @throws NullPointerException     if the specified key is null.
      * @throws IllegalArgumentException if the specified keys set is empty
      */
     Map<K, Object> executeOnKeys(Set<K> keys, EntryProcessor entryProcessor);
@@ -1588,6 +1590,58 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate);
 
     /**
+     * Applies the aggregation logic on all map entries and returns the result
+     * <p>
+     * Fast-Aggregations are the successor of the Map-Reduce Aggregators.
+     * They are equivalent to the Map-Reduce Aggregators in most of the use-cases, but instead of running on the Map-Reduce
+     * engine they run on the Query infrastructure. Their performance is tens to hundreds times better due to the fact
+     * that they run in parallel for each partition and are highly optimized for speed and low memory consumption.
+     *
+     * @param aggregator aggregator to aggregate the entries with
+     * @param <R>        type of the result
+     * @return the result of the given type
+     * @since 3.8
+     */
+    <R> R aggregate(Aggregator<R, K, V> aggregator);
+
+    /**
+     * Applies the aggregation logic on map entries filtered with the Predicated and returns the result
+     * <p>
+     * Fast-Aggregations are the successor of the Map-Reduce Aggregators.
+     * They are equivalent to the Map-Reduce Aggregators in most of the use-cases, but instead of running on the Map-Reduce
+     * engine they run on the Query infrastructure. Their performance is tens to hundreds times better due to the fact
+     * that they run in parallel for each partition and are highly optimized for speed and low memory consumption.
+     *
+     * @param aggregator aggregator to aggregate the entries with
+     * @param predicate  predicate to filter the entries with
+     * @param <R>        type of the result
+     * @return the result of the given type
+     * @since 3.8
+     */
+    <R> R aggregate(Aggregator<R, K, V> aggregator, Predicate<K, V> predicate);
+
+    /**
+     * Applies the projection logic on all map entries and returns the result
+     *
+     * @param projection projection to transform the entries with. May return null.
+     * @param <R>        type of the result
+     * @return the result of the given type
+     * @since 3.8
+     */
+    <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection);
+
+    /**
+     * Applies the projection logic on map entries filtered with the Predicated and returns the result
+     *
+     * @param projection projection to transform the entries with. May return null.
+     * @param predicate  predicate to filter the entries with
+     * @param <R>        type of the result
+     * @return the result of the given type
+     * @since 3.8
+     */
+    <R> Collection<R> project(Projection<Map.Entry<K, V>, R> projection, Predicate<K, V> predicate);
+
+    /**
      * Executes a predefined aggregation on the maps data set. The {@link com.hazelcast.mapreduce.aggregation.Supplier}
      * is used to either select or to select and extract a (sub-)value. A predefined set of aggregations can be found in
      * {@link com.hazelcast.mapreduce.aggregation.Aggregations}.
@@ -1597,7 +1651,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param <SuppliedValue> the final type emitted from the supplier.
      * @param <Result>        the resulting aggregation value type.
      * @return the aggregated value.
+     * @deprecated Use fast-aggregations {@link IMap#aggregate(Aggregator)} {@link IMap#aggregate(Aggregator, Predicate)}
      */
+    @Deprecated
     <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                              Aggregation<K, SuppliedValue, Result> aggregation);
 
@@ -1612,7 +1668,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @param <SuppliedValue> the final type emitted from the supplier.
      * @param <Result>        the resulting aggregation value type.
      * @return the aggregated value
+     * @deprecated Use fast-aggregations {@link IMap#aggregate(Aggregator)} or {@link IMap#aggregate(Aggregator, Predicate)}.
      */
+    @Deprecated
     <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                              Aggregation<K, SuppliedValue, Result> aggregation,
                                              JobTracker jobTracker);

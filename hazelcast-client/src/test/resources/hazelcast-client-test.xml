@@ -15,19 +15,21 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.6.xsd"
+<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.8.xsd"
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
-	<instance-name>MyName</instance-name>
-	
-    <near-cache name="nearCacheWithEviction">
+    <instance-name>MyInstanceName</instance-name>
+
+    <near-cache name="nearCacheWithEvictionAndPreloader">
         <time-to-live-seconds>10000</time-to-live-seconds>
         <max-idle-seconds>5000</max-idle-seconds>
         <invalidate-on-change>false</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
         <cache-local-entries>true</cache-local-entries>
         <eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
+        <preloader enabled="true" file-name="myNearCache.store"
+                   store-initial-delay-seconds="2342" store-interval-seconds="4223"/>
     </near-cache>
 
 </hazelcast-client>

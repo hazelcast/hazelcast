@@ -188,7 +188,7 @@ public class ManagementService implements DistributedObjectListener {
         try {
             return new ObjectName(DOMAIN, properties);
         } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(e);
         }
     }
 

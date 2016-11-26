@@ -160,7 +160,7 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
     private Member getMember(EventData eventData) {
         Member member = replicatedMapService.getNodeEngine().getClusterService().getMember(eventData.getCaller());
         if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), false);
+            member = new MemberImpl(eventData.getCaller(), nodeEngine.getVersion(), false);
         }
         return member;
     }

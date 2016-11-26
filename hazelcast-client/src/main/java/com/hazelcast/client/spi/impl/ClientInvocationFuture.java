@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -68,7 +69,7 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
-    public ClientMessage resolveAndThrow(Object response) throws ExecutionException, InterruptedException {
+    public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
             if (response instanceof ExecutionException) {
@@ -79,6 +80,9 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
             }
             if (response instanceof InterruptedException) {
                 throw (InterruptedException) response;
+            }
+            if (response instanceof CancellationException) {
+                throw (CancellationException) response;
             }
             throw new ExecutionException((Throwable) response);
         }

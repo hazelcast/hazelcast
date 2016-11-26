@@ -110,6 +110,12 @@ public final class SerializationConstants {
     public static final int HIBERNATE5_TYPE_HIBERNATE_CACHE_ENTRY = -205;
     public static final int HIBERNATE5_TYPE_HIBERNATE_NATURAL_ID_KEY = -206;
 
+    //--------------------------------------------------------------
+    // RESERVED FOR JET -300 to -400
+
+    public static final int JET_SERIALIZER_FIRST = -300;
+    public static final int JET_SERIALIZER_LAST = -399;
+
     private SerializationConstants() {
     }
 }

@@ -66,4 +66,5 @@ public interface InternalSerializationService extends SerializationService, Disp
     ByteOrder getByteOrder();
 
     byte getVersion();
+
 }

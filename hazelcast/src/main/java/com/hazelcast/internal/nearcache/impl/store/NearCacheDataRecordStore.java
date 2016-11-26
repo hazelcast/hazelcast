@@ -28,9 +28,11 @@ import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 public class NearCacheDataRecordStore<K, V>
         extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
-    public NearCacheDataRecordStore(NearCacheConfig nearCacheConfig,
-                                    SerializationService serializationService, ClassLoader classLoader) {
-        super(nearCacheConfig, serializationService, classLoader);
+    public NearCacheDataRecordStore(String name,
+                                    NearCacheConfig nearCacheConfig,
+                                    SerializationService serializationService,
+                                    ClassLoader classLoader) {
+        super(name, nearCacheConfig, serializationService, classLoader);
     }
 
     @Override

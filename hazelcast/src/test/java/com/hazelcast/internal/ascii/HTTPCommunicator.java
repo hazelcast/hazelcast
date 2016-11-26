@@ -207,6 +207,16 @@ public class HTTPCommunicator {
         return doPost(url, wanRepName, targetGroupName, mapName);
     }
 
+    public String syncMapsOverWAN(String wanRepName, String targetGroupName) throws IOException {
+        String url = address + "wan/sync/allmaps";
+        return doPost(url, wanRepName, targetGroupName);
+    }
+
+    public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
+        String url = address + "mancenter/clearWanQueues";
+        return doPost(url, wanRepName, targetGroupName);
+    }
+
     private String doGet(final String url) throws IOException {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {

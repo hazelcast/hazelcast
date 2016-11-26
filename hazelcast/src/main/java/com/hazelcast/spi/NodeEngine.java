@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -28,6 +29,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
@@ -273,4 +275,14 @@ public interface NodeEngine {
      * @deprecated since 3.7. Use {@link #getService(String)} instead.
      */
     <T extends SharedService> T getSharedService(String serviceName);
+
+    /**
+     * Returns the codebase version of the node. For example, when running on hazelcast-3.8.jar, this would resolve
+     * to {@code Version.of(3,8,0)}. A node's codebase version may be different than cluster version.
+     *
+     * @return codebase version of the node.
+     * @see Cluster#getClusterVersion()
+     * @since 3.8
+     */
+    Version getVersion();
 }

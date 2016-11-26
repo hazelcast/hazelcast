@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.spi.annotation.Beta;
-
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +30,9 @@ import java.util.Map;
  * @param <ValueIn>  type of value used as input value type
  * @see com.hazelcast.mapreduce.Job
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public interface MappingJob<EntryKey, KeyIn, ValueIn> {
 
     /**

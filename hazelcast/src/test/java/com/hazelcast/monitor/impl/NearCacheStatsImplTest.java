@@ -39,11 +39,16 @@ public class NearCacheStatsImplTest {
         nearCacheStats.setMisses(304);
         nearCacheStats.incrementMisses();
 
-        nearCacheStats.setEvictions(222);
+        nearCacheStats.incrementEvictions();
+        nearCacheStats.incrementEvictions();
+        nearCacheStats.incrementEvictions();
         nearCacheStats.incrementEvictions();
 
-        nearCacheStats.setExpirations(123);
         nearCacheStats.incrementExpirations();
+        nearCacheStats.incrementExpirations();
+        nearCacheStats.incrementExpirations();
+
+        nearCacheStats.addPersistence(200, 300, 400);
     }
 
     @Test
@@ -53,8 +58,13 @@ public class NearCacheStatsImplTest {
         assertEquals(1280, nearCacheStats.getOwnedEntryMemoryCost());
         assertEquals(602, nearCacheStats.getHits());
         assertEquals(305, nearCacheStats.getMisses());
-        assertEquals(223, nearCacheStats.getEvictions());
-        assertEquals(124, nearCacheStats.getExpirations());
+        assertEquals(4, nearCacheStats.getEvictions());
+        assertEquals(3, nearCacheStats.getExpirations());
+        assertEquals(1, nearCacheStats.getPersistenceCount());
+        assertTrue(nearCacheStats.getLastPersistenceTime() > 0);
+        assertEquals(200, nearCacheStats.getLastPersistenceDuration());
+        assertEquals(300, nearCacheStats.getLastPersistenceWrittenBytes());
+        assertEquals(400, nearCacheStats.getLastPersistenceKeyCount());
         assertNotNull(nearCacheStats.toString());
     }
 
@@ -69,8 +79,13 @@ public class NearCacheStatsImplTest {
         assertEquals(1280, deserialized.getOwnedEntryMemoryCost());
         assertEquals(602, deserialized.getHits());
         assertEquals(305, deserialized.getMisses());
-        assertEquals(223, deserialized.getEvictions());
-        assertEquals(124, deserialized.getExpirations());
+        assertEquals(4, deserialized.getEvictions());
+        assertEquals(3, deserialized.getExpirations());
+        assertEquals(1, deserialized.getPersistenceCount());
+        assertTrue(deserialized.getLastPersistenceTime() > 0);
+        assertEquals(200, deserialized.getLastPersistenceDuration());
+        assertEquals(300, deserialized.getLastPersistenceWrittenBytes());
+        assertEquals(400, deserialized.getLastPersistenceKeyCount());
         assertNotNull(deserialized.toString());
     }
 

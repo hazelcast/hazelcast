@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * This exception is thrown when a topology change happens during the
@@ -25,8 +24,9 @@ import com.hazelcast.spi.annotation.Beta;
  * is set to {@link com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.
  *
  * @since 3.2
+ * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
-@Beta
+@Deprecated
 public class TopologyChangedException
         extends HazelcastException {
 
