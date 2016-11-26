@@ -24,8 +24,8 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -40,9 +40,14 @@ public class MulticastJoiner extends AbstractJoiner {
     private final AtomicInteger currentTryCount = new AtomicInteger(0);
     private final AtomicInteger maxTryCount;
 
+    // this deque is used as a stack, the SplitBrainMulticastListener adds to its head and the periodic split brain handler job
+    // also polls from its head.
+    private final BlockingDeque<SplitBrainJoinMessage> splitBrainJoinMessages = new LinkedBlockingDeque<SplitBrainJoinMessage>();
+
     public MulticastJoiner(Node node) {
         super(node);
         maxTryCount = new AtomicInteger(calculateTryCount());
+        node.multicastService.addMulticastListener(new SplitBrainMulticastListener(node, splitBrainJoinMessages));
     }
 
     @Override
@@ -105,50 +110,38 @@ public class MulticastJoiner extends AbstractJoiner {
 
     @Override
     public void searchForOtherClusters() {
-        final BlockingQueue<SplitBrainJoinMessage> q = new LinkedBlockingQueue<SplitBrainJoinMessage>();
-        MulticastListener listener = new MulticastListener() {
-            public void onMessage(Object msg) {
-                if (msg != null && msg instanceof SplitBrainJoinMessage) {
-                    SplitBrainJoinMessage joinRequest = (SplitBrainJoinMessage) msg;
-                    if (node.getThisAddress() != null && !node.getThisAddress().equals(joinRequest.getAddress())) {
-                        q.add(joinRequest);
-                    }
-                }
-            }
-        };
-        node.multicastService.addMulticastListener(listener);
         node.multicastService.send(node.createSplitBrainJoinMessage());
+        SplitBrainJoinMessage joinInfo;
         try {
-            SplitBrainJoinMessage joinInfo = q.poll(3, TimeUnit.SECONDS);
-            if (joinInfo != null) {
-                if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
-                    if (logger.isFineEnabled()) {
-                        logger.fine("Ignoring merge join response, since " + joinInfo.getAddress()
-                                + " is already a member.");
+            while ((joinInfo = splitBrainJoinMessages.poll(3, TimeUnit.SECONDS)) != null) {
+                try {
+                    if (node.clusterService.getMember(joinInfo.getAddress()) != null) {
+                        if (logger.isFineEnabled()) {
+                            logger.fine("Ignoring merge join response, since " + joinInfo.getAddress()
+                                    + " is already a member.");
+                        }
+                        return;
                     }
-                    return;
-                }
 
-                if (joinInfo.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
-                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
-                    Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
-                }
+                    if (joinInfo.getMemberCount() == 1) {
+                        // if the other cluster has just single member, that may be a newly starting node instead of a split node
+                        // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
+                        Thread.sleep(2 * node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
+                    }
 
-                SplitBrainJoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
-                if (shouldMerge(response)) {
-                    logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
-                    startClusterMerge(joinInfo.getAddress());
+                    SplitBrainJoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());
+                    if (shouldMerge(response)) {
+                        logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
+                        startClusterMerge(joinInfo.getAddress());
+                    }
+                } catch (Exception e) {
+                    if (logger != null) {
+                        logger.warning(e);
+                    }
                 }
             }
         } catch (InterruptedException ignored) {
             EmptyStatement.ignore(ignored);
-        } catch (Exception e) {
-            if (logger != null) {
-                logger.warning(e);
-            }
-        } finally {
-            node.multicastService.removeMulticastListener(listener);
         }
     }
 
