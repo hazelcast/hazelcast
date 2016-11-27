@@ -171,6 +171,7 @@ public final class ScheduledFutureProxy<V>
         checkAccessibleOwner();
 
         unRegisterPartitionListenerIfExists();
+        unRegisterMembershipListenerIfExists();
 
         Operation op = new DisposeTaskOperation(handler);
         InternalCompletableFuture future = invoke(op);

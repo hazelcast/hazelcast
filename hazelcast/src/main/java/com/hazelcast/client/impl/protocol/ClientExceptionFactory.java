@@ -42,6 +42,8 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.scheduledexecutor.DuplicateTaskException;
+import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -580,6 +582,32 @@ public class ClientExceptionFactory {
                 return new StaleTaskIdException(message);
             }
         });
+        register(ClientProtocolErrorCodes.DUPLICATE_TASK, DuplicateTaskException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new DuplicateTaskException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.STALE_TASK, StaleTaskException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new StaleTaskException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.CANCELLED_TASK, CancellationException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new CancellationException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.REJECTED_TASK, RejectedExecutionException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new RejectedExecutionException(message);
+            }
+        });
+
+
     }
 
     public Throwable createException(ClientMessage clientMessage) {
