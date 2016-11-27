@@ -128,7 +128,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleSum_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(DOUBLE);
-        double expectation = Sums.sumValueContainer(values, DOUBLE);
+        double expectation = Sums.sumValueContainer(values, DOUBLE).doubleValue();
 
         Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.doubleSum("doubleValue");
         for (ValueContainer value : values) {
@@ -156,7 +156,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerSum_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(INTEGER);
-        long expectation = Sums.sumValueContainer(values, INTEGER);
+        long expectation = Sums.sumValueContainer(values, INTEGER).intValue();
 
         Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.integerSum("intValue");
         for (ValueContainer value : values) {
@@ -184,7 +184,7 @@ public class SumAggregationTest {
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongSum_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(LONG);
-        long expectation = Sums.sumValueContainer(values, LONG);
+        long expectation = Sums.sumValueContainer(values, LONG).longValue();
 
         Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.longSum("longValue");
         for (ValueContainer value : values) {
@@ -216,7 +216,7 @@ public class SumAggregationTest {
     public void testFixedPointSum_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(NUMBER);
         addValues(values, BIG_INTEGER);
-        double expectation = Sums.sumValueContainer(values, NUMBER);
+        double expectation = Sums.sumValueContainer(values, NUMBER).doubleValue();
 
         Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.fixedPointSum("numberValue");
         for (ValueContainer value : values) {
@@ -248,7 +248,7 @@ public class SumAggregationTest {
     public void testFloatingPointSum_withAttributePath() {
         List<ValueContainer> values = sampleValueContainers(NUMBER);
         addValues(values, DOUBLE);
-        double expectation = Sums.sumValueContainer(values, NUMBER);
+        double expectation = Sums.sumValueContainer(values, NUMBER).doubleValue();
 
         Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.floatingPointSum("numberValue");
         for (ValueContainer value : values) {
