@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduled
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
-import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
@@ -36,6 +35,7 @@ import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledFutureProxy;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -51,13 +51,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -71,28 +68,28 @@ public class ClientScheduledExecutorProxy
         extends PartitionSpecificClientProxy
         implements IScheduledExecutorService {
 
-    private int partitionCount;
-
-    private Random partitionRandom;
-
     private static final int GET_ALL_SCHEDULED_TIMEOUT = 10;
 
     private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
             logAllExceptions("Exception while ScheduledExecutor Service shutdown", Level.FINEST);
 
-    private final ClientMessageDecoder SUBMIT_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder SUBMIT_DECODER = new ClientMessageDecoder() {
         @Override
         public Void decodeClientMessage(ClientMessage clientMessage) {
             return null;
         }
     };
 
-    private final ClientMessageDecoder GET_ALL_SCHEDULED_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder GET_ALL_SCHEDULED_DECODER = new ClientMessageDecoder() {
         @Override
         public List<ScheduledTaskHandler> decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorGetAllScheduledCodec.decodeResponse(clientMessage).handlers;
         }
     };
+
+    private int partitionCount;
+
+    private Random partitionRandom;
 
     public ClientScheduledExecutorProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
@@ -286,65 +283,41 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, List<IScheduledFuture<?>>> getAllScheduled() {
-        //TODO tkountis - Consider extra flavour with Executor provided as arg
-        ClientExecutionService service = getContext().getExecutionService();
-        ExecutorService executor = getContext().getExecutionService().getAsyncExecutor();
-
         //TODO tkountis - Consider extra flavour with timeout as arg
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
+        Map<Member, List<IScheduledFuture<?>>> tasks =
+                new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
 
-        Future<Map<Member, List<IScheduledFuture<?>>>> future =
-                executor.submit(new Callable<Map<Member, List<IScheduledFuture<?>>>>() {
-                    @Override
-                    public Map<Member, List<IScheduledFuture<?>>> call()
-                            throws Exception {
+        List<Member> members = new ArrayList<Member>(getContext().getClusterService().getMemberList());
+        List<Future<List<ScheduledTaskHandler>>> calls = new ArrayList<Future<List<ScheduledTaskHandler>>>();
+        for (Member member : members) {
+            Address address = member.getAddress();
+            ClientMessage request = ScheduledExecutorGetAllScheduledCodec.encodeRequest(getName(), address);
 
-                        Map<Member, List<IScheduledFuture<?>>> tasks =
-                                new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
-
-                        List<Member> members = new ArrayList<Member>(getContext().getClusterService().getMemberList());
-                        List<Future<List<ScheduledTaskHandler>>> calls = new ArrayList<Future<List<ScheduledTaskHandler>>>();
-                        for (Member member : members) {
-                            Address address = member.getAddress();
-                            ClientMessage request = ScheduledExecutorGetAllScheduledCodec.encodeRequest(getName(), address);
-
-                            calls.add(ClientScheduledExecutorProxy.this.<List<ScheduledTaskHandler>>
-                                    doSubmitOnAddress(request, GET_ALL_SCHEDULED_DECODER, address));
-                        }
-
-                        // TODO unit test - returnWithDeadline returns a Collection, currently in the same order, but
-                        // there is no contract to guarantee so for the future.
-                        List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
-                                returnWithDeadline(calls, timeout, TimeUnit.SECONDS));
-
-                        for (int i = 0; i < members.size(); i++) {
-                            Member member = members.get(i);
-                            List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
-                            List<IScheduledFuture<?>> scheduledFutures = new ArrayList<IScheduledFuture<?>>();
-
-                            for (ScheduledTaskHandler handler : handlers) {
-                                ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
-                                attachHazelcastInstance(proxy);
-                                scheduledFutures.add(proxy);
-                            }
-
-                            tasks.put(member, scheduledFutures);
-                        }
-
-                        return tasks;
-                    }
-
-                });
-
-        try {
-            return future.get();
-        } catch (InterruptedException e) {
-            sneakyThrow(e);
-        } catch (ExecutionException e) {
-            sneakyThrow(e);
+            calls.add(ClientScheduledExecutorProxy.this.<List<ScheduledTaskHandler>>
+                    doSubmitOnAddress(request, GET_ALL_SCHEDULED_DECODER, address));
         }
 
-        return null;
+        // TODO unit test - returnWithDeadline returns a Collection, currently in the same order, but
+        // there is no contract to guarantee so for the future.
+        List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
+                returnWithDeadline(calls, timeout, TimeUnit.SECONDS));
+
+        for (int i = 0; i < members.size(); i++) {
+            Member member = members.get(i);
+            List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
+            List<IScheduledFuture<?>> scheduledFutures = new ArrayList<IScheduledFuture<?>>();
+
+            for (ScheduledTaskHandler handler : handlers) {
+                ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
+                attachHazelcastInstance(proxy);
+                scheduledFutures.add(proxy);
+            }
+
+            tasks.put(member, scheduledFutures);
+        }
+
+        return tasks;
     }
 
     @Override
@@ -388,7 +361,7 @@ public class ClientScheduledExecutorProxy
         clientMessage.setPartitionId(partitionId);
 
         doSubmitOnPartition(clientMessage, clientMessageDecoder, partitionId).join();
-        ScheduledTaskHandler handler = ScheduledTaskHandler.of(partitionId, getName(), name);
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(partitionId, getName(), name);
         ClientScheduledFutureProxy future = new ClientScheduledFutureProxy(handler, getContext());
         attachHazelcastInstance(future);
         return future;
@@ -397,10 +370,10 @@ public class ClientScheduledExecutorProxy
     private <V> IScheduledFuture<V> scheduleOnMember(String name, Member member, TaskDefinition definition) {
         int partitionId = -1;
         Data data = getSerializationService().toData(definition);
-        ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(),member.getAddress(), data);
+        ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(), member.getAddress(), data);
         doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress());
 
-        ScheduledTaskHandler handler = ScheduledTaskHandler.of(partitionId, getName(), name);
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(partitionId, getName(), name);
         ClientScheduledFutureProxy future = new ClientScheduledFutureProxy(handler, getContext());
         attachHazelcastInstance(future);
         return future;

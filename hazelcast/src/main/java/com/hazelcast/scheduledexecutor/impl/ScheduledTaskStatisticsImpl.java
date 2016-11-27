@@ -18,6 +18,7 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -80,8 +81,8 @@ public class ScheduledTaskStatisticsImpl
     }
 
     @Override
-    public long getLastRunEnd(TimeUnit unit) {
-        return unit.convert(lastRunEnd, MEASUREMENT_UNIT);
+    public long getLastRunEnd() {
+        return lastRunEnd;
     }
 
     @Override
@@ -154,6 +155,7 @@ public class ScheduledTaskStatisticsImpl
         }
     }
 
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
     @Override
     public void onAfterRun() {
         long now = System.nanoTime();

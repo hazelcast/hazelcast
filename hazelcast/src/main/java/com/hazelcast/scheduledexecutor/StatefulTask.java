@@ -17,14 +17,70 @@
 package com.hazelcast.scheduledexecutor;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
- * Created by Thomas Kountis.
+ * An interface to provide means for saving & loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
+ * tasks scheduled with an {@link IScheduledExecutorService}. When task implements this interface, the Scheduled Executor
+ * will be able to handle state of the task among the replicas in an event of Migration or Node failure.
+ *
+ * Example:
+ * <pre>
+ * public class CleanUpTask implements Runnable, StatefulTask<String, Integer>, HazelcastInstanceAware {
+ *
+ *      transient HazelcastInstance instance;
+ *
+ *      transient int recordsDeletedSoFar;
+ *
+ *      public CleanUpTask(HazelcastInstance instance) {
+ *          this.instance = instance;
+ *      }
+ *
+ *      public void run() {
+ *          recordsDeletedSoFar += cleanUpInvalidRecordsAndReturnCount();
+ *      }
+ *
+ *      private int cleanUpInvalidRecordsAndReturnCount() {
+ *      }
+ *
+ *      public void saveState(Map<String, Integer> state) {
+ *          state.put("recordsDeletedSoFar", recordsDeletedSoFar);
+ *      }
+ *
+ *      public void loadState(Map<String, Integer> state) {
+ *          if (state.containsKey("recordsDeletedSoFar")) {
+ *              recordsDeletedSoFar = state.get("recordsDeletedSoFar");
+ *          }
+ *      }
+ * }
+ * </pre>
+ *
+ * @param <K> The data type of the Key in the state {@link Map}
+ * @param <V> The data type of the Value in the state {@link Map}
  */
 public interface StatefulTask<K, V> {
 
+    /**
+     * Used to store current state of the task to a Map.
+     * Keys and Values need to support serialization.
+     *
+     * Called immediately after run() or call() of the {@link Runnable}
+     * or {@link java.util.concurrent.Callable} respectively.
+     *
+     * In the event of partition migration, {@link #saveState(Map)} save might get called
+     * during the execution phase {@link Runnable#run()} or {@link Callable#call()} which could
+     * cause inconsistencies in the snapshot of the state.
+     *
+     * @param state The {@link Map} responsible for holding the state.
+    */
     void saveState(Map<K, V> state);
 
+    /**
+     * Used to load current state of the task from a Map.
+     * Called once, upon initial scheduling of the task.
+     *
+     * @param state The {@link Map} responsible for providing the state.
+     */
     void loadState(Map<K, V> state);
 
 }

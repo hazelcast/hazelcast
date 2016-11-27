@@ -178,7 +178,7 @@ public final class ScheduledFutureProxy<V>
     }
 
     @Override
-    public void destroy() {
+    public void dispose() {
         checkAccessiblePartition();
         checkAccessibleHandler();
 
@@ -196,6 +196,25 @@ public final class ScheduledFutureProxy<V>
             unRegisterPartitionListenerIfExists();
             this.partitionLost = true;
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ScheduledFutureProxy<?> proxy = (ScheduledFutureProxy<?>) o;
+
+        return handler != null ? handler.equals(proxy.handler) : proxy.handler == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return handler != null ? handler.hashCode() : 0;
     }
 
     private void registerPartitionListener() {

@@ -17,7 +17,7 @@
 package com.hazelcast.scheduledexecutor;
 
 /**
- * Created by Thomas Kountis.
+ * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
  */
 public class StaleTaskException
         extends RuntimeException {

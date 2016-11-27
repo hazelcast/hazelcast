@@ -43,13 +43,16 @@ import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * Created by Thomas Kountis.
+ * Proxy implementation of {@link IScheduledFuture}.
+ *
+ * @param <V> the return type of the {@link Callable#call()}
  */
 public class ClientScheduledFutureProxy<V>
         extends ClientProxy
@@ -57,70 +60,69 @@ public class ClientScheduledFutureProxy<V>
                    HazelcastInstanceAware,
                    PartitionLostListener/*, MembershipListener*/ {
 
-    private HazelcastInstance instance;
-
-    private String partitionLostRegistration;
-
-    private boolean partitionLost = false;
-
-    private ScheduledTaskHandler handler;
-
-    private final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
         @Override
         public Boolean decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorIsDoneCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder IS_CANCELLED_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder IS_CANCELLED_DECODER = new ClientMessageDecoder() {
         @Override
         public Boolean decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorIsCancelledCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder CANCEL_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder CANCEL_DECODER = new ClientMessageDecoder() {
         @Override
         public Boolean decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorCancelCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder GET_STATS_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder GET_STATS_DECODER = new ClientMessageDecoder() {
         @Override
         public ScheduledTaskStatistics decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage).stats;
         }
     };
 
-    private final ClientMessageDecoder GET_DELAY_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder GET_DELAY_DECODER = new ClientMessageDecoder() {
         @Override
         public Long decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorGetDelayCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder COMPARE_TO_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder COMPARE_TO_DECODER = new ClientMessageDecoder() {
         @Override
         public Integer decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorCompareToCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder GET_RESULT_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder GET_RESULT_DECODER = new ClientMessageDecoder() {
         @Override
         public Object decodeClientMessage(ClientMessage clientMessage) {
             return ScheduledExecutorCompareToCodec.decodeResponse(clientMessage).response;
         }
     };
 
-    private final ClientMessageDecoder DISPOSE_DECODER = new ClientMessageDecoder() {
+    private static final ClientMessageDecoder DISPOSE_DECODER = new ClientMessageDecoder() {
         @Override
         public Void decodeClientMessage(ClientMessage clientMessage) {
-            ScheduledExecutorDisposeCodec.decodeResponse(clientMessage);
             return null;
         }
     };
+
+    private HazelcastInstance instance;
+
+    private String partitionLostRegistration;
+
+    private boolean partitionLost;
+
+    private ScheduledTaskHandler handler;
 
     public ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
         super(DistributedScheduledExecutorService.SERVICE_NAME, handler.getSchedulerName());

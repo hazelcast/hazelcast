@@ -17,10 +17,18 @@
 package com.hazelcast.scheduledexecutor;
 
 /**
- * Created by Thomas Kountis.
+ * The <code>NamedTask</code> interface should be implemented by any task
+ * that needs to have an identification and enhanced atomicity upon scheduling the task.
  */
 public interface NamedTask {
 
+    /**
+     * Returns the name of the task.
+     * The name will be used to uniquely identify the task in the scheduler service, if a duplicate
+     * is detected a {@link DuplicateTaskException} will be thrown and the task will be rejected.
+
+     * @return String The name of the task
+     */
     String getName();
 
 }

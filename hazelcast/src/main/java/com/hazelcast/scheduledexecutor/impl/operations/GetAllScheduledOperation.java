@@ -24,6 +24,7 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -69,10 +70,10 @@ public class GetAllScheduledOperation
             Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
             for (ScheduledTaskDescriptor task : tasks) {
                 if (partitionId == -1) {
-                    handlers.add(ScheduledTaskHandler.of(getNodeEngine().getThisAddress(),
+                    handlers.add(ScheduledTaskHandlerImpl.of(getNodeEngine().getThisAddress(),
                             getSchedulerName(), task.getDefinition().getName()));
                 } else {
-                    handlers.add(ScheduledTaskHandler.of(partitionId, getSchedulerName(), task.getDefinition().getName()));
+                    handlers.add(ScheduledTaskHandlerImpl.of(partitionId, getSchedulerName(), task.getDefinition().getName()));
                 }
             }
         }

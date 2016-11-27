@@ -129,6 +129,38 @@ public final class ScheduledTaskHandlerImpl
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ScheduledTaskHandlerImpl that = (ScheduledTaskHandlerImpl) o;
+
+        if (partitionId != that.partitionId) {
+            return false;
+        }
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        if (!schedulerName.equals(that.schedulerName)) {
+            return false;
+        }
+        return taskName.equals(that.taskName);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + partitionId;
+        result = 31 * result + schedulerName.hashCode();
+        result = 31 * result + taskName.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "ScheduledTaskHandler{" + "address=" + address + ", partitionId=" + partitionId + ", schedulerName='"
                 + schedulerName + '\'' + ", taskName='" + taskName + '\'' + '}';

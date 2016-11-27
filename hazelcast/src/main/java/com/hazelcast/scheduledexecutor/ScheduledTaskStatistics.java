@@ -17,30 +17,73 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by Thomas Kountis.
+ * Statistics and timing info for a {@link IScheduledFuture} accessible through {@link IScheduledFuture#getStats()}
  */
+@Beta
 public interface ScheduledTaskStatistics extends IdentifiedDataSerializable {
 
+    /**
+     * Returns how many times the task was ran/called.
+     *
+     * @return The numbers of runs
+     */
     long getTotalRuns();
 
+    /**
+     * @return The monotonic creation time the task.
+     */
     long getCreatedAt();
 
+    /**
+     * @return The monotonic time of when the task was scheduled in for the very first time.
+     */
     long getFirstRunStart();
 
+    /**
+     * @return The monotonic time of when the task was scheduled in last.
+     */
     long getLastRunStart();
 
-    long getLastRunEnd(TimeUnit unit);
+    /**
+     * @return The monotonic time of when the task was last scheduled out.
+     */
+    long getLastRunEnd();
 
+    /**
+     * Returns the duration of the task's last execution.
+     *
+     * @param unit The time unit to return the duration in.
+     * @return The total duration of the task's last execution.
+     */
     long getLastRunDuration(TimeUnit unit);
 
+    /**
+     * Returns the last period of time the task was idle, waiting to get scheduled in.
+     *
+     * @param unit The time unit to return the duration in.
+     * @return The last idle period of time of the task.
+     */
     long getLastIdleTime(TimeUnit unit);
 
+    /**
+     * Returns the total amount of time the task spent while scheduled in.
+     *
+     * @param unit The time unit to return the duration in.
+     * @return The total amount of time the task spent while scheduled in.
+     */
     long getTotalRunTime(TimeUnit unit);
 
+    /**
+     * Returns the total amount of time the task was idle, waiting to get scheduled in.
+     *
+     * @param unit The time unit to return the duration in.
+     * @return The total amount of time the task was idle, waiting to get scheduled in.
+     */
     long getTotalIdleTime(TimeUnit unit);
 
 }

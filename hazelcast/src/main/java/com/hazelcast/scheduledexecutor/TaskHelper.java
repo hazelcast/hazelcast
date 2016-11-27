@@ -21,16 +21,33 @@ import com.hazelcast.spi.annotation.Beta;
 
 import java.util.concurrent.Callable;
 
+/**
+ * A helper class with utilities to act upon {@link Runnable} and/or {@link Callable} tasks.
+ */
 @Beta
-public final class ScheduledTaskUtil {
+public final class TaskHelper {
 
-    private ScheduledTaskUtil() {
+    private TaskHelper() {
     }
 
+    /**
+     * Decorate any {@link Runnable} with a {@link NamedTask} to provide naming information to scheduler.
+     *
+     * @param name The name that the task will have
+     * @param runnable The runnable task to be named
+     * @return A new Runnable implementing the {@link NamedTask} interface
+     */
     public static Runnable named(final String name, final Runnable runnable) {
         return NamedTaskDecorator.named(name, runnable);
     }
 
+    /**
+     * Decorate any {@link Callable} with a {@link NamedTask} to provide naming information to scheduler.
+     *
+     * @param name The name that the task will have
+     * @param callable The callable task to be named
+     * @return A new Callable implementing the {@link NamedTask} interface
+     */
     public static <V> Callable<V> named(final String name, final Callable<V> callable) {
         return NamedTaskDecorator.named(name, callable);
     }

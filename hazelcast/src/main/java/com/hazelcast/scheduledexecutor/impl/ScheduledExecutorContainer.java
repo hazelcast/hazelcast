@@ -348,9 +348,9 @@ public class ScheduledExecutorContainer {
 
         private ScheduledTaskHandler offprintHandler() {
             if (partitionId == -1) {
-                return ScheduledTaskHandler.of(nodeEngine.getThisAddress(), getName(), taskName);
+                return ScheduledTaskHandlerImpl.of(nodeEngine.getThisAddress(), getName(), taskName);
             } else {
-                return ScheduledTaskHandler.of(partitionId, getName(), taskName);
+                return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
             }
         }
 

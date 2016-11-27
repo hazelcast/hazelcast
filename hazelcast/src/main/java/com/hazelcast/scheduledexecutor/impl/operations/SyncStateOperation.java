@@ -22,6 +22,7 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -61,11 +62,11 @@ public class SyncStateOperation
         super.writeInternal(out);
         out.writeUTF(taskName);
         out.writeInt(state.size());
-        Iterator it = state.keySet().iterator();
+        Iterator<Map.Entry> it = state.entrySet().iterator();
         while (it.hasNext()) {
-            Object key = it.next();
-            out.writeObject(key);
-            out.writeObject(state.get(key));
+            Map.Entry entry = it.next();
+            out.writeObject(entry.getKey());
+            out.writeObject(entry.getValue());
         }
     }
 

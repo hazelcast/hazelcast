@@ -316,14 +316,14 @@ public class ScheduledExecutorServiceProxy
 
     private <V> IScheduledFuture<V> createFutureProxy(int partitionId, String taskName) {
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(
-                ScheduledTaskHandler.of(partitionId, getName(), taskName));
+                ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName));
         proxy.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         return proxy;
     }
 
     private <V> IScheduledFuture<V> createFutureProxy(Address address, String taskName) {
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(
-                ScheduledTaskHandler.of(address, getName(), taskName));
+                ScheduledTaskHandlerImpl.of(address, getName(), taskName));
         proxy.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         return proxy;
     }
@@ -360,10 +360,6 @@ public class ScheduledExecutorServiceProxy
         return name != null ? name : UuidUtil.newUnsecureUuidString();
     }
 
-    // TODO tkountis - Document that OPs are sync to avoid race-conditions;
-    // Member OPs since they are not forced to run in the partition thread
-    //  I can trigger a schedule and then GetAll and its not there yet
-    // Also partition based ones, if Node goes down before backup completes also failing.
     private <V> IScheduledFuture<V> submitOnPartitionSync(String taskName, Operation op, int partitionId) {
         op.setPartitionId(partitionId);
         invokeOnPartition(op).join();
