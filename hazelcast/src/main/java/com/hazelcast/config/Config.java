@@ -89,6 +89,9 @@ public class Config {
     private final Map<String, DurableExecutorConfig> durableExecutorConfigs
             = new ConcurrentHashMap<String, DurableExecutorConfig>();
 
+    private final Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs
+            = new ConcurrentHashMap<String, ScheduledExecutorConfig>();
+
     private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
     private final Map<String, ReplicatedMapConfig> replicatedMapConfigs = new ConcurrentHashMap<String, ReplicatedMapConfig>();
@@ -723,6 +726,14 @@ public class Config {
         return getDurableExecutorConfig("default").getAsReadOnly();
     }
 
+    public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
+        String baseName = getBaseName(name);
+        ScheduledExecutorConfig config = lookupByPattern(scheduledExecutorConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getScheduledExecutorConfig("default").getAsReadOnly();
+    }
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -772,6 +783,30 @@ public class Config {
     }
 
     /**
+     * Returns the ScheduledExecutorConfig for the given name
+     *
+     * @param name name of the scheduled executor config
+     * @return ScheduledExecutorConfig
+     */
+    public ScheduledExecutorConfig getScheduledExecutorConfig(String name) {
+        String baseName = getBaseName(name);
+        ScheduledExecutorConfig config = lookupByPattern(scheduledExecutorConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        ScheduledExecutorConfig defConfig = scheduledExecutorConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ScheduledExecutorConfig();
+            defConfig.setName("default");
+            addScheduledExecutorConfig(defConfig);
+        }
+        config = new ScheduledExecutorConfig(defConfig);
+        config.setName(name);
+        addScheduledExecutorConfig(config);
+        return config;
+    }
+
+    /**
      * Adds a new ExecutorConfig by name
      *
      * @param executorConfig executor config to add
@@ -790,6 +825,17 @@ public class Config {
      */
     public Config addDurableExecutorConfig(DurableExecutorConfig durableExecutorConfig) {
         this.durableExecutorConfigs.put(durableExecutorConfig.getName(), durableExecutorConfig);
+        return this;
+    }
+
+    /**
+     * Adds a new ScheduledExecutorConfig by name
+     *
+     * @param scheduledExecutorConfig executor config to add
+     * @return this config instance
+     */
+    public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
+        this.scheduledExecutorConfigs.put(scheduledExecutorConfig.getName(), scheduledExecutorConfig);
         return this;
     }
 
@@ -814,6 +860,19 @@ public class Config {
         this.durableExecutorConfigs.clear();
         this.durableExecutorConfigs.putAll(durableExecutorConfigs);
         for (Entry<String, DurableExecutorConfig> entry : durableExecutorConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Map<String, ScheduledExecutorConfig> getScheduledExecutorConfigs() {
+        return scheduledExecutorConfigs;
+    }
+
+    public Config setScheduledExecutorConfigs(Map<String, ScheduledExecutorConfig> durableExecutorConfigs) {
+        this.scheduledExecutorConfigs.clear();
+        this.scheduledExecutorConfigs.putAll(scheduledExecutorConfigs);
+        for (Entry<String, ScheduledExecutorConfig> entry : durableExecutorConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

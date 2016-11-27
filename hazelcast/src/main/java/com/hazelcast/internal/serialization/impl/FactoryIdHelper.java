@@ -116,6 +116,9 @@ public final class FactoryIdHelper {
     public static final String TEXT_PROTOCOLS_DS_FACTORY = "hazelcast.serialization.ds.text.protocols";
     public static final int TEXT_PROTOCOLS_DS_FACTORY_ID = -37;
 
+    public static final String SCHEDULED_EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.scheduled.executor";
+    public static final int SCHEDULED_EXECUTOR_DS_FACTORY_ID = -38;
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
