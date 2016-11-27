@@ -45,7 +45,6 @@ import com.hazelcast.client.proxy.ClientQueueProxy;
 import com.hazelcast.client.proxy.ClientReliableTopicProxy;
 import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientRingbufferProxy;
-import com.hazelcast.client.proxy.ClientScheduledExecutorProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
@@ -81,7 +80,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.exception.RetryableException;
@@ -188,8 +186,6 @@ public final class ProxyManager {
             }
         });
         register(CardinalityEstimatorService.SERVICE_NAME, ClientCardinalityEstimatorProxy.class);
-        register(DistributedScheduledExecutorService.SERVICE_NAME, ClientScheduledExecutorProxy.class);
-
         for (ProxyFactoryConfig proxyFactoryConfig : config.getProxyFactoryConfigs()) {
             try {
                 ClassLoader classLoader = config.getClassLoader();

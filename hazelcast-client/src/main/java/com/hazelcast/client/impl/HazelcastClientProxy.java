@@ -217,7 +217,7 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
 
     @Override
     public IScheduledExecutorService getScheduledExecutorService(String name) {
-        return getClient().getScheduledExecutorService(name);
+        throw new UnsupportedOperationException("No client support for the Scheduled Executor Service");
     }
 
     @Override
