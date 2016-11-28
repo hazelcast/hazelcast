@@ -18,18 +18,15 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import static com.hazelcast.util.StringUtil.tokenizeVersionString;
 
 public class BuildInfo {
     public static final int UNKNOWN_HAZELCAST_VERSION = -1;
 
     // major.minor.patch-RC-SNAPSHOT
-    private static final Pattern VERSION_PATTERN
-            = Pattern.compile("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(\\-[\\w]+)?(\\-SNAPSHOT)?$");
     private static final int MAJOR_VERSION_MULTIPLIER = 10000;
     private static final int MINOR_VERSION_MULTIPLIER = 100;
-    private static final int PATCH_GROUP_COUNT = 4;
+    private static final int PATCH_TOKEN_INDEX = 3;
 
     private final String version;
     private final String build;
@@ -77,15 +74,15 @@ public class BuildInfo {
             return UNKNOWN_HAZELCAST_VERSION;
         }
 
-        Matcher matcher = VERSION_PATTERN.matcher(version);
-        if (matcher.matches()) {
+        String[] versionTokens = tokenizeVersionString(version);
+        if (versionTokens != null) {
             try {
-                int calculatedVersion = MAJOR_VERSION_MULTIPLIER * Integer.parseInt(matcher.group(1))
-                        + MINOR_VERSION_MULTIPLIER * Integer.parseInt(matcher.group(2));
+                int calculatedVersion = MAJOR_VERSION_MULTIPLIER * Integer.parseInt(versionTokens[0])
+                        + MINOR_VERSION_MULTIPLIER * Integer.parseInt(versionTokens[1]);
 
-                int groupCount = matcher.groupCount();
-                if (groupCount >= PATCH_GROUP_COUNT) {
-                    String patchVersionString = matcher.group(PATCH_GROUP_COUNT);
+                int groupCount = versionTokens.length;
+                if (groupCount >= PATCH_TOKEN_INDEX) {
+                    String patchVersionString = versionTokens[PATCH_TOKEN_INDEX];
                     if (null != patchVersionString && !patchVersionString.startsWith("-")) {
                         calculatedVersion += Integer.parseInt(patchVersionString);
                     }

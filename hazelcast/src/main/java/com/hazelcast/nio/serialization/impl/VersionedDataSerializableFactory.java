@@ -17,9 +17,10 @@
 package com.hazelcast.nio.serialization.impl;
 
 
+import com.hazelcast.nio.Version;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 /**
  * VersionedDataSerializableFactory is used to create IdentifiedDataSerializable instances during de-serialization.
@@ -31,7 +32,7 @@ import com.hazelcast.version.Version;
  *
  * @see IdentifiedDataSerializable
  * @see DataSerializableFactory
- * @see Version
+ * @see MemberVersion
  */
 public interface VersionedDataSerializableFactory extends DataSerializableFactory {
 
@@ -41,7 +42,7 @@ public interface VersionedDataSerializableFactory extends DataSerializableFactor
      * @param typeId  IdentifiedDataSerializable type id
      * @param version version of the IdentifiedDataSerializable to create
      * @return IdentifiedDataSerializable instance or null if type id is not known by this factory
-     * @see Version
+     * @see MemberVersion
      */
     IdentifiedDataSerializable create(int typeId, Version version);
 

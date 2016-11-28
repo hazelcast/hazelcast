@@ -22,7 +22,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class ClusterVersionChangeTest
     private HazelcastInstance instance;
     private ClusterServiceImpl cluster;
     private CountDownLatch clusterVersionUpgradeLatch;
-    private Version codebaseVersion;
+    private MemberVersion codebaseVersion;
 
     @Before
     public void setup() {
@@ -59,16 +60,8 @@ public class ClusterVersionChangeTest
     }
 
     @Test
-    public void test_clusterVersionUpgradeSucceeds_whenNodePatchVersionPlusOne() {
-        final Version newVersion = new Version(codebaseVersion.getMajor(), codebaseVersion.getMinor(),
-                codebaseVersion.getPatch()+1);
-        cluster.changeClusterVersion(newVersion);
-        assertOpenEventually(clusterVersionUpgradeLatch);
-    }
-
-    @Test
     public void test_clusterVersionUpgradeFails_whenNodeMajorVersionPlusOne() {
-        Version newVersion = new Version(codebaseVersion.getMajor()+1, codebaseVersion.getMinor(), codebaseVersion.getPatch());
+        ClusterVersion newVersion = new ClusterVersion(codebaseVersion.getMajor()+1, codebaseVersion.getMinor());
 
         expectedException.expect(VersionMismatchException.class);
         cluster.changeClusterVersion(newVersion);
@@ -76,7 +69,7 @@ public class ClusterVersionChangeTest
 
     @Test
     public void test_clusterVersionUpgradeFails_whenNodeMinorVersionPlusOne() {
-        Version newVersion = new Version(codebaseVersion.getMajor(), codebaseVersion.getMinor()+1, codebaseVersion.getPatch());
+        ClusterVersion newVersion = new ClusterVersion(codebaseVersion.getMajor(), codebaseVersion.getMinor()+1);
 
         expectedException.expect(VersionMismatchException.class);
         cluster.changeClusterVersion(newVersion);
@@ -90,7 +83,7 @@ public class ClusterVersionChangeTest
         }
 
         @Override
-        public void onClusterVersionChange(Version newVersion) {
+        public void onClusterVersionChange(ClusterVersion newVersion) {
             latch.countDown();
         }
     }

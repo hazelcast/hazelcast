@@ -18,7 +18,8 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
@@ -32,7 +33,7 @@ public class TestClusterUpgradeUtils {
 
     // return a new HazelcastInstance at given version
     public static HazelcastInstance newHazelcastInstance(TestHazelcastInstanceFactory factory,
-                                                         Version version,
+                                                         MemberVersion version,
                                                          Config config) {
         try {
             System.setProperty("hazelcast.version", version.toString());
@@ -45,12 +46,12 @@ public class TestClusterUpgradeUtils {
 
     // shutdown and replace each member in membersToUpgrade with a new HazelcastInstance at given version
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
-                                             Version version, Config config) {
+                                             MemberVersion version, Config config) {
         upgradeClusterMembers(factory, membersToUpgrade, version, config, true);
     }
 
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
-                                             Version version, Config config, boolean assertClusterSize) {
+                                             MemberVersion version, Config config, boolean assertClusterSize) {
         try {
             System.setProperty("hazelcast.version", version.toString());
             // upgrade one by one each member of the cluster to the next version
@@ -78,14 +79,14 @@ public class TestClusterUpgradeUtils {
     }
 
     // assert all members' clusterService reports the given version
-    public static void assertClusterVersion(HazelcastInstance[] instances, Version version) {
+    public static void assertClusterVersion(HazelcastInstance[] instances, ClusterVersion version) {
         for (int i=0; i < instances.length; i++) {
             assertEquals(version, instances[i].getCluster().getClusterVersion());
         }
     }
 
     // assert all nodes in the cluster have the given codebase version
-    public static void assertNodesVersion(HazelcastInstance[] instances, Version version) {
+    public static void assertNodesVersion(HazelcastInstance[] instances, MemberVersion version) {
         for (int i=0; i < instances.length; i++) {
             assertEquals(version, getNode(instances[i]).getVersion());
         }

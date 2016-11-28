@@ -4,7 +4,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -26,7 +26,7 @@ public class ClusterStateChangeTest {
     public void setUp() {
         clusterStateChange = ClusterStateChange.from(ClusterState.ACTIVE);
         clusterStateChangeSameAttributes = ClusterStateChange.from(ClusterState.ACTIVE);
-        clusterStateChangeOtherType = ClusterStateChange.from(Version.UNKNOWN);
+        clusterStateChangeOtherType = ClusterStateChange.from(ClusterVersion.UNKNOWN);
         clusterStateChangeOtherNewState = ClusterStateChange.from(ClusterState.FROZEN);
     }
 
@@ -34,7 +34,7 @@ public class ClusterStateChangeTest {
     public void testGetType() {
         assertEquals(ClusterState.class, clusterStateChange.getType());
         assertEquals(ClusterState.class, clusterStateChangeSameAttributes.getType());
-        assertEquals(Version.class, clusterStateChangeOtherType.getType());
+        assertEquals(ClusterVersion.class, clusterStateChangeOtherType.getType());
         assertEquals(ClusterState.class, clusterStateChangeOtherNewState.getType());
     }
 
@@ -42,7 +42,7 @@ public class ClusterStateChangeTest {
     public void testGetNewState() {
         assertEquals(ClusterState.ACTIVE, clusterStateChange.getNewState());
         assertEquals(ClusterState.ACTIVE, clusterStateChangeSameAttributes.getNewState());
-        assertEquals(Version.UNKNOWN, clusterStateChangeOtherType.getNewState());
+        assertEquals(ClusterVersion.UNKNOWN, clusterStateChangeOtherType.getNewState());
         assertEquals(ClusterState.FROZEN, clusterStateChangeOtherNewState.getNewState());
     }
 

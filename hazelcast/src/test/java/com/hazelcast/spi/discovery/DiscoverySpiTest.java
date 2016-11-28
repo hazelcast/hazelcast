@@ -54,7 +54,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -89,7 +89,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class DiscoverySpiTest extends HazelcastTestSupport {
 
-    private static final Version VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
+    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.BUILD_INFO.getVersion());
     private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
 
     @Test

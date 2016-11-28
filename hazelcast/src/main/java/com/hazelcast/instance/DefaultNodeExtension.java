@@ -57,7 +57,8 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
@@ -68,7 +69,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
-import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
 
 @PrivateApi
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
@@ -232,7 +232,7 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void validateJoinRequest(JoinMessage joinMessage) {
         // check joining member's major.minor version is same as current cluster version's major.minor numbers
-        if (MAJOR_MINOR_VERSION_COMPARATOR.compare(joinMessage.getVersion(), node.getClusterService().getClusterVersion()) != 0) {
+        if (!joinMessage.getVersion().asClusterVersion().equals(node.getClusterService().getClusterVersion())) {
             throw new VersionMismatchException("Joining node's version " + joinMessage.getVersion() + " is not compatible with "
                     + node.getVersion());
         }
@@ -252,7 +252,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public void onClusterVersionChange(Version newVersion) {
+    public void onClusterVersionChange(ClusterVersion newVersion) {
         systemLogger.info("Cluster version changed to " + newVersion);
         ServiceManager serviceManager = node.getNodeEngine().getServiceManager();
         List<ClusterVersionListener> listeners = serviceManager.getServices(ClusterVersionListener.class);
@@ -266,9 +266,9 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public boolean isNodeVersionCompatibleWith(Version clusterVersion) {
+    public boolean isNodeVersionCompatibleWith(ClusterVersion clusterVersion) {
         Preconditions.checkNotNull(clusterVersion);
-        return MAJOR_MINOR_VERSION_COMPARATOR.compare(node.getVersion(), clusterVersion) == 0;
+        return node.getVersion().asClusterVersion().equals(clusterVersion);
     }
 
     @Override
@@ -306,12 +306,13 @@ public class DefaultNodeExtension implements NodeExtension {
     // obtain cluster version, if already initialized (not null)
     // otherwise, if overridden with GroupProperty#INIT_CLUSTER_VERSION, use this one
     // otherwise, if not overridden, use current node's codebase version
-    private Version getClusterOrNodeVersion() {
+    private ClusterVersion getClusterOrNodeVersion() {
         if (node.getClusterService() != null && node.getClusterService().getClusterVersion() != null) {
             return node.getClusterService().getClusterVersion();
         } else {
             String overriddenClusterVersion = node.getProperties().getString(GroupProperty.INIT_CLUSTER_VERSION);
-            return (overriddenClusterVersion != null) ? Version.of(overriddenClusterVersion) : node.getVersion();
+            return (overriddenClusterVersion != null) ? MemberVersion.of(overriddenClusterVersion).asClusterVersion()
+                                                        : node.getVersion().asClusterVersion();
         }
     }
 

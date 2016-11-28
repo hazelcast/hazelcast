@@ -6,7 +6,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.net.UnknownHostException;
@@ -46,7 +46,7 @@ public class TestNodeContext implements NodeContext {
         when(nodeExtension.createService(WanReplicationService.class)).thenReturn(mock(WanReplicationService.class));
         when(nodeExtension.createSerializationService()).thenReturn(new DefaultSerializationServiceBuilder().build());
         when(nodeExtension.isStartCompleted()).thenReturn(true);
-        when(nodeExtension.isNodeVersionCompatibleWith(any(Version.class))).thenReturn(true);
+        when(nodeExtension.isNodeVersionCompatibleWith(any(ClusterVersion.class))).thenReturn(true);
         return nodeExtension;
     }
 

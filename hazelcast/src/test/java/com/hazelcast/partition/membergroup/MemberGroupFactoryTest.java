@@ -8,7 +8,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class MemberGroupFactoryTest {
 
-    private static final Version VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
+    private static final MemberVersion VERSION = MemberVersion.of(BuildInfoProvider.BUILD_INFO.getVersion());
 
     @Test
     public void testHostAwareMemberGroupFactoryCreateMemberGroups() throws Exception {

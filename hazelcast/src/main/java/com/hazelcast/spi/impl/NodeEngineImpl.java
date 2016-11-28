@@ -80,7 +80,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
@@ -401,7 +401,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public Version getVersion() {
+    public MemberVersion getVersion() {
         return node.getVersion();
     }
 

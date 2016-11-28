@@ -34,7 +34,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 import java.util.Queue;
 import java.util.Set;
@@ -163,8 +163,8 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
             } else if (item instanceof ConnectionEvent) {
                 ConnectionEvent event = (ConnectionEvent) item;
                 render(writer, event);
-            } else if (item instanceof Version) {
-                render(writer, (Version) item);
+            } else if (item instanceof ClusterVersion) {
+                render(writer, (ClusterVersion) item);
             }
         }
     }
@@ -274,7 +274,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
         writer.endSection();
     }
 
-    private void render(DiagnosticsLogWriter writer, Version version) {
+    private void render(DiagnosticsLogWriter writer, ClusterVersion version) {
         writer.startSection("ClusterVersionChanged");
         writer.writeEntry(version.toString());
         writer.endSection();
@@ -340,7 +340,7 @@ public class SystemLogPlugin extends DiagnosticsPlugin {
 
     private class ClusterVersionListenerImpl implements ClusterVersionListener {
         @Override
-        public void onClusterVersionChange(Version newVersion) {
+        public void onClusterVersionChange(ClusterVersion newVersion) {
             logQueue.add(newVersion);
         }
     }

@@ -7,7 +7,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -26,67 +27,71 @@ public class ClusterVersionTest extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
     private ClusterServiceImpl cluster;
-    private Version codebaseVersion;
+    private MemberVersion codebaseVersion;
 
     @Test
     public void test_clusterVersion_isEventuallySet_whenSingleNodeMulticastJoinerCluster() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         setupInstance(config);
-        assertEqualsEventually(new Callable<Version>() {
+        assertEqualsEventually(new Callable<ClusterVersion>() {
             @Override
-            public Version call()
+            public ClusterVersion call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion);
+        }, codebaseVersion.asClusterVersion());
     }
 
     @Test
     public void test_clusterVersion_isEventuallySet_whenNoJoinerConfiguredSingleNode() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         setupInstance(config);
-        assertEqualsEventually(new Callable<Version>() {
+        assertEqualsEventually(new Callable<ClusterVersion>() {
             @Override
-            public Version call()
+            public ClusterVersion call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion);
+        }, codebaseVersion.asClusterVersion());
     }
 
     @Test
     public void test_clusterVersion_isEventuallySet_whenTcpJoinerConfiguredSingleNode() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         setupInstance(config);
-        assertEqualsEventually(new Callable<Version>() {
+        assertEqualsEventually(new Callable<ClusterVersion>() {
             @Override
-            public Version call()
+            public ClusterVersion call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion);
+        }, codebaseVersion.asClusterVersion());
     }
 
     @Test
     public void test_clusterVersion_isEventuallySetOnJoiningMember_whenMulticastJoinerConfigured() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         setupInstance(config);
         HazelcastInstance joiner = Hazelcast.newHazelcastInstance(config);
         final ClusterServiceImpl joinerCluster = (ClusterServiceImpl) joiner.getCluster();
 
-        assertEqualsEventually(new Callable<Version>() {
+        assertEqualsEventually(new Callable<ClusterVersion>() {
             @Override
-            public Version call()
+            public ClusterVersion call()
                     throws Exception {
                 return joinerCluster.getClusterVersion();
             }
-        }, codebaseVersion);
+        }, codebaseVersion.asClusterVersion());
 
         joiner.shutdown();
     }
@@ -94,19 +99,20 @@ public class ClusterVersionTest extends HazelcastTestSupport {
     @Test
     public void test_clusterVersion_isEventuallySetOnJoiningMember_whenTcpJoinerConfigured() {
         Config config = new Config();
+        config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         setupInstance(config);
         HazelcastInstance joiner = Hazelcast.newHazelcastInstance(config);
         final ClusterServiceImpl joinerCluster = (ClusterServiceImpl) joiner.getCluster();
 
-        assertEqualsEventually(new Callable<Version>() {
+        assertEqualsEventually(new Callable<ClusterVersion>() {
             @Override
-            public Version call()
+            public ClusterVersion call()
                     throws Exception {
                 return joinerCluster.getClusterVersion();
             }
-        }, codebaseVersion);
+        }, codebaseVersion.asClusterVersion());
 
         joiner.shutdown();
     }

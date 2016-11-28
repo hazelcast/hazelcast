@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +36,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
      * this is populated with the codebase version of the node trying to join the cluster
      * (ie {@link com.hazelcast.instance.Node#getVersion()}).
      */
-    protected Version version;
+    protected MemberVersion version;
     protected Address address;
     protected String uuid;
     protected boolean liteMember;
@@ -47,13 +47,13 @@ public class JoinMessage implements IdentifiedDataSerializable {
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Version version, Address address,
+    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address,
                        String uuid, boolean liteMember, ConfigCheck configCheck) {
         this(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, Collections.<Address>emptySet(), 0);
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Version version, Address address, String uuid, boolean liteMember,
-                       ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
+    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
+                       boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.version = version;
@@ -73,7 +73,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
         return buildNumber;
     }
 
-    public Version getVersion() {
+    public MemberVersion getVersion() {
         return version;
     }
 

@@ -19,7 +19,8 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.monitor.NodeState;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
@@ -29,8 +30,8 @@ public class NodeStateImpl implements NodeState {
     private ClusterState clusterState;
     private com.hazelcast.instance.NodeState nodeState;
 
-    private Version clusterVersion;
-    private Version nodeVersion;
+    private ClusterVersion clusterVersion;
+    private MemberVersion memberVersion;
 
     private boolean rollingUpgradeEnabled;
 
@@ -38,11 +39,11 @@ public class NodeStateImpl implements NodeState {
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
-                         Version clusterVersion, Version nodeVersion, boolean rollingUpgradeEnabled) {
+                         ClusterVersion clusterVersion, MemberVersion memberVersion, boolean rollingUpgradeEnabled) {
         this.clusterState = clusterState;
         this.nodeState = nodeState;
         this.clusterVersion = clusterVersion;
-        this.nodeVersion = nodeVersion;
+        this.memberVersion = memberVersion;
         this.rollingUpgradeEnabled = rollingUpgradeEnabled;
     }
 
@@ -57,12 +58,12 @@ public class NodeStateImpl implements NodeState {
     }
 
     @Override
-    public Version getClusterVersion() {
+    public ClusterVersion getClusterVersion() {
         return clusterVersion;
     }
 
-    public Version getNodeVersion() {
-        return nodeVersion;
+    public MemberVersion getMemberVersion() {
+        return memberVersion;
     }
 
     @Override
@@ -75,8 +76,8 @@ public class NodeStateImpl implements NodeState {
         JsonObject root = new JsonObject();
         root.add("clusterState", clusterState.name());
         root.add("nodeState", nodeState.name());
-        root.add("clusterVersion", clusterVersion.asString());
-        root.add("nodeVersion", nodeVersion.asString());
+        root.add("clusterVersion", clusterVersion.toString());
+        root.add("memberVersion", memberVersion.toString());
         root.add("rollingUpgradeEnabled", rollingUpgradeEnabled);
         return root;
     }
@@ -93,11 +94,11 @@ public class NodeStateImpl implements NodeState {
         }
         String jsonClusterVersion = getString(json, "clusterVersion", null);
         if (jsonClusterVersion != null) {
-            clusterVersion = Version.of(jsonClusterVersion);
+            clusterVersion = ClusterVersion.of(jsonClusterVersion);
         }
-        String jsonNodeVersion = getString(json, "nodeVersion", null);
+        String jsonNodeVersion = getString(json, "memberVersion", null);
         if (jsonNodeState != null) {
-            nodeVersion = Version.of(jsonNodeVersion);
+            memberVersion = MemberVersion.of(jsonNodeVersion);
         }
         rollingUpgradeEnabled = getBoolean(json, "rollingUpgradeEnabled", false);
     }
@@ -108,7 +109,7 @@ public class NodeStateImpl implements NodeState {
                 + "clusterState=" + clusterState
                 + ", nodeState=" + nodeState
                 + ", clusterVersion=" + clusterVersion
-                + ", nodeVersion=" + nodeVersion
+                + ", memberVersion=" + memberVersion
                 + ", rollingUpgradeEnabled=" + rollingUpgradeEnabled
                 + '}';
     }

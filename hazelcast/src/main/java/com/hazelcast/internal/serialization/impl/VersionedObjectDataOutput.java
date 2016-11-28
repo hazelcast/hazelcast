@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.Version;
 import com.hazelcast.nio.VersionAware;
-import com.hazelcast.version.Version;
 
 import java.io.OutputStream;
 

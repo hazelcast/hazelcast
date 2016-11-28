@@ -22,7 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -34,17 +34,17 @@ public class MemberInfo implements IdentifiedDataSerializable {
     private Address address;
     private String uuid;
     private boolean liteMember;
-    private Version version;
+    private MemberVersion version;
     private Map<String, Object> attributes;
 
     public MemberInfo() {
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, Version version) {
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, MemberVersion version) {
         this(address, uuid, attributes, false, version);
     }
 
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, Version version) {
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, MemberVersion version) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = attributes == null || attributes.isEmpty()
@@ -61,7 +61,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         return address;
     }
 
-    public Version getVersion() {
+    public MemberVersion getVersion() {
         return version;
     }
 

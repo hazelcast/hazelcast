@@ -24,7 +24,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.MemberVersion;
 
 import java.util.Collection;
 
@@ -134,7 +135,7 @@ public interface ClusterService extends CoreService, Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p/>
      * If a node of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(MemberVersion)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p/>
      * If an invalid version transition is requested, for example changing to a different major version, an
@@ -150,7 +151,7 @@ public interface ClusterService extends CoreService, Cluster {
      * @param version new version of the cluster
      * @since 3.8
      */
-    void changeClusterVersion(Version version);
+    void changeClusterVersion(ClusterVersion version);
 
     /**
      * Changes the cluster version transactionally, with the transaction options provided. Internally this method uses the same
@@ -160,7 +161,7 @@ public interface ClusterService extends CoreService, Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p/>
      * If a node of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(MemberVersion)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p/>
      * If an invalid version transition is requested, for example changing to a different major version, an
@@ -177,5 +178,5 @@ public interface ClusterService extends CoreService, Cluster {
      * @param options options by which to execute the transaction
      * @since 3.8
      */
-    void changeClusterVersion(Version version, TransactionOptions options);
+    void changeClusterVersion(ClusterVersion version, TransactionOptions options);
 }

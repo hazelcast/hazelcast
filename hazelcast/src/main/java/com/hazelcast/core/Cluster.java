@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 import java.util.Set;
 
@@ -178,19 +178,19 @@ public interface Cluster {
      * {@link com.hazelcast.core.LifecycleEvent.LifecycleState#STARTING} is triggered.
      *
      * For example, consider a cluster comprised of nodes running on {@code hazelcast-3.8.jar}. Each node's codebase version
-     * is 3.8.0 and on startup the cluster version is also 3.8.0. After a while, another node joins, running on
+     * is 3.8.0 and on startup the cluster version is 3.8. After a while, another node joins, running on
      * {@code hazelcast-3.9.jar}; this node's codebase version is 3.9.0. If deemed compatible, it is allowed to join the cluster.
-     * At this point, the cluster version is still 3.8.0, the 3.9.0 member should be able to adapt its behaviour to be compatible
-     * with other the 3.8.0 members. Once all 3.8.0 members have been shutdown and replaced by other members on codebase
-     * version 3.9.0, still the cluster version will be 3.8.0. At this point, it is possible to update the cluster version to
-     * 3.9.0, since all cluster members will be compatible with the new cluster version. Once cluster version
-     * is updated to 3.9.0, further communication among members will take place in 3.9.0 and all new features and functionality
-     * of version 3.9.0 will be available.
+     * At this point, the cluster version is still 3.8 and the 3.9.0 member should be able to adapt its behaviour to be compatible
+     * with the other 3.8.0 members. Once all 3.8.0 members have been shutdown and replaced by other members on codebase
+     * version 3.9.0, still the cluster version will be 3.8. At this point, it is possible to update the cluster version to
+     * 3.9, since all cluster members will be compatible with the new cluster version. Once cluster version
+     * is updated to 3.9.0, further communication among members will take place in 3.9 and all new features and functionality
+     * of version 3.9 will be available.
      *
      * @return the version at which this cluster operates.
      * @since 3.8
      */
-    Version getClusterVersion();
+    ClusterVersion getClusterVersion();
 
     /**
      * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,

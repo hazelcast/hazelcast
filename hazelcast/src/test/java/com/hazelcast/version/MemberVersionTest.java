@@ -7,7 +7,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
+import static com.hazelcast.version.MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class VersionTest {
+public class MemberVersionTest {
 
     private static final String VERSION_3_8_SNAPSHOT_STRING = "3.8-SNAPSHOT";
     private static final String VERSION_3_8_1_RC1_STRING = "3.8.1-RC1";
@@ -23,56 +23,56 @@ public class VersionTest {
     private static final String VERSION_3_9_0_STRING = "3.9.0";
     private static final String VERSION_UNKNOWN_STRING = "0.0.0";
 
-    private static final Version VERSION_3_8 = Version.of(VERSION_3_8_SNAPSHOT_STRING);
-    private static final Version VERSION_3_8_1 = Version.of(VERSION_3_8_1_RC1_STRING);
-    private static final Version VERSION_3_8_2 = Version.of(VERSION_3_8_2_STRING);
-    private static final Version VERSION_3_9 = Version.of(VERSION_3_9_0_STRING);
+    private static final MemberVersion VERSION_3_8 = MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING);
+    private static final MemberVersion VERSION_3_8_1 = MemberVersion.of(VERSION_3_8_1_RC1_STRING);
+    private static final MemberVersion VERSION_3_8_2 = MemberVersion.of(VERSION_3_8_2_STRING);
+    private static final MemberVersion VERSION_3_9 = MemberVersion.of(VERSION_3_9_0_STRING);
 
-    private Version version = Version.of(3, 8, 0);
-    private Version versionSameAttributes = Version.of(3, 8, 0);
-    private Version versionOtherMajor = Version.of(4, 8, 0);
-    private Version versionOtherMinor = Version.of(3, 7, 0);
-    private Version versionOtherPath = Version.of(3, 8, 1);
+    private MemberVersion version = MemberVersion.of(3, 8, 0);
+    private MemberVersion versionSameAttributes = MemberVersion.of(3, 8, 0);
+    private MemberVersion versionOtherMajor = MemberVersion.of(4, 8, 0);
+    private MemberVersion versionOtherMinor = MemberVersion.of(3, 7, 0);
+    private MemberVersion versionOtherPath = MemberVersion.of(3, 8, 1);
 
     @Test
     public void testIsUnknown() {
-        assertTrue(Version.UNKNOWN.isUnknown());
-        assertFalse(Version.of(VERSION_3_8_SNAPSHOT_STRING).isUnknown());
-        assertFalse(Version.of(VERSION_3_8_1_RC1_STRING).isUnknown());
-        assertFalse(Version.of(VERSION_3_8_2_STRING).isUnknown());
+        assertTrue(MemberVersion.UNKNOWN.isUnknown());
+        assertFalse(MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING).isUnknown());
+        assertFalse(MemberVersion.of(VERSION_3_8_1_RC1_STRING).isUnknown());
+        assertFalse(MemberVersion.of(VERSION_3_8_2_STRING).isUnknown());
     }
 
     @Test
     public void testVersionOf_whenVersionIsUnknown() {
-        assertEquals(Version.UNKNOWN, Version.of(0, 0, 0));
+        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(0, 0, 0));
     }
 
     @Test
     public void testVersionOf_whenVersionStringIsSnapshot() {
-        Version expected = Version.of(3, 8, 0);
-        assertEquals(expected, Version.of(VERSION_3_8_SNAPSHOT_STRING));
+        MemberVersion expected = MemberVersion.of(3, 8, 0);
+        assertEquals(expected, MemberVersion.of(VERSION_3_8_SNAPSHOT_STRING));
     }
 
     @Test
     public void testVersionOf_whenVersionStringIsRC() {
-        Version expected = Version.of(3, 8, 1);
-        assertEquals(expected, Version.of(VERSION_3_8_1_RC1_STRING));
+        MemberVersion expected = MemberVersion.of(3, 8, 1);
+        assertEquals(expected, MemberVersion.of(VERSION_3_8_1_RC1_STRING));
     }
 
     @Test
     public void testVersionOf_whenVersionStringIsRelease() {
-        Version expected = Version.of(3, 8, 2);
-        assertEquals(expected, Version.of(VERSION_3_8_2_STRING));
+        MemberVersion expected = MemberVersion.of(3, 8, 2);
+        assertEquals(expected, MemberVersion.of(VERSION_3_8_2_STRING));
     }
 
     @Test
     public void testVersionOf_whenVersionStringIsUnknown() {
-        assertEquals(Version.UNKNOWN, Version.of(VERSION_UNKNOWN_STRING));
+        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(VERSION_UNKNOWN_STRING));
     }
 
     @Test
     public void testVersionOf_whenVersionStringIsNull() {
-        assertEquals(Version.UNKNOWN, Version.of(null));
+        assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(null));
     }
 
     @Test

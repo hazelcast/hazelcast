@@ -53,7 +53,6 @@ import java.util.logging.Level;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.version.Version.MAJOR_MINOR_VERSION_COMPARATOR;
 
 public abstract class AbstractJoiner implements Joiner {
 
@@ -238,7 +237,7 @@ public abstract class AbstractJoiner implements Joiner {
             return false;
         }
 
-        if (MAJOR_MINOR_VERSION_COMPARATOR.compare(clusterService.getClusterVersion(), joinMessage.getClusterVersion()) != 0) {
+        if (!clusterService.getClusterVersion().equals(joinMessage.getClusterVersion())) {
             if (logger.isFineEnabled()) {
                 logger.fine("Should not merge to " + joinMessage.getAddress() + " because other cluster version is "
                         + joinMessage.getClusterVersion() + " while this cluster version is "

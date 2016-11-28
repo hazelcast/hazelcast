@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.version.Version;
-
 /**
  * Enables getting the version from the implementing object.
  * It may be any Version (cluster version, node version, custom version, etc.) It's up to the implementer.

@@ -70,7 +70,7 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -153,7 +153,7 @@ public class Node {
      * For example, when running on hazelcast-3.8.jar, this would resolve to {@code Version.of(3,8,0)}.
      * A node's codebase version may be different than cluster version.
      */
-    private final Version version;
+    private final MemberVersion version;
 
     private volatile Address masterAddress;
 
@@ -165,7 +165,7 @@ public class Node {
         this.configClassLoader = config.getClassLoader();
         this.properties = new HazelcastProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
-        this.version = Version.of(buildInfo.getVersion());
+        this.version = MemberVersion.of(buildInfo.getVersion());
 
         String loggingType = properties.getString(LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
@@ -706,7 +706,7 @@ public class Node {
         logger.finest("This node is being set as the master");
         masterAddress = address;
         if (getClusterService().getClusterVersion() == null) {
-            getClusterService().getClusterStateManager().setClusterVersion(version);
+            getClusterService().getClusterStateManager().setClusterVersion(version.asClusterVersion());
         }
         setJoined();
         getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
@@ -753,7 +753,7 @@ public class Node {
      *
      * @return codebase version of the node
      */
-    public Version getVersion() {
+    public MemberVersion getVersion() {
         return version;
     }
 

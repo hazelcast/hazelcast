@@ -17,20 +17,20 @@
 package com.hazelcast.internal.cluster;
 
 import com.hazelcast.core.Cluster;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 /**
  * Listeners interested in acting upon cluster version update should implement this interface.
  * Services registered with the Hazelcast {@link com.hazelcast.spi.impl.servicemanager.ServiceManager} which implement this
- * interface do not have have to register themselves, as their {@link #onClusterVersionChange(Version)} method will be invoked
- * automatically.
+ * interface do not have have to register themselves, as their {@link #onClusterVersionChange(ClusterVersion)} method will be
+ * invoked automatically.
  *
  * Other listeners have to register themselves with {@link com.hazelcast.instance.NodeExtension#registerListener(Object)}.
- * Upon registration, the listener's {@link #onClusterVersionChange(Version)} method will be invoked once with the current value
- * of the cluster version.
+ * Upon registration, the listener's {@link #onClusterVersionChange(ClusterVersion)} method will be invoked once with the current
+ * value of the cluster version.
  *
  * @see Cluster#getClusterVersion()
- * @see ClusterService#changeClusterVersion(Version)
+ * @see ClusterService#changeClusterVersion(ClusterVersion)
  * @since 3.8
  */
 public interface ClusterVersionListener {
@@ -47,6 +47,6 @@ public interface ClusterVersionListener {
      *
      * @param newVersion the new version
      */
-    void onClusterVersionChange(Version newVersion);
+    void onClusterVersionChange(ClusterVersion newVersion);
 
 }

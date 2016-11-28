@@ -31,7 +31,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.ClusterVersion;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -49,14 +49,14 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     private String clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
-    private Version clusterVersion;
+    private ClusterVersion clusterVersion;
 
     public FinalizeJoinOperation() {
     }
 
     public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
-                                 PartitionRuntimeState partitionRuntimeState) {
+                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 ClusterVersion clusterVersion, PartitionRuntimeState partitionRuntimeState) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -66,8 +66,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState, Version clusterVersion,
-                                 PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+                                 String clusterId, long clusterStartTime, ClusterState clusterState,
+                                 ClusterVersion clusterVersion, PartitionRuntimeState partitionRuntimeState,
+                                 boolean sendResponse) {
         super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;

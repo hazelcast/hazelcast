@@ -70,7 +70,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.util.AddressUtil;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WANReplicationQueueFullException;
 
 import javax.cache.CacheException;
@@ -187,7 +187,7 @@ public class ReferenceObjects {
         }
     }
 
-    public static Member aMember = new MemberImpl(anAddress, Version.UNKNOWN, aString, Collections.singletonMap(aString, (Object) aString), false);
+    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString, Collections.singletonMap(aString, (Object) aString), false);
     public static Collection<Map.Entry<Address, List<Integer>>> aPartitionTable;
 
     static {

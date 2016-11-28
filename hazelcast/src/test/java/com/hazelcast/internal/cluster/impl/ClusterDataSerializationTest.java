@@ -9,7 +9,7 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
+import com.hazelcast.version.MemberVersion;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 public class ClusterDataSerializationTest {
 
     private static final SerializationService SERIALIZATION_SERVICE = new DefaultSerializationServiceBuilder().build();
-    private static final ClusterStateChange<Version> VERSION_CLUSTER_STATE_CHANGE = ClusterStateChange.from(Version.of(
+    private static final ClusterStateChange<MemberVersion> VERSION_CLUSTER_STATE_CHANGE = ClusterStateChange.from(MemberVersion.of(
             BUILD_INFO.getVersion()));
     private static final ClusterStateChange<ClusterState> CLUSTER_STATE_CHANGE = ClusterStateChange.from(ClusterState.FROZEN);
 
@@ -91,7 +91,7 @@ public class ClusterDataSerializationTest {
         attributes.put("b", "b");
         attributes.put("c", new Address("127.0.0.1", 5999));
         MemberInfo memberInfo = new MemberInfo(new Address("127.0.0.1", 5071), UUID.randomUUID().toString(), attributes,
-                false, Version.of(BUILD_INFO.getVersion()));
+                false, MemberVersion.of(BUILD_INFO.getVersion()));
 
         Data serialized = SERIALIZATION_SERVICE.toData(memberInfo);
 
