@@ -16,20 +16,14 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -62,32 +56,6 @@ public final class Util {
             return peel(e.getCause());
         }
         return e;
-    }
-
-    public static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures) {
-        final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
-        compositeFuture.whenComplete((r, e) -> {
-            if (e instanceof CancellationException) {
-                futures.forEach(f -> f.cancel(true));
-            }
-        });
-        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
-        for (ICompletableFuture future : futures) {
-            future.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
-                    if (completionLatch.decrementAndGet() == 0) {
-                        compositeFuture.complete(true);
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    compositeFuture.completeExceptionally(t);
-                }
-            });
-        }
-        return compositeFuture;
     }
 
     public static byte[] read(InputStream in, int count) throws IOException {

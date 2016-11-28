@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -52,6 +53,7 @@ class ExecutionService {
     private final Thread[] threads;
     private final String hzInstanceName;
     private final String name;
+    private final ILogger logger;
 
     ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
         this.hzInstanceName = hz.getName();
@@ -59,6 +61,7 @@ class ExecutionService {
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
         this.contextClassLoader = contextClassLoader;
+        this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
     }
 
     ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
@@ -148,7 +151,7 @@ class ExecutionService {
         }
     }
 
-    private static final class BlockingWorker implements Runnable {
+    private final class BlockingWorker implements Runnable {
         private final TaskletTracker tracker;
 
         private BlockingWorker(TaskletTracker tracker) {
@@ -172,12 +175,13 @@ class ExecutionService {
                 }
                 tracker.jobFuture.taskletDone();
             } catch (Throwable e) {
+                logger.warning("Exception in " + t, e);
                 tracker.jobFuture.completeExceptionally(e);
             }
         }
     }
 
-    private static class NonBlockingWorker implements Runnable {
+    private class NonBlockingWorker implements Runnable {
         private final List<TaskletTracker> trackers;
         private final NonBlockingWorker[] colleagues;
         private volatile boolean isShutdown;
@@ -208,6 +212,7 @@ class ExecutionService {
                             madeProgress |= result.isMadeProgress();
                         }
                     } catch (Throwable e) {
+                        logger.warning("Exception in " + t.tasklet, e);
                         t.jobFuture.completeExceptionally(e);
                     }
                     if (t.jobFuture.isCompletedExceptionally()) {

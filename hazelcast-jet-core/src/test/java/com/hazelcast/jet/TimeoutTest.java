@@ -54,11 +54,10 @@ public class TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_slowRunningOperationOnSingleNode_then_shouldNotTimeout() throws Throwable {
+    public void when_slowRunningOperationOnSingleNode_then_doesNotTimeout() throws Throwable {
+        // Given
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
-
-        // Given
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
         dag.addVertex(slow);
@@ -68,13 +67,12 @@ public class TimeoutTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_slowRunningOperationOnMultipleNodes_thenShouldNotTimeout() throws Throwable {
+    public void when_slowRunningOperationOnMultipleNodes_doesNotTimeout() throws Throwable {
+        // Given
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
-
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
-        // Given
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
         dag.addVertex(slow);

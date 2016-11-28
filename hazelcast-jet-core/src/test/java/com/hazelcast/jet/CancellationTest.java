@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,6 +36,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.jet.impl.Util.peel;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
@@ -58,7 +60,7 @@ public class CancellationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_jobCancelledOnSingleNode_then_shouldTerminateEventually() throws Throwable {
+    public void when_jobCancelledOnSingleNode_then_terminatedEventually() throws Throwable {
         // Given
         HazelcastInstance instance = factory.newHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
@@ -80,7 +82,7 @@ public class CancellationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_jobCancelledOnMultipleNodes_then_shouldTerminateEventually() throws Throwable {
+    public void when_jobCancelledOnMultipleNodes_then_terminatedEventually() throws Throwable {
         // Given
         factory.newHazelcastInstance();
         HazelcastInstance instance = factory.newHazelcastInstance();
@@ -96,14 +98,14 @@ public class CancellationTest extends HazelcastTestSupport {
         // When
         future.cancel(true);
 
-        //Then
+        // Then
         assertExecutionTerminated();
         expectedException.expect(CancellationException.class);
         future.get();
     }
 
     @Test
-    public void when_jobCancelledFromClient_then_shouldTerminateEventually() throws Throwable {
+    public void when_jobCancelledFromClient_then_terminatedEventually() throws Throwable {
         // Given
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -124,6 +126,36 @@ public class CancellationTest extends HazelcastTestSupport {
         assertExecutionTerminated();
         expectedException.expect(CancellationException.class);
         future.get();
+    }
+
+    @Test
+    public void when_jobFailsOnOneNode_then_cancelledOnOtherNodes() throws Throwable {
+        // Given
+        HazelcastInstance other = factory.newHazelcastInstance();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
+
+        RuntimeException fault = new RuntimeException("fault");
+        DAG dag = new DAG();
+
+        Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(fault))
+                .parallelism(4);
+        dag.addVertex(faulty);
+
+        Future<Void> future = jetEngine.newJob(dag).execute();
+        assertExecutionStarted();
+
+        // Then
+        FaultyProcessor.failNow = true;
+        assertExecutionTerminated();
+
+        expectedException.expect(fault.getClass());
+        expectedException.expectMessage(fault.getMessage());
+        try {
+            future.get();
+        } catch (Exception e) {
+            throw peel(e);
+        }
     }
 
     private void assertExecutionStarted() {
@@ -159,6 +191,49 @@ public class CancellationTest extends HazelcastTestSupport {
             callCounter.incrementAndGet();
             sleepMillis(1);
             return false;
+        }
+    }
+
+    private static class FaultyProcessor extends AbstractProcessor {
+
+        private final RuntimeException e;
+        private static volatile boolean failNow = false;
+
+        public FaultyProcessor(RuntimeException e) {
+            this.e = e;
+        }
+
+        @Override
+        public boolean complete() {
+            if (failNow) {
+                throw e;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    private static class SingleNodeFaultSupplier implements ProcessorMetaSupplier {
+
+        private final RuntimeException e;
+        private transient Address address;
+
+        public SingleNodeFaultSupplier(RuntimeException e) {
+            this.e = e;
+        }
+
+        @Override
+        public void init(Context context) {
+            address = getAddress(context.getHazelcastInstance());
+        }
+
+        @Override
+        public ProcessorSupplier get(Address address) {
+            if (address.equals(this.address)) {
+                return ProcessorSupplier.of(() -> new FaultyProcessor(e));
+            } else {
+                return ProcessorSupplier.of(StuckProcessor::new);
+            }
         }
     }
 

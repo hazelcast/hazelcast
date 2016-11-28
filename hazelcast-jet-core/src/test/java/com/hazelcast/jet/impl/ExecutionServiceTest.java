@@ -18,6 +18,8 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -57,7 +59,11 @@ public class ExecutionServiceTest {
     @Before
     public void before() {
         HazelcastInstance hzMock = mock(HazelcastInstance.class);
+        LoggingService loggingService = mock(LoggingService.class);
+        ILogger mockLogger = mock(ILogger.class);
         Mockito.when(hzMock.getName()).thenReturn("test-hz-instance");
+        Mockito.when(hzMock.getLoggingService()).thenReturn(loggingService);
+        Mockito.when(loggingService.getLogger(Mockito.<Class>any())).thenReturn(mockLogger);
         es = new ExecutionService(hzMock, "test-execservice", new JetEngineConfig().setParallelism(4));
     }
 
@@ -167,7 +173,7 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_nonBlockingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+    public void when_nonBlockingTaskletIsCancelled_then_completesEarly() throws ExecutionException, InterruptedException {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().callsBeforeDone(Integer.MAX_VALUE))

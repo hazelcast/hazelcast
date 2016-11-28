@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
@@ -24,12 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.Util.allOf;
 import static java.util.stream.Collectors.toList;
 
 public class ExecuteJobOperation extends AsyncOperation {
@@ -93,5 +95,31 @@ public class ExecuteJobOperation extends AsyncOperation {
         super.readInternal(in);
         executionId = in.readLong();
         dag = in.readObject();
+    }
+
+    private static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures) {
+        final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
+        compositeFuture.whenComplete((r, e) -> {
+            if (e != null) {
+                futures.forEach(f -> f.cancel(true));
+            }
+        });
+        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
+        for (ICompletableFuture future : futures) {
+            future.andThen(new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    if (completionLatch.decrementAndGet() == 0) {
+                        compositeFuture.complete(true);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable t) {
+                    compositeFuture.completeExceptionally(t);
+                }
+            });
+        }
+        return compositeFuture;
     }
 }

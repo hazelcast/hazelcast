@@ -53,7 +53,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInProcessorSupplier_thenFailJob() throws Throwable {
+    public void when_exceptionInProcessorSupplier_then_failJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -75,7 +75,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInProcessorMetaSupplier_thenFailJob() throws Throwable {
+    public void when_exceptionInProcessorMetaSupplier_then_failJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -96,7 +96,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInProcessorSupplierOnOtherNode_thenFailJob() throws Throwable {
+    public void when_exceptionInProcessorSupplierOnOtherNode_then_failJob() throws Throwable {
         factory.newHazelcastInstance();
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
@@ -126,7 +126,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInNonBlockingTasklet_thenFailJob() throws Throwable {
+    public void when_exceptionInNonBlockingTasklet_then_failJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
@@ -148,7 +148,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_exceptionInBlockingTasklet_thenFailJob() throws Throwable {
+    public void when_exceptionInBlockingTasklet_then_failJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
 
