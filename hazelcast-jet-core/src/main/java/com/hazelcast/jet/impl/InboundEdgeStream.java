@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.impl;
 
+import java.util.Collection;
+
 /**
- * The inbound side of a data stream corresponding to the target of a single DAG edge identified by its ordinal.
+ * The inbound side of a data stream corresponding to a single DAG edge identified by its ordinal. In the
+ * {@code ProcessorTasklet} it corresponds to the target of an edge; in {@code SenderTasklet} it corresponds to the
+ * origin of an edge.
  */
 interface InboundEdgeStream {
 
@@ -30,7 +34,7 @@ interface InboundEdgeStream {
      *   {@link ProgressState#isDone()}: whether the stream is exhausted and no more items will arrive.
      * </li></ul>
      */
-    ProgressState drainTo(CollectionWithObserver dest);
+    ProgressState drainTo(Collection<Object> dest);
 
     int ordinal();
 

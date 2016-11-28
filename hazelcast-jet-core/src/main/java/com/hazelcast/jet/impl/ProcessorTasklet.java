@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.util.Preconditions;
 
@@ -36,13 +37,13 @@ public class ProcessorTasklet implements Tasklet {
 
     private static final int DEFAULT_HIGH_WATER_MARK = 2048;
 
+    private final ArrayDequeInbox inbox = new ArrayDequeInbox();
+    private final ProgressTracker progTracker = new ProgressTracker();
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private CircularCursor<InboundEdgeStream> instreamCursor;
-    private final ArrayDequeWithObserver inbox;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outstreams;
-    private final ProgressTracker progTracker = new ProgressTracker();
 
     private InboundEdgeStream currInstream;
     private boolean currInstreamExhausted;
@@ -59,7 +60,6 @@ public class ProcessorTasklet implements Tasklet {
                 .entrySet().stream()
                 .map(Entry::getValue)
                 .collect(toCollection(ArrayDeque::new));
-        this.inbox = new ArrayDequeWithObserver();
         this.outbox = new ArrayDequeOutbox(outstreams.size(), DEFAULT_HIGH_WATER_MARK);
         this.outstreams = outstreams.stream()
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
@@ -175,6 +175,9 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public String toString() {
         return "ProcessorTasklet{processor=" + processor + '}';
+    }
+
+    private static final class ArrayDequeInbox extends ArrayDeque<Object> implements Inbox {
     }
 }
 

@@ -18,46 +18,28 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 
-import java.util.function.Predicate;
+import java.util.Collection;
 
 class ConveyorEmitter implements InboundEmitter {
 
+    private final CollectionWithDoneDetector doneDetector = new CollectionWithDoneDetector();
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
-    private final DoneDetector doneDetector;
 
     ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
-        this.doneDetector = new DoneDetector(conveyor.submitterGoneItem());
     }
 
-    public ProgressState drainTo(CollectionWithObserver dest) {
-        dest.setVetoingObserverOfAdd(doneDetector);
+    @Override
+    public ProgressState drainTo(Collection<Object> dest) {
+        doneDetector.wrapped = dest;
         try {
-            int drainedCount = conveyor.drainTo(queueIndex, dest);
+            int drainedCount = conveyor.drainTo(queueIndex, doneDetector);
             return ProgressState.valueOf(drainedCount > 0, doneDetector.done);
         } finally {
-            dest.setVetoingObserverOfAdd(null);
+            doneDetector.wrapped = null;
         }
     }
 
-    private final class DoneDetector implements Predicate<Object> {
-        final Object doneItem;
-        boolean done;
-
-        DoneDetector(Object doneItem) {
-            this.doneItem = doneItem;
-        }
-
-        @Override
-        public boolean test(Object o) {
-            if (o != doneItem) {
-                return true;
-            }
-            assert !done : "Repeated 'submitterGoneItem' in queue at index " + queueIndex;
-            done = true;
-            return false;
-        }
-    }
 }

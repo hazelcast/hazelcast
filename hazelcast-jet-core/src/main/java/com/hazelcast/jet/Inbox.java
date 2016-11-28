@@ -17,42 +17,56 @@
 package com.hazelcast.jet;
 
 import java.util.Collection;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 /**
- * Javadoc pending.
+ * A restricted {@code Queue<Object>} API with additional support for bulk draining operations.
  */
 public interface Inbox {
 
     /**
-     * Javadoc pending
+     * @return {@code true} if this collection contains no elements; {@code false} otherwise
+     */
+    boolean isEmpty();
+
+    /**
+     * Retrieves, but does not remove, the head of this inbox, or returns {@code null} if it is empty.
      */
     Object peek();
 
     /**
-     * Javadoc pending
+     * Retrieves and removes the head of this inbox, or returns {@code null} if it is empty.
      */
     Object poll();
 
     /**
-     * Javadoc pending
+     * Retrieves and removes the head of this inbox.  This method differs from {@link #poll poll} only in that
+     * it throws an exception if the inbox is empty.
+     *
+     * @throws NoSuchElementException if this inbox is empty
      */
     Object remove();
 
     /**
-     * Javadoc pending
+     * Drains all elements into the provided {@link Collection}.
+     *
+     * @param target the collection to drain this object's items into
+     * @return the number of elements actually drained
      */
-    default <E> int drainTo(Collection<E> collection) {
+    default <E> int drainTo(Collection<E> target) {
         int drained = 0;
         //noinspection unchecked
         for (E o; (o = (E) poll()) != null; drained++) {
-            collection.add(o);
+            target.add(o);
         }
         return drained;
     }
 
     /**
-     * Javadoc pending
+     * Passes each of this object's items to the supplied consumer until it is empty.
+     *
+     * @return the number of elements drained
      */
     default <E> int drain(Consumer<E> consumer) {
         int consumed = 0;

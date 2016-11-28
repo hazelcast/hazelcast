@@ -58,9 +58,9 @@ public class ReceiverTasklet implements Tasklet {
             if (itemWithpId.getItem() == DONE_ITEM) {
                 remainingSenders--;
             } else {
-                ProgressState offered = collector.offer(itemWithpId.getItem(), itemWithpId.getPartitionId());
-                if (!offered.isDone()) {
-                    tracker.madeProgress(offered.isMadeProgress());
+                ProgressState outcome = collector.offer(itemWithpId.getItem(), itemWithpId.getPartitionId());
+                if (!outcome.isDone()) {
+                    tracker.madeProgress(outcome.isMadeProgress());
                     break;
                 }
             }

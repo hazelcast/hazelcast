@@ -18,9 +18,9 @@ package com.hazelcast.jet.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.ProgressState.DONE;
 import static com.hazelcast.jet.impl.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.ProgressState.NO_PROGRESS;
@@ -29,6 +29,7 @@ import static com.hazelcast.jet.impl.ProgressState.WAS_ALREADY_DONE;
 public class MockInboundStream implements InboundEdgeStream {
     private final int chunkSize;
     private final List<Object> mockData;
+    private final CollectionWithDoneDetector doneDetector = new CollectionWithDoneDetector();
     private final int ordinal;
     private int dataIndex;
     private boolean done;
@@ -45,7 +46,7 @@ public class MockInboundStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainTo(CollectionWithObserver dest) {
+    public ProgressState drainTo(Collection<Object> dest) {
         if (done) {
             return WAS_ALREADY_DONE;
         }
@@ -53,16 +54,17 @@ public class MockInboundStream implements InboundEdgeStream {
         if (limit == dataIndex) {
             return NO_PROGRESS;
         }
-        dest.setVetoingObserverOfAdd(o -> o != DONE_ITEM);
-        for (; dataIndex < limit; dataIndex++) {
-            final Object item = mockData.get(dataIndex);
-            if (dest.add(item)) {
-                assert !done : "DONE_ITEM followed by more items";
-            } else {
-                done = true;
+        doneDetector.wrapped = dest;
+        try {
+            for (; dataIndex < limit; dataIndex++) {
+                final Object item = mockData.get(dataIndex);
+                if (!doneDetector.add(item)) {
+                    done = true;
+                }
             }
+        } finally {
+            doneDetector.wrapped = null;
         }
-        dest.setVetoingObserverOfAdd(null);
         return done ? DONE : MADE_PROGRESS;
     }
 

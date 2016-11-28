@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
+import java.util.Collection;
+
 interface InboundEmitter {
-    ProgressState drainTo(CollectionWithObserver dest);
+    ProgressState drainTo(Collection<Object> dest);
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
+import java.util.Collection;
+
 /**
  * {@code InboundEdgeStream} implemented in terms of a {@code ConcurrentConveyor}. The conveyor has as many
  * 1-to-1 concurrent queues as there are upstream tasklets contributing to it.
@@ -35,7 +37,7 @@ class ConcurrentInboundEdgeStream implements InboundEdgeStream {
     }
 
     @Override
-    public ProgressState drainTo(CollectionWithObserver dest) {
+    public ProgressState drainTo(Collection<Object> dest) {
         tracker.reset();
         for (int i = 0; i < producers.length; i++) {
             InboundEmitter producer = producers[i];

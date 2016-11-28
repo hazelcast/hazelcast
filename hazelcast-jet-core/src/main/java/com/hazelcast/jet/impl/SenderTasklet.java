@@ -26,8 +26,11 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.JetService.createHeader;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class SenderTasklet implements Tasklet {
@@ -36,17 +39,16 @@ public class SenderTasklet implements Tasklet {
     public static final int PACKET_SIZE_LIMIT = 1 << 14;
     private final Connection connection;
     private final byte[] headerBytes;
-    private final ArrayDequeWithObserver inbox = new ArrayDequeWithObserver();
+    private final Queue<Object> inbox = new ArrayDeque<>();
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
 
-    public SenderTasklet(InboundEdgeStream inboundEdgeStream,
-                         NodeEngine engine, String engineName,
-                         Address destinationAddress, long executionId,
-                         int destinationVertexId) {
+    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine engine, String engineName,
+                         Address destinationAddress, long executionId, int destinationVertexId
+    ) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
-        this.headerBytes = JetService.createHeader(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
+        this.headerBytes = createHeader(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
         this.outputBuffer = ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataOutput(BUFFER_SIZE);
     }
@@ -56,7 +58,7 @@ public class SenderTasklet implements Tasklet {
     public ProgressState call() {
         ProgressState progressState = inboundEdgeStream.drainTo(inbox);
         if (progressState.isDone()) {
-            inbox.offer(new ObjectWithPartitionId(DONE_ITEM, -1));
+            inbox.add(new ObjectWithPartitionId(DONE_ITEM, -1));
         }
         if (!progressState.isMadeProgress()) {
             return progressState;
@@ -77,8 +79,10 @@ public class SenderTasklet implements Tasklet {
             // length will be filled in later
             outputBuffer.writeInt(0);
             int writtenCount = 0;
-            for (Object item; outputBuffer.position() < PACKET_SIZE_LIMIT
-                    && (item = inbox.poll()) != null; writtenCount++) {
+            for (Object item;
+                 outputBuffer.position() < PACKET_SIZE_LIMIT && (item = inbox.poll()) != null;
+                 writtenCount++
+            ) {
                 ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
                 outputBuffer.writeObject(itemWithpId.getItem());
                 outputBuffer.writeInt(itemWithpId.getPartitionId());

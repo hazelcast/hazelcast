@@ -141,8 +141,7 @@ class ExecutionContext {
                 tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
             }
         }
-        tasklets.addAll(receiverMap
-                .values().stream().flatMap(e -> e.values().stream()).collect(toList()));
+        tasklets.addAll(receiverMap.values().stream().flatMap(e -> e.values().stream()).collect(toList()));
     }
 
     private int totalPartitionCount() {
