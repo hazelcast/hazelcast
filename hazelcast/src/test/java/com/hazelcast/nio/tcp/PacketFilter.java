@@ -21,10 +21,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
 /**
- * A filter used by mock network system to allow or drop {@code Packet}s
+ * A filter used by mock network system to allow, drop or delay {@code Packet}s
  */
 public interface PacketFilter {
 
+    /**
+     * Filters a packet inspecting its content and/or endpoint and decides
+     * whether this packet should be filtered.
+     *
+     * @param packet packet
+     * @param endpoint target endpoint which packet is sent to
+     * @return returns true if packet should pass through intact, false otherwise
+     */
     boolean allow(Packet packet, Address endpoint);
 
 }

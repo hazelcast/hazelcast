@@ -20,6 +20,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.ReplicaErrorLogger;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,15 +50,16 @@ public final class CheckReplicaVersion extends AbstractPartitionOperation
         InternalPartitionServiceImpl partitionService = getService();
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+        long[] currentVersions = replicaManager.getPartitionReplicaVersions(partitionId);
         long currentVersion = currentVersions[replicaIndex - 1];
 
-        if (currentVersion == version) {
-            response = true;
-        } else {
+        if (replicaManager.isPartitionReplicaVersionDirty(partitionId) || currentVersion != version) {
             logBackupVersionMismatch(currentVersion);
-            partitionService.getReplicaManager().triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
+            replicaManager.triggerPartitionReplicaSync(partitionId, replicaIndex, 0L);
             response = false;
+        } else {
+            response = true;
         }
     }
 

@@ -31,6 +31,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.test.TestPartitionUtils.PartitionReplicaVersionsView;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
 
@@ -43,11 +44,13 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.TestPartitionUtils.getPartitionReplicaVersionsView;
 import static com.hazelcast.test.TestPartitionUtils.getReplicaVersions;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -159,10 +162,18 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     void assertSizeAndDataEventually() {
-        assertTrueEventually(new AssertSizeAndDataTask());
+        assertSizeAndDataEventually(false);
+    }
+
+    void assertSizeAndDataEventually(boolean allowDirty) {
+        assertTrueEventually(new AssertSizeAndDataTask(allowDirty));
     }
 
     void assertSizeAndData() throws InterruptedException {
+        assertSizeAndData(false);
+    }
+
+    private void assertSizeAndData(boolean allowDirty) throws InterruptedException {
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
         final int actualBackupCount = Math.min(backupCount, instances.size() - 1);
         final int expectedSize = partitionCount * (actualBackupCount + 1);
@@ -184,7 +195,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             assertNoMissingData(service, partitions, thisAddress);
 
             // check values
-            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions);
+            assertPartitionVersionsAndBackupValues(actualBackupCount, service, node, partitions, allowDirty);
 
             assertMigrationEvents(service, thisAddress);
         }
@@ -213,7 +224,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestMigrationAwareService service,
-            Node node, InternalPartition[] partitions) throws InterruptedException {
+            Node node, InternalPartition[] partitions, boolean allowDirty) throws InterruptedException {
         Address thisAddress = node.getThisAddress();
 
         for (InternalPartition partition : partitions) {
@@ -231,7 +242,8 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                     Node backupNode = getNode(backupInstance);
                     assertNotNull(backupNode);
 
-                    long[] backupReplicaVersions = getReplicaVersions(backupNode, partitionId);
+                    PartitionReplicaVersionsView backupReplicaVersionsView = getPartitionReplicaVersionsView(backupNode, partitionId);
+                    long[] backupReplicaVersions = backupReplicaVersionsView.getVersions();
                     assertNotNull("Versions null on " + backupNode.address + ", partitionId: " + partitionId, backupReplicaVersions);
 
                     for (int i = replica - 1; i < actualBackupCount; i++) {
@@ -239,6 +251,11 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
                                         + ", Partition: " + partition + ", Replica: " + (i + 1) + " owner versions: "
                                         + Arrays.toString(replicaVersions) + " backup versions: " + Arrays.toString(backupReplicaVersions),
                                 replicaVersions[i], backupReplicaVersions[i]);
+                    }
+
+                    if (!allowDirty) {
+                        assertFalse("Backup replica is dirty! Owner: " + thisAddress + ", Backup: " + address
+                                        + ", Partition: " + partition, backupReplicaVersionsView.isDirty());
                     }
 
                     TestMigrationAwareService backupService = getService(backupInstance);
@@ -296,9 +313,15 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private class AssertSizeAndDataTask extends AssertTask {
+        private final boolean allowDirty;
+
+        AssertSizeAndDataTask(boolean allowDirty) {
+            this.allowDirty = allowDirty;
+        }
+
         @Override
         public void run() throws Exception {
-            assertSizeAndData();
+            assertSizeAndData(allowDirty);
         }
     }
 }

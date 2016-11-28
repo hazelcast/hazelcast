@@ -41,50 +41,55 @@ import java.util.Collection;
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport {
-
-    private static final float BACKUP_BLOCK_RATIO = 0.65f;
+public class DirtyBackupTest extends PartitionCorrectnessTestSupport {
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return Arrays.asList(new Object[][] {
                 {1, 2},
-                {1, InternalPartition.MAX_REPLICA_COUNT},
                 {2, 3},
-                {2, InternalPartition.MAX_REPLICA_COUNT},
-                {3, 4},
-                {3, InternalPartition.MAX_REPLICA_COUNT}
+                {3, 4}
         });
     }
 
     @Test
-    public void testPartitionData() throws InterruptedException {
-        HazelcastInstance[] instances = factory.newInstances(getConfig(true, true), nodeCount);
+    public void testPartitionData_withoutAntiEntropy() throws InterruptedException {
+        startInstancesAndFillPartitions(false);
+        assertSizeAndDataEventually(true);
+    }
+
+    @Test
+    public void testPartitionData_withAntiEntropy() throws InterruptedException {
+        startInstancesAndFillPartitions(true);
+        assertSizeAndDataEventually(false);
+    }
+
+    private void startInstancesAndFillPartitions(boolean antiEntropyEnabled) {
+        backupCount = 1;
+        nodeCount = 3;
+
+        HazelcastInstance[] instances = factory.newInstances(getConfig(true, antiEntropyEnabled), nodeCount);
         for (HazelcastInstance instance : instances) {
-            setBackupPacketDropFilter(instance, BACKUP_BLOCK_RATIO);
+            setBackupPacketReorderFilter(instance);
         }
         warmUpPartitions(instances);
 
         for (HazelcastInstance instance : instances) {
             fillData(instance);
         }
-
-        assertSizeAndDataEventually();
     }
 
-    public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio) {
+    private static void setBackupPacketReorderFilter(HazelcastInstance instance) {
         Node node = getNode(instance);
         FirewallingMockConnectionManager cm = (FirewallingMockConnectionManager) node.getConnectionManager();
-        cm.setDroppingPacketFilter(new BackupPacketDropFilter(node.getSerializationService(), blockRatio));
+        cm.setDelayingPacketFilter(new BackupPacketReorderFilter(node.getSerializationService()));
     }
 
-    private static class BackupPacketDropFilter implements PacketFilter {
+    private static class BackupPacketReorderFilter implements PacketFilter {
         final InternalSerializationService serializationService;
-        final float blockRatio;
 
-        BackupPacketDropFilter(InternalSerializationService serializationService, float blockRatio) {
+        BackupPacketReorderFilter(InternalSerializationService serializationService) {
             this.serializationService = serializationService;
-            this.blockRatio = blockRatio;
         }
 
         @Override
@@ -95,14 +100,12 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         private boolean allowOperation(Packet packet) {
             try {
                 ObjectDataInput input = serializationService.createObjectDataInput(packet);
-                byte header = input.readByte();
-                boolean identified = (header & 1 << 0) != 0;
+                boolean identified = input.readBoolean();
                 if (identified) {
-                    boolean compressed = (header & 1 << 2) != 0;
-                    int factory = compressed ? input.readByte() : input.readInt();
-                    int type = compressed ? input.readByte() : input.readInt();
+                    int factory = input.readInt();
+                    int type = input.readInt();
                     boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
-                    return !isBackup || Math.random() > blockRatio;
+                    return !isBackup;
                 }
             } catch (IOException e) {
                 throw new HazelcastException(e);
