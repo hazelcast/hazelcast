@@ -164,7 +164,7 @@ public class MapConfigTest {
     }
 
     @Test
-    public void configSetsForDefaultAllwaysIssue466() {
+    public void configSetsForDefaultAlwaysIssue466() {
         Config config = new XmlConfigBuilder().build();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
@@ -190,7 +190,8 @@ public class MapConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void setAsyncBackupCount_whenTooLarge() {
         MapConfig config = new MapConfig();
-        config.setAsyncBackupCount(200); //max allowed is 6..
+        // max allowed is 6
+        config.setAsyncBackupCount(200);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -208,7 +209,8 @@ public class MapConfigTest {
     @Test(expected = IllegalArgumentException.class)
     public void setBackupCount_tooLarge() {
         MapConfig config = new MapConfig();
-        config.setBackupCount(200); //max allowed is 6..
+        // max allowed is 6
+        config.setBackupCount(200);
     }
 
     @Test(expected = java.lang.UnsupportedOperationException.class)
@@ -223,10 +225,10 @@ public class MapConfigTest {
 
     @Test
     public void testMapPartitionLostListenerConfig() {
-        final MapConfig mapConfig = new MapConfig();
-        final MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
+        MapConfig mapConfig = new MapConfig();
+        MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
         mapConfig.addMapPartitionLostListenerConfig(new MapPartitionLostListenerConfig(listener));
-        final MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig();
         listenerConfig.setImplementation(listener);
         mapConfig.addMapPartitionLostListenerConfig(listenerConfig);
 
@@ -238,34 +240,34 @@ public class MapConfigTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withClassName() {
-        final MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
         readOnly.setClassName("com.hz");
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withImplementation() {
-        final MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
-        final MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig(listener);
-        final MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
+        MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
+        MapPartitionLostListenerConfig listenerConfig = new MapPartitionLostListenerConfig(listener);
+        MapPartitionLostListenerConfigReadOnly readOnly = listenerConfig.getAsReadOnly();
         assertEquals(listener, readOnly.getImplementation());
         readOnly.setImplementation(mock(MapPartitionLostListener.class));
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMapPartitionLostListenerReadOnlyConfig_withEventListenerImplementation() {
-        final MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
+        MapPartitionLostListenerConfigReadOnly readOnly = new MapPartitionLostListenerConfig().getAsReadOnly();
         readOnly.setImplementation(mock(EventListener.class));
     }
 
     @Test
     public void testMapPartitionLostListener_equalsWithClassName() {
-        final MapPartitionLostListenerConfig config1 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config1 = new MapPartitionLostListenerConfig();
         config1.setClassName("com.hz");
 
-        final MapPartitionLostListenerConfig config2 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config2 = new MapPartitionLostListenerConfig();
         config2.setClassName("com.hz");
 
-        final MapPartitionLostListenerConfig config3 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config3 = new MapPartitionLostListenerConfig();
         config3.setClassName("com.hz2");
 
         assertEquals(config1, config2);
@@ -275,15 +277,15 @@ public class MapConfigTest {
 
     @Test
     public void testMapPartitionLostListener_equalsWithImplementation() {
-        final MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
+        MapPartitionLostListener listener = mock(MapPartitionLostListener.class);
 
-        final MapPartitionLostListenerConfig config1 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config1 = new MapPartitionLostListenerConfig();
         config1.setImplementation(listener);
 
-        final MapPartitionLostListenerConfig config2 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config2 = new MapPartitionLostListenerConfig();
         config2.setImplementation(listener);
 
-        final MapPartitionLostListenerConfig config3 = new MapPartitionLostListenerConfig();
+        MapPartitionLostListenerConfig config3 = new MapPartitionLostListenerConfig();
 
         assertEquals(config1, config2);
         assertNotEquals(config1, config3);
@@ -292,117 +294,115 @@ public class MapConfigTest {
 
     @Test(expected = ConfigurationException.class)
     public void givenCacheDeserializedValuesSetToALWAYS_whenSetOptimizeQueriesToFalse_thenThrowConfigurationException() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
 
-        //when
+        // when
         mapConfig.setOptimizeQueries(false);
     }
 
     @Test(expected = ConfigurationException.class)
     public void givenCacheDeserializedValuesSetToNEVER_whenSetOptimizeQueriesToTrue_thenThrowConfigurationException() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
 
-        //when
+        // when
         mapConfig.setOptimizeQueries(true);
     }
 
     @Test
     public void givenCacheDeserializedValuesIsDefault_whenSetOptimizeQueriesToTrue_thenSetCacheDeserializedValuesToALWAYS() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
 
-        //when
+        // when
         mapConfig.setOptimizeQueries(true);
 
-        //then
+        // then
         CacheDeserializedValues cacheDeserializedValues = mapConfig.getCacheDeserializedValues();
         assertEquals(CacheDeserializedValues.ALWAYS, cacheDeserializedValues);
     }
 
     @Test
     public void givenCacheDeserializedValuesIsDefault_thenIsOptimizeQueriesReturnFalse() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
 
-        //then
+        // then
         boolean optimizeQueries = mapConfig.isOptimizeQueries();
         assertFalse(optimizeQueries);
     }
 
     @Test
     public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToALWAYS_thenIsOptimizeQueriesReturnTrue() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
 
-        //when
+        // when
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
 
-        //then
+        // then
         boolean optimizeQueries = mapConfig.isOptimizeQueries();
         assertTrue(optimizeQueries);
     }
 
     @Test
     public void givenCacheDeserializedValuesIsDefault_whenSetCacheDeserializedValuesToNEVER_thenIsOptimizeQueriesReturnFalse() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
 
-        //when
+        // when
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
 
-        //then
+        // then
         boolean optimizeQueries = mapConfig.isOptimizeQueries();
         assertFalse(optimizeQueries);
     }
 
     @Test(expected = ConfigurationException.class)
     public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToNEVER_thenThrowConfigurationException() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setOptimizeQueries(true);
 
-        //when
+        // when
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.NEVER);
     }
 
     @Test(expected = ConfigurationException.class)
     public void givenSetOptimizeQueryIsFalse_whenSetCacheDeserializedValuesToALWAYS_thenThrowConfigurationException() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setOptimizeQueries(false);
 
-        //when
+        // when
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.ALWAYS);
     }
 
     @Test(expected = ConfigurationException.class)
     public void givenSetOptimizeQueryIsTrue_whenSetCacheDeserializedValuesToINDEX_ONLY_thenThrowConfigurationException() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setOptimizeQueries(true);
 
-        //when
+        // when
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
     }
 
     @Test
-    @Ignore //this MapStoreConfig does not override equals/hashcode -> this cannot pass right now
+    @Ignore(value = "this MapStoreConfig does not override equals/hashcode -> this cannot pass right now")
     public void givenSetCacheDeserializedValuesIsINDEX_ONLY_whenComparedWithOtherConfigWhereCacheIsINDEX_ONLY_thenReturnTrue() {
-        //given
+        // given
         MapConfig mapConfig = new MapConfig();
         mapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
 
-        //when
+        // when
         MapConfig otherMapConfig = new MapConfig();
         otherMapConfig.setCacheDeserializedValues(CacheDeserializedValues.INDEX_ONLY);
 
-        //then
+        // then
         assertEquals(mapConfig, otherMapConfig);
     }
-
-
 }
