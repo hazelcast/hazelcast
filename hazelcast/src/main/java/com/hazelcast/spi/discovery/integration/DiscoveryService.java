@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.discovery.integration;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
@@ -42,7 +41,6 @@ import java.util.Map;
  *
  * @since 3.6
  */
-@Beta
 public interface DiscoveryService {
 
     /**

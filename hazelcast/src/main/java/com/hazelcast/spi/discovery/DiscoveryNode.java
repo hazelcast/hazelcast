@@ -17,7 +17,6 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Map;
 
@@ -48,7 +47,6 @@ import java.util.Map;
  *
  * @since 3.6
  */
-@Beta
 public abstract class DiscoveryNode {
 
     /**

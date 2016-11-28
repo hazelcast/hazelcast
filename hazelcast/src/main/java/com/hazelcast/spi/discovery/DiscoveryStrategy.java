@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.discovery;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 
 import java.util.Map;
@@ -41,7 +40,6 @@ import java.util.Map;
  *
  * @since 3.6
  */
-@Beta
 public interface DiscoveryStrategy {
 
     /**

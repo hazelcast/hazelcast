@@ -17,7 +17,6 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collections;
 import java.util.Map;
@@ -31,7 +30,6 @@ import static java.util.Collections.unmodifiableMap;
  *
  * @since 3.6
  */
-@Beta
 public final class SimpleDiscoveryNode
         extends DiscoveryNode {
 
