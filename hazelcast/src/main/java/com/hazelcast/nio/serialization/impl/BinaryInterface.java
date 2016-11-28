@@ -25,7 +25,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 /**
  * Indicates that the binary serialized form of the annotated class is used in client-member communication over Hazelcast
  * Open Binary Client Protocol or in other ways which may break Hazelcast or other systems. Changing the way
- * {@code @BinaryInterface} classes are serialized most probably will result in incompatibilities, so proceed with caution.
+ * {@code @BinaryInterface} classes are serialized will result in incompatibilities, so the following rules
+ * apply to classes annotated with this annotation in the 3.x release series:
+ *
+ * - NEVER CHANGE THEM
+ * - NEVER MAKE THEM IMPLEMENT THE VERSIONED INTERFACE
  */
 @Target(TYPE)
 @Retention(RUNTIME)
