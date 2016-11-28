@@ -16,18 +16,24 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.eclipsesource.json.Json;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
+import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.version.Version;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
@@ -76,6 +82,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanSyncAllMaps(command);
             } else if (uri.startsWith(URI_MANCENTER_WAN_CLEAR_QUEUES)) {
                 handleWanClearQueues(command);
+            } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
+                handleAddWanConfig(command);
             } else {
                 command.setResponse(HttpCommand.RES_400);
             }
@@ -451,6 +459,31 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
         textCommandService.sendResponse(command);
+    }
+
+    private void handleAddWanConfig(HttpPostCommand command) throws UnsupportedEncodingException {
+        String res = "{\"status\":\"${STATUS}\",\"message\":\"${MESSAGE}\"}";
+
+        byte[] data = command.getData();
+        String[] strList = bytesToString(data).split("&");
+        String wanConfigJson = URLDecoder.decode(strList[0], "UTF-8");
+        try {
+            ManagementCenterService mcs = textCommandService.getNode().getNodeEngine().getManagementCenterService();
+            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
+            WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
+            dto.fromJson(Json.parse(wanConfigJson).asObject());
+
+            for (Member member : members) {
+                mcs.callOnMember(member, new AddWanConfigOperation(dto.getConfig()));
+            }
+            res = res.replace("${STATUS}", "success");
+            res = res.replace("${MESSAGE}", "WAN configuration added.");
+        } catch (Exception ex) {
+            res = res.replace("${STATUS}", "fail");
+            res = res.replace("${MESSAGE}", ex.getMessage());
+        }
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
     @Override

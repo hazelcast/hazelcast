@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
 
@@ -76,4 +77,9 @@ public interface WanReplicationService
      * @param targetGroupName
      */
     void clearQueues(String wanReplicationName, String targetGroupName);
+
+    /**
+     * Adds a new {@link WanReplicationConfig} to all members.
+     */
+    void addWanReplicationConfig(WanReplicationConfig wanConfig);
 }

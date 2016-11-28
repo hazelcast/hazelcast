@@ -54,4 +54,18 @@ public enum WANQueueFullBehavior {
     public int getId() {
         return id;
     }
+
+    /**
+     +     * Returns the EntryEventType as an enum.
+     +     *
+     +     * @return the EntryEventType as an enum.
+     +     */
+    public static WANQueueFullBehavior getByType(final int id) {
+        for (WANQueueFullBehavior behavior : values()) {
+            if (behavior.id == id) {
+                return behavior;
+            }
+        }
+        return null;
+    }
 }

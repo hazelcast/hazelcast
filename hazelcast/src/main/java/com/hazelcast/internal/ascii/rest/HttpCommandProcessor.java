@@ -37,6 +37,7 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_WAN_SYNC_MAP = "/hazelcast/rest/wan/sync/map";
     public static final String URI_WAN_SYNC_ALL_MAPS = "/hazelcast/rest/wan/sync/allmaps";
     public static final String URI_MANCENTER_WAN_CLEAR_QUEUES = "/hazelcast/rest/mancenter/clearWanQueues";
+    public static final String URI_ADD_WAN_CONFIG = "/hazelcast/rest/wan/addWanConfig";
 
     protected HttpCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);

@@ -20,6 +20,7 @@ import com.hazelcast.internal.management.dto.MapConfigDTO;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
+import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -38,8 +39,9 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
     public static final int UPDATE_MANAGEMENT_CENTER_URL = 1;
     public static final int UPDATE_MAP_CONFIG = 2;
     public static final int MAP_CONFIG_DTO = 3;
+    public static final int ADD_WAN_CONFIG = 4;
 
-    private static final int LEN = MAP_CONFIG_DTO + 1;
+    private static final int LEN = ADD_WAN_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -70,6 +72,12 @@ public class ManagementDataSerializerHook implements DataSerializerHook {
         constructors[MAP_CONFIG_DTO] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapConfigDTO();
+            }
+        };
+        constructors[ADD_WAN_CONFIG] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddWanConfigOperation();
             }
         };
 
