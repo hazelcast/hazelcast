@@ -37,6 +37,7 @@ public final class TextCommandConstants {
     public static final byte[] ERROR = stringToBytes("ERROR");
     public static final byte[] CLIENT_ERROR = stringToBytes("CLIENT_ERROR ");
     public static final byte[] SERVER_ERROR = stringToBytes("SERVER_ERROR ");
+    public static final byte[] MIME_TEXT_PLAIN = stringToBytes("text/plain");
 
     private static final int SECOND = 60;
     private static final int MINUTE = 60;

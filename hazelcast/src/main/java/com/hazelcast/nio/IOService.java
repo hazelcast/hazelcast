@@ -65,6 +65,8 @@ public interface IOService {
 
     boolean isRestEnabled();
 
+    boolean isHealthcheckEnabled();
+
     void removeEndpoint(Address endpoint);
 
     void onSuccessfulConnection(Address address);

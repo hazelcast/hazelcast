@@ -93,6 +93,7 @@ public class TextReadHandler implements ReadHandler {
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
+    private final boolean healthcheckEnabled;
     private boolean connectionTypeSet;
     private long requestIdGen;
     private final ILogger logger;
@@ -104,6 +105,7 @@ public class TextReadHandler implements ReadHandler {
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
+        this.healthcheckEnabled = ioService.isHealthcheckEnabled();
         this.logger = ioService.getLoggingService().getLogger(getClass());
     }
 
@@ -167,11 +169,12 @@ public class TextReadHandler implements ReadHandler {
     public void publishRequest(TextCommand command) {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
-                boolean isMancenterRequest = ((HttpCommand) command).getURI().
-                        startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
-                boolean isClusterManagementRequest = ((HttpCommand) command).getURI().
-                        startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
-                if (!restEnabled && (!isMancenterRequest && !isClusterManagementRequest)) {
+                String uri = ((HttpCommand) command).getURI();
+                boolean isMancenterRequest = uri.startsWith(HttpCommandProcessor.URI_MANCENTER_CHANGE_URL);
+                boolean isClusterManagementRequest = uri.startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
+                boolean isHealthCheck = healthcheckEnabled && uri.startsWith(HttpCommandProcessor.URI_HEALTH_URL);
+                boolean forceRequestHandling = isClusterManagementRequest || isMancenterRequest || isHealthCheck;
+                if (!restEnabled && !forceRequestHandling) {
                     connection.close("REST not enabled", null);
                     return;
                 }

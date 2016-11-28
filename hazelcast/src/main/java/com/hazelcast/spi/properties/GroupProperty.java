@@ -169,6 +169,9 @@ public final class GroupProperty {
     public static final HazelcastProperty REST_ENABLED
             = new HazelcastProperty("hazelcast.rest.enabled", false);
 
+    public static final HazelcastProperty HTTP_HEALTHCHECK_ENABLED
+            = new HazelcastProperty("hazelcast.http.healthcheck.enabled", false);
+
     public static final HazelcastProperty MAP_LOAD_CHUNK_SIZE
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 
