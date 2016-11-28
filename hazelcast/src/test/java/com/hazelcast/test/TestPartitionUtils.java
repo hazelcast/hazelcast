@@ -5,12 +5,14 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.util.scheduler.ScheduledEntry;
+import org.junit.Assert;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +77,11 @@ public class TestPartitionUtils {
     }
 
     public static long[] getReplicaVersions(Node node, int partitionId) throws InterruptedException {
+        return getPartitionReplicaVersionsView(node, partitionId).getVersions();
+    }
+
+    public static PartitionReplicaVersionsView getPartitionReplicaVersionsView(Node node, int partitionId)
+            throws InterruptedException {
         GetReplicaVersionsRunnable runnable = new GetReplicaVersionsRunnable(node, partitionId);
         node.getNodeEngine().getOperationService().execute(runnable);
         return runnable.getReplicaVersions();
@@ -148,7 +155,7 @@ public class TestPartitionUtils {
         private final Node node;
         private final int partitionId;
 
-        private long[] replicaVersions;
+        private PartitionReplicaVersionsView replicaVersions;
 
         GetReplicaVersionsRunnable(Node node, int partitionId) {
             this.node = node;
@@ -162,15 +169,41 @@ public class TestPartitionUtils {
 
         @Override
         public void run() {
-            InternalPartitionService partitionService = node.nodeEngine.getPartitionService();
-            long[] replicaVersionsArray = partitionService.getPartitionReplicaVersions(partitionId);
-            replicaVersions = Arrays.copyOf(replicaVersionsArray, replicaVersionsArray.length);
+            InternalPartitionServiceImpl partitionService =
+                    (InternalPartitionServiceImpl) node.nodeEngine.getPartitionService();
+            PartitionReplicaManager replicaManager = partitionService.getReplicaManager();
+            long[] originalVersions = replicaManager.getPartitionReplicaVersions(partitionId);
+            long[] versions = Arrays.copyOf(originalVersions, originalVersions.length);
+            boolean dirty = replicaManager.isPartitionReplicaVersionDirty(partitionId);
+            replicaVersions = new PartitionReplicaVersionsView(versions, dirty);
             latch.countDown();
         }
 
-        long[] getReplicaVersions() throws InterruptedException {
-            latch.await(30, TimeUnit.SECONDS);
+        private void await() throws InterruptedException {
+            Assert.assertTrue("GetReplicaVersionsRunnable is not executed!", latch.await(1, TimeUnit.MINUTES));
+        }
+
+        PartitionReplicaVersionsView getReplicaVersions() throws InterruptedException {
+            await();
             return replicaVersions;
+        }
+    }
+
+    public static class PartitionReplicaVersionsView {
+        private final long[] versions;
+        private final boolean dirty;
+
+        PartitionReplicaVersionsView(long[] replicaVersions, boolean dirty) {
+            this.versions = replicaVersions;
+            this.dirty = dirty;
+        }
+
+        public long[] getVersions() {
+            return versions;
+        }
+
+        public boolean isDirty() {
+            return dirty;
         }
     }
 }
