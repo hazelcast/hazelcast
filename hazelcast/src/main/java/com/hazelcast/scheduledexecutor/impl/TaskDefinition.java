@@ -62,16 +62,6 @@ public class TaskDefinition<V>
     }
 
     public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay,
-                          long delay, TimeUnit unit) {
-        this.type = type;
-        this.name = name;
-        this.command = command;
-        this.initialDelay = initialDelay;
-        this.delay = delay;
-        this.unit = unit;
-    }
-
-    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay,
                           long delay, long period, TimeUnit unit) {
         this.type = type;
         this.name = name;

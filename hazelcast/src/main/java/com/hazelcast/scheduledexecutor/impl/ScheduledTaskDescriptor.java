@@ -16,31 +16,22 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ScheduledTaskDescriptor
-        implements IdentifiedDataSerializable {
+public class ScheduledTaskDescriptor {
 
-    private TaskDefinition definition;
+    private final TaskDefinition definition;
 
-    private ScheduledFuture<?> scheduledFuture;
+    private final ScheduledFuture<?> scheduledFuture;
 
-    private ScheduledTaskStatisticsImpl stats;
+    private final ScheduledTaskStatisticsImpl stats;
 
-    private AtomicReference<Map<?, ?>> state;
+    private final AtomicReference<Map<?, ?>> state;
 
     private final AtomicBoolean lock = new AtomicBoolean();
-
-    public ScheduledTaskDescriptor() {
-    }
 
     public ScheduledTaskDescriptor(TaskDefinition definition, ScheduledFuture<?> scheduledFuture,
                                    AtomicReference<Map<?, ?>> taskState, ScheduledTaskStatisticsImpl stats) {
@@ -48,10 +39,6 @@ public class ScheduledTaskDescriptor
         this.scheduledFuture = scheduledFuture;
         this.stats = stats;
         this.state = taskState;
-    }
-
-    public void setScheduledFuture(ScheduledFuture<?> scheduledFuture) {
-        this.scheduledFuture = scheduledFuture;
     }
 
     public AtomicBoolean getLock() {
@@ -74,29 +61,4 @@ public class ScheduledTaskDescriptor
         return state;
     }
 
-    @Override
-    public int getFactoryId() {
-        return ScheduledExecutorDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ScheduledExecutorDataSerializerHook.TASK_DESCRIPTOR;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeObject(definition);
-        out.writeObject(state);
-        out.writeObject(stats);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        definition = in.readObject();
-        state = in.readObject();
-        stats = in.readObject();
-    }
 }

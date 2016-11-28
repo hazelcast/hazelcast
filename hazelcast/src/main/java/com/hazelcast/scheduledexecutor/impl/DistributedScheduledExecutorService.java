@@ -27,10 +27,9 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
-import java.util.Collections;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService {
@@ -45,8 +44,8 @@ public class DistributedScheduledExecutorService
 
     private ScheduledExecutorPartition memberPartition;
 
-    private final Set<String> shutdownExecutors
-            = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
+    private final ConcurrentMap<String, Boolean> shutdownExecutors
+            = new ConcurrentHashMap<String, Boolean>();
 
     public DistributedScheduledExecutorService() {
     }
@@ -107,17 +106,19 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void destroyDistributedObject(String name) {
-        shutdownExecutors.remove(name);
-        ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
+        if (shutdownExecutors.remove(name) != null) {
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
+        }
     }
 
     public void shutdownExecutor(String name) {
-        ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
-        shutdownExecutors.add(name);
+        if (shutdownExecutors.putIfAbsent(name, Boolean.TRUE) == null) {
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
+        }
     }
 
     public boolean isShutdown(String name) {
-        return shutdownExecutors.contains(name);
+        return shutdownExecutors.containsKey(name);
     }
 
     @Override

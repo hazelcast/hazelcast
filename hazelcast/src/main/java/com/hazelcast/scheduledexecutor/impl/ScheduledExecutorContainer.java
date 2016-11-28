@@ -236,7 +236,7 @@ public class ScheduledExecutorContainer {
     }
 
     public boolean shouldParkGetResult(String taskName) {
-        if (partitionId == -1) {
+        if (partitionId == MEMBER_PARTITION) {
             // For member owned tasks there is a race condition, so we avoid purposefully parking.
             // TODO tkountis - Look into the invocation subsystem, to identify root cause.
             return false;

@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.CompareToOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.DestroyTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
@@ -45,18 +44,15 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(
             SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
-    public static final int TASK_DESCRIPTOR = 0;
-    public static final int TASK_HANDLER = 23;
-    public static final int BACKUP_DESCRIPTOR = 1;
-    public static final int RUNNABLE_DEFINITION = 2;
+    public static final int TASK_HANDLER = 1;
+    public static final int BACKUP_DESCRIPTOR = 2;
+    public static final int RUNNABLE_DEFINITION = 3;
 
-    public static final int RUNNABLE_ADAPTER = 3;
-    public static final int NAMED_TASK_DECORATOR = 4;
+    public static final int RUNNABLE_ADAPTER = 4;
+    public static final int NAMED_TASK_DECORATOR = 5;
 
-    public static final int SCHEDULE_OP = 5;
-    public static final int SCHEDULE_BACKUP_OP = 6;
-
-    public static final int SCHEDULED_FUTURE = 7;
+    public static final int SCHEDULE_OP = 6;
+    public static final int SCHEDULE_BACKUP_OP = 7;
 
     public static final int CANCEL_OP = 8;
     public static final int CANCEL_BACKUP_OP = 9;
@@ -64,20 +60,19 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
     public static final int GET_RESULT = 10;
     public static final int PUBLISH_RESULT = 11;
     public static final int GET_DELAY_OP = 12;
-    public static final int COMPARE_TO_OP = 13;
-    public static final int IS_DONE_OP = 14;
-    public static final int IS_CANCELED_OP = 15;
-    public static final int GET_STATS_OP = 16;
-    public static final int TASK_STATS = 17;
+    public static final int IS_DONE_OP = 13;
+    public static final int IS_CANCELED_OP = 14;
+    public static final int GET_STATS_OP = 15;
+    public static final int TASK_STATS = 16;
 
-    public static final int SYNC_STATE_OP = 18;
-    public static final int REPLICATION = 19;
+    public static final int SYNC_STATE_OP = 17;
+    public static final int REPLICATION = 18;
 
-    public static final int DESTROY_TASK_OP = 20;
+    public static final int DESTROY_TASK_OP = 19;
 
-    public static final int GET_ALL_SCHEDULED = 21;
+    public static final int GET_ALL_SCHEDULED = 20;
 
-    public static final int SHUTDOWN = 22;
+    public static final int SHUTDOWN = 21;
 
     @Override
     public int getFactoryId() {
@@ -90,8 +85,6 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case TASK_DESCRIPTOR:
-                        return new ScheduledTaskDescriptor();
                     case TASK_HANDLER:
                         return new ScheduledTaskHandlerImpl();
                     case BACKUP_DESCRIPTOR:
@@ -102,8 +95,6 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                         return new ScheduledRunnableAdapter();
                     case NAMED_TASK_DECORATOR:
                         return new NamedTaskDecorator();
-                    case SCHEDULED_FUTURE:
-                        return new ScheduledFutureProxy();
                     case GET_DELAY_OP:
                         return new GetDelayOperation();
                     case CANCEL_OP:
@@ -114,8 +105,6 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                         return new ScheduleTaskOperation();
                     case DESTROY_TASK_OP:
                         return new DestroyTaskOperation();
-                    case COMPARE_TO_OP:
-                        return new CompareToOperation();
                     case IS_DONE_OP:
                         return new IsDoneOperation();
                     case IS_CANCELED_OP:

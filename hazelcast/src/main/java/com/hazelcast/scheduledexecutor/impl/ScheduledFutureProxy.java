@@ -23,9 +23,6 @@ import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -33,7 +30,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.CompareToOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.DestroyTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
@@ -44,7 +40,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
-import java.io.IOException;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -54,7 +49,7 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings({"checkstyle:methodcount"})
 public final class ScheduledFutureProxy<V>
         implements IScheduledFuture<V>,
-                   IdentifiedDataSerializable, HazelcastInstanceAware,
+                   HazelcastInstanceAware,
                    PartitionLostListener {
 
     private transient HazelcastInstance instance;
@@ -112,11 +107,7 @@ public final class ScheduledFutureProxy<V>
 
     @Override
     public int compareTo(Delayed o) {
-        checkAccessibleHandler();
-        checkAccessibleOwner();
-
-        Operation op = new CompareToOperation(handler, o);
-        return this.<Integer>invoke(op).join();
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -173,28 +164,6 @@ public final class ScheduledFutureProxy<V>
     @Override
     public void andThen(ExecutionCallback<V> callback, Executor executor) {
         this.get0().andThen(callback, executor);
-    }
-
-    @Override
-    public int getFactoryId() {
-        return ScheduledExecutorDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ScheduledExecutorDataSerializerHook.SCHEDULED_FUTURE;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
-        out.writeObject(handler);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
-        handler = in.readObject();
     }
 
     @Override
