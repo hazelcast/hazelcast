@@ -87,7 +87,6 @@ import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_PUBLIC_IP
 import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.ROLLING_UPGRADE_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
@@ -146,8 +145,6 @@ public class Node {
 
     private volatile NodeState state;
 
-    private final boolean rollingUpgradeEnabled;
-
     /**
      * Codebase version of Hazelcast being executed at this Node, as resolved by {@link BuildInfoProvider}.
      * For example, when running on hazelcast-3.8.jar, this would resolve to {@code Version.of(3,8,0)}.
@@ -203,7 +200,6 @@ public class Node {
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             joiner = nodeContext.createJoiner(this);
-            rollingUpgradeEnabled = getProperties().getBoolean(ROLLING_UPGRADE_ENABLED);
         } catch (Throwable e) {
             try {
                 serverSocketChannel.close();
@@ -783,7 +779,4 @@ public class Node {
         return attributes;
     }
 
-    public boolean isRollingUpgradeEnabled() {
-        return rollingUpgradeEnabled;
-    }
 }

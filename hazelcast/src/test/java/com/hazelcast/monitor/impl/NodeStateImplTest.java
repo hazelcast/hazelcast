@@ -23,9 +23,8 @@ public class NodeStateImplTest {
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
         ClusterVersion clusterVersion = ClusterVersion.of("3.8");
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
-        Boolean rollingUpgradeEnabled = true;
 
-        NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion, rollingUpgradeEnabled);
+        NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         NodeState deserialized = new NodeStateImpl();
         deserialized.fromJson(state.toJson());
 
@@ -33,7 +32,6 @@ public class NodeStateImplTest {
         assertEquals(nodeState, deserialized.getNodeState());
         assertEquals(clusterVersion, deserialized.getClusterVersion());
         assertEquals(memberVersion, deserialized.getMemberVersion());
-        assertEquals(rollingUpgradeEnabled, deserialized.isRollingUpgradeEnabled());
     }
 
 }

@@ -22,7 +22,6 @@ import com.hazelcast.monitor.NodeState;
 import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 
-import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getString;
 
 public class NodeStateImpl implements NodeState {
@@ -33,18 +32,15 @@ public class NodeStateImpl implements NodeState {
     private ClusterVersion clusterVersion;
     private MemberVersion memberVersion;
 
-    private boolean rollingUpgradeEnabled;
-
     public NodeStateImpl() {
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
-                         ClusterVersion clusterVersion, MemberVersion memberVersion, boolean rollingUpgradeEnabled) {
+                         ClusterVersion clusterVersion, MemberVersion memberVersion) {
         this.clusterState = clusterState;
         this.nodeState = nodeState;
         this.clusterVersion = clusterVersion;
         this.memberVersion = memberVersion;
-        this.rollingUpgradeEnabled = rollingUpgradeEnabled;
     }
 
     @Override
@@ -67,18 +63,12 @@ public class NodeStateImpl implements NodeState {
     }
 
     @Override
-    public boolean isRollingUpgradeEnabled() {
-        return rollingUpgradeEnabled;
-    }
-
-    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("clusterState", clusterState.name());
         root.add("nodeState", nodeState.name());
         root.add("clusterVersion", clusterVersion.toString());
         root.add("memberVersion", memberVersion.toString());
-        root.add("rollingUpgradeEnabled", rollingUpgradeEnabled);
         return root;
     }
 
@@ -100,7 +90,6 @@ public class NodeStateImpl implements NodeState {
         if (jsonNodeState != null) {
             memberVersion = MemberVersion.of(jsonNodeVersion);
         }
-        rollingUpgradeEnabled = getBoolean(json, "rollingUpgradeEnabled", false);
     }
 
     @Override
@@ -110,7 +99,6 @@ public class NodeStateImpl implements NodeState {
                 + ", nodeState=" + nodeState
                 + ", clusterVersion=" + clusterVersion
                 + ", memberVersion=" + memberVersion
-                + ", rollingUpgradeEnabled=" + rollingUpgradeEnabled
                 + '}';
     }
 
