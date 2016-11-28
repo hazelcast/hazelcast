@@ -17,10 +17,14 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -74,5 +78,21 @@ public final class Util {
             }
             return out.toByteArray();
         }
+    }
+
+    public static void writeList(ObjectDataOutput output, List list) throws IOException {
+        output.writeInt(list.size());
+        for (Object o : list) {
+            output.writeObject(o);
+        }
+    }
+
+    public static <E> List<E> readList(ObjectDataInput output) throws IOException {
+        int length = output.readInt();
+        List<E> list = new ArrayList<>(length);
+        for (int i = 0; i < length; i++) {
+            list.add(output.readObject());
+        }
+        return list;
     }
 }

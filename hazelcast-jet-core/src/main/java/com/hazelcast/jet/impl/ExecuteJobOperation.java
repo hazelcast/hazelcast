@@ -57,7 +57,7 @@ public class ExecuteJobOperation extends AsyncOperation {
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(executionId, dag);
         invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
                 .thenCompose(x -> executePlanFuture =
-                        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getId())))
+                        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getPlanId())))
                 .exceptionally(Util::peel)
                 .thenAccept(this::doSendResponse);
     }

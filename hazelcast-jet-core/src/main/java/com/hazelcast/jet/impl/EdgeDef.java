@@ -18,21 +18,27 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Partitioner;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.Serializable;
+import java.io.IOException;
 
-class EdgeDef implements Serializable {
+class EdgeDef implements IdentifiedDataSerializable {
 
-    private final int otherEndId;
-    private final int otherEndOrdinal;
-    private final int ordinal;
-    private final int priority;
-    private final boolean isDistributed;
-    private final Edge.ForwardingPattern forwardingPattern;
-    private final Partitioner partitioner;
+    private int otherEndId;
+    private int otherEndOrdinal;
+    private int ordinal;
+    private int priority;
+    private boolean isDistributed;
+    private Edge.ForwardingPattern forwardingPattern;
+    private Partitioner partitioner;
+
+    EdgeDef() {
+    }
 
     EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
-                   boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner) {
+            boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner) {
         this.otherEndId = otherEndId;
         this.otherEndOrdinal = otherEndOrdinal;
         this.ordinal = ordinal;
@@ -68,5 +74,37 @@ class EdgeDef implements Serializable {
 
     boolean isDistributed() {
         return isDistributed;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetImplDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetImplDataSerializerHook.EDGE_DEF;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(otherEndId);
+        out.writeInt(otherEndOrdinal);
+        out.writeInt(ordinal);
+        out.writeInt(priority);
+        out.writeBoolean(isDistributed);
+        out.writeObject(forwardingPattern);
+        out.writeObject(partitioner);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        otherEndId = in.readInt();
+        otherEndOrdinal = in.readInt();
+        ordinal = in.readInt();
+        priority = in.readInt();
+        isDistributed = in.readBoolean();
+        forwardingPattern = in.readObject();
+        partitioner = in.readObject();
     }
 }

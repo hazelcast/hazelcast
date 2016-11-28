@@ -1,1 +1,2 @@
 com.hazelcast.jet.JetDataSerializerHook
+com.hazelcast.jet.impl.JetImplDataSerializerHook

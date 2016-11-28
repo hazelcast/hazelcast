@@ -16,17 +16,28 @@
 
 package com.hazelcast.jet.impl;
 
-import java.io.Serializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-class ExecutionPlan implements Serializable {
-    private final List<VertexDef> vertices = new ArrayList<>();
-    private final long id;
+import static com.hazelcast.jet.impl.Util.readList;
+import static com.hazelcast.jet.impl.Util.writeList;
+
+class ExecutionPlan implements IdentifiedDataSerializable {
+    private List<VertexDef> vertices = new ArrayList<>();
+    private long id;
+
+    ExecutionPlan() {
+    }
 
     ExecutionPlan(long id) {
         this.id = id;
     }
+
 
     List<VertexDef> getVertices() {
         return vertices;
@@ -36,8 +47,30 @@ class ExecutionPlan implements Serializable {
         vertices.add(vertex);
     }
 
-    long getId() {
+    long getPlanId() {
         return id;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetImplDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetImplDataSerializerHook.EXECUTION_PLAN;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(id);
+        writeList(out, vertices);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        id = in.readLong();
+        vertices = readList(in);
     }
 }
 

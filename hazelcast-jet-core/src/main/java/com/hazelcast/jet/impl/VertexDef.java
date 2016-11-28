@@ -17,18 +17,27 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-class VertexDef implements Serializable {
+import static com.hazelcast.jet.impl.Util.readList;
+import static com.hazelcast.jet.impl.Util.writeList;
+
+class VertexDef implements IdentifiedDataSerializable {
 
     private int id;
-    private final List<EdgeDef> inputs = new ArrayList<>();
-    private final List<EdgeDef> outputs = new ArrayList<>();
-    private final ProcessorSupplier processorSupplier;
-    private final int parallelism;
+    private List<EdgeDef> inputs = new ArrayList<>();
+    private List<EdgeDef> outputs = new ArrayList<>();
+    private ProcessorSupplier processorSupplier;
+    private int parallelism;
+
+    VertexDef() {
+    }
 
     VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
         this.id = id;
@@ -36,7 +45,7 @@ class VertexDef implements Serializable {
         this.parallelism = parallelism;
     }
 
-    int getId() {
+    int getVertexId() {
         return id;
     }
 
@@ -62,5 +71,33 @@ class VertexDef implements Serializable {
 
     int getParallelism() {
         return parallelism;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetImplDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getId() {
+        return JetImplDataSerializerHook.VERTEX_DEF;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(id);
+        writeList(out, inputs);
+        writeList(out, outputs);
+        out.writeObject(processorSupplier);
+        out.writeInt(parallelism);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        id = in.readInt();
+        inputs = readList(in);
+        outputs = readList(in);
+        processorSupplier = in.readObject();
+        parallelism = in.readInt();
     }
 }

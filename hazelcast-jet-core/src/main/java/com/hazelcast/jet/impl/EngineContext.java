@@ -145,7 +145,7 @@ public class EngineContext {
     }
 
     void createAndRegisterExecutionContext(ExecutionPlan plan) {
-        executionContexts.computeIfAbsent(plan.getId(), k -> new ExecutionContext(this, plan));
+        executionContexts.computeIfAbsent(plan.getPlanId(), k -> new ExecutionContext(this, plan));
     }
 
     ExecutionContext getExecutionContext(long id) {

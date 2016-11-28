@@ -82,7 +82,7 @@ class ExecutionContext {
     private void initialize(ExecutionPlan plan) {
         final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
         final Map<String, Map<Address, ConcurrentConveyor<Object>>> senderConveyorMap = new HashMap<>();
-        final Map<Integer, VertexDef> vMap = plan.getVertices().stream().collect(toMap(VertexDef::getId, v -> v));
+        final Map<Integer, VertexDef> vMap = plan.getVertices().stream().collect(toMap(VertexDef::getVertexId, v -> v));
         List<Address> remoteMembers = nodeEngine.getClusterService().getMembers().stream()
                                                 .filter(m -> !m.equals(nodeEngine.getLocalMember()))
                                                 .map(Member::getAddress)
@@ -99,7 +99,7 @@ class ExecutionContext {
                 final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 for (EdgeDef edge : outputs) {
                     final int destinationId = edge.getOtherEndId();
-                    final String id = vertex.getId() + ":" + edge.getOtherEndId();
+                    final String id = vertex.getVertexId() + ":" + edge.getOtherEndId();
                     final VertexDef destination = vMap.get(destinationId);
                     final int localConsumerCount = destination.getParallelism();
                     final int receiverCount = edge.isDistributed() ? 1 : 0;
@@ -123,7 +123,7 @@ class ExecutionContext {
                                             edge.getPriority(),
                                             conveyor);
                                     tasklets.add(new SenderTasklet(inboundEdgeStream, nodeEngine, context.getName(),
-                                            address, plan.getId(), destinationId));
+                                            address, plan.getPlanId(), destinationId));
                                     map.put(address, conveyor);
                                 }
                                 return map;
@@ -134,7 +134,7 @@ class ExecutionContext {
                 for (EdgeDef input : inputs) {
                     // each tasklet will have one input conveyor per edge
                     // and one InboundEmitter per queue on the conveyor
-                    final String id = input.getOtherEndId() + ":" + vertex.getId();
+                    final String id = input.getOtherEndId() + ":" + vertex.getVertexId();
                     final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(id)[taskletIndex];
                     inboundStreams.add(createInboundEdgeStream(input.getOrdinal(), input.getPriority(), conveyor));
                 }
