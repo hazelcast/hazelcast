@@ -30,6 +30,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.test.TestPartitionUtils.PartitionReplicaVersionsView;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
@@ -133,6 +134,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
             return Collections.singleton(address);
         } else {
             final CountDownLatch latch = new CountDownLatch(count);
+            final Throwable[] error = new Throwable[1];
             Collection<Address> addresses = new HashSet<Address>();
 
             for (int i = 0; i < count; i++) {
@@ -141,12 +143,20 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
                 new Thread() {
                     public void run() {
-                        TestUtil.terminateInstance(hz);
-                        latch.countDown();
+                        try {
+                            TestUtil.terminateInstance(hz);
+                        } catch (Throwable e) {
+                            error[0] = e;
+                        } finally {
+                            latch.countDown();
+                        }
                     }
                 }.start();
             }
             assertTrue(latch.await(2, TimeUnit.MINUTES));
+            if (error[0] != null) {
+                ExceptionUtil.sneakyThrow(error[0]);
+            }
             return addresses;
         }
     }
