@@ -22,8 +22,10 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
+import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -104,6 +106,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     private void beforePromotion() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
+        InternalPartitionServiceImpl partitionService = getService();
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
         AtomicInteger tasks = new AtomicInteger(promotions.size());
 
         ILogger logger = getLogger();
@@ -113,6 +117,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             logger.fine("Submitting before promotion tasks for " + promotions.size() + " promotions.");
         }
         for (MigrationInfo promotion : promotions) {
+            InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(promotion.getPartitionId());
+            partition.setMigrating(true);
             operationService.execute(new BeforePromotionTask(this, promotion, nodeEngine, tasks));
         }
     }

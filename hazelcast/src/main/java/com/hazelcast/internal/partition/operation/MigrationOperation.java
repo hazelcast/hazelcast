@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener.MigrationParticipant;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
 import com.hazelcast.logging.ILogger;
@@ -74,7 +73,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     @Override
     public void run() throws Exception {
-        assertMigrationInitiatorIsMaster();
+        checkMigrationInitiatorIsMaster();
+        setActiveMigration();
 
         try {
             doRun();
@@ -91,7 +91,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void doRun() throws Exception {
-        if (startMigration()) {
+        if (migrationInfo.startProcessing()) {
             try {
                 executeBeforeMigrations();
 
@@ -102,7 +102,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
             } catch (Throwable e) {
                 success = false;
                 failureReason = e;
-                getLogger().severe("Error while executing replication operations" + migrationInfo, e);
+                getLogger().severe("Error while executing replication operations " + migrationInfo, e);
             } finally {
                 afterMigrate();
             }
@@ -112,15 +112,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
-    private void assertMigrationInitiatorIsMaster() {
+    private void checkMigrationInitiatorIsMaster() {
         Address masterAddress = getNodeEngine().getMasterAddress();
         if (!masterAddress.equals(migrationInfo.getMaster())) {
             throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
         }
-    }
-
-    private boolean startMigration() {
-        return migrationInfo.startProcessing() && addActiveMigration();
     }
 
     private void logMigrationCancelled() {
@@ -162,12 +158,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         return new PartitionMigrationEvent(MigrationEndpoint.DESTINATION,
                 migrationInfo.getPartitionId(), migrationInfo.getDestinationCurrentReplicaIndex(),
                 migrationInfo.getDestinationNewReplicaIndex());
-    }
-
-    private boolean addActiveMigration() {
-        InternalPartitionServiceImpl partitionService = getService();
-        MigrationManager migrationManager = partitionService.getMigrationManager();
-        return migrationManager.addActiveMigration(migrationInfo);
     }
 
     private void runMigrationOperation(Operation op) throws Exception {

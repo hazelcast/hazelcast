@@ -202,7 +202,6 @@ public class MigrationManager {
                 op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false)
                         .setService(partitionService);
                 nodeEngine.getOperationService().execute(op);
-                removeActiveMigration(partitionId);
             } else {
                 final Address partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerOrNull();
                 if (node.getThisAddress().equals(partitionOwner)) {
@@ -219,17 +218,20 @@ public class MigrationManager {
         }
     }
 
-    public boolean addActiveMigration(MigrationInfo migrationInfo) {
+    public MigrationInfo setActiveMigration(MigrationInfo migrationInfo) {
         partitionServiceLock.lock();
         try {
             if (activeMigrationInfo == null) {
                 partitionStateManager.setMigrating(migrationInfo.getPartitionId(), true);
                 activeMigrationInfo = migrationInfo;
-                return true;
+                return null;
             }
 
-            logger.warning(migrationInfo + " not added! Already existing active migration: " + activeMigrationInfo);
-            return false;
+            if (logger.isFineEnabled()) {
+                logger.fine("Active migration is not set: " + migrationInfo
+                        + ". Existing active migration: " + activeMigrationInfo);
+            }
+            return activeMigrationInfo;
         } finally {
             partitionServiceLock.unlock();
         }
@@ -239,7 +241,7 @@ public class MigrationManager {
         return activeMigrationInfo;
     }
 
-    private boolean removeActiveMigration(int partitionId) {
+    public boolean removeActiveMigration(int partitionId) {
         partitionServiceLock.lock();
         try {
             if (activeMigrationInfo != null) {
