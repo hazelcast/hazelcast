@@ -220,6 +220,7 @@ public class PartitionReplicaStateChecker {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private int invokeReplicaSyncOperations(int maxBackupCount, Semaphore semaphore, AtomicBoolean result) {
         Address thisAddress = node.getThisAddress();
         ExecutionCallback<Object> callback = new ReplicaSyncResponseCallback(result, semaphore);
@@ -239,8 +240,15 @@ public class PartitionReplicaStateChecker {
             if (!thisAddress.equals(owner)) {
                 continue;
             }
-
             ownedCount++;
+
+            if (maxBackupCount == 0) {
+                if (partition.isMigrating()) {
+                    result.set(false);
+                }
+                continue;
+            }
+
             for (int index = 1; index <= maxBackupCount; index++) {
                 Address replicaAddress = partition.getReplicaAddress(index);
 

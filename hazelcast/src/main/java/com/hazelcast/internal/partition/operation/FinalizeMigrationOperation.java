@@ -60,6 +60,9 @@ public final class FinalizeMigrationOperation extends AbstractOperation
             rollbackDestination();
         }
 
+        InternalPartitionServiceImpl partitionService = getService();
+        partitionService.getMigrationManager().removeActiveMigration(getPartitionId());
+
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);
         }
