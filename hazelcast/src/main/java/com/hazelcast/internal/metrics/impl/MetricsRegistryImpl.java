@@ -25,6 +25,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
+import com.hazelcast.internal.util.concurrent.ThreadFactoryImpl;
 import com.hazelcast.logging.ILogger;
 
 import java.util.ArrayList;
@@ -59,7 +60,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     final ILogger logger;
     final ProbeLevel minimumLevel;
 
-    private final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
+    private final ScheduledExecutorService scheduledExecutorService
+            = new ScheduledThreadPoolExecutor(2, new ThreadFactoryImpl("MetricsRegistry-thread-"));
 
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
