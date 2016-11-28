@@ -22,6 +22,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -38,6 +39,67 @@ public abstract class AbstractConcurrentArrayQueueTest {
     AbstractConcurrentArrayQueue<Integer> queue;
 
     private List<Integer> emptyList = emptyList();
+
+    @Test
+    public void testAddedCount() {
+        assertEquals(0, queue.addedCount());
+
+        queue.offer(1);
+
+        assertEquals(1, queue.addedCount());
+    }
+
+    @Test
+    public void testRemovedCount() {
+        queue.offer(1);
+        queue.peek();
+
+        assertEquals(0, queue.removedCount());
+
+        queue.poll();
+
+        assertEquals(1, queue.removedCount());
+    }
+
+    @Test
+    public void testCapacity() {
+        assertEquals(CAPACITY, queue.capacity());
+    }
+
+    @Test
+    public void testRemainingCapacity() {
+        assertEquals(CAPACITY, queue.remainingCapacity());
+
+        queue.offer(1);
+
+        assertEquals(CAPACITY - 1, queue.remainingCapacity());
+    }
+
+    @Test
+    public void testRemove() {
+        queue.offer(23);
+
+        assertEquals(23, (int) queue.remove());
+        assertEquals(0, queue.size());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testRemove_whenEmpty() {
+        queue.remove();
+    }
+
+    @Test
+    public void testElement() {
+        queue.offer(23);
+
+        assertEquals(23, (int) queue.element());
+        assertEquals(1, queue.size());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testElement_whenEmpty() {
+        queue.element();
+    }
 
     @Test
     public void testIsEmpty_whenEmpty() {
@@ -86,6 +148,26 @@ public abstract class AbstractConcurrentArrayQueueTest {
         assertFalse(queue.containsAll(asList(23, 42)));
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIterator() {
+        queue.iterator();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testToArray() {
+        queue.toArray();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testToArray_withArray() {
+        queue.toArray(new Integer[1]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemove_withObject() {
+        queue.remove(1);
+    }
+
     @Test
     public void testAddAll() {
         queue.addAll(asList(23, 42));
@@ -108,6 +190,17 @@ public abstract class AbstractConcurrentArrayQueueTest {
     @Test(expected = UnsupportedOperationException.class)
     public void testRetainAll() {
         queue.retainAll(emptyList);
+    }
+
+    @Test
+    public void testClear() {
+        queue.offer(1);
+        queue.offer(2);
+        queue.offer(3);
+
+        queue.clear();
+
+        assertEquals(0, queue.size());
     }
 
     @Test
