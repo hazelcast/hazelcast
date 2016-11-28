@@ -1,6 +1,5 @@
 package com.hazelcast.internal.util.concurrent;
 
-
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -33,25 +32,29 @@ import static org.junit.rules.ExpectedException.none;
 @Category({QuickTest.class, ParallelTest.class})
 public class ConcurrentConveyorTest {
 
+    static final int QUEUE_CAPACITY = 2;
+
     @Rule
     public ExpectedException excRule = none();
 
-    private final int queueCapacity = 2;
-    private final int queueCount = 2;
-    private final Item item1 = new Item();
-    private final Item item2 = new Item();
-    private final List<Item> batch = new ArrayList<Item>(queueCapacity);
+    final Item doneItem = new Item();
+    final Item item1 = new Item();
+    final Item item2 = new Item();
 
-    private OneToOneConcurrentArrayQueue<Item> defaultQ;
-    private final Item doneItem = new Item();
-    private ConcurrentConveyor<Item> conveyor;
+    int queueCount;
+    OneToOneConcurrentArrayQueue<Item> defaultQ;
+    ConcurrentConveyor<Item> conveyor;
+
+    private final List<Item> batch = new ArrayList<Item>(QUEUE_CAPACITY);
 
     @Before
     public void before() {
-        final QueuedPipe<Item>[] qs = new QueuedPipe[queueCount];
-        defaultQ = new OneToOneConcurrentArrayQueue<Item>(queueCapacity);
+        queueCount = 2;
+        defaultQ = new OneToOneConcurrentArrayQueue<Item>(QUEUE_CAPACITY);
+
+        QueuedPipe<Item>[] qs = new QueuedPipe[queueCount];
         qs[0] = defaultQ;
-        qs[1] = new OneToOneConcurrentArrayQueue<Item>(queueCapacity);
+        qs[1] = new OneToOneConcurrentArrayQueue<Item>(QUEUE_CAPACITY);
         conveyor = concurrentConveyor(doneItem, qs);
     }
 
@@ -77,153 +80,153 @@ public class ConcurrentConveyorTest {
 
     @Test
     public void when_offerToQueueZero_then_poll() {
-        // When
-        final boolean didOffer = conveyor.offer(0, item1);
+        // when
+        boolean didOffer = conveyor.offer(0, item1);
 
-        // Then
+        // then
         assertTrue(didOffer);
         assertSame(item1, defaultQ.poll());
     }
 
     @Test
     public void when_offerToGivenQueue_then_poll() {
-        // When
-        final boolean didOffer = conveyor.offer(defaultQ, item1);
+        // when
+        boolean didOffer = conveyor.offer(defaultQ, item1);
 
-        // Then
+        // then
         assertTrue(didOffer);
         assertSame(item1, defaultQ.poll());
     }
 
     @Test
     public void when_submitToGivenQueue_then_poll() {
-        // When
+        // when
         conveyor.submit(defaultQ, item1);
 
-        // Then
+        // then
         assertSame(item1, defaultQ.poll());
     }
 
     @Test
     public void when_drainToList_then_listPopulated() {
-        // Given
+        // given
         conveyor.offer(0, item1);
         conveyor.offer(0, item2);
 
-        // When
+        // when
         conveyor.drainTo(batch);
 
-        // Then
+        // then
         assertEquals(asList(item1, item2), batch);
     }
 
     @Test
     public void when_drainQueue1ToList_then_listPopulated() {
-        // Given
+        // given
         conveyor.offer(1, item1);
         conveyor.offer(1, item2);
 
-        // When
+        // when
         conveyor.drainTo(1, batch);
 
-        // Then
+        // then
         assertEquals(asList(item1, item2), batch);
     }
 
     @Test
     public void when_drainQueue1ToListLimited_then_listHasLimitedItems() {
-        // Given
+        // given
         conveyor.offer(1, item1);
         conveyor.offer(1, item2);
 
-        // When
+        // when
         conveyor.drainTo(1, batch, 1);
 
-        // Then
+        // then
         assertEquals(singletonList(item1), batch);
     }
 
     @Test
     public void when_drainToListLimited_then_listHasLimitItems() {
-        // Given
+        // given
         conveyor.offer(0, item1);
         conveyor.offer(0, item2);
 
-        // When
+        // when
         conveyor.drainTo(batch, 1);
 
-        // Then
+        // then
         assertEquals(singletonList(item1), batch);
     }
 
     @Test
     public void when_drainerDone_then_offerToFullQueueFails() {
-        // Given
+        // given
         assertTrue(conveyor.offer(1, item1));
         assertTrue(conveyor.offer(1, item2));
 
-        // When
+        // when
         conveyor.drainerDone();
 
-        // Then
+        // then
         excRule.expect(ConcurrentConveyorException.class);
         conveyor.offer(1, item1);
     }
 
     @Test
     public void when_drainerDone_then_submitToFullQueueFails() {
-        // Given
+        // given
         assertTrue(conveyor.offer(defaultQ, item1));
         assertTrue(conveyor.offer(defaultQ, item2));
 
-        // When
+        // when
         conveyor.drainerDone();
 
-        // Then
+        // then
         excRule.expect(ConcurrentConveyorException.class);
         conveyor.submit(defaultQ, item1);
     }
 
     @Test
     public void when_interrupted_then_submitToFullQueueFails() {
-        // Given
+        // given
         conveyor.drainerArrived();
         assertTrue(conveyor.offer(defaultQ, item1));
         assertTrue(conveyor.offer(defaultQ, item2));
 
-        // When
+        // when
         currentThread().interrupt();
 
-        // Then
+        // then
         excRule.expect(ConcurrentConveyorException.class);
         conveyor.submit(defaultQ, item1);
     }
 
     @Test
     public void when_drainerLeavesThenArrives_then_offerDoesntFail() {
-        // Given
+        // given
         assertTrue(conveyor.offer(defaultQ, item1));
         assertTrue(conveyor.offer(defaultQ, item2));
         conveyor.drainerDone();
 
-        // When
+        // when
         conveyor.drainerArrived();
 
-        // Then
+        // then
         conveyor.offer(defaultQ, item1);
     }
 
     @Test
     public void when_drainerFails_then_offerFailsWithItsFailureAsCause() {
-        // Given
+        // given
         assertTrue(conveyor.offer(1, item1));
         assertTrue(conveyor.offer(1, item2));
 
-        // When
-        final Exception drainerFailure = new Exception("test failure");
+        // when
+        Exception drainerFailure = new Exception("test failure");
         conveyor.drainerFailed(drainerFailure);
 
-        // Then
+        // then
         try {
             conveyor.offer(1, item1);
             fail("Expected exception not thrown");
@@ -239,35 +242,35 @@ public class ConcurrentConveyorTest {
 
     @Test
     public void when_drainerDone_then_isDrainerGoneReturnsTrue() {
-        // When
+        // when
         conveyor.drainerDone();
 
-        // Then
+        // then
         assertTrue(conveyor.isDrainerGone());
     }
 
     @Test
     public void when_drainerFailed_then_isDrainerGoneReturnsTrue() {
-        // When
+        // when
         conveyor.drainerFailed(new Exception("test failure"));
 
-        // Then
+        // then
         assertTrue(conveyor.isDrainerGone());
     }
 
     @Test
     public void when_backpressureOn_then_submitBlocks() throws InterruptedException {
-        // Given
+        // given
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
         new Thread() { public void run() {
-            // When
+            // when
             conveyor.backpressureOn();
             latch.countDown();
             parkNanos(MILLISECONDS.toNanos(10));
 
-            // Then
+            // then
             assertFalse(flag.get());
             conveyor.backpressureOff();
         }}.start();
@@ -279,17 +282,17 @@ public class ConcurrentConveyorTest {
 
     @Test
     public void awaitDrainerGone_blocksUntilDrainerGone() throws InterruptedException {
-        // Given
+        // given
         final AtomicBoolean flag = new AtomicBoolean();
         final CountDownLatch latch = new CountDownLatch(1);
 
         new Thread() { public void run() {
-            // When
+            // when
             conveyor.drainerArrived();
             latch.countDown();
             parkNanos(MILLISECONDS.toNanos(10));
 
-            // Then
+            // then
             assertFalse(flag.get());
             conveyor.drainerDone();
         }}.start();
@@ -299,6 +302,6 @@ public class ConcurrentConveyorTest {
         flag.set(true);
     }
 
-    private static class Item {
+    static class Item {
     }
 }
