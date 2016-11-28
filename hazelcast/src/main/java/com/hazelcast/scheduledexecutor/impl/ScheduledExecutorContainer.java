@@ -36,12 +36,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_PARTITION;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
@@ -59,13 +63,15 @@ public class ScheduledExecutorContainer {
 
     private final int durability;
 
-    private final Map<String, ScheduledTaskDescriptor> tasks;
+    private final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
 
     private final Map<String, BackupTaskDescriptor> backups;
 
+    private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
+
     public ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
                                       int durability) {
-        this(name, partitionId, nodeEngine, durability, new HashMap<String, BackupTaskDescriptor>());
+        this(name, partitionId, nodeEngine, durability, new ConcurrentHashMap<String, BackupTaskDescriptor>());
     }
 
     public ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
@@ -76,13 +82,24 @@ public class ScheduledExecutorContainer {
         this.executionService = (InternalExecutionService) nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
-        this.tasks = new HashMap<String, ScheduledTaskDescriptor>();
+        this.tasks = new ConcurrentHashMap<String, ScheduledTaskDescriptor>();
         this.backups = backups;
     }
 
     public <V> ScheduledFuture<V> schedule(TaskDefinition definition) {
-        checkNotDuplicateTask(definition.getName());
+        try {
+            acquireMemberPartitionLockIfNeeded();
 
+            checkNotDuplicateTask(definition.getName());
+            return createContextAndSchedule(definition);
+
+        } finally {
+            releaseMemberPartitionLockIfNeeded();
+        }
+
+    }
+
+    private <V> ScheduledFuture<V> createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFineEnabled()) {
             logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
         }
@@ -96,7 +113,6 @@ public class ScheduledExecutorContainer {
         }
 
         return (ScheduledFuture<V>) descriptor.getScheduledFuture();
-
     }
 
     private <V> ScheduledTaskDescriptor doSchedule(TaskDefinition<V> definition,
@@ -221,7 +237,7 @@ public class ScheduledExecutorContainer {
 
     public boolean shouldParkGetResult(String taskName) {
         if (partitionId == -1) {
-            // For member owned tasks there is a race condition, so we never park.
+            // For member owned tasks there is a race condition, so we avoid purposefully parking.
             // TODO tkountis - Look into the invocation subsystem, to identify root cause.
             return false;
         }
@@ -284,6 +300,20 @@ public class ScheduledExecutorContainer {
     private void checkNotStaleTask(String taskName) {
         if (!tasks.containsKey(taskName)) {
             throw new StaleTaskException("Task with name " + taskName + " not found. ");
+        }
+    }
+
+    private void acquireMemberPartitionLockIfNeeded() {
+        if (partitionId == MEMBER_PARTITION) {
+            while (!memberPartitionLock.compareAndSet(false, true)) {
+                Thread.yield();
+            }
+        }
+    }
+
+    private void releaseMemberPartitionLockIfNeeded() {
+        if (partitionId == MEMBER_PARTITION) {
+            memberPartitionLock.set(false);
         }
     }
 
