@@ -29,9 +29,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-/**
- * Created by Thomas Kountis.
- */
 public class ScheduledRunnableAdapter<V>
         implements IdentifiedDataSerializable, Callable<V>,
                    HazelcastInstanceAware, PartitionAware, NamedTask, StatefulTask {
@@ -85,16 +82,16 @@ public class ScheduledRunnableAdapter<V>
     }
 
     @Override
-    public void saveState(Map state) {
+    public void save(Map snapshot) {
         if (task instanceof StatefulTask) {
-            ((StatefulTask) task).saveState(state);
+            ((StatefulTask) task).save(snapshot);
         }
     }
 
     @Override
-    public void loadState(Map state) {
+    public void load(Map snapshot) {
         if (task instanceof StatefulTask) {
-            ((StatefulTask) task).loadState(state);
+            ((StatefulTask) task).load(snapshot);
         }
     }
 

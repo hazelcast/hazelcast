@@ -25,9 +25,9 @@ import java.util.concurrent.Callable;
  * A helper class with utilities to act upon {@link Runnable} and/or {@link Callable} tasks.
  */
 @Beta
-public final class TaskHelper {
+public final class TaskUtils {
 
-    private TaskHelper() {
+    private TaskUtils() {
     }
 
     /**

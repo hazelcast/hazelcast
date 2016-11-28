@@ -17,7 +17,6 @@
 package com.hazelcast.scheduledexecutor;
 
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 /**
  * An interface to provide means for saving & loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
@@ -28,9 +27,9 @@ import java.util.concurrent.Callable;
  * <pre>
  * public class CleanUpTask implements Runnable, StatefulTask<String, Integer>, HazelcastInstanceAware {
  *
- *      transient HazelcastInstance instance;
+ *      private transient HazelcastInstance instance;
  *
- *      transient int recordsDeletedSoFar;
+ *      private transient int recordsDeletedSoFar;
  *
  *      public CleanUpTask(HazelcastInstance instance) {
  *          this.instance = instance;
@@ -43,11 +42,11 @@ import java.util.concurrent.Callable;
  *      private int cleanUpInvalidRecordsAndReturnCount() {
  *      }
  *
- *      public void saveState(Map<String, Integer> state) {
+ *      public void save(Map<String, Integer> state) {
  *          state.put("recordsDeletedSoFar", recordsDeletedSoFar);
  *      }
  *
- *      public void loadState(Map<String, Integer> state) {
+ *      public void load(Map<String, Integer> state) {
  *          if (state.containsKey("recordsDeletedSoFar")) {
  *              recordsDeletedSoFar = state.get("recordsDeletedSoFar");
  *          }
@@ -67,20 +66,16 @@ public interface StatefulTask<K, V> {
      * Called immediately after run() or call() of the {@link Runnable}
      * or {@link java.util.concurrent.Callable} respectively.
      *
-     * In the event of partition migration, {@link #saveState(Map)} save might get called
-     * during the execution phase {@link Runnable#run()} or {@link Callable#call()} which could
-     * cause inconsistencies in the snapshot of the state.
-     *
-     * @param state The {@link Map} responsible for holding the state.
+     * @param snapshot The {@link Map} responsible for holding a snapshot of the current state.
     */
-    void saveState(Map<K, V> state);
+    void save(Map<K, V> snapshot);
 
     /**
      * Used to load current state of the task from a Map.
      * Called once, upon initial scheduling of the task.
      *
-     * @param state The {@link Map} responsible for providing the state.
+     * @param snapshot The {@link Map} responsible for providing the snapshot of state.
      */
-    void loadState(Map<K, V> state);
+    void load(Map<K, V> snapshot);
 
 }

@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 
 /**
- * Created by Thomas Kountis.
+ * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
  */
 public class ScheduledExecutorConfig {
 

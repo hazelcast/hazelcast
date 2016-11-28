@@ -24,9 +24,6 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-/**
- * Created by Thomas Kountis.
- */
 public final class ScheduledTaskHandlerImpl
         extends ScheduledTaskHandler {
 

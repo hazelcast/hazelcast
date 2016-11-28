@@ -26,9 +26,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Created by Thomas Kountis.
- */
 public class ScheduledTaskDescriptor
         implements IdentifiedDataSerializable {
 
@@ -36,7 +33,7 @@ public class ScheduledTaskDescriptor
 
     private ScheduledFuture<?> scheduledFuture;
 
-    private AmendableScheduledTaskStatistics stats;
+    private ScheduledTaskStatisticsImpl stats;
 
     private AtomicReference<Map<?, ?>> state;
 
@@ -46,7 +43,7 @@ public class ScheduledTaskDescriptor
     }
 
     public ScheduledTaskDescriptor(TaskDefinition definition, ScheduledFuture<?> scheduledFuture,
-                                   AtomicReference<Map<?, ?>> taskState, AmendableScheduledTaskStatistics stats) {
+                                   AtomicReference<Map<?, ?>> taskState, ScheduledTaskStatisticsImpl stats) {
         this.definition = definition;
         this.scheduledFuture = scheduledFuture;
         this.stats = stats;
@@ -69,7 +66,7 @@ public class ScheduledTaskDescriptor
         return scheduledFuture;
     }
 
-    public AmendableScheduledTaskStatistics getStats() {
+    public ScheduledTaskStatisticsImpl getStats() {
         return stats;
     }
 

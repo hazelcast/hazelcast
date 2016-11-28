@@ -73,11 +73,8 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void reset() {
-        shutdownExecutors.clear();
+        shutdown(true);
 
-        if (memberPartition != null) {
-            memberPartition.destroy();
-        }
         memberPartition = new ScheduledExecutorPartition(nodeEngine, MEMBER_PARTITION);
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
@@ -90,7 +87,17 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void shutdown(boolean terminate) {
-        reset();
+        shutdownExecutors.clear();
+
+        if (memberPartition != null) {
+            memberPartition.destroy();
+        }
+
+        for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
+            if (partitions[partitionId] != null) {
+                partitions[partitionId].destroy();
+            }
+        }
     }
 
     @Override

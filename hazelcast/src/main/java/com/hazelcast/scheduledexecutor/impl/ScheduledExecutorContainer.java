@@ -104,7 +104,7 @@ public class ScheduledExecutorContainer {
             logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
         }
 
-        AmendableScheduledTaskStatistics stats = new ScheduledTaskStatisticsImpl();
+        ScheduledTaskStatisticsImpl stats = new ScheduledTaskStatisticsImpl();
         Map<?, ?> taskState = new HashMap();
         ScheduledTaskDescriptor descriptor = doSchedule(definition, taskState, stats);
 
@@ -117,7 +117,7 @@ public class ScheduledExecutorContainer {
 
     private <V> ScheduledTaskDescriptor doSchedule(TaskDefinition<V> definition,
                                                    Map<?, ?> stateSnapshot,
-                                                   AmendableScheduledTaskStatistics stats) {
+                                                   ScheduledTaskStatisticsImpl stats) {
 
         ScheduledFuture<?> future;
         TaskRunner runner;
@@ -325,13 +325,13 @@ public class ScheduledExecutorContainer {
 
         private final AtomicReference<Map<?, ?>> state;
 
-        private final AmendableScheduledTaskStatistics stats;
+        private final TaskLifecycleListener lifecycleListener;
 
         TaskRunner(TaskDefinition<V> definition, AtomicReference<Map<?, ?>> state,
-                   AmendableScheduledTaskStatistics stats) {
+                   TaskLifecycleListener lifecycleListener) {
             this.original = definition.getCommand();
             this.taskName = definition.getName();
-            this.stats = stats;
+            this.lifecycleListener = lifecycleListener;
             this.state = state;
             init();
         }
@@ -339,7 +339,7 @@ public class ScheduledExecutorContainer {
         private void init() {
             Map snapshot = state.get();
             if (original instanceof StatefulTask && !snapshot.isEmpty()) {
-                ((StatefulTask) original).loadState(snapshot);
+                ((StatefulTask) original).load(snapshot);
             }
         }
 
@@ -366,18 +366,18 @@ public class ScheduledExecutorContainer {
         private void beforeRun() {
             if (logger.isFinestEnabled()) {
                 logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Entering running mode. Current stats: " + stats);
+                        + "Entering running mode.");
             }
 
-            stats.onBeforeRun();
+            lifecycleListener.onBeforeRun();
         }
 
         private void afterRun() {
             try {
-                stats.onAfterRun();
+                lifecycleListener.onAfterRun();
                 if (original instanceof StatefulTask) {
                     Map snapshot = new HashMap();
-                    ((StatefulTask) original).saveState(snapshot);
+                    ((StatefulTask) original).save(snapshot);
 
                     Map readOnlySnapshot = Collections.unmodifiableMap(snapshot);
                     state.set(readOnlySnapshot);
@@ -389,7 +389,7 @@ public class ScheduledExecutorContainer {
 
             if (logger.isFinestEnabled()) {
                 logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                        + "Exiting running mode. Current stats: " + stats);
+                        + "Exiting running mode.");
             }
         }
 

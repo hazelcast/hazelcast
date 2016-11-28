@@ -25,9 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-/**
- * Created by Thomas Kountis.
- */
 public class SyncStateOperation
         extends AbstractSchedulerOperation {
 

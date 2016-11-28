@@ -23,9 +23,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 
 import java.io.IOException;
 
-/**
- * Created by Thomas Kountis.
- */
 public class IsCanceledOperation
         extends AbstractSchedulerOperation {
 

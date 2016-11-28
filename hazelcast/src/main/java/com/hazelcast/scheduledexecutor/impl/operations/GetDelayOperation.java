@@ -24,9 +24,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by Thomas Kountis.
- */
 public class GetDelayOperation
         extends AbstractSchedulerOperation {
 

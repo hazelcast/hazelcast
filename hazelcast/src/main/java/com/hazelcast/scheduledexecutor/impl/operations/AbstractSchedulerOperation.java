@@ -28,9 +28,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 
-/**
- * Created by Thomas Kountis.
- */
 public abstract class AbstractSchedulerOperation
         extends Operation
         implements PartitionAwareOperation, IdentifiedDataSerializable {

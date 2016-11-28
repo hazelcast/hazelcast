@@ -16,11 +16,13 @@
 
 package com.hazelcast.scheduledexecutor;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
  * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
  */
 public class StaleTaskException
-        extends RuntimeException {
+        extends HazelcastException {
 
     public StaleTaskException(String msg) {
         super(msg);

@@ -31,9 +31,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Created by Thomas Kountis.
- */
 public class GetAllScheduledOperation
         extends AbstractSchedulerOperation {
 

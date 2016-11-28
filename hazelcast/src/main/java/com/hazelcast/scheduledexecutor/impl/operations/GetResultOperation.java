@@ -27,9 +27,6 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-/**
- * Created by Thomas Kountis.
- */
 public class GetResultOperation<V>
         extends AbstractSchedulerOperation implements BlockingOperation {
 

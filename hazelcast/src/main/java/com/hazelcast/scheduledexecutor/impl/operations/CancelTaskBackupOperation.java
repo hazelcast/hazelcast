@@ -23,9 +23,6 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-/**
- * Created by Thomas Kountis.
- */
 public class CancelTaskBackupOperation
         extends AbstractSchedulerOperation implements BackupOperation {
 

@@ -16,12 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
-
-/**
- * Created by Thomas Kountis.
- */
-public interface AmendableScheduledTaskStatistics extends ScheduledTaskStatistics {
+public interface TaskLifecycleListener {
 
     void onBeforeRun();
 

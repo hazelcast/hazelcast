@@ -25,9 +25,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import java.io.IOException;
 import java.util.concurrent.Delayed;
 
-/**
- * Created by Thomas Kountis.
- */
 public class CompareToOperation
         extends AbstractSchedulerOperation {
 

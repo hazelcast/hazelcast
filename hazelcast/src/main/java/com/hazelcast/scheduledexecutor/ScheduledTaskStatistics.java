@@ -35,7 +35,9 @@ public interface ScheduledTaskStatistics extends IdentifiedDataSerializable {
     long getTotalRuns();
 
     /**
-     * @return The monotonic creation time the task.
+     * @return The creation time the task
+     *
+     * @see {@link System#nanoTime()}.
      */
     long getCreatedAt();
 
@@ -63,7 +65,7 @@ public interface ScheduledTaskStatistics extends IdentifiedDataSerializable {
     long getLastRunDuration(TimeUnit unit);
 
     /**
-     * Returns the last period of time the task was idle, waiting to get scheduled in.
+     * Returns the last period of time the task was idle, waiting to get scheduled
      *
      * @param unit The time unit to return the duration in.
      * @return The last idle period of time of the task.

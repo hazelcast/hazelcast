@@ -45,13 +45,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.scheduledexecutor.TaskHelper.named;
+import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-/**
- * Created by Thomas Kountis.
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
@@ -120,6 +117,26 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
             throws ExecutionException, InterruptedException {
 
         int delay = 5;
+        String taskName = "Test";
+        double expectedResult = 25.0;
+
+        HazelcastInstance[] instances = createClusterWithCount(1);
+        IScheduledExecutorService executorService = instances[0].getScheduledExecutorService("s");
+        IScheduledFuture<Double> future = executorService.schedule(
+                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+
+        double result = future.get();
+
+        assertEquals(expectedResult, result, 0);
+        assertEquals(true, future.isDone());
+        assertEquals(false, future.isCancelled());
+    }
+
+    @Test
+    public void schedule_withNegativeDelay()
+            throws ExecutionException, InterruptedException {
+
+        int delay = -2;
         String taskName = "Test";
         double expectedResult = 25.0;
 
@@ -248,7 +265,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         ScheduledTaskHandler handler = first.getHandler();
         first.dispose();
 
-        executorService.getScheduled(handler).get();
+        executorService.getScheduledFuture(handler).get();
     }
 
     @Test()
@@ -439,7 +456,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
                 named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
 
         ScheduledTaskHandler handler = first.getHandler();
-        IScheduledFuture<Double> copy = executorService.getScheduled(handler);
+        IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first, copy);
     }
@@ -453,7 +470,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         s.scheduleOnAllMembers(new PlainCallableTask(), 0, TimeUnit.SECONDS);
 
         Set<Member> members = instances[0].getCluster().getMembers();
-        Map<Member, List<IScheduledFuture<Double>>> allScheduled = s.getAllScheduled();
+        Map<Member, List<IScheduledFuture<Double>>> allScheduled = s.getAllScheduledFutures();
 
         assertEquals(members.size(), allScheduled.size());
 
@@ -495,16 +512,16 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void loadState(Map<String, Integer> state) {
-            if (!state.isEmpty()) {
-                assertEquals(66 * 77, (int) state.get("status"));
+        public void load(Map<String, Integer> snapshot) {
+            if (!snapshot.isEmpty()) {
+                assertEquals(66 * 77, (int) snapshot.get("status"));
                 instance.getCountDownLatch(latchName).countDown();
             }
         }
 
         @Override
-        public void saveState(Map<String, Integer> state) {
-            state.put("status", status);
+        public void save(Map<String, Integer> snapshot) {
+            snapshot.put("status", status);
         }
 
         @Override

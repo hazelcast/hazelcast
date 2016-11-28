@@ -18,9 +18,6 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.spi.BackupAwareOperation;
 
-/**
- * Created by Thomas Kountis.
- */
 public abstract class AbstractBackupAwareSchedulerOperation
         extends AbstractSchedulerOperation
         implements BackupAwareOperation {

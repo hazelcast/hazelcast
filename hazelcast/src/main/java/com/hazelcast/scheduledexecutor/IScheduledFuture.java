@@ -36,7 +36,7 @@ public interface IScheduledFuture<V>
     /**
      * Returns the scheduled future resource handler.
      * Can be used to re-acquire control of the {@link IScheduledFuture} using the
-     * {@link IScheduledExecutorService#getScheduled(ScheduledTaskHandler)}
+     * {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)}
      *
      * @return An instance of {@link ScheduledTaskHandler}, a resource handler for this scheduled future.
      */
@@ -55,7 +55,7 @@ public interface IScheduledFuture<V>
      * Once the instance is destroyed, any subsequent action on the {@link IScheduledFuture} will
      * fail with an {@link IllegalStateException}
      * Attempting to re-create the {@link IScheduledFuture} from the
-     * {@link IScheduledExecutorService#getScheduled(ScheduledTaskHandler)} using the {@link #getHandler()}
+     * {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)} using the {@link #getHandler()}
      * will succeed, but any subsequent access on that new future, will also fail with {@link StaleTaskException}
      */
     void dispose();

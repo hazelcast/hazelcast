@@ -24,9 +24,6 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by Thomas Kountis.
- */
 public class TaskDefinition<V>
         implements IdentifiedDataSerializable {
 

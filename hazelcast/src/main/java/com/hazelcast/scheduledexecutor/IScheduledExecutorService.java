@@ -39,8 +39,8 @@ import java.util.concurrent.TimeUnit;
  * Tasks (<tt>Runnable</tt> and/or <tt>Callable</tt>) scheduled on any partition through an <tt>IScheduledExecutorService</tt>,
  * yield some durability characteristics.
  * <ul>
- *     <li>When a node goes down (up to <tt>durability</tt> config), the scheduled task will resume
- *     on a replica node, by starting over.</li>
+ *     <li>When a node goes down (up to <tt>durability</tt> config), the scheduled task will get re-scheduled
+ *     on a replica node.</li>
  *     <li>In the event of a partition migration, the task will be re-scheduled on the destination node.</li>
  * </ul>
  * <b>Note: </b> The above characteristics don't apply when scheduled on a <tt>Member</tt>.
@@ -58,8 +58,8 @@ import java.util.concurrent.TimeUnit;
  * the actual scheduling of the task on the node, which allows for a way to access the future in an event of a node failure
  * immediately after scheduling, and also guarantees no duplicates in the cluster by utilising a unique name per task.
  * A name can also be defined by the user by having the <tt>Runnable</tt> or <tt>Callable</tt> implement the {@link NamedTask}.
- * Alternatively, one can wrap any task using the {@link TaskHelper#named(String, Callable)} or
- * {@link TaskHelper#named(String, Runnable)} for simplicity.
+ * Alternatively, one can wrap any task using the {@link TaskUtils#named(String, Callable)} or
+ * {@link TaskUtils#named(String, Runnable)} for simplicity.
  *
  * <p/>
  *
@@ -252,6 +252,10 @@ public interface IScheduledExecutorService extends DistributedObject {
      * Creates and executes a one-shot action that becomes enabled
      * after the given delay on all cluster {@link Member}s.
      *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
+     * If a new member is added, the task will not get scheduled there automatically.
+     *
      * @param command the task to execute
      * @param delay the time from now to delay execution
      * @param unit the time unit of the delay parameter
@@ -267,6 +271,10 @@ public interface IScheduledExecutorService extends DistributedObject {
     /**
      * Creates and executes a one-shot action that becomes enabled
      * after the given delay on all cluster {@link Member}s.
+     *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
+     * If a new member is added, the task will not get scheduled there automatically.
      *
      * @param command the task to execute
      * @param delay the time from now to delay execution
@@ -289,6 +297,10 @@ public interface IScheduledExecutorService extends DistributedObject {
      * If any execution of this task
      * takes longer than its period, then subsequent execution will be skipped.
      *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
+     * If a new member is added, the task will not get scheduled there automatically.
+     *
      * @param command the task to execute
      * @param initialDelay the time to delay first execution
      * @param period the period between successive executions
@@ -307,6 +319,9 @@ public interface IScheduledExecutorService extends DistributedObject {
      * Creates and executes a one-shot action that becomes enabled
      * after the given delay on all {@link Member}s given.
      *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
+     *
      * @param command the task to execute
      * @param members the collections of members - where to execute the task
      * @param delay the time from now to delay execution
@@ -324,6 +339,9 @@ public interface IScheduledExecutorService extends DistributedObject {
     /**
      * Creates and executes a one-shot action that becomes enabled
      * after the given delay on all {@link Member}s given.
+     *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
      *
      * @param command the task to execute
      * @param members the collections of members - where to execute the task
@@ -347,6 +365,9 @@ public interface IScheduledExecutorService extends DistributedObject {
      * {@code initialDelay + 2 * period}, and so on.
      * If any execution of this task
      * takes longer than its period, then subsequent execution will be skipped.
+     *
+     * <br/>
+     * <b>Note: </b> In the event of Member leaving the cluster, for whatever reason, the task is lost.
      *
      * @param command the task to execute
      * @param members the collections of members - where to execute the task
@@ -372,7 +393,7 @@ public interface IScheduledExecutorService extends DistributedObject {
      * @param <V> The return type of callable tasks
      * @return A new {@link IScheduledFuture} from the given handler.
      */
-    <V> IScheduledFuture<V> getScheduled(ScheduledTaskHandler handler);
+    <V> IScheduledFuture<V> getScheduledFuture(ScheduledTaskHandler handler);
 
     /**
      * Fetches and returns all scheduled (not disposed yet) futures from all members in the cluster.
@@ -380,7 +401,7 @@ public interface IScheduledExecutorService extends DistributedObject {
      *
      * @return A {@link Map} with {@link Member} keys and a List of {@link IScheduledFuture} found for this scheduler.
      */
-    <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduled();
+    <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures();
 
     /**
      * Initiates an orderly shutdown in which previously submitted

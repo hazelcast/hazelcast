@@ -25,9 +25,6 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * Created by Thomas Kountis.
- */
 public class ScheduleTaskOperation
         extends AbstractBackupAwareSchedulerOperation {
 

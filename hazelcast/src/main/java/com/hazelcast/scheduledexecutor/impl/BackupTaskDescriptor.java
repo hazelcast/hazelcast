@@ -24,14 +24,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by Thomas Kountis.
- */
 public class BackupTaskDescriptor implements IdentifiedDataSerializable {
 
     private TaskDefinition definition;
 
-    private AmendableScheduledTaskStatistics masterStats;
+    private ScheduledTaskStatisticsImpl masterStats;
 
     private Map masterState;
 
@@ -48,7 +45,7 @@ public class BackupTaskDescriptor implements IdentifiedDataSerializable {
         return definition;
     }
 
-    public AmendableScheduledTaskStatistics getMasterStats() {
+    public ScheduledTaskStatisticsImpl getMasterStats() {
         return masterStats;
     }
 
@@ -60,7 +57,7 @@ public class BackupTaskDescriptor implements IdentifiedDataSerializable {
         this.masterState = masterState;
     }
 
-    public void setMasterStats(AmendableScheduledTaskStatistics masterStats) {
+    public void setMasterStats(ScheduledTaskStatisticsImpl masterStats) {
         this.masterStats = masterStats;
     }
 

@@ -217,14 +217,14 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public IScheduledFuture<?> getScheduled(ScheduledTaskHandler handler) {
+    public IScheduledFuture<?> getScheduledFuture(ScheduledTaskHandler handler) {
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
         attachHazelcastInstance(proxy);
         return proxy;
     }
 
     @Override
-    public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduled() {
+    public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
 
         Map<Member, List<IScheduledFuture<V>>> tasks =

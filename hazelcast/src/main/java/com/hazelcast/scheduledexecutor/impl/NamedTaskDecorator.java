@@ -24,9 +24,6 @@ import com.hazelcast.scheduledexecutor.NamedTask;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-/**
- * Created by Thomas Kountis.
- */
 public class NamedTaskDecorator<V>
         implements Runnable, Callable<V>, NamedTask, IdentifiedDataSerializable {
 

@@ -27,7 +27,7 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * To access the handler, see {@link IScheduledFuture#getHandler()}.
  * To re-acquire access to a previously scheduled task, having only the handler at hand,
- * see {@link IScheduledExecutorService#getScheduled(ScheduledTaskHandler)}
+ * see {@link IScheduledExecutorService#getScheduledFuture(ScheduledTaskHandler)}
  */
 @Beta
 public abstract class ScheduledTaskHandler

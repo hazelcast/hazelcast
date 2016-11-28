@@ -18,6 +18,7 @@ package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -25,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 
 public class ScheduledTaskStatisticsImpl
-        implements AmendableScheduledTaskStatistics {
+        implements ScheduledTaskStatistics, TaskLifecycleListener {
 
     private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 
