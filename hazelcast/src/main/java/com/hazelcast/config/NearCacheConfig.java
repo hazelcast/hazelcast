@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -115,11 +115,39 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         this.name = name;
     }
 
+    public NearCacheConfig(int timeToLiveSeconds, int maxIdleSeconds, boolean invalidateOnChange,
+                           InMemoryFormat inMemoryFormat) {
+        this(timeToLiveSeconds, maxIdleSeconds, invalidateOnChange, inMemoryFormat, null);
+    }
+
+    public NearCacheConfig(int timeToLiveSeconds, int maxIdleSeconds, boolean invalidateOnChange,
+                           InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
+        this.timeToLiveSeconds = timeToLiveSeconds;
+        this.maxSize = calculateMaxSize(maxSize);
+        this.maxIdleSeconds = maxIdleSeconds;
+        this.invalidateOnChange = invalidateOnChange;
+        this.inMemoryFormat = inMemoryFormat;
+        // EvictionConfig is not allowed to be null
+        if (evictionConfig != null) {
+            this.evictionConfig = evictionConfig;
+            this.evictionPolicy = evictionConfig.getEvictionPolicy().toString();
+            this.maxSize = evictionConfig.getSize();
+        }
+    }
+
+    /**
+     * @deprecated since 3.8,
+     * please use {@link NearCacheConfig#NearCacheConfig(int, int, boolean, InMemoryFormat)}
+     */
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
                            boolean invalidateOnChange, InMemoryFormat inMemoryFormat) {
         this(timeToLiveSeconds, maxSize, evictionPolicy, maxIdleSeconds, invalidateOnChange, inMemoryFormat, null);
     }
 
+    /**
+     * @deprecated since 3.8,
+     * please use {@link NearCacheConfig#NearCacheConfig(int, int, boolean, InMemoryFormat, EvictionConfig)}
+     */
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds,
                            boolean invalidateOnChange, InMemoryFormat inMemoryFormat, EvictionConfig evictionConfig) {
         this.timeToLiveSeconds = timeToLiveSeconds;
@@ -239,14 +267,6 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     /**
      * Returns the eviction policy for the Near Cache.
      *
-     * Valid values are:
-     * NONE (no extra eviction, time-to-live-seconds may still apply)
-     * LRU  (Least Recently Used)
-     * LFU  (Least Frequently Used)
-     *
-     * NONE is the default.
-     * Regardless of the eviction policy used, time-to-live-seconds will still apply.
-     *
      * @return The eviction policy for the Near Cache.
      * @deprecated since 3.8, use {@link #getEvictionConfig()} and {@link EvictionConfig#getEvictionPolicy()} instead
      */
@@ -258,12 +278,13 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * Sets the eviction policy.
      *
      * Valid values are:
-     * NONE (no extra eviction, time-to-live-seconds may still apply)
      * LRU  (Least Recently Used)
      * LFU  (Least Frequently Used)
+     * NONE (no extra eviction, time-to-live-seconds or max-idle-seconds may still apply)
+     * RANDOM (random entry)
      *
-     * NONE is the default.
-     * Regardless of the eviction policy used, time-to-live-seconds will still apply.
+     * LRU is the default.
+     * Regardless of the eviction policy used, time-to-live-seconds and max-idle-seconds will still apply.
      *
      * @param evictionPolicy The eviction policy for the Near Cache.
      * @return This Near Cache config instance.
@@ -399,13 +420,9 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     }
 
     /**
-     * The eviction policy.
-     * NONE (no extra eviction, time-to-live-seconds may still apply),
-     * LRU  (Least Recently Used),
-     * LFU  (Least Frequently Used).
-     * Regardless of the eviction policy used, time-to-live-seconds will still apply.
+     * The eviction configuration.
      *
-     * @return The eviction policy.
+     * @return The eviction configuration.
      */
     public EvictionConfig getEvictionConfig() {
         return evictionConfig;
@@ -413,12 +430,6 @@ public class NearCacheConfig implements DataSerializable, Serializable {
 
     /**
      * Sets the eviction configuration.
-     *
-     * Valid values are:
-     * NONE (no extra eviction, time-to-live-seconds may still apply),
-     * LRU  (Least Recently Used),
-     * LFU  (Least Frequently Used).
-     * Regardless of the eviction policy used, time-to-live-seconds will still apply.
      *
      * @param evictionConfig The eviction configuration.
      * @return This Near Cache config instance.
@@ -442,6 +453,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         out.writeUTF(name);
         out.writeUTF(evictionPolicy);
         out.writeInt(timeToLiveSeconds);
+        out.writeInt(maxIdleSeconds);
         out.writeInt(maxSize);
         out.writeBoolean(invalidateOnChange);
         out.writeBoolean(cacheLocalEntries);
@@ -456,6 +468,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         name = in.readUTF();
         evictionPolicy = in.readUTF();
         timeToLiveSeconds = in.readInt();
+        maxIdleSeconds = in.readInt();
         maxSize = in.readInt();
         invalidateOnChange = in.readBoolean();
         cacheLocalEntries = in.readBoolean();
