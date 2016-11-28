@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.discovery.integration;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * The <tt>DiscoveryServiceProvider</tt> interface provides the possibility to build {@link DiscoveryService}s.
  * <tt>DiscoveryService</tt> implementations should be immutable and therefore the provider is introduced to
@@ -27,7 +25,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @since 3.6
  */
-@Beta
 public interface DiscoveryServiceProvider {
 
     /**

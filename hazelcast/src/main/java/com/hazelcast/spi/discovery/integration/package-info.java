@@ -22,7 +22,4 @@
  *
  * @since 3.6
  */
-@Beta
 package com.hazelcast.spi.discovery.integration;
-
-import com.hazelcast.spi.annotation.Beta;

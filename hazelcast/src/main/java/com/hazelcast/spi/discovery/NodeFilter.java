@@ -16,8 +16,6 @@
 
 package com.hazelcast.spi.discovery;
 
-import com.hazelcast.spi.annotation.Beta;
-
 /**
  * The NodeFilter, if supplied, will retrieve all discovered nodes and might
  * apply additional filtering based on vendor provided metadata. These metadata
@@ -33,7 +31,6 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * @since 3.6
  */
-@Beta
 public interface NodeFilter {
 
     /**

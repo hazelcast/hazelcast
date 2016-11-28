@@ -18,7 +18,6 @@ package com.hazelcast.spi.discovery;
 
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
 import com.hazelcast.util.StringUtil;
 
@@ -34,7 +33,6 @@ import static java.util.Collections.unmodifiableMap;
  *
  * @since 3.6
  */
-@Beta
 public abstract class AbstractDiscoveryStrategy implements DiscoveryStrategy {
 
     private final ILogger logger;

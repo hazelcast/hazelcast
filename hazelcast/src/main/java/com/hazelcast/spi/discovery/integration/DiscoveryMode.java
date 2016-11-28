@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.discovery.integration;
 
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 
 /**
@@ -29,7 +28,6 @@ import com.hazelcast.spi.discovery.DiscoveryStrategy;
  *
  * @since 3.6
  */
-@Beta
 public enum DiscoveryMode {
     /**
      * The current runtime environment is a Hazelcast member node
