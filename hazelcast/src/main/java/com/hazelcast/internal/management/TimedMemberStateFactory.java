@@ -174,7 +174,7 @@ public class TimedMemberStateFactory {
         Node node = instance.node;
         ClusterService cluster = instance.node.clusterService;
         NodeStateImpl nodeState = new NodeStateImpl(cluster.getClusterState(), node.getState(),
-                cluster.getClusterVersion(), node.getVersion(), node.isRollingUpgradeEnabled());
+                cluster.getClusterVersion(), node.getVersion());
         memberState.setNodeState(nodeState);
     }
 

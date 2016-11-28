@@ -61,8 +61,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
         ClusterVersion clusterVersion = ClusterVersion.of("3.8.0");
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
-        Boolean rollingUpgradeEnabled = true;
-        NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion, rollingUpgradeEnabled);
+        NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -111,6 +110,5 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(nodeState, deserializedState.getNodeState());
         assertEquals(clusterVersion, deserializedState.getClusterVersion());
         assertEquals(memberVersion, deserializedState.getMemberVersion());
-        assertEquals(rollingUpgradeEnabled, deserializedState.isRollingUpgradeEnabled());
     }
 }

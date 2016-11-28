@@ -43,9 +43,4 @@ public interface NodeState extends JsonSerializable {
      */
     MemberVersion getMemberVersion();
 
-    /**
-     * @return true if rolling upgrade is enabled
-     */
-    boolean isRollingUpgradeEnabled();
-
 }

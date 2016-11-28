@@ -650,12 +650,6 @@ public final class GroupProperty {
     public static final HazelcastProperty INIT_CLUSTER_VERSION
             = new HazelcastProperty("hazelcast.init.cluster.version");
 
-    /**
-     * Allows enabling rolling upgrades support. Enterprise only feature.
-     */
-    public static final HazelcastProperty ROLLING_UPGRADE_ENABLED
-            = new HazelcastProperty("hazelcast.rolling.upgrade.enabled", false);
-
     private GroupProperty() {
     }
 }
