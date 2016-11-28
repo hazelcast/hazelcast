@@ -333,4 +333,8 @@ public class DefaultNodeExtension implements NodeExtension {
     public ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus() {
         return new ClusterHotRestartStatusDTO();
     }
+
+    @Override
+    public void resetHotRestartData() {
+    }
 }

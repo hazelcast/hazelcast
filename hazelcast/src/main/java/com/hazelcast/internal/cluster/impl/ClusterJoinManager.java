@@ -24,6 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
+import com.hazelcast.internal.cluster.impl.operations.SendExcludedMemberUuidsOperation;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOperation;
@@ -259,6 +260,14 @@ public class ClusterJoinManager {
 
         Address target = joinRequest.getAddress();
 
+        if (node.getNodeExtension().getExcludedMemberUuids().contains(joinRequest.getUuid())) {
+            logger.fine("cannot join " + target + " because it is excluded in cluster start.");
+            OperationService operationService = nodeEngine.getOperationService();
+            Operation op = new SendExcludedMemberUuidsOperation(node.getNodeExtension().getExcludedMemberUuids());
+            operationService.send(op, target);
+            return true;
+        }
+
         if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
             return true;
         }
@@ -266,14 +275,6 @@ public class ClusterJoinManager {
         if (joinRequest.getExcludedMemberUuids().contains(node.getThisUuid())) {
             logger.warning("cannot join " + target + " since this node is excluded in its list...");
             node.getNodeExtension().handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
-            return true;
-        }
-
-        if (node.getNodeExtension().getExcludedMemberUuids().contains(joinRequest.getUuid())) {
-            String msg =  target + " with uuid: " + joinRequest.getUuid() + " is excluded in partial start.";
-            OperationService operationService = nodeEngine.getOperationService();
-            BeforeJoinCheckFailureOperation op = new BeforeJoinCheckFailureOperation(msg);
-            operationService.send(op, target);
             return true;
         }
 
@@ -587,10 +588,10 @@ public class ClusterJoinManager {
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
-                Operation operation = new FinalizeJoinOperation(createMemberInfoList(clusterService.getMemberImpls()),
-                        postJoinOp, clusterClock.getClusterTime(), clusterService.getClusterId(),
-                        clusterClock.getClusterStartTime(), clusterStateManager.getState(), clusterService.getClusterVersion(),
-                        partitionRuntimeState, false);
+                List<MemberInfo> memberInfos = createMemberInfoList(clusterService.getMemberImpls());
+                Operation operation = new FinalizeJoinOperation(member.getUuid(), memberInfos, postJoinOp,
+                        clusterClock.getClusterTime(), clusterService.getClusterId(), clusterClock.getClusterStartTime(),
+                        clusterStateManager.getState(), clusterService.getClusterVersion(), partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             }
             return true;
@@ -666,7 +667,7 @@ public class ClusterJoinManager {
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
-                    Operation finalizeJoinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
+                    Operation finalizeJoinOperation = new FinalizeJoinOperation(member.getUuid(), memberInfos, postJoinOp, time,
                             clusterService.getClusterId(), startTime,
                             clusterStateManager.getState(), clusterService.getClusterVersion(), partitionRuntimeState);
                     calls.add(invokeClusterOperation(finalizeJoinOperation, member.getAddress()));
@@ -675,7 +676,7 @@ public class ClusterJoinManager {
                     if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
                         continue;
                     }
-                    Operation memberInfoUpdateOperation = new MemberInfoUpdateOperation(memberInfos, time,
+                    Operation memberInfoUpdateOperation = new MemberInfoUpdateOperation(member.getUuid(), memberInfos, time,
                             partitionRuntimeState, true);
                     calls.add(invokeClusterOperation(memberInfoUpdateOperation, member.getAddress()));
                 }

@@ -267,4 +267,10 @@ public interface NodeExtension {
      * be returned if Hot Restart is not available (not EE) or not enabled.
      */
     ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus();
+
+    /**
+     * Resets local hot restart data and gets a new uuid, if the local node hasn't completed the start process and
+     * it is excluded in cluster start.
+     */
+    void resetHotRestartData();
 }

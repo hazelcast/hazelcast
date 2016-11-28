@@ -108,8 +108,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
-            while (node.isRunning() && !node.joined()
-                    && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
                 connection = node.connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
@@ -144,8 +143,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             long maxJoinMillis = getMaxJoinMillis();
             long startTime = Clock.currentTimeMillis();
 
-            while (node.isRunning() && !node.joined()
-                    && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
+            while (shouldRetry() && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
 
                 tryToJoinPossibleAddresses(possibleAddresses);
                 if (node.joined()) {
@@ -323,7 +321,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isRunning() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (shouldRetry() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
 
             Address master = node.getMasterAddress();
             if (master != null) {
