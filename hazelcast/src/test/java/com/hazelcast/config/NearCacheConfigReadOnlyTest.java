@@ -77,6 +77,21 @@ public class NearCacheConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void setLocalUpdatePolicyOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setEvictionConfigOnReadOnlyNearCacheConfigShouldFail() {
+        getReadOnlyConfig().setEvictionConfig(new EvictionConfig());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void getEvictionConfigOnReadOnlyNearCacheConfigShouldReturnReadOnly() {
+        getReadOnlyConfig().getEvictionConfig().setSize(500);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
     public void setPreloaderConfigOnReadOnlyNearCacheConfigShouldFail() {
         getReadOnlyConfig().setPreloaderConfig(new NearCachePreloaderConfig());
     }
