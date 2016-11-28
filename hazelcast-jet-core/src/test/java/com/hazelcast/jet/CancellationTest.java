@@ -20,6 +20,10 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.AbstractProducer;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -32,6 +36,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
@@ -129,16 +134,46 @@ public class CancellationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_jobFailsOnOneNode_then_cancelledOnOtherNodes() throws Throwable {
+    public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
         // Given
-        HazelcastInstance other = factory.newHazelcastInstance();
         HazelcastInstance instance = factory.newHazelcastInstance();
+        HazelcastInstance other = factory.newHazelcastInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
 
-        Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(fault))
+        Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(getAddress(instance), fault))
+                .parallelism(4);
+        dag.addVertex(faulty);
+
+        Future<Void> future = jetEngine.newJob(dag).execute();
+        assertExecutionStarted();
+
+        // Then
+        FaultyProcessor.failNow = true;
+        assertExecutionTerminated();
+
+        expectedException.expect(fault.getClass());
+        expectedException.expectMessage(fault.getMessage());
+        try {
+            future.get();
+        } catch (Exception e) {
+            throw peel(e);
+        }
+    }
+
+    @Test
+    public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
+        // Given
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        HazelcastInstance other = factory.newHazelcastInstance();
+        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
+
+        RuntimeException fault = new RuntimeException("fault");
+        DAG dag = new DAG();
+
+        Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(getAddress(other), fault))
                 .parallelism(4);
         dag.addVertex(faulty);
 
@@ -213,28 +248,34 @@ public class CancellationTest extends HazelcastTestSupport {
         }
     }
 
-    private static class SingleNodeFaultSupplier implements ProcessorMetaSupplier {
+    private static class SingleNodeFaultSupplier implements DataSerializable, ProcessorMetaSupplier {
 
-        private final RuntimeException e;
-        private transient Address address;
+        private transient Address failOnAddress;
+        private RuntimeException e;
 
-        public SingleNodeFaultSupplier(RuntimeException e) {
+        public SingleNodeFaultSupplier(Address failOnAddress, RuntimeException e) {
             this.e = e;
-        }
-
-        @Override
-        public void init(Context context) {
-            address = getAddress(context.getHazelcastInstance());
+            this.failOnAddress = failOnAddress;
         }
 
         @Override
         public ProcessorSupplier get(Address address) {
-            if (address.equals(this.address)) {
+            if (address.equals(failOnAddress)) {
                 return ProcessorSupplier.of(() -> new FaultyProcessor(e));
-            } else {
-                return ProcessorSupplier.of(StuckProcessor::new);
             }
+            return ProcessorSupplier.of(StuckProcessor::new);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput objectDataOutput) throws IOException {
+            objectDataOutput.writeObject(failOnAddress);
+            objectDataOutput.writeObject(e);
+        }
+
+        @Override
+        public void readData(ObjectDataInput objectDataInput) throws IOException {
+            e = objectDataInput.readObject();
+            failOnAddress = objectDataInput.readObject();
         }
     }
-
 }
