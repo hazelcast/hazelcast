@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.eviction.EvictionPolicyType;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,8 +28,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -34,12 +39,96 @@ public class NearCacheConfigTest {
 
     private NearCacheConfig config = new NearCacheConfig();
 
+    @Test
+    public void testConstructor_withName() {
+        config = new NearCacheConfig("foobar");
+
+        assertEquals("foobar", config.getName());
+    }
+
+    @Test
+    public void testConstructor_withMultipleParameters() {
+        config = new NearCacheConfig(23, 42, true, InMemoryFormat.NATIVE);
+
+        assertEquals(23, config.getTimeToLiveSeconds());
+        assertEquals(42, config.getMaxIdleSeconds());
+        assertTrue(config.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
+    }
+
+    @Test
+    public void testConstructor_withMultipleParametersAndEvictionConfig() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                .setSize(66);
+
+        config = new NearCacheConfig(23, 42, true, InMemoryFormat.NATIVE, evictionConfig);
+
+        assertEquals(23, config.getTimeToLiveSeconds());
+        assertEquals(42, config.getMaxIdleSeconds());
+        assertTrue(config.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
+        assertEquals(EvictionPolicy.LFU, config.getEvictionConfig().getEvictionPolicy());
+        assertEquals(USED_NATIVE_MEMORY_PERCENTAGE, config.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(66, config.getEvictionConfig().getSize());
+    }
+
+    @Test
+    public void testDeprecatedConstructor_withMultipleParameters() {
+        config = new NearCacheConfig(23, 5000, EvictionPolicy.RANDOM.name(), 42, true, InMemoryFormat.NATIVE);
+
+        assertEquals(23, config.getTimeToLiveSeconds());
+        assertEquals(5000, config.getMaxSize());
+        assertEquals(EvictionPolicy.RANDOM.name(), config.getEvictionPolicy());
+        assertEquals(42, config.getMaxIdleSeconds());
+        assertTrue(config.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
+    }
+
+    @Test
+    public void testDeprecatedConstructor_withMultipleParametersAndEvictionConfig() {
+        EvictionConfig evictionConfig = new EvictionConfig()
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                .setSize(66);
+
+        config = new NearCacheConfig(23, 5000, EvictionPolicy.RANDOM.name(), 42, true, InMemoryFormat.NATIVE, evictionConfig);
+
+        assertEquals(23, config.getTimeToLiveSeconds());
+        assertEquals(5000, config.getMaxSize());
+        assertEquals(EvictionPolicy.RANDOM.name(), config.getEvictionPolicy());
+        assertEquals(42, config.getMaxIdleSeconds());
+        assertTrue(config.isInvalidateOnChange());
+        assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
+        assertEquals(EvictionPolicy.LFU, config.getEvictionConfig().getEvictionPolicy());
+        assertEquals(USED_NATIVE_MEMORY_PERCENTAGE, config.getEvictionConfig().getMaximumSizePolicy());
+        assertEquals(66, config.getEvictionConfig().getSize());
+    }
+
     /**
-     * Test method for {@link com.hazelcast.config.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)} .
+     * Test method for {@link com.hazelcast.config.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)}.
      */
     @Test(expected = UnsupportedOperationException.class)
     public void testReadOnlyNearCacheConfigSetCacheLocalEntries() {
         new NearCacheConfigReadOnly(new NearCacheConfig()).setCacheLocalEntries(true);
+    }
+
+    @Test
+    public void testSetInMemoryFormat_withString() {
+        config.setInMemoryFormat("NATIVE");
+
+        assertEquals(InMemoryFormat.NATIVE, config.getInMemoryFormat());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetInMemoryFormat_withInvalidString() {
+        config.setInMemoryFormat("UNKNOWN");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetInMemoryFormat_withString_whenNull() {
+        config.setInMemoryFormat((String) null);
     }
 
     @Test
@@ -113,5 +202,31 @@ public class NearCacheConfigTest {
     @Test(expected = NullPointerException.class)
     public void testSetNearCachePreloaderConfig_whenNull_thenThrowException() {
         config.setPreloaderConfig(null);
+    }
+
+    @Test
+    public void testSerialization() {
+        config.setInvalidateOnChange(true);
+        config.setCacheLocalEntries(true);
+        config.setName("foobar");
+        config.setInMemoryFormat(InMemoryFormat.NATIVE);
+        config.setTimeToLiveSeconds(23);
+        config.setMaxIdleSeconds(42);
+        config.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
+
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        Data serialized = serializationService.toData(config);
+        NearCacheConfig deserialized = serializationService.toObject(serialized);
+
+        assertEquals(config.isInvalidateOnChange(), deserialized.isInvalidateOnChange());
+        assertEquals(config.isCacheLocalEntries(), deserialized.isCacheLocalEntries());
+        assertEquals(config.getName(), deserialized.getName());
+        assertEquals(config.getInMemoryFormat(), deserialized.getInMemoryFormat());
+        assertEquals(config.getTimeToLiveSeconds(), deserialized.getTimeToLiveSeconds());
+        assertEquals(config.getMaxIdleSeconds(), deserialized.getMaxIdleSeconds());
+        assertEquals(config.getLocalUpdatePolicy(), deserialized.getLocalUpdatePolicy());
+        assertEquals(config.getEvictionPolicy(), deserialized.getEvictionPolicy());
+        assertEquals(config.getMaxSize(), deserialized.getMaxSize());
+        assertEquals(config.toString(), deserialized.toString());
     }
 }
