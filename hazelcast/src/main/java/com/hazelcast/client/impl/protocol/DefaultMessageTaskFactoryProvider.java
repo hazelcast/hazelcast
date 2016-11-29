@@ -6,22 +6,20 @@ import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorE
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveAndDisposeResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorIsShutdownMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToPartitionMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCompareToMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
-import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
@@ -1782,6 +1780,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new ScheduledExecutorTaskGetStatisticsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetResultMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

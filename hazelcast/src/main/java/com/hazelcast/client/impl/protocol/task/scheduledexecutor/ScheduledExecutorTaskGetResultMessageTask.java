@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultTimeoutCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class ScheduledExecutorTaskGetResultMessageTask
-        extends AbstractInvocationMessageTask<ScheduledExecutorGetResultTimeoutCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<ScheduledExecutorGetCodec.RequestParameters> {
 
     public ScheduledExecutorTaskGetResultMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -55,18 +55,18 @@ public class ScheduledExecutorTaskGetResultMessageTask
         Operation op = new GetResultOperation(parameters.handler);
         op.setPartitionId(getPartitionId());
         op.setCallerUuid(endpoint.getUuid());
-        op.setWaitTimeout(TimeUnit.MILLISECONDS.convert(parameters.timeout, parameters.timeUnit));
+        op.setWaitTimeout(TimeUnit.MILLISECONDS.convert(parameters.timeout, parameters.unit));
         return op;
     }
 
     @Override
-    protected ScheduledExecutorGetResultTimeoutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetResultTimeoutCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorGetResultTimeoutCodec.encodeResponse((Data) response);
+        return ScheduledExecutorGetCodec.encodeResponse((Data) response);
     }
 
     @Override
@@ -91,6 +91,6 @@ public class ScheduledExecutorTaskGetResultMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handler, parameters.timeout, parameters.timeUnit};
+        return new Object[] { parameters.handler, parameters.timeout, parameters.unit};
     }
 }

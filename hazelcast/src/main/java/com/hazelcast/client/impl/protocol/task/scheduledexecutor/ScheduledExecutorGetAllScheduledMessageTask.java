@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -34,7 +34,7 @@ import java.security.Permission;
 import java.util.List;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
-        extends AbstractInvocationMessageTask<ScheduledExecutorGetAllScheduledCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters> {
 
     public ScheduledExecutorGetAllScheduledMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -55,13 +55,13 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     }
 
     @Override
-    protected ScheduledExecutorGetAllScheduledCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetAllScheduledCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetAllScheduledFuturesCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorGetAllScheduledCodec.encodeResponse((List<ScheduledTaskHandler>) response);
+        return ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse((List<ScheduledTaskHandler>) response);
     }
 
     @Override

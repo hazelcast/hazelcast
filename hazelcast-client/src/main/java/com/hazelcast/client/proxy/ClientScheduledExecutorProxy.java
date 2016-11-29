@@ -18,7 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
@@ -83,7 +83,7 @@ public class ClientScheduledExecutorProxy
     private static final ClientMessageDecoder GET_ALL_SCHEDULED_DECODER = new ClientMessageDecoder() {
         @Override
         public List<ScheduledTaskHandler> decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorGetAllScheduledCodec.decodeResponse(clientMessage).handlers;
+            return ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(clientMessage).handlers;
         }
     };
 
@@ -283,7 +283,6 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, List<IScheduledFuture<?>>> getAllScheduled() {
-        //TODO tkountis - Consider extra flavour with timeout as arg
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
         Map<Member, List<IScheduledFuture<?>>> tasks =
                 new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
@@ -292,7 +291,7 @@ public class ClientScheduledExecutorProxy
         List<Future<List<ScheduledTaskHandler>>> calls = new ArrayList<Future<List<ScheduledTaskHandler>>>();
         for (Member member : members) {
             Address address = member.getAddress();
-            ClientMessage request = ScheduledExecutorGetAllScheduledCodec.encodeRequest(getName(), address);
+            ClientMessage request = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(getName(), address);
 
             calls.add(ClientScheduledExecutorProxy.this.<List<ScheduledTaskHandler>>
                     doSubmitOnAddress(request, GET_ALL_SCHEDULED_DECODER, address));
