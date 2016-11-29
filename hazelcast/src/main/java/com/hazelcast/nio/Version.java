@@ -18,6 +18,8 @@ package com.hazelcast.nio;
 
 /**
  * A generic version to be used with {@link VersionAware} classes. The version's value is a single byte.
+ *
+ * @since 3.8
  */
 public final class Version {
 

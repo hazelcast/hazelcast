@@ -26,6 +26,8 @@ import java.io.IOException;
 
 /**
  * Represents the cluster version in terms of major.minor version.
+ *
+ * @since 3.8
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public final class ClusterVersion implements IdentifiedDataSerializable, Comparable<ClusterVersion> {
