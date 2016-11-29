@@ -65,6 +65,10 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Shor
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.COMP_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.BigDecimalSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.BigIntegerSerializer;
 import static com.hazelcast.internal.serialization.impl.JavaDefaultSerializers.ClassSerializer;
@@ -75,9 +79,9 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 
-    private static final int DATA_SERIALIZABLE_HEADER_VALUE = 0;
-    private static final int IDENTIFIED_DATA_SERIALIZABLE_HEADER_VALUE = 1;
     private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;
+    private static final int FACTORY_AND_CLASS_ID_BYTE_COMP_LENGTH = 2;
+    private static final int EE_BYTE_LENGTH = 1;
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
@@ -198,9 +202,8 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     }
 
     /**
-     * Init the ObjectDataInput for the given Data skipping the header-bytes,
-     * - in case of DataSerializable, it skips the first header byte, and then the class-name
-     * - in case of IdentifiedDataSerializable, it skips the first header byte, and then the factoryId and classId integer bytes
+     * Init the ObjectDataInput for the given Data skipping the serialization header-bytes and navigating to the position
+     * from where the readData() starts reading the object fields.
      *
      * @param data data to initialize the ObjectDataInput with.
      * @return the initialized ObjectDataInput without the header.
@@ -209,17 +212,26 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     public ObjectDataInput initDataSerializableInputAndSkipTheHeader(Data data) throws IOException {
         ObjectDataInput input = createObjectDataInput(data);
         byte header = input.readByte();
-        if (header == IDENTIFIED_DATA_SERIALIZABLE_HEADER_VALUE) {
-            if (input.skipBytes(FACTORY_AND_CLASS_ID_BYTE_LENGTH) != FACTORY_AND_CLASS_ID_BYTE_LENGTH) {
-                throw new HazelcastSerializationException("Malformed serialization format");
+        if (isFlagSet(header, IDS_FLAG)) {
+            if (isFlagSet(header, COMP_FLAG)) {
+                skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_COMP_LENGTH);
+            } else {
+                skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
             }
-        } else if (header == DATA_SERIALIZABLE_HEADER_VALUE) {
-            // read class-name of DataSerializable
-            input.readUTF();
         } else {
-            throw new HazelcastSerializationException("Unsupported serialization format");
+            input.readUTF();
+        }
+
+        if (isFlagSet(header, EE_FLAG)) {
+            skipBytesSafely(input, EE_BYTE_LENGTH);
         }
         return input;
+    }
+
+    private void skipBytesSafely(ObjectDataInput input, int count) throws IOException {
+        if (input.skipBytes(count) != count) {
+            throw new HazelcastSerializationException("Malformed serialization format");
+        }
     }
 
 }
