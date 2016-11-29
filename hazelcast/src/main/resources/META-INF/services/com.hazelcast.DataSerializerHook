@@ -23,5 +23,6 @@ com.hazelcast.wan.impl.WanDataSerializerHook
 com.hazelcast.query.impl.predicates.PredicateDataSerializerHook
 com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook
 com.hazelcast.client.impl.ClientDataSerializerHook
+com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook
 com.hazelcast.internal.management.ManagementDataSerializerHook
 com.hazelcast.internal.ascii.TextProtocolsDataSerializerHook

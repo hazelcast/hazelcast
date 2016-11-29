@@ -190,7 +190,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
         } else {
-            throw new IllegalArgumentException("Unknown executor type: " + type);
+            throw new IllegalArgumentException("Unknown e"
+                    + ""
+                    + "xecutor type: " + type);
         }
         return executor;
     }
@@ -198,6 +200,10 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     @Override
     public ManagedExecutorService getExecutor(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
+    }
+
+    public ManagedExecutorService getDurable(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
     }
 
     @Override
@@ -218,8 +224,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public void executeDurable(String name, Runnable command) {
-        ManagedExecutorService executorService = ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
-        executorService.execute(command);
+        getDurable(name).execute(command);
     }
 
     @Override
@@ -243,6 +248,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public ScheduledFuture<?> scheduleDurable(String name, Runnable command, long delay, TimeUnit unit) {
+        return getDurableTaskScheduler(name).schedule(command, delay, unit);
+    }
+
+    @Override
+    public <V> ScheduledFuture<V> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit) {
+        return getDurableTaskScheduler(name).schedule(command, delay, unit);
+    }
+
+    @Override
     public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
         return globalTaskScheduler.scheduleWithRepetition(command, initialDelay, period, unit);
     }
@@ -254,6 +269,12 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command, long initialDelay,
+                                                     long period, TimeUnit unit) {
+        return getDurableTaskScheduler(name).scheduleWithRepetition(command, initialDelay, period, unit);
+    }
+
+    @Override
     public TaskScheduler getGlobalTaskScheduler() {
         return globalTaskScheduler;
     }
@@ -261,6 +282,10 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     @Override
     public TaskScheduler getTaskScheduler(String name) {
         return new DelegatingTaskScheduler(scheduledExecutorService, getExecutor(name));
+    }
+
+    public TaskScheduler getDurableTaskScheduler(String name) {
+        return new DelegatingTaskScheduler(scheduledExecutorService, getDurable(name));
     }
 
     public void shutdown() {
