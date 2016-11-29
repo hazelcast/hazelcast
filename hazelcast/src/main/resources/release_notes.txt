@@ -77,6 +77,24 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.4 Fixes*
+
+- When nodes terminates concurrently, clusterService.removeAddress can fail because
+target node is already shutdown. [9324]
+- Cache event listeners trigger multiple events when the listener is configured declaratively (XML). [9315]
+- When client is connected and the client process is paused, e.g., using a debugger, then the member starts printing the warning message (`Client heartbeat is timed out`) every 10 seconds. [9308]
+- Hazelcast client outside the AWS cloud cannot connect to Hazelcast member inside the AWS cloud. [9290]
+- In case of a retrying operation, an old heartbeat could still be stored
+on the invocation. If the invocation monitor sees this, it does not
+understand that this is from an old invocation. It concludes that the
+invocation has not received any recent heartbeats and aborts the invocation. [9287]
+- Client endpoint may have a different connection than the one it was initially constructed. [9282]
+- The method `loadAll(keys)` has to notify `RecordStores` about the end of loading. [9260]
+- Partitions should be unavailable/inaccessible until `MigrationAwareServices`
+complete commit/rollback during migration and/or promotion. [9235]
+- When backups are reordered and a backup with a version greater than (localVersion + 1)
+is received, backup is applied but partition replica versions are not updated. [9206]
+
 *3.7.3 Fixes*
 
 - MapLoader.loadAll(true) does not reload after reloading with given keys. [9263]
