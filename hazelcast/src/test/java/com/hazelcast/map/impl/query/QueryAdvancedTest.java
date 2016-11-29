@@ -53,15 +53,12 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.test.TimeConstants.MINUTE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryAdvancedTest extends HazelcastTestSupport {
-
-    private static final long TIMEOUT_MINUTES = 2 * MINUTE;
 
     @Test
     public void testQueryOperationAreNotSentToLiteMembers() {
@@ -103,7 +100,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     @SuppressWarnings("deprecation")
     public void testQueryWithTTL() throws Exception {
         Config config = getConfig();
@@ -151,7 +148,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoNodesWithPartialIndexes() throws Exception {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -198,7 +195,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoNodesWithIndexes() throws Exception {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -247,14 +244,14 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testOneMemberWithoutIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testOneMemberWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
@@ -264,7 +261,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testOneMemberSQLWithoutIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
@@ -273,7 +270,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(27, entries.size());
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testOneMemberSQLWithIndex() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, Employee> map = instance.getMap("employees");
@@ -283,7 +280,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         QueryBasicTest.doFunctionalSQLQueryTest(map);
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoMembers() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -294,7 +291,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoMembersWithIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -308,7 +305,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         QueryBasicTest.doFunctionalQueryTest(map);
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoMembersWithIndexesAndShutdown() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -334,7 +331,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoMembersWithIndexesAndShutdown2() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -361,7 +358,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testTwoMembersWithIndexesAndShutdown3() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -390,7 +387,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         }
     }
 
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testSecondMemberAfterAddingIndexes() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -450,7 +447,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     }
 
     // issue 1404 "to be fixed by issue 1404"
-    @Test(timeout = TIMEOUT_MINUTES)
+    @Test
     public void testQueryAfterInitialLoad() {
         final int size = 100;
         String name = "default";
