@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.hotrestart.HotRestartBackupService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -70,6 +71,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 return;
             } else if (uri.startsWith(URI_FORCESTART_CLUSTER_URL)) {
                 handleForceStart(command);
+            } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_CLUSTER_URL)) {
+                handleHotRestartBackup(command);
+            } else if (uri.startsWith(URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL)) {
+                handleHotRestartBackupInterrupt(command);
             } else if (uri.startsWith(URI_PARTIALSTART_CLUSTER_URL)) {
                 handlePartialStart(command);
             } else if (uri.startsWith(URI_CLUSTER_NODES_URL)) {
@@ -258,6 +263,44 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
         textCommandService.sendResponse(command);
+    }
+
+    private void handleHotRestartBackup(HttpPostCommand command) throws UnsupportedEncodingException {
+        String res;
+        try {
+            if (checkCredentials(command)) {
+                final HotRestartBackupService backupService = textCommandService.getNode().getNodeExtension()
+                                                                                .getHotRestartBackupService();
+                if (backupService != null) {
+                    backupService.backup();
+                }
+                res = "success";
+            } else {
+                res = "forbidden";
+            }
+        } catch (Throwable throwable) {
+            res = "fail";
+        }
+        sendResponse(command, String.format("{\"status\":\"%s\"}", res));
+    }
+
+    private void handleHotRestartBackupInterrupt(HttpPostCommand command) throws UnsupportedEncodingException {
+        String res;
+        try {
+            if (checkCredentials(command)) {
+                final HotRestartBackupService backupService = textCommandService.getNode().getNodeExtension()
+                                                                                .getHotRestartBackupService();
+                if (backupService != null) {
+                    backupService.interruptBackupTask();
+                }
+                res = "success";
+            } else {
+                res = "forbidden";
+            }
+        } catch (Throwable throwable) {
+            res = "fail";
+        }
+        sendResponse(command, String.format("{\"status\":\"%s\"}", res));
     }
 
     private void handleClusterShutdown(HttpPostCommand command) throws UnsupportedEncodingException {
@@ -484,6 +527,20 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             res = res.replace("${MESSAGE}", ex.getMessage());
         }
         command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
+    }
+
+    private boolean checkCredentials(HttpPostCommand command) throws UnsupportedEncodingException {
+        byte[] data = command.getData();
+        final String[] strList = bytesToString(data).split("&");
+        final String groupName = URLDecoder.decode(strList[0], "UTF-8");
+        final String groupPass = URLDecoder.decode(strList[1], "UTF-8");
+        final GroupConfig groupConfig = textCommandService.getNode().getConfig().getGroupConfig();
+        return groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass);
+    }
+
+    private void sendResponse(HttpPostCommand command, String value) {
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(value));
+        textCommandService.sendResponse(command);
     }
 
     @Override

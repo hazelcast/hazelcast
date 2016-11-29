@@ -55,6 +55,7 @@ public class HotRestartPersistenceConfig {
 
     private boolean enabled;
     private File baseDir = new File(HOT_RESTART_BASE_DIR_DEFAULT);
+    private File backupDir;
     private int parallelism = DEFAULT_PARALLELISM;
     private int validationTimeoutSeconds = DEFAULT_VALIDATION_TIMEOUT;
     private int dataLoadTimeoutSeconds = DEFAULT_DATA_LOAD_TIMEOUT;
@@ -118,6 +119,24 @@ public class HotRestartPersistenceConfig {
     public HotRestartPersistenceConfig setBaseDir(File baseDir) {
         checkNotNull(baseDir, "Base directory cannot be null!");
         this.baseDir = baseDir;
+        return this;
+    }
+
+    /**
+     * Base directory for all Hot Restart stores.
+     */
+    public File getBackupDir() {
+        return backupDir;
+    }
+
+    /**
+     * Sets base directory for all Hot Restart stores.
+     *
+     * @param backupDir home directory
+     * @return HotRestartConfig
+     */
+    public HotRestartPersistenceConfig setBackupDir(File backupDir) {
+        this.backupDir = backupDir;
         return this;
     }
 

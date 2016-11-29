@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
+import com.hazelcast.hotrestart.HotRestartBackupService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
@@ -229,6 +230,14 @@ public interface NodeExtension {
      * @return true if partial start is triggered.
      */
     boolean triggerPartialStart();
+
+
+    /**
+     * Returns the hot restart data backup service or null if Hot Restart backup is not available (not EE) or not enabled
+     *
+     * @return the hot restart data backup service
+     */
+    HotRestartBackupService getHotRestartBackupService();
 
     /**
      * Creates a UUID for local member

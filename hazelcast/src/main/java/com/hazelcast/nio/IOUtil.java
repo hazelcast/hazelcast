@@ -25,6 +25,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -34,6 +36,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -385,6 +388,83 @@ public final class IOUtil {
             return new File(resource.toURI());
         } catch (Exception e) {
             throw new HazelcastException("Could not find resource file " + resourceFileName, e);
+        }
+    }
+
+    /**
+     * Deep copies source to target and creates the target if necessary. Source can be a directory or a file and the target
+     * can be a directory or file. If the source is a directory, expects that the target is a directory (or that it doesn't exist)
+     * and nests the copied source under the target directory.
+     *
+     * @param source the source
+     * @param target the destination
+     * @throws IllegalArgumentException if the source was not found or the source is a directory and the target is a file
+     * @throws HazelcastException       if there was any exception while creating directories or copying
+     */
+    public static void copy(File source, File target) {
+        if (!source.exists()) {
+            throw new IllegalArgumentException("Source does not exist");
+        }
+        if (source.isDirectory()) {
+            copyDirectory(source, target);
+        } else {
+            copyFile(source, target, -1);
+        }
+    }
+
+    /**
+     * Copies source file to target and creates the target if necessary. The target can be a directory or file. If the target
+     * is a file, nests the new file under the target directory, otherwise copies to the given target.
+     *
+     * @param source      the source file
+     * @param target      the destination file or directory
+     * @param sourceCount The maximum number of bytes to be transferred. If negative transfers the entire source file.
+     * @throws IllegalArgumentException if the source was not found or the source not a file
+     * @throws HazelcastException       if there was any exception while creating directories or copying
+     */
+    public static void copyFile(File source, File target, long sourceCount) {
+        if (!source.exists()) {
+            throw new IllegalArgumentException("Source does not exist");
+        }
+        if (!source.isFile()) {
+            throw new IllegalArgumentException("Source is not a file");
+        }
+        if (!target.exists() && !target.mkdirs()) {
+            throw new HazelcastException("Could not create the target directory " + target);
+        }
+        final File destination = target.isDirectory() ? new File(target, source.getName()) : target;
+        FileInputStream in = null;
+        FileOutputStream out = null;
+        try {
+            in = new FileInputStream(source);
+            out = new FileOutputStream(destination);
+            final FileChannel inChannel = in.getChannel();
+            final FileChannel outChannel = out.getChannel();
+            final long transferCount = sourceCount > 0 ? sourceCount : inChannel.size();
+            inChannel.transferTo(0, transferCount, outChannel);
+        } catch (Exception e) {
+            throw new HazelcastException("Error occurred while copying", e);
+        } finally {
+            closeResource(in);
+            closeResource(out);
+        }
+    }
+
+    private static void copyDirectory(File source, File target) {
+        if (target.exists() && !target.isDirectory()) {
+            throw new IllegalArgumentException("Cannot copy source directory since the target already exists "
+                    + "but it is not a directory");
+        }
+        final File targetSubDir = new File(target, source.getName());
+        if (!targetSubDir.exists() && !targetSubDir.mkdirs()) {
+            throw new HazelcastException("Could not create the target directory " + target);
+        }
+        final File[] sourceFiles = source.listFiles();
+        if (sourceFiles == null) {
+            throw new HazelcastException("Error occurred while listing directory contents for copy");
+        }
+        for (File file : sourceFiles) {
+            copy(file, targetSubDir);
         }
     }
 

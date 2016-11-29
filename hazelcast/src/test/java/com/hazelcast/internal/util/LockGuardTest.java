@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.impl;
+package com.hazelcast.internal.util;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
@@ -37,78 +37,78 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterStateLockTest {
+public class LockGuardTest {
 
     @Test
     public void testNotLocked() {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertNull(stateLock.getLockOwner());
         assertEquals(0L, stateLock.getLockExpiryTime());
     }
 
     @Test(expected = NullPointerException.class)
     public void testAllowsLock_nullTransactionId() throws Exception {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsLock(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testAllowsUnlock_nullTransactionId() throws Exception {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         stateLock.allowsUnlock(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testConstructor_nullEndpoint() throws Exception {
-        new ClusterStateLock(null, "txn", 1000);
+        new LockGuard(null, "txn", 1000);
     }
 
     @Test(expected = NullPointerException.class)
     public void testConstructor_nullTransactionId() throws Exception {
         Address endpoint = newAddress();
-        new ClusterStateLock(endpoint, null, 1000);
+        new LockGuard(endpoint, null, 1000);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testConstructor_nonPositiveLeaseTime() throws Exception {
         Address endpoint = newAddress();
-        new ClusterStateLock(endpoint, "txn", -1000);
+        new LockGuard(endpoint, "txn", -1000);
     }
 
     @Test
     public void testAllowsLock_success() throws Exception {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertTrue(stateLock.allowsLock("txn"));
     }
 
     @Test
     public void testAllowsLock_fail() throws Exception {
         Address endpoint = newAddress();
-        ClusterStateLock stateLock = new ClusterStateLock(endpoint, "txn", 1000);
+        LockGuard stateLock = new LockGuard(endpoint, "txn", 1000);
         assertFalse(stateLock.allowsLock("another-txn"));
     }
 
     @Test
     public void testIsLocked() throws Exception {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertFalse(stateLock.isLocked());
 
         Address endpoint = newAddress();
-        stateLock = new ClusterStateLock(endpoint, "txn", 1000);
+        stateLock = new LockGuard(endpoint, "txn", 1000);
         assertTrue(stateLock.isLocked());
     }
 
     @Test
     public void testIsLeaseExpired() throws Exception {
-        ClusterStateLock stateLock = ClusterStateLock.NOT_LOCKED;
+        LockGuard stateLock = LockGuard.NOT_LOCKED;
         assertFalse(stateLock.isLeaseExpired());
 
         Address endpoint = newAddress();
-        stateLock = new ClusterStateLock(endpoint, "txn", TimeUnit.HOURS.toMillis(1));
+        stateLock = new LockGuard(endpoint, "txn", TimeUnit.HOURS.toMillis(1));
         assertFalse(stateLock.isLeaseExpired());
 
-        stateLock = new ClusterStateLock(endpoint, "txn", 1);
-        final ClusterStateLock finalStateLock = stateLock;
+        stateLock = new LockGuard(endpoint, "txn", 1);
+        final LockGuard finalStateLock = stateLock;
         HazelcastTestSupport.assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
