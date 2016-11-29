@@ -29,6 +29,8 @@ import java.util.Comparator;
 
 /**
  * Determines the Hazelcast codebase version in terms of major.minor.patch version.
+ *
+ * @since 3.8
  */
 @SuppressWarnings("checkstyle:magicnumber")
 public final class MemberVersion
