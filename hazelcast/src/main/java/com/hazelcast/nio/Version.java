@@ -19,9 +19,10 @@ package com.hazelcast.nio;
 /**
  * A generic version to be used with {@link VersionAware} classes. The version's value is a single byte.
  */
-public class Version {
+public final class Version {
 
     public static final byte UNKNOWN_VERSION = -1;
+
     public static final Version UNKNOWN = new Version(UNKNOWN_VERSION);
 
     private byte value;
@@ -32,6 +33,41 @@ public class Version {
 
     public byte getValue() {
         return value;
+    }
+
+    public boolean isEqualTo(Version version) {
+        return this.value == version.value;
+    }
+
+    public boolean isGreaterThan(Version version) {
+        return this.value > version.value;
+    }
+
+    public boolean isGreaterOrEqual(Version version) {
+        return this.value >= version.value;
+    }
+
+    public boolean isLessThan(Version version) {
+        return this.value < version.value;
+    }
+
+    public boolean isLessOrEqual(Version version) {
+        return this.value <= version.value;
+    }
+
+    /**
+     * Checks if the version is between specified version (both ends inclusive)
+     *
+     * @param from
+     * @param to
+     * @return true if the version is between from and to (both ends inclusive)
+     */
+    public boolean isBetween(Version from, Version to) {
+        return this.value >= from.value && this.value <= to.value;
+    }
+
+    public boolean isUnknown() {
+        return this.value == UNKNOWN_VERSION;
     }
 
     @Override
