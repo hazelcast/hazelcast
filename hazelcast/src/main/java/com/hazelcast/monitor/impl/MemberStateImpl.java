@@ -19,8 +19,10 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
+import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -39,6 +41,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
@@ -63,6 +66,7 @@ public class MemberStateImpl implements MemberState {
     private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
+    private HotRestartState hotRestartState = new HotRestartStateImpl();
 
     public MemberStateImpl() {
     }
@@ -207,55 +211,34 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public HotRestartState getHotRestartState() {
+        return hotRestartState;
+    }
+
+    public void setHotRestartState(HotRestartState hotRestartState) {
+        this.hotRestartState = hotRestartState;
+    }
+
+    @Override
     public JsonObject toJson() {
-        JsonObject root = new JsonObject();
+        final JsonObject root = new JsonObject();
         root.add("address", address);
-        JsonObject mapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMapStats> entry : mapStats.entrySet()) {
-            mapStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("mapStats", mapStatsObject);
-        JsonObject multimapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMultiMapStats> entry : multiMapStats.entrySet()) {
-            multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("multiMapStats", multimapStatsObject);
-        JsonObject replicatedMapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMapStats.entrySet()) {
-            replicatedMapStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("replicatedMapStats", replicatedMapStatsObject);
-        JsonObject queueStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalQueueStats> entry : queueStats.entrySet()) {
-            queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("queueStats", queueStatsObject);
-        JsonObject topicStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalTopicStats> entry : topicStats.entrySet()) {
-            topicStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("topicStats", topicStatsObject);
-        JsonObject executorStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalExecutorStats> entry : executorStats.entrySet()) {
-            executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("executorStats", executorStatsObject);
-        JsonObject cacheStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalCacheStats> entry : cacheStats.entrySet()) {
-            cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("cacheStats", cacheStatsObject);
-        JsonObject wanStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalWanStats> entry : wanStats.entrySet()) {
-            wanStatsObject.add(entry.getKey(), entry.getValue().toJson());
-        }
-        root.add("wanStats", wanStatsObject);
-        JsonObject runtimePropsObject = new JsonObject();
+        serializeMap(root, "mapStats", mapStats);
+        serializeMap(root, "multiMapStats", multiMapStats);
+        serializeMap(root, "replicatedMapStats", replicatedMapStats);
+        serializeMap(root, "queueStats", queueStats);
+        serializeMap(root, "topicStats", topicStats);
+        serializeMap(root, "executorStats", executorStats);
+        serializeMap(root, "cacheStats", cacheStats);
+        serializeMap(root, "wanStats", wanStats);
+
+        final JsonObject runtimePropsObject = new JsonObject();
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             runtimePropsObject.add(entry.getKey(), entry.getValue());
         }
         root.add("runtimeProps", runtimePropsObject);
-        JsonArray clientsArray = new JsonArray();
+
+        final JsonArray clientsArray = new JsonArray();
         for (ClientEndPointDTO client : clients) {
             clientsArray.add(client.toJson());
         }
@@ -265,7 +248,16 @@ public class MemberStateImpl implements MemberState {
         root.add("operationStats", operationStats.toJson());
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
+        root.add("hotRestartState", hotRestartState.toJson());
         return root;
+    }
+
+    private static void serializeMap(JsonObject root, String key, Map<String, ? extends JsonSerializable> map) {
+        final JsonObject jsonObject = new JsonObject();
+        for (Entry<String, ? extends JsonSerializable> e : map.entrySet()) {
+            jsonObject.add(e.getKey(), e.getValue().toJson());
+        }
+        root.add(key, jsonObject);
     }
 
     //CHECKSTYLE:OFF
@@ -341,6 +333,11 @@ public class MemberStateImpl implements MemberState {
             nodeState = new NodeStateImpl();
             nodeState.fromJson(jsonNodeState);
         }
+        JsonObject jsonHotRestartState = getObject(json, "hotRestartState", null);
+        if (hotRestartState != null) {
+            hotRestartState = new HotRestartStateImpl();
+            hotRestartState.fromJson(jsonHotRestartState);
+        }
     }
 
     //CHECKSTYLE:ON
@@ -360,6 +357,7 @@ public class MemberStateImpl implements MemberState {
                 + ", operationStats=" + operationStats
                 + ", memberPartitionState=" + memberPartitionState
                 + ", nodeState=" + nodeState
+                + ", hotRestartState=" + hotRestartState
                 + '}';
     }
 }

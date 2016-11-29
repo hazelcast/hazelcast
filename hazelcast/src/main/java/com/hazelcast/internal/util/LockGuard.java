@@ -14,28 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.cluster.impl;
+package com.hazelcast.internal.util;
 
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.Preconditions;
 
 /**
- * Lock record to hold transaction id and expiry time
- * in transactions started to change cluster state.
- *
- * @see ClusterState
- * @see com.hazelcast.core.Cluster#changeClusterState(ClusterState, com.hazelcast.transaction.TransactionOptions)
+ * Object that provides additional functionalities to a simple lock. The user can define a lock owner and a lock expiry
+ * and as such use a local lock as a cluster-wide lock if used properly.
+ * The {@code lockOwnerId} defines the owner of the lock. One example of the lock owner ID would be a transaction ID.
+ * The guard has an expiration time defined during construction.
  */
-class ClusterStateLock {
+public class LockGuard {
 
-    static final ClusterStateLock NOT_LOCKED = new ClusterStateLock();
+    public static final LockGuard NOT_LOCKED = new LockGuard();
 
     /**
-     * Transaction that acquired this lock
+     * The ID of the owner that acquired this lock
      */
-    private final String transactionId;
+    private final String lockOwnerId;
     /**
      * Owner endpoint, required for logging only
      */
@@ -45,19 +43,19 @@ class ClusterStateLock {
      */
     private final long lockExpiryTime;
 
-    private ClusterStateLock() {
+    private LockGuard() {
         this.lockOwner = null;
-        this.transactionId = null;
+        this.lockOwnerId = null;
         this.lockExpiryTime = 0L;
     }
 
-    ClusterStateLock(Address lockOwner, String transactionId, long leaseTime) {
+    public LockGuard(Address lockOwner, String lockOwnerId, long leaseTime) {
         Preconditions.checkNotNull(lockOwner);
-        Preconditions.checkNotNull(transactionId);
+        Preconditions.checkNotNull(lockOwnerId);
         Preconditions.checkPositive(leaseTime, "Lease time should be positive!");
 
         this.lockOwner = lockOwner;
-        this.transactionId = transactionId;
+        this.lockOwnerId = lockOwnerId;
         this.lockExpiryTime = toLockExpiry(leaseTime);
     }
 
@@ -69,46 +67,42 @@ class ClusterStateLock {
         return expiryTime;
     }
 
-    boolean isLocked() {
+    public boolean isLocked() {
         return lockOwner != null;
     }
 
-    boolean isLeaseExpired() {
-        boolean expired = false;
-        if (lockExpiryTime > 0L && Clock.currentTimeMillis() > lockExpiryTime) {
-            expired = true;
-        }
-        return expired;
+    public boolean isLeaseExpired() {
+        return lockExpiryTime > 0L && Clock.currentTimeMillis() > lockExpiryTime;
     }
 
-    boolean allowsLock(String txnId) {
-        Preconditions.checkNotNull(txnId);
+    public boolean allowsLock(String ownerId) {
+        Preconditions.checkNotNull(ownerId);
         boolean notLocked = isLeaseExpired() || !isLocked();
-        return notLocked || allowsUnlock(txnId);
+        return notLocked || allowsUnlock(ownerId);
     }
 
-    boolean allowsUnlock(String txnId) {
-        Preconditions.checkNotNull(txnId);
-        return txnId.equals(transactionId);
+    public boolean allowsUnlock(String ownerId) {
+        Preconditions.checkNotNull(ownerId);
+        return ownerId.equals(lockOwnerId);
     }
 
-    Address getLockOwner() {
+    public Address getLockOwner() {
         return lockOwner;
     }
 
-    String getTransactionId() {
-        return transactionId;
+    public String getLockOwnerId() {
+        return lockOwnerId;
     }
 
-    long getLockExpiryTime() {
+    public long getLockExpiryTime() {
         return lockExpiryTime;
     }
 
     @Override
     public String toString() {
-        return "ClusterStateLock{"
+        return "LockGuard{"
                 + "lockOwner=" + lockOwner
-                + ", transactionId='" + transactionId + '\''
+                + ", lockOwnerId='" + lockOwnerId + '\''
                 + ", lockExpiryTime=" + lockExpiryTime
                 + '}';
     }

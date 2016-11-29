@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +37,9 @@ import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,6 +50,8 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.createObjectDataOutputStream;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.compress;
+import static com.hazelcast.nio.IOUtil.copy;
+import static com.hazelcast.nio.IOUtil.copyFile;
 import static com.hazelcast.nio.IOUtil.decompress;
 import static com.hazelcast.nio.IOUtil.delete;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
@@ -412,6 +418,114 @@ public class IOUtilTest extends HazelcastTestSupport {
         assertFalse(childFile2.exists());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyFailsWhenSourceDoesntExist() {
+        copy(new File("nonExistant"), new File("target"));
+    }
+
+    @Test
+    public void testCopyFileFailsWhenTargetDoesntExistAndCannotBeCreated() throws IOException {
+        final File target = mock(File.class);
+        when(target.exists()).thenReturn(false);
+        when(target.mkdirs()).thenReturn(false);
+        final File source = new File("source");
+        assertTrue(!source.exists());
+        source.createNewFile();
+
+        try {
+            copyFile(source, target, -1);
+            fail();
+        } catch (HazelcastException expected) {
+            EmptyStatement.ignore(expected);
+        }
+
+        delete(source);
+    }
+
+    @Test
+    public void testCopyFailsWhenSourceCannotBeListed() throws IOException {
+        final File source = mock(File.class);
+        when(source.exists()).thenReturn(true);
+        when(source.isDirectory()).thenReturn(true);
+        when(source.listFiles()).thenReturn(null);
+        when(source.getName()).thenReturn("dummy");
+
+        final File dest = new File("dest");
+        assertTrue(!dest.exists());
+        dest.mkdir();
+
+        try {
+            copy(source, dest);
+            fail();
+        } catch (HazelcastException expected) {
+            EmptyStatement.ignore(expected);
+        }
+
+        delete(dest);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyFileFailsWhenSourceDoesntExist() {
+        copyFile(new File("nonExistant"), new File("target"), -1);
+    }
+
+    @Test
+    public void testCopyFileFailsWhenSourceIsNotAFile() {
+        final File source = new File("source");
+        assertTrue(!source.exists());
+        source.mkdirs();
+        try {
+            copyFile(source, new File("target"), -1);
+            fail();
+        } catch (IllegalArgumentException expected) {
+            EmptyStatement.ignore(expected);
+        }
+        delete(source);
+    }
+
+    @Test
+    public void testCopyFailsWhenSourceIsDirAndTargetIsFile() throws IOException {
+        final File source = new File("dir1");
+        final File target = new File("file1");
+        assertTrue(!source.exists() && !target.exists());
+        source.mkdir();
+        target.createNewFile();
+        try {
+            copy(source, target);
+            fail();
+        } catch (IllegalArgumentException expected) {
+            EmptyStatement.ignore(expected);
+        }
+        delete(source);
+        delete(target);
+    }
+
+    @Test
+    public void testCopyRecursiveDirectory() throws IOException {
+        final File dir = new File("dir");
+        final File subdir = new File(dir, "subdir");
+        final File f1 = new File(dir, "f1");
+        final File f2 = new File(subdir, "f2");
+        assertTrue(!dir.exists());
+        assertTrue(!subdir.exists());
+
+        dir.mkdir();
+        subdir.mkdir();
+        writeTo(f1, "testContent");
+        writeTo(f2, "otherContent");
+
+        final File copy = new File("copy");
+        assertTrue(!copy.exists());
+
+        copy(dir, copy);
+        assertTrue(copy.exists());
+        assertEqualFiles(dir, new File(copy, "dir"));
+
+        delete(dir);
+        delete(subdir);
+        delete(copy);
+    }
+
     @Test
     public void testDelete_shouldDeleteSingleFile() throws Exception {
         File file = createFile("singleFile");
@@ -516,6 +630,70 @@ public class IOUtilTest extends HazelcastTestSupport {
     @Test(expected = HazelcastException.class)
     public void testGetFileFromResources_shouldThrowExceptionIfFileDoesNotExist() {
         getFileFromResources("doesNotExist");
+    }
+
+    private static void writeTo(File f1, String testContent) {
+        FileWriter w = null;
+        try {
+            w = new FileWriter(f1);
+            w.write(testContent);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            closeResource(w);
+        }
+    }
+
+    private static void assertEqualFiles(File f1, File f2) {
+        if (f1.exists()) {
+            assertTrue(f2.exists());
+        }
+        assertTrue(f1.getName().equals(f2.getName()));
+        if (f1.isFile()) {
+            assertTrue(f2.isFile());
+            if (!equalContents(f1, f2)) {
+                fail();
+            }
+            return;
+        }
+        final File[] f1Files = f1.listFiles();
+        assertTrue(f1Files.length == f2.listFiles().length);
+        for (File f : f1Files) {
+            assertEqualFiles(f, new File(f2, f.getName()));
+        }
+    }
+
+    // note: use only for small files (e.g. up to a couple of hundred KBs). See below.
+    private static boolean equalContents(File f1, File f2) {
+        InputStream is1 = null;
+        InputStream is2 = null;
+        try {
+            is1 = new FileInputStream(f1);
+            is2 = new FileInputStream(f2);
+            // Compare byte-by-byte since InputStream.read(byte[]) possibly doesn't
+            // return the requested number of bytes. This is why this method should
+            // be used for smallFiles
+            int data;
+            while ((data = is1.read()) != -1) {
+                if (data != is2.read()) {
+                    return false;
+                }
+            }
+            if (is2.read() != -1) {
+                return false;
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            closeResource(is1);
+            closeResource(is2);
+        }
+        return true;
     }
 
 }

@@ -23,6 +23,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.hotrestart.HotRestartBackupService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
@@ -296,6 +297,12 @@ public class DefaultNodeExtension implements NodeExtension {
     public boolean triggerPartialStart() {
         logger.warning("Partial start is available when hot restart is active!");
         return false;
+    }
+
+    @Override
+    public HotRestartBackupService getHotRestartBackupService() {
+        logger.warning("Hot restart data backup features are only available on Hazelcast Enterprise!");
+        return null;
     }
 
     @Override

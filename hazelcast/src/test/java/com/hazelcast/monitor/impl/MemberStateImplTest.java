@@ -3,8 +3,11 @@ package com.hazelcast.monitor.impl;
 import com.hazelcast.cache.impl.CacheStatisticsImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hotrestart.BackupTaskState;
+import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -62,6 +65,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         ClusterVersion clusterVersion = ClusterVersion.of("3.8.0");
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
+        final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
+        final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus);
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -80,6 +85,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
         memberState.setNodeState(state);
+        memberState.setHotRestartState(hotRestartState);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -110,5 +116,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(nodeState, deserializedState.getNodeState());
         assertEquals(clusterVersion, deserializedState.getClusterVersion());
         assertEquals(memberVersion, deserializedState.getMemberVersion());
+
+        final HotRestartState deserializedHotRestartState = deserialized.getHotRestartState();
+        assertEquals(backupTaskStatus, deserializedHotRestartState.getBackupTaskStatus());
     }
 }

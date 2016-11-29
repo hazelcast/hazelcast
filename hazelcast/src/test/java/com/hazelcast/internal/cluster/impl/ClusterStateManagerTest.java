@@ -20,6 +20,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.LockGuard;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
@@ -224,7 +225,7 @@ public class ClusterStateManagerTest {
         final Address initiator = newAddress();
         clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), 0);
 
-        final ClusterStateLock stateLock = clusterStateManager.getStateLock();
+        final LockGuard stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
     }
 
@@ -234,15 +235,15 @@ public class ClusterStateManagerTest {
         clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, 10000, 0);
         clusterStateManager.lockClusterState(ClusterStateChange.from(FROZEN), initiator, TXN, TimeUnit.DAYS.toMillis(1), 0);
 
-        final ClusterStateLock stateLock = clusterStateManager.getStateLock();
+        final LockGuard stateLock = clusterStateManager.getStateLock();
         assertTrue(Clock.currentTimeMillis() + TimeUnit.HOURS.toMillis(12) < stateLock.getLockExpiryTime());
     }
 
     private void assertLockedBy(Address initiator) {
         assertEquals(IN_TRANSITION, clusterStateManager.getState());
-        ClusterStateLock stateLock = clusterStateManager.getStateLock();
+        LockGuard stateLock = clusterStateManager.getStateLock();
         assertTrue(stateLock.isLocked());
-        assertEquals(TXN, stateLock.getTransactionId());
+        assertEquals(TXN, stateLock.getLockOwnerId());
         assertEquals(initiator, stateLock.getLockOwner());
     }
 
@@ -252,7 +253,7 @@ public class ClusterStateManagerTest {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final ClusterStateLock stateLock = clusterStateManager.getStateLock();
+                final LockGuard stateLock = clusterStateManager.getStateLock();
                 assertFalse(stateLock.isLocked());
                 assertEquals(ACTIVE, clusterStateManager.getState());
             }
@@ -294,7 +295,7 @@ public class ClusterStateManagerTest {
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());
-        final ClusterStateLock stateLock = clusterStateManager.getStateLock();
+        final LockGuard stateLock = clusterStateManager.getStateLock();
         assertFalse(stateLock.isLocked());
     }
 

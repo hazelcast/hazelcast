@@ -22,6 +22,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.util.LockGuard;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
@@ -72,8 +73,8 @@ public class ClusterStateManager {
     private final Node node;
     private final ILogger logger;
     private final Lock clusterServiceLock;
-    private final AtomicReference<ClusterStateLock> stateLockRef
-            = new AtomicReference<ClusterStateLock>(ClusterStateLock.NOT_LOCKED);
+    private final AtomicReference<LockGuard> stateLockRef
+            = new AtomicReference<LockGuard>(LockGuard.NOT_LOCKED);
 
     private volatile ClusterState state = ClusterState.ACTIVE;
 
@@ -84,7 +85,7 @@ public class ClusterStateManager {
     }
 
     public ClusterState getState() {
-        ClusterStateLock stateLock = getStateLock();
+        LockGuard stateLock = getStateLock();
         return stateLock.isLocked() ? ClusterState.IN_TRANSITION : state;
     }
 
@@ -93,11 +94,11 @@ public class ClusterStateManager {
         return clusterVersion;
     }
 
-    ClusterStateLock getStateLock() {
-        ClusterStateLock stateLock = stateLockRef.get();
+    LockGuard getStateLock() {
+        LockGuard stateLock = stateLockRef.get();
         while (stateLock.isLeaseExpired()) {
-            if (stateLockRef.compareAndSet(stateLock, ClusterStateLock.NOT_LOCKED)) {
-                stateLock = ClusterStateLock.NOT_LOCKED;
+            if (stateLockRef.compareAndSet(stateLock, LockGuard.NOT_LOCKED)) {
+                stateLock = LockGuard.NOT_LOCKED;
                 break;
             }
             stateLock = stateLockRef.get();
@@ -142,7 +143,7 @@ public class ClusterStateManager {
     private void setClusterStateAndVersion(ClusterState newState, ClusterVersion newVersion, boolean isTransient) {
         this.state = newState;
         this.clusterVersion = newVersion;
-        stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+        stateLockRef.set(LockGuard.NOT_LOCKED);
         changeNodeState(newState);
         node.getNodeExtension().onClusterStateChange(newState, isTransient);
         node.getNodeExtension().onClusterVersionChange(newVersion);
@@ -150,14 +151,14 @@ public class ClusterStateManager {
 
     private void doSetClusterState(ClusterState newState, boolean isTransient) {
         this.state = newState;
-        stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+        stateLockRef.set(LockGuard.NOT_LOCKED);
         changeNodeState(newState);
         node.getNodeExtension().onClusterStateChange(newState, isTransient);
     }
 
     private void doSetClusterVersion(ClusterVersion newVersion) {
         this.clusterVersion = newVersion;
-        stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+        stateLockRef.set(LockGuard.NOT_LOCKED);
         node.getNodeExtension().onClusterVersionChange(newVersion);
     }
 
@@ -175,7 +176,7 @@ public class ClusterStateManager {
             // Instead, not notifying cluster version listeners will let the node use its last set cluster version for discovery &
             // join messages and join the cluster.
             clusterVersion = null;
-            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+            stateLockRef.set(LockGuard.NOT_LOCKED);
         } finally {
             clusterServiceLock.unlock();
         }
@@ -205,20 +206,20 @@ public class ClusterStateManager {
 
             checkMigrationsAndPartitionStateVersion(stateChange, partitionStateVersion);
 
-            final ClusterStateLock currentLock = getStateLock();
+            final LockGuard currentLock = getStateLock();
             if (!currentLock.allowsLock(txnId)) {
                 throw new TransactionException("Locking failed for " + initiator + ", tx: " + txnId
                         + ", current state: " + toString());
             }
 
-            stateLockRef.set(new ClusterStateLock(initiator, txnId, leaseTime));
+            stateLockRef.set(new LockGuard(initiator, txnId, leaseTime));
 
             try {
                 // check migration status and partition-state version again
                 // if partition state is changed then release the lock and fail.
                 checkMigrationsAndPartitionStateVersion(stateChange, partitionStateVersion);
             } catch (IllegalStateException e) {
-                stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+                stateLockRef.set(LockGuard.NOT_LOCKED);
                 throw e;
             }
         } finally {
@@ -260,12 +261,12 @@ public class ClusterStateManager {
     public boolean rollbackClusterState(String txnId) {
         clusterServiceLock.lock();
         try {
-            final ClusterStateLock currentLock = getStateLock();
+            final LockGuard currentLock = getStateLock();
             if (!currentLock.allowsUnlock(txnId)) {
                 return false;
             }
 
-            stateLockRef.set(ClusterStateLock.NOT_LOCKED);
+            stateLockRef.set(LockGuard.NOT_LOCKED);
 
             // if state remains ACTIVE after rollback, then remove all members which left during transaction.
             if (state == ClusterState.ACTIVE) {
@@ -288,7 +289,7 @@ public class ClusterStateManager {
 
         clusterServiceLock.lock();
         try {
-            final ClusterStateLock stateLock = getStateLock();
+            final LockGuard stateLock = getStateLock();
             if (!stateLock.allowsUnlock(txnId)) {
                 throw new TransactionException(
                         "Cluster state change [" + state + " -> " + stateChange + "] failed for "

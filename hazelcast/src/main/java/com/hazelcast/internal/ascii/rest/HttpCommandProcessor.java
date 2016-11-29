@@ -31,7 +31,10 @@ public abstract class HttpCommandProcessor<T> extends AbstractTextCommandProcess
     public static final String URI_SHUTDOWN_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/clusterShutdown";
     public static final String URI_FORCESTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/forceStart";
     public static final String URI_PARTIALSTART_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/partialStart";
-    public static final String URI_SHUTDOWN_NODE_CLUSTER_URL =  URI_CLUSTER_MANAGEMENT_BASE_URL + "/memberShutdown";
+    public static final String URI_HOT_RESTART_BACKUP_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/hotBackup";
+    public static final String URI_HOT_RESTART_BACKUP_INTERRUPT_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL
+            + "/hotBackupInterrupt";
+    public static final String URI_SHUTDOWN_NODE_CLUSTER_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/memberShutdown";
     public static final String URI_CLUSTER_NODES_URL = URI_CLUSTER_MANAGEMENT_BASE_URL + "/nodes";
     public static final String URI_MANCENTER_CHANGE_URL = "/hazelcast/rest/mancenter/changeurl";
     public static final String URI_WAN_SYNC_MAP = "/hazelcast/rest/wan/sync/map";

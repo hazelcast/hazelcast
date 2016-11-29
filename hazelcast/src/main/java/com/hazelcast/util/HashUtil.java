@@ -284,6 +284,13 @@ public final class HashUtil {
         return k;
     }
 
+    /**
+     * Hash function based on Knuth's multiplicative method. This version is faster than using Murmur hash but provides
+     * acceptable behavior.
+     *
+     * @param k the long for which the hash will be calculated
+     * @return the hash
+     */
     public static long fastLongMix(long k) {
         // phi = 2^64 / goldenRatio
         final long phi = 0x9E3779B97F4A7C15L;
@@ -292,6 +299,13 @@ public final class HashUtil {
         return h ^ (h >>> 16);
     }
 
+    /**
+     * Hash function based on Knuth's multiplicative method. This version is faster than using Murmur hash but provides
+     * acceptable behavior.
+     *
+     * @param k the integer for which the hash will be calculated
+     * @return the hash
+     */
     public static int fastIntMix(int k) {
         // phi = 2^32 / goldenRatio
         final int phi = 0x9E3779B9;
