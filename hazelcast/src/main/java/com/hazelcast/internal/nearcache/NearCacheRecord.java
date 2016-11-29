@@ -19,6 +19,8 @@ package com.hazelcast.internal.nearcache;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.Expirable;
 
+import java.util.UUID;
+
 /**
  * An expirable and evictable data object which represents a Near Cache entry.
  *
@@ -79,4 +81,27 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      * @return {@code true} if exceeds max idle seconds, otherwise {@code false}
      */
     boolean isIdleAt(long maxIdleMilliSeconds, long now);
+
+    /**
+     * Sets taken sequence at the time of record creation.
+     * This will help to check staleness of a record.
+     *
+     * @param sequence sequence for this record
+     */
+    void setSequence(long sequence);
+
+    /**
+     * @return cached sequence
+     */
+    long getSequence();
+
+    /**
+     * @return true if this records uuid is equal to supplied one, false when supplied uuid is null or not equal.
+     */
+    boolean hasSameUuid(UUID uuid);
+
+    /**
+     * @param uuid uuid of source this records belongs to.
+     */
+    void setUuid(UUID uuid);
 }

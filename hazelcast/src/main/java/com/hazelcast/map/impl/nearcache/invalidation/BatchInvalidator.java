@@ -20,10 +20,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
@@ -50,7 +50,7 @@ import static java.util.Collections.emptyList;
 /**
  * Sends invalidations to Near Cache in batches.
  */
-public class BatchInvalidator extends AbstractNearCacheInvalidator {
+public class BatchInvalidator extends Invalidator {
 
     private static final String INVALIDATION_EXECUTOR_NAME = BatchInvalidator.class.getName();
 
@@ -75,8 +75,8 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     private final String nodeShutdownListenerId;
     private final ExecutionService executionService;
 
-    public BatchInvalidator(NodeEngine nodeEngine) {
-        super(nodeEngine);
+    public BatchInvalidator(MapServiceContext mapServiceContext) {
+        super(mapServiceContext);
 
         this.batchSize = getBatchSize();
         this.nodeShutdownListenerId = registerNodeShutdownListener();
@@ -162,7 +162,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
         for (EventRegistration registration : registrations) {
             List<Invalidation> selection = filterInvalidations(invalidations, registration.getFilter());
             if (selection != null) {
-                Invalidation invalidation = new BatchNearCacheInvalidation(selection, mapName);
+                Invalidation invalidation = new BatchNearCacheInvalidation(mapName, selection);
                 eventService.publishEvent(SERVICE_NAME, registration, invalidation, mapName.hashCode());
             }
         }
@@ -171,7 +171,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     private List<Invalidation> filterInvalidations(List<Invalidation> invalidations, EventFilter filter) {
         List<Invalidation> selection = null;
         for (Invalidation invalidation : invalidations) {
-            if (canSendInvalidation(filter, invalidation.getSourceUuid())) {
+            if (canSendInvalidation(filter)) {
                 if (selection == null) {
                     selection = new ArrayList<Invalidation>();
                 }
@@ -240,7 +240,7 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     public void destroy(String mapName, String sourceUuid) {
         InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
         if (invalidationQueue != null) {
-            invalidateInternal(new ClearNearCacheInvalidation(mapName, sourceUuid), mapName.hashCode());
+            invalidateInternal(newClearInvalidation(mapName, sourceUuid), mapName.hashCode());
         }
     }
 
@@ -263,7 +263,6 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
 
     private static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
         private final AtomicInteger elementCount = new AtomicInteger(0);
-
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
 
         @Override

@@ -19,8 +19,13 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+
+import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -71,6 +76,32 @@ public class CacheService extends AbstractCacheService {
         CachePartitionSegment segment = segments[event.getPartitionId()];
         CacheReplicationOperation op = new CacheReplicationOperation(segment, event.getReplicaIndex());
         return op.isEmpty() ? null : op;
+    }
+
+    @Override
+    public void commitMigration(PartitionMigrationEvent event) {
+        super.commitMigration(event);
+
+        if (SOURCE == event.getMigrationEndpoint()) {
+            getMetaDataGenerator().resetMetadata(event.getPartitionId());
+        } else if (DESTINATION == event.getMigrationEndpoint()) {
+            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+        }
+    }
+
+    @Override
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        super.rollbackMigration(event);
+
+        if (DESTINATION == event.getMigrationEndpoint()) {
+            getMetaDataGenerator().resetMetadata(event.getPartitionId());
+        } else if (SOURCE == event.getMigrationEndpoint()) {
+            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+        }
+    }
+
+    private MetaDataGenerator getMetaDataGenerator() {
+        return cacheEventHandler.getMetaDataGenerator();
     }
 
     @Override

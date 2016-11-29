@@ -61,8 +61,6 @@ public class MapClearMessageTask
             Address thisAddress = nodeEngine.getThisAddress();
             MapEventPublisher mapEventPublisher = mapServiceContext.getMapEventPublisher();
             mapEventPublisher.publishMapEvent(thisAddress, parameters.name, CLEAR_ALL, clearedTotal);
-
-            sendNearCacheClearEvent(parameters.name);
         }
 
         return null;

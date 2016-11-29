@@ -43,6 +43,7 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
     // keep these fields `protected`, extended in another context.
     protected final MapReplicationStateHolder mapReplicationStateHolder = new MapReplicationStateHolder(this);
     protected final WriteBehindStateHolder writeBehindStateHolder = new WriteBehindStateHolder(this);
+    protected final MapNearCacheStateHolder mapNearCacheStateHolder = new MapNearCacheStateHolder(this);
 
     public MapReplicationOperation() {
     }
@@ -52,13 +53,16 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
 
         mapReplicationStateHolder.prepare(container, replicaIndex);
         writeBehindStateHolder.prepare(container, replicaIndex);
+        mapNearCacheStateHolder.prepare(container, replicaIndex);
     }
-
 
     @Override
     public void run() {
         mapReplicationStateHolder.applyState();
         writeBehindStateHolder.applyState();
+        if (getReplicaIndex() == 0) {
+            mapNearCacheStateHolder.applyState();
+        }
     }
 
     @Override
@@ -67,15 +71,17 @@ public class MapReplicationOperation extends Operation implements MutatingOperat
     }
 
     @Override
-    protected void readInternal(final ObjectDataInput in) throws IOException {
-        mapReplicationStateHolder.readData(in);
-        writeBehindStateHolder.readData(in);
-    }
-
-    @Override
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         mapReplicationStateHolder.writeData(out);
         writeBehindStateHolder.writeData(out);
+        mapNearCacheStateHolder.writeData(out);
+    }
+
+    @Override
+    protected void readInternal(final ObjectDataInput in) throws IOException {
+        mapReplicationStateHolder.readData(in);
+        writeBehindStateHolder.readData(in);
+        mapNearCacheStateHolder.readData(in);
     }
 
     RecordReplicationInfo createRecordReplicationInfo(Data key, Record record, MapServiceContext mapServiceContext) {

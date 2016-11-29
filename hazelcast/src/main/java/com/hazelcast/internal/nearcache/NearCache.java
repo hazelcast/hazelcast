@@ -23,6 +23,8 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 
+import java.util.UUID;
+
 /**
  * {@link NearCache} is the contract point to store keys and values in underlying
  * {@link NearCacheRecordStore}.
@@ -69,6 +71,16 @@ public interface NearCache<K, V> extends InitializingObject {
      * @param value the value will be stored
      */
     void put(K key, V value);
+
+    /**
+     * Puts (associates) a value with the given {@code key}.
+     *
+     * @param key      the key of the value will be stored
+     * @param value    the value will be stored
+     * @param uuid     uuid of the sequence source
+     * @param sequence sequence of the key
+     */
+    void putIdentified(K key, V value, UUID uuid, long sequence);
 
     /**
      * Removes the value associated with the given {@code key}.
@@ -146,4 +158,16 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return {@code true} if the pre-loading is done, {@code false} otherwise.
      */
     boolean isPreloadDone();
+
+    /**
+     * Used to access non-standard methods of an implementation.
+     * <p>
+     * If this method is called on a wrapper object, result is wrapped object.
+     *
+     * @param clazz the type of returning object.
+     * @param <T>   the type of the class modeled by this Class object
+     * @return an instance of the supplied clazz type.
+     * @throws IllegalArgumentException if no implementation found for the supplied clazz type.
+     */
+    <T> T unwrap(Class<T> clazz);
 }

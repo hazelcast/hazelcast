@@ -25,8 +25,7 @@ import com.hazelcast.util.Clock;
 
 import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 
-public class NearCacheDataRecordStore<K, V>
-        extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
+public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
     public NearCacheDataRecordStore(String name,
                                     NearCacheConfig nearCacheConfig,

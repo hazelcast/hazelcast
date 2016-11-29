@@ -195,6 +195,16 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.cache.CacheClearMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheAssignAndGetUuidsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.cache.CacheAssignAndGetUuidsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.cache.CacheFetchNearCacheInvalidationMetadataTask(clientMessage, node, connection);
+            }
+        };
         factories[com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.cache.CacheReplaceMessageTask(clientMessage, node, connection);
@@ -1227,6 +1237,21 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         factories[com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.map.MapAddNearCacheInvalidationListenerMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.map.MapFetchNearCacheInvalidationMetadataTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {

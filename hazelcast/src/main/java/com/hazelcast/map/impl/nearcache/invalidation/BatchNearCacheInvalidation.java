@@ -34,15 +34,9 @@ public class BatchNearCacheInvalidation extends Invalidation {
     public BatchNearCacheInvalidation() {
     }
 
-    public BatchNearCacheInvalidation(List<Invalidation> invalidations, String mapName) {
+    public BatchNearCacheInvalidation(String mapName, List<Invalidation> invalidations) {
         super(mapName);
-
         this.invalidations = checkNotNull(invalidations, "invalidations cannot be null");
-    }
-
-    @Override
-    public void consumedBy(InvalidationHandler invalidationHandler) {
-        invalidationHandler.handle(this);
     }
 
     public List<Invalidation> getInvalidations() {
@@ -76,11 +70,9 @@ public class BatchNearCacheInvalidation extends Invalidation {
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
-        for (Invalidation invalidation : invalidations) {
-            str.append(invalidation.toString());
-        }
-        return str.toString();
+        return "BatchNearCacheInvalidation{"
+                + "invalidations=" + invalidations
+                + '}';
     }
 
     @Override

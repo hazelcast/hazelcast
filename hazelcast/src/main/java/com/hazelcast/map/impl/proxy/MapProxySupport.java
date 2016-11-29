@@ -40,8 +40,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
-import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.nearcache.invalidation.NearCacheInvalidator;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
@@ -455,7 +453,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             if (evictedCount > 0) {
                 publishMapEvent(evictedCount, EntryEventType.EVICT_ALL);
-                sendNearCacheClearEvent();
             }
 
         } catch (Throwable t) {
@@ -474,10 +471,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             waitUntilLoaded();
         } catch (Throwable t) {
             throw rethrow(t);
-        } finally {
-            if (replaceExistingValues) {
-                sendNearCacheClearEvent();
-            }
         }
     }
 
@@ -495,13 +488,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
 
-        try {
-            waitUntilLoaded();
-        } finally {
-            if (replaceExistingValues) {
-                sendNearCacheClearEvent();
-            }
-        }
+        waitUntilLoaded();
     }
 
     protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
@@ -902,18 +889,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             if (clearedCount > 0) {
                 publishMapEvent(clearedCount, CLEAR_ALL);
-                sendNearCacheClearEvent();
             }
 
         } catch (Throwable t) {
             throw rethrow(t);
         }
-    }
-
-    protected void sendNearCacheClearEvent() {
-        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        NearCacheInvalidator nearCacheInvalidator = mapNearCacheManager.getNearCacheInvalidator();
-        nearCacheInvalidator.clear(name, localMemberUuid);
     }
 
     public String addMapInterceptorInternal(MapInterceptor interceptor) {

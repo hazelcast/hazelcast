@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.record;
 
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
@@ -33,6 +34,9 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     protected V value;
     protected long creationTime = TIME_NOT_SET;
+    protected long sequence;
+    protected UUID uuid;
+
     protected volatile long expirationTime = TIME_NOT_SET;
     protected volatile long accessTime = TIME_NOT_SET;
     protected volatile int accessHit;
@@ -106,6 +110,30 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
     @Override
     public boolean isExpiredAt(long now) {
         return (expirationTime > TIME_NOT_SET) && (expirationTime <= now);
+    }
+
+    @Override
+    public void setSequence(long version) {
+        this.sequence = version;
+    }
+
+    @Override
+    public long getSequence() {
+        return sequence;
+    }
+
+    @Override
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    @Override
+    public boolean hasSameUuid(UUID uuid) {
+        if (uuid == null || this.uuid == null) {
+            return false;
+        }
+
+        return this.uuid.equals(uuid);
     }
 
     @Override
