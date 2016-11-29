@@ -75,6 +75,12 @@ public class SqlPredicateTest {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
+    public void testFlatteningWhenNotAllSideAreTheSame() {
+        Employee employee = new Employee("Joe", "AUSTIN", 25, true, 0);
+        assertSqlTrue("name = 'Joe' and age = 25 and (city = 'austin' or city = 'AUSTIN')", employee);
+    }
+
+    @Test
     public void testEqualsWhenSqlMatches() {
         SqlPredicate sql1 = new SqlPredicate("foo='bar'");
         SqlPredicate sql2 = new SqlPredicate("foo='bar'");
