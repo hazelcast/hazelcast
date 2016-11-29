@@ -26,8 +26,10 @@ public interface InternalPartitionService extends IPartitionService {
 
     /**
      * Retry count for migration operations.
+     * <p>
+     * Current Invocation mechanism retries first 5 invocations without pausing.
      */
-    int MIGRATION_RETRY_COUNT = 6;
+    int MIGRATION_RETRY_COUNT = 12;
 
     /**
      * Retry pause for migration operations.
