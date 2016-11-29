@@ -105,11 +105,11 @@ public class EngineContext {
         executionService.shutdown();
     }
 
-    Map<Member, ExecutionPlan> newExecutionPlan(long executionId, DAG dag) {
+    Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
         final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m ->
-                new ExecutionPlan(executionId)));
+                new ExecutionPlan()));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
@@ -144,8 +144,20 @@ public class EngineContext {
         return plans;
     }
 
-    void createAndRegisterExecutionContext(ExecutionPlan plan) {
-        executionContexts.computeIfAbsent(plan.getPlanId(), k -> new ExecutionContext(this, plan));
+    void initExecution(long executionId, ExecutionPlan plan) {
+        executionContexts.compute(executionId, (k, v) -> {
+            if (v != null) {
+                throw new IllegalStateException("Execution for " + executionId + " ");
+            }
+            return new ExecutionContext(executionId, EngineContext.this);
+        }).initialize(plan);
+    }
+
+    void completeExecution(long executionId, Throwable error) {
+        ExecutionContext context = executionContexts.remove(executionId);
+        if (context != null) {
+            context.complete(error);
+        }
     }
 
     ExecutionContext getExecutionContext(long id) {
@@ -170,4 +182,5 @@ public class EngineContext {
     private static int getParallelism(Vertex vertex, JetEngineConfig config) {
         return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
     }
+
 }

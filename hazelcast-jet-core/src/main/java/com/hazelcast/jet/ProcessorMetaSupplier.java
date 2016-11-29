@@ -26,6 +26,7 @@ import java.io.Serializable;
 /**
  * Javadoc pending.
  */
+@FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
 
     /**

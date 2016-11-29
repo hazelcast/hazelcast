@@ -42,6 +42,13 @@ public interface ProcessorSupplier extends Serializable {
     List<Processor> get(int count);
 
     /**
+     * Called after execution is finished on all the nodes
+     * @param error Exception if execution finished with an error
+     */
+    default void complete(Throwable error) {
+    }
+
+    /**
      * Javadoc pending.
      */
     static ProcessorSupplier of(final SimpleProcessorSupplier processorSupplier) {

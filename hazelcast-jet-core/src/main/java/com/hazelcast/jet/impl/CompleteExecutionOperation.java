@@ -20,46 +20,41 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
-import java.util.concurrent.CompletionStage;
 
-class ExecutePlanOperation extends AsyncOperation {
+class CompleteExecutionOperation extends EngineOperation {
 
-    private long planId;
-    private volatile CompletionStage<Void> executionFuture;
+    private long executionId;
+    private Throwable error;
 
-    ExecutePlanOperation(String engineName, long planId) {
+    CompleteExecutionOperation(String engineName, long executionId, Throwable error) {
         super(engineName);
-        this.planId = planId;
+        this.executionId = executionId;
+        this.error = error;
     }
 
-    private ExecutePlanOperation() {
+    private CompleteExecutionOperation() {
         // for deserialization
     }
 
     @Override
-    void cancel() {
-        if (executionFuture != null) {
-            executionFuture.toCompletableFuture().cancel(true);
-        }
-    }
-
-    @Override
-    protected void doRun() throws Exception {
+    public void run() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        executionFuture = engineContext.getExecutionContext(planId).execute();
-        executionFuture.whenComplete((r, error) -> doSendResponse(error != null ? error : null));
+        engineContext.completeExecution(executionId, error);
     }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(planId);
+        out.writeLong(executionId);
+        out.writeObject(error);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        planId = in.readLong();
+        executionId = in.readLong();
+        error = in.readObject();
     }
 }

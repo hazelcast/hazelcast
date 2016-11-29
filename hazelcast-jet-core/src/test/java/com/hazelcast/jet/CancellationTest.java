@@ -219,7 +219,7 @@ public class CancellationTest extends HazelcastTestSupport {
 
     private static class StuckProcessor extends AbstractProducer {
 
-        private static final AtomicLong callCounter = new AtomicLong();
+        static final AtomicLong callCounter = new AtomicLong();
 
         @Override
         public boolean complete() {
@@ -231,8 +231,9 @@ public class CancellationTest extends HazelcastTestSupport {
 
     private static class FaultyProcessor extends AbstractProcessor {
 
+        static volatile boolean failNow = false;
+
         private final RuntimeException e;
-        private static volatile boolean failNow = false;
 
         public FaultyProcessor(RuntimeException e) {
             this.e = e;
