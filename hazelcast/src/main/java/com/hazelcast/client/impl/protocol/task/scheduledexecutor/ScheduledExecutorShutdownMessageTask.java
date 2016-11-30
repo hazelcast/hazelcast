@@ -18,19 +18,22 @@ package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
+import java.security.Key;
 import java.security.Permission;
 
 public class ScheduledExecutorShutdownMessageTask
-        extends AbstractPartitionMessageTask<ScheduledExecutorShutdownCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<ScheduledExecutorShutdownCodec.RequestParameters> {
 
     public ScheduledExecutorShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,7 +42,6 @@ public class ScheduledExecutorShutdownMessageTask
     @Override
     protected Operation prepareOperation() {
         Operation op = new ShutdownOperation(parameters.schedulerName);
-        op.setPartitionId(getPartitionId());
         op.setCallerUuid(endpoint.getUuid());
         return op;
     }

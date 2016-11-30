@@ -103,6 +103,10 @@ public final class ClientProtocolErrorCodes {
     public static final int NATIVE_OUT_OF_MEMORY_ERROR = 78;
     public static final int SERVICE_NOT_FOUND = 79;
     public static final int STALE_TASK_ID = 80;
+    public static final int DUPLICATE_TASK = 81;
+    public static final int STALE_TASK = 82;
+    public static final int CANCELLED_TASK = 83;
+    public static final int REJECTED_TASK = 84;
 
     private ClientProtocolErrorCodes() {
     }

@@ -25,15 +25,14 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartiti
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
-import com.hazelcast.scheduledexecutor.impl.ScheduledFutureProxy;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -44,12 +43,12 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -87,14 +86,8 @@ public class ClientScheduledExecutorProxy
         }
     };
 
-    private int partitionCount;
-
-    private Random partitionRandom;
-
     public ClientScheduledExecutorProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.partitionCount = getContext().getPartitionService().getPartitionCount();
-        this.partitionRandom = new Random();
     }
 
     @Override
@@ -104,7 +97,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        Callable adapter = createScheduledRunnableAdapter(command);
         return schedule(adapter, delay, unit);
     }
 
@@ -113,8 +106,9 @@ public class ClientScheduledExecutorProxy
         checkNotNull(command, "Command is null");
 
         String name = extractNameOrGenerateOne(command);
+        int partitionId = getTaskOrKeyPartitionId(command, name);
         TaskDefinition<V> definition = new TaskDefinition<V>(TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
-        return scheduleOnPartition(name, definition);
+        return scheduleOnPartition(name, definition, partitionId);
     }
 
     @Override
@@ -123,53 +117,46 @@ public class ClientScheduledExecutorProxy
         checkNotNull(command, "Command is null");
 
         String name = extractNameOrGenerateOne(command);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        int partitionId = getTaskOrKeyPartitionId(command, name);
+        Callable adapter = createScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
                 initialDelay, 0, period, unit);
 
-        return scheduleOnPartition(name, definition);
+        return scheduleOnPartition(name, definition, partitionId);
     }
 
     @Override
     public IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit) {
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        return scheduleOnMember(adapter, member, delay, unit);
+        checkNotNull(member, "Member is null");
+        return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
 
     @Override
     public <V> IScheduledFuture<V> scheduleOnMember(Callable<V> command, Member member, long delay, TimeUnit unit) {
-        checkNotNull(command, "Command is null");
-
-        String name = extractNameOrGenerateOne(command);
-        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command,
-                delay, unit);
-        return scheduleOnMember(name, member, definition);
+        checkNotNull(member, "Member is null");
+        return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
 
     @Override
     public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay,
                                                               long period, TimeUnit unit) {
-        checkNotNull(command, "Command is null");
-
-        String name = extractNameOrGenerateOne(command);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
-                initialDelay, 0, period, unit);
-        return scheduleOnMember(name, member, definition);
+        checkNotNull(member, "Member is null");
+        return scheduleOnMembersWithRepetition(command, Collections.singleton(member), initialDelay, period, unit).get(member);
     }
 
     @Override
     public IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object key, long delay, TimeUnit unit) {
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        Callable adapter = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(adapter, key, delay, unit);
     }
 
     @Override
     public <V> IScheduledFuture<V> scheduleOnKeyOwner(Callable<V> command, Object key, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(key, "Key is null");
 
         String name = extractNameOrGenerateOne(command);
-        int partitionId = getContext().getPartitionService().getPartitionId(key);
+        int partitionId = getKeyPartitionId(key);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.SINGLE_RUN, name, command,
                 delay, unit);
         return scheduleOnPartition(name, definition, partitionId);
@@ -179,10 +166,11 @@ public class ClientScheduledExecutorProxy
     public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay,
                                                                 long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(key, "Key is null");
 
         String name = extractNameOrGenerateOne(command);
-        int partitionId = getContext().getPartitionService().getPartitionId(key);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
+        int partitionId = getKeyPartitionId(key);
+        Callable adapter = createScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(TaskDefinition.Type.WITH_REPETITION, name, adapter,
                 initialDelay, 0, period, unit);
         return scheduleOnPartition(name, definition, partitionId);
@@ -190,61 +178,38 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit) {
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        return scheduleOnAllMembers(adapter, delay, unit);
+        return scheduleOnMembers(command, getContext().getClusterService().getMemberList(), delay, unit);
     }
 
     @Override
     public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay,
                                                                      TimeUnit unit) {
-        String name = extractNameOrGenerateOne(command);
-        Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
-        for (Member member : getContext().getClusterService().getMemberList()) {
-            TaskDefinition<V> definition = new TaskDefinition<V>(
-                    TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
-
-            futures.put(member, (IScheduledFuture<V>) scheduleOnMember(name, member, definition));
-        }
-
-        return futures;
+        return scheduleOnMembers(command, getContext().getClusterService().getMemberList(), delay, unit);
     }
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay,
                                                                                long period, TimeUnit unit) {
-        String name = extractNameOrGenerateOne(command);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
-        for (Member member : getContext().getClusterService().getMemberList()) {
-            TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.SINGLE_RUN, name, adapter, initialDelay, 0, period, unit);
-
-            //TODO tkountis - Wait on all when sync, not one by one
-            futures.put(member, scheduleOnMember(name, member, definition));
-        }
-
-        return futures;
+        return scheduleOnMembersWithRepetition(command, getContext().getClusterService().getMemberList(),
+                initialDelay, period, unit);
     }
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnMembers(Runnable command, Collection<Member> members, long delay,
                                                               TimeUnit unit) {
-        String name = extractNameOrGenerateOne(command);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
-        for (Member member : members) {
-            TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.SINGLE_RUN, name, adapter, delay, unit);
+        checkNotNull(command, "Command is null");
+        checkNotNull(members, "Members is null");
 
-            futures.put(member, scheduleOnMember(name, member, definition));
-        }
-
-        return futures;
+        Callable adapter = createScheduledRunnableAdapter(command);
+        return scheduleOnMembers(adapter, members, delay, unit);
     }
 
     @Override
     public <V> Map<Member, IScheduledFuture<V>> scheduleOnMembers(Callable<V> command, Collection<Member> members,
                                                                   long delay, TimeUnit unit) {
+        checkNotNull(command, "Command is null");
+        checkNotNull(members, "Members is null");
+
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
         for (Member member : members) {
@@ -261,9 +226,12 @@ public class ClientScheduledExecutorProxy
     public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command,
                                                                             Collection<Member> members, long initialDelay,
                                                                             long period, TimeUnit unit) {
+        checkNotNull(command, "Command is null");
+        checkNotNull(members, "Members is null");
+
         String name = extractNameOrGenerateOne(command);
-        ScheduledRunnableAdapter adapter = new ScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
+        Callable adapter = createScheduledRunnableAdapter(command);
+         Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.WITH_REPETITION, name, adapter, initialDelay, 0, period, unit);
@@ -275,17 +243,17 @@ public class ClientScheduledExecutorProxy
     }
 
     @Override
-    public <V> IScheduledFuture<V> getScheduled(ScheduledTaskHandler handler) {
+    public <V> IScheduledFuture<V> getScheduledFuture(ScheduledTaskHandler handler) {
         ClientScheduledFutureProxy<V> futureProxy = new ClientScheduledFutureProxy<V>(handler, getContext());
         futureProxy.setHazelcastInstance(getClient());
         return futureProxy;
     }
 
     @Override
-    public Map<Member, List<IScheduledFuture<?>>> getAllScheduled() {
+    public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
-        Map<Member, List<IScheduledFuture<?>>> tasks =
-                new LinkedHashMap<Member, List<IScheduledFuture<?>>>();
+        Map<Member, List<IScheduledFuture<V>>> tasks =
+                new LinkedHashMap<Member, List<IScheduledFuture<V>>>();
 
         List<Member> members = new ArrayList<Member>(getContext().getClusterService().getMemberList());
         List<Future<List<ScheduledTaskHandler>>> calls = new ArrayList<Future<List<ScheduledTaskHandler>>>();
@@ -297,25 +265,22 @@ public class ClientScheduledExecutorProxy
                     doSubmitOnAddress(request, GET_ALL_SCHEDULED_DECODER, address));
         }
 
-        // TODO unit test - returnWithDeadline returns a Collection, currently in the same order, but
-        // there is no contract to guarantee so for the future.
         List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
                 returnWithDeadline(calls, timeout, TimeUnit.SECONDS));
 
-        for (int i = 0; i < members.size(); i++) {
+        for (int i = 0; i < resolvedFutures.size(); i++) {
             Member member = members.get(i);
             List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
-            List<IScheduledFuture<?>> scheduledFutures = new ArrayList<IScheduledFuture<?>>();
+            List<IScheduledFuture<V>> scheduledFutures = new ArrayList<IScheduledFuture<V>>();
 
             for (ScheduledTaskHandler handler : handlers) {
-                ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
-                attachHazelcastInstance(proxy);
-                scheduledFutures.add(proxy);
+                scheduledFutures.add(this.<V>createFutureProxy(handler));
             }
 
-            tasks.put(member, scheduledFutures);
+            if (!scheduledFutures.isEmpty()) {
+                tasks.put(member, scheduledFutures);
+            }
         }
-
         return tasks;
     }
 
@@ -324,14 +289,58 @@ public class ClientScheduledExecutorProxy
         Collection<Member> members = getContext().getClusterService().getMemberList();
         Collection<Future> calls = new LinkedList<Future>();
 
-        int partitionId = -1;
         for (Member member : members) {
-            ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName());
-            request.setPartitionId(partitionId);
+            ClientMessage request = ScheduledExecutorShutdownCodec.encodeRequest(getName(), member.getAddress());
             calls.add(doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()));
         }
 
         waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+    }
+
+    private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {
+        checkNotNull(command, "Command can't be null");
+
+        return new ScheduledRunnableAdapter<T>(command);
+    }
+
+    private <V> IScheduledFuture<V> createFutureProxy(ScheduledTaskHandler handler) {
+        ClientScheduledFutureProxy<V> proxy = new ClientScheduledFutureProxy<V>(handler, getContext());
+        proxy.setHazelcastInstance(getClient());
+        return proxy;
+    }
+
+    private <V> IScheduledFuture<V> createFutureProxy(int partitionId, String taskName) {
+        return createFutureProxy(ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName));
+    }
+
+    private <V> IScheduledFuture<V> createFutureProxy(Address address, String taskName) {
+        return createFutureProxy(ScheduledTaskHandlerImpl.of(address, getName(), taskName));
+    }
+
+    private int getKeyPartitionId(Object key) {
+        return getClient().getPartitionService().getPartition(key).getPartitionId();
+    }
+
+    private int getTaskOrKeyPartitionId(Callable task, Object key) {
+        if (task instanceof PartitionAware) {
+            Object newKey = ((PartitionAware) task).getPartitionKey();
+            if (newKey != null) {
+                key = newKey;
+            }
+        }
+
+        return getKeyPartitionId(key);
+    }
+
+    private int getTaskOrKeyPartitionId(Runnable task, Object key) {
+        if (task instanceof PartitionAware) {
+            Object newKey = ((PartitionAware) task).getPartitionKey();
+            if (newKey != null) {
+                key = newKey;
+            }
+        }
+
+        return getKeyPartitionId(key);
     }
 
     private String extractNameOrGenerateOne(Object command) {
@@ -341,11 +350,6 @@ public class ClientScheduledExecutorProxy
         }
 
         return name != null ? name : UuidUtil.newUnsecureUuidString();
-    }
-
-    private <V> IScheduledFuture<V> scheduleOnPartition(String name, TaskDefinition definition) {
-        int partitionId = partitionRandom.nextInt(partitionCount);
-        return scheduleOnPartition(name, definition, partitionId);
     }
 
     private <V> IScheduledFuture<V> scheduleOnPartition(String name, TaskDefinition definition, int partitionId) {
@@ -358,24 +362,15 @@ public class ClientScheduledExecutorProxy
                                                         ClientMessageDecoder clientMessageDecoder,
                                                         int partitionId) {
         clientMessage.setPartitionId(partitionId);
-
         doSubmitOnPartition(clientMessage, clientMessageDecoder, partitionId).join();
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(partitionId, getName(), name);
-        ClientScheduledFutureProxy future = new ClientScheduledFutureProxy(handler, getContext());
-        attachHazelcastInstance(future);
-        return future;
+        return createFutureProxy(partitionId, name);
     }
 
     private <V> IScheduledFuture<V> scheduleOnMember(String name, Member member, TaskDefinition definition) {
-        int partitionId = -1;
         Data data = getSerializationService().toData(definition);
         ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(), member.getAddress(), data);
-        doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress());
-
-        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(partitionId, getName(), name);
-        ClientScheduledFutureProxy future = new ClientScheduledFutureProxy(handler, getContext());
-        attachHazelcastInstance(future);
-        return future;
+        doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()).join();
+        return createFutureProxy(member.getAddress(), name);
     }
 
     private <T> ClientDelegatingFuture<T> doSubmitOnPartition(ClientMessage clientMessage,
@@ -408,7 +403,4 @@ public class ClientScheduledExecutorProxy
         }
     }
 
-    private void attachHazelcastInstance(HazelcastInstanceAware future) {
-        future.setHazelcastInstance(getClient());
-    }
 }

@@ -19,10 +19,9 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCompareToCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultTimeoutCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneCodec;
@@ -33,13 +32,15 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
+import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -58,7 +59,7 @@ public class ClientScheduledFutureProxy<V>
         extends ClientProxy
         implements IScheduledFuture<V>,
                    HazelcastInstanceAware,
-                   PartitionLostListener/*, MembershipListener*/ {
+                   PartitionLostListener {
 
     private static final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -84,7 +85,14 @@ public class ClientScheduledFutureProxy<V>
     private static final ClientMessageDecoder GET_STATS_DECODER = new ClientMessageDecoder() {
         @Override
         public ScheduledTaskStatistics decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage).stats;
+            ScheduledExecutorGetStatsCodec.ResponseParameters responseParameters =
+                    ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage);
+
+            return new ScheduledTaskStatisticsImpl(
+                    responseParameters.totalRuns, responseParameters.firstRunStartNanos,
+                    responseParameters.lastRunStartNanos, responseParameters.lastRunEndNanos,
+                    responseParameters.lastIdleTimeNanos, responseParameters.totalRunTimeNanos,
+                    responseParameters.totalIdleTimeNanos);
         }
     };
 
@@ -95,17 +103,10 @@ public class ClientScheduledFutureProxy<V>
         }
     };
 
-    private static final ClientMessageDecoder COMPARE_TO_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Integer decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorCompareToCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
     private static final ClientMessageDecoder GET_RESULT_DECODER = new ClientMessageDecoder() {
         @Override
         public Object decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorCompareToCodec.decodeResponse(clientMessage).response;
+            return ScheduledExecutorGetResultCodec.decodeResponse(clientMessage).response;
         }
     };
 
@@ -145,8 +146,8 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public ScheduledTaskStatistics getStats() {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         ClientMessage request = ScheduledExecutorGetStatsCodec.encodeRequest(handler);
         return this.<ScheduledTaskStatistics>submitAsync(request, GET_STATS_DECODER).join();
@@ -154,8 +155,8 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public long getDelay(TimeUnit unit) {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler, unit);
         return this.<Long>submitAsync(request, GET_DELAY_DECODER).join();
@@ -163,18 +164,13 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public int compareTo(Delayed o) {
-        checkAccessiblePartition();
-        checkAccessibleHandler();
-
-        Data delayedData = getContext().getSerializationService().toData(o);
-        ClientMessage request = ScheduledExecutorCompareToCodec.encodeRequest(handler, delayedData);
-        return this.<Integer>submitAsync(request, COMPARE_TO_DECODER).join();
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         ClientMessage request = ScheduledExecutorCancelCodec.encodeRequest(handler, mayInterruptIfRunning);
         return this.<Boolean>submitAsync(request, CANCEL_DECODER).join();
@@ -182,8 +178,8 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public boolean isCancelled() {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         ClientMessage request = ScheduledExecutorIsCancelledCodec.encodeRequest(handler);
         return this.<Boolean>submitAsync(request, IS_CANCELLED_DECODER).join();
@@ -191,43 +187,43 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public boolean isDone() {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         ClientMessage request = ScheduledExecutorIsDoneCodec.encodeRequest(handler);
         return this.<Boolean>submitAsync(request, IS_DONE_DECODER).join();
     }
 
+    private InternalCompletableFuture<V> get0() {
+        checkAccessibleHandler();
+        checkAccessiblePartition();
+
+        ClientMessage request = ScheduledExecutorGetResultCodec.encodeRequest(handler);
+        return this.submitAsync(request, GET_RESULT_DECODER);
+    }
+
     @Override
     public V get()
             throws InterruptedException, ExecutionException {
-        checkAccessiblePartition();
-        checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorGetResultTimeoutCodec.encodeRequest(handler, 0L, TimeUnit.NANOSECONDS);
-        return this.<V>submitAsync(request, GET_RESULT_DECODER).join();
+        return this.get0().join();
     }
 
     @Override
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
-        checkAccessiblePartition();
-        checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorGetResultTimeoutCodec.encodeRequest(handler, 0L, TimeUnit.NANOSECONDS);
-        return this.<V>submitAsync(request, GET_RESULT_DECODER).join();
+        return this.get0().get(timeout, unit);
     }
 
     public void dispose() {
-        checkAccessiblePartition();
         checkAccessibleHandler();
+        checkAccessiblePartition();
 
         unRegisterPartitionListenerIfExists();
 
         ClientMessage request = ScheduledExecutorDisposeCodec.encodeRequest(handler);
-        submitAsync(request, DISPOSE_DECODER).join();
-
+        InternalCompletableFuture future = submitAsync(request, DISPOSE_DECODER);
         handler = null;
+        future.join();
     }
 
     @Override
@@ -257,8 +253,8 @@ public class ClientScheduledFutureProxy<V>
 
     private void checkAccessibleHandler() {
         if (handler == null) {
-            throw new IllegalStateException(
-                    "Scheduled task was previously destroyed.");
+            throw new StaleTaskException(
+                    "Scheduled task was previously disposed.");
         }
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
@@ -46,7 +47,8 @@ public class ScheduledExecutorSubmitToAddressMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Operation op = new ScheduleTaskOperation(parameters.schedulerName, parameters.taskDefinition);
+        TaskDefinition def = serializationService.toObject(parameters.taskDefinition);
+        Operation op = new ScheduleTaskOperation(parameters.schedulerName, def);
         op.setPartitionId(-1);
         op.setCallerUuid(endpoint.getUuid());
         return op;
