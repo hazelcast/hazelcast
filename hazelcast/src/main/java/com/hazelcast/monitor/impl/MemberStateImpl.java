@@ -334,7 +334,7 @@ public class MemberStateImpl implements MemberState {
             nodeState.fromJson(jsonNodeState);
         }
         JsonObject jsonHotRestartState = getObject(json, "hotRestartState", null);
-        if (hotRestartState != null) {
+        if (jsonHotRestartState != null) {
             hotRestartState = new HotRestartStateImpl();
             hotRestartState.fromJson(jsonHotRestartState);
         }
