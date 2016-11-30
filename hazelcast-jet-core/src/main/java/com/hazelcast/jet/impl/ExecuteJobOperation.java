@@ -27,8 +27,11 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -38,7 +41,7 @@ public class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
     private long executionId;
-    private volatile CompletableFuture<Object> executionFuture;
+    private volatile CompletableFuture<Object> executionInvocationFuture;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
@@ -55,31 +58,60 @@ public class ExecuteJobOperation extends AsyncOperation {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
-        invokeOnCluster(executionPlanMap, plan -> new InitExecutionOperation(engineName, executionId, plan))
-                .thenCompose(x -> executionFuture =
-                        invokeOnCluster(executionPlanMap, plan -> new ExecuteOperation(engineName, executionId)))
-                .whenComplete((r, e) -> invokeOnCluster(executionPlanMap,
-                        plan -> new CompleteExecutionOperation(engineName, executionId, e)))
-                .exceptionally(Util::peel)
-                .thenAccept(this::doSendResponse);
+
+
+        // Future that is signalled on a failure during Init
+        CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,
+                plan -> new InitOperation(engineName, executionId, plan));
+        CompletableFuture<Throwable> initFailed = onException(init);
+
+        // Future that is completed on the real completion of all Execute operations
+        CompletableFuture<Void> executionDone = new CompletableFuture<>();
+        CompletableFuture<Throwable> execution =
+                // ExecuteOperation should only be run if InitOperation succeeded
+                init.thenCompose(x -> executionInvocationFuture = invokeOnCluster(executionPlanMap,
+                        plan -> new ExecuteOperation(engineName, executionId), executionDone, true))
+                    .handle((v, e) -> Util.peel(e));
+
+        // CompleteOperation is fired regardless of success of previous operations
+        // It must be fired _after_ all Execute operation are done, or in case of failure during Init phase,
+        // after all Init operations are finished.
+        CompletableFuture<Throwable> completion =
+                CompletableFuture.anyOf(initFailed, executionDone)
+                                 .thenCombine(execution, (r, e) -> e)
+                                 .thenCompose(e -> invokeOnCluster(executionPlanMap, plan ->
+                                         new CompleteOperation(engineName, executionId, e)))
+                                 .handle((v, e) -> Util.peel(e));
+
+        // Exception from ExecuteOperation should have precedence
+        execution.thenAcceptBoth(completion, (e1, e2) -> doSendResponse(e1 == null ? e2 : e1));
     }
 
     private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func) {
+        return invokeOnCluster(memberMap, func, new CompletableFuture<>(), false);
+    }
+
+    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,
+                                                          CompletableFuture<Void> doneFuture, boolean propagateError) {
+        AtomicInteger doneLatch = new AtomicInteger(memberMap.size());
         final Stream<ICompletableFuture> futures =
-                memberMap.entrySet()
-                         .stream()
-                         .map(e -> getNodeEngine()
-                                 .getOperationService()
-                                 .createInvocationBuilder(
-                                         JetService.SERVICE_NAME, func.apply(e.getValue()), e.getKey().getAddress())
-                                 .invoke());
-        return allOf(futures.collect(toList()));
+                memberMap.entrySet().stream().map(e -> getNodeEngine()
+                        .getOperationService()
+                        .createInvocationBuilder(JetService.SERVICE_NAME,
+                                func.apply(e.getValue()), e.getKey().getAddress())
+                        .setDoneCallback(() -> {
+                            if (doneLatch.decrementAndGet() == 0) {
+                                doneFuture.complete(null);
+                            }
+                        })
+                        .invoke());
+        return allOf(futures.collect(toList()), propagateError);
     }
 
     @Override
     void cancel() {
-        if (executionFuture != null) {
-            executionFuture.cancel(true);
+        if (executionInvocationFuture != null) {
+            executionInvocationFuture.cancel(true);
         }
     }
 
@@ -97,29 +129,69 @@ public class ExecuteJobOperation extends AsyncOperation {
         dag = in.readObject();
     }
 
-    private static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures) {
+    // Combines several invocation futures into one. Completes only when all of the sub-futures have completed or
+    // when the composite future is cancelled from outside
+    private static CompletableFuture<Object> allOf(final Collection<ICompletableFuture> futures, boolean propagateError) {
         final CompletableFuture<Object> compositeFuture = new CompletableFuture<>();
         compositeFuture.whenComplete((r, e) -> {
-            if (e != null) {
+            if (e instanceof CancellationException) {
                 futures.forEach(f -> f.cancel(true));
             }
         });
-        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
-        for (ICompletableFuture future : futures) {
-            future.andThen(new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
-                    if (completionLatch.decrementAndGet() == 0) {
-                        compositeFuture.complete(true);
-                    }
-                }
 
-                @Override
-                public void onFailure(Throwable t) {
-                    compositeFuture.completeExceptionally(t);
+        final AtomicInteger completionLatch = new AtomicInteger(futures.size());
+        final AtomicReference<Throwable> firstError = new AtomicReference<>();
+        futures.forEach(f -> f.andThen(new Callback((r) -> {
+            if (completionLatch.decrementAndGet() == 0) {
+                Throwable error = firstError.get();
+                if (error == null) {
+                    compositeFuture.complete(null);
+                } else {
+                    compositeFuture.completeExceptionally(error);
                 }
-            });
-        }
+            }
+        }, e -> {
+            // cancel all other futures immediately when an error is detected
+            if (propagateError) {
+                futures.forEach(sub -> sub.cancel(true));
+            }
+            firstError.compareAndSet(null, e);
+            if (completionLatch.decrementAndGet() == 0) {
+                compositeFuture.completeExceptionally(firstError.get());
+            }
+        })));
         return compositeFuture;
+    }
+
+    private static <T> CompletableFuture<Throwable> onException(CompletableFuture<T> stage) {
+        CompletableFuture<Throwable> f = new CompletableFuture<>();
+        stage.whenComplete((r, e) -> {
+            if (e != null) {
+                f.complete(e);
+            }
+        });
+        return f;
+    }
+
+    // lambda-friendly wrapper for ExecutionCallback
+    private static final class Callback implements ExecutionCallback {
+
+        private final Consumer<Object> onResponse;
+        private final Consumer<Throwable> onError;
+
+        private Callback(Consumer<Object> onResponse, Consumer<Throwable> onError) {
+            this.onResponse = onResponse;
+            this.onError = onError;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            onResponse.accept(response);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            onError.accept(t);
+        }
     }
 }

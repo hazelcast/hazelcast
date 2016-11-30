@@ -18,13 +18,15 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.TestProcessors.FaultyProducer;
+import com.hazelcast.jet.TestProcessors.Identity;
+import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,12 +34,16 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.Util.peel;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -45,61 +51,55 @@ import static org.junit.Assert.fail;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class ExecutionLifecycleTest extends HazelcastTestSupport {
+public class ExecutionLifecycleTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
+    private static final int PARALLELISM = 4;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private TestHazelcastFactory factory;
+    private JetEngine jetEngine;
 
     @Before
     public void setup() {
-        factory = new TestHazelcastFactory();
-    }
+        MockSupplier.completeCount.set(0);
+        MockSupplier.initCount.set(0);
+        MockSupplier.completeErrors.clear();
 
-    @After
-    public void shutdown() {
-        factory.shutdownAll();
+        factory = new TestHazelcastFactory();
+        HazelcastInstance instance = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+
+        jetEngine = JetEngine.get(instance, "jetEngine");
     }
 
     @Test
     public void when_procSupplierInit_then_completeCalled() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-
-        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
-
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new TestSupplier(null));
+        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(Identity::new));
         dag.addVertex(test);
 
         // When
         jetEngine.newJob(dag).execute().get();
 
         // Then
-        assertEquals(NODE_COUNT, TestSupplier.initCount.get());
-        assertEquals(NODE_COUNT, TestSupplier.completeCount.get());
-        assertEquals(NODE_COUNT, TestSupplier.completeErrors.size());
+        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            assertNull(TestSupplier.completeErrors.get(i));
+            assertNull(MockSupplier.completeErrors.get(i));
         }
     }
 
     @Test
-    @Ignore //TODO: fails because of future returns eagerly on failure
     public void when_procSupplierFailsOnInit_then_completeCalledWithError() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
-
         RuntimeException e = new RuntimeException("mock error");
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new TestSupplier(e));
+        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(e, Identity::new));
         dag.addVertex(test);
 
         // When
@@ -112,32 +112,105 @@ public class ExecutionLifecycleTest extends HazelcastTestSupport {
         }
 
         // Then
-        assertEquals(NODE_COUNT, TestSupplier.initCount.get());
-        assertEquals(NODE_COUNT, TestSupplier.completeCount.get());
-        assertEquals(NODE_COUNT, TestSupplier.completeErrors.size());
+        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+
+        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            assertEquals(e.getMessage(), TestSupplier.completeErrors.get(i).getMessage());
+            assertEquals(e.getMessage(), MockSupplier.completeErrors.get(i).getMessage());
         }
     }
 
-    private static class TestSupplier implements ProcessorSupplier {
+    @Test
+    public void when_executionFails_then_completeCalledWithError() throws Throwable {
+        // Given
+        RuntimeException e = new RuntimeException("mock error");
+        DAG dag = new DAG();
+        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address ->
+                new MockSupplier(() -> new FaultyProducer(e)));
+        dag.addVertex(test);
+
+        // When
+        try {
+            jetEngine.newJob(dag).execute().get();
+            fail("Job execution should fail");
+        } catch (ExecutionException expected) {
+            Throwable cause = peel(expected);
+            assertEquals(e.getMessage(), cause.getMessage());
+        }
+
+        // Then
+        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+        assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+        assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
+
+        for (int i = 0; i < NODE_COUNT; i++) {
+            assertEquals(e.getMessage(), MockSupplier.completeErrors.get(i).getMessage());
+        }
+    }
+
+    @Test
+    public void when_executionCancelled_then_completeCalledAfterExecutionDone() throws Throwable {
+        // Given
+        DAG dag = new DAG();
+        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
+                .parallelism(PARALLELISM);
+        dag.addVertex(test);
+
+        // When
+        try {
+            Future<Void> future = jetEngine.newJob(dag).execute();
+            StuckProcessor.executionStarted.await();
+            future.cancel(true);
+            future.get();
+            fail("Job execution should fail");
+        } catch (CancellationException ignored) {
+        }
+
+        // Then
+        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+        assertTrueFiveSeconds(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, MockSupplier.completeCount.get());
+            }
+        });
+
+        StuckProcessor.proceedLatch.countDown();
+
+        assertTrueEventually(() -> {
+            assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+            assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
+            for (int i = 0; i < NODE_COUNT; i++) {
+                assertInstanceOf(CancellationException.class, MockSupplier.completeErrors.get(i));
+            }
+        });
+    }
+
+    private static class MockSupplier implements ProcessorSupplier {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger completeCount = new AtomicInteger();
         static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
 
         private final RuntimeException initError;
+        private final SimpleProcessorSupplier supplier;
 
-        private boolean init;
+        private boolean initCalled;
 
-        public TestSupplier(RuntimeException initError) {
+        public MockSupplier(SimpleProcessorSupplier supplier) {
+            this(null, supplier);
+        }
+
+        public MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
             this.initError = initError;
+            this.supplier = supplier;
         }
 
         @Override
         public void init(Context context) {
-            init = true;
+            initCalled = true;
             initCount.incrementAndGet();
 
             if (initError != null) {
@@ -147,14 +220,14 @@ public class ExecutionLifecycleTest extends HazelcastTestSupport {
 
         @Override
         public List<Processor> get(int count) {
-            return Stream.generate(TestProcessors.Identity::new).limit(count).collect(toList());
+            return Stream.generate(supplier).limit(count).collect(toList());
         }
 
         @Override
         public void complete(Throwable error) {
             completeErrors.add(error);
             completeCount.incrementAndGet();
-            if (!init) {
+            if (!initCalled) {
                 throw new IllegalStateException("Complete called without calling init()");
             }
             if (initCount.get() != NODE_COUNT) {
@@ -163,4 +236,19 @@ public class ExecutionLifecycleTest extends HazelcastTestSupport {
         }
     }
 
+    private static final class StuckProcessor extends AbstractProducer {
+        private static CountDownLatch executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
+        private static CountDownLatch proceedLatch = new CountDownLatch(1);
+
+        @Override
+        public boolean complete() {
+            executionStarted.countDown();
+            try {
+                proceedLatch.await();
+            } catch (InterruptedException e) {
+                throw rethrow(e);
+            }
+            return false;
+        }
+    }
 }

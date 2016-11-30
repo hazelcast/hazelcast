@@ -21,18 +21,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-class InitExecutionOperation extends EngineOperation {
+class CompleteOperation extends EngineOperation {
 
     private long executionId;
-    private ExecutionPlan plan;
+    private Throwable error;
 
-    InitExecutionOperation(String engineName, long executionId, ExecutionPlan plan) {
+    CompleteOperation(String engineName, long executionId, Throwable error) {
         super(engineName);
         this.executionId = executionId;
-        this.plan = plan;
+        this.error = error;
     }
 
-    private InitExecutionOperation() {
+    private CompleteOperation() {
         // for deserialization
     }
 
@@ -40,22 +40,21 @@ class InitExecutionOperation extends EngineOperation {
     public void run() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        engineContext.initExecution(executionId, plan);
+        engineContext.completeExecution(executionId, error);
     }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-
         out.writeLong(executionId);
-        out.writeObject(plan);
+        out.writeObject(error);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
         executionId = in.readLong();
-        plan = in.readObject();
+        error = in.readObject();
     }
 }

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.AbstractProducer;
+
 public class TestProcessors {
 
     public static class Identity extends AbstractProcessor {
@@ -30,6 +32,21 @@ public class TestProcessors {
         @Override
         public boolean isBlocking() {
             return true;
+        }
+    }
+
+
+    public static class FaultyProducer extends AbstractProducer {
+
+        private final RuntimeException e;
+
+        public FaultyProducer(RuntimeException e) {
+            this.e = e;
+        }
+
+        @Override
+        public boolean complete() {
+            throw e;
         }
     }
 }

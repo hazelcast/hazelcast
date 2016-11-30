@@ -20,6 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 
@@ -57,4 +58,17 @@ public class JetTestSupport extends HazelcastTestSupport {
         return instance.getList(randomName());
     }
 
+    public static void assertTrueEventually(UncheckedRunnable runnable) {
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                runnable.run();
+            }
+        });
+    }
+
+    @FunctionalInterface
+    protected interface UncheckedRunnable {
+        void run() throws Exception;
+    }
 }

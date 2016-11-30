@@ -17,10 +17,12 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -53,6 +55,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Repeat(1000)
     public void when_exceptionInProcessorSupplier_then_failJob() throws Throwable {
         instance = factory.newHazelcastInstance();
         jetEngine = JetEngine.get(instance, "jetEngine");
@@ -168,19 +171,4 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         // When
         executeAndPeel(jetEngine.newJob(dag));
     }
-
-    private static class FaultyProducer extends AbstractProcessor {
-
-        private final RuntimeException e;
-
-        public FaultyProducer(RuntimeException e) {
-            this.e = e;
-        }
-
-        @Override
-        public boolean complete() {
-            throw e;
-        }
-    }
-
 }
