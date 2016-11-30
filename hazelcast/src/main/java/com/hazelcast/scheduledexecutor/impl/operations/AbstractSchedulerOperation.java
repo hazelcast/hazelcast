@@ -57,7 +57,7 @@ public abstract class AbstractSchedulerOperation
     public ScheduledExecutorContainer getContainer() {
         checkNotShutdown();
         DistributedScheduledExecutorService service = getService();
-        return service.getPartition(getPartitionId()).getOrCreateContainer(schedulerName);
+        return service.getPartitionOrMemberBin(getPartitionId()).getOrCreateContainer(schedulerName);
     }
 
     private void checkNotShutdown() {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.scheduledexecutor;
 
-import com.hazelcast.core.ICompletableFuture;
-
 import java.util.concurrent.ScheduledFuture;
 
 /**
@@ -31,7 +29,7 @@ import java.util.concurrent.ScheduledFuture;
  * @param <V> The result type returned by this Future
  */
 public interface IScheduledFuture<V>
-        extends ScheduledFuture<V>, ICompletableFuture<V> {
+        extends ScheduledFuture<V> {
 
     /**
      * Returns the scheduled future resource handler.

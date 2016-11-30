@@ -36,13 +36,13 @@ public class DistributedScheduledExecutorService
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
 
-    public static final int MEMBER_PARTITION = -1;
+    private static final int MEMBER_BIN = -1;
 
     private NodeEngine nodeEngine;
 
     private ScheduledExecutorPartition[] partitions;
 
-    private ScheduledExecutorPartition memberPartition;
+    private ScheduledExecutorMemberBin memberBin;
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors
             = new ConcurrentHashMap<String, Boolean>();
@@ -59,11 +59,15 @@ public class DistributedScheduledExecutorService
     }
 
     public ScheduledExecutorPartition getPartition(int partitionId) {
-        if (partitionId == MEMBER_PARTITION) {
-            return memberPartition;
+        return partitions[partitionId];
+    }
+
+    public ScheduledExecutorContainerHolder getPartitionOrMemberBin(int id) {
+        if (id == MEMBER_BIN) {
+            return memberBin;
         }
 
-        return partitions[partitionId];
+        return getPartition(id);
     }
 
     public NodeEngine getNodeEngine() {
@@ -74,7 +78,7 @@ public class DistributedScheduledExecutorService
     public void reset() {
         shutdown(true);
 
-        memberPartition = new ScheduledExecutorPartition(nodeEngine, MEMBER_PARTITION);
+        memberBin = new ScheduledExecutorMemberBin(nodeEngine);
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
             if (partitions[partitionId] != null) {
@@ -88,9 +92,9 @@ public class DistributedScheduledExecutorService
     public void shutdown(boolean terminate) {
         shutdownExecutors.clear();
 
-        if (memberPartition != null) {
-            memberPartition.destroy();
-        }
+        if (memberBin != null) {
+            memberBin.destroy();
+         }
 
         for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
             if (partitions[partitionId] != null) {

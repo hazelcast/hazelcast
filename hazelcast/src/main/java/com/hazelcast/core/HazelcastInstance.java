@@ -431,11 +431,6 @@ public interface HazelcastInstance {
     CardinalityEstimator getCardinalityEstimator(String name);
 
     /**
-     * Obtain the {@link IScheduledExecutorService} that provides
-     * @param name
-     * @return
-     */
-    /**
      * Returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
      * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.

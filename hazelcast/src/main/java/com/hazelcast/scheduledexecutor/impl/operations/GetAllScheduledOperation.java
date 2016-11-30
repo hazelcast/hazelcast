@@ -21,10 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainerHolder;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
-import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +32,8 @@ import java.util.List;
 
 public class GetAllScheduledOperation
         extends AbstractSchedulerOperation {
+
+    private static final int MEMBER_BIN = -1;
 
     private List<ScheduledTaskHandler> response;
 
@@ -51,27 +52,22 @@ public class GetAllScheduledOperation
 
         int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
-            populateScheduledForPartition(handlers, service, i);
+            populateScheduledForHolder(handlers, service, i);
         }
 
-        // Member partition
-        populateScheduledForPartition(handlers, service, -1);
+        // Member bin
+        populateScheduledForHolder(handlers, service, MEMBER_BIN);
         response = handlers;
     }
 
-    private void populateScheduledForPartition(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
-                                               int partitionId) {
-        ScheduledExecutorPartition partition = service.getPartition(partitionId);
+    private void populateScheduledForHolder(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
+                                            int holderId) {
+        ScheduledExecutorContainerHolder partition = service.getPartitionOrMemberBin(holderId);
         Collection<ScheduledExecutorContainer> containers = partition.getContainers();
         for (ScheduledExecutorContainer container : containers) {
             Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
             for (ScheduledTaskDescriptor task : tasks) {
-                if (partitionId == -1) {
-                    handlers.add(ScheduledTaskHandlerImpl.of(getNodeEngine().getThisAddress(),
-                            getSchedulerName(), task.getDefinition().getName()));
-                } else {
-                    handlers.add(ScheduledTaskHandlerImpl.of(partitionId, getSchedulerName(), task.getDefinition().getName()));
-                }
+                handlers.add(container.offprintHandler(task.getDefinition().getName()));
             }
         }
     }

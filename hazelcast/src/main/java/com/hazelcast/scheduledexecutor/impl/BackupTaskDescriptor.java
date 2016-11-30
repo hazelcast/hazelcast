@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class BackupTaskDescriptor implements IdentifiedDataSerializable {
 
@@ -38,7 +38,7 @@ public class BackupTaskDescriptor implements IdentifiedDataSerializable {
     public BackupTaskDescriptor(TaskDefinition definition) {
         this.definition = definition;
         this.masterStats = new ScheduledTaskStatisticsImpl();
-        this.masterState = new ConcurrentHashMap();
+        this.masterState = new HashMap();
     }
 
     public TaskDefinition getDefinition() {

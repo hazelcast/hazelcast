@@ -38,14 +38,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_PARTITION;
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
@@ -67,8 +64,6 @@ public class ScheduledExecutorContainer {
 
     private final Map<String, BackupTaskDescriptor> backups;
 
-    private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
-
     public ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
                                       int durability) {
         this(name, partitionId, nodeEngine, durability, new ConcurrentHashMap<String, BackupTaskDescriptor>());
@@ -87,61 +82,8 @@ public class ScheduledExecutorContainer {
     }
 
     public <V> ScheduledFuture<V> schedule(TaskDefinition definition) {
-        try {
-            acquireMemberPartitionLockIfNeeded();
-
-            checkNotDuplicateTask(definition.getName());
-            return createContextAndSchedule(definition);
-
-        } finally {
-            releaseMemberPartitionLockIfNeeded();
-        }
-
-    }
-
-    private <V> ScheduledFuture<V> createContextAndSchedule(TaskDefinition definition) {
-        if (logger.isFineEnabled()) {
-            logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
-        }
-
-        ScheduledTaskStatisticsImpl stats = new ScheduledTaskStatisticsImpl();
-        Map<?, ?> taskState = new HashMap();
-        ScheduledTaskDescriptor descriptor = doSchedule(definition, taskState, stats);
-
-        if (logger.isFineEnabled()) {
-            logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Queue size: " + tasks.size());
-        }
-
-        return (ScheduledFuture<V>) descriptor.getScheduledFuture();
-    }
-
-    private <V> ScheduledTaskDescriptor doSchedule(TaskDefinition<V> definition,
-                                                   Map<?, ?> stateSnapshot,
-                                                   ScheduledTaskStatisticsImpl stats) {
-
-        ScheduledFuture<?> future;
-        TaskRunner runner;
-        AtomicReference<Map<?, ?>> taskState = new AtomicReference<Map<?, ?>>(stateSnapshot);
-        switch (definition.getType()) {
-            case SINGLE_RUN:
-                runner = new TaskRunner<V>(definition, taskState, stats);
-                future = executionService.scheduleDurable(getName(), (Callable) runner,
-                        definition.getInitialDelay(), definition.getUnit());
-                break;
-            case WITH_REPETITION:
-                runner = new TaskRunner<V>(definition, taskState, stats);
-                future = executionService.scheduleDurableWithRepetition(getName(),
-                        runner, definition.getInitialDelay(), definition.getPeriod(),
-                        definition.getUnit());
-                break;
-            default:
-                throw new IllegalArgumentException();
-        }
-
-        ScheduledTaskDescriptor descriptor = new ScheduledTaskDescriptor(definition, future, taskState, stats);
-        tasks.put(definition.getName(), descriptor);
-
-        return descriptor;
+        checkNotDuplicateTask(definition.getName());
+        return createContextAndSchedule(definition);
     }
 
     public boolean cancel(String taskName, boolean mayInterruptIfRunning) {
@@ -172,12 +114,6 @@ public class ScheduledExecutorContainer {
         checkNotStaleTask(taskName);
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
         return descriptor.getStats();
-    }
-
-    public int compareTo(String taskName, Delayed o) {
-        checkNotStaleTask(taskName);
-        ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        return descriptor.getScheduledFuture().compareTo(o);
     }
 
     public boolean isCancelled(String taskName) {
@@ -236,12 +172,6 @@ public class ScheduledExecutorContainer {
     }
 
     public boolean shouldParkGetResult(String taskName) {
-        if (partitionId == MEMBER_PARTITION) {
-            // For member owned tasks there is a race condition, so we avoid purposefully parking.
-            // TODO tkountis - Look into the invocation subsystem, to identify root cause.
-            return false;
-        }
-
         return (tasks.containsKey(taskName) && !tasks.get(taskName).getScheduledFuture().isDone())
                 || backups.containsKey(taskName);
     }
@@ -252,6 +182,14 @@ public class ScheduledExecutorContainer {
 
     public String getName() {
         return name;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
+    }
+
+    public ScheduledTaskHandler offprintHandler(String taskName) {
+        return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
     }
 
     void promoteStash() {
@@ -290,30 +228,94 @@ public class ScheduledExecutorContainer {
         return replicas;
     }
 
-    private void checkNotDuplicateTask(String taskName) {
+    protected <V> ScheduledFuture<V> createContextAndSchedule(TaskDefinition definition) {
+        if (logger.isFineEnabled()) {
+            logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
+        }
+
+        ScheduledTaskStatisticsImpl stats = new ScheduledTaskStatisticsImpl();
+        Map<?, ?> taskState = new HashMap();
+        ScheduledTaskDescriptor descriptor = doSchedule(definition, taskState, stats);
+
+        if (logger.isFineEnabled()) {
+            logger.fine("[Scheduler: " + name + "][Partition: " + partitionId + "] Queue size: " + tasks.size());
+        }
+
+        return (ScheduledFuture<V>) descriptor.getScheduledFuture();
+    }
+
+    protected void checkNotDuplicateTask(String taskName) {
         if (tasks.containsKey(taskName)) {
             throw new DuplicateTaskException("There is already a task "
                     + "with the same name '" + taskName + "' in '" + getName() + "'");
         }
     }
 
+    /**
+     * State is synced after every run with all replicas.
+     * When replicas get promoted, they start of, with the latest state see {@link TaskRunner#init()}
+     */
+    protected void publishStateToReplicas(String taskName, Map snapshot) {
+        int maxAllowedBackupCount = nodeEngine.getPartitionService().getMaxAllowedBackupCount();
+        boolean noBackup = partitionId == -1;
+        boolean replicationNotRequired = Math.min(maxAllowedBackupCount, getDurability()) == 0 || noBackup;
+        if (replicationNotRequired) {
+            return;
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
+                    + "Publishing state, to replicas. State: " + snapshot);
+        }
+
+
+        for (int i = 1; i < getDurability() + 1; i++) {
+            Operation op = new SyncStateOperation(getName(), taskName, snapshot);
+            createInvocationBuilder(op)
+                    .setReplicaIndex(i)
+                    .setCallTimeout(Long.MAX_VALUE)
+                    .invoke();
+        }
+
+    }
+
+    protected InvocationBuilder createInvocationBuilder(Operation op) {
+        OperationService operationService = nodeEngine.getOperationService();
+        return operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId);
+    }
+
+    private <V> ScheduledTaskDescriptor doSchedule(TaskDefinition<V> definition,
+                                                   Map<?, ?> stateSnapshot,
+                                                   ScheduledTaskStatisticsImpl stats) {
+
+        ScheduledFuture<?> future;
+        TaskRunner runner;
+        AtomicReference<Map<?, ?>> taskState = new AtomicReference<Map<?, ?>>(stateSnapshot);
+        switch (definition.getType()) {
+            case SINGLE_RUN:
+                runner = new TaskRunner<V>(definition, taskState, stats);
+                future = executionService.scheduleDurable(getName(), (Callable) runner,
+                        definition.getInitialDelay(), definition.getUnit());
+                break;
+            case WITH_REPETITION:
+                runner = new TaskRunner<V>(definition, taskState, stats);
+                future = executionService.scheduleDurableWithRepetition(getName(),
+                        runner, definition.getInitialDelay(), definition.getPeriod(),
+                        definition.getUnit());
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        ScheduledTaskDescriptor descriptor = new ScheduledTaskDescriptor(definition, future, taskState, stats);
+        tasks.put(definition.getName(), descriptor);
+
+        return descriptor;
+    }
+
     private void checkNotStaleTask(String taskName) {
         if (!tasks.containsKey(taskName)) {
             throw new StaleTaskException("Task with name " + taskName + " not found. ");
-        }
-    }
-
-    private void acquireMemberPartitionLockIfNeeded() {
-        if (partitionId == MEMBER_PARTITION) {
-            while (!memberPartitionLock.compareAndSet(false, true)) {
-                Thread.yield();
-            }
-        }
-    }
-
-    private void releaseMemberPartitionLockIfNeeded() {
-        if (partitionId == MEMBER_PARTITION) {
-            memberPartitionLock.set(false);
         }
     }
 
@@ -381,7 +383,7 @@ public class ScheduledExecutorContainer {
 
                     Map readOnlySnapshot = Collections.unmodifiableMap(snapshot);
                     state.set(readOnlySnapshot);
-                    publishStateToReplicas(readOnlySnapshot);
+                    publishStateToReplicas(taskName, readOnlySnapshot);
                 }
             } finally {
                 notifyResultReady();
@@ -393,58 +395,8 @@ public class ScheduledExecutorContainer {
             }
         }
 
-        private ScheduledTaskHandler offprintHandler() {
-            if (partitionId == -1) {
-                return ScheduledTaskHandlerImpl.of(nodeEngine.getThisAddress(), getName(), taskName);
-            } else {
-                return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
-            }
-        }
-
-        private InvocationBuilder createInvocationBuilder(Operation op) {
-            OperationService operationService = nodeEngine.getOperationService();
-
-            InvocationBuilder builder;
-            if (partitionId == -1) {
-                // Member partition
-                builder = operationService.createInvocationBuilder(SERVICE_NAME, op, nodeEngine.getThisAddress());
-            } else {
-                builder = operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId);
-            }
-
-            return builder;
-        }
-
-        /**
-         * State is synced after every run with all replicas.
-         * When replicas get promoted, they start of, with the latest state see {@link #init()}
-         */
-        private void publishStateToReplicas(Map snapshot) {
-            int maxAllowedBackupCount = nodeEngine.getPartitionService().getMaxAllowedBackupCount();
-            boolean noBackup = partitionId == -1;
-            boolean replicationNotRequired = Math.min(maxAllowedBackupCount, getDurability()) == 0 || noBackup;
-            if (replicationNotRequired) {
-                return;
-            }
-
-            if (logger.isFinestEnabled()) {
-                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
-                            + "Publishing state, to replicas. State: " + snapshot);
-            }
-
-
-            for (int i = 1; i < getDurability() + 1; i++) {
-                Operation op = new SyncStateOperation(getName(), taskName, snapshot);
-                createInvocationBuilder(op)
-                        .setReplicaIndex(i)
-                        .setCallTimeout(Long.MAX_VALUE)
-                        .invoke();
-            }
-
-        }
-
         private void notifyResultReady() {
-            Operation op = new ResultReadyNotifyOperation(offprintHandler());
+            Operation op = new ResultReadyNotifyOperation(offprintHandler(taskName));
             createInvocationBuilder(op)
                     .setCallTimeout(Long.MAX_VALUE)
                     .invoke();

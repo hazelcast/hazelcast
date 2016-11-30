@@ -16,7 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MembershipAdapter;
@@ -42,7 +41,6 @@ import com.hazelcast.spi.OperationService;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -157,16 +155,6 @@ public final class ScheduledFutureProxy<V>
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback) {
-        this.get0().andThen(callback);
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        this.get0().andThen(callback, executor);
-    }
-
-    @Override
     public void dispose() {
         checkAccessibleHandler();
         checkAccessibleOwner();
@@ -174,9 +162,9 @@ public final class ScheduledFutureProxy<V>
         unRegisterPartitionListenerIfExists();
 
         Operation op = new DestroyTaskOperation(handler);
-        invoke(op);
-
+        InternalCompletableFuture future = invoke(op);
         handler = null;
+        future.join();
     }
 
     @Override

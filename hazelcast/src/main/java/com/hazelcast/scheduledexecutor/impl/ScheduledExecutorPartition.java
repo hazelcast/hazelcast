@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class ScheduledExecutorPartition {
+public class ScheduledExecutorPartition implements ScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 

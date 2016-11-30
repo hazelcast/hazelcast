@@ -23,16 +23,13 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
  */
 public class ScheduledExecutorConfig {
 
-    /**
-     * Scheduled of Executor
-     */
-    public static final int DEFAULT_DURABILITY = 1;
+    private static final int DEFAULT_DURABILITY = 1;
 
     private String name = "default";
 
     private int durability = DEFAULT_DURABILITY;
 
-    private com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
+    private ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
     public ScheduledExecutorConfig() {
     }
@@ -46,13 +43,13 @@ public class ScheduledExecutorConfig {
         this.durability = durability;
     }
 
-    public ScheduledExecutorConfig(com.hazelcast.config.ScheduledExecutorConfig config) {
+    public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
         this(config.getName(), config.getDurability());
     }
 
-    public com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly getAsReadOnly() {
+    public ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
-            readOnly = new com.hazelcast.config.ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
+            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
         }
         return readOnly;
     }
@@ -72,7 +69,7 @@ public class ScheduledExecutorConfig {
      * @param name The name of the executor task.
      * @return This executor config instance.
      */
-    public com.hazelcast.config.ScheduledExecutorConfig setName(String name) {
+    public ScheduledExecutorConfig setName(String name) {
         this.name = name;
         return this;
     }
@@ -88,11 +85,14 @@ public class ScheduledExecutorConfig {
 
     /**
      * Sets the durability of the executor
+     * The durability represents the number of replicas that exist in a cluster for any given partition-owned task.
+     * If this is set to 0 then there is only 1 copy of the task in the cluster, meaning that if the partition owning it, goes
+     * down then the task is lost.
      *
      * @param durability the durability of the executor
      * @return This executor config instance.
      */
-    public com.hazelcast.config.ScheduledExecutorConfig setDurability(int durability) {
+    public ScheduledExecutorConfig setDurability(int durability) {
         checkNotNegative(durability, "durability can't be smaller than 0");
         this.durability = durability;
         return this;
@@ -106,19 +106,19 @@ public class ScheduledExecutorConfig {
                 + '}';
     }
 
-    private static class ScheduledExecutorConfigReadOnly extends com.hazelcast.config.ScheduledExecutorConfig {
+    private static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
 
-        public ScheduledExecutorConfigReadOnly(com.hazelcast.config.ScheduledExecutorConfig config) {
+        public ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
             super(config);
         }
 
         @Override
-        public com.hazelcast.config.ScheduledExecutorConfig setName(String name) {
+        public ScheduledExecutorConfig setName(String name) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
 
         @Override
-        public com.hazelcast.config.ScheduledExecutorConfig setDurability(int durability) {
+        public ScheduledExecutorConfig setDurability(int durability) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }

@@ -39,7 +39,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY_ID;
 
-public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
+public class    ScheduledExecutorDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(
             SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
@@ -128,7 +128,7 @@ public class ScheduledExecutorDataSerializerHook implements DataSerializerHook {
                     case SHUTDOWN:
                         return new ShutdownOperation();
                     default:
-                        return null;
+                        throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }
             }
         };
