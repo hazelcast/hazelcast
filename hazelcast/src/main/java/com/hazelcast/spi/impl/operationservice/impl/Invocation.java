@@ -164,10 +164,13 @@ public abstract class Invocation implements OperationResponseHandler {
     final long tryPauseMillis;
     final long callTimeoutMillis;
 
-    Invocation(Context context, Operation op, int tryCount, long tryPauseMillis,
+    private final Runnable taskDoneCallback;
+
+    Invocation(Context context, Operation op, Runnable taskDoneCallback, int tryCount, long tryPauseMillis,
                long callTimeoutMillis, boolean deserialize) {
         this.context = context;
         this.op = op;
+        this.taskDoneCallback = taskDoneCallback;
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeoutMillis = getCallTimeoutMillis(callTimeoutMillis);
@@ -586,8 +589,10 @@ public abstract class Invocation implements OperationResponseHandler {
     // This is an idempotent operation
     // because both invocationRegistry.deregister() and future.complete() are idempotent.
     private void complete(Object value) {
-        context.invocationRegistry.deregister(this);
         future.complete(value);
+        if (context.invocationRegistry.deregister(this) && taskDoneCallback != null) {
+            context.asyncExecutor.execute(taskDoneCallback);
+        }
     }
 
     private void handleRetry(Object cause) {

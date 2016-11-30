@@ -58,6 +58,7 @@ public abstract class InvocationBuilder {
     protected final int partitionId;
     protected final Address target;
     protected ExecutionCallback<Object> executionCallback;
+    protected Runnable doneCallback;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
     protected int replicaIndex;
@@ -238,6 +239,11 @@ public abstract class InvocationBuilder {
 
     protected ExecutionCallback getTargetExecutionCallback() {
         return executionCallback;
+    }
+
+    public InvocationBuilder setDoneCallback(Runnable doneCallback) {
+        this.doneCallback = doneCallback;
+        return this;
     }
 
     public abstract <E> InternalCompletableFuture<E> invoke();

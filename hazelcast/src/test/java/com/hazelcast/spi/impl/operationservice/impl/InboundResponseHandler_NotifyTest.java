@@ -53,7 +53,7 @@ public class InboundResponseHandler_NotifyTest extends HazelcastTestSupport {
 
     private Invocation newInvocation(Operation op) {
         Invocation.Context context = operationService.invocationContext;
-        Invocation invocation = new PartitionInvocation(context, op , 0, 0, 0, false);
+        Invocation invocation = new PartitionInvocation(context, op, 0, 0, 0, false);
         invocation.invTarget = getAddress(local);
         return invocation;
     }
