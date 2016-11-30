@@ -18,6 +18,7 @@ package com.hazelcast.quorum;
 
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QuorumConfig;
@@ -87,6 +88,15 @@ public class PartitionedCluster {
     public PartitionedCluster createFiveMemberCluster(QueueConfig queueConfig, QuorumConfig quorumConfig) {
         final Config config = createClusterConfig()
                 .addQueueConfig(queueConfig)
+                .addQuorumConfig(quorumConfig);
+        createInstances(config);
+        return this;
+    }
+
+
+    public PartitionedCluster createFiveMemberCluster(LockConfig lockConfig, QuorumConfig quorumConfig) {
+        final Config config = createClusterConfig()
+                .addLockConfig(lockConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
         return this;

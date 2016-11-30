@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.collection.impl.queue.QueueStoreWrapper;
 import com.hazelcast.config.helpers.DummyMapStore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -44,10 +45,12 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static java.io.File.createTempFile;
+import static java.io.File.listRoots;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -230,16 +233,81 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void readQueueConfig() {
+        final String xml = HAZELCAST_START_TAG
+                + "      <queue name=\"custom\">" +
+                "        <statistics-enabled>true</statistics-enabled>" +
+                "        <max-size>100</max-size>" +
+                "        <backup-count>1</backup-count>" +
+                "        <async-backup-count>0</async-backup-count>" +
+                "        <empty-queue-ttl>-1</empty-queue-ttl>" +
+                "        <item-listeners>" +
+                "            <item-listener>com.hazelcast.examples.ItemListener</item-listener>" +
+                "        </item-listeners>" +
+                "        <queue-store>" +
+                "            <class-name>com.hazelcast.QueueStoreImpl</class-name>" +
+                "            <properties>" +
+                "                <property name=\"binary\">false</property>" +
+                "                <property name=\"memory-limit\">1000</property>" +
+                "                <property name=\"bulk-load\">500</property>" +
+                "            </properties>" +
+                "        </queue-store>" +
+                "        <quorum-ref>customQuorumRule</quorum-ref>" +
+                "    </queue>"
+                + HAZELCAST_END_TAG;
+        final Config config = buildConfig(xml);
+        final QueueConfig qConfig = config.getQueueConfig("custom");
+        assertTrue(qConfig.isStatisticsEnabled());
+        assertEquals(100, qConfig.getMaxSize());
+        assertEquals(1, qConfig.getBackupCount());
+        assertEquals(0, qConfig.getAsyncBackupCount());
+        assertEquals(-1, qConfig.getEmptyQueueTtl());
+
+        assertTrue(qConfig.getItemListenerConfigs().size() == 1);
+        final ItemListenerConfig listenerConfig = qConfig.getItemListenerConfigs().iterator().next();
+        assertEquals("com.hazelcast.examples.ItemListener", listenerConfig.getClassName());
+
+        final QueueStoreConfig storeConfig = qConfig.getQueueStoreConfig();
+        assertNotNull(storeConfig);
+        assertTrue(storeConfig.isEnabled());
+        assertEquals("com.hazelcast.QueueStoreImpl", storeConfig.getClassName());
+        final Properties storeConfigProperties = storeConfig.getProperties();
+        assertEquals(3, storeConfigProperties.size());
+        assertEquals("500", storeConfigProperties.getProperty("bulk-load"));
+        assertEquals("1000", storeConfigProperties.getProperty("memory-limit"));
+        assertEquals("false", storeConfigProperties.getProperty("binary"));
+
+        assertEquals("customQuorumRule", qConfig.getQuorumName());
+    }
+
+    @Test
+    public void readLockConfig() {
+        final String xml = HAZELCAST_START_TAG
+                + "  <lock name=\"default\">"
+                + "        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>"
+                + "    </lock>"
+                + "  <lock name=\"custom\">"
+                + "        <quorum-ref>customQuorumRule</quorum-ref>"
+                + "    </lock>"
+                + HAZELCAST_END_TAG;
+        final Config config = buildConfig(xml);
+        final LockConfig defaultConfig = config.getLockConfig("default");
+        final LockConfig customConfig = config.getLockConfig("custom");
+        assertEquals("quorumRuleWithThreeNodes", defaultConfig.getQuorumName());
+        assertEquals("customQuorumRule", customConfig.getQuorumName());
+    }
+
+    @Test
     public void readReliableTopic() {
         String xml = HAZELCAST_START_TAG
-                + "    <reliable-topic name=\"custom\">\n"
-                + "           <read-batch-size>35</read-batch-size>\n"
-                + "           <statistics-enabled>false</statistics-enabled>\n"
-                + "           <topic-overload-policy>DISCARD_OLDEST</topic-overload-policy>\n"
+                + "    <reliable-topic name=\"custom\">"
+                + "           <read-batch-size>35</read-batch-size>"
+                + "           <statistics-enabled>false</statistics-enabled>"
+                + "           <topic-overload-policy>DISCARD_OLDEST</topic-overload-policy>"
                 + "           <message-listeners>"
                 + "               <message-listener>MessageListenerImpl</message-listener>"
                 + "           </message-listeners>"
-                + "    </reliable-topic>\n"
+                + "    </reliable-topic>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -260,12 +328,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     @Test
     public void readRingbuffer() {
         String xml = HAZELCAST_START_TAG
-                + "    <ringbuffer name=\"custom\">\n"
-                + "        <capacity>10</capacity>\n"
-                + "        <backup-count>2</backup-count>\n"
-                + "        <async-backup-count>1</async-backup-count>\n"
-                + "        <time-to-live-seconds>9</time-to-live-seconds>\n"
-                + "        <in-memory-format>OBJECT</in-memory-format>\n"
+                + "    <ringbuffer name=\"custom\">"
+                + "        <capacity>10</capacity>"
+                + "        <backup-count>2</backup-count>"
+                + "        <async-backup-count>1</async-backup-count>"
+                + "        <time-to-live-seconds>9</time-to-live-seconds>"
+                + "        <in-memory-format>OBJECT</in-memory-format>"
                 + "    </ringbuffer>"
                 + HAZELCAST_END_TAG;
         Config config = buildConfig(xml);
@@ -801,7 +869,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     private void testXSDConfigXML(String xmlFileName) throws Exception {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.7.xsd");
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.8.xsd");
         assertNotNull(schemaResource);
 
         InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);

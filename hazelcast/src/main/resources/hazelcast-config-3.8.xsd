@@ -52,6 +52,7 @@
                 <xs:element name="reliable-topic" type="reliable-topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="jobtracker" type="jobtracker" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="lock" type="lock" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="ringbuffer" type="ringbuffer" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
@@ -1172,6 +1173,23 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="lock">
+        <xs:all>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+        </xs:all>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the lock.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
     <xs:complexType name="ringbuffer-store">
         <xs:all>
             <xs:element ref="factory-or-class-name" minOccurs="0" maxOccurs="1"/>

@@ -486,7 +486,10 @@ https://hazelcast.org/documentation/.
 	- bulk-load:
 		Size of the bulks loaded from QueueStore when the queue is initialized. Its default 
 		value is 250.
--->    
+    * <quorum-ref>:
+        Adds the quorum for this queue which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+-->
     <queue name="default">
         <statistics-enabled>true</statistics-enabled>
         <max-size>0</max-size>
@@ -494,18 +497,19 @@ https://hazelcast.org/documentation/.
         <async-backup-count>0</async-backup-count>
         <empty-queue-ttl>-1</empty-queue-ttl>
         <item-listeners>
-        	<item-listener>
-        		com.hazelcast.examples.ItemListener
-        	</item-listener>
+            <item-listener include-value="true">
+                com.hazelcast.examples.ItemListener
+            </item-listener>
         </item-listeners>
         <queue-store>
-  		<class-name>com.hazelcast.QueueStoreImpl</class-name>
-  		<properties>
-    			<property name="binary">false</property>
-    			<property name="memory-limit">1000</property>
-    			<property name="bulk-load">500</property>
-  		</properties>
-	</queue-store>
+            <class-name>com.hazelcast.QueueStoreImpl</class-name>
+            <properties>
+                <property name="binary">false</property>
+                <property name="memory-limit">1000</property>
+                <property name="bulk-load">500</property>
+            </properties>
+        </queue-store>
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
     </queue>
 <!--
     ===== HAZELCAST MAP CONFIGURATION =====
@@ -1267,6 +1271,22 @@ https://hazelcast.org/documentation/.
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
     </semaphore>
+
+    <!--
+    ===== HAZELCAST LOCK CONFIGURATION =====
+
+    Configuration element's name is <lock>. It has the required attribute "name" with which you
+    can specify the name of your Lock. This attribute's default value is "default".
+    It has the following sub-elements:
+    * <quorum-ref>:
+        Adds the quorum for this lock which you configure using the <quorum> element. You should set the <quorum-ref>'s value
+        as the <quorum>'s name.
+-->
+
+    <lock name="default">
+        <quorum-ref>quorumRuleWithThreeNodes</quorum-ref>
+    </lock>
+
 <!--
     ===== HAZELCAST RINGBUFFER CONFIGURATION =====
     

@@ -152,10 +152,7 @@
                                  queue-capacity="300"
                                  statistics-enabled="false"
             />
-            <hz:queue name="testQ"
-                      max-size="1000"
-            >
-
+            <hz:queue name="testQ" max-size="1000">
                 <hz:item-listeners>
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
                 </hz:item-listeners>
@@ -165,7 +162,9 @@
                       backup-count="1"
                       async-backup-count="1"
                       statistics-enabled="false"
-                      empty-queue-ttl="100"/>
+                      empty-queue-ttl="100">
+                <hz:quorum-ref>my-quorum</hz:quorum-ref>
+            </hz:queue>
 
             <hz:queue name="queueWithStore1">
                 <hz:queue-store enabled="true" class-name="com.hazelcast.spring.DummyQueueStore"/>
@@ -179,6 +178,10 @@
             <hz:queue name="queueWithStore4">
                 <hz:queue-store enabled="true" factory-implementation="dummyQueueStoreFactory"/>
             </hz:queue>
+
+            <hz:lock name="lock">
+                <hz:quorum-ref>my-quorum</hz:quorum-ref>
+            </hz:lock>
 
             <hz:ringbuffer name="testRingbuffer"
                            in-memory-format="OBJECT"

@@ -24,11 +24,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class AwaitBackupOperation extends AbstractLockOperation
-        implements BackupOperation {
+        implements BackupOperation, MutatingOperation {
 
     private String originalCaller;
     private String conditionId;

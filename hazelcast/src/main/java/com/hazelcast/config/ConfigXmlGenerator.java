@@ -116,6 +116,8 @@ public class ConfigXmlGenerator {
 
         semaphoreXmlGenerator(xml, config);
 
+        lockXmlGenerator(xml, config);
+
         ringbufferXmlGenerator(xml, config);
 
         executorXmlGenerator(xml, config);
@@ -298,9 +300,11 @@ public class ConfigXmlGenerator {
         final Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
+            xml.append("<statistics-enabled>").append(q.isStatisticsEnabled()).append("</statistics-enabled>");
             xml.append("<max-size>").append(q.getMaxSize()).append("</max-size>");
             xml.append("<backup-count>").append(q.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(q.getAsyncBackupCount()).append("</async-backup-count>");
+            xml.append("<empty-queue-ttl>").append(q.getEmptyQueueTtl()).append("</empty-queue-ttl>");
             if (!q.getItemListenerConfigs().isEmpty()) {
                 xml.append("<item-listeners>");
                 for (ItemListenerConfig lc : q.getItemListenerConfigs()) {
@@ -310,7 +314,33 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</item-listeners>");
             }
+            final QueueStoreConfig storeConfig = q.getQueueStoreConfig();
+            if (storeConfig != null) {
+                xml.append("<queue-store enabled=\"").append(storeConfig.isEnabled()).append("\">");
+                if (storeConfig.getClassName() != null) {
+                    xml.append("<class-name>").append(storeConfig.getClassName()).append("</class-name>");
+                }
+                if (storeConfig.getFactoryClassName() != null) {
+                    xml.append("<factory-class-name>").append(storeConfig.getFactoryClassName()).append("</factory-class-name>");
+                }
+                appendProperties(xml, storeConfig.getProperties());
+                xml.append("</queue-store>");
+            }
+            if (q.getQuorumName() != null) {
+                xml.append("<quorum-ref>").append(q.getQuorumName()).append("</quorum-ref>");
+            }
             xml.append("</queue>");
+        }
+    }
+
+    private void lockXmlGenerator(StringBuilder xml, Config config) {
+        final Collection<LockConfig> configs = config.getLockConfigs().values();
+        for (LockConfig c : configs) {
+            xml.append("<lock name=\"").append(c.getName()).append("\">");
+            if (c.getQuorumName() != null) {
+                xml.append("<quorum-ref>").append(c.getQuorumName()).append("</quorum-ref>");
+            }
+            xml.append("</lock>");
         }
     }
 
@@ -319,10 +349,22 @@ public class ConfigXmlGenerator {
         for (RingbufferConfig rbConfig : configs) {
             xml.append("<ringbuffer name=\"").append(rbConfig.getName()).append("\">");
             xml.append("<capacity>").append(rbConfig.getCapacity()).append("</capacity>");
+            xml.append("<time-to-live-seconds>").append(rbConfig.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
             xml.append("<backup-count>").append(rbConfig.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(rbConfig.getAsyncBackupCount()).append("</async-backup-count>");
-            xml.append("<time-to-live-seconds>").append(rbConfig.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
             xml.append("<in-memory-format>").append(rbConfig.getInMemoryFormat().toString()).append("</in-memory-format>");
+            final RingbufferStoreConfig storeConfig = rbConfig.getRingbufferStoreConfig();
+            if (storeConfig != null) {
+                xml.append("<ringbuffer-store enabled=\"").append(storeConfig.isEnabled()).append("\">");
+                if (storeConfig.getClassName() != null) {
+                    xml.append("<class-name>").append(storeConfig.getClassName()).append("</class-name>");
+                }
+                if (storeConfig.getFactoryClassName() != null) {
+                    xml.append("<factory-class-name>").append(storeConfig.getFactoryClassName()).append("</factory-class-name>");
+                }
+                appendProperties(xml, storeConfig.getProperties());
+                xml.append("</ringbuffer-store>");
+            }
             xml.append("</ringbuffer>");
         }
     }

@@ -22,8 +22,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class SignalOperation extends BaseSignalOperation implements BackupAwareOperation {
+public class SignalOperation extends BaseSignalOperation implements BackupAwareOperation, MutatingOperation {
 
     public SignalOperation() {
     }

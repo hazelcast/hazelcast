@@ -26,11 +26,12 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 public class AwaitOperation extends AbstractLockOperation
-        implements BlockingOperation, BackupAwareOperation {
+        implements BlockingOperation, BackupAwareOperation, MutatingOperation {
 
     private String conditionId;
     private boolean expired;

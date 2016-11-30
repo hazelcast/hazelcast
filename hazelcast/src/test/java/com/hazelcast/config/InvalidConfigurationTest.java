@@ -455,6 +455,7 @@ public class InvalidConfigurationTest {
                 "</network>\n" +
 
                 "<queue name=\"default\">\n" +
+                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>"+
                 "<max-size>0</max-size>\n" +
                 "<backup-count>${queue-backup-count}</backup-count>\n" +
                 "<async-backup-count>${queue-async-backup-count}</async-backup-count>\n" +
@@ -519,6 +520,10 @@ public class InvalidConfigurationTest {
                 "<backup-count>${semaphore-backup-count}</backup-count>\n" +
                 "<async-backup-count>${semaphore-async-backup-count}</async-backup-count>\n" +
                 "</semaphore>\n" +
+
+                "<lock name=\"default\">\n" +
+                "<quorum-ref>quorumRuleWithThreeMembers</quorum-ref>\n" +
+                "</lock>" +
 
                 "    <ringbuffer name=\"default\">\n" +
                 "        <capacity>10000</capacity>\n" +
