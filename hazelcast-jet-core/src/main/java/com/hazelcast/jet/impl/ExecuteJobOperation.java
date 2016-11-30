@@ -38,7 +38,7 @@ public class ExecuteJobOperation extends AsyncOperation {
 
     private DAG dag;
     private long executionId;
-    private volatile CompletableFuture<Object> executePlanFuture;
+    private volatile CompletableFuture<Object> executionFuture;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
@@ -54,32 +54,32 @@ public class ExecuteJobOperation extends AsyncOperation {
     protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(executionId, dag);
-        invokeForPlan(executionPlanMap, plan -> new InitPlanOperation(engineName, plan))
-                .thenCompose(x -> executePlanFuture =
-                        invokeForPlan(executionPlanMap, plan -> new ExecutePlanOperation(engineName, plan.getPlanId())))
+        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
+        invokeOnCluster(executionPlanMap, plan -> new InitExecutionOperation(engineName, executionId, plan))
+                .thenCompose(x -> executionFuture =
+                        invokeOnCluster(executionPlanMap, plan -> new ExecuteOperation(engineName, executionId)))
+                .whenComplete((r, e) -> invokeOnCluster(executionPlanMap,
+                        plan -> new CompleteExecutionOperation(engineName, executionId, e)))
                 .exceptionally(Util::peel)
                 .thenAccept(this::doSendResponse);
     }
 
-    private CompletableFuture<Object> invokeForPlan(
-            Map<Member, ExecutionPlan> planMap, Function<ExecutionPlan, Operation> func
-    ) {
+    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func) {
         final Stream<ICompletableFuture> futures =
-                planMap.entrySet()
-                       .stream()
-                       .map(e -> getNodeEngine()
-                               .getOperationService()
-                               .createInvocationBuilder(
-                                       JetService.SERVICE_NAME, func.apply(e.getValue()), e.getKey().getAddress())
-                               .invoke());
+                memberMap.entrySet()
+                         .stream()
+                         .map(e -> getNodeEngine()
+                                 .getOperationService()
+                                 .createInvocationBuilder(
+                                         JetService.SERVICE_NAME, func.apply(e.getValue()), e.getKey().getAddress())
+                                 .invoke());
         return allOf(futures.collect(toList()));
     }
 
     @Override
     void cancel() {
-        if (executePlanFuture != null) {
-            executePlanFuture.cancel(true);
+        if (executionFuture != null) {
+            executionFuture.cancel(true);
         }
     }
 

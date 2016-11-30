@@ -54,17 +54,20 @@ class ExecutionContext {
     private static final int QUEUE_SIZE = 1024;
 
     private final List<Tasklet> tasklets = new ArrayList<>();
+    private final List<ProcessorSupplier> suppliers = new ArrayList<>();
+
     private final NodeEngine nodeEngine;
 
     // vertex id --> ordinal --> receiver
-    private ConcurrentMap<Integer, Map<Integer, ReceiverTasklet>> receiverMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, Map<Integer, ReceiverTasklet>> receiverMap = new ConcurrentHashMap<>();
 
+    private final long executionId;
     private final EngineContext context;
 
-    ExecutionContext(EngineContext context, ExecutionPlan plan) {
+    ExecutionContext(long executionId, EngineContext context) {
+        this.executionId = executionId;
         this.context = context;
         this.nodeEngine = context.getNodeEngine();
-        initialize(plan);
     }
 
     CompletionStage<Void> execute() {
@@ -73,13 +76,20 @@ class ExecutionContext {
         return stage;
     }
 
+    void complete(Throwable error) {
+        suppliers.forEach(s -> s.complete(error));
+    }
+
     void handlePacket(int vertexId, int ordinal, byte[] buffer, int offset) {
         Map<Integer, ReceiverTasklet> ordinalMap = receiverMap.get(vertexId);
         ReceiverTasklet tasklet = ordinalMap.get(ordinal);
         tasklet.addPacket(buffer, offset);
     }
 
-    private void initialize(ExecutionPlan plan) {
+    void initialize(ExecutionPlan plan) {
+        // make a copy of all suppliers - required for complete() call
+        suppliers.addAll(plan.getVertices().stream().map(VertexDef::getProcessorSupplier).collect(Collectors.toList()));
+
         final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
         final Map<String, Map<Address, ConcurrentConveyor<Object>>> senderConveyorMap = new HashMap<>();
         final Map<Integer, VertexDef> vMap = plan.getVertices().stream().collect(toMap(VertexDef::getVertexId, v -> v));
@@ -91,8 +101,7 @@ class ExecutionContext {
             final List<EdgeDef> inputs = vertex.getInputs();
             final List<EdgeDef> outputs = vertex.getOutputs();
             final int parallelism = vertex.getParallelism();
-            initializePartitioner(vertex);
-            final List<Processor> processors = getProcessors(vertex);
+            final List<Processor> processors = initVertex(vertex);
             for (int taskletIndex = 0; taskletIndex < processors.size(); taskletIndex++) {
                 final Processor p = processors.get(taskletIndex);
                 final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
@@ -123,7 +132,7 @@ class ExecutionContext {
                                             edge.getPriority(),
                                             conveyor);
                                     tasklets.add(new SenderTasklet(inboundEdgeStream, nodeEngine, context.getName(),
-                                            address, plan.getPlanId(), destinationId));
+                                            address, executionId, destinationId));
                                     map.put(address, conveyor);
                                 }
                                 return map;
@@ -210,7 +219,8 @@ class ExecutionContext {
         }
     }
 
-    private List<Processor> getProcessors(VertexDef vertexDef) {
+    private List<Processor> initVertex(VertexDef vertexDef) {
+        initializePartitioner(vertexDef);
         final ProcessorSupplier processorSupplier = vertexDef.getProcessorSupplier();
         int parallelism = vertexDef.getParallelism();
         processorSupplier.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(), parallelism));
@@ -271,4 +281,6 @@ class ExecutionContext {
         });
         return concurrentConveyors;
     }
+
+
 }

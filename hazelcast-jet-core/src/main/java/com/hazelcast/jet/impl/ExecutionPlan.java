@@ -29,15 +29,9 @@ import static com.hazelcast.jet.impl.Util.writeList;
 
 class ExecutionPlan implements IdentifiedDataSerializable {
     private List<VertexDef> vertices = new ArrayList<>();
-    private long id;
 
     ExecutionPlan() {
     }
-
-    ExecutionPlan(long id) {
-        this.id = id;
-    }
-
 
     List<VertexDef> getVertices() {
         return vertices;
@@ -45,10 +39,6 @@ class ExecutionPlan implements IdentifiedDataSerializable {
 
     void addVertex(VertexDef vertex) {
         vertices.add(vertex);
-    }
-
-    long getPlanId() {
-        return id;
     }
 
     @Override
@@ -63,13 +53,11 @@ class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(id);
         writeList(out, vertices);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        id = in.readLong();
         vertices = readList(in);
     }
 }
