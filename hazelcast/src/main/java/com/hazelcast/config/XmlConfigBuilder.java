@@ -69,6 +69,7 @@ import static com.hazelcast.config.XmlElements.LICENSE_KEY;
 import static com.hazelcast.config.XmlElements.LIST;
 import static com.hazelcast.config.XmlElements.LISTENERS;
 import static com.hazelcast.config.XmlElements.LITE_MEMBER;
+import static com.hazelcast.config.XmlElements.LOCK;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
@@ -314,6 +315,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleJobTracker(node);
         } else if (SEMAPHORE.isEqual(nodeName)) {
             handleSemaphore(node);
+        } else if (LOCK.isEqual(nodeName)) {
+            handleLock(node);
         } else if (RINGBUFFER.isEqual(nodeName)) {
             handleRingbuffer(node);
         } else if (LISTENERS.isEqual(nodeName)) {
@@ -875,6 +878,20 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 networkConfig.addOutboundPortDefinition(value);
             }
         }
+    }
+
+    private void handleLock(Node node) {
+        final String name = getAttribute(node, "name");
+        final LockConfig lockConfig = new LockConfig();
+        lockConfig.setName(name);
+        for (Node n : childElements(node)) {
+            final String nodeName = cleanNodeName(n);
+            final String value = getTextContent(n).trim();
+            if ("quorum-ref".equals(nodeName)) {
+                lockConfig.setQuorumName(value);
+            }
+        }
+        this.config.addLockConfig(lockConfig);
     }
 
     private void handleQueue(Node node) {

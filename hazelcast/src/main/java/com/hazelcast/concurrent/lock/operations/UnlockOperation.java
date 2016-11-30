@@ -26,12 +26,13 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 import static java.lang.Boolean.TRUE;
 
-public class UnlockOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation {
+public class UnlockOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private boolean force;
     private boolean shouldNotify;

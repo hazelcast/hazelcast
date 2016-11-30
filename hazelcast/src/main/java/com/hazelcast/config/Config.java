@@ -78,6 +78,8 @@ public class Config {
 
     private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
+    private final Map<String, LockConfig> lockConfigs = new ConcurrentHashMap<String, LockConfig>();
+
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
     private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
@@ -381,6 +383,51 @@ public class Config {
         this.queueConfigs.clear();
         this.queueConfigs.putAll(queueConfigs);
         for (Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public LockConfig findLockConfig(String name) {
+        final String baseName = getBaseName(name);
+        final LockConfig config = lookupByPattern(lockConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getLockConfig("default").getAsReadOnly();
+    }
+
+    public LockConfig getLockConfig(String name) {
+        final String baseName = getBaseName(name);
+        LockConfig config = lookupByPattern(lockConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        LockConfig defConfig = lockConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new LockConfig();
+            defConfig.setName("default");
+            addLockConfig(defConfig);
+        }
+        config = new LockConfig(defConfig);
+        config.setName(name);
+        addLockConfig(config);
+        return config;
+    }
+
+    public Config addLockConfig(LockConfig lockConfig) {
+        lockConfigs.put(lockConfig.getName(), lockConfig);
+        return this;
+    }
+
+    public Map<String, LockConfig> getLockConfigs() {
+        return lockConfigs;
+    }
+
+    public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
+        this.lockConfigs.clear();
+        this.lockConfigs.putAll(lockConfigs);
+        for (Entry<String, LockConfig> entry : lockConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

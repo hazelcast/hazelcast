@@ -41,6 +41,7 @@ import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.LoginModuleConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapAttributeConfig;
@@ -150,6 +151,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap mapConfigManagedMap;
         private ManagedMap cacheConfigManagedMap;
         private ManagedMap queueManagedMap;
+        private ManagedMap lockManagedMap;
         private ManagedMap ringbufferManagedMap;
         private ManagedMap reliableTopicManagedMap;
         private ManagedMap semaphoreManagedMap;
@@ -170,6 +172,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.mapConfigManagedMap = createManagedMap("mapConfigs");
             this.cacheConfigManagedMap = createManagedMap("cacheConfigs");
             this.queueManagedMap = createManagedMap("queueConfigs");
+            this.lockManagedMap = createManagedMap("lockConfigs");
             this.ringbufferManagedMap = createManagedMap("ringbufferConfigs");
             this.reliableTopicManagedMap = createManagedMap("reliableTopicConfigs");
             this.semaphoreManagedMap = createManagedMap("semaphoreConfigs");
@@ -212,6 +215,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleDurableExecutor(node);
                     } else if ("queue".equals(nodeName)) {
                         handleQueue(node);
+                    } else if ("lock".equals(nodeName)) {
+                        handleLock(node);
                     } else if ("ringbuffer".equals(nodeName)) {
                         handleRingbuffer(node);
                     } else if ("reliable-topic".equals(nodeName)) {
@@ -584,6 +589,18 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final BeanDefinitionBuilder builder = createBeanBuilder(SemaphoreConfig.class);
             fillAttributeValues(node, builder);
             semaphoreManagedMap.put(getAttribute(node, "name"), builder.getBeanDefinition());
+        }
+
+        public void handleLock(Node node) {
+            final BeanDefinitionBuilder lockConfigBuilder = createBeanBuilder(LockConfig.class);
+            fillAttributeValues(node, lockConfigBuilder);
+            for (Node childNode : childElements(node)) {
+                final String nodeName = cleanNodeName(childNode);
+                if ("quorum-ref".equals(nodeName)) {
+                    lockConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
+                }
+            }
+            lockManagedMap.put(getAttribute(node, "name"), lockConfigBuilder.getBeanDefinition());
         }
 
         public void handleRingbuffer(Node node) {

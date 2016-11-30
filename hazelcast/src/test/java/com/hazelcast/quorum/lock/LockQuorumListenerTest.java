@@ -14,11 +14,11 @@
 *  limitations under the License.
 */
 
-package com.hazelcast.quorum.queue;
+package com.hazelcast.quorum.lock;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ILock;
 import com.hazelcast.quorum.BaseQuorumListenerTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -31,17 +31,17 @@ import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueueQuorumListenerTest extends BaseQuorumListenerTest {
+public class LockQuorumListenerTest extends BaseQuorumListenerTest {
 
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() throws Exception {
         final CountDownLatch quorumNotPresent = new CountDownLatch(1);
-        final String queueName = randomString();
-        final Config config = addQuorum(new Config(), queueName, quorumListener(null, quorumNotPresent));
+        final String lockName = randomString();
+        final Config config = addQuorum(new Config(), lockName, quorumListener(null, quorumNotPresent));
         final HazelcastInstance instance = createHazelcastInstance(config);
-        final IQueue<Object> q = instance.getQueue(queueName);
+        final ILock q = instance.getLock(lockName);
         try {
-            q.offer(randomString());
+            q.lock();
         } catch (Exception expected) {
             expected.printStackTrace();
         }
@@ -50,6 +50,6 @@ public class QueueQuorumListenerTest extends BaseQuorumListenerTest {
 
     @Override
     protected void addQuorumConfig(Config config, String distributedObjectName, String quorumName) {
-        config.getQueueConfig(distributedObjectName).setQuorumName(quorumName);
+        config.getLockConfig(distributedObjectName).setQuorumName(quorumName);
     }
 }

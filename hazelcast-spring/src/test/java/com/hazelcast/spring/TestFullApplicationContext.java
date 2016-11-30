@@ -33,6 +33,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LockConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.config.MapConfig;
@@ -389,7 +390,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testQueueConfig() {
-        QueueConfig testQConfig = config.getQueueConfig("testQ");
+        final QueueConfig testQConfig = config.getQueueConfig("testQ");
         assertNotNull(testQConfig);
         assertEquals("testQ", testQConfig.getName());
         assertEquals(1000, testQConfig.getMaxSize());
@@ -398,12 +399,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         ItemListenerConfig listenerConfig = testQConfig.getItemListenerConfigs().get(0);
         assertEquals("com.hazelcast.spring.DummyItemListener", listenerConfig.getClassName());
         assertTrue(listenerConfig.isIncludeValue());
-        QueueConfig qConfig = config.getQueueConfig("q");
+
+        final QueueConfig qConfig = config.getQueueConfig("q");
         assertNotNull(qConfig);
         assertEquals("q", qConfig.getName());
         assertEquals(2500, qConfig.getMaxSize());
         assertFalse(qConfig.isStatisticsEnabled());
         assertEquals(100, qConfig.getEmptyQueueTtl());
+        assertEquals("my-quorum", qConfig.getQuorumName());
 
         final QueueConfig queueWithStore1 = config.getQueueConfig("queueWithStore1");
         assertNotNull(queueWithStore1);
@@ -428,6 +431,14 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         final QueueStoreConfig storeConfig4 = queueWithStore4.getQueueStoreConfig();
         assertNotNull(storeConfig4);
         assertEquals(dummyQueueStoreFactory, storeConfig4.getFactoryImplementation());
+    }
+
+    @Test
+    public void testLockConfig() {
+        final LockConfig lockConfig = config.getLockConfig("lock");
+        assertNotNull(lockConfig);
+        assertEquals("lock", lockConfig.getName());
+        assertEquals("my-quorum", lockConfig.getQuorumName());
     }
 
     @Test

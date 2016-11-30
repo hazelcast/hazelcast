@@ -26,10 +26,11 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
-public class BeforeAwaitOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation {
+public class BeforeAwaitOperation extends AbstractLockOperation implements Notifier, BackupAwareOperation, MutatingOperation {
 
     private String conditionId;
 

@@ -20,8 +20,9 @@ import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public class GetLockCountOperation extends AbstractLockOperation {
+public class GetLockCountOperation extends AbstractLockOperation implements ReadonlyOperation {
 
     public GetLockCountOperation() {
     }

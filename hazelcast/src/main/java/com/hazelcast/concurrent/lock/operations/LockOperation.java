@@ -26,8 +26,9 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.MutatingOperation;
 
-public class LockOperation extends AbstractLockOperation implements BlockingOperation, BackupAwareOperation {
+public class LockOperation extends AbstractLockOperation implements BlockingOperation, BackupAwareOperation, MutatingOperation {
 
     public LockOperation() {
     }

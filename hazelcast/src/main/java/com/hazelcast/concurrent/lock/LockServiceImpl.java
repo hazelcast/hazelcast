@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.concurrent.lock.operations.LocalLockCleanupOperation;
 import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -34,6 +35,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -42,6 +44,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -50,16 +53,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, ClientAwareService {
+        MigrationAwareService, ClientAwareService, QuorumAwareService {
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
-
+    private final ConcurrentMap<String, String> quorumConfigCache = new ConcurrentHashMap<String, String>();
+    private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final long maxLeaseTimeInMillis;
 
     public LockServiceImpl(NodeEngine nodeEngine) {
@@ -309,5 +314,18 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     public static long getMaxLeaseTimeInMillis(HazelcastProperties hazelcastProperties) {
         return hazelcastProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
+    }
+
+    @Override
+    public String getQuorumName(final String name) {
+        // we use caching here because lock operations are often and we should avoid lock config lookup
+        return getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                new ConstructorFunction<String, String>() {
+                    @Override
+                    public String createNew(String arg) {
+                        final LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
+                        return lockConfig.getQuorumName();
+                    }
+                });
     }
 }

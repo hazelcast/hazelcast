@@ -39,6 +39,7 @@ enum XmlElements {
     RELIABLE_TOPIC("reliable-topic", true),
     JOB_TRACKER("jobtracker", true),
     SEMAPHORE("semaphore", true),
+    LOCK("lock", true),
     RINGBUFFER("ringbuffer", true),
     LISTENERS("listeners", false),
     SERIALIZATION("serialization", false),

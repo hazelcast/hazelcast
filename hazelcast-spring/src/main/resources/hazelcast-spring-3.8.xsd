@@ -162,6 +162,14 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="lock" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence>
+                                    <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
+                                </xs:sequence>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="ringbuffer" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>

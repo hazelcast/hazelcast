@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -31,7 +32,7 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 public abstract class AbstractLockOperation extends Operation
-        implements PartitionAwareOperation, IdentifiedDataSerializable {
+        implements PartitionAwareOperation, IdentifiedDataSerializable, NamedOperation {
 
     public static final int ANY_THREAD = 0;
 
@@ -121,6 +122,11 @@ public abstract class AbstractLockOperation extends Operation
 
     public final Data getKey() {
         return key;
+    }
+
+    @Override
+    public String getName() {
+        return namespace.getObjectName();
     }
 
     @Override

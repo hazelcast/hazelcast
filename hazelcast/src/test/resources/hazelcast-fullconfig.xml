@@ -33,7 +33,7 @@
     4. If a configuration cannot be found, Hazelcast will use the default hazelcast configuration
        ’hazelcast-default.xml’, which is included in the the Hazelcast jar
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.7.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.8.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -175,6 +175,7 @@
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
 
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </queue>
     <map name="default">
         <!--
@@ -394,6 +395,10 @@
         <async-backup-count>0</async-backup-count>
     </semaphore>
 
+    <lock name="default">
+        <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
+    </lock>
+
     <ringbuffer name="default">
         <capacity>25311</capacity>
         <backup-count>2</backup-count>
@@ -548,4 +553,9 @@
         <attribute name="attribute.float" type="float">1234.5678</attribute>
     </member-attributes>
 
+
+    <quorum name="quorumRuleWithThreeMembers" enabled="true">
+        <quorum-size>3</quorum-size>
+        <quorum-type>READ_WRITE</quorum-type>
+    </quorum>
 </hazelcast>
