@@ -46,7 +46,12 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
  * <li>{@link IdentifiedDataSerializable}</li>
  * </ol>
  */
+@SuppressWarnings("checkstyle:npathcomplexity")
 final class DataSerializableSerializer implements StreamSerializer<DataSerializable>, TypedStreamDeserializer<DataSerializable> {
+
+    public static final byte IDS_FLAG = 1 << 0;
+    public static final byte EE_FLAG = 1 << 1;
+    public static final byte COMP_FLAG = 1 << 2;
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
@@ -116,20 +121,21 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             }
         }
 
-        final boolean identified = in.readBoolean();
+        final byte header = in.readByte();
         int id = 0;
         int factoryId = 0;
         String className = null;
         try {
             // If you ever change the way this is serialized think about to change
             // BasicOperationService::extractOperationCallId
-            if (identified) {
-                factoryId = in.readInt();
+            if (isFlagSet(header, IDS_FLAG)) {
+                boolean comp = isFlagSet(header, COMP_FLAG);
+                factoryId = comp ? in.readByte() : in.readInt();
                 final DataSerializableFactory dsf = factories.get(factoryId);
                 if (dsf == null) {
                     throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
                 }
-                id = in.readInt();
+                id = comp ? in.readByte() : in.readInt();
                 if (null == aClass) {
                     ds = dsf.create(id);
                     if (ds == null) {
@@ -143,11 +149,19 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
                     ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
                 }
             }
+            if (isFlagSet(header, EE_FLAG)) {
+                in.readByte();
+            }
+
             ds.readData(in);
             return ds;
         } catch (Exception e) {
             throw rethrowReadException(id, factoryId, className, e);
         }
+    }
+
+    public static boolean isFlagSet(byte value, byte flag) {
+        return (value & flag) != 0;
     }
 
     private IOException rethrowReadException(int id, int factoryId, String className, Exception e) throws IOException {
