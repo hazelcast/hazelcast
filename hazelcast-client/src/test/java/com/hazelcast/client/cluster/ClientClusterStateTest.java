@@ -9,6 +9,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -152,19 +153,22 @@ public class ClientClusterStateTest {
                 @Override
                 public void run() {
                     ILogger logger = Logger.getLogger(getClass());
-                    boolean finished = false;
                     threadsStarted.countDown();
                     logger.info("putAll thread started");
-                    while (!finished) {
+                    while (true) {
                         try {
                             map.putAll(values);
                             Thread.sleep(100);
                         } catch (IllegalStateException e) {
                            logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
-                            finished = true;
+                           break;
+                        } catch (TargetDisconnectedException e) {
+                            logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
+                            break;
                         } catch (InterruptedException e) {
                             // do nothing
                         }
+
                     }
                     threadsFinished.countDown();
                     logger.info("putAll thread finishing. Current finished thread count is:" + (numThreads - threadsFinished
