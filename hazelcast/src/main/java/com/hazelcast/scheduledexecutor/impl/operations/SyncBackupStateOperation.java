@@ -19,23 +19,22 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SyncStateOperation
-        extends AbstractBackupAwareSchedulerOperation {
+public class SyncBackupStateOperation
+        extends AbstractSchedulerOperation {
 
     private String taskName;
 
     private Map<Object, Object> state;
 
-    public SyncStateOperation() {
+    public SyncBackupStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state) {
+    public SyncBackupStateOperation(String schedulerName, String taskName, Map state) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
@@ -48,13 +47,8 @@ public class SyncStateOperation
     }
 
     @Override
-    public Operation getBackupOperation() {
-        return new SyncBackupStateOperation(schedulerName, taskName, state);
-    }
-
-    @Override
     public int getId() {
-        return ScheduledExecutorDataSerializerHook.SYNC_STATE_OP;
+        return ScheduledExecutorDataSerializerHook.SYNC_BACKUP_STATE_OP;
     }
 
     @Override

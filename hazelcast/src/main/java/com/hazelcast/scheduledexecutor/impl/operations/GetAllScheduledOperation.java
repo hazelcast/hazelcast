@@ -16,8 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
@@ -25,7 +23,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainerHolder;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -82,15 +79,4 @@ public class GetAllScheduledOperation
         return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED;
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
-        super.readInternal(in);
-    }
 }

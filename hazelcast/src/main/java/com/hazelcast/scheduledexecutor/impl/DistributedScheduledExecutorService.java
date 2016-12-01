@@ -30,7 +30,11 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Scheduled executor service, middle-man responsible for managing Scheduled Executor containers.
+ */
 public class DistributedScheduledExecutorService
         implements ManagedService, RemoteService, MigrationAwareService {
 
@@ -46,6 +50,8 @@ public class DistributedScheduledExecutorService
 
     private final ConcurrentMap<String, Boolean> shutdownExecutors
             = new ConcurrentHashMap<String, Boolean>();
+
+    private final AtomicBoolean migrationMode = new AtomicBoolean();
 
     public DistributedScheduledExecutorService() {
     }
@@ -116,24 +122,26 @@ public class DistributedScheduledExecutorService
     }
 
     public void shutdownExecutor(String name) {
-        if (shutdownExecutors.putIfAbsent(name, Boolean.TRUE) == null) {
-            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
+        String fqden = fullyQualifiedDurableExecutorName(name);
+        if (shutdownExecutors.putIfAbsent(fqden, Boolean.TRUE) == null) {
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(fqden);
         }
     }
 
     public boolean isShutdown(String name) {
-        return shutdownExecutors.containsKey(name);
+        return shutdownExecutors.containsKey(fullyQualifiedDurableExecutorName(name));
     }
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int partitionId = event.getPartitionId();
         ScheduledExecutorPartition partition = partitions[partitionId];
-        return partition.prepareReplicationOperation(event.getReplicaIndex());
+        return partition.prepareReplicationOperation(event.getReplicaIndex(), migrationMode.get());
     }
 
     @Override
     public void beforeMigration(PartitionMigrationEvent event) {
+        migrationMode.compareAndSet(false, true);
     }
 
     @Override
@@ -145,17 +153,27 @@ public class DistributedScheduledExecutorService
             ScheduledExecutorPartition partition = partitions[partitionId];
             partition.promoteStash();
         }
+        migrationMode.set(false);
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
+        int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             discardStash(event.getPartitionId(), event.getCurrentReplicaIndex());
+        } else {
+            ScheduledExecutorPartition partition = partitions[partitionId];
+            partition.promoteStash();
         }
+        migrationMode.set(false);
     }
 
     private void discardStash(int partitionId, int thresholdReplicaIndex) {
         ScheduledExecutorPartition partition = partitions[partitionId];
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
+    }
+
+    static String fullyQualifiedDurableExecutorName(String name) {
+        return String.format("%s:%s", SERVICE_NAME, name);
     }
 }

@@ -55,12 +55,6 @@ public class ScheduleTaskOperation
     }
 
     @Override
-    public boolean shouldBackup() {
-        boolean isMemberOperation = getPartitionId() == -1;
-        return !isMemberOperation;
-    }
-
-    @Override
     public Operation getBackupOperation() {
         return new ScheduleTaskBackupOperation(schedulerName, (TaskDefinition) definition);
     }

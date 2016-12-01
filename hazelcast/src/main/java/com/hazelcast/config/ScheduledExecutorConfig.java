@@ -17,17 +17,29 @@
 package com.hazelcast.config;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
  */
 public class ScheduledExecutorConfig {
 
+    /**
+     * The number of executor threads per Member for the Executor based on this configuration.
+     */
+    private static final int DEFAULT_POOL_SIZE = 16;
+
+    /**
+     * The number of replicas per task scheduled in each ScheduledExecutor
+     */
     private static final int DEFAULT_DURABILITY = 1;
 
     private String name = "default";
 
     private int durability = DEFAULT_DURABILITY;
+
+    private int poolSize = DEFAULT_POOL_SIZE;
+
 
     private ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
@@ -38,13 +50,14 @@ public class ScheduledExecutorConfig {
         this.name = name;
     }
 
-    public ScheduledExecutorConfig(String name, int durability) {
+    public ScheduledExecutorConfig(String name, int durability, int poolSize) {
         this.name = name;
         this.durability = durability;
+        this.poolSize = poolSize;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability());
+        this(config.getName(), config.getDurability(), config.getPoolSize());
     }
 
     public ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly getAsReadOnly() {
@@ -71,6 +84,28 @@ public class ScheduledExecutorConfig {
      */
     public ScheduledExecutorConfig setName(String name) {
         this.name = name;
+        return this;
+    }
+
+
+    /**
+     * Gets the number of executor threads per member for the executor.
+     *
+     * @return The number of executor threads per member for the executor.
+     */
+    public int getPoolSize() {
+        return poolSize;
+    }
+
+    /**
+     * Sets the number of executor threads per member for the executor.
+     *
+     * @param poolSize The number of executor threads per member for the executor.
+     * @return This executor config instance.
+     */
+    public ScheduledExecutorConfig setPoolSize(int poolSize) {
+        checkPositive(poolSize, "Pool size should be greater than 0");
+        this.poolSize = poolSize;
         return this;
     }
 
@@ -103,6 +138,7 @@ public class ScheduledExecutorConfig {
         return "ScheduledExecutorConfig{"
                 + "name='" + name + '\''
                 + ", durability=" + durability
+                + ", poolSize-" + poolSize
                 + '}';
     }
 
@@ -119,6 +155,11 @@ public class ScheduledExecutorConfig {
 
         @Override
         public ScheduledExecutorConfig setDurability(int durability) {
+            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+        }
+
+        @Override
+        public ScheduledExecutorConfig setPoolSize(int poolSize) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }

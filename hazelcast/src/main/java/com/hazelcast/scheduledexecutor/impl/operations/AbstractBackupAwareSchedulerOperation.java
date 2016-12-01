@@ -30,7 +30,8 @@ public abstract class AbstractBackupAwareSchedulerOperation
 
     @Override
     public boolean shouldBackup() {
-        return true;
+        boolean isMemberOperation = getPartitionId() == -1;
+        return !isMemberOperation;
     }
 
     @Override

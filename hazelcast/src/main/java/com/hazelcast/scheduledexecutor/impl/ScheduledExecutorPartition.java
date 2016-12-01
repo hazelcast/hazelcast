@@ -61,9 +61,9 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
         this.nodeEngine = nodeEngine;
     }
 
-    public void createContainer(String name, Map<String, BackupTaskDescriptor> backup) {
+    public void createContainer(String name, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         checkNotNull(name, "Name can't be null");
-        checkNotNull(backup, "Backup info can't be null");
+        checkNotNull(tasks, "Tasks info can't be null");
 
         if (logger.isFineEnabled()) {
             logger.fine("Creating Scheduled Executor partition with name: " + name);
@@ -71,7 +71,7 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
 
         ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
         ScheduledExecutorContainer container =
-                new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(), backup);
+                new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(), tasks);
         containers.put(name, container);
     }
 
@@ -92,15 +92,15 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
         }
     }
 
-    public Operation prepareReplicationOperation(int replicaIndex) {
-        Map<String, Map<String, BackupTaskDescriptor>> map =
-                new HashMap<String, Map<String, BackupTaskDescriptor>>();
+    public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
+        Map<String, Map<String, ScheduledTaskDescriptor>> map =
+                new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
 
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {
                 continue;
             }
-            map.put(container.getName(), container.prepareForReplication());
+            map.put(container.getName(), container.prepareForReplication(migrationMode));
         }
 
         return new ReplicationOperation(map);
@@ -108,14 +108,19 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {
         if (thresholdReplicaIndex < 0) {
-            containers.clear();
-        }
+            for (ScheduledExecutorContainer container : containers.values()) {
+                container.destroy();
+            }
 
-        Iterator<ScheduledExecutorContainer> iterator = containers.values().iterator();
-        while (iterator.hasNext()) {
-            ScheduledExecutorContainer container = iterator.next();
-            if (thresholdReplicaIndex > container.getDurability()) {
-                iterator.remove();
+            containers.clear();
+        } else {
+            Iterator<ScheduledExecutorContainer> iterator = containers.values().iterator();
+            while (iterator.hasNext()) {
+                ScheduledExecutorContainer container = iterator.next();
+                if (thresholdReplicaIndex > container.getDurability()) {
+                    container.destroy();
+                    iterator.remove();
+                }
             }
         }
     }

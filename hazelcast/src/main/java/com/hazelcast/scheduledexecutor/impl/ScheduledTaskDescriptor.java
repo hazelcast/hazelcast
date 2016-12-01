@@ -16,49 +16,105 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ScheduledTaskDescriptor {
+/**
+ * Metadata holder for scheduled tasks.
+ * Scheduled ones have a reference in their future in {@link #scheduledFuture}.
+ * Stashed ones have this reference null.
+ */
+public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
 
-    private final TaskDefinition definition;
-
-    private final ScheduledFuture<?> scheduledFuture;
-
-    private final ScheduledTaskStatisticsImpl stats;
-
-    private final AtomicReference<Map<?, ?>> state;
-
-    private final AtomicBoolean lock = new AtomicBoolean();
-
-    public ScheduledTaskDescriptor(TaskDefinition definition, ScheduledFuture<?> scheduledFuture,
-                                   AtomicReference<Map<?, ?>> taskState, ScheduledTaskStatisticsImpl stats) {
-        this.definition = definition;
-        this.scheduledFuture = scheduledFuture;
-        this.stats = stats;
-        this.state = taskState;
+    public enum Mode {
+        IDLE,
+        RUNNING,
+        SAFEPOINT
     }
 
-    public AtomicBoolean getLock() {
-        return lock;
+    private TaskDefinition definition;
+
+    private ScheduledFuture<?> scheduledFuture;
+
+    private ScheduledTaskStatisticsImpl stats;
+
+    private volatile Map<?, ?> stateSnapshot;
+
+    private final AtomicReference<Mode> mode = new AtomicReference<Mode>(Mode.IDLE);
+
+    public ScheduledTaskDescriptor() {
+    }
+
+    public ScheduledTaskDescriptor(TaskDefinition definition) {
+        this.definition = definition;
+        this.stateSnapshot = new HashMap();
+        this.stats = new ScheduledTaskStatisticsImpl();
+    }
+    public ScheduledTaskDescriptor(TaskDefinition definition,
+                                   Map<?, ?> stateSnapshot, ScheduledTaskStatisticsImpl stats) {
+        this.definition = definition;
+        this.stats = stats;
+        this.stateSnapshot = stateSnapshot;
     }
 
     public TaskDefinition getDefinition() {
         return definition;
     }
 
-    public ScheduledFuture<?> getScheduledFuture() {
-        return scheduledFuture;
-    }
-
     public ScheduledTaskStatisticsImpl getStats() {
         return stats;
     }
 
-    public AtomicReference<Map<?, ?>> getState() {
-        return state;
+    Map<?, ?> getStateSnapshot() {
+        return stateSnapshot;
     }
 
+    void setStateSnapshot(Map<?, ?> snapshot) {
+        this.stateSnapshot = snapshot;
+    }
+
+    ScheduledFuture<?> getScheduledFuture() {
+        return scheduledFuture;
+    }
+
+    void setScheduledFuture(ScheduledFuture<?> future) {
+        this.scheduledFuture = future;
+    }
+
+    AtomicReference<Mode> getModeRef() {
+        return mode;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ScheduledExecutorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ScheduledExecutorDataSerializerHook.TASK_DESCRIPTOR;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeObject(definition);
+        out.writeObject(stateSnapshot);
+        out.writeObject(stats);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        definition = in.readObject();
+        stateSnapshot = in.readObject();
+        stats = in.readObject();
+    }
 }

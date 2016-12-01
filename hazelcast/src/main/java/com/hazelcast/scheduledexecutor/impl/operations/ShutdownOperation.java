@@ -16,12 +16,8 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-
-import java.io.IOException;
 
 public class ShutdownOperation
         extends AbstractSchedulerOperation {
@@ -44,15 +40,4 @@ public class ShutdownOperation
         return ScheduledExecutorDataSerializerHook.SHUTDOWN;
     }
 
-    @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
-        super.writeInternal(out);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
-        super.readInternal(in);
-    }
 }

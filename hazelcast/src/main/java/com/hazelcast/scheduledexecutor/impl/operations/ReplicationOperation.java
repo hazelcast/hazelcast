@@ -18,24 +18,25 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.scheduledexecutor.impl.BackupTaskDescriptor;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
 
-    private Map<String, Map<String, BackupTaskDescriptor>> map;
+    private Map<String, Map<String, ScheduledTaskDescriptor>> map;
 
     public ReplicationOperation() {
     }
 
-    public ReplicationOperation(Map<String, Map<String, BackupTaskDescriptor>> map) {
+    public ReplicationOperation(Map<String, Map<String, ScheduledTaskDescriptor>> map) {
         this.map = map;
     }
 
@@ -43,18 +44,19 @@ public class ReplicationOperation
     public void run() throws Exception {
         DistributedScheduledExecutorService service = getService();
         ScheduledExecutorPartition partition = service.getPartition(getPartitionId());
-        for (Map.Entry<String, Map<String, BackupTaskDescriptor>> entry : map.entrySet()) {
-            partition.createContainer(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
+            partition.createContainer(entry.getKey(),
+                    new ConcurrentHashMap<String, ScheduledTaskDescriptor>(entry.getValue()));
         }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<String, Map<String, BackupTaskDescriptor>> entry : map.entrySet()) {
+        for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
             out.writeUTF(entry.getKey());
             out.writeInt(entry.getValue().size());
-            for (Map.Entry<String, BackupTaskDescriptor> subEntry : entry.getValue().entrySet()) {
+            for (Map.Entry<String, ScheduledTaskDescriptor> subEntry : entry.getValue().entrySet()) {
                 out.writeUTF(subEntry.getKey());
                 out.writeObject(subEntry.getValue());
             }
@@ -64,14 +66,15 @@ public class ReplicationOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        map = new HashMap<String, Map<String, BackupTaskDescriptor>>(size);
+        map = new HashMap<String, Map<String, ScheduledTaskDescriptor>>(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             int subSize = in.readInt();
-            Map<String, BackupTaskDescriptor> subMap = new HashMap<String, BackupTaskDescriptor>(subSize);
+            Map<String, ScheduledTaskDescriptor> subMap =
+                    new HashMap<String, ScheduledTaskDescriptor>(subSize);
             map.put(key, subMap);
             for (int k = 0; k < subSize; k++) {
-                subMap.put(in.readUTF(), (BackupTaskDescriptor) in.readObject());
+                subMap.put(in.readUTF(), (ScheduledTaskDescriptor) in.readObject());
             }
         }
     }

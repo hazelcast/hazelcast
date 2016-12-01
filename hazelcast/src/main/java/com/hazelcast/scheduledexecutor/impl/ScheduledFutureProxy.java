@@ -29,7 +29,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.DestroyTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.DisposeTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
@@ -43,6 +43,8 @@ import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings({"checkstyle:methodcount"})
 public final class ScheduledFutureProxy<V>
@@ -96,6 +98,7 @@ public final class ScheduledFutureProxy<V>
 
     @Override
     public long getDelay(TimeUnit unit) {
+        checkNotNull(unit, "Unit is null");
         checkAccessibleHandler();
         checkAccessibleOwner();
 
@@ -151,6 +154,7 @@ public final class ScheduledFutureProxy<V>
     @Override
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
+        checkNotNull(unit, "Unit is null");
         return this.get0().get(timeout, unit);
     }
 
@@ -161,7 +165,7 @@ public final class ScheduledFutureProxy<V>
 
         unRegisterPartitionListenerIfExists();
 
-        Operation op = new DestroyTaskOperation(handler);
+        Operation op = new DisposeTaskOperation(handler);
         InternalCompletableFuture future = invoke(op);
         handler = null;
         future.join();
@@ -213,7 +217,6 @@ public final class ScheduledFutureProxy<V>
             this.membershipListenerRegistration = this.instance.getCluster().addMembershipListener(new MembershipAdapter() {
                 @Override
                 public void memberRemoved(MembershipEvent membershipEvent) {
-                    System.err.println("Member event : " + membershipEvent);
                     if (membershipEvent.getMember().getAddress().equals(handler.getAddress())) {
                         ScheduledFutureProxy.this.memberLost = true;
                     }

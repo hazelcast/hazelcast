@@ -22,6 +22,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,10 +40,11 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
 
     private final AtomicBoolean memberPartitionLock = new AtomicBoolean();
 
-    public ScheduledExecutorMemberOwnedContainer(String name, NodeEngine nodeEngine) {
-        super(name, -1, nodeEngine, MEMBER_DURABILITY, null);
+    ScheduledExecutorMemberOwnedContainer(String name, NodeEngine nodeEngine) {
+        super(name, -1, nodeEngine, MEMBER_DURABILITY, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
     }
 
+    @Override
     public <V> ScheduledFuture<V> schedule(TaskDefinition definition) {
         try {
             acquireMemberPartitionLockIfNeeded();
@@ -55,19 +58,27 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
 
     }
 
+    @Override
     public boolean shouldParkGetResult(String taskName) {
         // For member owned tasks there is a race condition, so we avoid purposefully parking.
         // TODO tkountis - Look into the invocation subsystem, to identify root cause.
         return false;
     }
 
+    @Override
     public ScheduledTaskHandler offprintHandler(String taskName) {
         return ScheduledTaskHandlerImpl.of(getNodeEngine().getThisAddress(), getName(), taskName);
     }
 
+    @Override
     protected InvocationBuilder createInvocationBuilder(Operation op) {
         OperationService operationService = getNodeEngine().getOperationService();
         return operationService.createInvocationBuilder(SERVICE_NAME, op, getNodeEngine().getThisAddress());
+    }
+
+    @Override
+    protected void publishStateToReplicas(String taskName, Map snapshot) {
+        // No replicas in the case of Member owned tasks
     }
 
     private void acquireMemberPartitionLockIfNeeded() {

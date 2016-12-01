@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
@@ -97,6 +98,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                     return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED);
                 }
             };
+
+    private final ConstructorFunction<String, ManagedExecutorService> scheduledDurableConstructor =
+            new ConstructorFunction<String, ManagedExecutorService>() {
+                @Override
+                public ManagedExecutorService createNew(String name) {
+                    ScheduledExecutorConfig cfg = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED);
+                }
+            };
+
 
     private final MetricsRegistry metricsRegistry;
 
@@ -190,9 +201,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
             pool.allowCoreThreadTimeOut(true);
             executor = pool;
         } else {
-            throw new IllegalArgumentException("Unknown e"
-                    + ""
-                    + "xecutor type: " + type);
+            throw new IllegalArgumentException("Unknown executor type: " + type);
         }
         return executor;
     }
@@ -202,8 +211,10 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
     }
 
-    public ManagedExecutorService getDurable(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
+    @Override
+    public ManagedExecutorService getDurable(String name, boolean scheduled) {
+        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name,
+                scheduled ? scheduledDurableConstructor : durableConstructor);
     }
 
     @Override
@@ -224,7 +235,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public void executeDurable(String name, Runnable command) {
-        getDurable(name).execute(command);
+        getDurable(name, false).execute(command);
     }
 
     @Override
@@ -284,10 +295,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         return new DelegatingTaskScheduler(scheduledExecutorService, getExecutor(name));
     }
 
-    public TaskScheduler getDurableTaskScheduler(String name) {
-        return new DelegatingTaskScheduler(scheduledExecutorService, getDurable(name));
-    }
-
     public void shutdown() {
         logger.finest("Stopping executors...");
         for (ExecutorService executorService : executors.values()) {
@@ -332,5 +339,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
+    }
+
+    private TaskScheduler getDurableTaskScheduler(String name) {
+        return new DelegatingTaskScheduler(scheduledExecutorService, getDurable(name, true));
     }
 }

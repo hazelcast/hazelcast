@@ -16,7 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
@@ -30,8 +29,6 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHolder {
-
-    private final ILogger logger;
 
     private final NodeEngine nodeEngine;
 
@@ -47,7 +44,6 @@ public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHol
             };
 
     public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
-        this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
     }
 

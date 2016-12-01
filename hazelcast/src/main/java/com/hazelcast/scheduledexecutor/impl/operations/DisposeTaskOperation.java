@@ -20,18 +20,19 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class DestroyTaskOperation
-        extends AbstractSchedulerOperation {
+public class DisposeTaskOperation
+        extends AbstractBackupAwareSchedulerOperation {
 
     private String taskName;
 
-    public DestroyTaskOperation() {
+    public DisposeTaskOperation() {
     }
 
-    public DestroyTaskOperation(ScheduledTaskHandler descriptor) {
+    public DisposeTaskOperation(ScheduledTaskHandler descriptor) {
         super(descriptor.getSchedulerName());
         this.taskName = descriptor.getTaskName();
         setPartitionId(descriptor.getPartitionId());
@@ -40,12 +41,17 @@ public class DestroyTaskOperation
     @Override
     public void run()
             throws Exception {
-        getContainer().destroy(taskName);
+        getContainer().dispose(taskName);
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new DisposeBackupTaskOperation(getSchedulerName(), taskName);
     }
 
     @Override
     public int getId() {
-        return ScheduledExecutorDataSerializerHook.DESTROY_TASK_OP;
+        return ScheduledExecutorDataSerializerHook.DISPOSE_TASK_OP;
     }
 
     @Override

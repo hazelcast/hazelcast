@@ -19,42 +19,31 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
-public class SyncStateOperation
-        extends AbstractBackupAwareSchedulerOperation {
+public class DisposeBackupTaskOperation
+        extends AbstractSchedulerOperation {
 
     private String taskName;
 
-    private Map<Object, Object> state;
-
-    public SyncStateOperation() {
+    public DisposeBackupTaskOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state) {
+    public DisposeBackupTaskOperation(String schedulerName, String taskName) {
         super(schedulerName);
         this.taskName = taskName;
-        this.state = state;
     }
 
     @Override
     public void run()
             throws Exception {
-        getContainer().syncState(taskName, state);
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new SyncBackupStateOperation(schedulerName, taskName, state);
+        getContainer().unstash(taskName);
     }
 
     @Override
     public int getId() {
-        return ScheduledExecutorDataSerializerHook.SYNC_STATE_OP;
+        return ScheduledExecutorDataSerializerHook.DISPOSE_BACKUP_TASK_OP;
     }
 
     @Override
@@ -62,11 +51,6 @@ public class SyncStateOperation
             throws IOException {
         super.writeInternal(out);
         out.writeUTF(taskName);
-        out.writeInt(state.size());
-        for (Map.Entry entry : state.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
     }
 
     @Override
@@ -74,10 +58,5 @@ public class SyncStateOperation
             throws IOException {
         super.readInternal(in);
         this.taskName = in.readUTF();
-        int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
-        for (int i = 0; i < stateSize; i++) {
-            this.state.put(in.readObject(), in.readObject());
-        }
     }
 }

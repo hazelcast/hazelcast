@@ -87,6 +87,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public IScheduledFuture schedule(Runnable command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
 
         ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
         return schedule(callable, delay, unit);
@@ -95,6 +96,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public <V> IScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -108,6 +110,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -122,6 +125,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit) {
         checkNotNull(member, "Member is null");
+        checkNotNull(unit, "Unit is null");
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -129,6 +133,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public <V> IScheduledFuture<V> scheduleOnMember(Callable<V> command, Member member, long delay, TimeUnit unit) {
         checkNotNull(member, "Member is null");
+        checkNotNull(unit, "Unit is null");
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -137,6 +142,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay,
                                                               long period, TimeUnit unit) {
         checkNotNull(member, "Member is null");
+        checkNotNull(unit, "Unit is null");
 
         return scheduleOnMembersWithRepetition(command, Collections.singleton(member), initialDelay, period, unit).get(member);
     }
@@ -144,6 +150,7 @@ public class ScheduledExecutorServiceProxy
     @Override
     public IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object key, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
 
         ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
@@ -153,6 +160,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> scheduleOnKeyOwner(Callable<V> command, Object key, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -167,6 +175,7 @@ public class ScheduledExecutorServiceProxy
                                                                 long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -180,12 +189,14 @@ public class ScheduledExecutorServiceProxy
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
     @Override
     public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -193,6 +204,7 @@ public class ScheduledExecutorServiceProxy
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period,
                                                                                TimeUnit unit) {
         checkNotNull(command, "Command is null");
+        checkNotNull(unit, "Unit is null");
        return scheduleOnMembersWithRepetition(command, getNodeEngine().getClusterService().getMembers(),
                initialDelay, period, unit);
     }
@@ -202,6 +214,7 @@ public class ScheduledExecutorServiceProxy
                                                               TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
+        checkNotNull(unit, "Unit is null");
 
         ScheduledRunnableAdapter callable = createScheduledRunnableAdapter(command);
         return (Map<Member, IScheduledFuture<?>>) scheduleOnMembers(callable, members, delay, unit);
@@ -212,6 +225,7 @@ public class ScheduledExecutorServiceProxy
                                                                   TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
@@ -232,6 +246,7 @@ public class ScheduledExecutorServiceProxy
                                                                             long initialDelay, long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
+        checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
@@ -248,6 +263,8 @@ public class ScheduledExecutorServiceProxy
 
     @Override
     public IScheduledFuture<?> getScheduledFuture(ScheduledTaskHandler handler) {
+        checkNotNull(handler, "Handler is null");
+
         ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
         attachHazelcastInstance(proxy);
         return proxy;

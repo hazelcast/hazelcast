@@ -67,22 +67,22 @@ public class ScheduledTaskStatisticsImpl
     }
 
     @Override
-    public long getCreatedAt() {
+    public long getCreatedAtNanos() {
         return createdAt;
     }
 
     @Override
-    public long getFirstRunStart() {
+    public long getFirstRunStartNanos() {
         return firstRunStart;
     }
 
     @Override
-    public long getLastRunStart() {
+    public long getLastRunStartNanos() {
         return lastRunStart;
     }
 
     @Override
-    public long getLastRunEnd() {
+    public long getLastRunEndNanos() {
         return lastRunEnd;
     }
 

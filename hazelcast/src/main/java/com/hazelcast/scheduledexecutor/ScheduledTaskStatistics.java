@@ -36,25 +36,23 @@ public interface ScheduledTaskStatistics extends IdentifiedDataSerializable {
 
     /**
      * @return The creation time the task
-     *
-     * @see {@link System#nanoTime()}.
      */
-    long getCreatedAt();
+    long getCreatedAtNanos();
 
     /**
-     * @return The monotonic time of when the task was scheduled in for the very first time.
+     * @return The time of when the task was scheduled in for the very first time.
      */
-    long getFirstRunStart();
+    long getFirstRunStartNanos();
 
     /**
-     * @return The monotonic time of when the task was scheduled in last.
+     * @return The time of when the task was scheduled in last.
      */
-    long getLastRunStart();
+    long getLastRunStartNanos();
 
     /**
-     * @return The monotonic time of when the task was last scheduled out.
+     * @return The time of when the task was last scheduled out.
      */
-    long getLastRunEnd();
+    long getLastRunEndNanos();
 
     /**
      * Returns the duration of the task's last execution.

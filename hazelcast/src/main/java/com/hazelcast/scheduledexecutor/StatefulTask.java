@@ -74,6 +74,8 @@ public interface StatefulTask<K, V> {
      * Used to load current state of the task from a Map.
      * Called once, upon initial scheduling of the task.
      *
+     * {@link #load(Map)} will not be called if the snapshot is empty.
+     *
      * @param snapshot The {@link Map} responsible for providing the snapshot of state.
      */
     void load(Map<K, V> snapshot);

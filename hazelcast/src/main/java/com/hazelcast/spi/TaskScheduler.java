@@ -55,6 +55,20 @@ public interface TaskScheduler extends ExecutorService {
      */
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
+    /**
+     * Creates and executes a one-shot action that becomes enabled
+     * after the given delay.
+     *
+     * @param command the task to execute
+     * @param delay the time from now to delay execution
+     * @param unit the time unit of the delay parameter
+     * @return a ScheduledFuture representing pending completion of
+     *         the task and whose {@code get()} method will return
+     *         {@code <V>} upon completion
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     * @throws NullPointerException if command is null
+     */
     <V> ScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit);
 
     /**

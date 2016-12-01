@@ -125,15 +125,15 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
         double durationFromCreationToScheduleIn = TimeUnit.SECONDS.convert(
-                stats.getLastRunStart() - stats.getCreatedAt(), TimeUnit.NANOSECONDS);
+                stats.getLastRunStartNanos() - stats.getCreatedAtNanos(), TimeUnit.NANOSECONDS);
 
         assertEquals(1, stats.getTotalRuns());
         assertEquals(delay, durationFromCreationToScheduleIn, delayGracePeriod);
-        assertNotNull(stats.getCreatedAt());
-        assertNotNull(stats.getFirstRunStart());
+        assertNotNull(stats.getCreatedAtNanos());
+        assertNotNull(stats.getFirstRunStartNanos());
         assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunStart());
+        assertNotNull(stats.getLastRunStartNanos());
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));
@@ -159,6 +159,33 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         ScheduledTaskStatistics stats = future.getStats();
         assertEquals(6, stats.getTotalRuns());
     }
+
+    @Test
+    public void stats_longRunningTask_durable()
+            throws ExecutionException, InterruptedException {
+        HazelcastInstance[] instances = createClusterWithCount(4);
+
+        String key = generateKeyOwnedBy(instances[1]);
+
+        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        latch.trySetCount(6);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture future = executorService.scheduleOnKeyOwnerWithRepetition(
+                new ICountdownLatchRunnableTask("latch", instances[0]), key, 0, 10, TimeUnit.SECONDS);
+
+        // Wait 20 seconds
+        Thread.sleep(20000);
+
+        instances[1].getLifecycleService().shutdown();
+
+        latch.await(70, TimeUnit.SECONDS);
+        future.cancel(true);
+
+        ScheduledTaskStatistics stats = future.getStats();
+        assertEquals(6, stats.getTotalRuns());
+    }
+
 
     @Test
     public void schedule_withCallable()

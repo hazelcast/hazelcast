@@ -22,7 +22,8 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.DestroyTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.DisposeBackupTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.DisposeTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
@@ -34,6 +35,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.ResultReadyNotifyOperatio
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskBackupOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.SyncBackupStateOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.SyncStateOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SCHEDULED_EXECUTOR_DS_FACTORY;
@@ -45,7 +47,7 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
             SCHEDULED_EXECUTOR_DS_FACTORY, SCHEDULED_EXECUTOR_DS_FACTORY_ID);
 
     public static final int TASK_HANDLER = 1;
-    public static final int BACKUP_DESCRIPTOR = 2;
+    public static final int TASK_DESCRIPTOR = 2;
     public static final int RUNNABLE_DEFINITION = 3;
 
     public static final int RUNNABLE_ADAPTER = 4;
@@ -66,13 +68,16 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
     public static final int TASK_STATS = 16;
 
     public static final int SYNC_STATE_OP = 17;
-    public static final int REPLICATION = 18;
+    public static final int SYNC_BACKUP_STATE_OP = 18;
+    public static final int REPLICATION = 19;
 
-    public static final int DESTROY_TASK_OP = 19;
+    public static final int DISPOSE_TASK_OP = 20;
 
-    public static final int GET_ALL_SCHEDULED = 20;
+    public static final int DISPOSE_BACKUP_TASK_OP = 21;
 
-    public static final int SHUTDOWN = 21;
+    public static final int GET_ALL_SCHEDULED = 22;
+
+    public static final int SHUTDOWN = 23;
 
     @Override
     public int getFactoryId() {
@@ -87,8 +92,8 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                 switch (typeId) {
                     case TASK_HANDLER:
                         return new ScheduledTaskHandlerImpl();
-                    case BACKUP_DESCRIPTOR:
-                        return new BackupTaskDescriptor();
+                    case TASK_DESCRIPTOR:
+                        return new ScheduledTaskDescriptor();
                     case RUNNABLE_DEFINITION:
                         return new TaskDefinition();
                     case RUNNABLE_ADAPTER:
@@ -103,8 +108,10 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new CancelTaskBackupOperation();
                     case SCHEDULE_OP:
                         return new ScheduleTaskOperation();
-                    case DESTROY_TASK_OP:
-                        return new DestroyTaskOperation();
+                    case DISPOSE_TASK_OP:
+                        return new DisposeTaskOperation();
+                    case DISPOSE_BACKUP_TASK_OP:
+                        return new DisposeBackupTaskOperation();
                     case IS_DONE_OP:
                         return new IsDoneOperation();
                     case IS_CANCELED_OP:
@@ -117,6 +124,8 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new ScheduleTaskBackupOperation();
                     case SYNC_STATE_OP:
                         return new SyncStateOperation();
+                    case SYNC_BACKUP_STATE_OP:
+                        return new SyncBackupStateOperation();
                     case REPLICATION:
                         return new ReplicationOperation();
                     case GET_ALL_SCHEDULED:
