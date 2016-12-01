@@ -56,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
 
     private static final int CORE_POOL_SIZE = 3;
