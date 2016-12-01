@@ -29,9 +29,14 @@ import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
  */
 final class PartitionInvocation extends Invocation {
 
+    PartitionInvocation(Context context, Operation op, Runnable doneCallback, int tryCount, long tryPauseMillis,
+                        long callTimeoutMillis, boolean deserialize) {
+        super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+    }
+
     PartitionInvocation(Context context, Operation op, int tryCount, long tryPauseMillis,
-                               long callTimeoutMillis, boolean deserialize) {
-        super(context, op, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
+                        long callTimeoutMillis, boolean deserialize) {
+        this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize);
     }
 
     @Override

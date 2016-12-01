@@ -1,17 +1,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,8 +17,6 @@ import org.mockito.Mockito;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
-import static com.hazelcast.spi.properties.GroupProperty.BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
