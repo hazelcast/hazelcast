@@ -17,6 +17,7 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.config.WanReplicationConfig;
+import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.StatisticsAwareService;
 
@@ -82,4 +83,9 @@ public interface WanReplicationService
      * Adds a new {@link WanReplicationConfig} to all members.
      */
     void addWanReplicationConfig(WanReplicationConfig wanConfig);
+
+    /**
+     * Returns current status of WAN sync operation
+     */
+    WanSyncState getWanSyncState();
 }
