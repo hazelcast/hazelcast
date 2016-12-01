@@ -20,6 +20,7 @@ import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionReplicaManager;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -61,7 +62,8 @@ public final class FinalizeMigrationOperation extends AbstractOperation
         }
 
         InternalPartitionServiceImpl partitionService = getService();
-        partitionService.getMigrationManager().removeActiveMigration(getPartitionId());
+        PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
+        partitionStateManager.clearMigratingFlag(migrationInfo.getPartitionId());
 
         if (success) {
             nodeEngine.onPartitionMigrate(migrationInfo);

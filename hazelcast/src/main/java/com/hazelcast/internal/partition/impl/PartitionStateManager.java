@@ -262,8 +262,12 @@ public class PartitionStateManager {
         return newState;
     }
 
-    void setMigrating(int partitionId, boolean migrating) {
-        partitions[partitionId].setMigrating(migrating);
+    public void setMigratingFlag(int partitionId) {
+        partitions[partitionId].setMigrating(true);
+    }
+
+    public void clearMigratingFlag(int partitionId) {
+        partitions[partitionId].setMigrating(false);
     }
 
     void updateReplicaAddresses(int partitionId, Address[] replicaAddresses) {

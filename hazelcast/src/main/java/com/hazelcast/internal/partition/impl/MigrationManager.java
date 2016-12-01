@@ -202,10 +202,12 @@ public class MigrationManager {
                 op.setPartitionId(partitionId).setNodeEngine(nodeEngine).setValidateTarget(false)
                         .setService(partitionService);
                 nodeEngine.getOperationService().execute(op);
+                removeActiveMigration(partitionId);
             } else {
                 final Address partitionOwner = partitionStateManager.getPartitionImpl(partitionId).getOwnerOrNull();
                 if (node.getThisAddress().equals(partitionOwner)) {
                     removeActiveMigration(partitionId);
+                    partitionStateManager.clearMigratingFlag(partitionId);
                 } else {
                     logger.severe("Failed to finalize migration because this member " + thisAddress
                             + " is not a participant of the migration: " + migrationInfo);
@@ -222,14 +224,13 @@ public class MigrationManager {
         partitionServiceLock.lock();
         try {
             if (activeMigrationInfo == null) {
-                partitionStateManager.setMigrating(migrationInfo.getPartitionId(), true);
                 activeMigrationInfo = migrationInfo;
                 return null;
             }
 
             if (logger.isFineEnabled()) {
                 logger.fine("Active migration is not set: " + migrationInfo
-                        + ". Existing active migration: " + activeMigrationInfo);
+                        + ". Existing active migration: " + activeMigrationInfo + "\n");
             }
             return activeMigrationInfo;
         } finally {
@@ -241,18 +242,17 @@ public class MigrationManager {
         return activeMigrationInfo;
     }
 
-    public boolean removeActiveMigration(int partitionId) {
+    private boolean removeActiveMigration(int partitionId) {
         partitionServiceLock.lock();
         try {
             if (activeMigrationInfo != null) {
                 if (activeMigrationInfo.getPartitionId() == partitionId) {
-                    partitionStateManager.setMigrating(partitionId, false);
                     activeMigrationInfo = null;
                     return true;
                 }
 
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Active migration is not removed, because it has different partitionId! "
+                if (logger.isFineEnabled()) {
+                    logger.fine("Active migration is not removed, because it has different partitionId! "
                             + "partitionId=" + partitionId + ", active migration=" + activeMigrationInfo);
                 }
             }
