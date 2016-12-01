@@ -164,6 +164,7 @@ public abstract class Invocation implements OperationResponseHandler {
     final long tryPauseMillis;
     final long callTimeoutMillis;
 
+    /** Refer to {@link com.hazelcast.spi.InvocationBuilder#setDoneCallback(Runnable)} for an explanation */
     private final Runnable taskDoneCallback;
 
     Invocation(Context context, Operation op, Runnable taskDoneCallback, int tryCount, long tryPauseMillis,
