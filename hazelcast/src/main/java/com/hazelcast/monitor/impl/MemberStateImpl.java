@@ -33,6 +33,7 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.LocalWanStats;
+import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.NodeState;
@@ -67,6 +68,7 @@ public class MemberStateImpl implements MemberState {
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
+    private WanSyncState wanSyncState = new WanSyncStateImpl();
 
     public MemberStateImpl() {
     }
@@ -220,6 +222,15 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public WanSyncState getWanSyncState() {
+        return wanSyncState;
+    }
+
+    public void setWanSyncState(WanSyncState wanSyncState) {
+        this.wanSyncState = wanSyncState;
+    }
+
+    @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
         root.add("address", address);
@@ -249,6 +260,7 @@ public class MemberStateImpl implements MemberState {
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
+        root.add("wanSyncState", wanSyncState.toJson());
         return root;
     }
 
@@ -338,6 +350,11 @@ public class MemberStateImpl implements MemberState {
             hotRestartState = new HotRestartStateImpl();
             hotRestartState.fromJson(jsonHotRestartState);
         }
+        JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
+        if (jsonWanSyncState != null) {
+            wanSyncState = new WanSyncStateImpl();
+            wanSyncState.fromJson(jsonWanSyncState);
+        }
     }
 
     //CHECKSTYLE:ON
@@ -358,6 +375,7 @@ public class MemberStateImpl implements MemberState {
                 + ", memberPartitionState=" + memberPartitionState
                 + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
+                + ", wanSyncState=" + wanSyncState
                 + '}';
     }
 }

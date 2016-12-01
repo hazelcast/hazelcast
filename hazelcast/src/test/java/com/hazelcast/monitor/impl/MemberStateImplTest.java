@@ -10,6 +10,7 @@ import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.TimedMemberState;
+import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -17,6 +18,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.wan.WanSyncStatus;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -67,6 +69,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus);
+        final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS);
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -86,6 +89,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.setClients(clients);
         memberState.setNodeState(state);
         memberState.setHotRestartState(hotRestartState);
+        memberState.setWanSyncState(wanSyncState);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
@@ -119,5 +123,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         final HotRestartState deserializedHotRestartState = deserialized.getHotRestartState();
         assertEquals(backupTaskStatus, deserializedHotRestartState.getBackupTaskStatus());
+
+        final WanSyncState deserializedWanSyncState = deserialized.getWanSyncState();
+        assertEquals(WanSyncStatus.IN_PROGRESS, deserializedWanSyncState.getStatus());
     }
 }

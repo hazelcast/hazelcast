@@ -20,6 +20,7 @@ import com.hazelcast.config.WanPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.monitor.LocalWanStats;
+import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEndpoint;
@@ -142,5 +143,10 @@ public class WanReplicationServiceImpl implements WanReplicationService {
 
     private ConcurrentHashMap<String, WanReplicationPublisherDelegate> initializeWanReplicationPublisherMapping() {
         return new ConcurrentHashMap<String, WanReplicationPublisherDelegate>(2);
+    }
+
+    @Override
+    public WanSyncState getWanSyncState() {
+        return null;
     }
 }

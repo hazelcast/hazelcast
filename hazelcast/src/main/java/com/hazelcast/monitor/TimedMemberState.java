@@ -34,9 +34,6 @@ import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
-/**
- * @deprecated this class will be removed in 3.8
- */
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     long time;

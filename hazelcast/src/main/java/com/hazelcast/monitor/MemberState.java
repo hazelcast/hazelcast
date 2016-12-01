@@ -63,4 +63,6 @@ public interface MemberState extends JsonSerializable {
     NodeState getNodeState();
 
     HotRestartState getHotRestartState();
+
+    WanSyncState getWanSyncState();
 }
