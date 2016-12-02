@@ -77,6 +77,16 @@ a `SAXParse` exception is thrown. [5528]
 
 The following are the issues solved for Hazelcast 3.6 and 3.6.x releases.
 
+*3.6.7*
+
+- When loading keys supplied by the user, keyLoaderState should not be changed. In some cases, MapLoader.loadAll(true) does not reload after reloading with new keys. [9279]
+
+*3.6.6*
+
+- NullPointerException is thrown while deleting an entry through Entry Processor by setting value to NULL. [9141]
+- Indefinite reads of stale values from near cache should be prevented. [9075]
+- Write behind MapStore is not retrying to store an entry indefinitely. When an entry cannot be persisted, the retry mechanism stops working after a while. This happens when the distributed map is configured to use the write-behind mechanism. [8918]
+
 *3.6.5*
 
 - The method ClusterMergeTask::waitOnFutureInterruptible has an almost endless loop. [8527]
