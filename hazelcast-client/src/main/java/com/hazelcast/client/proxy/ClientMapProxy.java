@@ -145,6 +145,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
@@ -160,9 +161,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> key
  * @param <V> value
  */
-public class ClientMapProxy<K, V>
-        extends ClientProxy
-        implements IMap<K, V> {
+public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
@@ -211,6 +210,7 @@ public class ClientMapProxy<K, V>
     };
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+    private Data entryRemovingProcessor;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -293,6 +293,18 @@ public class ClientMapProxy<K, V>
         ClientMessage response = invoke(request, keyData);
         MapRemoveIfSameCodec.ResponseParameters resultParameters = MapRemoveIfSameCodec.decodeResponse(response);
         return resultParameters.response;
+    }
+
+    @Override
+    public void removeAll(Predicate<K, V> predicate) {
+        checkNotNull(predicate, "predicate cannot be null");
+
+        removeAllInternal(predicate);
+    }
+
+    protected void removeAllInternal(Predicate predicate) {
+        ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, entryRemovingProcessor, toData(predicate));
+        invoke(request);
     }
 
     @Override
@@ -1484,6 +1496,7 @@ public class ClientMapProxy<K, V>
         super.onInitialize();
 
         lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
+        entryRemovingProcessor = toData(ENTRY_REMOVING_PROCESSOR);
     }
 
     private class ClientMapEventHandler

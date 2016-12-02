@@ -68,6 +68,16 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable {
     }
 
 
+    /**
+     * Similar to calling {@link #setValue} with null but doesn't return old-value hence no extra deserialization.
+     */
+    public void remove() {
+        modified = true;
+        valueObject = null;
+        valueData = null;
+    }
+
+
     public boolean isModified() {
         return modified;
     }

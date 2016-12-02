@@ -101,6 +101,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
@@ -534,6 +535,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected boolean tryRemoveInternal(Data key, long timeout, TimeUnit timeunit) {
         MapOperation operation = operationProvider.createTryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
         return (Boolean) invokeOperation(key, operation);
+    }
+
+    protected void removeAllInternal(Predicate predicate) {
+        OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(name,
+                ENTRY_REMOVING_PROCESSOR, predicate);
+        try {
+            operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
     }
 
     protected InternalCompletableFuture<Data> removeAsyncInternal(Data key) {

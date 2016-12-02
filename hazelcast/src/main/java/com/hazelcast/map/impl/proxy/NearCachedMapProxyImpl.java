@@ -262,6 +262,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
+    protected void removeAllInternal(Predicate predicate) {
+        super.removeAllInternal(predicate);
+        nearCache.clear();
+    }
+
+    @Override
     protected void deleteInternal(Data key) {
         super.deleteInternal(key);
         invalidateCache(key);

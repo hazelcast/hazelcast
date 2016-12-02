@@ -211,6 +211,13 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public void removeAll(Predicate<K, V> predicate) {
+        checkNotNull(predicate, "predicate cannot be null");
+
+        removeAllInternal(predicate);
+    }
+
+    @Override
     public void delete(Object k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
