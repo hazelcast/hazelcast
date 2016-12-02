@@ -38,7 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.Util.executeAndPeel;
+import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)

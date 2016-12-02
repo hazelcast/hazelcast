@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.Util.executeAndPeel;
+import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;

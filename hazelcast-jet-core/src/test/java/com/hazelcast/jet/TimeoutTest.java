@@ -31,7 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.Util.executeAndPeel;
+import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)

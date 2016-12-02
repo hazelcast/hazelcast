@@ -27,6 +27,7 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
@@ -40,23 +41,23 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
+import static com.hazelcast.jet.impl.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class EngineContext {
 
+    // Type of variable is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
+    // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
+    final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+    // keeps track of active invocations from client for cancellation support
+    private final ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
     private final String name;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private ResourceStore resourceStore;
     private JetEngineConfig config;
-
-    // Type of variable is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
-    // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
-    private ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
-
-    // keeps track of active invocations from client for cancellation support
-    private ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
 
     public EngineContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
         this.name = name;
@@ -122,8 +123,8 @@ public class EngineContext {
             supplier.init(Context.of(nodeEngine, totalParallelism, perNodeParallelism));
 
             final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
-                int otherEndId = vertexIdMap.get(edge.getDestination());
-                return new EdgeDef(otherEndId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
+                int oppositeVertexId = vertexIdMap.get(edge.getDestination());
+                return new EdgeDef(oppositeVertexId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
                         edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
             }).collect(toList());
 
@@ -147,7 +148,7 @@ public class EngineContext {
     void initExecution(long executionId, ExecutionPlan plan) {
         executionContexts.compute(executionId, (k, v) -> {
             if (v != null) {
-                throw new IllegalStateException("Execution for " + executionId + " ");
+                throw new IllegalStateException("Execution for " + executionId + ' ');
             }
             return new ExecutionContext(executionId, EngineContext.this);
         }).initialize(plan);

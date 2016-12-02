@@ -96,7 +96,7 @@ class ExecutionContext {
         List<Address> remoteMembers = nodeEngine.getClusterService().getMembers().stream()
                                                 .filter(m -> !m.equals(nodeEngine.getLocalMember()))
                                                 .map(Member::getAddress)
-                                                .collect(Collectors.toList());
+                                                .collect(toList());
         for (VertexDef vertex : plan.getVertices()) {
             final List<EdgeDef> inputs = vertex.getInputs();
             final List<EdgeDef> outputs = vertex.getOutputs();
@@ -107,8 +107,8 @@ class ExecutionContext {
                 final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
                 final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
                 for (EdgeDef edge : outputs) {
-                    final int destinationId = edge.getOtherEndId();
-                    final String id = vertex.getVertexId() + ":" + edge.getOtherEndId();
+                    final int destinationId = edge.getOppositeVertexId();
+                    final String edgeId = vertex.getVertexId() + ":" + edge.getOppositeVertexId();
                     final VertexDef destination = vMap.get(destinationId);
                     final int localConsumerCount = destination.getParallelism();
                     final int receiverCount = edge.isDistributed() ? 1 : 0;
@@ -116,21 +116,19 @@ class ExecutionContext {
                     // each edge has an array of conveyors
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
-                    final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(id,
+                    final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edgeId,
                             e -> createConveyorArray(localConsumerCount, parallelism + receiverCount, QUEUE_SIZE));
 
                     // create a sender tasklet per destination address, each with a single conveyor with number of
                     // producers queues feeding it
                     final Map<Address, ConcurrentConveyor<Object>> senderConveyor = !edge.isDistributed() ? null :
-                            senderConveyorMap.computeIfAbsent(id, k -> {
+                            senderConveyorMap.computeIfAbsent(edgeId, k -> {
                                 final Map<Address, ConcurrentConveyor<Object>> map = new HashMap<>();
                                 for (Address address : remoteMembers) {
                                     final ConcurrentConveyor<Object> conveyor =
                                             createConveyorArray(1, parallelism, QUEUE_SIZE)[0];
                                     final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
-                                            edge.getOtherEndOrdinal(),
-                                            edge.getPriority(),
-                                            conveyor);
+                                            edge.getOtherEndOrdinal(), edge.getPriority(), conveyor);
                                     tasklets.add(new SenderTasklet(inboundEdgeStream, nodeEngine, context.getName(),
                                             address, executionId, destinationId));
                                     map.put(address, conveyor);
@@ -143,7 +141,7 @@ class ExecutionContext {
                 for (EdgeDef input : inputs) {
                     // each tasklet will have one input conveyor per edge
                     // and one InboundEmitter per queue on the conveyor
-                    final String id = input.getOtherEndId() + ":" + vertex.getVertexId();
+                    final String id = input.getOppositeVertexId() + ":" + vertex.getVertexId();
                     final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(id)[taskletIndex];
                     inboundStreams.add(createInboundEdgeStream(input.getOrdinal(), input.getPriority(), conveyor));
                 }
@@ -182,14 +180,14 @@ class ExecutionContext {
 
         final int partitionCount = totalPartitionCount();
         final int parallelism = source.getParallelism();
-        final int destinationId = edge.getOtherEndId();
+        final int destVertexId = edge.getOppositeVertexId();
         final OutboundCollector[] allCollectors;
         if (!edge.isDistributed()) {
             allCollectors = localCollectors;
         } else {
             // create the receiver tasklet for the edge, if not already created
-            receiverMap.computeIfAbsent(destinationId, x -> new HashMap<>());
-            receiverMap.get(destinationId).computeIfAbsent(ordinalAtDestination, x -> {
+            receiverMap.computeIfAbsent(destVertexId, x -> new HashMap<>());
+            receiverMap.get(destVertexId).computeIfAbsent(ordinalAtDestination, x -> {
                 final OutboundCollector[] receivers = new OutboundCollector[localConsumerCount];
                 Arrays.setAll(receivers, n ->
                         new ConveyorCollector(localConveyors[n], parallelism, localPartitions.get(n)));

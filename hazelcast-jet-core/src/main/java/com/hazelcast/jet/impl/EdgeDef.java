@@ -26,8 +26,8 @@ import java.io.IOException;
 
 class EdgeDef implements IdentifiedDataSerializable {
 
-    private int otherEndId;
-    private int otherEndOrdinal;
+    private int oppositeVertexId;
+    private int oppositeEndOrdinal;
     private int ordinal;
     private int priority;
     private boolean isDistributed;
@@ -37,10 +37,10 @@ class EdgeDef implements IdentifiedDataSerializable {
     EdgeDef() {
     }
 
-    EdgeDef(int otherEndId, int ordinal, int otherEndOrdinal, int priority,
+    EdgeDef(int oppositeVertexId, int ordinal, int oppositeEndOrdinal, int priority,
             boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner) {
-        this.otherEndId = otherEndId;
-        this.otherEndOrdinal = otherEndOrdinal;
+        this.oppositeVertexId = oppositeVertexId;
+        this.oppositeEndOrdinal = oppositeEndOrdinal;
         this.ordinal = ordinal;
         this.priority = priority;
         this.isDistributed = isDistributed;
@@ -48,12 +48,16 @@ class EdgeDef implements IdentifiedDataSerializable {
         this.partitioner = partitioner;
     }
 
-    int getOtherEndId() {
-        return otherEndId;
-    }
-
     int getOrdinal() {
         return ordinal;
+    }
+
+    int getOppositeEndOrdinal() {
+        return oppositeEndOrdinal;
+    }
+
+    int getOppositeVertexId() {
+        return oppositeVertexId;
     }
 
     Edge.ForwardingPattern getForwardingPattern() {
@@ -68,13 +72,12 @@ class EdgeDef implements IdentifiedDataSerializable {
         return priority;
     }
 
-    int getOtherEndOrdinal() {
-        return otherEndOrdinal;
-    }
-
     boolean isDistributed() {
         return isDistributed;
     }
+
+
+    // IdentifiedDataSerializable implementation
 
     @Override
     public int getFactoryId() {
@@ -88,8 +91,8 @@ class EdgeDef implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(otherEndId);
-        out.writeInt(otherEndOrdinal);
+        out.writeInt(oppositeVertexId);
+        out.writeInt(oppositeEndOrdinal);
         out.writeInt(ordinal);
         out.writeInt(priority);
         out.writeBoolean(isDistributed);
@@ -99,8 +102,8 @@ class EdgeDef implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        otherEndId = in.readInt();
-        otherEndOrdinal = in.readInt();
+        oppositeVertexId = in.readInt();
+        oppositeEndOrdinal = in.readInt();
         ordinal = in.readInt();
         priority = in.readInt();
         isDistributed = in.readBoolean();

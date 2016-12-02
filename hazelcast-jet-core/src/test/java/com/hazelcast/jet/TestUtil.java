@@ -20,9 +20,9 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.impl.Util.peel;
 
-public final class Util {
+public final class TestUtil {
 
-    private Util() {
+    private TestUtil() {
 
     }
 

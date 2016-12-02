@@ -21,7 +21,8 @@ import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 /**
- * A restricted {@code Queue<Object>} API with additional support for bulk draining operations.
+ * A subset of {@code Queue<Object>} API restricted to the consumer side,
+ * with additional support for bulk draining operations.
  */
 public interface Inbox {
 

@@ -40,9 +40,9 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
 
     @Override
     protected void processMessage() {
-        Operation op = this.prepareOperation();
+        Operation op = prepareOperation();
         op.setCallerUuid(getEndpoint().getUuid());
-        InvocationBuilder builder = this.getInvocationBuilder(op).setResultDeserialized(false);
+        InvocationBuilder builder = getInvocationBuilder(op).setResultDeserialized(false);
         EngineContext engineContext = getEngineContext(parameters.engineName);
 
         InternalCompletableFuture<Object> invocation = builder.invoke();
