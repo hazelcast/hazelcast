@@ -17,8 +17,6 @@
 
 package com.hazelcast.test.mocknetwork;
 
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
@@ -62,19 +60,6 @@ public class MockConnectionManager implements ConnectionManager {
         this.registry = registry;
         this.node = node;
         this.logger = ioService.getLogger(MockConnectionManager.class.getName());
-        // add a listener for member shutdown so that the client side connection also receives notification of connection closes
-        node.getNodeEngine().getHazelcastInstance().getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.SHUTTING_DOWN == event.getState()) {
-                    for (Connection connection : mapConnections.values()) {
-                        if (connection.isClient()) {
-                            destroyConnection(connection);
-                        }
-                    }
-                }
-            }
-        });
     }
 
     @Override
