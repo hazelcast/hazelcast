@@ -69,7 +69,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
         final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus);
-        final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS);
+        final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86);
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
@@ -126,5 +126,6 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         final WanSyncState deserializedWanSyncState = deserialized.getWanSyncState();
         assertEquals(WanSyncStatus.IN_PROGRESS, deserializedWanSyncState.getStatus());
+        assertEquals(86, deserializedWanSyncState.getSyncedPartitionCount());
     }
 }

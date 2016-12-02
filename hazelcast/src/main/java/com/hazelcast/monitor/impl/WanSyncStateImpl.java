@@ -25,12 +25,14 @@ public class WanSyncStateImpl implements WanSyncState {
 
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;
+    private int syncedPartitionCount;
 
     public WanSyncStateImpl() { }
 
-    public WanSyncStateImpl(WanSyncStatus status) {
+    public WanSyncStateImpl(WanSyncStatus status, int syncedPartitionCount) {
         creationTime = Clock.currentTimeMillis();
         this.status = status;
+        this.syncedPartitionCount = syncedPartitionCount;
     }
 
     @Override
@@ -44,10 +46,16 @@ public class WanSyncStateImpl implements WanSyncState {
     }
 
     @Override
+    public int getSyncedPartitionCount() {
+        return syncedPartitionCount;
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
         root.add("status", status.getStatus());
+        root.add("syncedPartitionCount", syncedPartitionCount);
         return root;
     }
 
@@ -56,10 +64,13 @@ public class WanSyncStateImpl implements WanSyncState {
         this.creationTime = json.getLong("creationTime", -1L);
         int status = json.getInt("status", WanSyncStatus.READY.getStatus());
         this.status = WanSyncStatus.getByStatus(status);
+        this.syncedPartitionCount = json.getInt("syncedPartitionCount", 0);
     }
 
     @Override
     public String toString() {
-        return "WanSyncStateImpl{wanSyncStatus=" + status + '}';
+        return "WanSyncStateImpl{wanSyncStatus=" + status
+                + ", syncedPartitionCount=" + syncedPartitionCount
+                + '}';
     }
 }
