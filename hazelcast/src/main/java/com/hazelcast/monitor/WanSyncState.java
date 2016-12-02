@@ -22,4 +22,6 @@ public interface WanSyncState extends LocalInstanceStats {
 
     WanSyncStatus getStatus();
 
+    int getSyncedPartitionCount();
+
 }
