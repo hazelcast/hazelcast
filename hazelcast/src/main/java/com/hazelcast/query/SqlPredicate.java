@@ -314,22 +314,13 @@ public class SqlPredicate
         // The following could have been achieved with {@link com.hazelcast.query.impl.predicates.FlatteningVisitor},
         // however since we only care for 2-argument flattening, we can avoid constructing a visitor and its internals
         // for each token pass at the cost of the following explicit code.
-        Predicate[] subpredicatesLeft;
-        Predicate[] subpredicatesRight;
         Predicate[] predicates;
-        if (klass.isInstance(predicateLeft)) {
-            subpredicatesLeft = ((CompoundPredicate) predicateLeft).getPredicates();
-            if (predicateRight instanceof CompoundPredicate) {
-                subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
-            } else {
-                subpredicatesRight = new Predicate[] {predicateRight};
-            }
-            predicates = new Predicate[subpredicatesLeft.length + subpredicatesRight.length];
-            ArrayUtils.concat(subpredicatesLeft, subpredicatesRight, predicates);
-        } else if (klass.isInstance(predicateRight)) {
-            subpredicatesRight = ((CompoundPredicate) predicateRight).getPredicates();
-            predicates = new Predicate[subpredicatesRight.length + 1];
-            ArrayUtils.concat(new Predicate[] {predicateLeft}, subpredicatesRight, predicates);
+        if (klass.isInstance(predicateLeft) || klass.isInstance(predicateRight)) {
+            Predicate[] left = getSubPredicatesIfClass(predicateLeft, klass);
+            Predicate[] right = getSubPredicatesIfClass(predicateRight, klass);
+
+            predicates = new Predicate[left.length + right.length];
+            ArrayUtils.concat(left, right, predicates);
         } else {
             predicates = new Predicate[] {predicateLeft, predicateRight};
         }
@@ -341,6 +332,14 @@ public class SqlPredicate
             throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
         } catch (IllegalAccessException e) {
             throw new RuntimeException(String.format("%s should have a public default constructor", klass.getName()));
+        }
+    }
+
+    private static <T extends CompoundPredicate> Predicate[] getSubPredicatesIfClass(Predicate predicate, Class<T> klass) {
+        if (klass.isInstance(predicate)) {
+            return ((CompoundPredicate) predicate).getPredicates();
+        } else {
+            return new Predicate[]{predicate};
         }
     }
 
