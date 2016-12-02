@@ -88,6 +88,7 @@ import static com.hazelcast.spi.properties.GroupProperty.GRACEFUL_SHUTDOWN_MAX_W
 import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
@@ -123,7 +124,7 @@ public class Node {
     private final AtomicBoolean joined = new AtomicBoolean(false);
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
-    private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
+    private final NodeShutdownHookThread shutdownHookThread;
 
     private final PhoneHome phoneHome = new PhoneHome();
 
@@ -161,6 +162,9 @@ public class Node {
         this.liteMember = config.isLiteMember();
         this.configClassLoader = config.getClassLoader();
         this.properties = new HazelcastProperties(config);
+
+        String policy = properties.getString(SHUTDOWNHOOK_POLICY);
+        this.shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread", policy);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
         this.version = MemberVersion.of(buildInfo.getVersion());
 
@@ -592,10 +596,17 @@ public class Node {
         return discoveryService;
     }
 
-    public class NodeShutdownHookThread extends Thread {
+    private enum ShutdownHookPolicy {
+        TERMINATE,
+        GRACEFUL
+    }
 
-        NodeShutdownHookThread(String name) {
+    public class NodeShutdownHookThread extends Thread {
+        private final ShutdownHookPolicy policy;
+
+        NodeShutdownHookThread(String name, String policy) {
             super(name);
+            this.policy = ShutdownHookPolicy.valueOf(policy);
         }
 
         @Override
@@ -603,7 +614,16 @@ public class Node {
             try {
                 if (isRunning()) {
                     logger.info("Running shutdown hook... Current state: " + state);
-                    hazelcastInstance.getLifecycleService().terminate();
+                    switch (policy) {
+                        case TERMINATE:
+                            hazelcastInstance.getLifecycleService().terminate();
+                            break;
+                        case GRACEFUL:
+                            hazelcastInstance.getLifecycleService().shutdown();
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unimplemented shutdown hook policy: " + policy);
+                    }
                 }
             } catch (Exception e) {
                 logger.warning(e);

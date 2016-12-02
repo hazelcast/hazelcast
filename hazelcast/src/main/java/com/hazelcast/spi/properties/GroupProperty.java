@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -256,6 +257,23 @@ public final class GroupProperty {
 
     public static final HazelcastProperty SHUTDOWNHOOK_ENABLED
             = new HazelcastProperty("hazelcast.shutdownhook.enabled", true);
+
+    /**
+     * Behaviour when JVM is about to exit while Hazelcast instance is still running.
+     *
+     * Possible values:
+     * TERMINATE: Terminate Hazelcast immediately
+     * GRACEFUL:  Initiate graceful shutdown. This can significantly slow-down JVM exit process, but it's tries to
+     *            retain data safety.
+     *
+     * Default: TERMINATE
+     *
+     * You should always shutdown Hazelcast explicitly via {@link HazelcastInstance#shutdown()}
+     * It's not recommended to rely on shutdown hook, this is a last-effort measure.
+     *
+     */
+    public static final HazelcastProperty SHUTDOWNHOOK_POLICY
+            = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
 
     public static final HazelcastProperty WAIT_SECONDS_BEFORE_JOIN
             = new HazelcastProperty("hazelcast.wait.seconds.before.join", 5, SECONDS);
