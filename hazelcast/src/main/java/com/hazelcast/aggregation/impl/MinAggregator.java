@@ -36,13 +36,13 @@ public class MinAggregator<T extends Comparable, K, V> extends AbstractAggregato
     public void accumulate(Map.Entry<K, V> entry) {
         T extractedValue = (T) extract(entry);
 
-        if (min == null || isCurrentlyGreaterThan(extractedValue)) {
+        if (isCurrentlyGreaterThan(extractedValue)) {
             min = extractedValue;
         }
     }
 
     private boolean isCurrentlyGreaterThan(T otherValue) {
-        return min.compareTo(otherValue) > 0;
+        return min == null || min.compareTo(otherValue) > 0;
     }
 
     @Override

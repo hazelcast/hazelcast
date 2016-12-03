@@ -46,7 +46,10 @@ public class CountAggregationTest {
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, BigDecimal, BigDecimal> resultAggregation = Aggregators.count();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -60,7 +63,10 @@ public class CountAggregationTest {
         for (Person person : values) {
             aggregation.accumulate(createEntryWithValue(person));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, BigDecimal, BigDecimal> resultAggregation = Aggregators.count();Aggregators.count("age");
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }

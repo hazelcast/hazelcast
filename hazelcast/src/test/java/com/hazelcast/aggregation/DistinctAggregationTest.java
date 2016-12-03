@@ -49,7 +49,10 @@ public class DistinctAggregationTest {
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        Set<String> result = aggregation.aggregate();
+
+        Aggregator<Set<String>, String, String> resultAggregation = Aggregators.distinct();
+        resultAggregation.combine(aggregation);
+        Set<String> result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -65,7 +68,10 @@ public class DistinctAggregationTest {
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        Set<Double> result = aggregation.aggregate();
+
+        Aggregator<Set<Double>, Person, Person> resultAggregation = Aggregators.distinct("age");
+        resultAggregation.combine(aggregation);
+        Set<Double> result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
