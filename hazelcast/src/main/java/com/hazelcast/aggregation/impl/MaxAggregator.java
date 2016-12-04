@@ -36,13 +36,13 @@ public class MaxAggregator<T extends Comparable, K, V> extends AbstractAggregato
     public void accumulate(Map.Entry<K, V> entry) {
         T extractedValue = (T) extract(entry);
 
-        if (max == null || isCurrentlyLessThan(extractedValue)) {
+        if (isCurrentlyLessThan(extractedValue)) {
             max = extractedValue;
         }
     }
 
     private boolean isCurrentlyLessThan(T extractedValue) {
-        return max.compareTo(extractedValue) < 0;
+        return max == null || max.compareTo(extractedValue) < 0;
     }
 
     @Override

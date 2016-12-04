@@ -29,12 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.aggregation.TestSamples.addValues;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
@@ -43,6 +37,12 @@ import static com.hazelcast.aggregation.TestSamples.sampleDoubles;
 import static com.hazelcast.aggregation.TestSamples.sampleIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleLongs;
 import static com.hazelcast.aggregation.TestSamples.sampleValueContainers;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.NUMBER;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -65,7 +65,10 @@ public class AvgAggregationTest {
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg();
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -80,7 +83,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -95,7 +101,10 @@ public class AvgAggregationTest {
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, BigInteger, BigInteger> resultAggregation = Aggregators.bigIntegerAvg();
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -111,7 +120,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigIntegerAvg("bigInteger");
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -125,7 +137,10 @@ public class AvgAggregationTest {
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        Double result = aggregation.aggregate();
+
+        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleAvg();
+        resultAggregation.combine(aggregation);
+        Double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -139,7 +154,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.doubleAvg("doubleValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -153,7 +171,10 @@ public class AvgAggregationTest {
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, Integer, Integer> resultAggregation = Aggregators.integerAvg();
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -167,7 +188,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.integerAvg("intValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -181,7 +205,10 @@ public class AvgAggregationTest {
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.longAvg();
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -195,7 +222,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.longAvg("longValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -212,7 +242,10 @@ public class AvgAggregationTest {
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.numberAvg();
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -227,7 +260,10 @@ public class AvgAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.numberAvg("numberValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }

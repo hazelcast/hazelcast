@@ -64,7 +64,10 @@ public class SumAggregationTest {
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalSum();
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -78,7 +81,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigDecimalSum("bigDecimal");
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -92,7 +98,10 @@ public class SumAggregationTest {
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigInteger result = aggregation.aggregate();
+
+        Aggregator<BigInteger, BigInteger, BigInteger> resultAggregation = Aggregators.bigIntegerSum();
+        resultAggregation.combine(aggregation);
+        BigInteger result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -106,7 +115,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigInteger result = aggregation.aggregate();
+
+        Aggregator<BigInteger, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigIntegerSum("bigInteger");
+        resultAggregation.combine(aggregation);
+        BigInteger result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -120,7 +132,10 @@ public class SumAggregationTest {
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        Double result = aggregation.aggregate();
+
+        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleSum();
+        resultAggregation.combine(aggregation);
+        Double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -134,7 +149,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.doubleSum("doubleValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -148,7 +166,10 @@ public class SumAggregationTest {
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, Integer, Integer> resultAggregation = Aggregators.integerSum();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -162,7 +183,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, ValueContainer, ValueContainer> resultAggregation = Aggregators.integerSum("intValue");
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -176,7 +200,10 @@ public class SumAggregationTest {
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, Long, Long> resultAggregation = Aggregators.longSum();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -190,7 +217,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, ValueContainer, ValueContainer> resultAggregation = Aggregators.longSum("longValue");
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -207,7 +237,10 @@ public class SumAggregationTest {
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, Number, Number> resultAggregation = Aggregators.fixedPointSum();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -222,7 +255,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Long, ValueContainer, ValueContainer> resultAggregation = Aggregators.fixedPointSum("numberValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -239,7 +275,10 @@ public class SumAggregationTest {
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, Number, Number> resultAggregation = Aggregators.floatingPointSum();
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -254,7 +293,10 @@ public class SumAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, ValueContainer, ValueContainer> resultAggregation = Aggregators.floatingPointSum("numberValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }

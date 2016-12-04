@@ -28,11 +28,6 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
-import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
@@ -40,8 +35,13 @@ import static com.hazelcast.aggregation.TestSamples.sampleBigIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleDoubles;
 import static com.hazelcast.aggregation.TestSamples.sampleIntegers;
 import static com.hazelcast.aggregation.TestSamples.sampleLongs;
-import static com.hazelcast.aggregation.TestSamples.sampleValueContainers;
 import static com.hazelcast.aggregation.TestSamples.sampleStrings;
+import static com.hazelcast.aggregation.TestSamples.sampleValueContainers;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_DECIMAL;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.BIG_INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.DOUBLE;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.INTEGER;
+import static com.hazelcast.aggregation.ValueContainer.ValueType.LONG;
 import static com.hazelcast.aggregation.ValueContainer.ValueType.STRING;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
@@ -64,7 +64,10 @@ public class MaxAggregationTest {
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalMax();
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -79,7 +82,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigDecimal result = aggregation.aggregate();
+
+        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalMax("bigDecimal");
+        resultAggregation.combine(aggregation);
+        BigDecimal result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -94,7 +100,10 @@ public class MaxAggregationTest {
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        BigInteger result = aggregation.aggregate();
+
+        Aggregator<BigInteger, BigInteger, BigInteger> resultAggregation = Aggregators.bigIntegerMax();
+        resultAggregation.combine(aggregation);
+        BigInteger result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -109,7 +118,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        BigInteger result = aggregation.aggregate();
+
+        Aggregator<BigInteger, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigIntegerMax("bigInteger");
+        resultAggregation.combine(aggregation);
+        BigInteger result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -124,7 +136,10 @@ public class MaxAggregationTest {
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        Double result = aggregation.aggregate();
+
+        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleMax();
+        resultAggregation.combine(aggregation);
+        Double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
@@ -139,7 +154,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        double result = aggregation.aggregate();
+
+        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleMax("doubleValue");
+        resultAggregation.combine(aggregation);
+        double result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -154,7 +172,10 @@ public class MaxAggregationTest {
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Integer, Integer, Integer> resultAggregation = Aggregators.integerMax();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -169,7 +190,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        int result = aggregation.aggregate();
+
+        Aggregator<Integer, ValueContainer, ValueContainer> resultAggregation = Aggregators.integerMax("intValue");
+        resultAggregation.combine(aggregation);
+        int result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -184,7 +208,10 @@ public class MaxAggregationTest {
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, Long, Long> resultAggregation = Aggregators.longMax();
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -199,7 +226,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        long result = aggregation.aggregate();
+
+        Aggregator<Long, ValueContainer, ValueContainer> resultAggregation = Aggregators.longMax("longValue");
+        resultAggregation.combine(aggregation);
+        long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -214,7 +244,10 @@ public class MaxAggregationTest {
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
-        String result = aggregation.aggregate();
+
+        Aggregator<String, String, String> resultAggregation = Aggregators.comparableMax();
+        resultAggregation.combine(aggregation);
+        String result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
@@ -229,7 +262,10 @@ public class MaxAggregationTest {
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
-        String result = aggregation.aggregate();
+
+        Aggregator<String, ValueContainer, ValueContainer> resultAggregation = Aggregators.comparableMax("stringValue");
+        resultAggregation.combine(aggregation);
+        String result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
     }
