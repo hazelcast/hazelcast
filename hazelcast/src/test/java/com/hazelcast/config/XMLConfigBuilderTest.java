@@ -948,6 +948,23 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testScheduledExecutorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <scheduled-executor-service name=\"foobar\">\n"
+                + "        <durability>4</durability>\n"
+                + "        <pool-size>5</pool-size>\n"
+                + "    </scheduled-executor-service>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        ScheduledExecutorConfig scheduledExecutorConfig = config.getScheduledExecutorConfig("foobar");
+
+        assertFalse(config.getScheduledExecutorConfigs().isEmpty());
+        assertEquals(4, scheduledExecutorConfig.getDurability());
+        assertEquals(5, scheduledExecutorConfig.getPoolSize());
+    }
+
+    @Test
     public void testIndexesConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"

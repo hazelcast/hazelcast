@@ -45,7 +45,7 @@ class DelegatingTaskDecorator implements Runnable {
 
     @Override
     public String toString() {
-        return "DelegatingTaskDecorator{"
+        return "DelegateDecorator{"
                 + "executor=" + executor
                 + ", runnable=" + runnable
                 + '}';

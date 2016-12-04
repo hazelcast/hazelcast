@@ -77,8 +77,10 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
     }
 
     @Override
-    protected void publishStateToReplicas(String taskName, Map snapshot) {
-        // No replicas in the case of Member owned tasks
+    public void syncState(String taskName, Map newState, ScheduledTaskStatisticsImpl stats) {
+        // Member owned tasks don't have state - there is no replica for them
+        ScheduledTaskDescriptor descriptor = tasks.get(taskName);
+        descriptor.setStats(stats);
     }
 
     private void acquireMemberPartitionLockIfNeeded() {

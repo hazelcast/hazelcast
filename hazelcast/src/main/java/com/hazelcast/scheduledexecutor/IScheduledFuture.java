@@ -58,4 +58,24 @@ public interface IScheduledFuture<V>
      */
     void dispose();
 
+    /**
+     * Attempts to cancel further scheduling of this task.  This attempt will
+     * fail if the task has already completed, has already been cancelled,
+     * or could not be cancelled for some other reason. If successful,
+     * and this task has not started when {@code cancel} is called,
+     * this task should never run.
+     *
+     * <p><b>Warning: </b> This cancel will not attempt to interrupt the running
+     * thread if the task is already in progress, will just cancel further scheduling.</p>
+     *
+     * <p>After this method returns, subsequent calls to {@link #isDone} will
+     * always return {@code true}.  Subsequent calls to {@link #isCancelled}
+     * will always return {@code true} if this method returned {@code true}.
+     *
+     * @param mayInterruptIfRunning is throwing {@link UnsupportedOperationException}
+     * @return {@code false} if the task could not be cancelled,
+     * typically because it has already completed normally;
+     * {@code true
+     */
+    boolean cancel(boolean mayInterruptIfRunning);
 }

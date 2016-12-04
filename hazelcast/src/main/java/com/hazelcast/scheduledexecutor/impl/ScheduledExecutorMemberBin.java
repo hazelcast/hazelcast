@@ -60,7 +60,7 @@ public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHol
     public void destroy() {
         for (ScheduledExecutorContainer container : containers.values()) {
             ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownDurableExecutor(container.getName());
+                    .shutdownScheduledDurableExecutor(container.getName());
         }
     }
 

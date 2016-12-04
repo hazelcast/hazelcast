@@ -64,11 +64,11 @@ import java.util.concurrent.TimeUnit;
  * <p/>
  *
  * One difference of this service in comparison to {@link ScheduledExecutorService} is the
- * {@link #scheduleWithRepetition(Runnable, long, long, TimeUnit)} which has similar semantic
+ * {@link #scheduleAtFixedRate(Runnable, long, long, TimeUnit)} which has similar semantic
  * to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}. It
  * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will
  * skip a scheduled execution if another thread is still running the same task, instead of postponing its execution.
- * To emphasize this difference the method is called <code>scheduleWithRepetition</code>
+ * To emphasize this difference the method is called <code>scheduleAtFixedRate</code>
  * instead of <code>scheduleAtFixedRate</code>
  * <br/><br/>
  * The other difference is this service does not offer an equivalent of
@@ -129,8 +129,8 @@ public interface IScheduledExecutorService extends DistributedObject {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay,
-                                               long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay,
+                                            long period, TimeUnit unit);
 
     /**
      * Creates and executes a one-shot action that becomes enabled
@@ -187,8 +187,8 @@ public interface IScheduledExecutorService extends DistributedObject {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member,
-                                                       long initialDelay, long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnMemberAtFixedRate(Runnable command, Member member,
+                                                    long initialDelay, long period, TimeUnit unit);
 
     /**
      * Creates and executes a one-shot action that becomes enabled
@@ -245,8 +245,8 @@ public interface IScheduledExecutorService extends DistributedObject {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay,
-                                                         long period, TimeUnit unit);
+    IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(Runnable command, Object key, long initialDelay,
+                                                      long period, TimeUnit unit);
 
     /**
      * Creates and executes a one-shot action that becomes enabled
@@ -312,8 +312,8 @@ public interface IScheduledExecutorService extends DistributedObject {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay,
-                                                                        long period, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(Runnable command, long initialDelay,
+                                                                     long period, TimeUnit unit);
 
     /**
      * Creates and executes a one-shot action that becomes enabled
@@ -381,8 +381,8 @@ public interface IScheduledExecutorService extends DistributedObject {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members,
-                                                                     long initialDelay, long period, TimeUnit unit);
+    Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(Runnable command, Collection<Member> members,
+                                                                  long initialDelay, long period, TimeUnit unit);
 
     /**
      * Creates a new {@link IScheduledFuture} from the given handler.

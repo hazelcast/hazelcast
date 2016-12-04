@@ -108,7 +108,7 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public IScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
+    public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
 
@@ -117,7 +117,7 @@ public class ScheduledExecutorServiceProxy
 
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(
-                TaskDefinition.Type.WITH_REPETITION, name, adapter, initialDelay, 0, period, unit);
+                TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -139,12 +139,12 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnMemberWithRepetition(Runnable command, Member member, long initialDelay,
-                                                              long period, TimeUnit unit) {
+    public IScheduledFuture<?> scheduleOnMemberAtFixedRate(Runnable command, Member member, long initialDelay,
+                                                           long period, TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
 
-        return scheduleOnMembersWithRepetition(command, Collections.singleton(member), initialDelay, period, unit).get(member);
+        return scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit).get(member);
     }
 
     @Override
@@ -171,8 +171,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public IScheduledFuture<?> scheduleOnKeyOwnerWithRepetition(Runnable command, Object key, long initialDelay,
-                                                                long period, TimeUnit unit) {
+    public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(Runnable command, Object key, long initialDelay,
+                                                             long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
@@ -181,7 +181,7 @@ public class ScheduledExecutorServiceProxy
         int partitionId = getKeyPartitionId(key);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
         TaskDefinition definition = new TaskDefinition(
-                TaskDefinition.Type.WITH_REPETITION, name, adapter, initialDelay, 0, period, unit);
+                TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
     }
@@ -201,11 +201,11 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersWithRepetition(Runnable command, long initialDelay, long period,
-                                                                               TimeUnit unit) {
+    public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(Runnable command, long initialDelay, long period,
+                                                                            TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
-       return scheduleOnMembersWithRepetition(command, getNodeEngine().getClusterService().getMembers(),
+       return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(),
                initialDelay, period, unit);
     }
 
@@ -242,8 +242,8 @@ public class ScheduledExecutorServiceProxy
     }
 
     @Override
-    public Map<Member, IScheduledFuture<?>> scheduleOnMembersWithRepetition(Runnable command, Collection<Member> members,
-                                                                            long initialDelay, long period, TimeUnit unit) {
+    public Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(Runnable command, Collection<Member> members,
+                                                                         long initialDelay, long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
@@ -253,7 +253,7 @@ public class ScheduledExecutorServiceProxy
         Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
-                    TaskDefinition.Type.WITH_REPETITION, name, adapter, initialDelay, 0, period, unit);
+                    TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
 
             futures.put(member, submitOnMemberSync(name, new ScheduleTaskOperation(getName(), definition), member));
         }

@@ -81,6 +81,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> durableExecutors
             = new ConcurrentHashMap<String, ManagedExecutorService>();
 
+    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors
+            = new ConcurrentHashMap<String, ManagedExecutorService>();
+
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -213,9 +216,13 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
-    public ManagedExecutorService getDurable(String name, boolean scheduled) {
-        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name,
-                scheduled ? scheduledDurableConstructor : durableConstructor);
+    public ManagedExecutorService getDurable(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
+    }
+
+    @Override
+    public ExecutorService getScheduledDurable(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(scheduleDurableExecutors, name, scheduledDurableConstructor);
     }
 
     @Override
@@ -236,7 +243,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public void executeDurable(String name, Runnable command) {
-        getDurable(name, false).execute(command);
+        getDurable(name).execute(command);
     }
 
     @Override
@@ -304,6 +311,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         for (ExecutorService executorService : durableExecutors.values()) {
             executorService.shutdown();
         }
+        for (ExecutorService executorService : scheduleDurableExecutors.values()) {
+            executorService.shutdown();
+        }
         scheduledExecutorService.shutdownNow();
         cachedExecutorService.shutdown();
         try {
@@ -318,6 +328,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
         executors.clear();
         durableExecutors.clear();
+        scheduleDurableExecutors.clear();
     }
 
     @Override
@@ -336,6 +347,14 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
     }
 
+    @Override
+    public void shutdownScheduledDurableExecutor(String name) {
+        ExecutorService executorService = scheduleDurableExecutors.remove(name);
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+
     private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
         CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
@@ -343,6 +362,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     private TaskScheduler getDurableTaskScheduler(String name) {
-        return new DelegatingTaskScheduler(scheduledExecutorService, getDurable(name, true));
+        return new DelegatingTaskScheduler(scheduledExecutorService, getScheduledDurable(name));
     }
+
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.scheduledexecutor;
 
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * An interface to provide means for saving & loading state for {@link Runnable} and {@link java.util.concurrent.Callable}
@@ -42,13 +43,13 @@ import java.util.Map;
  *      private int cleanUpInvalidRecordsAndReturnCount() {
  *      }
  *
- *      public void save(Map<String, Integer> state) {
- *          state.put("recordsDeletedSoFar", recordsDeletedSoFar);
+ *      public void save(Map<String, Integer> snapshot) {
+ *          snapshot.put("recordsDeletedSoFar", recordsDeletedSoFar);
  *      }
  *
- *      public void load(Map<String, Integer> state) {
+ *      public void load(Map<String, Integer> snapshot) {
  *          if (state.containsKey("recordsDeletedSoFar")) {
- *              recordsDeletedSoFar = state.get("recordsDeletedSoFar");
+ *              recordsDeletedSoFar = snapshot.get("recordsDeletedSoFar");
  *          }
  *      }
  * }
@@ -60,8 +61,14 @@ import java.util.Map;
 public interface StatefulTask<K, V> {
 
     /**
-     * Used to store current state of the task to a Map.
-     * Keys and Values need to support serialization.
+     * Task callback to capture its state on the provided map.
+     * This is invoked after each invocation of {@link Runnable#run()} or {@link Callable#call()}
+     * to capture a snapshot of the state and publish to replicas. If two or more replicas of the
+     * same task run at the same time and publish their states, then only the one running on the owner
+     * member will be allowed to update the replicas.
+     *
+     * <b>Note: </b> The state of the cluster is not known or guaranteed during task's execution, thus,
+     * publication of the task's state to replicas is done on best-effort basis.
      *
      * Called immediately after run() or call() of the {@link Runnable}
      * or {@link java.util.concurrent.Callable} respectively.
@@ -71,12 +78,14 @@ public interface StatefulTask<K, V> {
     void save(Map<K, V> snapshot);
 
     /**
-     * Used to load current state of the task from a Map.
-     * Called once, upon initial scheduling of the task.
+     * Task callback to initialize its inner state, after a replica promotion, from the given map.
+     * This is invoked once per task's lifecycle in a single member, before invocation of
+     * {@link Runnable#run()} or {@link Callable#call()} to setup task's state as published from
+     * the previous owner of the task in the cluster.
      *
-     * {@link #load(Map)} will not be called if the snapshot is empty.
+     * <tt>load</tt> will not be called if the snapshot is empty.
      *
-     * @param snapshot The {@link Map} responsible for providing the snapshot of state.
+     * @param snapshot The {@link Map} responsible for providing a snapshot of the task's state.
      */
     void load(Map<K, V> snapshot);
 

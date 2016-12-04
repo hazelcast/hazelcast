@@ -40,7 +40,7 @@ public class DistributedScheduledExecutorService
 
     public static final String SERVICE_NAME = "hz:impl:scheduledExecutorService";
 
-    private static final int MEMBER_BIN = -1;
+    public static final int MEMBER_BIN = -1;
 
     private NodeEngine nodeEngine;
 
@@ -117,19 +117,18 @@ public class DistributedScheduledExecutorService
     @Override
     public void destroyDistributedObject(String name) {
         if (shutdownExecutors.remove(name) != null) {
-            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(name);
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(name);
         }
     }
 
     public void shutdownExecutor(String name) {
-        String fqden = fullyQualifiedDurableExecutorName(name);
-        if (shutdownExecutors.putIfAbsent(fqden, Boolean.TRUE) == null) {
-            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownDurableExecutor(fqden);
+        if (shutdownExecutors.putIfAbsent(name, Boolean.TRUE) == null) {
+            ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(name);
         }
     }
 
     public boolean isShutdown(String name) {
-        return shutdownExecutors.containsKey(fullyQualifiedDurableExecutorName(name));
+        return shutdownExecutors.containsKey(name);
     }
 
     @Override
@@ -173,7 +172,4 @@ public class DistributedScheduledExecutorService
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
     }
 
-    static String fullyQualifiedDurableExecutorName(String name) {
-        return String.format("%s:%s", SERVICE_NAME, name);
-    }
 }

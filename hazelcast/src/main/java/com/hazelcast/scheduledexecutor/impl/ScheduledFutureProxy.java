@@ -113,10 +113,14 @@ public final class ScheduledFutureProxy<V>
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
+        if (mayInterruptIfRunning) {
+            throw new UnsupportedOperationException("mayInterruptIfRunning flag is not supported.");
+        }
+
         checkAccessibleHandler();
         checkAccessibleOwner();
 
-        Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
+        Operation op = new CancelTaskOperation(handler, false);
         return this.<Boolean>invoke(op).join();
     }
 

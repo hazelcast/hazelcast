@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  * to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}. It
  * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will
  * skip a scheduled execution if another thread is still running the same task, instead of postponing its execution.
- * To emphasize this difference the method is called <code>scheduleWithRepetition</code>
+ * To emphasize this difference the method is called <code>scheduleAtFixedRate</code>
  * instead of <code>scheduleAtFixedRate</code>
  *
  * The other difference is this service does not offer an equivalent of

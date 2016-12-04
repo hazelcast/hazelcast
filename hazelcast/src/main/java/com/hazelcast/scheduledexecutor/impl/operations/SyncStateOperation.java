@@ -19,11 +19,14 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
@@ -32,24 +35,36 @@ public class SyncStateOperation
 
     private Map<Object, Object> state;
 
+    private ScheduledTaskStatisticsImpl stats;
+
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state) {
+    public SyncStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
+        this.stats = stats;
     }
 
     @Override
     public void run()
             throws Exception {
-        getContainer().syncState(taskName, state);
+        if (getPartitionId() == MEMBER_BIN
+                || getNodeEngine().getPartitionService().isPartitionOwner(getPartitionId())) {
+            getContainer().syncState(taskName, state, stats);
+        }
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return super.shouldBackup()
+                && getNodeEngine().getPartitionService().isPartitionOwner(getPartitionId());
     }
 
     @Override
     public Operation getBackupOperation() {
-        return new SyncBackupStateOperation(schedulerName, taskName, state);
+        return new SyncBackupStateOperation(schedulerName, taskName, state, stats);
     }
 
     @Override
@@ -67,6 +82,7 @@ public class SyncStateOperation
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
         }
+        out.writeObject(stats);
     }
 
     @Override
@@ -79,5 +95,6 @@ public class SyncStateOperation
         for (int i = 0; i < stateSize; i++) {
             this.state.put(in.readObject(), in.readObject());
         }
+        this.stats = in.readObject();
     }
 }

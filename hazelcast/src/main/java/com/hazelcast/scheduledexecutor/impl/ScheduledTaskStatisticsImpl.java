@@ -19,7 +19,6 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -30,23 +29,29 @@ public class ScheduledTaskStatisticsImpl
 
     private static final TimeUnit MEASUREMENT_UNIT = TimeUnit.NANOSECONDS;
 
-    private volatile long runs;
+    private long runs;
 
-    private volatile long createdAt = System.nanoTime();
+    private long createdAt = System.nanoTime();
 
-    private volatile long firstRunStart;
+    private long firstRunStart;
 
-    private volatile long lastRunStart;
+    private long lastRunStart;
 
-    private volatile long lastRunEnd;
+    private long lastRunEnd;
 
-    private volatile long lastIdleTime;
+    private long lastIdleTime;
 
-    private volatile long totalRunTime;
+    private long totalRunTime;
 
-    private volatile long totalIdleTime;
+    private long totalIdleTime;
 
     public ScheduledTaskStatisticsImpl() {
+    }
+
+    public ScheduledTaskStatisticsImpl(ScheduledTaskStatistics copy) {
+        this(copy.getTotalRuns(), copy.getFirstRunStartNanos(), copy.getLastRunStartNanos(), copy.getLastRunEndNanos(),
+                copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+                copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
     public ScheduledTaskStatisticsImpl(long runs, long firstRunStartNanos, long lastRunStartNanos,
@@ -156,7 +161,6 @@ public class ScheduledTaskStatisticsImpl
         }
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
     @Override
     public void onAfterRun() {
         long now = System.nanoTime();
@@ -167,6 +171,10 @@ public class ScheduledTaskStatisticsImpl
         this.runs++;
         this.totalRunTime += lastRunTime;
 
+    }
+
+    public ScheduledTaskStatisticsImpl snapshot() {
+        return new ScheduledTaskStatisticsImpl(this);
     }
 
     @Override

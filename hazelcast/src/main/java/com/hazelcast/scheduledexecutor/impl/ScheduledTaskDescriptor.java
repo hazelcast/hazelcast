@@ -33,51 +33,53 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
 
-    public enum Mode {
-        IDLE,
-        RUNNING,
-        SAFEPOINT
-    }
-
     private TaskDefinition definition;
 
     private ScheduledFuture<?> scheduledFuture;
 
-    private ScheduledTaskStatisticsImpl stats;
+    /**
+     * Stats are written from a single thread and read by many outside the partition threads. (see. Member owned tasks)
+     */
+    private AtomicReference<ScheduledTaskStatisticsImpl> stats = new AtomicReference<ScheduledTaskStatisticsImpl>(null);
 
-    private volatile Map<?, ?> stateSnapshot;
-
-    private final AtomicReference<Mode> mode = new AtomicReference<Mode>(Mode.IDLE);
+    /**
+     * State is only write/read only through the partition threads.
+     */
+    private Map<?, ?> state;
 
     public ScheduledTaskDescriptor() {
     }
 
     public ScheduledTaskDescriptor(TaskDefinition definition) {
         this.definition = definition;
-        this.stateSnapshot = new HashMap();
-        this.stats = new ScheduledTaskStatisticsImpl();
+        this.state = new HashMap();
+        this.stats.set(new ScheduledTaskStatisticsImpl());
     }
     public ScheduledTaskDescriptor(TaskDefinition definition,
-                                   Map<?, ?> stateSnapshot, ScheduledTaskStatisticsImpl stats) {
+                                   Map<?, ?> state, ScheduledTaskStatisticsImpl stats) {
         this.definition = definition;
-        this.stats = stats;
-        this.stateSnapshot = stateSnapshot;
+        this.stats.set(stats);
+        this.state = state;
     }
 
     public TaskDefinition getDefinition() {
         return definition;
     }
 
-    public ScheduledTaskStatisticsImpl getStats() {
-        return stats;
+    ScheduledTaskStatisticsImpl getStatsSnapshot() {
+        return stats.get().snapshot();
+    }
+
+    void setStats(ScheduledTaskStatisticsImpl stats) {
+        this.stats.set(stats);
     }
 
     Map<?, ?> getStateSnapshot() {
-        return stateSnapshot;
+        return new HashMap(state);
     }
 
-    void setStateSnapshot(Map<?, ?> snapshot) {
-        this.stateSnapshot = snapshot;
+    void setState(Map<?, ?> snapshot) {
+        this.state = snapshot;
     }
 
     ScheduledFuture<?> getScheduledFuture() {
@@ -86,10 +88,6 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
 
     void setScheduledFuture(ScheduledFuture<?> future) {
         this.scheduledFuture = future;
-    }
-
-    AtomicReference<Mode> getModeRef() {
-        return mode;
     }
 
     @Override
@@ -106,15 +104,22 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeObject(definition);
-        out.writeObject(stateSnapshot);
-        out.writeObject(stats);
+        out.writeObject(state);
+        out.writeObject(stats.get());
     }
 
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
         definition = in.readObject();
-        stateSnapshot = in.readObject();
-        stats = in.readObject();
+        state = in.readObject();
+        stats.set((ScheduledTaskStatisticsImpl) in.readObject());
     }
+
+    @Override
+    public String toString() {
+        return "ScheduledTaskDescriptor{" + "definition=" + definition + ", scheduledFuture=" + scheduledFuture + ", stats="
+                + stats + ", state=" + state + '}';
+    }
+
 }

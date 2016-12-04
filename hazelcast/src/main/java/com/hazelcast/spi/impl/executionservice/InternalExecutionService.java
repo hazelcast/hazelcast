@@ -29,7 +29,9 @@ import java.util.concurrent.TimeUnit;
  */
 public interface InternalExecutionService extends ExecutionService {
 
-    ExecutorService getDurable(String name, boolean scheduled);
+    ExecutorService getDurable(String name);
+
+    ExecutorService getScheduledDurable(String name);
 
     void executeDurable(String name, Runnable command);
 
@@ -41,4 +43,6 @@ public interface InternalExecutionService extends ExecutionService {
                                                      long initialDelay, long period, TimeUnit unit);
 
     void shutdownDurableExecutor(String name);
+
+    void shutdownScheduledDurableExecutor(String name);
 }

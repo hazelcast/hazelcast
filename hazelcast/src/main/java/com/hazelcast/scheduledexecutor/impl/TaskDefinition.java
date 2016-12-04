@@ -31,7 +31,7 @@ public class TaskDefinition<V>
 
         SINGLE_RUN,
 
-        WITH_REPETITION
+        AT_FIXED_RATE
 
     }
 
@@ -43,8 +43,6 @@ public class TaskDefinition<V>
 
     private long initialDelay;
 
-    private long delay;
-
     private long period;
 
     private TimeUnit unit;
@@ -52,22 +50,21 @@ public class TaskDefinition<V>
     public TaskDefinition() {
     }
 
-    public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay,
+    public TaskDefinition(Type type, String name, Callable<V> command, long delay,
                           TimeUnit unit) {
         this.type = type;
         this.name = name;
         this.command = command;
-        this.initialDelay = initialDelay;
+        this.initialDelay = delay;
         this.unit = unit;
     }
 
     public TaskDefinition(Type type, String name, Callable<V> command, long initialDelay,
-                          long delay, long period, TimeUnit unit) {
+                          long period, TimeUnit unit) {
         this.type = type;
         this.name = name;
         this.command = command;
         this.initialDelay = initialDelay;
-        this.delay = delay;
         this.period = period;
         this.unit = unit;
     }
@@ -86,10 +83,6 @@ public class TaskDefinition<V>
 
     public long getInitialDelay() {
         return initialDelay;
-    }
-
-    public long getDelay() {
-        return delay;
     }
 
     public long getPeriod() {
@@ -117,7 +110,6 @@ public class TaskDefinition<V>
         out.writeUTF(name);
         out.writeObject(command);
         out.writeLong(initialDelay);
-        out.writeLong(delay);
         out.writeLong(period);
         out.writeUTF(unit.name());
     }
@@ -129,7 +121,6 @@ public class TaskDefinition<V>
         name = in.readUTF();
         command = in.readObject();
         initialDelay = in.readLong();
-        delay = in.readLong();
         period = in.readLong();
         unit = TimeUnit.valueOf(in.readUTF());
     }
@@ -137,6 +128,6 @@ public class TaskDefinition<V>
     @Override
     public String toString() {
         return "TaskDefinition{" + "type=" + type + ", name='" + name + '\'' + ", command=" + command + ", initialDelay="
-                + initialDelay + ", delay=" + delay + ", period=" + period + ", unit=" + unit + '}';
+                + initialDelay + ", period=" + period + ", unit=" + unit + '}';
     }
 }
