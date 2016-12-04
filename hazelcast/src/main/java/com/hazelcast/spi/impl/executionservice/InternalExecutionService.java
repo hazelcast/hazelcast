@@ -20,6 +20,7 @@ import com.hazelcast.spi.ExecutionService;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +38,7 @@ public interface InternalExecutionService extends ExecutionService {
 
     ScheduledFuture<?> scheduleDurable(String name, Runnable command, long delay, TimeUnit unit);
 
-    <V> ScheduledFuture<V> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit);
+    <V> ScheduledFuture<Future<V>> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit);
 
     ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command,
                                                      long initialDelay, long period, TimeUnit unit);

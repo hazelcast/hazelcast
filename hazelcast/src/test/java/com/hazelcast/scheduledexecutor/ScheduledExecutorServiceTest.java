@@ -270,6 +270,51 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void schedule_withLongSleepingCallable_blockingOnGet()
+            throws ExecutionException, InterruptedException {
+
+        int delay = 0;
+        double expectedResult = 169.4;
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        ICountDownLatch runsCountLatch = instances[0].getCountDownLatch("runsCountLatchName");
+        runsCountLatch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> future = executorService.schedule(
+                new ICountdownLatchCallableRunnableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
+
+        double result = future.get();
+
+        assertEquals(expectedResult, result, 0);
+        assertEquals(true, future.isDone());
+        assertEquals(false, future.isCancelled());
+    }
+
+    @Test
+    public void schedule_withLongSleepingCallable_cancelledAndGet()
+            throws ExecutionException, InterruptedException {
+
+        int delay = 0;
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        ICountDownLatch runsCountLatch = instances[0].getCountDownLatch("runsCountLatchName");
+        runsCountLatch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> future = executorService.schedule(
+                new ICountdownLatchCallableRunnableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
+
+        Thread.sleep(4000);
+        future.cancel(false);
+
+        runsCountLatch.await(15, TimeUnit.SECONDS);
+
+        assertEquals(true, future.isDone());
+        assertEquals(true, future.isCancelled());
+    }
+
+    @Test
     public void schedule_withNegativeDelay()
             throws ExecutionException, InterruptedException {
 
@@ -750,7 +795,8 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    static class ICountdownLatchSleepyRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+    static class ICountdownLatchCallableRunnableTask
+            implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
         final String runLatchName;
 
@@ -758,15 +804,15 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         transient HazelcastInstance instance;
 
-        ICountdownLatchSleepyRunnableTask(String runLatchName,
-                                          int sleepPeriod, HazelcastInstance instance) {
+        ICountdownLatchCallableRunnableTask(String runLatchName,
+                                            int sleepPeriod, HazelcastInstance instance) {
             this.runLatchName = runLatchName;
             this.instance = instance;
             this.sleepPeriod = sleepPeriod;
         }
 
         @Override
-        public void run() {
+        public Double call() {
             try {
                 Thread.sleep(sleepPeriod);
             } catch (InterruptedException e) {
@@ -774,6 +820,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
             }
 
             instance.getCountDownLatch(runLatchName).countDown();
+            return 77 * 2.2;
         }
 
         @Override
@@ -781,7 +828,6 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
             this.instance = hazelcastInstance;
         }
     }
-
 
     static class ICountdownLatchRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
 

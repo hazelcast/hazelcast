@@ -272,7 +272,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
-    public <V> ScheduledFuture<V> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit) {
+    public <V> ScheduledFuture<Future<V>> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit) {
         return getDurableTaskScheduler(name).schedule(command, delay, unit);
     }
 

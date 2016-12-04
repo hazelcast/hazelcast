@@ -20,6 +20,7 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 /**
  * Delegates task execution to a given Executor.
@@ -28,7 +29,7 @@ import java.util.concurrent.ExecutorService;
  *
  */
 class DelegatingCallableTaskDecorator<V>
-        implements Callable<V> {
+        implements Callable<Future<V>> {
 
     private final ExecutorService executor;
     private final Callable<V> callable;
@@ -43,9 +44,9 @@ class DelegatingCallableTaskDecorator<V>
     }
 
     @Override
-    public V call() {
+    public Future<V> call() {
         try {
-            return executor.submit(callable).get();
+            return executor.submit(callable);
         } catch (Throwable t) {
             ExceptionUtil.sneakyThrow(t);
         }

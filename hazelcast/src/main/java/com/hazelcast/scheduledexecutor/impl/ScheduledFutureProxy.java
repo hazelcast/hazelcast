@@ -114,13 +114,16 @@ public final class ScheduledFutureProxy<V>
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         if (mayInterruptIfRunning) {
+            // DelegateAndSkipOnConcurrentExecutionDecorator doesn't expose the Executor's future
+            // therefore we don't have access to the runner thread to interrupt. We could access through Thread.currentThread()
+            // inside the TaskRunner but it adds extra complexity.
             throw new UnsupportedOperationException("mayInterruptIfRunning flag is not supported.");
         }
 
         checkAccessibleHandler();
         checkAccessibleOwner();
 
-        Operation op = new CancelTaskOperation(handler, false);
+        Operation op = new CancelTaskOperation(handler, mayInterruptIfRunning);
         return this.<Boolean>invoke(op).join();
     }
 

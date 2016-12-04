@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -69,7 +70,7 @@ public interface TaskScheduler extends ExecutorService {
      *         scheduled for execution
      * @throws NullPointerException if command is null
      */
-    <V> ScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit);
+    <V> ScheduledFuture<Future<V>> schedule(Callable<V> command, long delay, TimeUnit unit);
 
     /**
      * Creates and executes a periodic action that becomes enabled first

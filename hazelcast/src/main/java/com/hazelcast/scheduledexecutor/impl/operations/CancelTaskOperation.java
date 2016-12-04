@@ -46,7 +46,7 @@ public class CancelTaskOperation
     @Override
     public void run()
             throws Exception {
-        response = getContainer().cancel(taskName, mayInterruptIfRunning);
+        response = getContainer().cancel(taskName);
     }
 
     @Override

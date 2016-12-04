@@ -22,7 +22,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -45,7 +44,7 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
     }
 
     @Override
-    public <V> ScheduledFuture<V> schedule(TaskDefinition definition) {
+    public ScheduledFuture schedule(TaskDefinition definition) {
         try {
             acquireMemberPartitionLockIfNeeded();
 
@@ -74,13 +73,6 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
     protected InvocationBuilder createInvocationBuilder(Operation op) {
         OperationService operationService = getNodeEngine().getOperationService();
         return operationService.createInvocationBuilder(SERVICE_NAME, op, getNodeEngine().getThisAddress());
-    }
-
-    @Override
-    public void syncState(String taskName, Map newState, ScheduledTaskStatisticsImpl stats) {
-        // Member owned tasks don't have state - there is no replica for them
-        ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        descriptor.setStats(stats);
     }
 
     private void acquireMemberPartitionLockIfNeeded() {

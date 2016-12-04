@@ -37,6 +37,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -44,6 +45,8 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 public class ScheduledExecutorContainer {
+
+    protected final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
 
     private final ILogger logger;
 
@@ -56,8 +59,6 @@ public class ScheduledExecutorContainer {
     private final int partitionId;
 
     private final int durability;
-
-    protected final ConcurrentMap<String, ScheduledTaskDescriptor> tasks;
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
                                       int durability) {
@@ -75,12 +76,13 @@ public class ScheduledExecutorContainer {
         this.tasks = tasks;
     }
 
-    public <V> ScheduledFuture<V> schedule(TaskDefinition definition) {
+    public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
         return createContextAndSchedule(definition);
     }
 
-    public boolean cancel(String taskName, boolean mayInterruptIfRunning) {
+    public boolean cancel(String taskName)
+            throws ExecutionException, InterruptedException {
         checkNotStaleTask(taskName);
 
         if (logger.isFinestEnabled()) {
@@ -88,14 +90,26 @@ public class ScheduledExecutorContainer {
         }
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        return descriptor.getScheduledFuture().cancel(mayInterruptIfRunning);
+        boolean cancelled = descriptor.getScheduledFuture().cancel(true);
+
+        if (TaskDefinition.Type.SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            // Cancel the delegating Executor's Future (in case of Callable, see. DelegatingCallableTaskDecorator)
+            cancelled = ((Future) descriptor.getScheduledFuture().get()).cancel(true);
+        }
+
+        return cancelled;
     }
 
     public Object get(String taskName)
             throws ExecutionException, InterruptedException {
         checkNotStaleTask(taskName);
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        return descriptor.getScheduledFuture().get();
+        if (TaskDefinition.Type.SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            // Get the result from the delegating's Executor Future (in case of Callable, see. DelegatingCallableTaskDecorator)
+            return ((Future) descriptor.getScheduledFuture().get()).get();
+        } else {
+            return descriptor.getScheduledFuture().get();
+        }
     }
 
     public long getDelay(String taskName, TimeUnit unit) {
@@ -110,16 +124,28 @@ public class ScheduledExecutorContainer {
         return descriptor.getStatsSnapshot();
     }
 
-    public boolean isCancelled(String taskName) {
+    public boolean isCancelled(String taskName)
+            throws ExecutionException, InterruptedException {
         checkNotStaleTask(taskName);
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        return descriptor.getScheduledFuture().isCancelled();
+        if (TaskDefinition.Type.SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            // Check the status from the delegating Executor Future (in case of Callable, see. DelegatingCallableTaskDecorator)
+            return ((Future) descriptor.getScheduledFuture().get()).isCancelled();
+        } else {
+            return descriptor.getScheduledFuture().isCancelled();
+        }
     }
 
-    public boolean isDone(String taskName) {
+    public boolean isDone(String taskName)
+            throws ExecutionException, InterruptedException {
         checkNotStaleTask(taskName);
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        return descriptor.getScheduledFuture().isDone();
+        if (TaskDefinition.Type.SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+            // Check the status from the delegating Executor Future (in case of Callable, see. DelegatingCallableTaskDecorator)
+            return ((Future) descriptor.getScheduledFuture().get()).isDone();
+        } else {
+            return descriptor.getScheduledFuture().isDone();
+        }
     }
 
     public void destroy() {
@@ -139,7 +165,8 @@ public class ScheduledExecutorContainer {
         }
     }
 
-    public void dispose(String taskName) {
+    public void dispose(String taskName)
+            throws ExecutionException, InterruptedException {
         checkNotStaleTask(taskName);
 
         if (logger.isFinestEnabled()) {
@@ -147,8 +174,14 @@ public class ScheduledExecutorContainer {
         }
 
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
-        ScheduledFuture scheduledFuture = descriptor.getScheduledFuture();
+        Future scheduledFuture = descriptor.getScheduledFuture();
         if (!scheduledFuture.isDone()) {
+            if (TaskDefinition.Type.SINGLE_RUN.equals(descriptor.getDefinition().getType())) {
+                // Cancel the delegating Executor Future (in case of Callable, see. DelegatingCallableTaskDecorator)
+                ((Future) scheduledFuture.get()).cancel(true);
+            }
+
+            // Cancel the ScheduledExecutor ScheduledFuture
             scheduledFuture.cancel(true);
         }
 
@@ -166,7 +199,7 @@ public class ScheduledExecutorContainer {
         }
 
         if (logger.isFinestEnabled()) {
-            logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Stash size: " + tasks.size());
+            logger.finest("[Backup Scheduler: " + name + "][Partition: " + partitionId + "] Stash size: " + tasks.size());
         }
     }
 
@@ -178,18 +211,29 @@ public class ScheduledExecutorContainer {
         return tasks.values();
     }
 
-    public void syncState(String taskName, Map newState, ScheduledTaskStatisticsImpl stats) {
+    public void syncState(String taskName, Map newState, ScheduledTaskStatisticsImpl stats)
+            throws ExecutionException, InterruptedException {
         ScheduledTaskDescriptor descriptor = tasks.get(taskName);
+        if (descriptor == null) {
+            // Task previously disposed or unstashed
+            if (logger.isFinestEnabled()) {
+                logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] syncState attempt "
+                        + "but no descriptor found for task: " + taskName);
+            }
+            return;
+        }
+
         descriptor.setState(newState);
         descriptor.setStats(stats);
     }
 
-    public boolean shouldParkGetResult(String taskName) {
+    public boolean shouldParkGetResult(String taskName)
+            throws ExecutionException, InterruptedException {
         if (!tasks.containsKey(taskName)) {
             return false;
         }
 
-        return tasks.get(taskName).getScheduledFuture() == null || !tasks.get(taskName).getScheduledFuture().isDone();
+        return tasks.get(taskName).getScheduledFuture() == null || !isDone(taskName);
     }
 
     public int getDurability() {
@@ -208,7 +252,7 @@ public class ScheduledExecutorContainer {
         return ScheduledTaskHandlerImpl.of(partitionId, getName(), taskName);
     }
 
-    <V> ScheduledFuture<V> createContextAndSchedule(TaskDefinition definition) {
+    ScheduledFuture createContextAndSchedule(TaskDefinition definition) {
         if (logger.isFinestEnabled()) {
             logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Scheduling " + definition);
         }
@@ -222,7 +266,7 @@ public class ScheduledExecutorContainer {
             logger.finest("[Scheduler: " + name + "][Partition: " + partitionId + "] Queue size: " + tasks.size());
         }
 
-        return (ScheduledFuture<V>) descriptor.getScheduledFuture();
+        return descriptor.getScheduledFuture();
     }
 
     void promoteStash() {
@@ -245,9 +289,10 @@ public class ScheduledExecutorContainer {
                 replicas.put(descriptor.getDefinition().getName(), replica);
             } finally {
                 if (migrationMode) {
-                    // Cancel further scheduling - The actual task may continue to run
-                    // until it finishes its run() cycle. The runner thread is not interrupted
-                    // due to semantics of the DelegatingTaskScheduler
+                    // Best effort to cancel & interrupt the task.
+                    // In the case of Runnable the DelegateAndSkipOnConcurrentExecutionDecorator is not exposing access
+                    // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
+                    // the line below is only cancelling future scheduling attempts.
                     descriptor.getScheduledFuture().cancel(true);
                     // Nullify record so we can re-schedule in the event of rollback
                     descriptor.setScheduledFuture(null);
@@ -290,13 +335,13 @@ public class ScheduledExecutorContainer {
         assert descriptor.getScheduledFuture() == null;
         TaskDefinition definition = descriptor.getDefinition();
 
-        ScheduledFuture<?> future;
+        ScheduledFuture future;
         TaskRunner<V> runner;
         switch (definition.getType()) {
             case SINGLE_RUN:
                 runner = new TaskRunner<V>(descriptor);
-                future = executionService.scheduleDurable(name, (Callable) runner,
-                        definition.getInitialDelay(), definition.getUnit());
+                    future = executionService.scheduleDurable(name, (Callable) runner,
+                            definition.getInitialDelay(), definition.getUnit());
                 break;
             case AT_FIXED_RATE:
                 runner = new TaskRunner<V>(descriptor);
@@ -394,7 +439,7 @@ public class ScheduledExecutorContainer {
                 }
 
                 publishTaskState(taskName, state, statistics);
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 logger.warning("[Scheduler: " + name + "][Partition: " + partitionId + "][Task: " + taskName + "] "
                         + "Unexpected exception during afterRun occurred: ", ex);
             } finally {
