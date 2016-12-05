@@ -26,13 +26,18 @@ public class WanSyncStateImpl implements WanSyncState {
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;
     private int syncedPartitionCount;
+    private String activeWanConfigName = "";
+    private String activePublisherName = "";
 
     public WanSyncStateImpl() { }
 
-    public WanSyncStateImpl(WanSyncStatus status, int syncedPartitionCount) {
+    public WanSyncStateImpl(WanSyncStatus status, int syncedPartitionCount,
+                            String activeWanConfigName, String activePublisherName) {
         creationTime = Clock.currentTimeMillis();
         this.status = status;
         this.syncedPartitionCount = syncedPartitionCount;
+        this.activeWanConfigName = activeWanConfigName;
+        this.activePublisherName = activePublisherName;
     }
 
     @Override
@@ -51,11 +56,23 @@ public class WanSyncStateImpl implements WanSyncState {
     }
 
     @Override
+    public String getActiveWanConfigName() {
+        return activeWanConfigName;
+    }
+
+    @Override
+    public String getActivePublisherName() {
+        return activePublisherName;
+    }
+
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
         root.add("status", status.getStatus());
         root.add("syncedPartitionCount", syncedPartitionCount);
+        root.add("activeWanConfigName", activeWanConfigName);
+        root.add("activePublisherName", activePublisherName);
         return root;
     }
 
@@ -65,12 +82,16 @@ public class WanSyncStateImpl implements WanSyncState {
         int status = json.getInt("status", WanSyncStatus.READY.getStatus());
         this.status = WanSyncStatus.getByStatus(status);
         this.syncedPartitionCount = json.getInt("syncedPartitionCount", 0);
+        this.activeWanConfigName = json.getString("activeWanConfigName", "");
+        this.activePublisherName = json.getString("activePublisherName", "");
     }
 
     @Override
     public String toString() {
         return "WanSyncStateImpl{wanSyncStatus=" + status
                 + ", syncedPartitionCount=" + syncedPartitionCount
+                + ", activeWanConfigName=" + activeWanConfigName
+                + ", activePublisherName=" + activePublisherName
                 + '}';
     }
 }
