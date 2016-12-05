@@ -102,6 +102,10 @@ public class PermissionConfig {
          * Cardinality Estimator
          */
         CARDINALITY_ESTIMATOR("cardinality-estimator-permission"),
+        /**
+         * Scheduled executor service
+         */
+        SCHEDULED_EXECUTOR("scheduled-executor-permission"),
 
         /**
          * All

@@ -1015,6 +1015,26 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
     }
 
+
+    @Test
+    public void testDurableExecutorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <durable-executor-service name=\"foobar\">\n" +
+                "        <pool-size>2</pool-size>\n" +
+                "        <durability>3</durability>\n" +
+                "        <capacity>4</capacity>\n" +
+                "    </durable-executor-service>"
+                + HAZELCAST_END_TAG;
+
+        final Config config = buildConfig(xml);
+        final DurableExecutorConfig durableExecutorConfig = config.getDurableExecutorConfig("foobar");
+
+        assertFalse(config.getDurableExecutorConfigs().isEmpty());
+        assertEquals(2, durableExecutorConfig.getPoolSize());
+        assertEquals(3, durableExecutorConfig.getDurability());
+        assertEquals(4, durableExecutorConfig.getCapacity());
+    }
+
     @Test
     public void testScheduledExecutorConfig() {
         String xml = HAZELCAST_START_TAG

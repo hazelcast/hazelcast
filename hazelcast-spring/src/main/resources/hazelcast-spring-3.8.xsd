@@ -93,6 +93,26 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
+                        <xs:element name="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded">
+                            <xs:complexType>
+                                <xs:sequence/>
+                                <xs:attribute name="name" use="required" type="xs:string"/>
+                                <xs:attribute name="pool-size" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The number of executor threads per member for the executor.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="durability" use="optional" type="xs:string">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The durability of the scheduled executor.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                            </xs:complexType>
+                        </xs:element>
                         <xs:element name="queue" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
@@ -2130,6 +2150,10 @@
                         <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0"
+                                    maxOccurs="unbounded"/>
+                        <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>

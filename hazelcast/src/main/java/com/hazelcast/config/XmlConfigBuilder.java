@@ -59,6 +59,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
+import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
 import static com.hazelcast.config.XmlElements.HOT_RESTART_PERSISTENCE;
@@ -290,6 +291,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleWanReplication(node);
         } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleExecutor(node);
+        } else if (DURABLE_EXECUTOR_SERVICE.isEqual(nodeName)) {
+            handleDurableExecutor(node);
         } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleScheduledExecutor(node);
         } else if (SERVICES.isEqual(nodeName)) {
@@ -546,6 +549,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleExecutor(Node node) throws Exception {
         ExecutorConfig executorConfig = new ExecutorConfig();
         handleViaReflection(node, config, executorConfig);
+    }
+
+    private void handleDurableExecutor(Node node) throws Exception {
+        final DurableExecutorConfig durableExecutorConfig = new DurableExecutorConfig();
+        handleViaReflection(node, config, durableExecutorConfig);
     }
 
     private void handleScheduledExecutor(Node node) throws Exception {

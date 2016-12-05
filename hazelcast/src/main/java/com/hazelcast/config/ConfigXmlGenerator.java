@@ -124,6 +124,8 @@ public class ConfigXmlGenerator {
 
         durableExecutorXmlGenerator(xml, config);
 
+        scheduledExecutorXmlGenerator(xml, config);
+
         partitionGroupXmlGenerator(xml, config);
 
         listenerXmlGenerator(xml, config);
@@ -197,13 +199,21 @@ public class ConfigXmlGenerator {
     }
 
     private void durableExecutorXmlGenerator(StringBuilder xml, Config config) {
-        Collection<DurableExecutorConfig> exCfgs = config.getDurableExecutorConfigs().values();
-        for (DurableExecutorConfig ex : exCfgs) {
+        for (DurableExecutorConfig ex : config.getDurableExecutorConfigs().values()) {
             xml.append("<durable-executor-service name=\"").append(ex.getName()).append("\">");
-            xml.append("<pool-size>").append(ex.getPoolSize()).append("</pool-size>");
-            xml.append("<durability>").append(ex.getDurability()).append("</durability>");
-            xml.append("<capacity>").append(ex.getCapacity()).append("</capacity>");
-            xml.append("</executor-service>");
+            appendNode(xml, "pool-size", ex.getPoolSize());
+            appendNode(xml, "durability", ex.getDurability());
+            appendNode(xml, "capacity", ex.getCapacity());
+            xml.append("</durable-executor-service>");
+        }
+    }
+
+    private void scheduledExecutorXmlGenerator(StringBuilder xml, Config config) {
+        for (ScheduledExecutorConfig ex : config.getScheduledExecutorConfigs().values()) {
+            xml.append("<scheduled-executor-service name=\"").append(ex.getName()).append("\">");
+            appendNode(xml, "pool-size", ex.getPoolSize());
+            appendNode(xml, "durability", ex.getDurability());
+            xml.append("</scheduled-executor-service>");
         }
     }
 
@@ -865,6 +875,14 @@ public class ConfigXmlGenerator {
             if (xmlOutput != null) {
                 closeResource(xmlOutput.getWriter());
             }
+        }
+    }
+
+    private static void appendNode(StringBuilder xml, String name, Object value) {
+        if (value != null) {
+            xml.append('<').append(name).append('>')
+               .append(value)
+               .append("</").append(name).append('>');
         }
     }
 

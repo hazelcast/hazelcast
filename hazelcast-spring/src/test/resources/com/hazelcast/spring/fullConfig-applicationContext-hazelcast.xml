@@ -152,6 +152,14 @@
                                  queue-capacity="300"
                                  statistics-enabled="false"
             />
+            <hz:durable-executor-service name="durableExec"
+                                         pool-size="10"
+                                         durability="5"
+                                         capacity="200"/>
+
+            <hz:scheduled-executor-service name="scheduledExec"
+                                           pool-size="10"
+                                           durability="5"/>
             <hz:queue name="testQ" max-size="1000">
                 <hz:item-listeners>
                     <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>

@@ -425,24 +425,42 @@ https://hazelcast.org/documentation/.
         <pool-size>16</pool-size>
         <queue-capacity>0</queue-capacity>
     </executor-service>
+
 <!--
     ===== HAZELCAST DURABLE EXECUTOR SERVICE CONFIGURATION =====
-    
-    Configuration element's name is <durable-executor-service>. It has the optional attribute "name" with which you 
-    can specify the name of your durable executor service. Its default value is "default". 
+
+    Configuration element's name is <durable-executor-service>. It has the optional attribute "name" with which you
+    can specify the name of your durable executor service. Its default value is "default".
     It has the following sub-elements:
-    * <pool-size>: 
-	The number of executor threads per member for the executor. Its default value is 8.
+    * <pool-size>:
+    The number of executor threads per member for the executor. Its default value is 16.
     * <durability>:
-    	Durability of the executor.
-    * <capacity>: 
-	Capacity of the executor task per partition.
+        Durability of the executor. The default value is 1.
+    * <capacity>:
+    Capacity of the executor task per partition. The default value is 100.
 -->
-    <executor-service name="default">
-        <statistics-enabled>true</statistics-enabled>
+    <durable-executor-service name="default">
         <pool-size>16</pool-size>
-        <queue-capacity>0</queue-capacity>
-    </executor-service>
+        <durability>1</durability>
+        <capacity>100</capacity>
+    </durable-executor-service>
+
+<!--
+    ===== HAZELCAST SCHEDULED EXECUTOR SERVICE CONFIGURATION =====
+
+    Configuration element's name is <scheduled-executor-service>. It has the optional attribute "name" with which you
+    can specify the name of your scheduled executor service. Its default value is "default".
+    It has the following sub-elements:
+    * <pool-size>:
+        The number of executor threads per member for the executor. Its default value is 16.
+    * <durability>:
+        Durability of the scheduled executor. The default value is 1.
+-->
+    <scheduled-executor-service name="default">
+        <pool-size>16</pool-size>
+        <durability>1</durability>
+    </scheduled-executor-service>
+
 <!--
     ===== HAZELCAST QUEUE CONFIGURATION =====
     

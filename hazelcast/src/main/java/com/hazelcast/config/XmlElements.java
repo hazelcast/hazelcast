@@ -28,6 +28,7 @@ enum XmlElements {
     NETWORK("network", false),
     PARTITION_GROUP("partition-group", false),
     EXECUTOR_SERVICE("executor-service", true),
+    DURABLE_EXECUTOR_SERVICE("durable-executor-service", true),
     SCHEDULED_EXECUTOR_SERVICE("scheduled-executor-service", true),
     QUEUE("queue", true),
     MAP("map", true),
