@@ -37,8 +37,8 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         initExecutor();
 
         DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
-        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.raiseFlags(Packet.FLAG_OP);
+        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+                .setPacketType(Packet.Type.OPERATION);
 
         doThrow(new OutOfMemoryError()).when(handler).run(packet);
 
@@ -102,8 +102,8 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
     public void executePacket_withInvalid_partitionId() {
         final int partitionId = Integer.MAX_VALUE;
         Operation operation = new DummyPartitionOperation(partitionId);
-        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.raiseFlags(Packet.FLAG_OP);
+        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+                .setPacketType(Packet.Type.OPERATION);
 
         testExecute_withInvalid_partitionId(packet);
     }

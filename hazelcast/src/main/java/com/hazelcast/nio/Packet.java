@@ -26,10 +26,11 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
- * A Packet is a piece of data send over the line. The Packet is used for member to member communication.
+ * A Packet is a piece of data sent over the wire. The Packet is used for member to member communication.
  *
- * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
- * prefer composition over inheritance), but in this case that would mean more object litter.
+ * The Packet extends HeapData instead of wrapping it. From a design point of view this is often
+ * not the preferred solution (prefer composition over inheritance), but in this case that
+ * would mean more object litter.
  *
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
@@ -43,7 +44,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     //
     // Flags are dispatched against in a cascade:
     // 1. URGENT (bit 4)
-    // 2. Packet type (bits 0, 2, 5, 7)
+    // 2. Packet type (bits 0, 2, 5)
     // 3. Flags specific to a given packet type (bits 1, 6)
 
 
@@ -53,17 +54,21 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int FLAG_URGENT = 1 << 4;
 
 
-    // 2. Packet type flags, mutually exclusive
+    // 2. Packet type flags, encode up to 7 packet types.
+    //
+    // When adding a new packet type, DO NOT ADD MORE TYPE FLAGS. Instead rename one of the
+    // Packet.Type.UNDEFINEDx members to represent the new type.
+    //
+    // Historically the first three packet types were encoded as separate, mutually exclusive flags.
+    // These are given below. The enum Packet.Type should be used to encode/decode the type from the
+    // header flags bitfield.
 
-    /** Marks the packet type as Operation */
+    /** Packet type bit 0. Historically the OPERATION type flag. */
     public static final int FLAG_OP = 1 << 0;
-    /** Marks the packet type as Event */
+    /** Packet type bit 1. Historically the EVENT type flag. */
     public static final int FLAG_EVENT = 1 << 2;
-    /** Marks the packet type as Bind message */
+    /** Packet type bit 2. Historically the BIND type flag. */
     public static final int FLAG_BIND = 1 << 5;
-    /** Marks the packet as Jet */
-    public static final int FLAG_JET = 1 << 7;
-
 
     // 3. Type-specific flags. Same bits can be reused within each type
 
@@ -89,10 +94,11 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     // char is a 16-bit unsigned integer. Here we use it as a bitfield.
     private char flags;
+
     private int partitionId;
     private transient Connection conn;
 
-    // These 2 fields are only used during read/write. Otherwise they have no meaning.
+    // These 3 fields are only used during read/write. Otherwise they have no meaning.
     private int valueOffset;
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
@@ -127,8 +133,19 @@ public final class Packet extends HeapData implements OutboundFrame {
      *
      * @param conn the connection.
      */
-    public void setConn(Connection conn) {
+    public Packet setConn(Connection conn) {
         this.conn = conn;
+        return this;
+    }
+
+    public Type getPacketType() {
+        return Type.fromFlags(flags);
+    }
+
+    public Packet setPacketType(Packet.Type type) {
+        int nonTypeFlags = flags & ~FLAG_OP & ~FLAG_EVENT & ~FLAG_BIND;
+        resetFlagsTo(type.headerEncoding | nonTypeFlags);
+        return this;
     }
 
     /**
@@ -160,6 +177,10 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return {@code true} if any of the flags is set, {@code false} otherwise.
      */
     public boolean isFlagSet(int flagsToCheck) {
+        return isFlagSet(flags, flagsToCheck);
+    }
+
+    private static boolean isFlagSet(char flags, int flagsToCheck) {
         return (flags & flagsToCheck) != 0;
     }
 
@@ -205,6 +226,12 @@ public final class Packet extends HeapData implements OutboundFrame {
         return writeValue(dst);
     }
 
+    /**
+     * Reads the packet data from the supplied {@code ByteBuffer}. The buffer may not contain the complete packet.
+     * If this method returns {@code false}, it should be called again to read more packet data.
+     * @param src the source byte buffer
+     * @return {@code true} if all the packet's data is now read; {@code false} otherwise.
+     */
     public boolean readFrom(ByteBuffer src) {
         if (!headerComplete) {
             if (src.remaining() < HEADER_SIZE) {
@@ -331,13 +358,108 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     @Override
     public String toString() {
+        final Type type = getPacketType();
         return "Packet{"
-                + "flags=" + flags
-                + ", isResponse=" + isFlagSet(Packet.FLAG_OP_RESPONSE)
-                + ", isOperation=" + isFlagSet(Packet.FLAG_OP)
-                + ", isEvent=" + isFlagSet(Packet.FLAG_EVENT)
-                + ", partitionId=" + partitionId
+                + "partitionId=" + partitionId
                 + ", conn=" + conn
+                + ", rawFlags=" + Integer.toBinaryString(flags)
+                + ", isUrgent=" + isUrgent()
+                + ", packetType=" + type.name()
+                + ", typeSpecificFlags=" + type.describeFlags(flags)
                 + '}';
+    }
+
+
+    public enum Type {
+        /**
+         * Represents "missing packet type", consists of all zeros. A zeroed-out packet header would
+         * resolve to this type.
+         * <p>
+         * {@code ordinal = 0}
+         */
+        NULL,
+        /**
+         * The type of an Operation packet.
+         * <p>
+         * {@code ordinal = 1}
+         */
+        OPERATION {
+            @Override
+            public String describeFlags(char flags) {
+                return "[isResponse=" + isFlagSet(flags, FLAG_OP_RESPONSE)
+                        + ", isOpControl=" + isFlagSet(flags, FLAG_OP_CONTROL) + ']';
+            }
+        },
+        /**
+         * The type of an Event packet.
+         * <p>
+         * {@code ordinal = 2}
+         */
+        EVENT,
+        /**
+         * The type of a Jet packet.
+         * <p>
+         *  {@code ordinal = 3}
+         */
+        JET {
+            @Override
+            public String describeFlags(char flags) {
+                return "[isFlowControl=" + isFlagSet(flags, FLAG_JET_FLOW_CONTROL) + ']';
+            }
+        },
+        /**
+         * The type of a Bind Message packet.
+         * <p>
+         * {@code ordinal = 4}
+         */
+        BIND,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 5}
+         */
+        UNDEFINED5,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 6}
+         */
+        UNDEFINED6,
+        /**
+         * Unused packet type. Available for future use.
+         * <p>
+         * {@code ordinal = 7}
+         */
+        UNDEFINED7;
+
+        final char headerEncoding;
+
+        Type() {
+            headerEncoding = (char) encodeOrdinal();
+        }
+
+        public static Type fromFlags(int flags) {
+            return values()[headerDecode(flags)];
+        }
+
+        public String describeFlags(char flags) {
+            return "<NONE>";
+        };
+
+        @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+        private int encodeOrdinal() {
+            final int ordinal = ordinal();
+            assert ordinal < 8 : "Ordinal out of range for member " + name() + ": " + ordinal;
+            return (ordinal & 0x01)
+                 | (ordinal & 0x02) << 1
+                 | (ordinal & 0x04) << 3;
+        }
+
+        @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
+        private static int headerDecode(int flags) {
+            return (flags & FLAG_OP)
+                 | (flags & FLAG_EVENT) >> 1
+                 | (flags & FLAG_BIND) >> 3;
+        }
     }
 }

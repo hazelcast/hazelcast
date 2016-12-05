@@ -14,9 +14,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.nio.Packet.FLAG_BIND;
-import static com.hazelcast.nio.Packet.FLAG_EVENT;
-import static com.hazelcast.nio.Packet.FLAG_JET;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
@@ -120,8 +117,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenEventPacket() throws Exception {
-        Packet packet = new Packet()
-                .raiseFlags(FLAG_EVENT);
+        Packet packet = new Packet().setPacketType(Packet.Type.EVENT);
 
         dispatcher.dispatch(packet);
 
@@ -131,8 +127,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenBindPacket() throws Exception {
-        Packet packet = new Packet()
-                .raiseFlags(FLAG_BIND);
+        Packet packet = new Packet().setPacketType(Packet.Type.BIND);
 
         dispatcher.dispatch(packet);
 
@@ -142,9 +137,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenJetPacket() throws Exception {
-        Packet packet = new Packet()
-                .raiseFlags(FLAG_JET);
-
+        Packet packet = new Packet().setPacketType(Packet.Type.JET);
         dispatcher.dispatch(packet);
 
         verify(jetService).handle(packet);
@@ -154,7 +147,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     // unrecognized packets are logged. No handlers is contacted.
     @Test
     public void whenUnrecognizedPacket_thenSwallowed() throws Exception {
-        Packet packet = new Packet();
+        Packet packet = new Packet().setPacketType(Packet.Type.NULL);
 
         dispatcher.dispatch(packet);
 
@@ -165,8 +158,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     // when one of the handlers throws an exception, the exception is logged but not rethrown
     @Test
     public void whenProblemHandlingPacket_thenSwallowed() throws Exception {
-        Packet packet = new Packet()
-                .raiseFlags(FLAG_OP);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION);
 
         Mockito.doThrow(new ExpectedRuntimeException()).when(operationExecutor).handle(packet);
 
