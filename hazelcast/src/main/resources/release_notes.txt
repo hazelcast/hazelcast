@@ -51,6 +51,7 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 The following are the issues solved for 3.8-EA (Early Access) release.
 
+- Hazelcast 3.7.3 and Spring Boot 1.4.2 get the error PortableFactory[-22] is already registered. [9353]
 - Problems with timeout in blocking calls. [9250]
 - Client protocol cannot handle "null"s in the collection. [9240]
 - Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
@@ -58,6 +59,7 @@ The following are the issues solved for 3.8-EA (Early Access) release.
 - When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
 - Spring XML configuration: The smart routing attribute defaults to false while the documentation says it defaults to true. [8746]
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
+- Bulk get operation with 100 keys fails. [8535]
 - Member attributes go missing after merging from a split-brain scenario. [7697]
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
 
