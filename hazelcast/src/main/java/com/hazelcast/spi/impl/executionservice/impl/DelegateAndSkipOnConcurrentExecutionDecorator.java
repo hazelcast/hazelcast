@@ -16,39 +16,61 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Decorator to prevent concurrent task execution.
+ * Decorator to delegate task to an executor and prevent concurrent task execution.
  *
  * If this task is running on a thread and another thread calls attempt the execute it concurrently
  * then the 2nd execution will be skipped.
  *
  */
-public class SkipOnConcurrentExecutionDecorator implements Runnable {
+public class DelegateAndSkipOnConcurrentExecutionDecorator
+        implements Runnable {
+
     private final AtomicBoolean isAlreadyRunning = new AtomicBoolean();
     private final Runnable runnable;
+    private final Executor executor;
 
-    public SkipOnConcurrentExecutionDecorator(Runnable runnable) {
-        this.runnable = runnable;
+    public DelegateAndSkipOnConcurrentExecutionDecorator(Runnable runnable, Executor executor) {
+        this.runnable = new DelegateDecorator(runnable);
+        this.executor = executor;
     }
 
     @Override
     public void run() {
         if (isAlreadyRunning.compareAndSet(false, true)) {
+            executor.execute(runnable);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "DelegateAndSkipOnConcurrentExecutionDecorator{"
+                + "isAlreadyRunning=" + isAlreadyRunning
+                + ", runnable=" + runnable
+                + ", executor=" + executor
+                + '}';
+    }
+
+    private class DelegateDecorator
+            implements Runnable {
+
+        private final Runnable runnable;
+
+        DelegateDecorator(Runnable runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override
+        public void run() {
             try {
                 runnable.run();
             } finally {
                 isAlreadyRunning.set(false);
             }
         }
-    }
 
-    @Override
-    public String toString() {
-        return "SkipOnConcurrentExecutionDecorator{"
-                + "isAlreadyRunning=" + isAlreadyRunning
-                + ", runnable=" + runnable
-                + '}';
     }
 }

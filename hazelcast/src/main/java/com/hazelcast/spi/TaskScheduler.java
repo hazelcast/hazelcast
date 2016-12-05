@@ -16,7 +16,9 @@
 
 package com.hazelcast.spi;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}. It
  * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will
  * skip a scheduled execution if another thread is still running the same task, instead of postponing its execution.
- * To emphasize this difference the method is called <code>scheduleWithRepetition</code>
+ * To emphasize this difference the method is called <code>scheduleAtFixedRate</code>
  * instead of <code>scheduleAtFixedRate</code>
  *
  * The other difference is this service does not offer an equivalent of
@@ -53,6 +55,22 @@ public interface TaskScheduler extends ExecutorService {
      * @throws NullPointerException if command is null
      */
     ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
+
+    /**
+     * Creates and executes a one-shot action that becomes enabled
+     * after the given delay.
+     *
+     * @param command the task to execute
+     * @param delay the time from now to delay execution
+     * @param unit the time unit of the delay parameter
+     * @return a ScheduledFuture representing pending completion of
+     *         the task and whose {@code get()} method will return
+     *         {@code <V>} upon completion
+     * @throws RejectedExecutionException if the task cannot be
+     *         scheduled for execution
+     * @throws NullPointerException if command is null
+     */
+    <V> ScheduledFuture<Future<V>> schedule(Callable<V> command, long delay, TimeUnit unit);
 
     /**
      * Creates and executes a periodic action that becomes enabled first

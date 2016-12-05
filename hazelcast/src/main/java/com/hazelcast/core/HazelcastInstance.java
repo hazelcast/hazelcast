@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -428,6 +429,16 @@ public interface HazelcastInstance {
      * @return a {@link CardinalityEstimator}
      */
     CardinalityEstimator getCardinalityEstimator(String name);
+
+    /**
+     * Returns the {@link IScheduledExecutorService} scheduled executor service for the given name.
+     * ScheduledExecutor service enables you to schedule your <tt>Runnable</tt>s and <tt>Callable</tt>s
+     * on the Hazelcast cluster.
+     *
+     * @param name name of the executor service
+     * @return the scheduled executor service for the given name
+     */
+    IScheduledExecutorService getScheduledExecutorService(String name);
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

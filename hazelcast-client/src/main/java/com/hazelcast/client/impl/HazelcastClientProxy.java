@@ -49,6 +49,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -212,6 +213,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
     @Override
     public CardinalityEstimator getCardinalityEstimator(String name) {
         return getClient().getCardinalityEstimator(name);
+    }
+
+    @Override
+    public IScheduledExecutorService getScheduledExecutorService(String name) {
+        throw new UnsupportedOperationException("No client support for the Scheduled Executor Service");
     }
 
     @Override

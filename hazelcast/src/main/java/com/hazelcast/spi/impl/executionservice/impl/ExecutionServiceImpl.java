@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
@@ -55,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public final class ExecutionServiceImpl implements InternalExecutionService {
 
     private static final int CORE_POOL_SIZE = 3;
@@ -79,6 +81,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ConcurrentMap<String, ManagedExecutorService> durableExecutors
             = new ConcurrentHashMap<String, ManagedExecutorService>();
 
+    private final ConcurrentMap<String, ManagedExecutorService> scheduleDurableExecutors
+            = new ConcurrentHashMap<String, ManagedExecutorService>();
+
     private final ConstructorFunction<String, ManagedExecutorService> constructor =
             new ConstructorFunction<String, ManagedExecutorService>() {
                 @Override
@@ -97,6 +102,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                     return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED);
                 }
             };
+
+    private final ConstructorFunction<String, ManagedExecutorService> scheduledDurableConstructor =
+            new ConstructorFunction<String, ManagedExecutorService>() {
+                @Override
+                public ManagedExecutorService createNew(String name) {
+                    ScheduledExecutorConfig cfg = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    return createExecutor(name, cfg.getPoolSize(), Integer.MAX_VALUE, ExecutorType.CACHED);
+                }
+            };
+
 
     private final MetricsRegistry metricsRegistry;
 
@@ -201,6 +216,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public ManagedExecutorService getDurable(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
+    }
+
+    @Override
+    public ExecutorService getScheduledDurable(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(scheduleDurableExecutors, name, scheduledDurableConstructor);
+    }
+
+    @Override
     public <V> ICompletableFuture<V> asCompletableFuture(Future<V> future) {
         if (future == null) {
             throw new IllegalArgumentException("future must not be null");
@@ -218,8 +243,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
 
     @Override
     public void executeDurable(String name, Runnable command) {
-        ManagedExecutorService executorService = ConcurrencyUtil.getOrPutIfAbsent(durableExecutors, name, durableConstructor);
-        executorService.execute(command);
+        getDurable(name).execute(command);
     }
 
     @Override
@@ -243,6 +267,16 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     }
 
     @Override
+    public ScheduledFuture<?> scheduleDurable(String name, Runnable command, long delay, TimeUnit unit) {
+        return getDurableTaskScheduler(name).schedule(command, delay, unit);
+    }
+
+    @Override
+    public <V> ScheduledFuture<Future<V>> scheduleDurable(String name, Callable<V> command, long delay, TimeUnit unit) {
+        return getDurableTaskScheduler(name).schedule(command, delay, unit);
+    }
+
+    @Override
     public ScheduledFuture<?> scheduleWithRepetition(Runnable command, long initialDelay, long period, TimeUnit unit) {
         return globalTaskScheduler.scheduleWithRepetition(command, initialDelay, period, unit);
     }
@@ -251,6 +285,12 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     public ScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay,
                                                      long period, TimeUnit unit) {
         return getTaskScheduler(name).scheduleWithRepetition(command, initialDelay, period, unit);
+    }
+
+    @Override
+    public ScheduledFuture<?> scheduleDurableWithRepetition(String name, Runnable command, long initialDelay,
+                                                     long period, TimeUnit unit) {
+        return getDurableTaskScheduler(name).scheduleWithRepetition(command, initialDelay, period, unit);
     }
 
     @Override
@@ -271,6 +311,9 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         for (ExecutorService executorService : durableExecutors.values()) {
             executorService.shutdown();
         }
+        for (ExecutorService executorService : scheduleDurableExecutors.values()) {
+            executorService.shutdown();
+        }
         scheduledExecutorService.shutdownNow();
         cachedExecutorService.shutdown();
         try {
@@ -285,6 +328,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
         executors.clear();
         durableExecutors.clear();
+        scheduleDurableExecutors.clear();
     }
 
     @Override
@@ -303,9 +347,22 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         }
     }
 
+    @Override
+    public void shutdownScheduledDurableExecutor(String name) {
+        ExecutorService executorService = scheduleDurableExecutors.remove(name);
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+
     private <V> ICompletableFuture<V> registerCompletableFuture(Future<V> future) {
         CompletableFutureEntry<V> entry = new CompletableFutureEntry<V>(future, nodeEngine);
         completableFutureTask.registerCompletableFutureEntry(entry);
         return entry.completableFuture;
     }
+
+    private TaskScheduler getDurableTaskScheduler(String name) {
+        return new DelegatingTaskScheduler(scheduledExecutorService, getScheduledDurable(name));
+    }
+
 }

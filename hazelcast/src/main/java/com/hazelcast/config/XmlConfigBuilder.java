@@ -83,6 +83,7 @@ import static com.hazelcast.config.XmlElements.QUORUM;
 import static com.hazelcast.config.XmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
 import static com.hazelcast.config.XmlElements.RINGBUFFER;
+import static com.hazelcast.config.XmlElements.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.SECURITY;
 import static com.hazelcast.config.XmlElements.SEMAPHORE;
 import static com.hazelcast.config.XmlElements.SERIALIZATION;
@@ -289,6 +290,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleWanReplication(node);
         } else if (EXECUTOR_SERVICE.isEqual(nodeName)) {
             handleExecutor(node);
+        } else if (SCHEDULED_EXECUTOR_SERVICE.isEqual(nodeName)) {
+            handleScheduledExecutor(node);
         } else if (SERVICES.isEqual(nodeName)) {
             handleServices(node);
         } else if (QUEUE.isEqual(nodeName)) {
@@ -543,6 +546,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleExecutor(Node node) throws Exception {
         ExecutorConfig executorConfig = new ExecutorConfig();
         handleViaReflection(node, config, executorConfig);
+    }
+
+    private void handleScheduledExecutor(Node node) throws Exception {
+        ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
+        handleViaReflection(node, config, scheduledExecutorConfig);
     }
 
     private void handleGroup(Node node) {
