@@ -1,5 +1,8 @@
 package com.hazelcast.version;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
+import com.hazelcast.nio.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,6 +69,15 @@ public class MemberVersionTest {
     }
 
     @Test
+    public void test_constituents() {
+        MemberVersion expected = MemberVersion.of(3, 8, 2);
+
+        assertEquals(3, expected.getMajor());
+        assertEquals(8, expected.getMinor());
+        assertEquals(2, expected.getPatch());
+    }
+
+    @Test
     public void testVersionOf_whenVersionStringIsUnknown() {
         assertEquals(MemberVersion.UNKNOWN, MemberVersion.of(VERSION_UNKNOWN_STRING));
     }
@@ -118,5 +130,43 @@ public class MemberVersionTest {
         assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8, VERSION_3_9) < 0);
         assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_9, VERSION_3_8_1) > 0);
         assertTrue(MAJOR_MINOR_VERSION_COMPARATOR.compare(VERSION_3_8_1, VERSION_3_9) < 0);
+    }
+
+    @Test
+    public void testAsClusterVersion() {
+        ClusterVersion clusterVersion = MemberVersion.of(3, 8, 2).asClusterVersion();
+
+        assertEquals(3, clusterVersion.getMajor());
+        assertEquals(8, clusterVersion.getMinor());
+    }
+
+    @Test
+    public void testAsSerializationVersion() {
+        Version version = MemberVersion.of(3, 8, 2).asSerializationVersion();
+
+        assertEquals(8, version.getValue());
+    }
+
+    @Test
+    public void testEmpty() {
+        MemberVersion version = new MemberVersion();
+
+        assertEquals(0, version.getMajor());
+        assertEquals(0, version.getMinor());
+        assertEquals(0, version.getPatch());
+    }
+
+    @Test
+    public void testSerialization() {
+        MemberVersion given = MemberVersion.of(3, 9, 1);
+        SerializationServiceV1 ss = new DefaultSerializationServiceBuilder().setVersion(SerializationServiceV1.VERSION_1).build();
+        MemberVersion deserialized = ss.toObject(ss.toData(given));
+
+        assertEquals(deserialized, given);
+    }
+
+    @Test
+    public void toStringTest() throws Exception {
+        assertEquals("3.8.2", MemberVersion.of(3, 8, 2).toString());
     }
 }

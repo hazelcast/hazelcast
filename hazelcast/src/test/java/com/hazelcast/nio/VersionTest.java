@@ -7,11 +7,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.nio.Version.of;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import static com.hazelcast.nio.Version.of;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -76,6 +75,25 @@ public class VersionTest {
         assertTrue(Version.of(Version.UNKNOWN_VERSION).isUnknown());
         assertTrue(Version.of(-1).isUnknown());
         assertFalse(Version.of(0).isUnknown());
+    }
+
+
+    @Test
+    public void equals() throws Exception {
+        assertEquals(Version.UNKNOWN, Version.UNKNOWN);
+        assertEquals(Version.of(3), Version.of(3));
+
+        assertFalse(Version.of(3).equals(Version.of(4)));
+        assertFalse(Version.UNKNOWN.equals(Version.of(4)));
+
+        assertFalse(Version.UNKNOWN.equals(new Object()));
+    }
+
+    @Test
+    public void hashCodeTest() throws Exception {
+        assertEquals(Version.UNKNOWN.hashCode(), Version.UNKNOWN.hashCode());
+
+        assertTrue(Version.UNKNOWN.hashCode() != Version.of(4).hashCode());
     }
 
 }
