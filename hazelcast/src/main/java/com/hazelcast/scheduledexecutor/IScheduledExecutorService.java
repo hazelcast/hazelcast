@@ -68,14 +68,30 @@ import java.util.concurrent.TimeUnit;
  * to {@link java.util.concurrent.ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)}. It
  * guarantees a task won't be executed by multiple threads concurrently. The difference is that this service will
  * skip a scheduled execution if another thread is still running the same task, instead of postponing its execution.
- * To emphasize this difference the method is called <code>scheduleAtFixedRate</code>
- * instead of <code>scheduleAtFixedRate</code>
+ *
  * <br/><br/>
  * The other difference is this service does not offer an equivalent of
  * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}
+ *
+ * <br/><br/>
+ * No implementation is provided for:
+ * <ul>
+ *     <li>{@link #scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}</li>
+ *     <li>{@link #shutdownNow()}</li>
+ *     <li>{@link #isTerminated()}</li>
+ *     <li>{@link #isShutdown()}</li>
+ *     <li>{@link #execute(Runnable)}</li>
+ *     <li>{@link #submit(Callable)}</li>
+ *     <li>{@link #submit(Runnable)}</li>
+ *     <li>{@link #submit(Runnable, Object)}</li>
+ *     <li>{@link #invokeAll(Collection)}</li>
+ *     <li>{@link #invokeAll(Collection, long, TimeUnit)}</li>
+ *     <li>{@link #invokeAny(Collection)}</li>
+ *     <li>{@link #invokeAny(Collection, long, TimeUnit)}</li>
+ * </ul>
  */
 @Beta
-public interface IScheduledExecutorService extends DistributedObject {
+public interface IScheduledExecutorService extends ScheduledExecutorService, DistributedObject {
 
     /**
      * Creates and executes a one-shot action that becomes enabled
