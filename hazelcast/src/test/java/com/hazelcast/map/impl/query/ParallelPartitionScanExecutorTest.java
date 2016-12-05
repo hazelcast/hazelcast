@@ -45,7 +45,7 @@ public class ParallelPartitionScanExecutorTest {
                 new LinkedBlockingQueue<Runnable>(100),
                 threadFactory
         );
-        return new ParallelPartitionScanExecutor(runner, pool, 5);
+        return new ParallelPartitionScanExecutor(runner, pool, 60000);
     }
 
     @Test

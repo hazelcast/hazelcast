@@ -32,7 +32,7 @@ import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
-import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Implementation of the {@link PartitionScanExecutor} which executes the partition scan in a parallel-fashion
@@ -40,17 +40,15 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
-    public static final int DEFAULT_QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
-
     private final PartitionScanRunner partitionScanRunner;
     private final ManagedExecutorService executor;
-    private final int timeoutInMinutes;
+    private final int timeoutInMillis;
 
     public ParallelPartitionScanExecutor(
-            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor, int timeoutInMinutes) {
+            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor, int timeoutInMillis) {
         this.partitionScanRunner = partitionScanRunner;
         this.executor = executor;
-        this.timeoutInMinutes = timeoutInMinutes;
+        this.timeoutInMillis = timeoutInMillis;
     }
 
     @Override
@@ -73,7 +71,7 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
             futures.add(future);
         }
 
-        Collection<Collection<QueryableEntry>> returnedResults = waitForResult(futures, timeoutInMinutes);
+        Collection<Collection<QueryableEntry>> returnedResults = waitForResult(futures, timeoutInMillis);
         List<QueryableEntry> result = new ArrayList<QueryableEntry>();
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             result.addAll(returnedResult);
@@ -86,8 +84,8 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         return executor.submit(task);
     }
 
-    private static <T> Collection<Collection<T>> waitForResult(List<Future<Collection<T>>> lsFutures, int timeoutInMinutes) {
-        return returnWithDeadline(lsFutures, timeoutInMinutes, MINUTES, RETHROW_EVERYTHING);
+    private static <T> Collection<Collection<T>> waitForResult(List<Future<Collection<T>>> lsFutures, int timeoutInMillis) {
+        return returnWithDeadline(lsFutures, timeoutInMillis, MILLISECONDS, RETHROW_EVERYTHING);
     }
 
     private final class QueryPartitionCallable implements Callable<Collection<QueryableEntry>> {

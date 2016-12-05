@@ -91,6 +91,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.spi.properties.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
 
 /**
@@ -185,9 +186,10 @@ class MapServiceContextImpl implements MapServiceContext {
         boolean parallelEvaluation = nodeEngine.getProperties().getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
         PartitionScanExecutor partitionScanExecutor;
         if (parallelEvaluation) {
+            int opTimeoutInMillis = nodeEngine.getProperties().getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
             partitionScanExecutor = new ParallelPartitionScanExecutor(partitionScanRunner, queryExecutorService,
-                    ParallelPartitionScanExecutor.DEFAULT_QUERY_EXECUTION_TIMEOUT_MINUTES);
+                    opTimeoutInMillis);
         } else {
             partitionScanExecutor = new CallerRunsPartitionScanExecutor(partitionScanRunner);
         }
@@ -207,10 +209,11 @@ class MapServiceContextImpl implements MapServiceContext {
 
     private AggregationResultProcessor createAggregationResultProcessor(SerializationService ss) {
         boolean parallelAccumulation = nodeEngine.getProperties().getBoolean(AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION);
+        int opTimeoutInMillis = nodeEngine.getProperties().getInteger(OPERATION_CALL_TIMEOUT_MILLIS);
         AccumulationExecutor accumulationExecutor;
         if (parallelAccumulation) {
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
-            accumulationExecutor = new ParallelAccumulationExecutor(queryExecutorService, ss);
+            accumulationExecutor = new ParallelAccumulationExecutor(queryExecutorService, ss, opTimeoutInMillis);
         } else {
             accumulationExecutor = new CallerRunsAccumulationExecutor(ss);
         }
