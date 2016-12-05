@@ -45,10 +45,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
@@ -122,11 +120,6 @@ public class ScheduledExecutorServiceProxy
                 TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
 
         return submitOnPartitionSync(name, new ScheduleTaskOperation(getName(), definition), partitionId);
-    }
-
-    @Override
-    public IScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -335,71 +328,6 @@ public class ScheduledExecutorServiceProxy
         }
 
         waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isShutdown() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isTerminated() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Future<?> submit(Runnable task) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
-            throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void execute(Runnable command) {
-        throw new UnsupportedOperationException();
     }
 
     private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {

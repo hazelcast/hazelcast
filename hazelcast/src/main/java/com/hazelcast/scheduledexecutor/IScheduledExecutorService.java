@@ -29,7 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Distributed & durable implementation of {@link ScheduledExecutorService}.
+ * Distributed & durable implementation similar to, but not directly inherited {@link ScheduledExecutorService}.
  * <code>IScheduledExecutorService</code> provides similar API to the <code>ScheduledExecutorService</code> with some
  * exceptions but also additional methods like scheduling tasks on a specific member, on a member who is owner of a specific key,
  * executing a tasks on multiple members etc.
@@ -72,26 +72,9 @@ import java.util.concurrent.TimeUnit;
  * <br/><br/>
  * The other difference is this service does not offer an equivalent of
  * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}
- *
- * <br/><br/>
- * No implementation is provided for:
- * <ul>
- *     <li>{@link #scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}</li>
- *     <li>{@link #shutdownNow()}</li>
- *     <li>{@link #isTerminated()}</li>
- *     <li>{@link #isShutdown()}</li>
- *     <li>{@link #execute(Runnable)}</li>
- *     <li>{@link #submit(Callable)}</li>
- *     <li>{@link #submit(Runnable)}</li>
- *     <li>{@link #submit(Runnable, Object)}</li>
- *     <li>{@link #invokeAll(Collection)}</li>
- *     <li>{@link #invokeAll(Collection, long, TimeUnit)}</li>
- *     <li>{@link #invokeAny(Collection)}</li>
- *     <li>{@link #invokeAny(Collection, long, TimeUnit)}</li>
- * </ul>
  */
 @Beta
-public interface IScheduledExecutorService extends ScheduledExecutorService, DistributedObject {
+public interface IScheduledExecutorService extends DistributedObject {
 
     /**
      * Creates and executes a one-shot action that becomes enabled
