@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.MemberImpl;
@@ -282,13 +283,49 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new ICountdownLatchCallableRunnableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
+                new ICountdownLatchCallableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
 
         double result = future.get();
 
         assertEquals(expectedResult, result, 0);
         assertEquals(true, future.isDone());
         assertEquals(false, future.isCancelled());
+    }
+
+    @Test
+    public void schedule_withMapChanges_durable()
+            throws ExecutionException, InterruptedException {
+
+        int delay = 0;
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IMap<String, Integer> map = instances[1].getMap("map");
+        for (int i = 0; i < 100000; i++) {
+            map.put(String.valueOf(i), i);
+        }
+
+        Object key = generateKeyOwnedBy(instances[0]);
+        ICountDownLatch runsCountLatch = instances[1].getCountDownLatch("runsCountLatchName");
+        runsCountLatch.trySetCount(1);
+
+        IAtomicLong runEntryCounter = instances[1].getAtomicLong("runEntryCounterName");
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        executorService.scheduleOnKeyOwner(
+                new ICountdownLatchMapIncrementCallableTask("map", "runEntryCounterName",
+                        "runsCountLatchName", instances[0]), key, delay, TimeUnit.SECONDS);
+
+        Thread.sleep(2000);
+        instances[0].getLifecycleService().shutdown();
+
+        runsCountLatch.await(2, TimeUnit.MINUTES);
+
+        for (int i = 0; i < 100000; i++) {
+            assertTrue(map.get(String.valueOf(i)) == (i + 1));
+        }
+
+        assertEquals(2, runEntryCounter.get());
+
     }
 
     @Test
@@ -303,7 +340,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new ICountdownLatchCallableRunnableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
+                new ICountdownLatchCallableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
 
         Thread.sleep(4000);
         future.cancel(false);
@@ -795,7 +832,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
-    static class ICountdownLatchCallableRunnableTask
+    static class ICountdownLatchCallableTask
             implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
         final String runLatchName;
@@ -804,8 +841,8 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         transient HazelcastInstance instance;
 
-        ICountdownLatchCallableRunnableTask(String runLatchName,
-                                            int sleepPeriod, HazelcastInstance instance) {
+        ICountdownLatchCallableTask(String runLatchName,
+                                    int sleepPeriod, HazelcastInstance instance) {
             this.runLatchName = runLatchName;
             this.instance = instance;
             this.sleepPeriod = sleepPeriod;
@@ -821,6 +858,45 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
             instance.getCountDownLatch(runLatchName).countDown();
             return 77 * 2.2;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
+    }
+
+    static class ICountdownLatchMapIncrementCallableTask
+            implements Runnable, Serializable, HazelcastInstanceAware {
+
+        final String runLatchName;
+
+        final String runEntryCounterName;
+
+        final String mapName;
+
+        transient HazelcastInstance instance;
+
+        ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
+                                                String runLatchName, HazelcastInstance instance) {
+            this.mapName = mapName;
+            this.runEntryCounterName = runEntryCounterName;
+            this.runLatchName = runLatchName;
+            this.instance = instance;
+        }
+
+        @Override
+        public void run() {
+            instance.getAtomicLong(runEntryCounterName).incrementAndGet();
+
+            IMap<String, Integer> map = instance.getMap(mapName);
+            for (int i = 0; i < 100000; i++) {
+                if (map.get(String.valueOf(i)) == i) {
+                    map.put(String.valueOf(i), i + 1);
+                }
+            }
+
+            instance.getCountDownLatch(runLatchName).countDown();
         }
 
         @Override

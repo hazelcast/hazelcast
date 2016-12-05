@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
@@ -37,6 +38,8 @@ public class SyncStateOperation
 
     private ScheduledTaskStatisticsImpl stats;
 
+    private boolean shouldRun;
+
     public SyncStateOperation() {
     }
 
@@ -50,16 +53,23 @@ public class SyncStateOperation
     @Override
     public void run()
             throws Exception {
-        if (getPartitionId() == MEMBER_BIN
-                || getNodeEngine().getPartitionService().isPartitionOwner(getPartitionId())) {
+
+        int partitionId = getPartitionId();
+        shouldRun = partitionId == MEMBER_BIN;
+
+        if (partitionId >= 0) {
+            Address partitionOwner = getNodeEngine().getPartitionService().getPartitionOwner(partitionId);
+            shouldRun = shouldRun || getCallerAddress().equals(partitionOwner);
+        }
+
+        if (shouldRun) {
             getContainer().syncState(taskName, state, stats);
         }
     }
 
     @Override
     public boolean shouldBackup() {
-        return super.shouldBackup()
-                && getNodeEngine().getPartitionService().isPartitionOwner(getPartitionId());
+        return super.shouldBackup() && shouldRun;
     }
 
     @Override
