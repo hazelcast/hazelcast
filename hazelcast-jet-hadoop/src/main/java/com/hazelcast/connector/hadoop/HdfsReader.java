@@ -41,11 +41,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import org.apache.hadoop.fs.Path;
@@ -57,10 +57,12 @@ import org.apache.hadoop.mapred.TextInputFormat;
 
 import static com.hazelcast.jet.impl.Util.uncheckCall;
 import static java.util.Collections.emptyList;
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
@@ -143,8 +145,6 @@ public final class HdfsReader extends AbstractProducer {
             configuration = new JobConf();
             configuration.setInputFormat(TextInputFormat.class);
             TextInputFormat.addInputPath(configuration, new Path(path));
-
-
             try {
                 int totalParallelism = context.totalParallelism();
                 InputSplit[] splits = configuration.getInputFormat().getSplits(configuration, totalParallelism);
@@ -166,22 +166,22 @@ public final class HdfsReader extends AbstractProducer {
             return new Supplier(configuration, splits != null ? splits : emptyList());
         }
 
-        private void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) throws IOException {
+        private static void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
             LOGGER.info(assigned.entrySet().stream().flatMap(e -> concat(
                     Stream.of(e.getKey() + ":"),
                     Optional.of(e.getValue()).orElse(emptyList()).stream().map(Object::toString))
             ).collect(joining("\n")));
         }
 
-        private boolean isSplitLocalForMember(Member member, InputSplit split) throws IOException {
+        private static boolean isSplitLocalForMember(Member member, InputSplit split) throws IOException {
             final InetAddress memberAddr = member.getAddress().getInetAddress();
             return Arrays.stream(split.getLocations())
                     .flatMap(loc -> Arrays.stream(uncheckCall(() -> InetAddress.getAllByName(loc))))
                     .anyMatch(memberAddr::equals);
         }
 
-        private Map<Address, Collection<IndexedInputSplit>> assignSplits(IndexedInputSplit[] inputSplits,
-                                                                         Member[] members) throws IOException {
+        private static Map<Address, Collection<IndexedInputSplit>> assignSplits(
+                IndexedInputSplit[] inputSplits, Member[] members) throws IOException {
             Map<IndexedInputSplit, List<Integer>> assignments = new TreeMap<>();
             int[] counts = new int[members.length];
 
@@ -200,7 +200,8 @@ public final class HdfsReader extends AbstractProducer {
             for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
                 List<Integer> indexes = entry.getValue();
                 if (indexes.isEmpty()) {
-                    int indexToAdd = findMinIndex(counts);
+                    int indexToAdd = range(0, counts.length).boxed().min(comparingInt(i -> counts[i]))
+                                                            .orElseThrow(() -> new AssertionError("Empty counts"));
                     indexes.add(indexToAdd);
                     counts[indexToAdd]++;
                 }
@@ -215,10 +216,11 @@ public final class HdfsReader extends AbstractProducer {
                     List<Integer> indexes = entry.getValue();
                     if (indexes.size() > 1) {
                         found = true;
-                        // find member with most number of splits and remove from list
-                        int maxIndex = findMaxIndex(counts, indexes);
-                        indexes.remove((Object) maxIndex);
-                        counts[maxIndex]--;
+                        // find member with most splits and remove from list
+                        int indexWithMaxCount = indexes.stream().max(comparingInt(i -> counts[i]))
+                                                       .orElseThrow(() -> new AssertionError("Empty indexes"));
+                        indexes.remove(indexWithMaxCount);
+                        counts[indexWithMaxCount]--;
                     }
                 }
             } while (found);
@@ -244,30 +246,9 @@ public final class HdfsReader extends AbstractProducer {
                     mapToSplit.put(address, new TreeSet<>(Collections.singletonList(split)));
                 }
             }
-
             return mapToSplit;
         }
 
-        private int findMinIndex(int[] counts) {
-            int index = 0;
-            for (int i = 1; i < counts.length; i++) {
-                if (counts[i] < counts[index]) {
-                    index = i;
-                }
-            }
-            return index;
-        }
-
-        private int findMaxIndex(int[] counts, List<Integer> indexes) {
-            int maxIndex = indexes.get(0);
-            for (int i = 1; i < indexes.size(); i++) {
-                Integer comparedIndex = indexes.get(i);
-                if (counts[comparedIndex] > counts[maxIndex]) {
-                    maxIndex = comparedIndex;
-                }
-            }
-            return maxIndex;
-        }
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -284,23 +265,23 @@ public final class HdfsReader extends AbstractProducer {
 
         @Override
         public List<Processor> get(int count) {
-            Map<Integer, List<IndexedInputSplit>> processorToSplits = IntStream.range(0, assignedSplits.size()).boxed()
+            Map<Integer, List<IndexedInputSplit>> processorToSplits = range(0, assignedSplits.size()).boxed()
                     .map(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
-                    .collect(groupingBy(e -> e.getKey() % count,
-                            mapping(Map.Entry::getValue, toList())));
-            IntStream.range(0, count)
+                    .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+            range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
             InputFormat inputFormat = configuration.getInputFormat();
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
-                            ? new EmptyProcessor()
-                            : new HdfsReader(splits.stream().map((split) ->uncheckCall(() ->
-                                             inputFormat.getRecordReader(split.getSplit(), configuration, NULL)))
-                                            .collect(toList()))
-                        ).collect(toList());
+                            ? new EmptyProducer()
+                            : new HdfsReader(splits.stream()
+                                                   .map(IndexedInputSplit::getSplit)
+                                                   .map(split -> uncheckCall(() ->
+                                                           inputFormat.getRecordReader(split, configuration, NULL)))
+                                                   .collect(toList()))
+                    ).collect(toList());
         }
-
 
         private void writeObject(ObjectOutputStream out) throws IOException {
             configuration.write(out);
@@ -319,9 +300,6 @@ public final class HdfsReader extends AbstractProducer {
         private int index;
         private InputSplit split;
 
-        IndexedInputSplit() {
-        }
-
         IndexedInputSplit(int index, InputSplit split) {
             this.index = index;
             this.split = split;
@@ -331,16 +309,9 @@ public final class HdfsReader extends AbstractProducer {
             return split;
         }
 
-        public int getIndex() {
-            return index;
-        }
-
         @Override
         public String toString() {
-            return "IndexedInputSplit{" +
-                    "index=" + index +
-                    ", split=" + split +
-                    '}';
+            return "IndexedInputSplit{index=" + index + ", split=" + split + '}';
         }
 
         @Override
@@ -350,27 +321,17 @@ public final class HdfsReader extends AbstractProducer {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-
-            IndexedInputSplit that = (IndexedInputSplit) o;
-
-            if (index != that.index) {
-                return false;
-            }
-            return split != null ? split.equals(that.split) : that.split == null;
-
+            IndexedInputSplit that;
+            return this == o ||
+                    o != null
+                    && getClass() == o.getClass()
+                    && index == (that = (IndexedInputSplit) o).index
+                    && Objects.equals(split, that.split);
         }
 
         @Override
         public int hashCode() {
-            int result = index;
-            result = 31 * result + (split != null ? split.hashCode() : 0);
-            return result;
+            return 31 * index + Objects.hashCode(split);
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
@@ -386,9 +347,6 @@ public final class HdfsReader extends AbstractProducer {
         }
     }
 
-    private static class EmptyProcessor extends AbstractProducer {
-
+    private static class EmptyProducer extends AbstractProducer {
     }
-
-
 }
