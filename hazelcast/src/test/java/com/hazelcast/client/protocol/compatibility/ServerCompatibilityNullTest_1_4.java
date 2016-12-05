@@ -1,22 +1,342 @@
 package com.hazelcast.client.protocol.compatibility;
 
-import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.client.impl.MemberImpl;
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.*;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongDecrementAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceClearCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAssignAndGetUuidsCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorDisposeResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveAndDisposeResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapDestroyCacheCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapMadePublishableCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapPublisherCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapPublisherCreateWithValueCodec;
+import com.hazelcast.client.impl.protocol.codec.EnterpriseMapSetReadCursorCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListClearCodec;
+import com.hazelcast.client.impl.protocol.codec.ListCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.ListGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListGetCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.ListLastIndexOfCodec;
+import com.hazelcast.client.impl.protocol.codec.ListListIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSetCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
+import com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec;
+import com.hazelcast.client.impl.protocol.codec.LockGetRemainingLeaseTimeCodec;
+import com.hazelcast.client.impl.protocol.codec.LockIsLockedByCurrentThreadCodec;
+import com.hazelcast.client.impl.protocol.codec.LockIsLockedCodec;
+import com.hazelcast.client.impl.protocol.codec.LockLockCodec;
+import com.hazelcast.client.impl.protocol.codec.LockTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
+import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.MapClearNearCacheCodec;
+import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEvictCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
+import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
+import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapIsLockedCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForListCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapIsLockedCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValueCountCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToMaxSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueOfferCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePeekCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferHeadSequenceCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainPermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetClearCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.SetGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionRollbackCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListAddCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapDeleteCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetForUpdateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetAddCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionClearRemoteCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -29,89 +349,86 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import java.util.Arrays;
-import java.io.IOException;
-import java.lang.reflect.Array;
-import java.net.UnknownHostException;
-import javax.transaction.xa.Xid;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.longs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.members;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ServerCompatibilityTest_1_2 {
+public class ServerCompatibilityNullTest_1_4 {
     private static final int FRAME_LEN_FIELD_SIZE = 4;
     @org.junit.Test
             public void test() throws IOException {
-              InputStream input = getClass().getResourceAsStream("/1.2.protocol.compatibility.binary");
+              InputStream input = getClass().getResourceAsStream("/1.4.protocol.compatibility.null.binary");
                DataInputStream inputStream = new DataInputStream(input);
 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientAuthenticationCodec.RequestParameters params = ClientAuthenticationCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.username));
-                assertTrue(isEqual(aString, params.password));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aString, params.ownerUuid));
-                assertTrue(isEqual(aBoolean, params.isOwnerConnection));
-                assertTrue(isEqual(aString, params.clientType));
-                assertTrue(isEqual(aByte, params.serializationVersion));
-                assertFalse(params.clientHazelcastVersionExist);
+            assertTrue(isEqual(aString, params.username));
+            assertTrue(isEqual(aString, params.password));
+            assertTrue(isEqual(null, params.uuid));
+            assertTrue(isEqual(null, params.ownerUuid));
+            assertTrue(isEqual(aBoolean, params.isOwnerConnection));
+            assertTrue(isEqual(aString, params.clientType));
+            assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.clientHazelcastVersion));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    anAddress ,    aString ,    aString ,    aByte ,    aString ,    members   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientAuthenticationCustomCodec.RequestParameters params = ClientAuthenticationCustomCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.credentials));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aString, params.ownerUuid));
-                assertTrue(isEqual(aBoolean, params.isOwnerConnection));
-                assertTrue(isEqual(aString, params.clientType));
-                assertTrue(isEqual(aByte, params.serializationVersion));
-                assertFalse(params.clientHazelcastVersionExist);
+            assertTrue(isEqual(aData, params.credentials));
+            assertTrue(isEqual(null, params.uuid));
+            assertTrue(isEqual(null, params.ownerUuid));
+            assertTrue(isEqual(aBoolean, params.isOwnerConnection));
+            assertTrue(isEqual(aString, params.clientType));
+            assertTrue(isEqual(aByte, params.serializationVersion));
+            assertTrue(isEqual(aString, params.clientHazelcastVersion));
 }
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    anAddress ,    aString ,    aString ,    aByte ,    aString ,    members   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeResponse(    aByte ,    null ,    null ,    null ,    aByte ,    aString ,    null   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientAddMembershipListenerCodec.RequestParameters params = ClientAddMembershipListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeResponse(    aString   );
@@ -124,7 +441,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeMemberEvent( aMember ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -132,15 +448,13 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeMemberListEvent( members   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
      }
     {
-        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeMemberAttributeChangeEvent( aString ,  aString ,  anInt ,  aString   );
+        ClientMessage clientMessage = ClientAddMembershipListenerCodec.encodeMemberAttributeChangeEvent( aString ,  aString ,  anInt ,  null   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -151,9 +465,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientCreateProxyCodec.RequestParameters params = ClientCreateProxyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.serviceName));
-                assertTrue(isEqual(anAddress, params.target));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.serviceName));
+            assertTrue(isEqual(anAddress, params.target));
 }
 {
     ClientMessage clientMessage = ClientCreateProxyCodec.encodeResponse( );
@@ -167,8 +481,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientDestroyProxyCodec.RequestParameters params = ClientDestroyProxyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.serviceName));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.serviceName));
 }
 {
     ClientMessage clientMessage = ClientDestroyProxyCodec.encodeResponse( );
@@ -208,7 +522,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientAddPartitionLostListenerCodec.RequestParameters params = ClientAddPartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ClientAddPartitionLostListenerCodec.encodeResponse(    aString   );
@@ -219,9 +533,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ClientAddPartitionLostListenerCodec.encodePartitionLostEvent( anInt ,  anInt ,  anAddress   );
+        ClientMessage clientMessage = ClientAddPartitionLostListenerCodec.encodePartitionLostEvent( anInt ,  anInt ,  null   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -232,7 +545,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientRemovePartitionLostListenerCodec.RequestParameters params = ClientRemovePartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = ClientRemovePartitionLostListenerCodec.encodeResponse(    aBoolean   );
@@ -259,7 +572,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientAddDistributedObjectListenerCodec.RequestParameters params = ClientAddDistributedObjectListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ClientAddDistributedObjectListenerCodec.encodeResponse(    aString   );
@@ -272,7 +585,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent( aString ,  aString ,  aString   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -283,7 +595,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ClientRemoveDistributedObjectListenerCodec.RequestParameters params = ClientRemoveDistributedObjectListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = ClientRemoveDistributedObjectListenerCodec.encodeResponse(    aBoolean   );
@@ -310,14 +622,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapPutCodec.RequestParameters params = MapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
-    ClientMessage clientMessage = MapPutCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapPutCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -328,12 +640,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapGetCodec.RequestParameters params = MapGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -344,12 +656,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapRemoveCodec.RequestParameters params = MapRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapRemoveCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapRemoveCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -360,13 +672,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReplaceCodec.RequestParameters params = MapReplaceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapReplaceCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapReplaceCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -377,11 +689,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReplaceIfSameCodec.RequestParameters params = MapReplaceIfSameCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.testValue));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.testValue));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MapReplaceIfSameCodec.encodeResponse(    aBoolean   );
@@ -395,9 +707,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapContainsKeyCodec.RequestParameters params = MapContainsKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MapContainsKeyCodec.encodeResponse(    aBoolean   );
@@ -411,8 +723,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapContainsValueCodec.RequestParameters params = MapContainsValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = MapContainsValueCodec.encodeResponse(    aBoolean   );
@@ -426,10 +738,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapRemoveIfSameCodec.RequestParameters params = MapRemoveIfSameCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MapRemoveIfSameCodec.encodeResponse(    aBoolean   );
@@ -443,9 +755,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapDeleteCodec.RequestParameters params = MapDeleteCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MapDeleteCodec.encodeResponse( );
@@ -459,7 +771,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapFlushCodec.RequestParameters params = MapFlushCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapFlushCodec.encodeResponse( );
@@ -473,10 +785,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapTryRemoveCodec.RequestParameters params = MapTryRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = MapTryRemoveCodec.encodeResponse(    aBoolean   );
@@ -490,11 +802,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapTryPutCodec.RequestParameters params = MapTryPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = MapTryPutCodec.encodeResponse(    aBoolean   );
@@ -508,11 +820,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapPutTransientCodec.RequestParameters params = MapPutTransientCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
     ClientMessage clientMessage = MapPutTransientCodec.encodeResponse( );
@@ -526,14 +838,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapPutIfAbsentCodec.RequestParameters params = MapPutIfAbsentCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
-    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapPutIfAbsentCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -544,11 +856,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapSetCodec.RequestParameters params = MapSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
     ClientMessage clientMessage = MapSetCodec.encodeResponse( );
@@ -562,11 +874,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapLockCodec.RequestParameters params = MapLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MapLockCodec.encodeResponse( );
@@ -580,12 +892,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapTryLockCodec.RequestParameters params = MapTryLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.lease));
-                assertTrue(isEqual(aLong, params.timeout));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.lease));
+            assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MapTryLockCodec.encodeResponse(    aBoolean   );
@@ -599,8 +911,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapIsLockedCodec.RequestParameters params = MapIsLockedCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = MapIsLockedCodec.encodeResponse(    aBoolean   );
@@ -614,10 +926,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapUnlockCodec.RequestParameters params = MapUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MapUnlockCodec.encodeResponse( );
@@ -631,8 +943,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddInterceptorCodec.RequestParameters params = MapAddInterceptorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.interceptor));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.interceptor));
 }
 {
     ClientMessage clientMessage = MapAddInterceptorCodec.encodeResponse(    aString   );
@@ -646,8 +958,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapRemoveInterceptorCodec.RequestParameters params = MapRemoveInterceptorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.id));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.id));
 }
 {
     ClientMessage clientMessage = MapRemoveInterceptorCodec.encodeResponse(    aBoolean   );
@@ -661,12 +973,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters params = MapAddEntryListenerToKeyWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(anInt, params.listenerFlags));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddEntryListenerToKeyWithPredicateCodec.encodeResponse(    aString   );
@@ -677,9 +989,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -690,11 +1001,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddEntryListenerWithPredicateCodec.RequestParameters params = MapAddEntryListenerWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(anInt, params.listenerFlags));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddEntryListenerWithPredicateCodec.encodeResponse(    aString   );
@@ -705,9 +1016,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MapAddEntryListenerWithPredicateCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MapAddEntryListenerWithPredicateCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -718,11 +1028,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddEntryListenerToKeyCodec.RequestParameters params = MapAddEntryListenerToKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(anInt, params.listenerFlags));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddEntryListenerToKeyCodec.encodeResponse(    aString   );
@@ -733,9 +1043,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MapAddEntryListenerToKeyCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MapAddEntryListenerToKeyCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -746,10 +1055,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddEntryListenerCodec.RequestParameters params = MapAddEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(anInt, params.listenerFlags));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddEntryListenerCodec.encodeResponse(    aString   );
@@ -760,9 +1069,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MapAddEntryListenerCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MapAddEntryListenerCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -773,48 +1081,31 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddNearCacheEntryListenerCodec.RequestParameters params = MapAddNearCacheEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.listenerFlags));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddNearCacheEntryListenerCodec.encodeResponse(    aString   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.4), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     {
-        ClientMessage clientMessage = MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent( aData ,  aString ,  aUUID ,  aLong   );
+        ClientMessage clientMessage = MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent( null ,  aString ,  aUUID ,  aLong   );
         int length = inputStream.readInt();
-
-        // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-        // (version 1.4), only the bytes after frame length fields are compared
-        int frameLength = clientMessage.getFrameLength();
-        assertTrue(frameLength >= length);
-        inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-        byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+        byte[] bytes = new byte[length];
         inputStream.read(bytes);
-        assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
      }
     {
         ClientMessage clientMessage = MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
         int length = inputStream.readInt();
-
-        // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-        // (version 1.4), only the bytes after frame length fields are compared
-        int frameLength = clientMessage.getFrameLength();
-        assertTrue(frameLength >= length);
-        inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-        byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+        byte[] bytes = new byte[length];
         inputStream.read(bytes);
-        assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
      }
 }
 {
@@ -822,8 +1113,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapRemoveEntryListenerCodec.RequestParameters params = MapRemoveEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = MapRemoveEntryListenerCodec.encodeResponse(    aBoolean   );
@@ -837,8 +1128,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddPartitionLostListenerCodec.RequestParameters params = MapAddPartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MapAddPartitionLostListenerCodec.encodeResponse(    aString   );
@@ -851,7 +1142,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = MapAddPartitionLostListenerCodec.encodeMapPartitionLostEvent( anInt ,  aString   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -862,8 +1152,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapRemovePartitionLostListenerCodec.RequestParameters params = MapRemovePartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = MapRemovePartitionLostListenerCodec.encodeResponse(    aBoolean   );
@@ -877,12 +1167,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapGetEntryViewCodec.RequestParameters params = MapGetEntryViewCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapGetEntryViewCodec.encodeResponse(    anEntryView   );
+    ClientMessage clientMessage = MapGetEntryViewCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -893,9 +1183,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapEvictCodec.RequestParameters params = MapEvictCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MapEvictCodec.encodeResponse(    aBoolean   );
@@ -909,7 +1199,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapEvictAllCodec.RequestParameters params = MapEvictAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapEvictAllCodec.encodeResponse( );
@@ -923,8 +1213,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapLoadAllCodec.RequestParameters params = MapLoadAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.replaceExistingValues));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.replaceExistingValues));
 }
 {
     ClientMessage clientMessage = MapLoadAllCodec.encodeResponse( );
@@ -938,9 +1228,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapLoadGivenKeysCodec.RequestParameters params = MapLoadGivenKeysCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aBoolean, params.replaceExistingValues));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(aBoolean, params.replaceExistingValues));
 }
 {
     ClientMessage clientMessage = MapLoadGivenKeysCodec.encodeResponse( );
@@ -954,7 +1244,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapKeySetCodec.RequestParameters params = MapKeySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapKeySetCodec.encodeResponse(    datas   );
@@ -968,8 +1258,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapGetAllCodec.RequestParameters params = MapGetAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.keys));
 }
 {
     ClientMessage clientMessage = MapGetAllCodec.encodeResponse(    aListOfEntry   );
@@ -983,7 +1273,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapValuesCodec.RequestParameters params = MapValuesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapValuesCodec.encodeResponse(    datas   );
@@ -997,7 +1287,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapEntrySetCodec.RequestParameters params = MapEntrySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapEntrySetCodec.encodeResponse(    aListOfEntry   );
@@ -1011,8 +1301,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapKeySetWithPredicateCodec.RequestParameters params = MapKeySetWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapKeySetWithPredicateCodec.encodeResponse(    datas   );
@@ -1026,8 +1316,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapValuesWithPredicateCodec.RequestParameters params = MapValuesWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapValuesWithPredicateCodec.encodeResponse(    datas   );
@@ -1041,8 +1331,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapEntriesWithPredicateCodec.RequestParameters params = MapEntriesWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapEntriesWithPredicateCodec.encodeResponse(    aListOfEntry   );
@@ -1056,9 +1346,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapAddIndexCodec.RequestParameters params = MapAddIndexCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.attribute));
-                assertTrue(isEqual(aBoolean, params.ordered));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.attribute));
+            assertTrue(isEqual(aBoolean, params.ordered));
 }
 {
     ClientMessage clientMessage = MapAddIndexCodec.encodeResponse( );
@@ -1072,7 +1362,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapSizeCodec.RequestParameters params = MapSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapSizeCodec.encodeResponse(    anInt   );
@@ -1086,7 +1376,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapIsEmptyCodec.RequestParameters params = MapIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -1100,8 +1390,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapPutAllCodec.RequestParameters params = MapPutAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aListOfEntry, params.entries));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aListOfEntry, params.entries));
 }
 {
     ClientMessage clientMessage = MapPutAllCodec.encodeResponse( );
@@ -1115,7 +1405,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapClearCodec.RequestParameters params = MapClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MapClearCodec.encodeResponse( );
@@ -1129,13 +1419,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapExecuteOnKeyCodec.RequestParameters params = MapExecuteOnKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.entryProcessor));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapExecuteOnKeyCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapExecuteOnKeyCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1146,13 +1436,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapSubmitToKeyCodec.RequestParameters params = MapSubmitToKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.entryProcessor));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = MapSubmitToKeyCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapSubmitToKeyCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1163,8 +1453,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapExecuteOnAllKeysCodec.RequestParameters params = MapExecuteOnAllKeysCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.entryProcessor));
 }
 {
     ClientMessage clientMessage = MapExecuteOnAllKeysCodec.encodeResponse(    aListOfEntry   );
@@ -1178,9 +1468,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapExecuteWithPredicateCodec.RequestParameters params = MapExecuteWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.entryProcessor));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapExecuteWithPredicateCodec.encodeResponse(    aListOfEntry   );
@@ -1194,9 +1484,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapExecuteOnKeysCodec.RequestParameters params = MapExecuteOnKeysCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.entryProcessor));
-                assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(datas, params.keys));
 }
 {
     ClientMessage clientMessage = MapExecuteOnKeysCodec.encodeResponse(    aListOfEntry   );
@@ -1210,9 +1500,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapForceUnlockCodec.RequestParameters params = MapForceUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MapForceUnlockCodec.encodeResponse( );
@@ -1226,8 +1516,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapKeySetWithPagingPredicateCodec.RequestParameters params = MapKeySetWithPagingPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapKeySetWithPagingPredicateCodec.encodeResponse(    datas   );
@@ -1241,8 +1531,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapValuesWithPagingPredicateCodec.RequestParameters params = MapValuesWithPagingPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapValuesWithPagingPredicateCodec.encodeResponse(    aListOfEntry   );
@@ -1256,8 +1546,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapEntriesWithPagingPredicateCodec.RequestParameters params = MapEntriesWithPagingPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = MapEntriesWithPagingPredicateCodec.encodeResponse(    aListOfEntry   );
@@ -1271,8 +1561,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapClearNearCacheCodec.RequestParameters params = MapClearNearCacheCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anAddress, params.target));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anAddress, params.target));
 }
 {
     ClientMessage clientMessage = MapClearNearCacheCodec.encodeResponse( );
@@ -1286,10 +1576,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapFetchKeysCodec.RequestParameters params = MapFetchKeysCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.partitionId));
-                assertTrue(isEqual(anInt, params.tableIndex));
-                assertTrue(isEqual(anInt, params.batch));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(anInt, params.tableIndex));
+            assertTrue(isEqual(anInt, params.batch));
 }
 {
     ClientMessage clientMessage = MapFetchKeysCodec.encodeResponse(    anInt ,    datas   );
@@ -1303,10 +1593,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapFetchEntriesCodec.RequestParameters params = MapFetchEntriesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.partitionId));
-                assertTrue(isEqual(anInt, params.tableIndex));
-                assertTrue(isEqual(anInt, params.batch));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(anInt, params.tableIndex));
+            assertTrue(isEqual(anInt, params.batch));
 }
 {
     ClientMessage clientMessage = MapFetchEntriesCodec.encodeResponse(    anInt ,    aListOfEntry   );
@@ -1319,11 +1609,133 @@ public class ServerCompatibilityTest_1_2 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    MapAggregateCodec.RequestParameters params = MapAggregateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.aggregator));
+}
+{
+    ClientMessage clientMessage = MapAggregateCodec.encodeResponse(    null   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapAggregateWithPredicateCodec.RequestParameters params = MapAggregateWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.aggregator));
+            assertTrue(isEqual(aData, params.predicate));
+}
+{
+    ClientMessage clientMessage = MapAggregateWithPredicateCodec.encodeResponse(    null   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapProjectCodec.RequestParameters params = MapProjectCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.projection));
+}
+{
+    ClientMessage clientMessage = MapProjectCodec.encodeResponse(    datas   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapProjectWithPredicateCodec.RequestParameters params = MapProjectWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.projection));
+            assertTrue(isEqual(aData, params.predicate));
+}
+{
+    ClientMessage clientMessage = MapProjectWithPredicateCodec.encodeResponse(    datas   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.RequestParameters params = MapAddNearCacheInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
+}
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapInvalidationEvent( null ,  aString ,  aUUID ,  aLong   );
+        int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
+        int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapFetchNearCacheInvalidationMetadataCodec.RequestParameters params = MapFetchNearCacheInvalidationMetadataCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(strings, params.names));
+            assertTrue(isEqual(anAddress, params.address));
+}
+{
+    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(    null   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapAssignAndGetUuidsCodec.RequestParameters params = MapAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+}
+{
+    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     MultiMapPutCodec.RequestParameters params = MultiMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeResponse(    aBoolean   );
@@ -1337,9 +1749,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapGetCodec.RequestParameters params = MultiMapGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapGetCodec.encodeResponse(    datas   );
@@ -1353,9 +1765,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapRemoveCodec.RequestParameters params = MultiMapRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapRemoveCodec.encodeResponse(    datas   );
@@ -1369,7 +1781,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapKeySetCodec.RequestParameters params = MultiMapKeySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MultiMapKeySetCodec.encodeResponse(    datas   );
@@ -1383,7 +1795,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapValuesCodec.RequestParameters params = MultiMapValuesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MultiMapValuesCodec.encodeResponse(    datas   );
@@ -1397,7 +1809,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapEntrySetCodec.RequestParameters params = MultiMapEntrySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MultiMapEntrySetCodec.encodeResponse(    aListOfEntry   );
@@ -1411,9 +1823,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapContainsKeyCodec.RequestParameters params = MultiMapContainsKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapContainsKeyCodec.encodeResponse(    aBoolean   );
@@ -1427,8 +1839,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapContainsValueCodec.RequestParameters params = MultiMapContainsValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = MultiMapContainsValueCodec.encodeResponse(    aBoolean   );
@@ -1442,10 +1854,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapContainsEntryCodec.RequestParameters params = MultiMapContainsEntryCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapContainsEntryCodec.encodeResponse(    aBoolean   );
@@ -1459,7 +1871,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapSizeCodec.RequestParameters params = MultiMapSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MultiMapSizeCodec.encodeResponse(    anInt   );
@@ -1473,7 +1885,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapClearCodec.RequestParameters params = MultiMapClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = MultiMapClearCodec.encodeResponse( );
@@ -1487,9 +1899,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapValueCountCodec.RequestParameters params = MultiMapValueCountCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapValueCountCodec.encodeResponse(    anInt   );
@@ -1503,10 +1915,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapAddEntryListenerToKeyCodec.RequestParameters params = MultiMapAddEntryListenerToKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MultiMapAddEntryListenerToKeyCodec.encodeResponse(    aString   );
@@ -1517,9 +1929,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MultiMapAddEntryListenerToKeyCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MultiMapAddEntryListenerToKeyCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -1530,9 +1941,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapAddEntryListenerCodec.RequestParameters params = MultiMapAddEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = MultiMapAddEntryListenerCodec.encodeResponse(    aString   );
@@ -1543,9 +1954,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = MultiMapAddEntryListenerCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = MultiMapAddEntryListenerCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -1556,8 +1966,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapRemoveEntryListenerCodec.RequestParameters params = MultiMapRemoveEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = MultiMapRemoveEntryListenerCodec.encodeResponse(    aBoolean   );
@@ -1571,11 +1981,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapLockCodec.RequestParameters params = MultiMapLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.ttl));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MultiMapLockCodec.encodeResponse( );
@@ -1589,12 +1999,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapTryLockCodec.RequestParameters params = MultiMapTryLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.lease));
-                assertTrue(isEqual(aLong, params.timeout));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.lease));
+            assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MultiMapTryLockCodec.encodeResponse(    aBoolean   );
@@ -1608,8 +2018,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapIsLockedCodec.RequestParameters params = MultiMapIsLockedCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = MultiMapIsLockedCodec.encodeResponse(    aBoolean   );
@@ -1623,10 +2033,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapUnlockCodec.RequestParameters params = MultiMapUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MultiMapUnlockCodec.encodeResponse( );
@@ -1640,9 +2050,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapForceUnlockCodec.RequestParameters params = MultiMapForceUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = MultiMapForceUnlockCodec.encodeResponse( );
@@ -1656,10 +2066,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MultiMapRemoveEntryCodec.RequestParameters params = MultiMapRemoveEntryCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = MultiMapRemoveEntryCodec.encodeResponse(    aBoolean   );
@@ -1673,9 +2083,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueOfferCodec.RequestParameters params = QueueOfferCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.timeoutMillis));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.timeoutMillis));
 }
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeResponse(    aBoolean   );
@@ -1689,8 +2099,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueuePutCodec.RequestParameters params = QueuePutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = QueuePutCodec.encodeResponse( );
@@ -1704,7 +2114,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueSizeCodec.RequestParameters params = QueueSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueSizeCodec.encodeResponse(    anInt   );
@@ -1718,8 +2128,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueRemoveCodec.RequestParameters params = QueueRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = QueueRemoveCodec.encodeResponse(    aBoolean   );
@@ -1733,11 +2143,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueuePollCodec.RequestParameters params = QueuePollCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.timeoutMillis));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.timeoutMillis));
 }
 {
-    ClientMessage clientMessage = QueuePollCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = QueuePollCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1748,10 +2158,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueTakeCodec.RequestParameters params = QueueTakeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
-    ClientMessage clientMessage = QueueTakeCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = QueueTakeCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1762,10 +2172,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueuePeekCodec.RequestParameters params = QueuePeekCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
-    ClientMessage clientMessage = QueuePeekCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = QueuePeekCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1776,7 +2186,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueIteratorCodec.RequestParameters params = QueueIteratorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueIteratorCodec.encodeResponse(    datas   );
@@ -1790,7 +2200,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueDrainToCodec.RequestParameters params = QueueDrainToCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueDrainToCodec.encodeResponse(    datas   );
@@ -1804,8 +2214,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueDrainToMaxSizeCodec.RequestParameters params = QueueDrainToMaxSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.maxSize));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.maxSize));
 }
 {
     ClientMessage clientMessage = QueueDrainToMaxSizeCodec.encodeResponse(    datas   );
@@ -1819,8 +2229,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueContainsCodec.RequestParameters params = QueueContainsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = QueueContainsCodec.encodeResponse(    aBoolean   );
@@ -1834,8 +2244,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueContainsAllCodec.RequestParameters params = QueueContainsAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.dataList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.dataList));
 }
 {
     ClientMessage clientMessage = QueueContainsAllCodec.encodeResponse(    aBoolean   );
@@ -1849,8 +2259,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueCompareAndRemoveAllCodec.RequestParameters params = QueueCompareAndRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.dataList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.dataList));
 }
 {
     ClientMessage clientMessage = QueueCompareAndRemoveAllCodec.encodeResponse(    aBoolean   );
@@ -1864,8 +2274,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueCompareAndRetainAllCodec.RequestParameters params = QueueCompareAndRetainAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.dataList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.dataList));
 }
 {
     ClientMessage clientMessage = QueueCompareAndRetainAllCodec.encodeResponse(    aBoolean   );
@@ -1879,7 +2289,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueClearCodec.RequestParameters params = QueueClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueClearCodec.encodeResponse( );
@@ -1893,8 +2303,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueAddAllCodec.RequestParameters params = QueueAddAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.dataList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.dataList));
 }
 {
     ClientMessage clientMessage = QueueAddAllCodec.encodeResponse(    aBoolean   );
@@ -1908,9 +2318,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueAddListenerCodec.RequestParameters params = QueueAddListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = QueueAddListenerCodec.encodeResponse(    aString   );
@@ -1921,9 +2331,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = QueueAddListenerCodec.encodeItemEvent( aData ,  aString ,  anInt   );
+        ClientMessage clientMessage = QueueAddListenerCodec.encodeItemEvent( null ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -1934,8 +2343,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueRemoveListenerCodec.RequestParameters params = QueueRemoveListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = QueueRemoveListenerCodec.encodeResponse(    aBoolean   );
@@ -1949,7 +2358,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueRemainingCapacityCodec.RequestParameters params = QueueRemainingCapacityCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueRemainingCapacityCodec.encodeResponse(    anInt   );
@@ -1963,7 +2372,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     QueueIsEmptyCodec.RequestParameters params = QueueIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = QueueIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -1977,8 +2386,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TopicPublishCodec.RequestParameters params = TopicPublishCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.message));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.message));
 }
 {
     ClientMessage clientMessage = TopicPublishCodec.encodeResponse( );
@@ -1992,8 +2401,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TopicAddMessageListenerCodec.RequestParameters params = TopicAddMessageListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = TopicAddMessageListenerCodec.encodeResponse(    aString   );
@@ -2006,7 +2415,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = TopicAddMessageListenerCodec.encodeTopicEvent( aData ,  aLong ,  aString   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -2017,8 +2425,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TopicRemoveMessageListenerCodec.RequestParameters params = TopicRemoveMessageListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = TopicRemoveMessageListenerCodec.encodeResponse(    aBoolean   );
@@ -2032,7 +2440,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListSizeCodec.RequestParameters params = ListSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ListSizeCodec.encodeResponse(    anInt   );
@@ -2046,8 +2454,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListContainsCodec.RequestParameters params = ListContainsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListContainsCodec.encodeResponse(    aBoolean   );
@@ -2061,8 +2469,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListContainsAllCodec.RequestParameters params = ListContainsAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.values));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.values));
 }
 {
     ClientMessage clientMessage = ListContainsAllCodec.encodeResponse(    aBoolean   );
@@ -2076,8 +2484,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListAddCodec.RequestParameters params = ListAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListAddCodec.encodeResponse(    aBoolean   );
@@ -2091,8 +2499,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListRemoveCodec.RequestParameters params = ListRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListRemoveCodec.encodeResponse(    aBoolean   );
@@ -2106,8 +2514,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListAddAllCodec.RequestParameters params = ListAddAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.valueList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.valueList));
 }
 {
     ClientMessage clientMessage = ListAddAllCodec.encodeResponse(    aBoolean   );
@@ -2121,8 +2529,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListCompareAndRemoveAllCodec.RequestParameters params = ListCompareAndRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.values));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.values));
 }
 {
     ClientMessage clientMessage = ListCompareAndRemoveAllCodec.encodeResponse(    aBoolean   );
@@ -2136,8 +2544,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListCompareAndRetainAllCodec.RequestParameters params = ListCompareAndRetainAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.values));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.values));
 }
 {
     ClientMessage clientMessage = ListCompareAndRetainAllCodec.encodeResponse(    aBoolean   );
@@ -2151,7 +2559,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListClearCodec.RequestParameters params = ListClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ListClearCodec.encodeResponse( );
@@ -2165,7 +2573,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListGetAllCodec.RequestParameters params = ListGetAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ListGetAllCodec.encodeResponse(    datas   );
@@ -2179,9 +2587,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListAddListenerCodec.RequestParameters params = ListAddListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ListAddListenerCodec.encodeResponse(    aString   );
@@ -2192,9 +2600,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ListAddListenerCodec.encodeItemEvent( aData ,  aString ,  anInt   );
+        ClientMessage clientMessage = ListAddListenerCodec.encodeItemEvent( null ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -2205,8 +2612,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListRemoveListenerCodec.RequestParameters params = ListRemoveListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = ListRemoveListenerCodec.encodeResponse(    aBoolean   );
@@ -2220,7 +2627,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListIsEmptyCodec.RequestParameters params = ListIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ListIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -2234,9 +2641,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListAddAllWithIndexCodec.RequestParameters params = ListAddAllWithIndexCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
-                assertTrue(isEqual(datas, params.valueList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(datas, params.valueList));
 }
 {
     ClientMessage clientMessage = ListAddAllWithIndexCodec.encodeResponse(    aBoolean   );
@@ -2250,11 +2657,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListGetCodec.RequestParameters params = ListGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
 }
 {
-    ClientMessage clientMessage = ListGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ListGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2265,12 +2672,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListSetCodec.RequestParameters params = ListSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(aData, params.value));
 }
 {
-    ClientMessage clientMessage = ListSetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ListSetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2281,9 +2688,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListAddWithIndexCodec.RequestParameters params = ListAddWithIndexCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListAddWithIndexCodec.encodeResponse( );
@@ -2297,11 +2704,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListRemoveWithIndexCodec.RequestParameters params = ListRemoveWithIndexCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
 }
 {
-    ClientMessage clientMessage = ListRemoveWithIndexCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ListRemoveWithIndexCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2312,8 +2719,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListLastIndexOfCodec.RequestParameters params = ListLastIndexOfCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListLastIndexOfCodec.encodeResponse(    anInt   );
@@ -2327,8 +2734,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListIndexOfCodec.RequestParameters params = ListIndexOfCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ListIndexOfCodec.encodeResponse(    anInt   );
@@ -2342,9 +2749,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListSubCodec.RequestParameters params = ListSubCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.from));
-                assertTrue(isEqual(anInt, params.to));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.from));
+            assertTrue(isEqual(anInt, params.to));
 }
 {
     ClientMessage clientMessage = ListSubCodec.encodeResponse(    datas   );
@@ -2358,7 +2765,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListIteratorCodec.RequestParameters params = ListIteratorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ListIteratorCodec.encodeResponse(    datas   );
@@ -2372,8 +2779,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ListListIteratorCodec.RequestParameters params = ListListIteratorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.index));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.index));
 }
 {
     ClientMessage clientMessage = ListListIteratorCodec.encodeResponse(    datas   );
@@ -2387,7 +2794,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetSizeCodec.RequestParameters params = SetSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SetSizeCodec.encodeResponse(    anInt   );
@@ -2401,8 +2808,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetContainsCodec.RequestParameters params = SetContainsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = SetContainsCodec.encodeResponse(    aBoolean   );
@@ -2416,8 +2823,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetContainsAllCodec.RequestParameters params = SetContainsAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.items));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.items));
 }
 {
     ClientMessage clientMessage = SetContainsAllCodec.encodeResponse(    aBoolean   );
@@ -2431,8 +2838,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetAddCodec.RequestParameters params = SetAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = SetAddCodec.encodeResponse(    aBoolean   );
@@ -2446,8 +2853,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetRemoveCodec.RequestParameters params = SetRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = SetRemoveCodec.encodeResponse(    aBoolean   );
@@ -2461,8 +2868,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetAddAllCodec.RequestParameters params = SetAddAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.valueList));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.valueList));
 }
 {
     ClientMessage clientMessage = SetAddAllCodec.encodeResponse(    aBoolean   );
@@ -2476,8 +2883,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetCompareAndRemoveAllCodec.RequestParameters params = SetCompareAndRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.values));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.values));
 }
 {
     ClientMessage clientMessage = SetCompareAndRemoveAllCodec.encodeResponse(    aBoolean   );
@@ -2491,8 +2898,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetCompareAndRetainAllCodec.RequestParameters params = SetCompareAndRetainAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.values));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.values));
 }
 {
     ClientMessage clientMessage = SetCompareAndRetainAllCodec.encodeResponse(    aBoolean   );
@@ -2506,7 +2913,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetClearCodec.RequestParameters params = SetClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SetClearCodec.encodeResponse( );
@@ -2520,7 +2927,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetGetAllCodec.RequestParameters params = SetGetAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SetGetAllCodec.encodeResponse(    datas   );
@@ -2534,9 +2941,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetAddListenerCodec.RequestParameters params = SetAddListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = SetAddListenerCodec.encodeResponse(    aString   );
@@ -2547,9 +2954,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = SetAddListenerCodec.encodeItemEvent( aData ,  aString ,  anInt   );
+        ClientMessage clientMessage = SetAddListenerCodec.encodeItemEvent( null ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -2560,8 +2966,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetRemoveListenerCodec.RequestParameters params = SetRemoveListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = SetRemoveListenerCodec.encodeResponse(    aBoolean   );
@@ -2575,7 +2981,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SetIsEmptyCodec.RequestParameters params = SetIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SetIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -2589,7 +2995,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockIsLockedCodec.RequestParameters params = LockIsLockedCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = LockIsLockedCodec.encodeResponse(    aBoolean   );
@@ -2603,8 +3009,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockIsLockedByCurrentThreadCodec.RequestParameters params = LockIsLockedByCurrentThreadCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = LockIsLockedByCurrentThreadCodec.encodeResponse(    aBoolean   );
@@ -2618,7 +3024,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockGetLockCountCodec.RequestParameters params = LockGetLockCountCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = LockGetLockCountCodec.encodeResponse(    anInt   );
@@ -2632,7 +3038,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockGetRemainingLeaseTimeCodec.RequestParameters params = LockGetRemainingLeaseTimeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = LockGetRemainingLeaseTimeCodec.encodeResponse(    aLong   );
@@ -2646,10 +3052,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockLockCodec.RequestParameters params = LockLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.leaseTime));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.leaseTime));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = LockLockCodec.encodeResponse( );
@@ -2663,9 +3069,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockUnlockCodec.RequestParameters params = LockUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = LockUnlockCodec.encodeResponse( );
@@ -2679,8 +3085,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockForceUnlockCodec.RequestParameters params = LockForceUnlockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = LockForceUnlockCodec.encodeResponse( );
@@ -2694,11 +3100,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     LockTryLockCodec.RequestParameters params = LockTryLockCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.lease));
-                assertTrue(isEqual(aLong, params.timeout));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.lease));
+            assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = LockTryLockCodec.encodeResponse(    aBoolean   );
@@ -2712,11 +3118,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ConditionAwaitCodec.RequestParameters params = ConditionAwaitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.timeout));
-                assertTrue(isEqual(aString, params.lockName));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = ConditionAwaitCodec.encodeResponse(    aBoolean   );
@@ -2730,10 +3136,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ConditionBeforeAwaitCodec.RequestParameters params = ConditionBeforeAwaitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aString, params.lockName));
-                assertTrue(isEqual(aLong, params.referenceId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aLong, params.referenceId));
 }
 {
     ClientMessage clientMessage = ConditionBeforeAwaitCodec.encodeResponse( );
@@ -2747,9 +3153,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ConditionSignalCodec.RequestParameters params = ConditionSignalCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.lockName));
 }
 {
     ClientMessage clientMessage = ConditionSignalCodec.encodeResponse( );
@@ -2763,9 +3169,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ConditionSignalAllCodec.RequestParameters params = ConditionSignalAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aString, params.lockName));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.lockName));
 }
 {
     ClientMessage clientMessage = ConditionSignalAllCodec.encodeResponse( );
@@ -2779,7 +3185,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceShutdownCodec.RequestParameters params = ExecutorServiceShutdownCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ExecutorServiceShutdownCodec.encodeResponse( );
@@ -2793,7 +3199,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceIsShutdownCodec.RequestParameters params = ExecutorServiceIsShutdownCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ExecutorServiceIsShutdownCodec.encodeResponse(    aBoolean   );
@@ -2807,9 +3213,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceCancelOnPartitionCodec.RequestParameters params = ExecutorServiceCancelOnPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(anInt, params.partitionId));
-                assertTrue(isEqual(aBoolean, params.interrupt));
+            assertTrue(isEqual(aString, params.uuid));
+            assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(aBoolean, params.interrupt));
 }
 {
     ClientMessage clientMessage = ExecutorServiceCancelOnPartitionCodec.encodeResponse(    aBoolean   );
@@ -2823,9 +3229,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceCancelOnAddressCodec.RequestParameters params = ExecutorServiceCancelOnAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(anAddress, params.address));
-                assertTrue(isEqual(aBoolean, params.interrupt));
+            assertTrue(isEqual(aString, params.uuid));
+            assertTrue(isEqual(anAddress, params.address));
+            assertTrue(isEqual(aBoolean, params.interrupt));
 }
 {
     ClientMessage clientMessage = ExecutorServiceCancelOnAddressCodec.encodeResponse(    aBoolean   );
@@ -2839,13 +3245,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceSubmitToPartitionCodec.RequestParameters params = ExecutorServiceSubmitToPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aData, params.callable));
-                assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.uuid));
+            assertTrue(isEqual(aData, params.callable));
+            assertTrue(isEqual(anInt, params.partitionId));
 }
 {
-    ClientMessage clientMessage = ExecutorServiceSubmitToPartitionCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ExecutorServiceSubmitToPartitionCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2856,13 +3262,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ExecutorServiceSubmitToAddressCodec.RequestParameters params = ExecutorServiceSubmitToAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aData, params.callable));
-                assertTrue(isEqual(anAddress, params.address));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.uuid));
+            assertTrue(isEqual(aData, params.callable));
+            assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ExecutorServiceSubmitToAddressCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ExecutorServiceSubmitToAddressCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2873,11 +3279,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongApplyCodec.RequestParameters params = AtomicLongApplyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
-    ClientMessage clientMessage = AtomicLongApplyCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicLongApplyCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -2888,8 +3294,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongAlterCodec.RequestParameters params = AtomicLongAlterCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
     ClientMessage clientMessage = AtomicLongAlterCodec.encodeResponse( );
@@ -2903,8 +3309,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongAlterAndGetCodec.RequestParameters params = AtomicLongAlterAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
     ClientMessage clientMessage = AtomicLongAlterAndGetCodec.encodeResponse(    aLong   );
@@ -2918,8 +3324,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongGetAndAlterCodec.RequestParameters params = AtomicLongGetAndAlterCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
     ClientMessage clientMessage = AtomicLongGetAndAlterCodec.encodeResponse(    aLong   );
@@ -2933,8 +3339,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongAddAndGetCodec.RequestParameters params = AtomicLongAddAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.delta));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.delta));
 }
 {
     ClientMessage clientMessage = AtomicLongAddAndGetCodec.encodeResponse(    aLong   );
@@ -2948,9 +3354,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongCompareAndSetCodec.RequestParameters params = AtomicLongCompareAndSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.expected));
-                assertTrue(isEqual(aLong, params.updated));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.expected));
+            assertTrue(isEqual(aLong, params.updated));
 }
 {
     ClientMessage clientMessage = AtomicLongCompareAndSetCodec.encodeResponse(    aBoolean   );
@@ -2964,7 +3370,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongDecrementAndGetCodec.RequestParameters params = AtomicLongDecrementAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicLongDecrementAndGetCodec.encodeResponse(    aLong   );
@@ -2978,7 +3384,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongGetCodec.RequestParameters params = AtomicLongGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicLongGetCodec.encodeResponse(    aLong   );
@@ -2992,8 +3398,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongGetAndAddCodec.RequestParameters params = AtomicLongGetAndAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.delta));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.delta));
 }
 {
     ClientMessage clientMessage = AtomicLongGetAndAddCodec.encodeResponse(    aLong   );
@@ -3007,8 +3413,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongGetAndSetCodec.RequestParameters params = AtomicLongGetAndSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.newValue));
 }
 {
     ClientMessage clientMessage = AtomicLongGetAndSetCodec.encodeResponse(    aLong   );
@@ -3022,7 +3428,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongIncrementAndGetCodec.RequestParameters params = AtomicLongIncrementAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicLongIncrementAndGetCodec.encodeResponse(    aLong   );
@@ -3036,7 +3442,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongGetAndIncrementCodec.RequestParameters params = AtomicLongGetAndIncrementCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicLongGetAndIncrementCodec.encodeResponse(    aLong   );
@@ -3050,8 +3456,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicLongSetCodec.RequestParameters params = AtomicLongSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.newValue));
 }
 {
     ClientMessage clientMessage = AtomicLongSetCodec.encodeResponse( );
@@ -3065,11 +3471,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceApplyCodec.RequestParameters params = AtomicReferenceApplyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceApplyCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceApplyCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3080,8 +3486,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceAlterCodec.RequestParameters params = AtomicReferenceAlterCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
     ClientMessage clientMessage = AtomicReferenceAlterCodec.encodeResponse( );
@@ -3095,11 +3501,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceAlterAndGetCodec.RequestParameters params = AtomicReferenceAlterAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceAlterAndGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceAlterAndGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3110,11 +3516,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceGetAndAlterCodec.RequestParameters params = AtomicReferenceGetAndAlterCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.function));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.function));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceGetAndAlterCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceGetAndAlterCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3125,8 +3531,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceContainsCodec.RequestParameters params = AtomicReferenceContainsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.expected));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(null, params.expected));
 }
 {
     ClientMessage clientMessage = AtomicReferenceContainsCodec.encodeResponse(    aBoolean   );
@@ -3140,9 +3546,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceCompareAndSetCodec.RequestParameters params = AtomicReferenceCompareAndSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.expected));
-                assertTrue(isEqual(aData, params.updated));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(null, params.expected));
+            assertTrue(isEqual(null, params.updated));
 }
 {
     ClientMessage clientMessage = AtomicReferenceCompareAndSetCodec.encodeResponse(    aBoolean   );
@@ -3156,10 +3562,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceGetCodec.RequestParameters params = AtomicReferenceGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3170,8 +3576,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceSetCodec.RequestParameters params = AtomicReferenceSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(null, params.newValue));
 }
 {
     ClientMessage clientMessage = AtomicReferenceSetCodec.encodeResponse( );
@@ -3185,7 +3591,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceClearCodec.RequestParameters params = AtomicReferenceClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicReferenceClearCodec.encodeResponse( );
@@ -3199,11 +3605,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceGetAndSetCodec.RequestParameters params = AtomicReferenceGetAndSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(null, params.newValue));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceGetAndSetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceGetAndSetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3214,11 +3620,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceSetAndGetCodec.RequestParameters params = AtomicReferenceSetAndGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(null, params.newValue));
 }
 {
-    ClientMessage clientMessage = AtomicReferenceSetAndGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = AtomicReferenceSetAndGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3229,7 +3635,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     AtomicReferenceIsNullCodec.RequestParameters params = AtomicReferenceIsNullCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = AtomicReferenceIsNullCodec.encodeResponse(    aBoolean   );
@@ -3243,8 +3649,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CountDownLatchAwaitCodec.RequestParameters params = CountDownLatchAwaitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = CountDownLatchAwaitCodec.encodeResponse(    aBoolean   );
@@ -3258,7 +3664,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CountDownLatchCountDownCodec.RequestParameters params = CountDownLatchCountDownCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = CountDownLatchCountDownCodec.encodeResponse( );
@@ -3272,7 +3678,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CountDownLatchGetCountCodec.RequestParameters params = CountDownLatchGetCountCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = CountDownLatchGetCountCodec.encodeResponse(    anInt   );
@@ -3286,8 +3692,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CountDownLatchTrySetCountCodec.RequestParameters params = CountDownLatchTrySetCountCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.count));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.count));
 }
 {
     ClientMessage clientMessage = CountDownLatchTrySetCountCodec.encodeResponse(    aBoolean   );
@@ -3301,8 +3707,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreInitCodec.RequestParameters params = SemaphoreInitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.permits));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.permits));
 }
 {
     ClientMessage clientMessage = SemaphoreInitCodec.encodeResponse(    aBoolean   );
@@ -3316,8 +3722,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreAcquireCodec.RequestParameters params = SemaphoreAcquireCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.permits));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.permits));
 }
 {
     ClientMessage clientMessage = SemaphoreAcquireCodec.encodeResponse( );
@@ -3331,7 +3737,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreAvailablePermitsCodec.RequestParameters params = SemaphoreAvailablePermitsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SemaphoreAvailablePermitsCodec.encodeResponse(    anInt   );
@@ -3345,7 +3751,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreDrainPermitsCodec.RequestParameters params = SemaphoreDrainPermitsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = SemaphoreDrainPermitsCodec.encodeResponse(    anInt   );
@@ -3359,8 +3765,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreReducePermitsCodec.RequestParameters params = SemaphoreReducePermitsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.reduction));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.reduction));
 }
 {
     ClientMessage clientMessage = SemaphoreReducePermitsCodec.encodeResponse( );
@@ -3374,8 +3780,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreReleaseCodec.RequestParameters params = SemaphoreReleaseCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.permits));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.permits));
 }
 {
     ClientMessage clientMessage = SemaphoreReleaseCodec.encodeResponse( );
@@ -3389,9 +3795,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     SemaphoreTryAcquireCodec.RequestParameters params = SemaphoreTryAcquireCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.permits));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.permits));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = SemaphoreTryAcquireCodec.encodeResponse(    aBoolean   );
@@ -3405,13 +3811,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapPutCodec.RequestParameters params = ReplicatedMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
-    ClientMessage clientMessage = ReplicatedMapPutCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ReplicatedMapPutCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3422,7 +3828,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapSizeCodec.RequestParameters params = ReplicatedMapSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapSizeCodec.encodeResponse(    anInt   );
@@ -3436,7 +3842,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapIsEmptyCodec.RequestParameters params = ReplicatedMapIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -3450,8 +3856,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapContainsKeyCodec.RequestParameters params = ReplicatedMapContainsKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = ReplicatedMapContainsKeyCodec.encodeResponse(    aBoolean   );
@@ -3465,8 +3871,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapContainsValueCodec.RequestParameters params = ReplicatedMapContainsValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = ReplicatedMapContainsValueCodec.encodeResponse(    aBoolean   );
@@ -3480,11 +3886,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapGetCodec.RequestParameters params = ReplicatedMapGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
-    ClientMessage clientMessage = ReplicatedMapGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ReplicatedMapGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3495,11 +3901,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapRemoveCodec.RequestParameters params = ReplicatedMapRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
-    ClientMessage clientMessage = ReplicatedMapRemoveCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ReplicatedMapRemoveCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3510,8 +3916,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapPutAllCodec.RequestParameters params = ReplicatedMapPutAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aListOfEntry, params.entries));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aListOfEntry, params.entries));
 }
 {
     ClientMessage clientMessage = ReplicatedMapPutAllCodec.encodeResponse( );
@@ -3525,7 +3931,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapClearCodec.RequestParameters params = ReplicatedMapClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapClearCodec.encodeResponse( );
@@ -3539,10 +3945,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.RequestParameters params = ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeResponse(    aString   );
@@ -3553,9 +3959,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -3566,9 +3971,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapAddEntryListenerWithPredicateCodec.RequestParameters params = ReplicatedMapAddEntryListenerWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse(    aString   );
@@ -3579,9 +3984,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -3592,9 +3996,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapAddEntryListenerToKeyCodec.RequestParameters params = ReplicatedMapAddEntryListenerToKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse(    aString   );
@@ -3605,9 +4009,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = ReplicatedMapAddEntryListenerToKeyCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -3618,8 +4021,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapAddEntryListenerCodec.RequestParameters params = ReplicatedMapAddEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ReplicatedMapAddEntryListenerCodec.encodeResponse(    aString   );
@@ -3630,9 +4033,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ReplicatedMapAddEntryListenerCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = ReplicatedMapAddEntryListenerCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -3643,8 +4045,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapRemoveEntryListenerCodec.RequestParameters params = ReplicatedMapRemoveEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = ReplicatedMapRemoveEntryListenerCodec.encodeResponse(    aBoolean   );
@@ -3658,7 +4060,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapKeySetCodec.RequestParameters params = ReplicatedMapKeySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapKeySetCodec.encodeResponse(    datas   );
@@ -3672,7 +4074,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapValuesCodec.RequestParameters params = ReplicatedMapValuesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapValuesCodec.encodeResponse(    datas   );
@@ -3686,7 +4088,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapEntrySetCodec.RequestParameters params = ReplicatedMapEntrySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = ReplicatedMapEntrySetCodec.encodeResponse(    aListOfEntry   );
@@ -3700,9 +4102,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     ReplicatedMapAddNearCacheEntryListenerCodec.RequestParameters params = ReplicatedMapAddNearCacheEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.includeValue));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.includeValue));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = ReplicatedMapAddNearCacheEntryListenerCodec.encodeResponse(    aString   );
@@ -3713,9 +4115,8 @@ public class ServerCompatibilityTest_1_2 {
 }
 {
     {
-        ClientMessage clientMessage = ReplicatedMapAddNearCacheEntryListenerCodec.encodeEntryEvent( aData ,  aData ,  aData ,  aData ,  anInt ,  aString ,  anInt   );
+        ClientMessage clientMessage = ReplicatedMapAddNearCacheEntryListenerCodec.encodeEntryEvent( null ,  null ,  null ,  null ,  anInt ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -3726,8 +4127,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceCancelCodec.RequestParameters params = MapReduceCancelCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
 }
 {
     ClientMessage clientMessage = MapReduceCancelCodec.encodeResponse(    aBoolean   );
@@ -3741,8 +4142,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceJobProcessInformationCodec.RequestParameters params = MapReduceJobProcessInformationCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
 }
 {
     ClientMessage clientMessage = MapReduceJobProcessInformationCodec.encodeResponse(    jobPartitionStates ,    anInt   );
@@ -3756,16 +4157,16 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceForMapCodec.RequestParameters params = MapReduceForMapCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aData, params.mapper));
-                assertTrue(isEqual(aData, params.combinerFactory));
-                assertTrue(isEqual(aData, params.reducerFactory));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(anInt, params.chunkSize));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aString, params.topologyChangedStrategy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(aData, params.mapper));
+            assertTrue(isEqual(null, params.combinerFactory));
+            assertTrue(isEqual(null, params.reducerFactory));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(anInt, params.chunkSize));
+            assertTrue(isEqual(null, params.keys));
+            assertTrue(isEqual(null, params.topologyChangedStrategy));
 }
 {
     ClientMessage clientMessage = MapReduceForMapCodec.encodeResponse(    aListOfEntry   );
@@ -3779,16 +4180,16 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceForListCodec.RequestParameters params = MapReduceForListCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aData, params.mapper));
-                assertTrue(isEqual(aData, params.combinerFactory));
-                assertTrue(isEqual(aData, params.reducerFactory));
-                assertTrue(isEqual(aString, params.listName));
-                assertTrue(isEqual(anInt, params.chunkSize));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aString, params.topologyChangedStrategy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(aData, params.mapper));
+            assertTrue(isEqual(null, params.combinerFactory));
+            assertTrue(isEqual(null, params.reducerFactory));
+            assertTrue(isEqual(aString, params.listName));
+            assertTrue(isEqual(anInt, params.chunkSize));
+            assertTrue(isEqual(null, params.keys));
+            assertTrue(isEqual(null, params.topologyChangedStrategy));
 }
 {
     ClientMessage clientMessage = MapReduceForListCodec.encodeResponse(    aListOfEntry   );
@@ -3802,16 +4203,16 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceForSetCodec.RequestParameters params = MapReduceForSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aData, params.mapper));
-                assertTrue(isEqual(aData, params.combinerFactory));
-                assertTrue(isEqual(aData, params.reducerFactory));
-                assertTrue(isEqual(aString, params.setName));
-                assertTrue(isEqual(anInt, params.chunkSize));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aString, params.topologyChangedStrategy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(aData, params.mapper));
+            assertTrue(isEqual(null, params.combinerFactory));
+            assertTrue(isEqual(null, params.reducerFactory));
+            assertTrue(isEqual(aString, params.setName));
+            assertTrue(isEqual(anInt, params.chunkSize));
+            assertTrue(isEqual(null, params.keys));
+            assertTrue(isEqual(null, params.topologyChangedStrategy));
 }
 {
     ClientMessage clientMessage = MapReduceForSetCodec.encodeResponse(    aListOfEntry   );
@@ -3825,16 +4226,16 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceForMultiMapCodec.RequestParameters params = MapReduceForMultiMapCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aData, params.mapper));
-                assertTrue(isEqual(aData, params.combinerFactory));
-                assertTrue(isEqual(aData, params.reducerFactory));
-                assertTrue(isEqual(aString, params.multiMapName));
-                assertTrue(isEqual(anInt, params.chunkSize));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aString, params.topologyChangedStrategy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(aData, params.mapper));
+            assertTrue(isEqual(null, params.combinerFactory));
+            assertTrue(isEqual(null, params.reducerFactory));
+            assertTrue(isEqual(aString, params.multiMapName));
+            assertTrue(isEqual(anInt, params.chunkSize));
+            assertTrue(isEqual(null, params.keys));
+            assertTrue(isEqual(null, params.topologyChangedStrategy));
 }
 {
     ClientMessage clientMessage = MapReduceForMultiMapCodec.encodeResponse(    aListOfEntry   );
@@ -3848,16 +4249,16 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     MapReduceForCustomCodec.RequestParameters params = MapReduceForCustomCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.jobId));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(aData, params.mapper));
-                assertTrue(isEqual(aData, params.combinerFactory));
-                assertTrue(isEqual(aData, params.reducerFactory));
-                assertTrue(isEqual(aData, params.keyValueSource));
-                assertTrue(isEqual(anInt, params.chunkSize));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aString, params.topologyChangedStrategy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.jobId));
+            assertTrue(isEqual(null, params.predicate));
+            assertTrue(isEqual(aData, params.mapper));
+            assertTrue(isEqual(null, params.combinerFactory));
+            assertTrue(isEqual(null, params.reducerFactory));
+            assertTrue(isEqual(aData, params.keyValueSource));
+            assertTrue(isEqual(anInt, params.chunkSize));
+            assertTrue(isEqual(null, params.keys));
+            assertTrue(isEqual(null, params.topologyChangedStrategy));
 }
 {
     ClientMessage clientMessage = MapReduceForCustomCodec.encodeResponse(    aListOfEntry   );
@@ -3871,10 +4272,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapContainsKeyCodec.RequestParameters params = TransactionalMapContainsKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = TransactionalMapContainsKeyCodec.encodeResponse(    aBoolean   );
@@ -3888,13 +4289,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapGetCodec.RequestParameters params = TransactionalMapGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
-    ClientMessage clientMessage = TransactionalMapGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3905,13 +4306,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapGetForUpdateCodec.RequestParameters params = TransactionalMapGetForUpdateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
-    ClientMessage clientMessage = TransactionalMapGetForUpdateCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapGetForUpdateCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3922,9 +4323,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapSizeCodec.RequestParameters params = TransactionalMapSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalMapSizeCodec.encodeResponse(    anInt   );
@@ -3938,9 +4339,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapIsEmptyCodec.RequestParameters params = TransactionalMapIsEmptyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalMapIsEmptyCodec.encodeResponse(    aBoolean   );
@@ -3954,15 +4355,15 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapPutCodec.RequestParameters params = TransactionalMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aLong, params.ttl));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aLong, params.ttl));
 }
 {
-    ClientMessage clientMessage = TransactionalMapPutCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapPutCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -3973,11 +4374,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapSetCodec.RequestParameters params = TransactionalMapSetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = TransactionalMapSetCodec.encodeResponse( );
@@ -3991,14 +4392,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapPutIfAbsentCodec.RequestParameters params = TransactionalMapPutIfAbsentCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
-    ClientMessage clientMessage = TransactionalMapPutIfAbsentCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapPutIfAbsentCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4009,14 +4410,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapReplaceCodec.RequestParameters params = TransactionalMapReplaceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
-    ClientMessage clientMessage = TransactionalMapReplaceCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapReplaceCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4027,12 +4428,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapReplaceIfSameCodec.RequestParameters params = TransactionalMapReplaceIfSameCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.oldValue));
-                assertTrue(isEqual(aData, params.newValue));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.oldValue));
+            assertTrue(isEqual(aData, params.newValue));
 }
 {
     ClientMessage clientMessage = TransactionalMapReplaceIfSameCodec.encodeResponse(    aBoolean   );
@@ -4046,13 +4447,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapRemoveCodec.RequestParameters params = TransactionalMapRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
-    ClientMessage clientMessage = TransactionalMapRemoveCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalMapRemoveCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4063,10 +4464,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapDeleteCodec.RequestParameters params = TransactionalMapDeleteCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = TransactionalMapDeleteCodec.encodeResponse( );
@@ -4080,11 +4481,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapRemoveIfSameCodec.RequestParameters params = TransactionalMapRemoveIfSameCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = TransactionalMapRemoveIfSameCodec.encodeResponse(    aBoolean   );
@@ -4098,9 +4499,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapKeySetCodec.RequestParameters params = TransactionalMapKeySetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalMapKeySetCodec.encodeResponse(    datas   );
@@ -4114,10 +4515,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapKeySetWithPredicateCodec.RequestParameters params = TransactionalMapKeySetWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = TransactionalMapKeySetWithPredicateCodec.encodeResponse(    datas   );
@@ -4131,9 +4532,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapValuesCodec.RequestParameters params = TransactionalMapValuesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalMapValuesCodec.encodeResponse(    datas   );
@@ -4147,10 +4548,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMapValuesWithPredicateCodec.RequestParameters params = TransactionalMapValuesWithPredicateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.predicate));
 }
 {
     ClientMessage clientMessage = TransactionalMapValuesWithPredicateCodec.encodeResponse(    datas   );
@@ -4164,11 +4565,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapPutCodec.RequestParameters params = TransactionalMultiMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapPutCodec.encodeResponse(    aBoolean   );
@@ -4182,10 +4583,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapGetCodec.RequestParameters params = TransactionalMultiMapGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapGetCodec.encodeResponse(    datas   );
@@ -4199,10 +4600,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapRemoveCodec.RequestParameters params = TransactionalMultiMapRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapRemoveCodec.encodeResponse(    datas   );
@@ -4216,11 +4617,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapRemoveEntryCodec.RequestParameters params = TransactionalMultiMapRemoveEntryCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapRemoveEntryCodec.encodeResponse(    aBoolean   );
@@ -4234,10 +4635,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapValueCountCodec.RequestParameters params = TransactionalMultiMapValueCountCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapValueCountCodec.encodeResponse(    anInt   );
@@ -4251,9 +4652,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalMultiMapSizeCodec.RequestParameters params = TransactionalMultiMapSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalMultiMapSizeCodec.encodeResponse(    anInt   );
@@ -4267,10 +4668,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalSetAddCodec.RequestParameters params = TransactionalSetAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.item));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.item));
 }
 {
     ClientMessage clientMessage = TransactionalSetAddCodec.encodeResponse(    aBoolean   );
@@ -4284,10 +4685,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalSetRemoveCodec.RequestParameters params = TransactionalSetRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.item));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.item));
 }
 {
     ClientMessage clientMessage = TransactionalSetRemoveCodec.encodeResponse(    aBoolean   );
@@ -4301,9 +4702,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalSetSizeCodec.RequestParameters params = TransactionalSetSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalSetSizeCodec.encodeResponse(    anInt   );
@@ -4317,10 +4718,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalListAddCodec.RequestParameters params = TransactionalListAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.item));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.item));
 }
 {
     ClientMessage clientMessage = TransactionalListAddCodec.encodeResponse(    aBoolean   );
@@ -4334,10 +4735,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalListRemoveCodec.RequestParameters params = TransactionalListRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.item));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.item));
 }
 {
     ClientMessage clientMessage = TransactionalListRemoveCodec.encodeResponse(    aBoolean   );
@@ -4351,9 +4752,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalListSizeCodec.RequestParameters params = TransactionalListSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalListSizeCodec.encodeResponse(    anInt   );
@@ -4367,11 +4768,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalQueueOfferCodec.RequestParameters params = TransactionalQueueOfferCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aData, params.item));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aData, params.item));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = TransactionalQueueOfferCodec.encodeResponse(    aBoolean   );
@@ -4385,12 +4786,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalQueueTakeCodec.RequestParameters params = TransactionalQueueTakeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
-    ClientMessage clientMessage = TransactionalQueueTakeCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalQueueTakeCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4401,13 +4802,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalQueuePollCodec.RequestParameters params = TransactionalQueuePollCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
-    ClientMessage clientMessage = TransactionalQueuePollCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalQueuePollCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4418,13 +4819,13 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalQueuePeekCodec.RequestParameters params = TransactionalQueuePeekCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
-    ClientMessage clientMessage = TransactionalQueuePeekCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = TransactionalQueuePeekCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4435,9 +4836,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionalQueueSizeCodec.RequestParameters params = TransactionalQueueSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.txnId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.txnId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionalQueueSizeCodec.encodeResponse(    anInt   );
@@ -4451,8 +4852,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheAddEntryListenerCodec.RequestParameters params = CacheAddEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = CacheAddEntryListenerCodec.encodeResponse(    aString   );
@@ -4465,7 +4866,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = CacheAddEntryListenerCodec.encodeCacheEvent( anInt ,  cacheEventDatas ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -4476,47 +4876,30 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheAddInvalidationListenerCodec.RequestParameters params = CacheAddInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeResponse(    aString   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.4), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     {
-        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent( aString ,  aData ,  aString ,  aUUID ,  aLong   );
+        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent( aString ,  null ,  null ,  aUUID ,  aLong   );
         int length = inputStream.readInt();
-
-        // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-        // (version 1.4), only the bytes after frame length fields are compared
-        int frameLength = clientMessage.getFrameLength();
-        assertTrue(frameLength >= length);
-        inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-        byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+        byte[] bytes = new byte[length];
         inputStream.read(bytes);
-        assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
      }
     {
-        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent( aString ,  datas ,  strings ,  uuids ,  longs   );
+        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent( aString ,  datas ,  null ,  null ,  longs   );
         int length = inputStream.readInt();
-
-        // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-        // (version 1.4), only the bytes after frame length fields are compared
-        int frameLength = clientMessage.getFrameLength();
-        assertTrue(frameLength >= length);
-        inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-        byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+        byte[] bytes = new byte[length];
         inputStream.read(bytes);
-        assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
      }
 }
 {
@@ -4524,7 +4907,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheClearCodec.RequestParameters params = CacheClearCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = CacheClearCodec.encodeResponse( );
@@ -4538,9 +4921,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemoveAllKeysCodec.RequestParameters params = CacheRemoveAllKeysCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CacheRemoveAllKeysCodec.encodeResponse( );
@@ -4554,8 +4937,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemoveAllCodec.RequestParameters params = CacheRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CacheRemoveAllCodec.encodeResponse( );
@@ -4569,8 +4952,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheContainsKeyCodec.RequestParameters params = CacheContainsKeyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
 }
 {
     ClientMessage clientMessage = CacheContainsKeyCodec.encodeResponse(    aBoolean   );
@@ -4584,11 +4967,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheCreateConfigCodec.RequestParameters params = CacheCreateConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.cacheConfig));
-                assertTrue(isEqual(aBoolean, params.createAlsoOnOthers));
+            assertTrue(isEqual(aData, params.cacheConfig));
+            assertTrue(isEqual(aBoolean, params.createAlsoOnOthers));
 }
 {
-    ClientMessage clientMessage = CacheCreateConfigCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheCreateConfigCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4599,7 +4982,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheDestroyCodec.RequestParameters params = CacheDestroyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = CacheDestroyCodec.encodeResponse( );
@@ -4613,14 +4996,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheEntryProcessorCodec.RequestParameters params = CacheEntryProcessorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.entryProcessor));
-                assertTrue(isEqual(datas, params.arguments));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.entryProcessor));
+            assertTrue(isEqual(datas, params.arguments));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
-    ClientMessage clientMessage = CacheEntryProcessorCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheEntryProcessorCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4631,9 +5014,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheGetAllCodec.RequestParameters params = CacheGetAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aData, params.expiryPolicy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(null, params.expiryPolicy));
 }
 {
     ClientMessage clientMessage = CacheGetAllCodec.encodeResponse(    aListOfEntry   );
@@ -4647,12 +5030,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheGetAndRemoveCodec.RequestParameters params = CacheGetAndRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
-    ClientMessage clientMessage = CacheGetAndRemoveCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheGetAndRemoveCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4663,14 +5046,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheGetAndReplaceCodec.RequestParameters params = CacheGetAndReplaceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aData, params.expiryPolicy));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(null, params.expiryPolicy));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
-    ClientMessage clientMessage = CacheGetAndReplaceCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheGetAndReplaceCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4681,11 +5064,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheGetConfigCodec.RequestParameters params = CacheGetConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.simpleName));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.simpleName));
 }
 {
-    ClientMessage clientMessage = CacheGetConfigCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheGetConfigCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4696,12 +5079,12 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheGetCodec.RequestParameters params = CacheGetCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.expiryPolicy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(null, params.expiryPolicy));
 }
 {
-    ClientMessage clientMessage = CacheGetCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheGetCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4712,10 +5095,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheIterateCodec.RequestParameters params = CacheIterateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.partitionId));
-                assertTrue(isEqual(anInt, params.tableIndex));
-                assertTrue(isEqual(anInt, params.batch));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(anInt, params.tableIndex));
+            assertTrue(isEqual(anInt, params.batch));
 }
 {
     ClientMessage clientMessage = CacheIterateCodec.encodeResponse(    anInt ,    datas   );
@@ -4729,10 +5112,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheListenerRegistrationCodec.RequestParameters params = CacheListenerRegistrationCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.listenerConfig));
-                assertTrue(isEqual(aBoolean, params.shouldRegister));
-                assertTrue(isEqual(anAddress, params.address));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.listenerConfig));
+            assertTrue(isEqual(aBoolean, params.shouldRegister));
+            assertTrue(isEqual(anAddress, params.address));
 }
 {
     ClientMessage clientMessage = CacheListenerRegistrationCodec.encodeResponse( );
@@ -4746,9 +5129,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheLoadAllCodec.RequestParameters params = CacheLoadAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.keys));
-                assertTrue(isEqual(aBoolean, params.replaceExistingValues));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.keys));
+            assertTrue(isEqual(aBoolean, params.replaceExistingValues));
 }
 {
     ClientMessage clientMessage = CacheLoadAllCodec.encodeResponse( );
@@ -4762,10 +5145,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheManagementConfigCodec.RequestParameters params = CacheManagementConfigCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.isStat));
-                assertTrue(isEqual(aBoolean, params.enabled));
-                assertTrue(isEqual(anAddress, params.address));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.isStat));
+            assertTrue(isEqual(aBoolean, params.enabled));
+            assertTrue(isEqual(anAddress, params.address));
 }
 {
     ClientMessage clientMessage = CacheManagementConfigCodec.encodeResponse( );
@@ -4779,11 +5162,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CachePutIfAbsentCodec.RequestParameters params = CachePutIfAbsentCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aData, params.expiryPolicy));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(null, params.expiryPolicy));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CachePutIfAbsentCodec.encodeResponse(    aBoolean   );
@@ -4797,15 +5180,15 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CachePutCodec.RequestParameters params = CachePutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.value));
-                assertTrue(isEqual(aData, params.expiryPolicy));
-                assertTrue(isEqual(aBoolean, params.get));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(null, params.expiryPolicy));
+            assertTrue(isEqual(aBoolean, params.get));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
-    ClientMessage clientMessage = CachePutCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CachePutCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4816,8 +5199,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemoveEntryListenerCodec.RequestParameters params = CacheRemoveEntryListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = CacheRemoveEntryListenerCodec.encodeResponse(    aBoolean   );
@@ -4831,8 +5214,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemoveInvalidationListenerCodec.RequestParameters params = CacheRemoveInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = CacheRemoveInvalidationListenerCodec.encodeResponse(    aBoolean   );
@@ -4846,10 +5229,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemoveCodec.RequestParameters params = CacheRemoveCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.currentValue));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(null, params.currentValue));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CacheRemoveCodec.encodeResponse(    aBoolean   );
@@ -4863,15 +5246,15 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheReplaceCodec.RequestParameters params = CacheReplaceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.key));
-                assertTrue(isEqual(aData, params.oldValue));
-                assertTrue(isEqual(aData, params.newValue));
-                assertTrue(isEqual(aData, params.expiryPolicy));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.key));
+            assertTrue(isEqual(null, params.oldValue));
+            assertTrue(isEqual(aData, params.newValue));
+            assertTrue(isEqual(null, params.expiryPolicy));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
-    ClientMessage clientMessage = CacheReplaceCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheReplaceCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -4882,7 +5265,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheSizeCodec.RequestParameters params = CacheSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = CacheSizeCodec.encodeResponse(    anInt   );
@@ -4896,8 +5279,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheAddPartitionLostListenerCodec.RequestParameters params = CacheAddPartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = CacheAddPartitionLostListenerCodec.encodeResponse(    aString   );
@@ -4910,7 +5293,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = CacheAddPartitionLostListenerCodec.encodeCachePartitionLostEvent( anInt ,  aString   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -4921,8 +5303,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheRemovePartitionLostListenerCodec.RequestParameters params = CacheRemovePartitionLostListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aString, params.registrationId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.registrationId));
 }
 {
     ClientMessage clientMessage = CacheRemovePartitionLostListenerCodec.encodeResponse(    aBoolean   );
@@ -4936,10 +5318,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CachePutAllCodec.RequestParameters params = CachePutAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aListOfEntry, params.entries));
-                assertTrue(isEqual(aData, params.expiryPolicy));
-                assertTrue(isEqual(anInt, params.completionId));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aListOfEntry, params.entries));
+            assertTrue(isEqual(null, params.expiryPolicy));
+            assertTrue(isEqual(anInt, params.completionId));
 }
 {
     ClientMessage clientMessage = CachePutAllCodec.encodeResponse( );
@@ -4953,10 +5335,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     CacheIterateEntriesCodec.RequestParameters params = CacheIterateEntriesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.partitionId));
-                assertTrue(isEqual(anInt, params.tableIndex));
-                assertTrue(isEqual(anInt, params.batch));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.partitionId));
+            assertTrue(isEqual(anInt, params.tableIndex));
+            assertTrue(isEqual(anInt, params.batch));
 }
 {
     ClientMessage clientMessage = CacheIterateEntriesCodec.encodeResponse(    anInt ,    aListOfEntry   );
@@ -4969,8 +5351,67 @@ public class ServerCompatibilityTest_1_2 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    CacheAddNearCacheInvalidationListenerCodec.RequestParameters params = CacheAddNearCacheInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aBoolean, params.localOnly));
+}
+{
+    ClientMessage clientMessage = CacheAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    {
+        ClientMessage clientMessage = CacheAddNearCacheInvalidationListenerCodec.encodeCacheInvalidationEvent( aString ,  null ,  null ,  aUUID ,  aLong   );
+        int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+    {
+        ClientMessage clientMessage = CacheAddNearCacheInvalidationListenerCodec.encodeCacheBatchInvalidationEvent( aString ,  datas ,  null ,  null ,  longs   );
+        int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    CacheFetchNearCacheInvalidationMetadataCodec.RequestParameters params = CacheFetchNearCacheInvalidationMetadataCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(strings, params.names));
+            assertTrue(isEqual(anAddress, params.address));
+}
+{
+    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(    null   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    CacheAssignAndGetUuidsCodec.RequestParameters params = CacheAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+}
+{
+    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     XATransactionClearRemoteCodec.RequestParameters params = XATransactionClearRemoteCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(anXid, params.xid));
+            assertTrue(isEqual(anXid, params.xid));
 }
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeResponse( );
@@ -4997,8 +5438,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     XATransactionFinalizeCodec.RequestParameters params = XATransactionFinalizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(anXid, params.xid));
-                assertTrue(isEqual(aBoolean, params.isCommit));
+            assertTrue(isEqual(anXid, params.xid));
+            assertTrue(isEqual(aBoolean, params.isCommit));
 }
 {
     ClientMessage clientMessage = XATransactionFinalizeCodec.encodeResponse( );
@@ -5012,8 +5453,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     XATransactionCommitCodec.RequestParameters params = XATransactionCommitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.transactionId));
-                assertTrue(isEqual(aBoolean, params.onePhase));
+            assertTrue(isEqual(aString, params.transactionId));
+            assertTrue(isEqual(aBoolean, params.onePhase));
 }
 {
     ClientMessage clientMessage = XATransactionCommitCodec.encodeResponse( );
@@ -5027,8 +5468,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     XATransactionCreateCodec.RequestParameters params = XATransactionCreateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(anXid, params.xid));
-                assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(anXid, params.xid));
+            assertTrue(isEqual(aLong, params.timeout));
 }
 {
     ClientMessage clientMessage = XATransactionCreateCodec.encodeResponse(    aString   );
@@ -5042,7 +5483,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     XATransactionPrepareCodec.RequestParameters params = XATransactionPrepareCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.transactionId));
+            assertTrue(isEqual(aString, params.transactionId));
 }
 {
     ClientMessage clientMessage = XATransactionPrepareCodec.encodeResponse( );
@@ -5056,7 +5497,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     XATransactionRollbackCodec.RequestParameters params = XATransactionRollbackCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.transactionId));
+            assertTrue(isEqual(aString, params.transactionId));
 }
 {
     ClientMessage clientMessage = XATransactionRollbackCodec.encodeResponse( );
@@ -5070,8 +5511,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionCommitCodec.RequestParameters params = TransactionCommitCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.transactionId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.transactionId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionCommitCodec.encodeResponse( );
@@ -5085,10 +5526,10 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionCreateCodec.RequestParameters params = TransactionCreateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aLong, params.timeout));
-                assertTrue(isEqual(anInt, params.durability));
-                assertTrue(isEqual(anInt, params.transactionType));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aLong, params.timeout));
+            assertTrue(isEqual(anInt, params.durability));
+            assertTrue(isEqual(anInt, params.transactionType));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionCreateCodec.encodeResponse(    aString   );
@@ -5102,8 +5543,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     TransactionRollbackCodec.RequestParameters params = TransactionRollbackCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.transactionId));
-                assertTrue(isEqual(aLong, params.threadId));
+            assertTrue(isEqual(aString, params.transactionId));
+            assertTrue(isEqual(aLong, params.threadId));
 }
 {
     ClientMessage clientMessage = TransactionRollbackCodec.encodeResponse( );
@@ -5117,14 +5558,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapPublisherCreateWithValueCodec.RequestParameters params = EnterpriseMapPublisherCreateWithValueCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(aString, params.cacheName));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(anInt, params.batchSize));
-                assertTrue(isEqual(anInt, params.bufferSize));
-                assertTrue(isEqual(aLong, params.delaySeconds));
-                assertTrue(isEqual(aBoolean, params.populate));
-                assertTrue(isEqual(aBoolean, params.coalesce));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(anInt, params.batchSize));
+            assertTrue(isEqual(anInt, params.bufferSize));
+            assertTrue(isEqual(aLong, params.delaySeconds));
+            assertTrue(isEqual(aBoolean, params.populate));
+            assertTrue(isEqual(aBoolean, params.coalesce));
 }
 {
     ClientMessage clientMessage = EnterpriseMapPublisherCreateWithValueCodec.encodeResponse(    aListOfEntry   );
@@ -5138,14 +5579,14 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapPublisherCreateCodec.RequestParameters params = EnterpriseMapPublisherCreateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(aString, params.cacheName));
-                assertTrue(isEqual(aData, params.predicate));
-                assertTrue(isEqual(anInt, params.batchSize));
-                assertTrue(isEqual(anInt, params.bufferSize));
-                assertTrue(isEqual(aLong, params.delaySeconds));
-                assertTrue(isEqual(aBoolean, params.populate));
-                assertTrue(isEqual(aBoolean, params.coalesce));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aData, params.predicate));
+            assertTrue(isEqual(anInt, params.batchSize));
+            assertTrue(isEqual(anInt, params.bufferSize));
+            assertTrue(isEqual(aLong, params.delaySeconds));
+            assertTrue(isEqual(aBoolean, params.populate));
+            assertTrue(isEqual(aBoolean, params.coalesce));
 }
 {
     ClientMessage clientMessage = EnterpriseMapPublisherCreateCodec.encodeResponse(    datas   );
@@ -5159,8 +5600,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapMadePublishableCodec.RequestParameters params = EnterpriseMapMadePublishableCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
 }
 {
     ClientMessage clientMessage = EnterpriseMapMadePublishableCodec.encodeResponse(    aBoolean   );
@@ -5174,8 +5615,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapAddListenerCodec.RequestParameters params = EnterpriseMapAddListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.listenerName));
-                assertTrue(isEqual(aBoolean, params.localOnly));
+            assertTrue(isEqual(aString, params.listenerName));
+            assertTrue(isEqual(aBoolean, params.localOnly));
 }
 {
     ClientMessage clientMessage = EnterpriseMapAddListenerCodec.encodeResponse(    aString   );
@@ -5188,7 +5629,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = EnterpriseMapAddListenerCodec.encodeQueryCacheSingleEvent( aQueryCacheEventData   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -5196,7 +5636,6 @@ public class ServerCompatibilityTest_1_2 {
     {
         ClientMessage clientMessage = EnterpriseMapAddListenerCodec.encodeQueryCacheBatchEvent( queryCacheEventDatas ,  aString ,  anInt   );
         int length = inputStream.readInt();
-
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
         assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
@@ -5207,9 +5646,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapSetReadCursorCodec.RequestParameters params = EnterpriseMapSetReadCursorCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(aString, params.cacheName));
-                assertTrue(isEqual(aLong, params.sequence));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aLong, params.sequence));
 }
 {
     ClientMessage clientMessage = EnterpriseMapSetReadCursorCodec.encodeResponse(    aBoolean   );
@@ -5223,8 +5662,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     EnterpriseMapDestroyCacheCodec.RequestParameters params = EnterpriseMapDestroyCacheCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.mapName));
-                assertTrue(isEqual(aString, params.cacheName));
+            assertTrue(isEqual(aString, params.mapName));
+            assertTrue(isEqual(aString, params.cacheName));
 }
 {
     ClientMessage clientMessage = EnterpriseMapDestroyCacheCodec.encodeResponse(    aBoolean   );
@@ -5238,7 +5677,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferSizeCodec.RequestParameters params = RingbufferSizeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = RingbufferSizeCodec.encodeResponse(    aLong   );
@@ -5252,7 +5691,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferTailSequenceCodec.RequestParameters params = RingbufferTailSequenceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = RingbufferTailSequenceCodec.encodeResponse(    aLong   );
@@ -5266,7 +5705,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferHeadSequenceCodec.RequestParameters params = RingbufferHeadSequenceCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = RingbufferHeadSequenceCodec.encodeResponse(    aLong   );
@@ -5280,7 +5719,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferCapacityCodec.RequestParameters params = RingbufferCapacityCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = RingbufferCapacityCodec.encodeResponse(    aLong   );
@@ -5294,7 +5733,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferRemainingCapacityCodec.RequestParameters params = RingbufferRemainingCapacityCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = RingbufferRemainingCapacityCodec.encodeResponse(    aLong   );
@@ -5308,9 +5747,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferAddCodec.RequestParameters params = RingbufferAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.overflowPolicy));
-                assertTrue(isEqual(aData, params.value));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.overflowPolicy));
+            assertTrue(isEqual(aData, params.value));
 }
 {
     ClientMessage clientMessage = RingbufferAddCodec.encodeResponse(    aLong   );
@@ -5324,11 +5763,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferReadOneCodec.RequestParameters params = RingbufferReadOneCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.sequence));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.sequence));
 }
 {
-    ClientMessage clientMessage = RingbufferReadOneCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = RingbufferReadOneCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5339,9 +5778,9 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferAddAllCodec.RequestParameters params = RingbufferAddAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(datas, params.valueList));
-                assertTrue(isEqual(anInt, params.overflowPolicy));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(datas, params.valueList));
+            assertTrue(isEqual(anInt, params.overflowPolicy));
 }
 {
     ClientMessage clientMessage = RingbufferAddAllCodec.encodeResponse(    aLong   );
@@ -5355,11 +5794,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     RingbufferReadManyCodec.RequestParameters params = RingbufferReadManyCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aLong, params.startSequence));
-                assertTrue(isEqual(anInt, params.minCount));
-                assertTrue(isEqual(anInt, params.maxCount));
-                assertTrue(isEqual(aData, params.filter));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.startSequence));
+            assertTrue(isEqual(anInt, params.minCount));
+            assertTrue(isEqual(anInt, params.maxCount));
+            assertTrue(isEqual(null, params.filter));
 }
 {
     ClientMessage clientMessage = RingbufferReadManyCodec.encodeResponse(    anInt ,    datas   );
@@ -5373,7 +5812,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorShutdownCodec.RequestParameters params = DurableExecutorShutdownCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = DurableExecutorShutdownCodec.encodeResponse( );
@@ -5387,7 +5826,7 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorIsShutdownCodec.RequestParameters params = DurableExecutorIsShutdownCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.name));
 }
 {
     ClientMessage clientMessage = DurableExecutorIsShutdownCodec.encodeResponse(    aBoolean   );
@@ -5401,8 +5840,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorSubmitToPartitionCodec.RequestParameters params = DurableExecutorSubmitToPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(aData, params.callable));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.callable));
 }
 {
     ClientMessage clientMessage = DurableExecutorSubmitToPartitionCodec.encodeResponse(    anInt   );
@@ -5416,11 +5855,11 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorRetrieveResultCodec.RequestParameters params = DurableExecutorRetrieveResultCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.sequence));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.sequence));
 }
 {
-    ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeResponse(    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5431,8 +5870,8 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorDisposeResultCodec.RequestParameters params = DurableExecutorDisposeResultCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.sequence));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.sequence));
 }
 {
     ClientMessage clientMessage = DurableExecutorDisposeResultCodec.encodeResponse( );
@@ -5446,11 +5885,40 @@ public class ServerCompatibilityTest_1_2 {
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
     DurableExecutorRetrieveAndDisposeResultCodec.RequestParameters params = DurableExecutorRetrieveAndDisposeResultCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.name));
-                assertTrue(isEqual(anInt, params.sequence));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.sequence));
 }
 {
-    ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = DurableExecutorRetrieveAndDisposeResultCodec.encodeResponse(    null   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    CardinalityEstimatorAddCodec.RequestParameters params = CardinalityEstimatorAddCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aLong, params.hash));
+}
+{
+    ClientMessage clientMessage = CardinalityEstimatorAddCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    CardinalityEstimatorEstimateCodec.RequestParameters params = CardinalityEstimatorEstimateCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+            assertTrue(isEqual(aString, params.name));
+}
+{
+    ClientMessage clientMessage = CardinalityEstimatorEstimateCodec.encodeResponse(    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);

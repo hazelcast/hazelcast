@@ -47,26 +47,20 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCompatibilityTest_1_2 {
+public class ClientCompatibilityNullTest_1_4 {
     private static final int FRAME_LEN_FIELD_SIZE = 4;
 
     @org.junit.Test
             public void test() throws IOException {
-           InputStream input = getClass().getResourceAsStream("/1.2.protocol.compatibility.binary");
+            InputStream input = getClass().getResourceAsStream("/1.4.protocol.compatibility.null.binary");
             DataInputStream inputStream = new DataInputStream(input);
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(    aString ,    aString ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
-
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -74,27 +68,21 @@ public class ClientCompatibilityTest_1_2 {
     inputStream.read(bytes);
     ClientAuthenticationCodec.ResponseParameters params = ClientAuthenticationCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aByte, params.status));
-                assertTrue(isEqual(anAddress, params.address));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aString, params.ownerUuid));
+                assertTrue(isEqual(null, params.address));
+                assertTrue(isEqual(null, params.uuid));
+                assertTrue(isEqual(null, params.ownerUuid));
                 assertTrue(isEqual(aByte, params.serializationVersion));
-                assertFalse(params.serverHazelcastVersionExist);
-                assertFalse(params.clientUnregisteredMembersExist);
+                assertTrue(isEqual(aString, params.serverHazelcastVersion));
+                assertTrue(isEqual(null, params.clientUnregisteredMembers));
 }
 
 
 {
-    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    aString ,    aString ,    aBoolean ,    aString ,    aByte ,    aString   );
+    ClientMessage clientMessage = ClientAuthenticationCustomCodec.encodeRequest(    aData ,    null ,    null ,    aBoolean ,    aString ,    aByte ,    aString   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.3), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
-
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -102,12 +90,12 @@ public class ClientCompatibilityTest_1_2 {
     inputStream.read(bytes);
     ClientAuthenticationCustomCodec.ResponseParameters params = ClientAuthenticationCustomCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aByte, params.status));
-                assertTrue(isEqual(anAddress, params.address));
-                assertTrue(isEqual(aString, params.uuid));
-                assertTrue(isEqual(aString, params.ownerUuid));
+                assertTrue(isEqual(null, params.address));
+                assertTrue(isEqual(null, params.uuid));
+                assertTrue(isEqual(null, params.ownerUuid));
                 assertTrue(isEqual(aByte, params.serializationVersion));
-                assertFalse(params.serverHazelcastVersionExist);
-                assertFalse(params.clientUnregisteredMembersExist);
+                assertTrue(isEqual(aString, params.serverHazelcastVersion));
+                assertTrue(isEqual(null, params.clientUnregisteredMembers));
 }
 
 
@@ -117,7 +105,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -148,7 +135,7 @@ public class ClientCompatibilityTest_1_2 {
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(aString, key));
                             assertTrue(isEqual(anInt, operationType));
-                            assertTrue(isEqual(aString, value));
+                            assertTrue(isEqual(null, value));
         }
     }
     ClientAddMembershipListenerCodecHandler handler = new ClientAddMembershipListenerCodecHandler();
@@ -179,7 +166,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -195,7 +181,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -211,7 +196,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -228,7 +212,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -244,7 +227,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -262,7 +244,7 @@ public class ClientCompatibilityTest_1_2 {
  source   ) {
                             assertTrue(isEqual(anInt, partitionId));
                             assertTrue(isEqual(anInt, lostBackupCount));
-                            assertTrue(isEqual(anAddress, source));
+                            assertTrue(isEqual(null, source));
         }
     }
     ClientAddPartitionLostListenerCodecHandler handler = new ClientAddPartitionLostListenerCodecHandler();
@@ -281,7 +263,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -298,7 +279,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -315,7 +295,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -352,7 +331,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -369,7 +347,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -379,20 +356,20 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = MapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapPutCodec.ResponseParameters params = MapPutCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -402,14 +379,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapGetCodec.ResponseParameters params = MapGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -419,14 +395,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapRemoveCodec.ResponseParameters params = MapRemoveCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -436,14 +411,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapReplaceCodec.ResponseParameters params = MapReplaceCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -453,7 +427,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -470,7 +443,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -487,7 +459,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -504,7 +475,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -521,7 +491,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -537,7 +506,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -553,7 +521,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -570,7 +537,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -587,7 +553,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -603,14 +568,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapPutIfAbsentCodec.ResponseParameters params = MapPutIfAbsentCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -620,7 +584,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -636,7 +599,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -652,7 +614,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -669,7 +630,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -686,7 +646,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -702,7 +661,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -719,7 +677,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -736,7 +693,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -756,10 +712,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -781,7 +737,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -801,10 +756,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -826,7 +781,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -846,10 +800,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -871,7 +825,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -891,10 +844,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -913,15 +866,9 @@ public class ClientCompatibilityTest_1_2 {
 {
     ClientMessage clientMessage = MapAddNearCacheEntryListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.4), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
-
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -938,11 +885,17 @@ public class ClientCompatibilityTest_1_2 {
  sourceUuid ,   java.util.UUID
  partitionUuid ,   long
  sequence   ) {
-                            assertTrue(isEqual(aData, key));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(aString, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
         }
         @Override
         public void handle(  java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
                             assertTrue(isEqual(datas, keys));
+                            assertTrue(isEqual(strings, sourceUuids));
+                            assertTrue(isEqual(uuids, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
         }
     }
     MapAddNearCacheEntryListenerCodecHandler handler = new MapAddNearCacheEntryListenerCodecHandler();
@@ -967,7 +920,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -984,7 +936,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1019,7 +970,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1036,14 +986,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapGetEntryViewCodec.ResponseParameters params = MapGetEntryViewCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(anEntryView, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -1053,7 +1002,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1070,7 +1018,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1086,7 +1033,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1102,7 +1048,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1118,7 +1063,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1135,7 +1079,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1152,7 +1095,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1169,7 +1111,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1186,7 +1127,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1203,7 +1143,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1220,7 +1159,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1237,7 +1175,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1253,7 +1190,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1270,7 +1206,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1287,7 +1222,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1303,7 +1237,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1319,14 +1252,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapExecuteOnKeyCodec.ResponseParameters params = MapExecuteOnKeyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -1336,14 +1268,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapSubmitToKeyCodec.ResponseParameters params = MapSubmitToKeyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -1353,7 +1284,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1370,7 +1300,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1387,7 +1316,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1404,7 +1332,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1420,7 +1347,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1437,7 +1363,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1454,7 +1379,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1471,7 +1395,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1487,7 +1410,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1505,7 +1427,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1517,17 +1438,151 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+{
+    ClientMessage clientMessage = MapAggregateCodec.encodeRequest(    aString ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAggregateCodec.ResponseParameters params = MapAggregateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(null, params.response));
+}
 
 
+{
+    ClientMessage clientMessage = MapAggregateWithPredicateCodec.encodeRequest(    aString ,    aData ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAggregateWithPredicateCodec.ResponseParameters params = MapAggregateWithPredicateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(null, params.response));
+}
 
 
+{
+    ClientMessage clientMessage = MapProjectCodec.encodeRequest(    aString ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapProjectCodec.ResponseParameters params = MapProjectCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(datas, params.response));
+}
 
 
+{
+    ClientMessage clientMessage = MapProjectWithPredicateCodec.encodeRequest(    aString ,    aData ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapProjectWithPredicateCodec.ResponseParameters params = MapProjectWithPredicateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(datas, params.response));
+}
 
 
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.ResponseParameters params = MapAddNearCacheInvalidationListenerCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.response));
+}
+{
+    class MapAddNearCacheInvalidationListenerCodecHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  com.hazelcast.nio.serialization.Data
+ key ,   java.lang.String
+ sourceUuid ,   java.util.UUID
+ partitionUuid ,   long
+ sequence   ) {
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(aString, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
+        }
+        @Override
+        public void handle(  java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
+                            assertTrue(isEqual(datas, keys));
+                            assertTrue(isEqual(strings, sourceUuids));
+                            assertTrue(isEqual(uuids, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
+        }
+    }
+    MapAddNearCacheInvalidationListenerCodecHandler handler = new MapAddNearCacheInvalidationListenerCodecHandler();
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+}
 
 
+{
+    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeRequest(    strings ,    anAddress   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = MapFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(null, params.response));
+}
 
+
+{
+    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeRequest( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAssignAndGetUuidsCodec.ResponseParameters params = MapAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(datas, params.response));
+}
 
 
 
@@ -1537,7 +1592,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1554,7 +1608,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1571,7 +1624,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1588,7 +1640,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1605,7 +1656,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1622,7 +1672,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1639,7 +1688,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1656,7 +1704,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1673,7 +1720,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1690,7 +1736,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1707,7 +1752,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1723,7 +1767,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1740,7 +1783,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1760,10 +1802,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -1785,7 +1827,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1805,10 +1846,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -1830,7 +1871,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1847,7 +1887,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1863,7 +1902,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1880,7 +1918,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1897,7 +1934,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1913,7 +1949,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1929,7 +1964,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1940,13 +1974,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = QueueOfferCodec.encodeRequest(    aString ,    aData ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1963,7 +1997,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1979,7 +2012,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -1996,7 +2028,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2013,14 +2044,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     QueuePollCodec.ResponseParameters params = QueuePollCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2030,14 +2060,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     QueueTakeCodec.ResponseParameters params = QueueTakeCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2047,14 +2076,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     QueuePeekCodec.ResponseParameters params = QueuePeekCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2064,7 +2092,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2081,7 +2108,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2098,7 +2124,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2115,7 +2140,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2132,7 +2156,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2149,7 +2172,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2166,7 +2188,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2183,7 +2204,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2199,7 +2219,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2216,7 +2235,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2232,7 +2250,7 @@ public class ClientCompatibilityTest_1_2 {
  item ,   java.lang.String
  uuid ,   int
  eventType   ) {
-                            assertTrue(isEqual(aData, item));
+                            assertTrue(isEqual(null, item));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, eventType));
         }
@@ -2253,7 +2271,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2270,7 +2287,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2287,7 +2303,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2298,13 +2313,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TopicPublishCodec.encodeRequest(    aString ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2320,7 +2335,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2357,7 +2371,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2368,13 +2381,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = ListSizeCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2391,7 +2404,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2408,7 +2420,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2425,7 +2436,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2442,7 +2452,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2459,7 +2468,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2476,7 +2484,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2493,7 +2500,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2510,7 +2516,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2526,7 +2531,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2543,7 +2547,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2559,7 +2562,7 @@ public class ClientCompatibilityTest_1_2 {
  item ,   java.lang.String
  uuid ,   int
  eventType   ) {
-                            assertTrue(isEqual(aData, item));
+                            assertTrue(isEqual(null, item));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, eventType));
         }
@@ -2580,7 +2583,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2597,7 +2599,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2614,7 +2615,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2631,14 +2631,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ListGetCodec.ResponseParameters params = ListGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2648,14 +2647,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ListSetCodec.ResponseParameters params = ListSetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2665,7 +2663,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2681,14 +2678,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ListRemoveWithIndexCodec.ResponseParameters params = ListRemoveWithIndexCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -2698,7 +2694,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2715,7 +2710,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2732,7 +2726,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2749,7 +2742,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2766,7 +2758,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2777,13 +2768,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = SetSizeCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2800,7 +2791,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2817,7 +2807,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2834,7 +2823,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2851,7 +2839,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2868,7 +2855,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2885,7 +2871,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2902,7 +2887,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2919,7 +2903,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2935,7 +2918,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2952,7 +2934,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -2968,7 +2949,7 @@ public class ClientCompatibilityTest_1_2 {
  item ,   java.lang.String
  uuid ,   int
  eventType   ) {
-                            assertTrue(isEqual(aData, item));
+                            assertTrue(isEqual(null, item));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, eventType));
         }
@@ -2989,7 +2970,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3006,7 +2986,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3017,13 +2996,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = LockIsLockedCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3040,7 +3019,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3057,7 +3035,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3074,7 +3051,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3091,7 +3067,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3107,7 +3082,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3123,7 +3097,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3139,7 +3112,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3150,13 +3122,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = ConditionAwaitCodec.encodeRequest(    aString ,    aLong ,    aLong ,    aString ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3173,7 +3145,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3189,7 +3160,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3205,7 +3175,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3215,13 +3184,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = ExecutorServiceShutdownCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3237,7 +3206,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3254,7 +3222,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3271,7 +3238,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3288,14 +3254,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ExecutorServiceSubmitToPartitionCodec.ResponseParameters params = ExecutorServiceSubmitToPartitionCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3305,15 +3270,15 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ExecutorServiceSubmitToAddressCodec.ResponseParameters params = ExecutorServiceSubmitToAddressCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
+
 
 
 {
@@ -3322,14 +3287,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicLongApplyCodec.ResponseParameters params = AtomicLongApplyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3339,7 +3303,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3355,7 +3318,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3372,7 +3334,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3389,7 +3350,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3406,7 +3366,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3423,7 +3382,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3440,7 +3398,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3457,7 +3414,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3474,7 +3430,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3491,7 +3446,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3508,7 +3462,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3525,7 +3478,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3535,20 +3487,20 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = AtomicReferenceApplyCodec.encodeRequest(    aString ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceApplyCodec.ResponseParameters params = AtomicReferenceApplyCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3558,7 +3510,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3574,14 +3525,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceAlterAndGetCodec.ResponseParameters params = AtomicReferenceAlterAndGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3591,24 +3541,22 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceGetAndAlterCodec.ResponseParameters params = AtomicReferenceGetAndAlterCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = AtomicReferenceContainsCodec.encodeRequest(    aString ,    aData   );
+    ClientMessage clientMessage = AtomicReferenceContainsCodec.encodeRequest(    aString ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3620,12 +3568,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = AtomicReferenceCompareAndSetCodec.encodeRequest(    aString ,    aData ,    aData   );
+    ClientMessage clientMessage = AtomicReferenceCompareAndSetCodec.encodeRequest(    aString ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3642,24 +3589,22 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceGetCodec.ResponseParameters params = AtomicReferenceGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = AtomicReferenceSetCodec.encodeRequest(    aString ,    aData   );
+    ClientMessage clientMessage = AtomicReferenceSetCodec.encodeRequest(    aString ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3675,7 +3620,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3686,36 +3630,34 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = AtomicReferenceGetAndSetCodec.encodeRequest(    aString ,    aData   );
+    ClientMessage clientMessage = AtomicReferenceGetAndSetCodec.encodeRequest(    aString ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceGetAndSetCodec.ResponseParameters params = AtomicReferenceGetAndSetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = AtomicReferenceSetAndGetCodec.encodeRequest(    aString ,    aData   );
+    ClientMessage clientMessage = AtomicReferenceSetAndGetCodec.encodeRequest(    aString ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     AtomicReferenceSetAndGetCodec.ResponseParameters params = AtomicReferenceSetAndGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3725,7 +3667,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3736,13 +3677,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = CountDownLatchAwaitCodec.encodeRequest(    aString ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3759,7 +3700,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3775,7 +3715,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3792,7 +3731,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3803,13 +3741,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = SemaphoreInitCodec.encodeRequest(    aString ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3826,7 +3764,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3842,7 +3779,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3859,7 +3795,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3876,7 +3811,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3892,7 +3826,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3908,7 +3841,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3919,20 +3851,20 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = ReplicatedMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ReplicatedMapPutCodec.ResponseParameters params = ReplicatedMapPutCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -3942,7 +3874,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3959,7 +3890,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3976,7 +3906,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -3993,7 +3922,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4010,14 +3938,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ReplicatedMapGetCodec.ResponseParameters params = ReplicatedMapGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4027,14 +3954,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ReplicatedMapRemoveCodec.ResponseParameters params = ReplicatedMapRemoveCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4044,7 +3970,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4060,7 +3985,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4076,7 +4000,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4096,10 +4019,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -4121,7 +4044,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4141,10 +4063,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -4166,7 +4088,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4186,10 +4107,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -4211,7 +4132,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4231,10 +4151,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -4256,7 +4176,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4273,7 +4192,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4290,7 +4208,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4307,7 +4224,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4324,7 +4240,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4344,10 +4259,10 @@ public class ClientCompatibilityTest_1_2 {
  eventType ,   java.lang.String
  uuid ,   int
  numberOfAffectedEntries   ) {
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aData, value));
-                            assertTrue(isEqual(aData, oldValue));
-                            assertTrue(isEqual(aData, mergingValue));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, value));
+                            assertTrue(isEqual(null, oldValue));
+                            assertTrue(isEqual(null, mergingValue));
                             assertTrue(isEqual(anInt, eventType));
                             assertTrue(isEqual(aString, uuid));
                             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -4363,13 +4278,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = MapReduceCancelCodec.encodeRequest(    aString ,    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4386,7 +4301,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4399,12 +4313,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = MapReduceForMapCodec.encodeRequest(    aString ,    aString ,    aData ,    aData ,    aData ,    aData ,    aString ,    anInt ,    datas ,    aString   );
+    ClientMessage clientMessage = MapReduceForMapCodec.encodeRequest(    aString ,    aString ,    null ,    aData ,    null ,    null ,    aString ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4416,12 +4329,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = MapReduceForListCodec.encodeRequest(    aString ,    aString ,    aData ,    aData ,    aData ,    aData ,    aString ,    anInt ,    datas ,    aString   );
+    ClientMessage clientMessage = MapReduceForListCodec.encodeRequest(    aString ,    aString ,    null ,    aData ,    null ,    null ,    aString ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4433,12 +4345,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = MapReduceForSetCodec.encodeRequest(    aString ,    aString ,    aData ,    aData ,    aData ,    aData ,    aString ,    anInt ,    datas ,    aString   );
+    ClientMessage clientMessage = MapReduceForSetCodec.encodeRequest(    aString ,    aString ,    null ,    aData ,    null ,    null ,    aString ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4450,12 +4361,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = MapReduceForMultiMapCodec.encodeRequest(    aString ,    aString ,    aData ,    aData ,    aData ,    aData ,    aString ,    anInt ,    datas ,    aString   );
+    ClientMessage clientMessage = MapReduceForMultiMapCodec.encodeRequest(    aString ,    aString ,    null ,    aData ,    null ,    null ,    aString ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4467,12 +4377,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = MapReduceForCustomCodec.encodeRequest(    aString ,    aString ,    aData ,    aData ,    aData ,    aData ,    aData ,    anInt ,    datas ,    aString   );
+    ClientMessage clientMessage = MapReduceForCustomCodec.encodeRequest(    aString ,    aString ,    null ,    aData ,    null ,    null ,    aData ,    anInt ,    null ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4483,13 +4392,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionalMapContainsKeyCodec.encodeRequest(    aString ,    aString ,    aLong ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4506,14 +4415,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapGetCodec.ResponseParameters params = TransactionalMapGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4523,14 +4431,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapGetForUpdateCodec.ResponseParameters params = TransactionalMapGetForUpdateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4540,7 +4447,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4557,7 +4463,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4574,14 +4479,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapPutCodec.ResponseParameters params = TransactionalMapPutCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4591,7 +4495,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4607,14 +4510,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapPutIfAbsentCodec.ResponseParameters params = TransactionalMapPutIfAbsentCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4624,14 +4526,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapReplaceCodec.ResponseParameters params = TransactionalMapReplaceCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4641,7 +4542,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4658,14 +4558,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalMapRemoveCodec.ResponseParameters params = TransactionalMapRemoveCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -4675,7 +4574,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4691,7 +4589,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4708,7 +4605,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4725,7 +4621,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4742,7 +4637,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4759,7 +4653,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4770,13 +4663,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionalMultiMapPutCodec.encodeRequest(    aString ,    aString ,    aLong ,    aData ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4793,7 +4686,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4810,7 +4702,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4827,7 +4718,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4844,7 +4734,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4861,7 +4750,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4872,13 +4760,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionalSetAddCodec.encodeRequest(    aString ,    aString ,    aLong ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4895,7 +4783,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4912,7 +4799,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4923,13 +4809,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionalListAddCodec.encodeRequest(    aString ,    aString ,    aLong ,    aData   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4946,7 +4832,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4963,7 +4848,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4974,13 +4858,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionalQueueOfferCodec.encodeRequest(    aString ,    aString ,    aLong ,    aData ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -4997,14 +4881,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalQueueTakeCodec.ResponseParameters params = TransactionalQueueTakeCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5014,14 +4897,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalQueuePollCodec.ResponseParameters params = TransactionalQueuePollCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5031,14 +4913,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     TransactionalQueuePeekCodec.ResponseParameters params = TransactionalQueuePeekCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5048,7 +4929,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5059,13 +4939,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = CacheAddEntryListenerCodec.encodeRequest(    aString ,    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5098,15 +4978,9 @@ public class ClientCompatibilityTest_1_2 {
 {
     ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeRequest(    aString ,    aBoolean   );
     int length = inputStream.readInt();
-    // Since the test is generated for protocol version (1.2) which is earlier than latest change in the message
-    // (version 1.4), only the bytes after frame length fields are compared
-    int frameLength = clientMessage.getFrameLength();
-    assertTrue(frameLength >= length);
-    inputStream.skipBytes(FRAME_LEN_FIELD_SIZE);
-    byte[] bytes = new byte[length - FRAME_LEN_FIELD_SIZE];
+    byte[] bytes = new byte[length];
     inputStream.read(bytes);
-    assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
-
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
 }
 {
     int length = inputStream.readInt();
@@ -5125,15 +4999,19 @@ public class ClientCompatibilityTest_1_2 {
  partitionUuid ,   long
  sequence   ) {
                             assertTrue(isEqual(aString, name));
-                            assertTrue(isEqual(aData, key));
-                            assertTrue(isEqual(aString, sourceUuid));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
         }
         @Override
         public void handle(  java.lang.String
  name ,   java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
                             assertTrue(isEqual(aString, name));
                             assertTrue(isEqual(datas, keys));
-                            assertTrue(isEqual(strings, sourceUuids));
+                            assertTrue(isEqual(null, sourceUuids));
+                            assertTrue(isEqual(null, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
         }
     }
     CacheAddInvalidationListenerCodecHandler handler = new CacheAddInvalidationListenerCodecHandler();
@@ -5158,7 +5036,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5174,7 +5051,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5190,7 +5066,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5206,7 +5081,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5223,14 +5097,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheCreateConfigCodec.ResponseParameters params = CacheCreateConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5240,7 +5113,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5256,24 +5128,22 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheEntryProcessorCodec.ResponseParameters params = CacheEntryProcessorCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = CacheGetAllCodec.encodeRequest(    aString ,    datas ,    aData   );
+    ClientMessage clientMessage = CacheGetAllCodec.encodeRequest(    aString ,    datas ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5290,31 +5160,29 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheGetAndRemoveCodec.ResponseParameters params = CacheGetAndRemoveCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = CacheGetAndReplaceCodec.encodeRequest(    aString ,    aData ,    aData ,    aData ,    anInt   );
+    ClientMessage clientMessage = CacheGetAndReplaceCodec.encodeRequest(    aString ,    aData ,    aData ,    null ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheGetAndReplaceCodec.ResponseParameters params = CacheGetAndReplaceCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5324,31 +5192,29 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheGetConfigCodec.ResponseParameters params = CacheGetConfigCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
 {
-    ClientMessage clientMessage = CacheGetCodec.encodeRequest(    aString ,    aData ,    aData   );
+    ClientMessage clientMessage = CacheGetCodec.encodeRequest(    aString ,    aData ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheGetCodec.ResponseParameters params = CacheGetCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5358,7 +5224,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5376,7 +5241,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5392,7 +5256,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5408,7 +5271,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5419,12 +5281,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = CachePutIfAbsentCodec.encodeRequest(    aString ,    aData ,    aData ,    aData ,    anInt   );
+    ClientMessage clientMessage = CachePutIfAbsentCodec.encodeRequest(    aString ,    aData ,    aData ,    null ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5436,19 +5297,18 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = CachePutCodec.encodeRequest(    aString ,    aData ,    aData ,    aData ,    aBoolean ,    anInt   );
+    ClientMessage clientMessage = CachePutCodec.encodeRequest(    aString ,    aData ,    aData ,    null ,    aBoolean ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CachePutCodec.ResponseParameters params = CachePutCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5458,7 +5318,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5475,7 +5334,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5487,12 +5345,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = CacheRemoveCodec.encodeRequest(    aString ,    aData ,    aData ,    anInt   );
+    ClientMessage clientMessage = CacheRemoveCodec.encodeRequest(    aString ,    aData ,    null ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5504,19 +5361,18 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = CacheReplaceCodec.encodeRequest(    aString ,    aData ,    aData ,    aData ,    aData ,    anInt   );
+    ClientMessage clientMessage = CacheReplaceCodec.encodeRequest(    aString ,    aData ,    null ,    aData ,    null ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheReplaceCodec.ResponseParameters params = CacheReplaceCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -5526,7 +5382,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5543,7 +5398,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5578,7 +5432,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5590,12 +5443,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = CachePutAllCodec.encodeRequest(    aString ,    aListOfEntry ,    aData ,    anInt   );
+    ClientMessage clientMessage = CachePutAllCodec.encodeRequest(    aString ,    aListOfEntry ,    null ,    anInt   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5611,7 +5463,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5623,9 +5474,91 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+{
+    ClientMessage clientMessage = CacheAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    CacheAddNearCacheInvalidationListenerCodec.ResponseParameters params = CacheAddNearCacheInvalidationListenerCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.response));
+}
+{
+    class CacheAddNearCacheInvalidationListenerCodecHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  java.lang.String
+ name ,   com.hazelcast.nio.serialization.Data
+ key ,   java.lang.String
+ sourceUuid ,   java.util.UUID
+ partitionUuid ,   long
+ sequence   ) {
+                            assertTrue(isEqual(aString, name));
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(null, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
+        }
+        @Override
+        public void handle(  java.lang.String
+ name ,   java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
+                            assertTrue(isEqual(aString, name));
+                            assertTrue(isEqual(datas, keys));
+                            assertTrue(isEqual(null, sourceUuids));
+                            assertTrue(isEqual(null, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
+        }
+    }
+    CacheAddNearCacheInvalidationListenerCodecHandler handler = new CacheAddNearCacheInvalidationListenerCodecHandler();
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+}
 
 
+{
+    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeRequest(    strings ,    anAddress   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = CacheFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(null, params.response));
+}
 
+
+{
+    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeRequest( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    CacheAssignAndGetUuidsCodec.ResponseParameters params = CacheAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(datas, params.response));
+}
 
 
 
@@ -5635,7 +5568,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5651,7 +5583,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5668,7 +5599,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5684,7 +5614,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5700,7 +5629,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5717,7 +5645,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5733,7 +5660,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5743,13 +5669,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = TransactionCommitCodec.encodeRequest(    aString ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5765,7 +5691,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5782,7 +5707,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5792,13 +5716,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = EnterpriseMapPublisherCreateWithValueCodec.encodeRequest(    aString ,    aString ,    aData ,    anInt ,    anInt ,    aLong ,    aBoolean ,    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5815,7 +5739,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5832,7 +5755,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5849,7 +5771,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5896,7 +5817,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5913,7 +5833,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5924,13 +5843,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = RingbufferSizeCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5947,7 +5866,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5964,7 +5882,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5981,7 +5898,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -5998,7 +5914,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6015,7 +5930,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6032,14 +5946,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     RingbufferReadOneCodec.ResponseParameters params = RingbufferReadOneCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -6049,7 +5962,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6061,12 +5973,11 @@ public class ClientCompatibilityTest_1_2 {
 
 
 {
-    ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    aData   );
+    ClientMessage clientMessage = RingbufferReadManyCodec.encodeRequest(    aString ,    aLong ,    anInt ,    anInt ,    null   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6078,13 +5989,13 @@ public class ClientCompatibilityTest_1_2 {
 }
 
 
+
 {
     ClientMessage clientMessage = DurableExecutorShutdownCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6100,7 +6011,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6117,7 +6027,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6134,14 +6043,13 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     DurableExecutorRetrieveResultCodec.ResponseParameters params = DurableExecutorRetrieveResultCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
@@ -6151,7 +6059,6 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
@@ -6167,17 +6074,46 @@ public class ClientCompatibilityTest_1_2 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
-
 }
 {
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     DurableExecutorRetrieveAndDisposeResultCodec.ResponseParameters params = DurableExecutorRetrieveAndDisposeResultCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(null, params.response));
 }
 
 
+
+{
+    ClientMessage clientMessage = CardinalityEstimatorAddCodec.encodeRequest(    aString ,    aLong   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    CardinalityEstimatorAddCodec.ResponseParameters params = CardinalityEstimatorAddCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+}
+
+
+{
+    ClientMessage clientMessage = CardinalityEstimatorEstimateCodec.encodeRequest(    aString   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    CardinalityEstimatorEstimateCodec.ResponseParameters params = CardinalityEstimatorEstimateCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aLong, params.response));
+}
 
 
 
