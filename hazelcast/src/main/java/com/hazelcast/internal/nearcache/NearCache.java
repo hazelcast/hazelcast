@@ -146,4 +146,16 @@ public interface NearCache<K, V> extends InitializingObject {
      * @return {@code true} if the pre-loading is done, {@code false} otherwise.
      */
     boolean isPreloadDone();
+
+    /**
+     * Used to access non-standard methods of an implementation.
+     * <p>
+     * If this method is called on a wrapper object, result is wrapped object.
+     *
+     * @param clazz the type of returning object.
+     * @param <T>   the type of the class modeled by this Class object
+     * @return an instance of the supplied clazz type.
+     * @throws IllegalArgumentException if no implementation found for the supplied clazz type.
+     */
+    <T> T unwrap(Class<T> clazz);
 }

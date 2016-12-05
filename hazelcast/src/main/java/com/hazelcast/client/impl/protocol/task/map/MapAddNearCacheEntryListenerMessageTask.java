@@ -21,9 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCode
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.InvalidationHandler;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
@@ -32,11 +30,21 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 
+/**
+ * Deprecated class is here to provide backward compatibility.
+ *
+ * @see MapAddNearCacheInvalidationListenerMessageTask
+ */
+@Deprecated
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
 
@@ -85,9 +93,51 @@ public class MapAddNearCacheEntryListenerMessageTask
         return new EventListenerFilter(parameters.listenerFlags, new UuidFilter(endpoint.getUuid()));
     }
 
-    private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener, InvalidationHandler {
+    private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
 
         private ClientNearCacheInvalidationListenerImpl() {
+        }
+
+        private void sendEvent(Invalidation invalidation) {
+            if (invalidation instanceof BatchNearCacheInvalidation) {
+                List<Data> keys = getKeys((BatchNearCacheInvalidation) invalidation);
+                if (keys == null) {
+                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
+                            invalidation.getPartitionUuid(), NO_SEQUENCE));
+                } else {
+                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys, Collections.<String>emptyList(),
+                            Collections.<UUID>emptyList(), Collections.<Long>emptyList()));
+                }
+                return;
+            }
+
+            if (!getEndpoint().getUuid().equals(invalidation.getSourceUuid())) {
+                if (invalidation instanceof SingleNearCacheInvalidation) {
+                    Data key = invalidation.getKey();
+                    if (NULL_KEY.equals(key)) {
+                        sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
+                                invalidation.getPartitionUuid(), NO_SEQUENCE));
+                    } else {
+                        sendClientMessage(key, encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
+                                invalidation.getPartitionUuid(), NO_SEQUENCE));
+                    }
+                }
+                return;
+            }
+        }
+
+        private List<Data> getKeys(BatchNearCacheInvalidation invalidation) {
+            List<Invalidation> invalidations = invalidation.getInvalidations();
+            List<Data> keys = new ArrayList<Data>(invalidations.size());
+            for (Invalidation single : invalidations) {
+                Data key = single.getKey();
+                if (NULL_KEY.equals(key)) {
+                    return null;
+                } else {
+                    keys.add(key);
+                }
+            }
+            return keys;
         }
 
         @Override
@@ -95,57 +145,7 @@ public class MapAddNearCacheEntryListenerMessageTask
             if (!endpoint.isAlive()) {
                 return;
             }
-
-            invalidation.consumedBy(this);
-        }
-
-        @Override
-        public void handle(SingleNearCacheInvalidation invalidation) {
-            Data key = invalidation.getKey();
-            sendClientMessage(key, encodeIMapInvalidationEvent(key));
-        }
-
-        @Override
-        public void handle(BatchNearCacheInvalidation batchNearCacheInvalidation) {
-            List<Data> keys = getKeysOrNull(batchNearCacheInvalidation);
-
-            if (keys == null) {
-                sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
-            } else {
-                sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys));
-            }
-        }
-
-        /**
-         * Returns null if invalidation is caused by a clear event, otherwise returns key-list to invalidate.
-         * Returning null is a special case and represents a near-cache clear event.
-         *
-         * @see SingleNearCacheInvalidation
-         */
-        private List<Data> getKeysOrNull(BatchNearCacheInvalidation batch) {
-            List<Invalidation> invalidations = batch.getInvalidations();
-
-            List<Data> keyList = null;
-            for (Invalidation invalidation : invalidations) {
-                if (invalidation instanceof ClearNearCacheInvalidation) {
-                    return null;
-                }
-
-                if (keyList == null) {
-                    keyList = new ArrayList<Data>(invalidations.size());
-                }
-
-                keyList.add(((SingleNearCacheInvalidation) invalidation).getKey());
-            }
-
-            assert keyList != null;
-
-            return keyList;
-        }
-
-        @Override
-        public void handle(ClearNearCacheInvalidation invalidation) {
-            sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null));
+            sendEvent(invalidation);
         }
 
     }

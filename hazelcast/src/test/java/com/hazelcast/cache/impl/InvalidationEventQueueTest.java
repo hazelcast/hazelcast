@@ -36,7 +36,7 @@ public class InvalidationEventQueueTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < ITEM_COUNT_PER_WORKER; i++) {
-                        queue.offer(new CacheSingleInvalidationMessage(null, null, null));
+                        queue.offer(new CacheSingleInvalidationMessage(null, null, null, null, 0));
                     }
                 }
             });
@@ -56,7 +56,7 @@ public class InvalidationEventQueueTest {
         List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT * ITEM_COUNT_PER_WORKER; i++) {
-            queue.offer(new CacheSingleInvalidationMessage(null, null, null));
+            queue.offer(new CacheSingleInvalidationMessage(null, null, null, null, 0));
         }
 
         for (int i = 0; i < WORKER_COUNT; i++) {
@@ -80,7 +80,7 @@ public class InvalidationEventQueueTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void addOperationIsNotSupported() {
-        new InvalidationEventQueue().add(new CacheSingleInvalidationMessage(null, null, null));
+        new InvalidationEventQueue().add(new CacheSingleInvalidationMessage(null, null, null, null, 0));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -90,7 +90,7 @@ public class InvalidationEventQueueTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void removeWithSpecifiedElementOperationIsNotSupported() {
-        new InvalidationEventQueue().remove(new CacheSingleInvalidationMessage(null, null, null));
+        new InvalidationEventQueue().remove(new CacheSingleInvalidationMessage(null, null, null, null, 0));
     }
 
     @Test(expected = UnsupportedOperationException.class)

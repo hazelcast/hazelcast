@@ -16,13 +16,15 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
+import static com.hazelcast.map.impl.MapDataSerializerHook.NEAR_CACHE_SINGLE_INVALIDATION;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -30,60 +32,47 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class SingleNearCacheInvalidation extends Invalidation {
 
-    private Data key;
-    private String sourceUuid;
+    private Data key = NULL_KEY;
 
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid) {
-        super(mapName);
+    public SingleNearCacheInvalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
+        super(mapName, sourceUuid, partitionUuid, sequence);
+    }
 
+    public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
+        super(mapName, sourceUuid, partitionUuid, sequence);
         this.key = checkNotNull(key, "key cannot be null");
-        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
     }
 
-    public Data getKey() {
+    @Override
+    public final Data getKey() {
         return key;
-    }
-
-    @Override
-    public String getSourceUuid() {
-        return sourceUuid;
-    }
-
-    @Override
-    public void consumedBy(InvalidationHandler invalidationHandler) {
-        invalidationHandler.handle(this);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-
-        out.writeUTF(sourceUuid);
         out.writeData(key);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-
-        sourceUuid = in.readUTF();
         key = in.readData();
     }
 
     @Override
     public String toString() {
         return "SingleNearCacheInvalidation{"
-                + "mapName='" + mapName + '\''
-                + ", sourceUuid='" + sourceUuid + '\''
-                + ", key='" + key + '\''
+                + "key=" + key
+                + ", " + super.toString()
                 + '}';
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.NEAR_CACHE_SINGLE_INVALIDATION;
+        return NEAR_CACHE_SINGLE_INVALIDATION;
     }
 }

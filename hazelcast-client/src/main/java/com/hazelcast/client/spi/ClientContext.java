@@ -16,18 +16,36 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.client.cache.impl.nearcache.invalidation.ClientCacheMetaDataFetcher;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.map.impl.nearcache.invalidation.ClientMapMetaDataFetcher;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
+import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
+import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.ConstructorFunction;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static java.lang.String.format;
 
 /**
  * Context holding all the required services, managers and the configuration for a Hazelcast client.
  */
 public final class ClientContext {
 
+    private final String localUuid;
     private final SerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
@@ -38,7 +56,17 @@ public final class ClientContext {
     private final ProxyManager proxyManager;
     private final ClientConfig clientConfig;
     private final LoggingService loggingService;
+    private final HazelcastProperties properties;
     private final NearCacheManager nearCacheManager;
+    private final MinimalPartitionService minimalPartitionService;
+    private final ConcurrentMap<String, RepairingTask> repairingTasks = new ConcurrentHashMap<String, RepairingTask>();
+    private final ConstructorFunction<String, RepairingTask> repairingTaskConstructor
+            = new ConstructorFunction<String, RepairingTask>() {
+        @Override
+        public RepairingTask createNew(String serviceName) {
+            return newRepairingTask(serviceName);
+        }
+    };
 
     ClientContext(HazelcastClientInstanceImpl client, ProxyManager proxyManager) {
         this.serializationService = client.getSerializationService();
@@ -52,6 +80,52 @@ public final class ClientContext {
         this.transactionManager = client.getTransactionManager();
         this.loggingService = client.getLoggingService();
         this.nearCacheManager = client.getNearCacheManager();
+        this.properties = client.getProperties();
+        this.localUuid = client.getLocalEndpoint().getUuid();
+        this.minimalPartitionService = new ClientMinimalPartitionService();
+    }
+
+    public RepairingTask getRepairingTask(String serviceName) {
+        return getOrPutIfAbsent(repairingTasks, serviceName, repairingTaskConstructor);
+    }
+
+    private RepairingTask newRepairingTask(String serviceName) {
+        MetaDataFetcher metaDataFetcher = newMetaDataFetcher(serviceName);
+        ILogger logger = loggingService.getLogger(RepairingTask.class);
+        return new RepairingTask(metaDataFetcher, executionService, minimalPartitionService, properties, localUuid, logger);
+    }
+
+    private MetaDataFetcher newMetaDataFetcher(String serviceName) {
+        if (MapService.SERVICE_NAME.equals(serviceName)) {
+            return new ClientMapMetaDataFetcher(this);
+        }
+
+        if (CacheService.SERVICE_NAME.equals(serviceName)) {
+            return new ClientCacheMetaDataFetcher(this);
+        }
+
+        throw new IllegalArgumentException(format("%s is not a known service-name to fetch metadata for", serviceName));
+    }
+
+    /**
+     * Client side implementation of {@link MinimalPartitionService}
+     */
+    private class ClientMinimalPartitionService implements MinimalPartitionService {
+
+        @Override
+        public int getPartitionId(Data key) {
+            return partitionService.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartitionId(Object key) {
+            return partitionService.getPartitionId(key);
+        }
+
+        @Override
+        public int getPartitionCount() {
+            return partitionService.getPartitionCount();
+        }
     }
 
     public HazelcastInstance getHazelcastInstance() {
@@ -88,6 +162,10 @@ public final class ClientContext {
 
     public LoggingService getLoggingService() {
         return loggingService;
+    }
+
+    public ClientInvocationService getInvocationService() {
+        return invocationService;
     }
 
     public void removeProxy(ClientProxy proxy) {

@@ -22,20 +22,24 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.UUID;
 
 public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
 
     private Data key;
     private String sourceUuid;
+    private UUID partitionUuid;
+    private long sequence;
 
     public CacheSingleInvalidationMessage() {
-
     }
 
-    public CacheSingleInvalidationMessage(String name, Data key, String sourceUuid) {
+    public CacheSingleInvalidationMessage(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
         super(name);
         this.key = key;
         this.sourceUuid = sourceUuid;
+        this.partitionUuid = partitionUuid;
+        this.sequence = sequence;
     }
 
     @Override
@@ -43,8 +47,16 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
         return key;
     }
 
+    public long getSequence() {
+        return sequence;
+    }
+
     public String getSourceUuid() {
         return sourceUuid;
+    }
+
+    public UUID getPartitionUuid() {
+        return partitionUuid;
     }
 
     @Override
@@ -62,6 +74,9 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
         if (hasKey) {
             out.writeData(key);
         }
+        out.writeLong(sequence);
+        out.writeLong(partitionUuid.getMostSignificantBits());
+        out.writeLong(partitionUuid.getLeastSignificantBits());
     }
 
     @Override
@@ -71,7 +86,10 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
         if (in.readBoolean()) {
             key = in.readData();
         }
+        sequence = in.readLong();
+        partitionUuid = new UUID(in.readLong(), in.readLong());
     }
+
 
     @Override
     public String toString() {
@@ -79,6 +97,8 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
                 + "name='" + name + '\''
                 + ", key=" + key
                 + ", sourceUuid='" + sourceUuid + '\''
+                + ", partitionUuid='" + partitionUuid + '\''
+                + ", sequence=" + sequence
                 + '}';
     }
 

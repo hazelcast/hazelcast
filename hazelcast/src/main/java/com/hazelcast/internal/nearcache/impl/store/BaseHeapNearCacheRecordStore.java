@@ -68,7 +68,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected R getRecord(K key) {
+    public R getRecord(K key) {
         return records.get(key);
     }
 

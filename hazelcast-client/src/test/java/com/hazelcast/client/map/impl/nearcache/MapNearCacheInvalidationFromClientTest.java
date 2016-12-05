@@ -244,7 +244,8 @@ public class MapNearCacheInvalidationFromClientTest {
     private NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
         MapServiceContext mapServiceContext = getMapService(instance).getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        return mapNearCacheManager.getOrCreateNearCache(mapName);
+        NearCacheConfig nearCacheConfig = getNodeEngineImpl(instance).getConfig().getMapConfig(mapName).getNearCacheConfig();
+        return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
     }
 
     private Data toData(HazelcastInstance instance, Object obj) {

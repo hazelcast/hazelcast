@@ -62,6 +62,13 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
         recordStore.loadAllFromStore(keys);
     }
 
+    @Override
+    public void afterRun() throws Exception {
+        super.afterRun();
+
+        invalidateNearCache(keys);
+    }
+
     private void removeExistingKeys(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;

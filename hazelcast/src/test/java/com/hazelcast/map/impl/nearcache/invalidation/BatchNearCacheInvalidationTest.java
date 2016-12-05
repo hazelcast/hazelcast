@@ -29,8 +29,11 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -44,12 +47,13 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
         Data key = ss.toData("key");
         String mapName = "mapName";
         String sourceUuid = "sourceUuid";
+        UUID partitionUuid = UUID.randomUUID();
 
         List<Invalidation> invalidations = new ArrayList<Invalidation>();
-        invalidations.add(new SingleNearCacheInvalidation(key, mapName, sourceUuid));
-        invalidations.add(new ClearNearCacheInvalidation(mapName, sourceUuid));
+        invalidations.add(new SingleNearCacheInvalidation(key, mapName, sourceUuid, partitionUuid, 1));
+        invalidations.add(new SingleNearCacheInvalidation(mapName, sourceUuid, partitionUuid, 1));
 
-        BatchNearCacheInvalidation batch = new BatchNearCacheInvalidation(invalidations, mapName);
+        BatchNearCacheInvalidation batch = new BatchNearCacheInvalidation(mapName, invalidations);
 
 
         Data data = ss.toData(batch);
@@ -58,19 +62,19 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
         assertInstanceOf(BatchNearCacheInvalidation.class, object);
 
         List<Invalidation> actualInvalidations = ((BatchNearCacheInvalidation) object).getInvalidations();
-        assertDeserializedEqualsExpected(key, mapName, sourceUuid, actualInvalidations);
+        assertDeserializedEqualsExpected(key, mapName, partitionUuid, actualInvalidations);
     }
 
-    private void assertDeserializedEqualsExpected(Data key, String mapName, String sourceUuid, List<Invalidation> invalidations) {
+    private void assertDeserializedEqualsExpected(Data key, String mapName, UUID partitionUuid, List<Invalidation> invalidations) {
         for (Invalidation invalidation : invalidations) {
+            Data invalidationKey = invalidation.getKey();
 
-            if (invalidation instanceof SingleNearCacheInvalidation) {
-                assertEquals(key, ((SingleNearCacheInvalidation) invalidation).getKey());
-            }
-
+            assertTrue(invalidationKey.equals(NULL_KEY) || invalidationKey.equals(key));
             assertEquals(mapName, invalidation.getName());
-            assertEquals(sourceUuid, invalidation.getSourceUuid());
+            assertEquals(partitionUuid, invalidation.getPartitionUuid());
         }
+
+
     }
 
 }

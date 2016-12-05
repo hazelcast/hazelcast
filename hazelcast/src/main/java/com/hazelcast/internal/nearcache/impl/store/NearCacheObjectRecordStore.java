@@ -23,8 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
-public class NearCacheObjectRecordStore<K, V>
-        extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
+public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
 
     public NearCacheObjectRecordStore(String name,
                                       NearCacheConfig nearCacheConfig,

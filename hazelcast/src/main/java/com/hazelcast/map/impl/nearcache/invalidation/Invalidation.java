@@ -22,18 +22,26 @@ import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.UUID;
 
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Root interface for Near Cache invalidation data.
  */
 public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializable {
 
-    protected String mapName;
+    private String mapName;
+    private String sourceUuid;
+    private UUID partitionUuid;
+    private long sequence = NO_SEQUENCE;
 
     public Invalidation() {
     }
@@ -42,13 +50,38 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
         this.mapName = checkNotNull(mapName, "mapName cannot be null");
     }
 
-    @Override
-    public String getName() {
-        return mapName;
+    public Invalidation(String mapName, String sourceUuid, UUID partitionUuid) {
+        this.mapName = checkNotNull(mapName, "mapName cannot be null");
+        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
+        this.partitionUuid = partitionUuid;
     }
 
-    public String getSourceUuid() {
-        throw new UnsupportedOperationException();
+    public Invalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
+        this.mapName = checkNotNull(mapName, "mapName cannot be null");
+        this.partitionUuid = checkNotNull(partitionUuid, "partitionUuid cannot be null");
+        this.sequence = checkPositive(sequence, "sequence should be positive");
+        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
+    }
+
+    public final UUID getPartitionUuid() {
+        return partitionUuid;
+    }
+
+    public final String getSourceUuid() {
+        return sourceUuid;
+    }
+
+    public final long getSequence() {
+        return sequence;
+    }
+
+    public Data getKey() {
+        throw new UnsupportedOperationException("getKey is not supported");
+    }
+
+    @Override
+    public final String getName() {
+        return mapName;
     }
 
     @Override
@@ -58,23 +91,42 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public EntryEventType getEventType() {
-        return EntryEventType.INVALIDATION;
+        return INVALIDATION;
     }
-
-    public abstract void consumedBy(InvalidationHandler invalidationHandler);
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
+        out.writeUTF(sourceUuid);
+        out.writeLong(sequence);
+
+        boolean nullUuid = partitionUuid == null;
+        out.writeBoolean(nullUuid);
+        if (!nullUuid) {
+            out.writeLong(partitionUuid.getMostSignificantBits());
+            out.writeLong(partitionUuid.getLeastSignificantBits());
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
+        sourceUuid = in.readUTF();
+        sequence = in.readLong();
+        boolean nullUuid = in.readBoolean();
+        if (!nullUuid) {
+            partitionUuid = new UUID(in.readLong(), in.readLong());
+        }
     }
 
     @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public String toString() {
+        return "mapName='" + mapName + "', sourceUuid='" + sourceUuid
+                + "', partitionUuid='" + partitionUuid + ", sequence=" + sequence;
     }
 }

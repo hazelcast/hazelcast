@@ -16,13 +16,14 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperation;
+import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.ClearNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
@@ -47,6 +48,7 @@ import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
+import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
@@ -61,6 +63,7 @@ import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
 import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapNearCacheStateHolder;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.operation.MapReplicationStateHolder;
 import com.hazelcast.map.impl.operation.MapSizeOperation;
@@ -255,8 +258,13 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int AGGREGATION_RESULT = 115;
     public static final int QUERY = 116;
     public static final int TARGET = 117;
+    public static final int MAP_INVALIDATION_METADATA = 118;
+    public static final int MAP_INVALIDATION_METADATA_RESPONSE = 119;
+    public static final int MAP_NEAR_CACHE_STATE_HOLDER = 120;
+    public static final int MAP_ASSIGN_AND_GET_UUIDS = 121;
+    public static final int MAP_ASSIGN_AND_GET_UUIDS_FACTORY = 122;
 
-    private static final int LEN = TARGET + 1;
+    private static final int LEN = MAP_ASSIGN_AND_GET_UUIDS_FACTORY + 1;
 
     @Override
     public int getFactoryId() {
@@ -737,11 +745,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new BatchNearCacheInvalidation();
             }
         };
-        constructors[NEAR_CACHE_CLEAR_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearNearCacheInvalidation();
-            }
-        };
         constructors[ADD_INTERCEPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AddInterceptorOperation();
@@ -817,11 +820,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new UuidFilter();
             }
         };
-        constructors[CLEAR_NEAR_CACHE_INVALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClearNearCacheInvalidation();
-            }
-        };
         constructors[MAP_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MapTransactionLogRecord();
@@ -857,7 +855,36 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new Target();
             }
         };
-
+        constructors[MAP_INVALIDATION_METADATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapGetInvalidationMetaDataOperation();
+            }
+        };
+        constructors[MAP_INVALIDATION_METADATA_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapGetInvalidationMetaDataOperation.MetaDataResponse();
+            }
+        };
+        constructors[MAP_NEAR_CACHE_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapNearCacheStateHolder();
+            }
+        };
+        constructors[MAP_ASSIGN_AND_GET_UUIDS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapAssignAndGetUuidsOperationFactory();
+            }
+        };
+        constructors[MAP_ASSIGN_AND_GET_UUIDS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MapAssignAndGetUuidsOperation();
+            }
+        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

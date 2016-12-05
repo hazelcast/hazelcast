@@ -53,18 +53,20 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
  * Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
  * {@link com.hazelcast.cache.ICache} is the designated interface.
- *
+ * <p>
  * AbstractCacheProxyExtension provides implementation of various {@link com.hazelcast.cache.ICache} methods.
- *
+ * <p>
  * Note: this partial implementation is used by client.
  *
  * @param <K> the type of key
  * @param <V> the type of value
  */
+@SuppressWarnings("checkstyle:npathcomplexity")
 abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> implements ICacheInternal<K, V> {
 
     @SuppressWarnings("unchecked")
@@ -96,6 +98,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         if (cached != null) {
             return cached;
         }
+
+        final boolean marked = keyStateMarker.tryMark(keyData);
         final Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         ClientInvocationFuture future;
@@ -114,7 +118,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             if (nearCache != null) {
                 delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
                     public void onResponse(Data valueData) {
-                        storeInNearCache(keyData, valueData, null);
+                        storeInNearCache(keyData, valueData, null, marked);
                         if (statisticsEnabled) {
                             handleStatisticsOnGet(start, valueData);
                         }
@@ -129,7 +133,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             try {
                 Object value = toObject(delegatingFuture.get());
                 if (nearCache != null) {
-                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), (V) value);
+                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), (V) value, marked);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnGet(start, value);
@@ -257,6 +261,11 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         if (keySet.isEmpty()) {
             return result;
         }
+
+        Map<Data, Boolean> markers = createHashMap(keySet.size());
+        for (Data key : keySet) {
+            markers.put(key, keyStateMarker.tryMark(key));
+        }
         Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
@@ -267,7 +276,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             K key = toObject(keyData);
             V value = toObject(valueData);
             result.put(key, value);
-            storeInNearCache(keyData, valueData, value);
+            storeInNearCache(keyData, valueData, value, markers.get(keyData));
         }
         if (statisticsEnabled) {
             statistics.increaseCacheHits(entries.size());
@@ -313,12 +322,13 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         int partitionCount = partitionService.getPartitionCount();
 
         try {
+            Map<Data, Boolean> markers = createHashMap(map.size());
             // First we fill entry set per partition
             List<Map.Entry<Data, Data>>[] entriesPerPartition =
                     groupDataToPartitions(map, partitionService, partitionCount);
 
             // Then we invoke the operations and sync on completion of these operations
-            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start);
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start, markers);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -364,14 +374,20 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     }
 
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        ExpiryPolicy expiryPolicy, long start)
+                                                        ExpiryPolicy expiryPolicy, long start, Map<Data, Boolean> markers)
             throws ExecutionException, InterruptedException {
         Data expiryPolicyData = toData(expiryPolicy);
-        List<FutureEntriesTuple> futureEntriesTuples =
-                new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
+        List<FutureEntriesTuple> futureEntriesTuples = new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
+
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
+
             if (entries != null) {
+                for (Map.Entry<Data, Data> entry : entries) {
+                    Data key = entry.getKey();
+                    markers.put(key, keyStateMarker.tryMark(key));
+                }
+
                 int completionId = nextCompletionId();
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
                 ClientMessage request =
@@ -381,10 +397,11 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
         }
 
-        waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start);
+        waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start, markers);
     }
 
-    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long start) {
+    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long start,
+                                                        Map<Data, Boolean> markers) {
         Throwable error = null;
         for (FutureEntriesTuple tuple : futureEntriesTuples) {
             Future future = tuple.future;
@@ -392,7 +409,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             try {
                 future.get();
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries);
+                    handleNearCacheOnPutAll(entries, markers);
                 }
                 // Note that we count the batch put only if there is no exception while putting to target partition.
                 // In case of error, some of the entries might have been put and others might fail.
@@ -402,7 +419,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 }
             } catch (Throwable t) {
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries);
+                    handleNearCacheOnPutAll(entries, markers);
                 }
                 logger.finest("Error occurred while putting entries as batch!", t);
                 if (error == null) {
@@ -434,11 +451,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries) {
+    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, Map<Data, Boolean> markers) {
         if (nearCache != null) {
             if (cacheOnUpdate) {
                 for (Map.Entry<Data, Data> entry : entries) {
-                    storeInNearCache(entry.getKey(), entry.getValue(), null);
+                    Data key = entry.getKey();
+                    storeInNearCache(key, entry.getValue(), null, markers.get(key));
                 }
             } else {
                 for (Map.Entry<Data, Data> entry : entries) {

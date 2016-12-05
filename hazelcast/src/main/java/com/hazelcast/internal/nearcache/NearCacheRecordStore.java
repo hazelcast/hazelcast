@@ -17,6 +17,7 @@
 package com.hazelcast.internal.nearcache;
 
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
@@ -112,4 +113,15 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * Persists the key set of the Near Cache.
      */
     void storeKeys();
+
+    /**
+     * @see StaleReadDetector
+     */
+
+    void setStaleReadDetector(StaleReadDetector detector);
+
+    /**
+     * @see StaleReadDetector
+     */
+    StaleReadDetector getStaleReadDetector();
 }

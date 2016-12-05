@@ -101,6 +101,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
@@ -169,12 +170,14 @@ public class ReferenceObjects {
         return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
 
     }
-
+    // Static values below should not be a random value, because the values are used when generating compatibility files and
+    // when testing against them. Random values causes test failures.
     public static boolean aBoolean = true;
     public static byte aByte = 113;
     public static int anInt = 56789;
     public static long aLong = -50992225L;
     public static String aString = "SampleString";
+    public static UUID aUUID = new UUID(123456789, 987654321);
     public static Throwable aThrowable = new HazelcastException(aString);
     public static Data aData = new HeapData("111313123131313131".getBytes());
     public static Address anAddress;
@@ -208,6 +211,8 @@ public class ReferenceObjects {
     public static Collection<Data> datas = Collections.singletonList(aData);
     public static Collection<Member> members = Collections.singletonList(aMember);
     public static Collection<String> strings = Collections.singletonList(aString);
+    public static Collection<Long> longs = Collections.singletonList(aLong);
+    public static Collection<UUID> uuids = Collections.singletonList(aUUID);
     public static Xid anXid = new SerializableXID(1, aString.getBytes(), aString.getBytes());
     public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(
             new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
