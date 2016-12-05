@@ -22,6 +22,7 @@ import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
@@ -57,6 +58,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
@@ -590,6 +592,25 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(5, testExec2Config.getPoolSize());
         assertEquals(300, testExec2Config.getQueueCapacity());
         assertEquals(false, testExec2Config.isStatisticsEnabled());
+    }
+
+    @Test
+    public void testDurableExecutorConfig() {
+        final DurableExecutorConfig testExecConfig = config.getDurableExecutorConfig("durableExec");
+        assertNotNull(testExecConfig);
+        assertEquals("durableExec", testExecConfig.getName());
+        assertEquals(10, testExecConfig.getPoolSize());
+        assertEquals(5, testExecConfig.getDurability());
+        assertEquals(200, testExecConfig.getCapacity());
+    }
+
+    @Test
+    public void testScheduledExecutorConfig() {
+        final ScheduledExecutorConfig testExecConfig = config.getScheduledExecutorConfig("scheduledExec");
+        assertNotNull(testExecConfig);
+        assertEquals("scheduledExec", testExecConfig.getName());
+        assertEquals(10, testExecConfig.getPoolSize());
+        assertEquals(5, testExecConfig.getDurability());
     }
 
     @Test

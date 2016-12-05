@@ -73,6 +73,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SecurityConfig;
 import com.hazelcast.config.SecurityInterceptorConfig;
 import com.hazelcast.config.SemaphoreConfig;
@@ -148,23 +149,24 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private final ParserContext parserContext;
 
-        private ManagedMap mapConfigManagedMap;
-        private ManagedMap cacheConfigManagedMap;
-        private ManagedMap queueManagedMap;
-        private ManagedMap lockManagedMap;
-        private ManagedMap ringbufferManagedMap;
-        private ManagedMap reliableTopicManagedMap;
-        private ManagedMap semaphoreManagedMap;
-        private ManagedMap listManagedMap;
-        private ManagedMap setManagedMap;
-        private ManagedMap topicManagedMap;
-        private ManagedMap multiMapManagedMap;
-        private ManagedMap executorManagedMap;
-        private ManagedMap durableExecutorManagedMap;
-        private ManagedMap wanReplicationManagedMap;
-        private ManagedMap jobTrackerManagedMap;
-        private ManagedMap replicatedMapManagedMap;
-        private ManagedMap quorumManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> mapConfigManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> cacheConfigManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> queueManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> lockManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> ringbufferManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> reliableTopicManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> semaphoreManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> listManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> setManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> topicManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> multiMapManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> executorManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> durableExecutorManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> scheduledExecutorManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> wanReplicationManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> jobTrackerManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> replicatedMapManagedMap;
+        private ManagedMap<String, AbstractBeanDefinition> quorumManagedMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -182,14 +184,15 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.multiMapManagedMap = createManagedMap("multiMapConfigs");
             this.executorManagedMap = createManagedMap("executorConfigs");
             this.durableExecutorManagedMap = createManagedMap("durableExecutorConfigs");
+            this.scheduledExecutorManagedMap = createManagedMap("scheduledExecutorConfigs");
             this.wanReplicationManagedMap = createManagedMap("wanReplicationConfigs");
             this.jobTrackerManagedMap = createManagedMap("jobTrackerConfigs");
             this.replicatedMapManagedMap = createManagedMap("replicatedMapConfigs");
             this.quorumManagedMap = createManagedMap("quorumConfigs");
         }
 
-        private ManagedMap createManagedMap(String configName) {
-            ManagedMap managedMap = new ManagedMap();
+        private ManagedMap<String, AbstractBeanDefinition> createManagedMap(String configName) {
+            ManagedMap<String, AbstractBeanDefinition> managedMap = new ManagedMap<String, AbstractBeanDefinition>();
             this.configBuilder.addPropertyValue(configName, managedMap);
             return managedMap;
         }
@@ -213,6 +216,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         handleExecutor(node);
                     } else if ("durable-executor-service".equals(nodeName)) {
                         handleDurableExecutor(node);
+                    } else if ("scheduled-executor-service".equals(nodeName)) {
+                        handleScheduledExecutor(node);
                     } else if ("queue".equals(nodeName)) {
                         handleQueue(node);
                     } else if ("lock".equals(nodeName)) {
@@ -531,6 +536,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleDurableExecutor(Node node) {
             createAndFillListedBean(node, DurableExecutorConfig.class, "name", durableExecutorManagedMap);
+        }
+
+        public void handleScheduledExecutor(Node node) {
+            createAndFillListedBean(node, ScheduledExecutorConfig.class, "name", scheduledExecutorManagedMap);
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {

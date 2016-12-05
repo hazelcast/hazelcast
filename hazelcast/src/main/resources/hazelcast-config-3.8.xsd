@@ -1642,21 +1642,21 @@
 
     <xs:complexType name="durable-executor-service">
         <xs:all>
-            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>
                         The number of executor threads per member for the executor.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>
                     <xs:documentation>
                         The durability of the executor
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="100">
                 <xs:annotation>
                     <xs:documentation>
                         Capacity of the executor task per partition.
@@ -1675,14 +1675,14 @@
 
     <xs:complexType name="scheduled-executor-service">
         <xs:all>
-            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="16">
                 <xs:annotation>
                     <xs:documentation>
                         The number of executor threads per member for the executor.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>
                     <xs:documentation>
                         The durability of the scheduled executor.
@@ -2216,6 +2216,8 @@
                         maxOccurs="unbounded"/>
             <xs:element name="durable-executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
+            <xs:element name="cardinality-estimator-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="scheduled-executor-permission" type="instance-permission" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
         </xs:choice>
     </xs:complexType>

@@ -916,10 +916,10 @@ public class Config {
         return scheduledExecutorConfigs;
     }
 
-    public Config setScheduledExecutorConfigs(Map<String, ScheduledExecutorConfig> durableExecutorConfigs) {
+    public Config setScheduledExecutorConfigs(Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs) {
         this.scheduledExecutorConfigs.clear();
         this.scheduledExecutorConfigs.putAll(scheduledExecutorConfigs);
-        for (Entry<String, ScheduledExecutorConfig> entry : durableExecutorConfigs.entrySet()) {
+        for (Entry<String, ScheduledExecutorConfig> entry : scheduledExecutorConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

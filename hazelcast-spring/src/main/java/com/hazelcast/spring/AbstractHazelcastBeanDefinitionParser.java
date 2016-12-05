@@ -112,16 +112,15 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             return builder;
         }
 
-        protected void createAndFillListedBean(Node node,
+        protected void createAndFillListedBean(final Node node,
                                                final Class clazz,
                                                final String propertyName,
-                                               final ManagedMap managedMap,
-                                               String... excludeNames) {
-            BeanDefinitionBuilder builder = createBeanBuilder(clazz);
+                                               final ManagedMap<String, AbstractBeanDefinition> managedMap,
+                                               final String... excludeNames) {
+            final BeanDefinitionBuilder builder = createBeanBuilder(clazz);
             final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
             //"name"
-            final Node attName = node.getAttributes().getNamedItem(propertyName);
-            final String name = getTextContent(attName);
+            final String name = getAttribute(node, propertyName);
             builder.addPropertyValue("name", name);
             fillValues(node, builder, excludeNames);
             managedMap.put(name, beanDefinition);
