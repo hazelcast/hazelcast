@@ -60,3 +60,7 @@ The following are the issues solved for 3.8-EA (Early Access) release.
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
 - Member attributes go missing after merging from a split-brain scenario. [7697]
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
+
+4. Removed/Deprecated Features
+
+- Aggregators feature is deprecated. Instead, Fast-Aggregations feature should be used.
