@@ -118,7 +118,15 @@ public final class ClusterVersion implements IdentifiedDataSerializable, Compara
     }
 
     /**
+     * @return the {@code ClusterVersion} with the given major and minor
+     */
+    public static ClusterVersion of(int major, int minor) {
+        return new ClusterVersion(major, minor);
+    }
+
+    /**
      * Parse the given string to a {@code ClusterVersion}. This method may throw an {@code IllegalArgumentException}
+     *
      * @param version string to parse to {@code ClusterVersion}.
      * @return the {@code ClusterVersion} parsed from given argument.
      */

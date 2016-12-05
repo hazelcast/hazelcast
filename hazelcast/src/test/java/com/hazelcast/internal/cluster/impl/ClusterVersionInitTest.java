@@ -20,7 +20,7 @@ import java.util.concurrent.Callable;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterVersionTest extends HazelcastTestSupport {
+public class ClusterVersionInitTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
