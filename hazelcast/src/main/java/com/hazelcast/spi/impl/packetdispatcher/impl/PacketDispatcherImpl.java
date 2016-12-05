@@ -76,7 +76,7 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
             } else if (packet.isFlagSet(FLAG_JET)) {
                 jetService.handle(packet);
             } else {
-                logger.severe("Unknown packet type! Header: " + packet.getFlags());
+                logger.severe("Unknown packet type! Header flags: " + Integer.toBinaryString(packet.getFlags()));
             }
         } catch (Throwable t) {
             inspectOutOfMemoryError(t);

@@ -60,7 +60,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenOperationPacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP);
+                .resetFlagsTo(FLAG_OP);
 
         dispatcher.dispatch(packet);
 
@@ -72,7 +72,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenUrgentOperationPacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_URGENT);
+                .resetFlagsTo(FLAG_OP | FLAG_URGENT);
 
         dispatcher.dispatch(packet);
 
@@ -85,7 +85,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenOperationResponsePacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE);
 
         dispatcher.dispatch(packet);
 
@@ -96,7 +96,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenUrgentOperationResponsePacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE | FLAG_URGENT);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE | FLAG_URGENT);
 
         dispatcher.dispatch(packet);
 
@@ -108,7 +108,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenOperationControlPacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_OP_CONTROL);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_CONTROL);
 
         dispatcher.dispatch(packet);
 
@@ -121,7 +121,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenEventPacket() throws Exception {
         Packet packet = new Packet()
-                .setFlag(FLAG_EVENT);
+                .raiseFlags(FLAG_EVENT);
 
         dispatcher.dispatch(packet);
 
@@ -132,7 +132,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenBindPacket() throws Exception {
         Packet packet = new Packet()
-                .setFlag(FLAG_BIND);
+                .raiseFlags(FLAG_BIND);
 
         dispatcher.dispatch(packet);
 
@@ -143,7 +143,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenJetPacket() throws Exception {
         Packet packet = new Packet()
-                .setFlag(FLAG_JET);
+                .raiseFlags(FLAG_JET);
 
         dispatcher.dispatch(packet);
 
@@ -166,7 +166,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenProblemHandlingPacket_thenSwallowed() throws Exception {
         Packet packet = new Packet()
-                .setFlag(FLAG_OP);
+                .raiseFlags(FLAG_OP);
 
         Mockito.doThrow(new ExpectedRuntimeException()).when(operationExecutor).handle(packet);
 

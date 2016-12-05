@@ -331,7 +331,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes);
-        packet.setFlag(Packet.FLAG_BIND);
+        packet.raiseFlags(Packet.FLAG_BIND);
         connection.write(packet);
         //now you can send anything...
     }

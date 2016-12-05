@@ -1,7 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.impl;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
@@ -39,7 +38,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
         DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setFlag(Packet.FLAG_OP);
+        packet.raiseFlags(Packet.FLAG_OP);
 
         doThrow(new OutOfMemoryError()).when(handler).run(packet);
 
@@ -104,7 +103,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         final int partitionId = Integer.MAX_VALUE;
         Operation operation = new DummyPartitionOperation(partitionId);
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setFlag(Packet.FLAG_OP);
+        packet.raiseFlags(Packet.FLAG_OP);
 
         testExecute_withInvalid_partitionId(packet);
     }

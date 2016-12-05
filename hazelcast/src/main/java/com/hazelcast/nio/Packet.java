@@ -87,7 +87,8 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
 
-    private short flags;
+    // char is a 16-bit unsigned integer. Here we use it as a bitfield.
+    private char flags;
     private int partitionId;
     private transient Connection conn;
 
@@ -131,47 +132,41 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     /**
-     * Sets a particular flag. The other flags will not be touched.
+     * Raises all the flags raised in the argument. Does not lower any flags.
      *
-     * @param flag the flag to set
+     * @param flagsToRaise the flags to raise
      * @return this (for fluent interface)
      */
-    public Packet setFlag(int flag) {
-        flags = (short) (flags | flag);
+    public Packet raiseFlags(int flagsToRaise) {
+        flags |= flagsToRaise;
         return this;
     }
 
     /**
-     * Sets all flags at once. The old flags will be completely overwritten by the new flags.
+     * Sets all the flags to the state they have in the supplied argument.
      *
-     * The reason this method accepts an int instead of a short is that Java immediately converts to ints,
-     * so you would have to do bit shifting logic to down cast to a short all the time.*
-     *
-     * @param flags the flags.
+     * @param flagsToSet the flags. Only the least significant two bytes of the argument are used.
      * @return this (for fluent interface)
      */
-    public Packet setAllFlags(int flags) {
-        this.flags = (short) flags;
+    public Packet resetFlagsTo(int flagsToSet) {
+        flags = (char) flagsToSet;
         return this;
     }
 
     /**
-     * Checks if a flag is set.
+     * Returns {@code true} if any of the flags supplied in the argument are set.
      *
-     * @param flag the flag to check
-     * @return true if the flag is set, false otherwise.
+     * @param flagsToCheck the flags to check
+     * @return {@code true} if any of the flags is set, {@code false} otherwise.
      */
-    public boolean isFlagSet(int flag) {
-        return (flags & flag) != 0;
+    public boolean isFlagSet(int flagsToCheck) {
+        return (flags & flagsToCheck) != 0;
     }
 
     /**
-     * Returns the flags of the Packet. The flags is used to figure out what the content is of this Packet before
-     * the actual payload needs to be processed.
-     *
-     * @return the flags.
+     * @return the complete flags bitfield as a {@code char}.
      */
-    public short getFlags() {
+    public char getFlags() {
         return flags;
     }
 
@@ -200,7 +195,7 @@ public final class Packet extends HeapData implements OutboundFrame {
             }
 
             dst.put(VERSION);
-            dst.putShort(flags);
+            dst.putChar(flags);
             dst.putInt(partitionId);
             size = totalSize();
             dst.putInt(size);
@@ -222,7 +217,7 @@ public final class Packet extends HeapData implements OutboundFrame {
                         + VERSION + ", Incoming -> " + version);
             }
 
-            flags = src.getShort();
+            flags = src.getChar();
             partitionId = src.getInt();
             size = src.getInt();
             headerComplete = true;

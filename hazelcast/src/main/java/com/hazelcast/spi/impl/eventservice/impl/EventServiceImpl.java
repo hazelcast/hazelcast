@@ -410,7 +410,7 @@ public class EventServiceImpl implements InternalEventService, MetricsProvider {
             }
         } else {
             Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
-            packet.setFlag(Packet.FLAG_EVENT);
+            packet.raiseFlags(Packet.FLAG_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
                 if (nodeEngine.isRunning()) {

@@ -49,7 +49,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     @Test
     public void whenNoProblemPacket() throws Exception {
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
-                .setFlag(FLAG_OP| FLAG_OP_RESPONSE);
+                .raiseFlags(FLAG_OP| FLAG_OP_RESPONSE);
         asyncHandler.handle(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -63,10 +63,10 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
     @Test
     public void whenPacketThrowsException() throws Exception {
         final Packet badPacket = new Packet(serializationService.toBytes(new NormalResponse("bad", 1, 0, false)))
-                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE);
 
         final Packet goodPacket = new Packet(serializationService.toBytes(new NormalResponse("good", 1, 0, false)))
-                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE);
 
         doThrow(new ExpectedRuntimeException()).when(responsePacketHandler).handle(badPacket);
 
@@ -89,7 +89,7 @@ public class AsyncInboundResponseHandlerTest extends HazelcastTestSupport {
         assertJoinable(asyncHandler.responseThread);
 
         final Packet packet = new Packet(serializationService.toBytes(new NormalResponse("foo", 1, 0, false)))
-                .setAllFlags(FLAG_OP| FLAG_OP_RESPONSE);
+                .resetFlagsTo(FLAG_OP| FLAG_OP_RESPONSE);
 
         asyncHandler.handle(packet);
 

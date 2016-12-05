@@ -452,7 +452,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
                 scheduler.execute(new ProcessOperationControlTask(opControl));
             } else {
                 Packet packet = new Packet(serializationService.toBytes(opControl))
-                        .setAllFlags(FLAG_OP | FLAG_OP_CONTROL | FLAG_URGENT);
+                        .resetFlagsTo(FLAG_OP | FLAG_OP_CONTROL | FLAG_URGENT);
                 nodeEngine.getNode().getConnectionManager().transmit(packet, address);
             }
         }

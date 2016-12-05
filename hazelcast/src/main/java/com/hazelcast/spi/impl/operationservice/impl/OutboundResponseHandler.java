@@ -88,10 +88,10 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1)
-                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
+                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE);
 
         if (response.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            packet.raiseFlags(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

@@ -408,10 +408,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
         Packet packet = new Packet(bytes, partitionId)
-                .setFlag(FLAG_OP);
+                .raiseFlags(FLAG_OP);
 
         if (op.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            packet.raiseFlags(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();
