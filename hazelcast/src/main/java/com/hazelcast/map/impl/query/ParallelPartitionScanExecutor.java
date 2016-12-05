@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -27,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
@@ -42,7 +40,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
  */
 public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
 
-    protected static final int QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
+    public static final int DEFAULT_QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
     private final PartitionScanRunner partitionScanRunner;
     private final ManagedExecutorService executor;
@@ -55,32 +53,18 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
         this.timeoutInMinutes = timeoutInMinutes;
     }
 
-    public ParallelPartitionScanExecutor(
-            PartitionScanRunner partitionScanRunner, ManagedExecutorService executor) {
-        this.partitionScanRunner = partitionScanRunner;
-        this.executor = executor;
-        this.timeoutInMinutes = QUERY_EXECUTION_TIMEOUT_MINUTES;
-    }
-
     @Override
     public List<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions) {
-        try {
-            List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
-            if (predicate instanceof PagingPredicate) {
-                Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
-                result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
-            }
-            return result;
-        } catch (ExecutionException ex) {
-            throw new HazelcastException(ex);
-        } catch (InterruptedException ex) {
-            throw new HazelcastException(ex);
+        List<QueryableEntry> result = runUsingPartitionScanWithoutPaging(mapName, predicate, partitions);
+        if (predicate instanceof PagingPredicate) {
+            Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry((PagingPredicate) predicate);
+            result = getSortedSubList(result, (PagingPredicate) predicate, nearestAnchorEntry);
         }
+        return result;
     }
 
     protected List<QueryableEntry> runUsingPartitionScanWithoutPaging(
-            String name, Predicate predicate, Collection<Integer> partitions)
-            throws InterruptedException, ExecutionException {
+            String name, Predicate predicate, Collection<Integer> partitions) {
 
         List<Future<Collection<QueryableEntry>>> futures = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
 
