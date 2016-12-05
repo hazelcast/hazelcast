@@ -86,20 +86,17 @@ public final class ProxyRegistry {
     }
 
     /**
-     * Gets the ProxyInfo of all proxies in this registry. The result is written into 'result'.
+     * Gets the ProxyInfo of all fully initialized proxies in this registry.
+     * The result is written into 'result'.
      *
      * @param result The ProxyInfo of all proxies in this registry.
      */
     public void getProxyInfos(Collection<ProxyInfo> result) {
         for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
-            final DistributedObjectFuture future = entry.getValue();
-            if (!future.isSet()) {
-                continue;
-            }
-            final DistributedObject distributedObject = future.get();
-
-            if (distributedObject instanceof InitializingObject) {
-                result.add(new ProxyInfo(serviceName, entry.getKey()));
+            DistributedObjectFuture future = entry.getValue();
+            if (future.isSet()) {
+                String proxyName = entry.getKey();
+                result.add(new ProxyInfo(serviceName, proxyName));
             }
         }
     }
