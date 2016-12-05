@@ -1,187 +1,62 @@
 
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.7 release.
+In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.8 release.
 The numbers in the square brackets refer to the issue number in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
 1. New Features
 
-- Custom Eviction Policies: You can implement and use your own eviction policy. Please refer to the Custom Eviction Policy section in Hazelcast Reference Manual.
-- Discovery SPI Implementation for Microsoft Azure Services: Hazelcast members can be discovered within your Azure resource group. You can add this implementation as a plugin to your projects. Please refer to Hazelcast-Azure plugin page on hazelcast.org/plugins.
-- Hazelcast CLI with Scripting: A command line interface that supports scripting. You can automate cluster operations such as start, stop, and force start using shell scripting. Please refer to Hazelcast CLI plugin page on hazelcast.org/plugins.
-- Hazelcast for OpenShift and CloudFoundry: Hazelcast members on OpenShift and CloudFoundry can discover each other. Please refer to Hazelcast OpenShift on https://hub.docker.com/r/hazelcast/openshift and Hazelcast CloudFoundry on https://github.com/hazelcast/hazelcast-cloudfoundry.
-- Alignment of WAN Replication Clusters: This feature provides a mechanism to align or realign distributed objects in the clusters connected through WAN. WAN replication mirrors changes from a map or cache in one cluster to another. It was maintaining the alignment but was not attaining. Now when the receiving cluster is empty and the sending cluster is not, objects are aligned. And if changes have been dropped for any reason, realignment is attained. Please refer to the Synchronizing WAN Target Cluster section in Hazelcast Reference Manual.
-- Fault Tolerant Executor Service: This new data structure is introduced to guarantee that no execution tasks will be lost when a member goes down. Please refer to the Durable Executor Service section in Hazelcast Reference Manual. 
+- Rolling Member Upgrades for Minor Releases: You can upgrade your Hazelcast members to the next minor release without service interruption. Please refer to the Rolling Member Upgrades chapter.
+- Copy Hot Restart Data to a Different Cluster: Hot Restart's base directory can be copied or moved to a different server and you can restart your Hazelcast member using the existing Hot Restart data on that new server. Please refer to the Moving/Copying Hot Restart Data section.
+- HyperLogLog: HyperLogLog data structure is implemented on top of Hazelcast to estimate cardinality.
+- Scheduled Executor Service: Distributed implementation of Java's ScheduledExecutorService API.
+- Zero Deployment: Hazelcast, now, accesses and uses the user classes without having them on the classpath.
 
 2. Enhancements
 
-This section lists the enhancements performed for Hazelcast 3.7 release.
+This section lists the enhancements performed for Hazelcast 3.8 release.
 
-- Near Cache (JCache) Notification Enhancements: You can disable the near cache notifications for each entry and enable/disable notifications of full-flush events. Please refer to the ICache Configuration section and see definition of the new configuration element disable-per-entry-invalidation-events.
-- Migration Algorithm Enhancements: With these improvements the possibility of a data loss due to a member crash while the partitions are being migrated is eliminated.
-- WAN Replication Integrated with Solace: This integration is achieved through a new JMS endpoint.
-- Cloud Discovery SPI Plugin for Multicast: You can use multicast discovery for your Hazelcast platform with client/server topology. Only Hazelcast Java client is supported for this release.
-- IMap Eviction Sync with JCache: Hazelcast Map uses now the Hazelcast JCache's eviction algorithm when evicting map entries.
-- Docker Image Enhancements: Hazelcast Docker image is able to integrate with the Service Discovery products such as Zookeeper, Consul, Etcd, and Eureka.
-- Phone Home Enhancements: Performed to collect new phone home data to learn more about the environment on which Hazelcast runs.
-- IMap.putAll() Performance Enhancements: The performance of putAll operation is improved.
-- Hazelcast Instance and JCache Integration Enhancements: A direct relation between a Hazelcast instance and JCache is established with this enhancement. You can retrieve and access caches via the method getCache(String name) over HazelcastInstance API. Please refer to the JCache - Hazelcast Instance Integration section.
-- Indexing with Predicates for Entry Processors: Entry Processor can use indexing when a predicate is used to filter entries that need to be processed.
-- Partition Grouping Enhancements: You can define partition groups, in the same way as the IP address network configuration with wildcard support. You can also configure zone-aware partition groups for your Hazelcast clusters on AWS.
-- Prevention of Blocking Reads in Transactions: Now the read operations are blocked only during committing the transactions.
+- Hazelcast Striim Hot Cache Adapter: Hot Cache functionality based on Striim's Change Data Capture (CDC) for the underlying database updates. Please refer to the Hazelcast Striim Hot Cache section.
+- Entry Cost Statistics for High-Density Memory Store: If you are using High-Density Memory, you can see the entry cost statistics in the Management Center.
+- Hot Restart Usability Improvements: When a cluster with Hot Restart enabled is restarted, it starts in the ACTIVE state. Please refer to the Hot Restart Types section.
+- Hot Restart with Incomplete Members: The restart procedure for a cluster having Hot Restart enabled is now more flexible by allowing you to do a partial start, which basically means that once the cluster is shutdown, it can be restarted with some missing members. Please refer to the Partial Start section.
+- Cluster Quorum for Queue and Lock: Cluster quorum is now available for the queue and lock data structures. Please refer to the Split-Brain Protection section.
+- Eventually Consistent Near Cache: With this improvement, possible losses of invalidation events are detected and stale reads are prevented.
+- High Performance Near Cache: A near cache pre-loader is introduced to preserve the information about which keys are used in a populated near cache.
+- Fast Aggregations for Queries: Please refer to Fast Aggregations section.
+- Projections for Queries: Please refer to Projections section.
+- `removeAll(predicate)` for Map: A void method to selectively delete a bulk of objects from the member side.
+- Ringbuffer with Persistent Datastore: Implemented for the Ringbuffer which is similar to the existing queue store mechanism.
+- Unified Near Cache Implementation: Different near cache implementations for JCache, map, client side and member side are unified. You can refer to the Near Cache section.
+- Dynamic WAN Synchronization: Improvement to allow copying the maps' all content to a target cluster dynamically in runtime.
+- Improvement in WAN Queue Full Behavior: Now, Hazelcast throws an exception when the queue is full and replication is active, unless it is stopped on the Management Center.
 
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
-- Performance improvements for the invocation system. [8009]
-
-- The performance log should have an option to log to the 'shared' logger instead of its own file. It would be useful for environments where Hazelcast cannot create or get a performance log file. [7973]
-
-- The path for performance logs, which is currently fixed to the user's working directory should be configurable. [7968]
-
-- Hazelcast IAtomicLong data structure provides synchronous methods only; async versions already exist and are available to Hazelcast members via AsyncAtomicLong interface. Lack of public a async API for IAtomicLong is impeding Hazelcast integrations. [7957]
-
-- It would be better to have a way where near cache notifications for each entry are disabled, but an ability to enable/disable notifications of full-flush events (clear, etc.). [7580]
-
-- Hazelcast should support Transaction API of Spring. [7469], [611]
-
-- For Hazelcast Topic, even the event service's pool size is set to a number larger than one, all of the messages are consumed by only one Hazelcast event thread. The use case includes a single Hazelcast member, both producer and consumer being singletons within the member, and message rate of more than 1000 per second. [7443]
-
-- Partition strategy should be able to be specified not only in the Hazelcast configuration, but also within the Spring context. In addition, an implementing instance should be specified besides the class which implements the partition strategy. [7363]
-
-- Async put operations should be reflected at near cache as soon as the method future.get() returns. In the case of async put operations and LocalUpdatePolicy being CACHE at the client side, entries are put to the near cache asynchronously from another task when the response is received. But with this way, when future.get() returns, entry might not be inside the near cache (but it will be there eventually). [7155]
-
-- For ICache.iterator(), fetchSize is not configurable. [7041]
-
-- Unit tests should have a default timeout. [6978]
-
-- Outgoing ports on Hazelcast clients should be configurable. [6845]
-
-- The method IMap.set does not have a corresponding async version, unlike put and putAsync. The method putAsync is not entirely suitable as an async set, since put returns the previous value mapped to the key, and triggers EntryListeners which may not be desirable. IMap should expose a dedicated setAsync to fulfill the contract for set and have the means to do so asynchronously. [6726]
-
-- Javadoc for EntryProcessor.java should be enhanced by adding notes related to its thread safety. [6593]
-
-- Custom SPI services should be more Spring-friendly. [6567]
-
-- The "spring-aware" should be enabled programmatically too. [6514]
-
-- It would be nice if the type parameters of Predicate were inherited by the IndexAwarePredicate. [1686]
-
-- The class MigrationEndpoint should be a part of Hazelcast SPI package. [1427]
-
-- When a task is submitted to all members, and an executeOnEntries is invoked in the call with a predicate that is based on an index, then the index is ignored and a "full scan" of the "local" members is performed. [1156]
-
-- Inconsistency between the declarative and programmatic configuration of network elements should be solved. [945]
-
+- It would be nice to have names assigned to all threads created by Hazelcast (and not the default ones, e.g., pool-2-thread-1, pool-2-thread-2). [9210]
+- There should be a more detailed and clarifying information in the diagnostics of PartitionIteratingOperation. [8855]
+When there is no access to NodeEngine, the logger should be able to be used from a static context without any side effects to the logging configuration. [8760]
+- Client tasks should be bounced back when a member has not completely start yet. [8715]
+- Currently the property com.hazelcast.map.impl.eviction.ExpirationManager.PERIOD is hard-coded to 5 seconds. Making it a configurable property will help in tuning the eviction. [8277]
+- The method com.hazelcast.topic.impl.TopicProxy#publish serializes the message even if the message is never sent due to having no subscribers. In the case of non-global-ordering and non-client use, the implementation should defer serialization until it has established that there are subscribers. [8262]
+- Configuration setting for WAN replication queue should be only for primary entries. [7124]
+- Currently if you want to use Container-Managed Transactions with Hazelcast within a JEE Application Server, you need to use the provided JCA Adapter. This JCA Adapter creates a Hazelcast instance. This should be allowed: configuration of the JCA Adapter to be either Server or Client-based. [5667]
+- Currently PartitionIteratingOperation consumes a generic operation thread, while the operations for the partitions are running. This means that the generic thread pool can dry out and this can cause a lot of problems for important tasks that cannot be executed since the thread pool is empty. A PartitionIteratingService should be introduced where the system can lookup TraceableOperations. [4889]
 
 3. Fixes
 
-This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
+This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
-*3.7-RC Fixes*
+*3.8-EA Fixes*
 
-The following are the issues solved for 3.7-RC (Release Candidate) release.
+The following are the issues solved for 3.8-EA (Early Access) release.
 
-- `MapAttributeConfig` cannot be loaded in an OSGi environment. [8482]
-- Using Hazelcast out of the box with no configuration creates a Peer-to-Peer cluster. As soon as the configuration file `hazelcast.xml` is created by the user, in which only the logging type is set, Hazelcast does not create a cluster but starts in standalone mode. [8481]
-- Portable EntryProcessor is not being called on portable objects. [8365]
-- In Hazelcast Hibernate modules, there is no JCache dependencies in the classpath. When Hazelcast is upgraded to 3.7-SNAPSHOT, `java.lang.NoClassDefFoundError: javax/cache/Cache` error is thrown when mocking HazelcastInstance. [8352]
-- The method `QueryableEntry.serializationService` throws `NullPointerException` when MapReduce is run with extractable entries. Mapping phase of the MapReduce for Portable data formats should be fixed. [8346]
-- There is an error when configuring Replicated Map. The return of the method `getConfig` in `ReplicatedMapMBean` should be fixed. [8298]
-- TransactionalMap's `removeIfSame` test fails. [8238]
-- Distributed Executor Service does not take `ExecutorConfig.isStatisticsEnabled` into account. [8223]
-
-*3.7-EA Fixes*
-
-The following are the issues solved for 3.7-EA (Early Access) release.
-
-- The method ICache::destroy should remove the cache itself from the owner CacheManager because, otherwise, it causes memory leaks due to the cache proxies which are dead but deemed as working, in AbstractHazelcastCacheManager::caches. [8186]
-
-- Partition promotion is skipped when a node is terminated during the commit. [8174]
-
-- The method IAtomicReference:alter does not persist the changes. When a reference is tried to be altered, no alteration happens. [8149]
-
-- Cache should not expire entities when Duration value is 0. [8148]
-
-- Deserialization of dynamic proxy instances ignores the configured class loader. [8033]
-
-- The attribute "binary" is missing in the MultiMap configuration within Spring context. It does not exist in Hazelcast configuration schema either. [8000]
-
-- If you setup an interceptor to change the data being inserted, the entry listeners still fire with the old value. [7991]
-
-- Unlike the InvocationFuture at the server side, ClientInvocationFuture immediately propagates InterruptedException if the calling thread gets interrupted. This can be a problem when both caller and callee need to agree on whether the operation has executed or not. [7963]
-
-- Hazelcast 3.2.6 uses too much CPU when it is idle. [7943]
-
-- Old version of Portable object from a map cannot be read if new UTF_ARRAY type field is added. [7926]
-
-- Isolated thread pool for priority generic operations. [7857]
-
-- There is an issue when detecting JCache in the classpath. The exception NoClassDefFound is thrown when upgrading to a newer Hazelcast version. [7810]
-
-- Better separators should be used in the exceptions for a clearer read between local and remote stacktraces. [7744]
-
-- Under the section "Operation Threading" of Hazelcast Reference Manual, it states that the default number of partition-aware operation threads is (2 x number of cores). However, when looking at the code and observing the actual number of threads created runtime, it seems like the default value is instead 1 x number of cores instead. [7741]
-
-- The method IMap.executeOnKeys() does not support the empty set (it throws a misleading NullPointerException), and is inconsistent with the method getAll(). [7631]
-
-- Replicated map updates take a very long time. The problematic method is putAll(). The replication logic in this method checks whether the data owners are in sync with the replicas. If they are not, this logic syncs them every 30 seconds. This means, when the updates are not replicated to callers, it takes up to 30 seconds to make all the members synchronized. This period should be configurable. [7617]
-
-- ScheduledExecutorServiceDelegate violates contract of ScheduledExecutorService. It wraps tasks in ScheduledTaskRunner which delegates to a different executor. As a consequence, a task can be executed concurrently and this is a violation of a contract of ScheduledExecutorService. [7611]
-
-- If javax.cache.CacheManager is created with the default settings, the underlying HazelcastInstance is not shutdown when the method close is called on the CacheManager. [7606]
-
-- The method containsKey() of TransactionalMap is blocked when the key was previously locked by the method getForUpdate(). [7588]
-
-- There is an inconsistent behavior when removing from TransactionalMap while the key is locked on IMap. In order to avoid trying to remove an entry that may have already been removed in another uncommitted transaction, IMap.tryLock is used before performing TransactionalMap.remove. This works as expected if the operations occur on a member. But a TransactionException is thrown when it occurs on a client when using XA Transaction. [7587]
-
-- Hazelcast instance should be exposed through com.hazelcast.spring.cache.HazelcastCacheManager. [7571]
-
-- Instance name should not be overridden while creating cache manager from the specified configuration file. Also, it would be better to specify instance name via (]HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME property when instance configuration is taken from the specified configuration file via HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION.[7567]
-
-- The addInterceptor() method in com.hazelcast.map.impl.MapContainer() is not thread safe. For example, if two concurrent attempts are made to inject the same interceptor, these will be different interceptor objects with the same ID. In this case, the call to interceptorMap.put(id, interceptor) will increase the map size by one, but the call to interceptors.add(interceptor) will increase the list size by two. [7520]
-
-- There are unused elements for Management Center configuration: cluster-id and security-token. [7446]
-
-- For clients, InitialMembershipListener.init is called after MembershipListener.memberAdded. This contradicts the content in the Reference Manual. [7430]
-
-- DiscoveryService's start and destroy methods should be called during the start and shutdown of client when Discovery SPI is enabled. [7347]
-
-- Return cache config as response even though found and created cache config could not put into cache configs inside cache service. [7208]
-
-- In Hazelcast Management Center shutting down a node seems to prevent a node from restarting. [7101]
-
-- MapStoreConfig does not override hashCode and equals methods. Implementation for these two methods should be added. [7035]
-
-- Data is lost when the member dies during repartitioning. [6628]
-
-- Some of the map statistics, such as cost and last access time, are calculated by the traversing map entries. Therefore the calculation time exceeds the time interval reserved for management center state sending thread when entry count is too high. [6442], [5905]
-
-- InvocationFuture's asynchronous calls do not detect the lost operations. [6250]
-
-- The invocation mechanism for blocking operations relies on a periodic timeout so that the operation gets retried. To prevent the calling thread (the thread for future.get) from waiting indefinitely, it will periodically ask the isstillrunning service if the operation is lost. [6248]
-
-- Under some circumstances Hazelcast is getting a corrupt value for IAtomicLongs when a member leaves the cluster. [6074]
-
-- When the client disconnects normally, the server logs an info and a warning message containing the text java.io.EOFException. [6035]
-
-- Some operating systems (such as HPUX or Solaris) and hardware platforms have constraints about the aligned memory operations. In these architectures memory operations must be byte-by-byte as implemented in DirectByteBuffer. [5532]
-
-- Data is lost when a member crashes or is killed during the repartitioning. [5444]
-
-- Data is lost when a member is terminated. Related scenario is a follows [5388]:
-Start the first member, and let it populate a map with 100k entries.
-Start the second member, and let it start joining the cluster.
-Terminate the second member during the join operation.
-Observe that data is lost from the first member. 
-
-- As for now it is very complicated to listen a getAsync or putAsync result and to integrate it with completable futures or listenable futures. An ICompletableFuture should be returned since it is an interface which seems to extend JDK futures and is returned by an IMap. [5315]
-
-- If multiple Hazelcast members attempt to remove values from a key of a multimap concurrently, and then the members are shut down, the multimap can remain in an inconsistent state with entries remaining after all have been removed. [5220]
-
-- ClassNotFoundException is thrown when trying to get an entry from a TransactionalMap. [4969]
-
-- Profiling a Hazelcast application reveals a thread contention in SpringManagedContext on java.lang.Class.getAnnotation(). And this calls a synchronized method called initAnnotationsIfNecessary(). [4506]
-
-- Hazelcast IMap statistics show negative values. After heavy usage of the cache, the number of misses starts showing up negative. [4022]
-
-- When there is a map with write-behind mode and a map store is configured (eviction is not needed); when the method flush is called in the IMap, the map store's store method can be called concurrently for the same key, namely for those keys which are in the write-behind queue and then forcibly stored by the flush. This is because the flush operation storing all entries in the write-behind queue seems to be executed in the operation thread, while the periodic processing of the write-behind queue is done by an executor service defined in the WriteBehindQueueManager. [3338]
+- Problems with timeout in blocking calls. [9250]
+- Client protocol cannot handle "null"s in the collection. [9240]
+- Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
+- "Warning 2" in IMap::tryRemove method's code comments is not correct. This method returns only a boolean. [8884]
+- When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
+- Spring XML configuration: The smart routing attribute defaults to false while the documentation says it defaults to true. [8746]
+- In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
+- Member attributes go missing after merging from a split-brain scenario. [7697]
+- The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
