@@ -38,21 +38,51 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
-    public static final int FLAG_OP = 1 << 0;
-    public static final int FLAG_RESPONSE = 1 << 1;
-    public static final int FLAG_EVENT = 1 << 2;
-    public static final int FLAG_URGENT = 1 << 4;
-    public static final int FLAG_BIND = 1 << 5;
 
-    /**
-     * A flag to indicate this is a special control packet for the operation system like invocation-heartbeats.
-     */
+    //             PACKET HEADER FLAGS
+    //
+    // Flags are dispatched against in a cascade:
+    // 1. URGENT (bit 4)
+    // 2. Packet type (bits 0, 2, 5, 7)
+    // 3. Flags specific to a given packet type (bits 1, 6)
+
+
+    // 1. URGENT flag
+
+    /** Marks the packet as Urgent  */
+    public static final int FLAG_URGENT = 1 << 4;
+
+
+    // 2. Packet type flags, mutually exclusive
+
+    /** Marks the packet type as Operation */
+    public static final int FLAG_OP = 1 << 0;
+    /** Marks the packet type as Event */
+    public static final int FLAG_EVENT = 1 << 2;
+    /** Marks the packet type as Bind message */
+    public static final int FLAG_BIND = 1 << 5;
+    /** Marks the packet as Jet */
+    public static final int FLAG_JET = 1 << 7;
+
+
+    // 3. Type-specific flags. Same bits can be reused within each type
+
+    // 3.a Operation packet flags
+
+    /** Marks an Operation packet as Response */
+    public static final int FLAG_OP_RESPONSE = 1 << 1;
+    /** Marks an Operation packet as Operation control (like invocation-heartbeats) */
     public static final int FLAG_OP_CONTROL = 1 << 6;
 
-    /**
-     * Flag to indicate this will be a Jet packet
-     */
-    public static final int FLAG_JET = 1 << 7;
+
+    // 3.b Jet packet flags
+
+    /** Marks a Jet packet as Flow control */
+    public static final int FLAG_JET_FLOW_CONTROL = 1 << 1;
+
+
+    //            END OF HEADER FLAG SECTION
+
 
 
     private static final int HEADER_SIZE = BYTE_SIZE_IN_BYTES + SHORT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES;
@@ -308,7 +338,7 @@ public final class Packet extends HeapData implements OutboundFrame {
     public String toString() {
         return "Packet{"
                 + "flags=" + flags
-                + ", isResponse=" + isFlagSet(Packet.FLAG_RESPONSE)
+                + ", isResponse=" + isFlagSet(Packet.FLAG_OP_RESPONSE)
                 + ", isOperation=" + isFlagSet(Packet.FLAG_OP)
                 + ", isEvent=" + isFlagSet(Packet.FLAG_EVENT)
                 + ", partitionId=" + partitionId

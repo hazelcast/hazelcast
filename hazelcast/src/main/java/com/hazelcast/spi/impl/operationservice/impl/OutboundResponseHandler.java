@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -88,7 +88,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1)
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
+                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
 
         if (response.isUrgent()) {
             packet.setFlag(FLAG_URGENT);

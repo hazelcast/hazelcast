@@ -27,7 +27,7 @@ import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_JET;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 
 /**
  * Default {@link PacketDispatcher} implementation.
@@ -62,7 +62,7 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
     public void dispatch(Packet packet) {
         try {
             if (packet.isFlagSet(FLAG_OP)) {
-                if (packet.isFlagSet(FLAG_RESPONSE)) {
+                if (packet.isFlagSet(FLAG_OP_RESPONSE)) {
                     responseHandler.handle(packet);
                 } else if (packet.isFlagSet(FLAG_OP_CONTROL)) {
                     invocationMonitor.handle(packet);

@@ -19,7 +19,7 @@ import static com.hazelcast.nio.Packet.FLAG_EVENT;
 import static com.hazelcast.nio.Packet.FLAG_JET;
 import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -85,7 +85,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenOperationResponsePacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
+                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE);
 
         dispatcher.dispatch(packet);
 
@@ -96,7 +96,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
     @Test
     public void whenUrgentOperationResponsePacket() throws Exception {
         Packet packet = new Packet()
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE | FLAG_URGENT);
+                .setAllFlags(FLAG_OP | FLAG_OP_RESPONSE | FLAG_URGENT);
 
         dispatcher.dispatch(packet);
 

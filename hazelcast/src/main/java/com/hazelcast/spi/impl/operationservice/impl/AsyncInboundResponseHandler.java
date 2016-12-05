@@ -36,7 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -85,7 +85,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     public void handle(Packet packet) {
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.isFlagSet(FLAG_OP), "FLAG_OP should be set");
-        checkTrue(packet.isFlagSet(FLAG_RESPONSE), "FLAG_RESPONSE should be set");
+        checkTrue(packet.isFlagSet(FLAG_OP_RESPONSE), "FLAG_OP_RESPONSE should be set");
 
         responseThread.responseQueue.add(packet);
     }
