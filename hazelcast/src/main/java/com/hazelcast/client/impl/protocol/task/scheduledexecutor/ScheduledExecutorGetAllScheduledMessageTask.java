@@ -31,6 +31,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
@@ -61,7 +62,12 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse((List<ScheduledTaskHandler>) response);
+        List<ScheduledTaskHandler> handlers = (List<ScheduledTaskHandler>) response;
+        List<String> urns = new ArrayList<String>(handlers.size());
+        for (ScheduledTaskHandler handler : handlers) {
+            urns.add(handler.toUrn());
+        }
+        return ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(urns);
     }
 
     @Override

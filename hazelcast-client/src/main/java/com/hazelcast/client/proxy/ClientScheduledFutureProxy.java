@@ -32,8 +32,6 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.partition.PartitionLostEvent;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -50,6 +48,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 /**
  * Proxy implementation of {@link IScheduledFuture}.
  *
@@ -58,8 +58,7 @@ import java.util.concurrent.TimeoutException;
 public class ClientScheduledFutureProxy<V>
         extends ClientProxy
         implements IScheduledFuture<V>,
-                   HazelcastInstanceAware,
-                   PartitionLostListener {
+                   HazelcastInstanceAware {
 
     private static final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -133,10 +132,7 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        unRegisterPartitionListenerIfExists();
-
         this.instance = hazelcastInstance;
-        registerPartitionListener();
     }
 
     @Override
@@ -147,18 +143,17 @@ public class ClientScheduledFutureProxy<V>
     @Override
     public ScheduledTaskStatistics getStats() {
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        ClientMessage request = ScheduledExecutorGetStatsCodec.encodeRequest(handler);
+        ClientMessage request = ScheduledExecutorGetStatsCodec.encodeRequest(handler.toUrn());
         return this.<ScheduledTaskStatistics>submitAsync(request, GET_STATS_DECODER).join();
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
+        checkNotNull(unit, "Unit is null");
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler, unit);
+        ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler.toUrn(), unit);
         return this.<Long>submitAsync(request, GET_DELAY_DECODER).join();
     }
 
@@ -169,36 +164,39 @@ public class ClientScheduledFutureProxy<V>
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
-        checkAccessibleHandler();
-        checkAccessiblePartition();
+        if (mayInterruptIfRunning) {
+            // DelegateAndSkipOnConcurrentExecutionDecorator doesn't expose the Executor's future
+            // therefore we don't have access to the runner thread to interrupt. We could access through Thread.currentThread()
+            // inside the TaskRunner but it adds extra complexity.
+            throw new UnsupportedOperationException("mayInterruptIfRunning flag is not supported.");
+        }
 
-        ClientMessage request = ScheduledExecutorCancelCodec.encodeRequest(handler, mayInterruptIfRunning);
+        checkAccessibleHandler();
+
+        ClientMessage request = ScheduledExecutorCancelCodec.encodeRequest(handler.toUrn(), mayInterruptIfRunning);
         return this.<Boolean>submitAsync(request, CANCEL_DECODER).join();
     }
 
     @Override
     public boolean isCancelled() {
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        ClientMessage request = ScheduledExecutorIsCancelledCodec.encodeRequest(handler);
+        ClientMessage request = ScheduledExecutorIsCancelledCodec.encodeRequest(handler.toUrn());
         return this.<Boolean>submitAsync(request, IS_CANCELLED_DECODER).join();
     }
 
     @Override
     public boolean isDone() {
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        ClientMessage request = ScheduledExecutorIsDoneCodec.encodeRequest(handler);
+        ClientMessage request = ScheduledExecutorIsDoneCodec.encodeRequest(handler.toUrn());
         return this.<Boolean>submitAsync(request, IS_DONE_DECODER).join();
     }
 
     private InternalCompletableFuture<V> get0() {
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        ClientMessage request = ScheduledExecutorGetResultCodec.encodeRequest(handler);
+        ClientMessage request = ScheduledExecutorGetResultCodec.encodeRequest(handler.toUrn());
         return this.submitAsync(request, GET_RESULT_DECODER);
     }
 
@@ -211,44 +209,17 @@ public class ClientScheduledFutureProxy<V>
     @Override
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
+        checkNotNull(unit, "Unit is null");
         return this.get0().get(timeout, unit);
     }
 
     public void dispose() {
         checkAccessibleHandler();
-        checkAccessiblePartition();
 
-        unRegisterPartitionListenerIfExists();
-
-        ClientMessage request = ScheduledExecutorDisposeCodec.encodeRequest(handler);
+        ClientMessage request = ScheduledExecutorDisposeCodec.encodeRequest(handler.toUrn());
         InternalCompletableFuture future = submitAsync(request, DISPOSE_DECODER);
         handler = null;
         future.join();
-    }
-
-    @Override
-    public void partitionLost(PartitionLostEvent event) {
-        if (handler.getPartitionId() == event.getPartitionId()) {
-            unRegisterPartitionListenerIfExists();
-            this.partitionLost = true;
-        }
-    }
-
-    private void registerPartitionListener() {
-        this.partitionLostRegistration = this.instance.getPartitionService().addPartitionLostListener(this);
-    }
-
-    private void unRegisterPartitionListenerIfExists() {
-        if (partitionLostRegistration != null) {
-            this.instance.getPartitionService().removePartitionLostListener(this.partitionLostRegistration);
-        }
-    }
-
-    private void checkAccessiblePartition() {
-        if (partitionLost) {
-            throw new IllegalStateException(
-                    "Partition holding this Scheduled task was lost along with all backups.");
-        }
     }
 
     private void checkAccessibleHandler() {

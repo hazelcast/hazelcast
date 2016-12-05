@@ -21,8 +21,9 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.scheduledexecutor.impl.operations.DestroyTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.DisposeTaskOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.InvocationBuilder;
@@ -41,16 +42,17 @@ public class ScheduledExecutorTaskDisposeMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        if (parameters.handler.getAddress() != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getAddress());
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        if (handler.getAddress() != null) {
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getAddress());
         } else {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getPartitionId());
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getPartitionId());
         }
     }
 
     @Override
     protected Operation prepareOperation() {
-        Operation op = new DestroyTaskOperation(parameters.handler);
+        Operation op = new DisposeTaskOperation(ScheduledTaskHandler.of(parameters.handlerUrn));
         op.setPartitionId(getPartitionId());
         return op;
     }
@@ -72,12 +74,14 @@ public class ScheduledExecutorTaskDisposeMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.handler.getSchedulerName(), ActionConstants.ACTION_MODIFY);
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_MODIFY);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.handler.getTaskName();
+        ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return handler.getTaskName();
     }
 
     @Override
@@ -87,6 +91,6 @@ public class ScheduledExecutorTaskDisposeMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handler };
+        return new Object[] { parameters.handlerUrn };
     }
 }

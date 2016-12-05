@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
@@ -43,16 +44,20 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        if (parameters.handler.getAddress() != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getAddress());
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+
+        if (handler.getAddress() != null) {
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getAddress());
         } else {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getPartitionId());
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getPartitionId());
         }
     }
 
     @Override
     protected Operation prepareOperation() {
-        Operation op = new GetStatisticsOperation(parameters.handler);
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+
+        Operation op = new GetStatisticsOperation(handler);
         op.setPartitionId(getPartitionId());
         return op;
     }
@@ -65,9 +70,9 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
-        return ScheduledExecutorGetStatsCodec.encodeResponse(stats.getCreatedAt(), stats.getFirstRunStart(),
-                stats.getLastIdleTime(TimeUnit.NANOSECONDS), stats.getLastRunEnd(),
-                stats.getLastRunStart(), stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
+        return ScheduledExecutorGetStatsCodec.encodeResponse(stats.getCreatedAtNanos(), stats.getFirstRunStartNanos(),
+                stats.getLastIdleTime(TimeUnit.NANOSECONDS), stats.getLastRunEndNanos(),
+                stats.getLastRunStartNanos(), stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
                 stats.getTotalRunTime(TimeUnit.NANOSECONDS));
     }
 
@@ -78,12 +83,14 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.handler.getSchedulerName(), ActionConstants.ACTION_READ);
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.handler.getTaskName();
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return handler.getTaskName();
     }
 
     @Override
@@ -93,6 +100,6 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handler };
+        return new Object[] { parameters.handlerUrn };
     }
 }

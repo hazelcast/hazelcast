@@ -29,7 +29,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
-import java.security.Key;
 import java.security.Permission;
 
 public class ScheduledExecutorShutdownMessageTask
@@ -37,6 +36,12 @@ public class ScheduledExecutorShutdownMessageTask
 
     public ScheduledExecutorShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
+    }
+
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        final InternalOperationService operationService = nodeEngine.getOperationService();
+        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 
     @Override

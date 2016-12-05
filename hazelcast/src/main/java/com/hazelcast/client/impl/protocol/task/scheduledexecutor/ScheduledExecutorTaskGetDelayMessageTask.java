@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.security.permission.ActionConstants;
@@ -41,16 +42,19 @@ public class ScheduledExecutorTaskGetDelayMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        if (parameters.handler.getAddress() != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getAddress());
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+
+        if (handler.getAddress() != null) {
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getAddress());
         } else {
-            return operationService.createInvocationBuilder(getServiceName(), op, parameters.handler.getPartitionId());
+            return operationService.createInvocationBuilder(getServiceName(), op, handler.getPartitionId());
         }
     }
 
     @Override
     protected Operation prepareOperation() {
-        Operation op = new GetDelayOperation(parameters.handler, parameters.unit);
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        Operation op = new GetDelayOperation(handler, parameters.unit);
         op.setPartitionId(getPartitionId());
         return op;
     }
@@ -72,12 +76,14 @@ public class ScheduledExecutorTaskGetDelayMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.handler.getSchedulerName(), ActionConstants.ACTION_MODIFY);
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_MODIFY);
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.handler.getTaskName();
+        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
+        return handler.getTaskName();
     }
 
     @Override
@@ -87,6 +93,6 @@ public class ScheduledExecutorTaskGetDelayMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handler, parameters.unit };
+        return new Object[] { parameters.handlerUrn, parameters.unit };
     }
 }
