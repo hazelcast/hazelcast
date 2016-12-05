@@ -153,7 +153,7 @@ public class ClientScheduledFutureProxy<V>
         checkNotNull(unit, "Unit is null");
         checkAccessibleHandler();
 
-        ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler.toUrn(), unit);
+        ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler.toUrn(), unit.name());
         return this.<Long>submitAsync(request, GET_DELAY_DECODER).join();
     }
 

@@ -31,6 +31,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
+import java.util.concurrent.TimeUnit;
 
 public class ScheduledExecutorTaskGetDelayMessageTask
         extends AbstractInvocationMessageTask<ScheduledExecutorGetDelayCodec.RequestParameters> {
@@ -54,7 +55,7 @@ public class ScheduledExecutorTaskGetDelayMessageTask
     @Override
     protected Operation prepareOperation() {
         final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-        Operation op = new GetDelayOperation(handler, parameters.unit);
+        Operation op = new GetDelayOperation(handler, TimeUnit.valueOf(parameters.timeUnitName));
         op.setPartitionId(getPartitionId());
         return op;
     }
@@ -93,6 +94,6 @@ public class ScheduledExecutorTaskGetDelayMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handlerUrn, parameters.unit };
+        return new Object[] { parameters.handlerUrn, parameters.timeUnitName };
     }
 }
