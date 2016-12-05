@@ -297,14 +297,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
             nearCacheTestContext2.cache.remove(entry.getKey());
         }
 
-        // we don't shutdown the instance because in case of shutdown even though events are published to event queue,
-        // they may not be processed in the event queue due to shutdown event queue executor or may not be sent
-        // to client endpoint due to IO handler shutdown
-
-        // for not to making test fragile, we just simulate shutting down by sending its event through `LifeCycleService`,
-        // so the node should flush invalidation events before shutdown
-        ((LifecycleServiceImpl) instanceToShutdown.getLifecycleService())
-                .fireLifecycleEvent(LifecycleEvent.LifecycleState.SHUTTING_DOWN);
+        instanceToShutdown.shutdown();
 
         // verify that records in the Near Cache of client-1 are invalidated eventually when instance shutdown
         for (Map.Entry<String, String> entry : keyAndValues.entrySet()) {
