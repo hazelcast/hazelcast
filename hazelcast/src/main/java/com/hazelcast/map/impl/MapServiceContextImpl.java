@@ -186,7 +186,8 @@ class MapServiceContextImpl implements MapServiceContext {
         PartitionScanExecutor partitionScanExecutor;
         if (parallelEvaluation) {
             ManagedExecutorService queryExecutorService = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
-            partitionScanExecutor = new ParallelPartitionScanExecutor(partitionScanRunner, queryExecutorService);
+            partitionScanExecutor = new ParallelPartitionScanExecutor(partitionScanRunner, queryExecutorService,
+                    ParallelPartitionScanExecutor.DEFAULT_QUERY_EXECUTION_TIMEOUT_MINUTES);
         } else {
             partitionScanExecutor = new CallerRunsPartitionScanExecutor(partitionScanRunner);
         }
