@@ -40,6 +40,7 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -139,6 +140,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         boolean removed = super.removeInternal(keyData, valueData);
         invalidateNearCache(keyData);
         return removed;
+    }
+
+    @Override
+    protected void removeAllInternal(Predicate predicate) {
+        super.removeAllInternal(predicate);
+        nearCache.clear();
     }
 
     @Override
