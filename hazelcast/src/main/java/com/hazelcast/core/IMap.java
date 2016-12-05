@@ -186,6 +186,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * Removes all entries which match with the supplied predicate.
      * If this map has index, matching entries will be found via index search, otherwise they will be found by full-scan.
      *
+     * Note that calling this method also removes all entries from callers near cache.
+     *
      * @param predicate matching entries with this predicate will be removed from this map
      * @throws NullPointerException if the specified predicate is null.
      */
