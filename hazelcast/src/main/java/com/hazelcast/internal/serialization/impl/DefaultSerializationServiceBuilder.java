@@ -43,6 +43,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static java.nio.ByteOrder.BIG_ENDIAN;
+import static java.nio.ByteOrder.nativeOrder;
+
 public class DefaultSerializationServiceBuilder
         implements SerializationServiceBuilder {
 
@@ -69,7 +72,7 @@ public class DefaultSerializationServiceBuilder
 
     protected boolean useNativeByteOrder;
 
-    protected ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
+    protected ByteOrder byteOrder = BIG_ENDIAN;
 
     protected boolean enableCompression;
 
@@ -300,15 +303,11 @@ public class DefaultSerializationServiceBuilder
 
     protected InputOutputFactory createInputOutputFactory() {
         if (byteOrder == null) {
-            byteOrder = ByteOrder.BIG_ENDIAN;
+            byteOrder = useNativeByteOrder ? nativeOrder() : BIG_ENDIAN;
         }
-        if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
-            byteOrder = ByteOrder.nativeOrder();
-            if (allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE) {
-                return new UnsafeInputOutputFactory();
-            }
-        }
-        return new ByteArrayInputOutputFactory(byteOrder);
+        return byteOrder == nativeOrder() && allowUnsafe && GlobalMemoryAccessorRegistry.MEM_AVAILABLE
+                ? new UnsafeInputOutputFactory()
+                : new ByteArrayInputOutputFactory(byteOrder);
     }
 
     private void addConfigDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories,
