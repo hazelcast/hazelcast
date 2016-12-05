@@ -26,7 +26,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +56,17 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
     public void givenTheTaskIsAlreadyRunning_whenThreadAttemptToExecuteIt_theExutionWillBeSkipped() throws InterruptedException {
         final ResumableCountingRunnable task = new ResumableCountingRunnable();
 
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        final AtomicInteger counter = new AtomicInteger();
+        SynchronousQueue<Runnable> queue = new SynchronousQueue<Runnable>() {
+            @Override
+            public boolean offer(Runnable runnable) {
+                counter.incrementAndGet();
+                return super.offer(runnable);
+            }
+        };
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                60L, TimeUnit.SECONDS, queue);
 
         //start first task
         DelegateAndSkipOnConcurrentExecutionDecorator decoratedTask =
@@ -70,7 +82,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecoratorTest
         task.resumeExecution();
 
         assertEquals(1, task.getExecutionCount());
-        assertEquals(1, executor.getTaskCount());
+        assertEquals(1, counter.get());
     }
 
 
