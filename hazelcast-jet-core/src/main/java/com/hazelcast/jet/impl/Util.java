@@ -19,21 +19,22 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 
 public final class Util {
 
-    private static final int KILOBYTE = 1024;
+    public static final int BUFFER_SIZE = 1 << 15;
 
     private Util() {
     }
@@ -55,6 +56,26 @@ public final class Util {
         }
     }
 
+    public static <T> T uncheckCall(Callable<T> callable) {
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            return sneakyThrow(e);
+        }
+    }
+
+    public static void uncheckRun(RunnableExc r) {
+        try {
+            r.run();
+        } catch (Exception e) {
+            sneakyThrow(e);
+        }
+    }
+
+    public interface RunnableExc {
+        void run() throws Exception;
+    }
+
     public static Throwable peel(Throwable e) {
         if (e instanceof CompletionException || e instanceof ExecutionException) {
             return peel(e.getCause());
@@ -72,7 +93,7 @@ public final class Util {
 
     public static byte[] read(InputStream in) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            byte[] b = new byte[KILOBYTE];
+            byte[] b = new byte[BUFFER_SIZE];
             for (int len; (len = in.read(b)) != -1; ) {
                 out.write(b, 0, len);
             }
