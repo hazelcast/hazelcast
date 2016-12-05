@@ -27,6 +27,8 @@ import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
@@ -38,6 +40,7 @@ import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.ge
 import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
@@ -57,26 +60,28 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
-
     protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
+
     protected MaxSizeChecker maxSizeChecker;
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected EvictionChecker evictionChecker;
     protected EvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyType evictionPolicyType;
-
     protected NCRM records;
+
+    protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
         this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
     }
 
-    public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
-                                        SerializationService serializationService, ClassLoader classLoader) {
+    // extended in ee.
+    protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
+                                           SerializationService serializationService, ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
         this.timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * MILLI_SECONDS_IN_A_SECOND;
         this.maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * MILLI_SECONDS_IN_A_SECOND;
@@ -97,6 +102,14 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
     }
 
+    public void setStaleReadDetector(StaleReadDetector staleReadDetector) {
+        this.staleReadDetector = staleReadDetector;
+    }
+
+    public StaleReadDetector getStaleReadDetector() {
+        return staleReadDetector;
+    }
+
     protected abstract MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
                                                                     NearCacheConfig nearCacheConfig);
 
@@ -110,7 +123,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract V recordToValue(R record);
 
-    protected abstract R getRecord(K key);
+    // public for tests.
+    public abstract R getRecord(K key);
 
     protected abstract R putRecord(K key, R record);
 
@@ -197,8 +211,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    protected void onRecordCreate(R record) {
+    protected void onRecordCreate(K key, R record) {
         record.setCreationTime(Clock.currentTimeMillis());
+        MetaDataContainer metaDataContainer = staleReadDetector.getMetaDataContainer(key);
+        if (metaDataContainer != null) {
+            record.setUuid(metaDataContainer.getUuid());
+            record.setInvalidationSequence(metaDataContainer.getSequence());
+        }
     }
 
     protected void onRecordAccess(R record) {
@@ -254,6 +273,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         try {
             record = getRecord(key);
             if (record != null) {
+
+                if (staleReadDetector.isStaleRead(key, record)) {
+                    remove(key);
+                    return null;
+                }
+
                 if (isRecordExpired(record)) {
                     remove(key);
                     onExpire(key, record);
@@ -274,6 +299,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
+
     @Override
     public void put(K key, V value) {
         checkAvailable();
@@ -288,7 +314,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R oldRecord = null;
         try {
             record = valueToRecord(value);
-            onRecordCreate(record);
+            onRecordCreate(key, record);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
@@ -338,8 +364,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected void destroyStore() {
         clearRecords();
-        // clear reference so GC can collect it
-        records = null;
     }
 
     @Override

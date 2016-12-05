@@ -216,4 +216,16 @@ public class DefaultNearCacheManager implements NearCacheManager {
             return true;
         }
     }
+
+    protected SerializationService getSerializationService() {
+        return serializationService;
+    }
+
+    protected ExecutionService getExecutionService() {
+        return executionService;
+    }
+
+    protected ClassLoader getClassLoader() {
+        return classLoader;
+    }
 }

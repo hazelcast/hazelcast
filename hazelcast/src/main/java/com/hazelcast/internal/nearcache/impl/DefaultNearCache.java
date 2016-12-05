@@ -64,15 +64,14 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         this.classLoader = classLoader;
         this.executionService = executionService;
         this.nearCacheRecordStore = nearCacheRecordStore;
-
     }
 
     @Override
     public void initialize() {
         if (nearCacheRecordStore == null) {
             nearCacheRecordStore = createNearCacheRecordStore(name, nearCacheConfig);
-            nearCacheRecordStore.initialize();
         }
+        nearCacheRecordStore.initialize();
 
         expirationTaskFuture = createAndScheduleExpirationTask();
     }
@@ -188,6 +187,19 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     @Override
     public boolean isPreloadDone() {
         return preloadDone;
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (clazz.isAssignableFrom(getClass())) {
+            return clazz.cast(this);
+        }
+
+        throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
+    }
+
+    public NearCacheRecordStore<K, V> getNearCacheRecordStore() {
+        return nearCacheRecordStore;
     }
 
     private class ExpirationTask implements Runnable {
