@@ -40,49 +40,48 @@ class MockJoiner extends AbstractJoiner {
     }
 
     public void doJoin() {
-        synchronized (registry) {
-            registry.registerNode(node);
+        registry.registerNode(node);
 
-            ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
-            final long joinStartTime = Clock.currentTimeMillis();
-            final long maxJoinMillis = getMaxJoinMillis();
+        ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
+        final long joinStartTime = Clock.currentTimeMillis();
+        final long maxJoinMillis = getMaxJoinMillis();
 
-            Address previousJoinAddress = null;
-            long joinAddressTimeout = 0;
-            while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-                try {
-                    Address joinAddress = getJoinAddress();
-                    verifyInvariant(joinAddress != null, "joinAddress should not be null");
+        Address previousJoinAddress = null;
+        long joinAddressTimeout = 0;
+        while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            synchronized (registry) {
+                Address joinAddress = getJoinAddress();
+                verifyInvariant(joinAddress != null, "joinAddress should not be null");
 
-                    if (!joinAddress.equals(previousJoinAddress)) {
-                        previousJoinAddress = joinAddress;
-                        joinAddressTimeout = Clock.currentTimeMillis() + JOIN_ADDRESS_TIMEOUT_IN_MILLIS;
-                    }
+                if (!joinAddress.equals(previousJoinAddress)) {
+                    previousJoinAddress = joinAddress;
+                    joinAddressTimeout = Clock.currentTimeMillis() + JOIN_ADDRESS_TIMEOUT_IN_MILLIS;
+                }
 
-                    if (node.getThisAddress().equals(joinAddress)) {
-                        logger.fine("This node is found as master, no need to join.");
-                        node.setAsMaster();
-                        break;
-                    }
-
-                    logger.fine("Sending join request to " + joinAddress);
-                    if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
-                        logger.fine("Could not send join request to " + joinAddress);
-                        node.setMasterAddress(null);
-                    }
-
-                    if (Clock.currentTimeMillis() > joinAddressTimeout) {
-                        logger.warning("Resetting master address because join address timeout");
-                        previousJoinAddress = null;
-                        joinAddressTimeout = 0;
-                        node.setMasterAddress(null);
-                    }
-
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (node.getThisAddress().equals(joinAddress)) {
+                    logger.fine("This node is found as master, no need to join.");
+                    node.setAsMaster();
                     break;
                 }
+
+                logger.fine("Sending join request to " + joinAddress);
+                if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
+                    logger.fine("Could not send join request to " + joinAddress);
+                    node.setMasterAddress(null);
+                }
+
+                if (Clock.currentTimeMillis() > joinAddressTimeout) {
+                    logger.warning("Resetting master address because join address timeout");
+                    previousJoinAddress = null;
+                    joinAddressTimeout = 0;
+                    node.setMasterAddress(null);
+                }
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                break;
             }
         }
     }
