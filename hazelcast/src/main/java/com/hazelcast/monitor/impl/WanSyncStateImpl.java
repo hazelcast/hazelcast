@@ -26,8 +26,8 @@ public class WanSyncStateImpl implements WanSyncState {
     private long creationTime;
     private WanSyncStatus status = WanSyncStatus.READY;
     private int syncedPartitionCount;
-    private String activeWanConfigName = "";
-    private String activePublisherName = "";
+    private String activeWanConfigName;
+    private String activePublisherName;
 
     public WanSyncStateImpl() { }
 
@@ -71,8 +71,12 @@ public class WanSyncStateImpl implements WanSyncState {
         root.add("creationTime", creationTime);
         root.add("status", status.getStatus());
         root.add("syncedPartitionCount", syncedPartitionCount);
-        root.add("activeWanConfigName", activeWanConfigName);
-        root.add("activePublisherName", activePublisherName);
+        if (activeWanConfigName != null) {
+            root.add("activeWanConfigName", activeWanConfigName);
+        }
+        if (activePublisherName != null) {
+            root.add("activePublisherName", activePublisherName);
+        }
         return root;
     }
 
@@ -82,8 +86,8 @@ public class WanSyncStateImpl implements WanSyncState {
         int status = json.getInt("status", WanSyncStatus.READY.getStatus());
         this.status = WanSyncStatus.getByStatus(status);
         this.syncedPartitionCount = json.getInt("syncedPartitionCount", 0);
-        this.activeWanConfigName = json.getString("activeWanConfigName", "");
-        this.activePublisherName = json.getString("activePublisherName", "");
+        this.activeWanConfigName = json.getString("activeWanConfigName", null);
+        this.activePublisherName = json.getString("activePublisherName", null);
     }
 
     @Override
