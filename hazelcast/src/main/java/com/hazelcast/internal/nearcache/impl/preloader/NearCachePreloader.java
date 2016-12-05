@@ -105,7 +105,7 @@ public class NearCachePreloader<K> {
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
 
-        String filename = getFileName(preloaderConfig.getDirectory(), nearCacheName);
+        String filename = getFilename(preloaderConfig.getDirectory(), nearCacheName);
         this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
         this.storeFile = new File(filename);
         this.tmpStoreFile = new File(filename + "~");
@@ -287,12 +287,11 @@ public class NearCachePreloader<K> {
         buf.clear();
     }
 
-    private static String getFileName(String directory, String nearCacheName) {
+    private static String getFilename(String directory, String nearCacheName) {
         String filename = toFileName("nearCache-" + nearCacheName + ".store");
         if (isNullOrEmpty(directory)) {
             return filename;
         }
-
         return getPath(directory, filename);
     }
 

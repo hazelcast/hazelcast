@@ -11,7 +11,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,10 +31,9 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    protected static final int TEST_TIMEOUT = 120000;
     protected static final int KEY_COUNT = 10023;
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
-
-    private static final int TEST_TIMEOUT = 120000;
 
     private final File preloadDir10kInt = getFileFromResources("nearcache-10k-int");
     private final File preloadDir10kString = getFileFromResources("nearcache-10k-string");
@@ -45,7 +43,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private final File preloadDirNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat");
 
     @After
-    @Before
     public void deleteFiles() {
         deleteQuietly(getDefaultStoreFile());
         deleteQuietly(getDefaultStoreLockFile());
@@ -77,13 +74,15 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
 
     /**
-     * Returns the default store file used for the current implementation (Map or Cache)
+     * Returns the default store file used for the current implementation (IMap or JCache)
+     *
      * @return the default store file
      */
     protected abstract File getDefaultStoreFile();
 
     /**
-     * Returns the default store lock file used for the current implementation (Map or Cache)
+     * Returns the default store lock file used for the current implementation (IMap or JCache)
+     *
      * @return the default store lock file
      */
     protected abstract File getDefaultStoreLockFile();
@@ -220,7 +219,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     private void preloadNearCache(File preloaderDir, int keyCount, boolean useStringKey) {
         nearCacheConfig.getPreloaderConfig()
-                       .setDirectory(preloaderDir.getAbsolutePath());
+                .setDirectory(preloaderDir.getAbsolutePath());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache

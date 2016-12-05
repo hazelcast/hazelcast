@@ -36,10 +36,10 @@ class NearCachePreloaderLock {
     private final FileChannel channel;
     private final FileLock lock;
 
-    NearCachePreloaderLock(ILogger logger, String lockFileName) {
+    NearCachePreloaderLock(ILogger logger, String lockFilename) {
         this.logger = logger;
 
-        this.lockFile = new File(lockFileName);
+        this.lockFile = new File(lockFilename);
         this.channel = openChannel(lockFile);
         this.lock = acquireLock(lockFile);
     }

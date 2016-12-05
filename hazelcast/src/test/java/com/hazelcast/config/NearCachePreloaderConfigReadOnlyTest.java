@@ -21,8 +21,8 @@ public class NearCachePreloaderConfigReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setFilenameOnReadOnlyNearCachePreloaderConfigShouldFail() {
-        getReadOnlyConfig().setDirectory("myFileName");
+    public void setDirectoryOnReadOnlyNearCachePreloaderConfigShouldFail() {
+        getReadOnlyConfig().setDirectory("myDirectory");
     }
 
     @Test(expected = UnsupportedOperationException.class)

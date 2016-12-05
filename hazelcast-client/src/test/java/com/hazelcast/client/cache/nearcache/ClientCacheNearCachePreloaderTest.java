@@ -1,20 +1,17 @@
 package com.hazelcast.client.cache.nearcache;
 
-import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.ClientICacheManager;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -31,12 +28,12 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.cache.CacheUtil.getDistributedObjectName;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
@@ -47,9 +44,7 @@ import static com.hazelcast.nio.IOUtil.toFileName;
 @Category(QuickTest.class)
 public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloaderTest<Data, String> {
 
-
-
-    private static final String CACHE_FILE_NAME = toFileName(CacheUtil.getDistributedObjectName("defaultNearCache"));
+    private static final String CACHE_FILE_NAME = toFileName(getDistributedObjectName(DEFAULT_NEAR_CACHE_NAME));
     private static final File DEFAULT_STORE_FILE = new File("nearCache-" + CACHE_FILE_NAME + ".store").getAbsoluteFile();
     private static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
 

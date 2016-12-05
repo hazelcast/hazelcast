@@ -28,14 +28,14 @@ public class NearCachePreloaderConfigTest {
     }
 
     @Test
-    public void testFileName() {
+    public void setDirectory() {
         config.setDirectory("myStorage.store");
 
         assertEquals("myStorage.store", config.getDirectory());
     }
 
     @Test(expected = NullPointerException.class)
-    public void testFileName_withNull() {
+    public void setDirectory_withNull() {
         config.setDirectory(null);
     }
 
