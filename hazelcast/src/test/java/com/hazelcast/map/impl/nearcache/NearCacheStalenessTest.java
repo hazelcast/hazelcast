@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
@@ -56,6 +56,7 @@ public class NearCacheStalenessTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         Config config = getConfig();
+        config.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
 
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true).setCacheLocalEntries(true);

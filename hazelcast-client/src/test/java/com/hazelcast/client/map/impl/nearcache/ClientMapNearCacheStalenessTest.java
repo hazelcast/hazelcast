@@ -60,6 +60,7 @@ public class ClientMapNearCacheStalenessTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         ClientConfig clientConfig = getClientConfig(MAP_NAME);
+        clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
 
         member = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient(clientConfig);

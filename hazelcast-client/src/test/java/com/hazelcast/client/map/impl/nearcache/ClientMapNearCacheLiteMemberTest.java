@@ -2,7 +2,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.nearcache.NearCacheLiteMemberTest;
+import com.hazelcast.map.impl.nearcache.NearCacheLiteMemberTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -12,7 +12,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.nearcache.NearCacheLiteMemberTest.createNearCachedMapConfigWithMapStoreConfig;
+import static com.hazelcast.map.impl.nearcache.NearCacheLiteMemberTest.createNearCachedMapConfigWithMapStoreConfig;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -133,7 +133,7 @@ public class ClientMapNearCacheLiteMemberTest {
 
     private void initWithMapStore() {
         factory.terminateAll();
-        factory.newHazelcastInstance(NearCacheLiteMemberTest.createNearCachedMapConfigWithMapStoreConfig(mapName, false));
+        factory.newHazelcastInstance(createNearCachedMapConfigWithMapStoreConfig(mapName, false));
 
         client = factory.newHazelcastClient();
         lite = factory.newHazelcastInstance(createNearCachedMapConfigWithMapStoreConfig(mapName, true));

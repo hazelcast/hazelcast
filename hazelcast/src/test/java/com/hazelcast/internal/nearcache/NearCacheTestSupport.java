@@ -4,6 +4,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
+import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.spi.ExecutionService;
@@ -256,6 +257,8 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         protected volatile boolean doEvictionIfRequiredCalled;
         protected volatile boolean doExpirationCalled;
 
+        protected volatile StaleReadDetector staleReadDetector = StaleReadDetector.ALWAYS_FRESH;
+
         protected ManagedNearCacheRecordStore(Map<Integer, String> expectedKeyValueMappings) {
             this.expectedKeyValueMappings = expectedKeyValueMappings;
         }
@@ -359,12 +362,21 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             }
         }
 
+
         @Override
         public void storeKeys() {
         }
 
         @Override
         public void loadKeys(DataStructureAdapter adapter) {
+        }
+
+        public void setStaleReadDetector(StaleReadDetector detector) {
+            staleReadDetector = detector;
+        }
+
+        public StaleReadDetector getStaleReadDetector() {
+            return staleReadDetector;
         }
     }
 }

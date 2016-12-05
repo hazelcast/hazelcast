@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;

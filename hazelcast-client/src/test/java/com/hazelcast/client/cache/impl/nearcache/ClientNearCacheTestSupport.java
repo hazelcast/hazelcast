@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
@@ -32,6 +30,8 @@ import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.instance.LifecycleServiceImpl;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.properties.GroupProperty;

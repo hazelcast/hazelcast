@@ -1,4 +1,4 @@
-package com.hazelcast.map.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
@@ -29,33 +29,42 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+/**
+ * Invalidates any map operation starter node's Near Cache immediately.
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
+public class NearCacheLocalImmediateInvalidateTest extends HazelcastTestSupport {
+
+    protected static final String MAP_NAME = NearCacheLocalImmediateInvalidateTest.class.getCanonicalName();
 
     private static final int INSTANCE_COUNT = 2;
     private static final int NUM_ITERATIONS = 1000;
     private static final long TIMEOUT = 100L;
     private static final TimeUnit TIME_UNIT = TimeUnit.MILLISECONDS;
-    private static final String MAP_NAME = NearCacheLocalInvalidationTest.class.getCanonicalName();
 
     private HazelcastInstance hzInstance1;
     private HazelcastInstance hzInstance2;
 
     @Before
     public void setUp() {
+        Config config = createConfig();
+        // create Hazelcast instance
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
+        hzInstance1 = factory.newHazelcastInstance(config);
+        hzInstance2 = factory.newHazelcastInstance(config);
+    }
+
+    protected Config createConfig() {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         nearCacheConfig.getEvictionConfig().setEvictionPolicy(EvictionPolicy.NONE);
-        nearCacheConfig.setCacheLocalEntries(true);
 
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig(MAP_NAME + "*");
         mapConfig.setNearCacheConfig(nearCacheConfig);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
-        hzInstance1 = factory.newHazelcastInstance(config);
-        hzInstance2 = factory.newHazelcastInstance(config);
+        return config;
     }
 
     @After
@@ -70,7 +79,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
         for (int k = 0; k < NUM_ITERATIONS; k++) {
             String key = "remove_" + String.valueOf(k);
             String value = "merhaba-" + key;
-
+            // test
             String value0 = map.put(key, value);
             // this brings the value into the Near Cache
             String value1 = map.get(key);
@@ -274,29 +283,6 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSetAsync() {
-        IMap<String, String> map = hzInstance1.getMap(getMapName());
-        for (int k = 0; k < NUM_ITERATIONS; k++) {
-            String key = "setasync_" + String.valueOf(k);
-            String value = "merhaba-" + key;
-
-            // this brings the NULL_OBJECT into the Near Cache
-            String value0 = map.get(key);
-            Future<Void> future = map.setAsync(key, value);
-            try {
-                future.get();
-            } catch (Exception e) {
-                fail("Exception in future.get(): " + e.getMessage());
-            }
-            // here we _might_ still see the NULL_OBJECT
-            String value2 = map.get(key);
-
-            assertNull(value0);
-            assertEquals(value, value2);
-        }
-    }
-
-    @Test
     public void testEvict() {
         IMap<String, String> map = hzInstance1.getMap(getMapName());
         for (int k = 0; k < NUM_ITERATIONS; k++) {
@@ -407,6 +393,5 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             entry.setValue("new value");
             return "new value";
         }
-
     }
 }

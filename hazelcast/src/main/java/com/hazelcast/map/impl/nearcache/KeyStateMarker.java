@@ -25,6 +25,36 @@ package com.hazelcast.map.impl.nearcache;
  */
 public interface KeyStateMarker {
 
+    /**
+     * Always returns true for all calls.
+     */
+    KeyStateMarker TRUE_MARKER = new KeyStateMarker() {
+        @Override
+        public boolean tryMark(Object key) {
+            return true;
+        }
+
+        @Override
+        public boolean tryUnmark(Object key) {
+            return true;
+        }
+
+        @Override
+        public boolean tryRemove(Object key) {
+            return true;
+        }
+
+        @Override
+        public void forceUnmark(Object key) {
+
+        }
+
+        @Override
+        public void init() {
+
+        }
+    };
+
     boolean tryMark(Object key);
 
     boolean tryUnmark(Object key);

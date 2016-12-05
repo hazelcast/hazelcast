@@ -48,7 +48,7 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
         clearRecordsOrDestroyStore(inMemoryFormat, false);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void destroyStore() {
         clearRecordsOrDestroyStore(inMemoryFormat, true);
     }

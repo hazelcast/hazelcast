@@ -1,16 +1,18 @@
-package com.hazelcast.map.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Logger;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -21,15 +23,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static java.lang.Integer.parseInt;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
  * A test to ensure no lost invalidations on the Near Cache.
- *
+ * <p>
  * Issue: https://github.com/hazelcast/hazelcast/issues/4671
- *
+ * <p>
  * Thansk Lukas Blunschi for this test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastSerialClassRunner.class)
@@ -40,46 +43,50 @@ public class NearCacheStaleReadTest extends HazelcastTestSupport {
     private static final int MAX_RUNTIME = 30;
     private static final String KEY = "key123";
     private static final String MAP_NAME = "testMap" + NearCacheStaleReadTest.class.getSimpleName();
-
     private static final Logger LOGGER = Logger.getLogger(NearCacheStaleReadTest.class);
 
     private IMap<String, String> map;
+    private AtomicInteger valuePut;
+    private AtomicBoolean stop;
+    private AtomicInteger assertionViolationCount;
+    private AtomicBoolean failed;
+    private HazelcastInstance hzInstance;
 
-    private AtomicInteger valuePut = new AtomicInteger(0);
+    @Before
+    public void setUp() throws Exception {
+        stop = new AtomicBoolean(false);
+        failed = new AtomicBoolean(false);
+        valuePut = new AtomicInteger(0);
+        assertionViolationCount = new AtomicInteger(0);
 
-    private AtomicBoolean stop = new AtomicBoolean(false);
-
-    private AtomicInteger assertionViolationCount = new AtomicInteger(0);
-
-    private AtomicBoolean failed = new AtomicBoolean(false);
-
-    @Test
-    public void testNoLostInvalidationsEventually() throws Exception {
-        assertionViolationCount.set(0);
-        testNoLostInvalidations(false);
-    }
-
-    private void testNoLostInvalidations(boolean strict) throws Exception {
         // create hazelcast config
         Config config = getConfig();
+        config.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         config.setProperty("hazelcast.logging.type", "log4j");
-
-        // we use a single node only - do not search for others
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
         // configure Near Cache
         NearCacheConfig nearCacheConfig = getNearCacheConfig();
-
         // enable Near Cache
         MapConfig mapConfig = config.getMapConfig(MAP_NAME);
         mapConfig.setNearCacheConfig(nearCacheConfig);
 
-        // create Hazelcast instance
-        HazelcastInstance hzInstance = Hazelcast.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
+        hzInstance = factory.newHazelcastInstance(config);
 
-        // get hazelcast map
         map = hzInstance.getMap(MAP_NAME);
+    }
 
+    @After
+    public void tearDown() throws Exception {
+        hzInstance.shutdown();
+    }
+
+    @Test
+    public void testNoLostInvalidationsEventually() throws Exception {
+        testNoLostInvalidations(false);
+    }
+
+    private void testNoLostInvalidations(boolean strict) throws Exception {
         // run test
         runTestInternal();
 

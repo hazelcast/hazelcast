@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
@@ -36,6 +34,8 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -53,6 +53,7 @@ import org.junit.runners.Parameterized.Parameters;
 import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -76,7 +77,7 @@ import static org.junit.Assert.assertTrue;
 @Category({SlowTest.class})
 public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
 
-    static final String DEFAULT_CACHE_NAME = "com.hazelcast.client.cache.nearcache.ClientNearCacheInvalidationTest";
+    static final String DEFAULT_CACHE_NAME = "com.hazelcast.client.cache.impl.nearcache.ClientNearCacheInvalidationTest";
 
     // time to wait until invalidation event is delivered (when used with assertTrueEventually)
     // and time to wait when testing that no invalidation event is delivered (used with assertTrueAllTheTime)
@@ -233,7 +234,7 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
     }
 
     private void registerInvalidationListener(AtomicInteger counter) {
-        EventHandler handler = new NearCacheInvalidationHandler(counter);
+        EventHandler handler = new NearCacheRepairingHandler(counter);
         ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
         final HazelcastClientInstanceImpl clientInstance = testContext.client.client;
         clientInstance.getListenerService().registerListener(listenerCodec, handler);
@@ -321,23 +322,24 @@ public class ClientNearCacheInvalidationTest extends HazelcastTestSupport {
                 .setBackupCount(1);
     }
 
-    private final class NearCacheInvalidationHandler
+    private final class NearCacheRepairingHandler
             extends CacheAddInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final AtomicInteger counter;
 
-        NearCacheInvalidationHandler(AtomicInteger counter) {
+        NearCacheRepairingHandler(AtomicInteger counter) {
             this.counter = counter;
         }
 
         @Override
-        public void handle(String name, Data key, String sourceUuid) {
+        public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
             counter.incrementAndGet();
         }
 
         @Override
-        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids) {
+        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids, Collection<UUID> partitionUuids,
+                           Collection<Long> sequences) {
             counter.incrementAndGet();
         }
 

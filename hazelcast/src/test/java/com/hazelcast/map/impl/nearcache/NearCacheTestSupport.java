@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
@@ -30,7 +30,6 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.monitor.NearCacheStats;
@@ -42,11 +41,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
+import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.lang.String.format;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -55,6 +60,34 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected static final int MAX_CACHE_SIZE = 50000;
     protected static final int MAX_TTL_SECONDS = 2;
     protected static final int MAX_IDLE_SECONDS = 1;
+
+    protected void testNearCacheEviction(IMap<Integer, Integer> map, int size) {
+        // all Near Cache implementations use the same eviction algorithm, which evicts a single entry
+        int expectedEvictions = 1;
+
+        // populate map with an extra entry
+        populateMap(map, size + 1);
+
+        // populate Near Caches
+        populateNearCache(map, size);
+
+        NearCacheStats statsBeforeEviction = getNearCacheStats(map);
+
+        // trigger eviction via fetching the extra entry
+        map.get(size);
+
+        waitForNearCacheEvictions(map, expectedEvictions);
+
+        // we expect (size + the extra entry - the expectedEvictions) entries in the Near Cache
+        int expectedOwnedEntryCount = size + 1 - expectedEvictions;
+
+        NearCacheStats stats = getNearCacheStats(map);
+        assertEquals("got the wrong ownedEntryCount", expectedOwnedEntryCount, stats.getOwnedEntryCount());
+        assertEquals("got the wrong eviction count", expectedEvictions, stats.getEvictions());
+        assertEquals("got the wrong expiration count", 0, stats.getExpirations());
+        assertEquals("we expect the same hits", statsBeforeEviction.getHits(), stats.getHits());
+        assertEquals("we expect the same misses", statsBeforeEviction.getMisses(), stats.getMisses());
+    }
 
     protected void testNearCacheExpiration(final IMap<Integer, Integer> map, final int size, int expireSeconds) {
         populateMap(map, size);
@@ -85,6 +118,56 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         });
     }
 
+    /**
+     * Tests the Near Cache memory cost calculation.
+     * <p>
+     * Depending on the parameters the following memory costs are asserted:
+     * <ul>
+     * <li>{@link NearCacheStats#getOwnedEntryMemoryCost()}</li>
+     * <li>{@link com.hazelcast.monitor.LocalMapStats#getHeapCost()}</li>
+     * </ul>
+     *
+     * @param map         the {@link IMap} with a Near Cache to be tested
+     * @param isMember    determines if the heap costs will be asserted, which are just available for member nodes
+     * @param threadCount the thread count for concurrent population of the Near Cache
+     */
+    protected void testNearCacheMemoryCostCalculation(final IMap<Integer, Integer> map, boolean isMember, int threadCount) {
+        populateMap(map, MAX_CACHE_SIZE);
+
+        final CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        Runnable task = new Runnable() {
+            @Override
+            public void run() {
+                populateNearCache(map, MAX_CACHE_SIZE);
+                countDownLatch.countDown();
+            }
+        };
+
+        ExecutorService executorService = newFixedThreadPool(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.execute(task);
+        }
+        assertOpenEventually(countDownLatch);
+
+        // the Near Cache is filled, we should see some memory costs now
+        assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
+                getNearCacheStats(map).getOwnedEntryMemoryCost() > 0);
+        if (isMember && !getBuildInfo().isEnterprise()) {
+            // the heap costs are just calculated on member on-heap maps
+            assertTrue("The Near Cache is filled, there should be some heap costs", map.getLocalMapStats().getHeapCost() > 0);
+        }
+
+        for (int i = 0; i < MAX_CACHE_SIZE; i++) {
+            map.remove(i);
+        }
+
+        // the Near Cache is empty, we shouldn't see memory costs anymore
+        assertEquals("The Near Cache is empty, there should be no owned entry memory costs",
+                0, getNearCacheStats(map).getOwnedEntryMemoryCost());
+        // this assert will work in all scenarios, since the default value should be 0 if no costs are calculated
+        assertEquals("The Near Cache is empty, there should be no heap costs", 0, map.getLocalMapStats().getHeapCost());
+    }
+
     protected NearCacheConfig newNearCacheConfigWithEntryCountEviction(EvictionPolicy evictionPolicy, int size) {
         return newNearCacheConfig()
                 .setCacheLocalEntries(true)
@@ -111,6 +194,17 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected void triggerNearCacheEviction(IMap<Integer, Integer> map) {
         populateMap(map, 1);
         populateNearCache(map, 1);
+    }
+
+    protected void waitForNearCacheEvictions(final IMap map, final int evictionCount) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                long evictions = getNearCacheStats(map).getEvictions();
+                assertTrue(
+                        format("Near Cache eviction count didn't reach the desired value (%d vs. %d)", evictions, evictionCount),
+                        evictions >= evictionCount);
+            }
+        });
     }
 
     protected void waitUntilEvictionEventsReceived(CountDownLatch latch) {
@@ -147,6 +241,9 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
     protected Config createNearCachedMapConfig(String mapName) {
         Config config = getConfig();
 
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(),"5");
+        config.setProperty(MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(),"10000");
+        config.setProperty(PARTITION_COUNT.getName(),"1");
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         nearCacheConfig.setCacheLocalEntries(true);
 
@@ -175,7 +272,8 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
 
         MapServiceContext mapServiceContext = service.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
-        return mapNearCacheManager.getOrCreateNearCache(mapName);
+        NearCacheConfig nearCacheConfig = nodeEngine.getConfig().getMapConfig(mapName).getNearCacheConfig();
+        return mapNearCacheManager.getOrCreateNearCache(mapName, nearCacheConfig);
     }
 
     protected int getNearCacheSize(IMap map) {

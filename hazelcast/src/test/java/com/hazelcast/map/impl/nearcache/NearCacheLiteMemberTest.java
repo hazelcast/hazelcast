@@ -1,4 +1,4 @@
-package com.hazelcast.map.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
@@ -451,13 +451,13 @@ public class NearCacheLiteMemberTest {
         return getNodeEngineImpl(instance).getService(MapService.SERVICE_NAME);
     }
 
-    private static NearCache<Data, Object> getNearCache(HazelcastInstance instance, String mapName) {
+    private static NearCache<Object, Object> getNearCache(HazelcastInstance instance, String mapName) {
         IMap<Data, Object> map = instance.getMap(mapName);
         return ((NearCachedMapProxyImpl<Data, Object>) map).getNearCache();
     }
 
     private static void assertNullNearCacheEntryEventually(final HazelcastInstance instance, String mapName, Object key) {
-        final NearCache<Data, Object> nearCache = getNearCache(instance, mapName);
+        final NearCache<Object, Object> nearCache = getNearCache(instance, mapName);
         final Data keyData = toData(instance, key);
         assertTrueEventually(new AssertTask() {
             @Override

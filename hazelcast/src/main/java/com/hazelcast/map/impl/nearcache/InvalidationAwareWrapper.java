@@ -23,23 +23,24 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.monitor.NearCacheStats;
 
 /**
- * Guards a {@link NearCache} against stale reads by using {@link KeyStateMarker}
+ * Aware of invalidations and if an invalidation for a key comes before put to cache,
+ * cached value will be removed. See usages of this wrapper in proxies.
  *
  * @see KeyStateMarker
+ * @see com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl#get
  */
-public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache<K, V> {
+public final class InvalidationAwareWrapper<K, V> implements NearCache<K, V> {
 
     private final NearCache<K, V> nearCache;
     private final KeyStateMarker keyStateMarker;
 
-    private StaleReadPreventerNearCacheWrapper(NearCache<K, V> nearCache, int markerCount) {
+    private InvalidationAwareWrapper(NearCache<K, V> nearCache, int markerCount) {
         this.nearCache = nearCache;
         this.keyStateMarker = new KeyStateMarkerImpl(markerCount);
     }
 
-    public static <KEY, VALUE> NearCache<KEY, VALUE> asStaleReadPreventerNearCache(NearCache<KEY, VALUE> nearCache,
-                                                                                   int markerCount) {
-        return new StaleReadPreventerNearCacheWrapper<KEY, VALUE>(nearCache, markerCount);
+    public static <KEY, VALUE> NearCache<KEY, VALUE> asInvalidationAware(NearCache<KEY, VALUE> nearCache, int markerCount) {
+        return new InvalidationAwareWrapper<KEY, VALUE>(nearCache, markerCount);
     }
 
     @Override
@@ -123,6 +124,15 @@ public final class StaleReadPreventerNearCacheWrapper<K, V> implements NearCache
     @Override
     public boolean isPreloadDone() {
         return nearCache.isPreloadDone();
+    }
+
+    @Override
+    public <T> T unwrap(Class<T> clazz) {
+        if (clazz.isAssignableFrom(nearCache.getClass())) {
+            return clazz.cast(nearCache);
+        }
+
+        throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
     public KeyStateMarker getKeyStateMarker() {

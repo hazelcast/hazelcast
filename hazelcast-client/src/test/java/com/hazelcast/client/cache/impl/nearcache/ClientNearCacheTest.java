@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.cache.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
@@ -61,15 +61,15 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         putIfAbsentToCacheAndThenGetFromClientNearCache(inMemoryFormat);
     }
 
+    @Ignore
     @Test
-    public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache() {
-        putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(inMemoryFormat);
+    public void putToCacheAndGetInvalidationEventWhenNodeShutdown() {
+        putToCacheAndGetInvalidationEventWhenNodeShutdown(inMemoryFormat);
     }
 
     @Test
-    @Ignore
-    public void putToCacheAndGetInvalidationEventWhenNodeShutdown() {
-        putToCacheAndGetInvalidationEventWhenNodeShutdown(inMemoryFormat);
+    public void putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache() {
+        putToCacheAndUpdateFromOtherNodeThenGetUpdatedFromClientNearCache(inMemoryFormat);
     }
 
     @Test

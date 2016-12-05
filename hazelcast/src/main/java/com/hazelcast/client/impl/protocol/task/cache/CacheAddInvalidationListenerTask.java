@@ -35,6 +35,11 @@ import com.hazelcast.spi.NotifiableEventListener;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import static com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent;
+import static com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent;
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 
 public class CacheAddInvalidationListenerTask
         extends AbstractCallableMessageTask<CacheAddInvalidationListenerCodec.RequestParameters> {
@@ -68,43 +73,53 @@ public class CacheAddInvalidationListenerTask
 
         @Override
         public void handleEvent(Object eventObject) {
-            if (!endpoint.isAlive()) {
+            if (!endpoint.isAlive() || !(eventObject instanceof CacheInvalidationMessage)) {
                 return;
             }
-            if (eventObject instanceof CacheInvalidationMessage) {
-                String targetUuid = endpoint.getUuid();
-                if (eventObject instanceof CacheSingleInvalidationMessage) {
-                    CacheSingleInvalidationMessage message = (CacheSingleInvalidationMessage) eventObject;
-                    if (!targetUuid.equals(message.getSourceUuid())) {
-                        // Since we already filtered as source uuid, no need to send source uuid to client
-                        // TODO Maybe don't send name also to client
-                        ClientMessage eventMessage =
-                                CacheAddInvalidationListenerCodec
-                                        .encodeCacheInvalidationEvent(message.getName(),
-                                                                      message.getKey(),
-                                                                      null);
-                        sendClientMessage(message.getName(), eventMessage);
-                    }
-                } else if (eventObject instanceof CacheBatchInvalidationMessage) {
-                    CacheBatchInvalidationMessage message = (CacheBatchInvalidationMessage) eventObject;
-                    List<CacheSingleInvalidationMessage> invalidationMessages =
-                            message.getInvalidationMessages();
-                    List<Data> filteredKeys = new ArrayList<Data>(invalidationMessages.size());
-                    for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
-                        if (!targetUuid.equals(invalidationMessage.getSourceUuid())) {
-                            filteredKeys.add(invalidationMessage.getKey());
-                        }
-                    }
-                    // Since we already filtered keys as source uuid, no need to send source uuid list to client
-                    // TODO Maybe don't send name also to client
-                    ClientMessage eventMessage =
-                            CacheAddInvalidationListenerCodec
-                                .encodeCacheBatchInvalidationEvent(message.getName(),
-                                                                   filteredKeys,
-                                                                   null);
-                    sendClientMessage(message.getName(), eventMessage);
-                }
+
+            CacheInvalidationMessage invalidationMessage = (CacheInvalidationMessage) eventObject;
+            ClientMessage message = getClientMessage(invalidationMessage);
+            if (message != null) {
+                sendClientMessage(invalidationMessage.getName(), message);
             }
+        }
+
+        private ClientMessage getClientMessage(Object eventObject) {
+
+            if (eventObject instanceof CacheSingleInvalidationMessage) {
+                CacheSingleInvalidationMessage message = (CacheSingleInvalidationMessage) eventObject;
+                Data messageKey = message.getKey();
+                Data key = messageKey == null ? NULL_KEY : message.getKey();
+
+                // Since we already filtered as source uuid, no need to send source uuid to client
+                // TODO Maybe don't send name also to client
+                return encodeCacheInvalidationEvent(message.getName(), key, message.getSourceUuid(),
+                        message.getPartitionUuid(), message.getSequence());
+            }
+
+
+            if (eventObject instanceof CacheBatchInvalidationMessage) {
+                CacheBatchInvalidationMessage message = (CacheBatchInvalidationMessage) eventObject;
+                List<CacheSingleInvalidationMessage> invalidationMessages = message.getInvalidationMessages();
+
+                int size = invalidationMessages.size();
+                List<Data> filteredKeys = new ArrayList<Data>(size);
+                List<String> sourceUuids = new ArrayList<String>(invalidationMessages.size());
+                List<UUID> partitionUuids = new ArrayList<UUID>(invalidationMessages.size());
+                List<Long> sequences = new ArrayList<Long>(invalidationMessages.size());
+
+                for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
+                    filteredKeys.add(invalidationMessage.getKey());
+                    sourceUuids.add(invalidationMessage.getSourceUuid());
+                    partitionUuids.add(invalidationMessage.getPartitionUuid());
+                    sequences.add(invalidationMessage.getSequence());
+                }
+                // Since we already filtered keys as source uuid, no need to send source uuid list to client
+                // TODO Maybe don't send name also to client
+                return encodeCacheBatchInvalidationEvent(message.getName(), filteredKeys, sourceUuids, partitionUuids, sequences);
+            }
+
+            throw new IllegalArgumentException("Unknown cache invalidation message type " + eventObject);
         }
 
         @Override

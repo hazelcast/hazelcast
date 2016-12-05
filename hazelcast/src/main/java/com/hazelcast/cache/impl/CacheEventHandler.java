@@ -21,15 +21,19 @@ import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -38,25 +42,33 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+import static java.lang.String.format;
 
 /**
  * Sends cache invalidation events in batch or single as configured.
  */
-class CacheEventHandler {
+public class CacheEventHandler {
 
+    private final ILogger logger;
     private final NodeEngine nodeEngine;
+    private final MetaDataGenerator metaDataGenerator;
+    private final IPartitionService partitionService;
+    private final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
+            new ConcurrentHashMap<String, InvalidationEventQueue>();
 
     private boolean invalidationMessageBatchEnabled;
     private int invalidationMessageBatchSize;
-    private final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
-            new ConcurrentHashMap<String, InvalidationEventQueue>();
     private ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
 
     CacheEventHandler(NodeEngine nodeEngine) {
+        this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
+        this.partitionService = nodeEngine.getPartitionService();
+        this.metaDataGenerator = new MetaDataGenerator(partitionService.getPartitionCount());
         HazelcastProperties properties = nodeEngine.getProperties();
         invalidationMessageBatchEnabled = properties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED);
         if (invalidationMessageBatchEnabled) {
@@ -75,11 +87,15 @@ class CacheEventHandler {
         lifecycleService.addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
+                if (event.getState() == SHUTTING_DOWN) {
                     invalidateAllCaches();
                 }
             }
         });
+    }
+
+    public MetaDataGenerator getMetaDataGenerator() {
+        return metaDataGenerator;
     }
 
     void publishEvent(CacheEventContext cacheEventContext) {
@@ -159,10 +175,21 @@ class CacheEventHandler {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
-            eventService.publishEvent(ICacheService.SERVICE_NAME, registrations,
-                    new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
-
+            CacheSingleInvalidationMessage event = newInvalidationEvent(name, key, sourceUuid);
+            eventService.publishEvent(ICacheService.SERVICE_NAME, registrations, event, name.hashCode());
         }
+    }
+
+    private CacheSingleInvalidationMessage newInvalidationEvent(String name, Data key, String sourceUuid) {
+        int partition = key != null ? partitionService.getPartitionId(key) : partitionService.getPartitionId(name);
+        long sequence = metaDataGenerator.nextSequence(name, partition);
+        UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partition);
+
+        if (logger.isFinestEnabled()) {
+            logger.finest(format("cacheName=%s, partition=%d, sequence=%d, uuid=%s", name, partition, sequence, partitionUuid));
+        }
+
+        return new CacheSingleInvalidationMessage(name, key, sourceUuid, partitionUuid, sequence);
     }
 
     private void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
@@ -179,7 +206,7 @@ class CacheEventHandler {
                 invalidationMessageQueue = newInvalidationMessageQueue;
             }
         }
-        CacheSingleInvalidationMessage invalidationMessage = new CacheSingleInvalidationMessage(name, key, sourceUuid);
+        CacheSingleInvalidationMessage invalidationMessage = newInvalidationEvent(name, key, sourceUuid);
         invalidationMessageQueue.offer(invalidationMessage);
         if (invalidationMessageQueue.size() >= invalidationMessageBatchSize) {
             flushInvalidationMessages(name, invalidationMessageQueue);
