@@ -5,6 +5,7 @@ import com.hazelcast.logging.NoLogFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -17,11 +18,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -54,7 +57,8 @@ public class ParallelPartitionScanExecutorTest {
         ParallelPartitionScanExecutor executor = executor(runner);
         Predicate predicate = Predicates.equal("attribute", 1);
 
-        executor.execute("Map", predicate, asList(1, 2, 3));
+        List<QueryableEntry> result = executor.execute("Map", predicate, asList(1, 2, 3));
+        assertEquals(0, result.size());
     }
 
     @Test
