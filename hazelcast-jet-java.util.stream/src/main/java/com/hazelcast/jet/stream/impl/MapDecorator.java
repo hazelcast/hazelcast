@@ -99,6 +99,11 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
     }
 
     @Override
+    public void removeAll(Predicate<K, V> predicate) {
+        map.removeAll(predicate);
+    }
+
+    @Override
     public void delete(Object key) {
         map.delete(key);
     }
