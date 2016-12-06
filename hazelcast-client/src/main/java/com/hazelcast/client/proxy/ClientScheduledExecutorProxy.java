@@ -62,7 +62,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Client proxy implementation of {@link IScheduledExecutorService}.
  */
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "checkstyle:methodcount"})
 public class ClientScheduledExecutorProxy
         extends PartitionSpecificClientProxy
         implements IScheduledExecutorService {
