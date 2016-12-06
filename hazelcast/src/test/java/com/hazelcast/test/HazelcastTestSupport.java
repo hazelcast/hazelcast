@@ -195,9 +195,9 @@ public abstract class HazelcastTestSupport {
         InternalSerializationService serializationService = getSerializationService(local);
         ConnectionManager connectionManager = getConnectionManager(local);
 
-        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
-        packet.setFlag(Packet.FLAG_OP);
-        packet.setConn(connectionManager.getConnection(getAddress(remote)));
+        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+                .setPacketType(Packet.Type.OPERATION)
+                .setConn(connectionManager.getConnection(getAddress(remote)));
         return packet;
     }
 

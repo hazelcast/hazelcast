@@ -63,7 +63,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
@@ -407,11 +406,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
 
         byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(bytes, partitionId)
-                .setFlag(FLAG_OP);
+        Packet packet = new Packet(bytes, partitionId).setPacketType(Packet.Type.OPERATION);
 
         if (op.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            packet.raiseFlags(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

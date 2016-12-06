@@ -98,8 +98,8 @@ public class PacketTest {
     @Test
     public void setFlag() {
         Packet packet = new Packet();
-        packet.setFlag(FLAG_OP);
-        packet.setFlag(FLAG_URGENT);
+        packet.setPacketType(Packet.Type.OPERATION);
+        packet.raiseFlags(FLAG_URGENT);
 
         assertEquals(FLAG_OP | FLAG_URGENT, packet.getFlags());
     }
@@ -107,8 +107,8 @@ public class PacketTest {
     @Test
     public void isFlagSet() {
         Packet packet = new Packet();
-        packet.setFlag(FLAG_OP);
-        packet.setFlag(FLAG_URGENT);
+        packet.setPacketType(Packet.Type.OPERATION);
+        packet.raiseFlags(FLAG_URGENT);
 
         assertTrue(packet.isFlagSet(FLAG_OP));
         assertTrue(packet.isFlagSet(FLAG_URGENT));
@@ -118,7 +118,7 @@ public class PacketTest {
     @Test
     public void setAllFlags() {
         Packet packet = new Packet();
-        packet.setAllFlags(FLAG_OP | FLAG_URGENT);
+        packet.resetFlagsTo(FLAG_OP | FLAG_URGENT);
 
         assertEquals(FLAG_OP | FLAG_URGENT, packet.getFlags());
     }

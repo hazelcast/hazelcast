@@ -53,7 +53,6 @@ import java.util.logging.Level;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutOfMemoryError;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.spi.properties.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
@@ -452,7 +451,8 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
                 scheduler.execute(new ProcessOperationControlTask(opControl));
             } else {
                 Packet packet = new Packet(serializationService.toBytes(opControl))
-                        .setAllFlags(FLAG_OP | FLAG_OP_CONTROL | FLAG_URGENT);
+                        .setPacketType(Packet.Type.OPERATION)
+                        .raiseFlags(FLAG_OP_CONTROL | FLAG_URGENT);
                 nodeEngine.getNode().getConnectionManager().transmit(packet, address);
             }
         }

@@ -50,7 +50,7 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
     public void whenPriorityPacket() throws Exception {
         ByteBuffer buffer = ByteBuffer.allocate(1000);
         Packet packet = new Packet(serializationService.toBytes("foobar"));
-        packet.setFlag(Packet.FLAG_URGENT);
+        packet.raiseFlags(Packet.FLAG_URGENT);
         packet.writeTo(buffer);
 
         buffer.flip();
@@ -93,7 +93,7 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
         packet3.writeTo(buffer);
 
         Packet packet4 = new Packet(serializationService.toBytes("packet4"));
-        packet4.setFlag(Packet.FLAG_URGENT);
+        packet4.raiseFlags(Packet.FLAG_URGENT);
         packet4.writeTo(buffer);
 
         buffer.flip();

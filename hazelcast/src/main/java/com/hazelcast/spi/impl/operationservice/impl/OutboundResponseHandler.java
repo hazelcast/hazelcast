@@ -29,8 +29,7 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
-import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -69,7 +68,7 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
         }
     }
 
-    private Response toResponse(Operation operation, Object obj) {
+    private static Response toResponse(Operation operation, Object obj) {
         if (obj instanceof Throwable) {
             return new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent());
         } else if (!(obj instanceof Response)) {
@@ -88,10 +87,11 @@ public final class OutboundResponseHandler implements OperationResponseHandler {
 
         byte[] bytes = serializationService.toBytes(response);
         Packet packet = new Packet(bytes, -1)
-                .setAllFlags(FLAG_OP | FLAG_RESPONSE);
+                .setPacketType(Packet.Type.OPERATION)
+                .raiseFlags(FLAG_OP_RESPONSE);
 
         if (response.isUrgent()) {
-            packet.setFlag(FLAG_URGENT);
+            packet.raiseFlags(FLAG_URGENT);
         }
 
         ConnectionManager connectionManager = node.getConnectionManager();

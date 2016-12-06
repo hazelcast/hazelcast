@@ -12,7 +12,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.nio.Packet.FLAG_OP;
-import static com.hazelcast.nio.Packet.FLAG_RESPONSE;
+import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -35,7 +35,8 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
         final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0)
-                .setAllFlags(FLAG_RESPONSE | FLAG_OP);
+                .setPacketType(Packet.Type.OPERATION)
+                .raiseFlags(FLAG_OP_RESPONSE);
         executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -55,7 +56,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         final DummyOperation operation = new DummyOperation(0);
         final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
-                .setFlag(FLAG_OP);
+                .setPacketType(Packet.Type.OPERATION);
         executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
@@ -74,7 +75,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
 
         final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
-                .setFlag(FLAG_OP);
+                .setPacketType(Packet.Type.OPERATION);
         executor.handle(packet);
 
         assertTrueEventually(new AssertTask() {
