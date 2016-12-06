@@ -43,7 +43,7 @@ public class SocketWriterInitializerImpl implements SocketWriterInitializer<TcpI
 
     @Override
     public void init(TcpIpConnection connection, SocketWriter writer, String protocol) {
-        logger.info("Initializing SocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
+        logger.fine("Initializing SocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
 
         initHandler(connection, writer, protocol);
         initOutputBuffer(connection, writer, protocol);

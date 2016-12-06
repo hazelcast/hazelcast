@@ -39,7 +39,7 @@ class ClientSocketWriterInitializer implements SocketWriterInitializer<ClientCon
     @Override
     public void init(ClientConnection connection, SocketWriter writer, String protocol) {
         Logger.getLogger(getClass())
-              .info("Initializing ClientSocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
+              .fine("Initializing ClientSocketWriter WriteHandler with " + Protocols.toUserFriendlyString(protocol));
 
         writer.initOutputBuffer(IOUtil.newByteBuffer(bufferSize, direct));
 
