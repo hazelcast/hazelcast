@@ -41,7 +41,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
     public void singleAttribute() {
         IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
 
-        Collection<Double> result = map.project(Projections.<String, Person, Double>singleAttribute("age"));
+        Collection<Double> result = map.project(Projections.<Map.Entry<String, Person>, Double>singleAttribute("age"));
 
         assertThat(result, containsInAnyOrder(1.0d, 4.0d, 7.0d));
     }
@@ -50,7 +50,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
     public void singleAttribute_key() {
         IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
 
-        Collection<String> result = map.project(Projections.<String, Person, String>singleAttribute("__key"));
+        Collection<String> result = map.project(Projections.<Map.Entry<String, Person>, String>singleAttribute("__key"));
 
         assertThat(result, containsInAnyOrder("key1", "key2", "key3"));
     }
@@ -61,7 +61,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", 1);
         map.put("key2", 2);
 
-        Collection<Integer> result = map.project(Projections.<String, Integer, Integer>singleAttribute("this"));
+        Collection<Integer> result = map.project(Projections.<Map.Entry<String, Integer>, Integer>singleAttribute("this"));
 
         assertThat(result, containsInAnyOrder(1, 2));
     }
@@ -70,7 +70,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
     public void singleAttribute_emptyMap() {
         IMap<String, Person> map = getMapWithNodeCount(1);
 
-        Collection<Double> result = map.project(Projections.<String, Person, Double>singleAttribute("age"));
+        Collection<Double> result = map.project(Projections.<Map.Entry<String, Person>, Double>singleAttribute("age"));
 
         assertEquals(0, result.size());
     }
@@ -81,7 +81,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", new Person(1.0d));
         map.put("007", new Person(null));
 
-        Collection<Double> result = map.project(Projections.<String, Person, Double>singleAttribute("age"));
+        Collection<Double> result = map.project(Projections.<Map.Entry<String, Person>, Double>singleAttribute("age"));
 
         assertThat(result, containsInAnyOrder(null, 1.0d));
     }

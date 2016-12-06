@@ -42,7 +42,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
     public void multiAttribute() {
         IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
 
-        Collection<Object[]> result = map.project(Projections.<String, Person>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
         assertThat(result, containsInAnyOrder(new Object[]{1.0d, 190}, new Object[]{4.0d, 123}));
     }
 
@@ -50,7 +50,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
     public void multiAttribute_emptyMap() {
         IMap<String, Person> map = getMapWithNodeCount(1);
 
-        Collection<Object[]> result = map.project(Projections.<String, Person>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
 
         assertEquals(0, result.size());
     }
@@ -60,7 +60,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
     public void multiAttribute_key() {
         IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
 
-        Collection<Object[]> result = map.project(Projections.<String, Person>multiAttribute("__key"));
+        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("__key"));
 
         assertThat(result, containsInAnyOrder(new Object[]{"key1"}, new Object[]{"key2"}));
     }
@@ -71,7 +71,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", 1);
         map.put("key2", 2);
 
-        Collection<Object[]> result = map.project(Projections.<String, Integer>multiAttribute("this"));
+        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Integer>>multiAttribute("this"));
 
         assertThat(result, containsInAnyOrder(new Object[]{1}, new Object[]{2}));
     }
@@ -82,7 +82,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         map.put("key1", new Person(1.0d, null));
         map.put("007", new Person(null, 144));
 
-        Collection<Object[]> result = map.project(Projections.<String, Person>multiAttribute("age", "height"));
+        Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
 
         assertThat(result, containsInAnyOrder(new Object[]{1.0d, null}, new Object[]{null, 144}));
     }

@@ -19,15 +19,12 @@ package com.hazelcast.projection.impl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
-import java.util.Map;
-
 /**
  * Projection that extracts the values of the given attributes and returns them in an Object[] array.
  *
- * @param <K> type of the map key
- * @param <V> type of the map value
+ * @param <I> type of the input
  */
-public class MultiAttributeProjection<K, V> extends Projection<Map.Entry<K, V>, Object[]> {
+public class MultiAttributeProjection<I> extends Projection<I, Object[]> {
 
     private final String[] attributePaths;
     private final int attributeCount;
@@ -42,7 +39,7 @@ public class MultiAttributeProjection<K, V> extends Projection<Map.Entry<K, V>, 
 
     @Override
     @SuppressWarnings("unchecked")
-    public Object[] transform(Map.Entry<K, V> input) {
+    public Object[] transform(I input) {
         if (input instanceof Extractable) {
             Extractable extractable = ((Extractable) input);
             Object[] result = new Object[attributeCount];
