@@ -116,17 +116,17 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     }
 
     private void assertDistinctAggregators(IMap<Integer, Person> map) {
-        assertEquals(map.project(Projections.<Integer, Person, Double>singleAttribute("doubleValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue")));
-        assertEquals(map.project(Projections.<Integer, Person, Long>singleAttribute("longValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute("longValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>distinct("longValue")));
-        assertEquals(map.project(Projections.<Integer, Person, Integer>singleAttribute("intValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Integer>singleAttribute("intValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>distinct("intValue")));
-        assertEquals(map.project(Projections.<Integer, Person, BigDecimal>singleAttribute("bigDecimalValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigDecimal>singleAttribute("bigDecimalValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>distinct("bigDecimalValue")));
-        assertEquals(map.project(Projections.<Integer, Person, BigInteger>singleAttribute("bigIntegerValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigInteger>singleAttribute("bigIntegerValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>distinct("bigIntegerValue")));
-        assertEquals(map.project(Projections.<Integer, Person, Comparable>singleAttribute("comparableValue")),
+        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Comparable>singleAttribute("comparableValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Comparable>distinct("comparableValue")));
     }
 

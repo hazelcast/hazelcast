@@ -19,8 +19,6 @@ package com.hazelcast.projection;
 import com.hazelcast.projection.impl.MultiAttributeProjection;
 import com.hazelcast.projection.impl.SingleAttributeProjection;
 
-import java.util.Map;
-
 /**
  * A utility class to create basic {@link com.hazelcast.projection.Projection} instances. <br/>
  *
@@ -38,8 +36,8 @@ public final class Projections {
      * @param <O>           Output type
      * @return a projection that extracts the value of the given attributePath
      */
-    public static <K, V, O> Projection<Map.Entry<K, V>, O> singleAttribute(String attributePath) {
-        return new SingleAttributeProjection<K, V, O>(attributePath);
+    public static <I, O> Projection<I, O> singleAttribute(String attributePath) {
+        return new SingleAttributeProjection<I, O>(attributePath);
     }
 
     /**
@@ -49,8 +47,8 @@ public final class Projections {
      * @param attributePath 1 to N attribute Paths
      * @return a projection that extracts the value of the given attributePaths.
      */
-    public static <K, V> Projection<Map.Entry<K, V>, Object[]> multiAttribute(String... attributePath) {
-        return new MultiAttributeProjection<K, V>(attributePath);
+    public static <I> Projection<I, Object[]> multiAttribute(String... attributePath) {
+        return new MultiAttributeProjection<I>(attributePath);
     }
 
 }

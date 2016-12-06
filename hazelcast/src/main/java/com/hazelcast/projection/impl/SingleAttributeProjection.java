@@ -19,16 +19,12 @@ package com.hazelcast.projection.impl;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
 
-import java.util.Map;
-
 /**
  * Projection that extracts the values of the given attribute and returns it.
  *
- * @param <K> type of the map key
- * @param <V> type of the map value
- * @param <O> type of the object returned from the projection call
+ * @param <I> type of the input
  */
-public class SingleAttributeProjection<K, V, O> extends Projection<Map.Entry<K, V>, O> {
+public class SingleAttributeProjection<I, O> extends Projection<I, O> {
 
     private final String attributePath;
 
@@ -38,7 +34,7 @@ public class SingleAttributeProjection<K, V, O> extends Projection<Map.Entry<K, 
 
     @Override
     @SuppressWarnings("unchecked")
-    public O transform(Map.Entry<K, V> input) {
+    public O transform(I input) {
         if (input instanceof Extractable) {
             return (O) ((Extractable) input).getAttributeValue(attributePath);
         }
