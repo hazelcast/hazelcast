@@ -240,4 +240,57 @@ public interface Cluster {
      * @since 3.6
      */
     void shutdown(TransactionOptions transactionOptions);
+
+    /**
+     * Changes the cluster version transactionally. Internally this method uses the same transaction infrastructure as
+     * {@link #changeClusterState(ClusterState)} and the transaction defaults are the same in this case as well
+     * ({@code TWO_PHASE} transaction with durability 1 by default).
+     * <p/>
+     * If the requested cluster version is same as the current one, nothing happens.
+     * <p/>
+     * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(ClusterVersion)}, then a
+     * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
+     * <p/>
+     * If an invalid version transition is requested, for example changing to a different major version, an
+     * {@link IllegalArgumentException} is thrown.
+     * <p/>
+     * If a membership change occurs in the cluster during locking phase, a new member joins or
+     * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
+     * <p/>
+     * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
+     * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
+     * committed.
+     *
+     * @param version new version of the cluster
+     * @since 3.8
+     */
+    void changeClusterVersion(ClusterVersion version);
+
+    /**
+     * Changes the cluster version transactionally, with the transaction options provided. Internally this method uses the same
+     * transaction infrastructure as {@link #changeClusterState(ClusterState, TransactionOptions)}. The transaction
+     * options must specify a {@code TWO_PHASE} transaction.
+     * <p/>
+     * If the requested cluster version is same as the current one, nothing happens.
+     * <p/>
+     * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(ClusterVersion)}, then a
+     * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
+     * <p/>
+     * If an invalid version transition is requested, for example changing to a different major version, an
+     * {@link IllegalArgumentException} is thrown.
+     * <p/>
+     * If a membership change occurs in the cluster during locking phase, a new member joins or
+     * an existing member leaves, then this method will fail with an {@code IllegalStateException}.
+     * <p/>
+     * Likewise, once locking phase is completed successfully, {@link Cluster#getClusterState()}
+     * will report being {@link ClusterState#IN_TRANSITION}, disallowing membership changes until the new cluster version is
+     * committed.
+     *
+     * @param version new version of the cluster
+     * @param options options by which to execute the transaction
+     * @since 3.8
+     */
+    void changeClusterVersion(ClusterVersion version, TransactionOptions options);
 }

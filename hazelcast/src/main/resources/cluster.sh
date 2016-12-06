@@ -70,7 +70,7 @@ if [ -z "$PASSWORD" ]; then
 fi
 
 if [ -z "$ADDRESS" ]; then
-    echo "No specific ip address is defined, running script with default ip : '127.0.0.1."
+    echo "No specific ip address is defined, running script with default ip : '127.0.0.1'."
     ADDRESS="127.0.0.1"
 fi
 
@@ -230,7 +230,7 @@ fi
 if [ "$OPERATION" = "get-cluster-version" ]; then
     echo "Getting cluster version on ip ${ADDRESS} on port ${PORT}"
 	request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/version"
- 	response=$(curl --data "${GROUPNAME}&${PASSWORD}" --silent "${request}");
+ 	response=$(curl --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
  	if [ "$STATUS" = "fail" ];then
         echo "An error occured while listing !";
@@ -257,7 +257,7 @@ if [ "$OPERATION" = "change-cluster-version" ]; then
     fi
 
     echo "Changing cluster version to ${CLUSTER_VERSION} on ip ${ADDRESS} on port ${PORT}"
-    request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/changeVersion"
+    request="http://${ADDRESS}:${PORT}/hazelcast/rest/management/cluster/version"
     response=$(curl --data "${GROUPNAME}&${PASSWORD}&${CLUSTER_VERSION}" --silent "${request}");
     STATUS=$(echo "${response}" | sed -e 's/^.*"status"[ ]*:[ ]*"//' -e 's/".*//');
 

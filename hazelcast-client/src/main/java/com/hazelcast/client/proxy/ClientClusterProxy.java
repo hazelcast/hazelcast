@@ -95,4 +95,13 @@ public class ClientClusterProxy implements Cluster {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void changeClusterVersion(ClusterVersion version) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void changeClusterVersion(ClusterVersion version, TransactionOptions options) {
+        throw new UnsupportedOperationException();
+    }
 }
