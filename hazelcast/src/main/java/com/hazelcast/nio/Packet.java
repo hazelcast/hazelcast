@@ -101,7 +101,6 @@ public final class Packet extends HeapData implements OutboundFrame {
     // These 3 fields are only used during read/write. Otherwise they have no meaning.
     private int valueOffset;
     private int size;
-    // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private boolean headerComplete;
 
     public Packet() {
@@ -132,6 +131,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * the sender of the Packet.
      *
      * @param conn the connection.
+     * @return {@code this} (for fluent interface)
      */
     public Packet setConn(Connection conn) {
         this.conn = conn;
@@ -142,6 +142,13 @@ public final class Packet extends HeapData implements OutboundFrame {
         return Type.fromFlags(flags);
     }
 
+    /**
+     * Sets the packet type by updating the packet type bits in the {@code flags} bitfield. Other bits
+     * are unaffected.
+     *
+     * @param type the type to set
+     * @return {@code this} (for fluent interface)
+     */
     public Packet setPacketType(Packet.Type type) {
         int nonTypeFlags = flags & ~FLAG_OP & ~FLAG_EVENT & ~FLAG_BIND;
         resetFlagsTo(type.headerEncoding | nonTypeFlags);
@@ -152,7 +159,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * Raises all the flags raised in the argument. Does not lower any flags.
      *
      * @param flagsToRaise the flags to raise
-     * @return this (for fluent interface)
+     * @return {@code this} (for fluent interface)
      */
     public Packet raiseFlags(int flagsToRaise) {
         flags |= flagsToRaise;
@@ -160,10 +167,10 @@ public final class Packet extends HeapData implements OutboundFrame {
     }
 
     /**
-     * Sets all the flags to the state they have in the supplied argument.
+     * Resets the entire {@code flags} bitfield to the supplied value. This also affects the packet type bits.
      *
      * @param flagsToSet the flags. Only the least significant two bytes of the argument are used.
-     * @return this (for fluent interface)
+     * @return {@code this} (for fluent interface)
      */
     public Packet resetFlagsTo(int flagsToSet) {
         flags = (char) flagsToSet;
@@ -200,15 +207,27 @@ public final class Packet extends HeapData implements OutboundFrame {
         return partitionId;
     }
 
-    public void reset() {
-        headerComplete = false;
-    }
-
     @Override
     public boolean isUrgent() {
         return isFlagSet(FLAG_URGENT);
     }
 
+    /**
+     * The methods {@link #readFrom(ByteBuffer)} and {@link #writeTo(ByteBuffer)} do not complete their I/O operation
+     * within a single call, and between calls there is some progress state to keep within this instance.
+     * Calling this method resets the state back to "no bytes read/written yet".
+     */
+    public void reset() {
+        headerComplete = false;
+        valueOffset = 0;
+    }
+
+    /**
+     * Writes the packet data to the supplied {@code ByteBuffer}, up to the buffer's limit. If it returns {@code false},
+     * it should be called again to write the remaining data.
+     * @param dst the destination byte buffer
+     * @return {@code true} if all the packet's data is now written out; {@code false} otherwise.
+     */
     public boolean writeTo(ByteBuffer dst) {
         if (!headerComplete) {
             if (dst.remaining() < HEADER_SIZE) {
@@ -444,7 +463,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
         public String describeFlags(char flags) {
             return "<NONE>";
-        };
+        }
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
         private int encodeOrdinal() {
