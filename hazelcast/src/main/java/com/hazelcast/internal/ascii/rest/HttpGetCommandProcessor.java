@@ -20,6 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.ConnectionManager;
@@ -48,6 +49,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             handleCluster(command);
         } else if (uri.startsWith(URI_HEALTH_URL)) {
             handleHealthcheck(command);
+        } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
+            handleGetClusterVersion(command);
         } else {
             command.send400();
         }
@@ -74,6 +77,15 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         res.append("Hazelcast::MigrationQueueSize=").append(migrationQueueSize).append("\n");
         res.append("Hazelcast::ClusterSize=").append(clusterSize).append("\n");
         command.setResponse(MIME_TEXT_PLAIN, stringToBytes(res.toString()));
+    }
+
+    private void handleGetClusterVersion(HttpGetCommand command) {
+        String res = "{\"status\":\"${STATUS}\",\"version\":\"${VERSION}\"}";
+        Node node = textCommandService.getNode();
+        ClusterService clusterService = node.getClusterService();
+        res = res.replace("${STATUS}", "success");
+        res = res.replace("${VERSION}", clusterService.getClusterVersion().toString());
+        command.setResponse(HttpCommand.CONTENT_TYPE_JSON, stringToBytes(res));
     }
 
     private void handleCluster(HttpGetCommand command) {
