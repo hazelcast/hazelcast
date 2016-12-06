@@ -120,6 +120,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
@@ -567,7 +568,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public IScheduledExecutorService getScheduledExecutorService(String name) {
-        throw new UnsupportedOperationException("No client support for the Scheduled Executor Service");
+        return getDistributedObject(DistributedScheduledExecutorService.SERVICE_NAME, name);
     }
 
     @Override
