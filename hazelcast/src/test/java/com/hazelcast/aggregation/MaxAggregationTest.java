@@ -78,7 +78,7 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(values.size() - 1).bigDecimal;
 
-        Aggregator<BigDecimal, ValueContainer, ValueContainer> aggregation = Aggregators.bigDecimalMax("bigDecimal");
+        Aggregator<ValueContainer, ValueContainer, BigDecimal> aggregation = Aggregators.bigDecimalMax("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
@@ -114,12 +114,12 @@ public class MaxAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(values.size() - 1).bigInteger;
 
-        Aggregator<BigInteger, ValueContainer, ValueContainer> aggregation = Aggregators.bigIntegerMax("bigInteger");
+        Aggregator<ValueContainer, ValueContainer, BigInteger> aggregation = Aggregators.bigIntegerMax("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<BigInteger, ValueContainer, ValueContainer> resultAggregation = Aggregators.bigIntegerMax("bigInteger");
+        Aggregator<ValueContainer, ValueContainer, BigInteger> resultAggregation = Aggregators.bigIntegerMax("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -150,7 +150,7 @@ public class MaxAggregationTest {
         Collections.sort(values);
         double expectation = values.get(values.size() - 1).doubleValue;
 
-        Aggregator<Double, ValueContainer, ValueContainer> aggregation = Aggregators.doubleMax("doubleValue");
+        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.doubleMax("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
@@ -186,12 +186,12 @@ public class MaxAggregationTest {
         Collections.sort(values);
         int expectation = values.get(values.size() - 1).intValue;
 
-        Aggregator<Integer, ValueContainer, ValueContainer> aggregation = Aggregators.integerMax("intValue");
+        Aggregator<ValueContainer, ValueContainer, Integer> aggregation = Aggregators.integerMax("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Integer, ValueContainer, ValueContainer> resultAggregation = Aggregators.integerMax("intValue");
+        Aggregator<ValueContainer, ValueContainer, Integer> resultAggregation = Aggregators.integerMax("intValue");
         resultAggregation.combine(aggregation);
         int result = resultAggregation.aggregate();
 
@@ -222,12 +222,12 @@ public class MaxAggregationTest {
         Collections.sort(values);
         long expectation = values.get(values.size() - 1).longValue;
 
-        Aggregator<Long, ValueContainer, ValueContainer> aggregation = Aggregators.longMax("longValue");
+        Aggregator<ValueContainer, ValueContainer, Long> aggregation = Aggregators.longMax("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Long, ValueContainer, ValueContainer> resultAggregation = Aggregators.longMax("longValue");
+        Aggregator<ValueContainer, ValueContainer, Long> resultAggregation = Aggregators.longMax("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -258,12 +258,12 @@ public class MaxAggregationTest {
         Collections.sort(values);
         String expectation = values.get(values.size() - 1).stringValue;
 
-        Aggregator<String, ValueContainer, ValueContainer> aggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<ValueContainer, ValueContainer, String> aggregation = Aggregators.comparableMax("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<String, ValueContainer, ValueContainer> resultAggregation = Aggregators.comparableMax("stringValue");
+        Aggregator<ValueContainer, ValueContainer, String> resultAggregation = Aggregators.comparableMax("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 

@@ -43,7 +43,7 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
         this.aggregator = aggregator;
     }
 
-    public <R> Aggregator<R, ?, ?> getAggregator() {
+    public <R> Aggregator<?, ?, R> getAggregator() {
         return aggregator;
     }
 

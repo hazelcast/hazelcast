@@ -30,7 +30,7 @@ import java.util.Map;
  * @param <K> entry key type
  * @param <V> entry value type
  */
-public abstract class AbstractAggregator<R, K, V> extends Aggregator<R, K, V> {
+public abstract class AbstractAggregator<K, V, R> extends Aggregator<K, V, R> {
 
     private final String attributePath;
 

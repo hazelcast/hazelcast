@@ -36,7 +36,7 @@ import java.util.Map;
  * @param <V> entry value type
  * @since 3.8
  */
-public abstract class Aggregator<R, K, V> implements Serializable {
+public abstract class Aggregator<K, V, R> implements Serializable {
 
     /**
      * Accumulates the given entries.

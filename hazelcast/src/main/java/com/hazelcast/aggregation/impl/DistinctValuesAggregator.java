@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class DistinctValuesAggregator<R, K, V> extends AbstractAggregator<Set<R>, K, V> {
+public class DistinctValuesAggregator<R, K, V> extends AbstractAggregator<K, V, Set<R>> {
     Set<R> values = new HashSet<R>();
 
     public DistinctValuesAggregator() {

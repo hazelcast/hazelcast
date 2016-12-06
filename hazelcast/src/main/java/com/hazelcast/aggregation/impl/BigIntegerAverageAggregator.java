@@ -22,7 +22,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
 
-public class BigIntegerAverageAggregator<K, V> extends AbstractAggregator<BigDecimal, K, V> {
+public class BigIntegerAverageAggregator<K, V> extends AbstractAggregator<K, V, BigDecimal> {
 
     private BigInteger sum = BigInteger.ZERO;
     private long count;

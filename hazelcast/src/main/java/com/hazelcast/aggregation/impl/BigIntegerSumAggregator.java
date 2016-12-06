@@ -21,7 +21,7 @@ import com.hazelcast.aggregation.Aggregator;
 import java.math.BigInteger;
 import java.util.Map;
 
-public class BigIntegerSumAggregator<K, V> extends AbstractAggregator<BigInteger, K, V> {
+public class BigIntegerSumAggregator<K, V> extends AbstractAggregator<K, V, BigInteger> {
 
     private BigInteger sum = BigInteger.ZERO;
 

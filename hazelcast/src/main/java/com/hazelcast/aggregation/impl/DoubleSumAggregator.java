@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 
 import java.util.Map;
 
-public class DoubleSumAggregator<K, V> extends AbstractAggregator<Double, K, V> {
+public class DoubleSumAggregator<K, V> extends AbstractAggregator<K, V, Double> {
 
     private double sum;
 

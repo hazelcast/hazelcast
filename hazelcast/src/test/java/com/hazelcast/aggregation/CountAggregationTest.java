@@ -42,12 +42,12 @@ public class CountAggregationTest {
         List<BigDecimal> values = sampleBigDecimals();
         long expectation = values.size();
 
-        Aggregator<Long, BigDecimal, BigDecimal> aggregation = Aggregators.count();
+        Aggregator<BigDecimal, BigDecimal, Long> aggregation = Aggregators.count();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Long, BigDecimal, BigDecimal> resultAggregation = Aggregators.count();
+        Aggregator<BigDecimal, BigDecimal, Long> resultAggregation = Aggregators.count();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -59,12 +59,12 @@ public class CountAggregationTest {
         List<Person> values = samplePersons();
         long expectation = values.size();
 
-        Aggregator<Long, Person, Person> aggregation = Aggregators.count("age");
+        Aggregator<Person, Person, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
             aggregation.accumulate(createEntryWithValue(person));
         }
 
-        Aggregator<Long, BigDecimal, BigDecimal> resultAggregation = Aggregators.count();Aggregators.count("age");
+        Aggregator<BigDecimal, BigDecimal, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 

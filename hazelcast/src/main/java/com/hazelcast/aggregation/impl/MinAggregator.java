@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 
 import java.util.Map;
 
-public class MinAggregator<T extends Comparable, K, V> extends AbstractAggregator<T, K, V> {
+public class MinAggregator<T extends Comparable, K, V> extends AbstractAggregator<K, V, T> {
 
     private T min;
 
