@@ -217,7 +217,11 @@ public class LocalMapStatsImpl implements LocalMapStats {
     }
 
     public void incrementGets(long latency) {
-        GET_COUNT.incrementAndGet(this);
+        incrementGets(1, latency);
+    }
+
+    public void incrementGets(long delta, long latency) {
+        GET_COUNT.addAndGet(this, delta);
         TOTAL_GET_LATENCIES.addAndGet(this, latency);
         setMax(this, MAX_GET_LATENCY, latency);
     }

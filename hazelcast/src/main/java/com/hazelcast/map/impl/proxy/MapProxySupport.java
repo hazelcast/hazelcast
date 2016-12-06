@@ -672,6 +672,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (keys.isEmpty()) {
             return;
         }
+        long time = System.currentTimeMillis();
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses;
         try {
@@ -684,6 +685,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     resultingKeyValuePairs.add(toObject(entries.getValue(i)));
                 }
             }
+            localMapStats.incrementGets(keys.size(), System.currentTimeMillis() - time);
         } catch (Exception e) {
             throw rethrow(e);
         }
