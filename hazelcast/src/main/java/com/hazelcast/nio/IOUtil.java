@@ -468,6 +468,21 @@ public final class IOUtil {
         }
     }
 
+    public static byte[] toByteArray(InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        drainTo(is, baos);
+        return baos.toByteArray();
+    }
+
+    public static void drainTo(InputStream input, OutputStream output) throws IOException {
+        byte[] buffer = new byte[1024];
+        int n;
+        while (-1 != (n = input.read(buffer))) {
+            output.write(buffer, 0, n);
+        }
+    }
+
+
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
 
         private final ClassLoader classLoader;

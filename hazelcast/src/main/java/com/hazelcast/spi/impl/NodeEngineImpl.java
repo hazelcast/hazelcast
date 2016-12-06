@@ -24,6 +24,12 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.distributedclassloading.DistributedClassloadingService;
+import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
+import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.diagnostics.BuildInfoPlugin;
 import com.hazelcast.internal.diagnostics.ConfigPropertiesPlugin;
 import com.hazelcast.internal.diagnostics.Diagnostics;
@@ -36,10 +42,6 @@ import com.hazelcast.internal.diagnostics.SlowOperationPlugin;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.diagnostics.SystemLogPlugin;
 import com.hazelcast.internal.diagnostics.SystemPropertiesPlugin;
-import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.ProbeLevel;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.FileMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
@@ -119,7 +121,9 @@ public class NodeEngineImpl implements NodeEngine {
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
     private final Diagnostics diagnostics;
+    private final DistributedClassloadingService distributedClassloadingService;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(final Node node) {
         this.node = node;
         this.loggingService = node.loggingService;
@@ -132,6 +136,11 @@ public class NodeEngineImpl implements NodeEngine {
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
         this.operationParker = new OperationParkerImpl(this);
+        this.distributedClassloadingService = new DistributedClassloadingService();
+        ClassLoader configClassLoader = node.getConfigClassLoader();
+        if (configClassLoader instanceof DistributedClassLoader) {
+            ((DistributedClassLoader) configClassLoader).setDistributedClassloadingService(distributedClassloadingService);
+        }
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetDispatcher = new PacketDispatcherImpl(
@@ -147,6 +156,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
+        serviceManager.registerService(DistributedClassloadingService.SERVICE_NAME, distributedClassloadingService);
     }
 
     private PacketHandler newJetPacketHandler() {

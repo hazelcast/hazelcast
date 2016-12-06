@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.internal.distributedclassloading.impl.ClassSource;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.EmptyStatement;
@@ -79,7 +80,9 @@ public final class ClassLoaderUtil {
         if (!constructor.isAccessible()) {
             constructor.setAccessible(true);
         }
-        CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
+        if (!shouldBypassCache(klass)) {
+            CONSTRUCTOR_CACHE.put(classLoader, className, constructor);
+        }
         return constructor.newInstance();
     }
 
@@ -152,7 +155,9 @@ public final class ClassLoaderUtil {
         }
 
         if (!CLASS_CACHE_DISABLED) {
-            CLASS_CACHE.put(classLoader, className, clazz);
+            if (!shouldBypassCache(clazz)) {
+                CLASS_CACHE.put(classLoader, className, clazz);
+            }
         }
 
         return clazz;
@@ -231,5 +236,11 @@ public final class ClassLoaderUtil {
             }
             return value;
         }
+    }
+
+    private static boolean shouldBypassCache(Class clazz) {
+        //dynamically loaded class should not be cached here as they are already cached
+        //in the DistributedLoadingService (when cache is enabled)
+        return (clazz.getClassLoader() instanceof ClassSource);
     }
 }

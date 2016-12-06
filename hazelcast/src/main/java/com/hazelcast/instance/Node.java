@@ -23,6 +23,7 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
+import com.hazelcast.config.DistributedClassloadingConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -40,6 +41,7 @@ import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
+import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
@@ -74,6 +76,7 @@ import com.hazelcast.version.MemberVersion;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -89,6 +92,7 @@ import static com.hazelcast.spi.properties.GroupProperty.LOGGING_TYPE;
 import static com.hazelcast.spi.properties.GroupProperty.MAX_JOIN_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.SHUTDOWNHOOK_POLICY;
+import static java.security.AccessController.doPrivileged;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:visibilitymodifier", "checkstyle:classdataabstractioncoupling",
         "checkstyle:classfanoutcomplexity"})
@@ -155,12 +159,12 @@ public class Node {
 
     private volatile Address masterAddress;
 
-    @SuppressWarnings("checkstyle:executablestatementcount")
+    @SuppressWarnings({"checkstyle:executablestatementcount", "checkstyle:methodlength"})
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
         this.liteMember = config.isLiteMember();
-        this.configClassLoader = config.getClassLoader();
+        this.configClassLoader = getConfigClassloader(config);
         this.properties = new HazelcastProperties(config);
 
         String policy = properties.getString(SHUTDOWNHOOK_POLICY);
@@ -212,6 +216,24 @@ public class Node {
             }
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private ClassLoader getConfigClassloader(Config config) {
+        DistributedClassloadingConfig distributedClassloadingConfig = config.getDistributedClassloadingConfig();
+        ClassLoader classLoader;
+        if (distributedClassloadingConfig.isEnabled()) {
+            ClassLoader parent = config.getClassLoader();
+            final ClassLoader theParent = parent == null ? Node.class.getClassLoader() : parent;
+            classLoader = doPrivileged(new PrivilegedAction<DistributedClassLoader>() {
+                @Override
+                public DistributedClassLoader run() {
+                    return new DistributedClassLoader(theParent);
+                }
+            });
+        } else {
+            classLoader = config.getClassLoader();
+        }
+        return classLoader;
     }
 
     public HazelcastThreadGroup getHazelcastThreadGroup() {

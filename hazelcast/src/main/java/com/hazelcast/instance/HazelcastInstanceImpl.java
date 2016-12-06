@@ -115,6 +115,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     final HazelcastInstanceCacheManager hazelcastCacheManager;
 
+    @SuppressWarnings("checkstyle:executablestatementcount")
     protected HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext)
             throws Exception {
         this.name = name;
@@ -143,6 +144,10 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
             this.healthMonitor = new HealthMonitor(node).start();
             this.hazelcastCacheManager = new HazelcastInstanceCacheManager(this);
+            ClassLoader classLoader = node.getConfigClassLoader();
+            if (classLoader instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) classLoader).setHazelcastInstance(this);
+            }
         } catch (Throwable e) {
             try {
                 // Terminate the node by terminating node engine,

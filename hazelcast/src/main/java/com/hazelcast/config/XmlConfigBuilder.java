@@ -20,6 +20,8 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import com.hazelcast.config.DistributedClassloadingConfig.ClassCacheMode;
+import com.hazelcast.config.DistributedClassloadingConfig.ProviderMode;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
@@ -92,6 +94,7 @@ import static com.hazelcast.config.XmlElements.SERVICES;
 import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
+import static com.hazelcast.config.XmlElements.DISTRIBUTED_CLASSLOADING;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -345,6 +348,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleLiteMember(node);
         } else if (HOT_RESTART_PERSISTENCE.isEqual(nodeName)) {
             handleHotRestartPersistence(node);
+        } else if (DISTRIBUTED_CLASSLOADING.isEqual(nodeName)) {
+            handleDistributedClassLoading(node);
         } else {
             return true;
         }
@@ -357,6 +362,42 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             throw new InvalidConfigurationException("Instance name in XML configuration is empty");
         }
         config.setInstanceName(instanceName);
+    }
+
+    private void handleDistributedClassLoading(Node dcRoot) {
+        DistributedClassloadingConfig dcConfig = new DistributedClassloadingConfig();
+        Node attrEnabled = dcRoot.getAttributes().getNamedItem("enabled");
+        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
+        dcConfig.setEnabled(enabled);
+
+        String classCacheModeName = "class-cache-mode";
+        String providerModeName = "provider-mode";
+        String blacklistPrefixesName = "blacklist-prefixes";
+        String whitelistPrefixesName = "whitelist-prefixes";
+        String providerFilterName = "provider-filter";
+
+        for (Node n : childElements(dcRoot)) {
+            String name = cleanNodeName(n);
+            if (classCacheModeName.equals(name)) {
+                String value = getTextContent(n);
+                ClassCacheMode classCacheMode = ClassCacheMode.valueOf(value);
+                dcConfig.setClassCacheMode(classCacheMode);
+            } else if (providerModeName.equals(name)) {
+                String value = getTextContent(n);
+                ProviderMode providerMode = ProviderMode.valueOf(value);
+                dcConfig.setProviderMode(providerMode);
+            } else if (blacklistPrefixesName.equals(name)) {
+                String value = getTextContent(n);
+                dcConfig.setBlacklistedPrefixes(value);
+            } else if (whitelistPrefixesName.equals(name)) {
+                String value = getTextContent(n);
+                dcConfig.setWhitelistedPrefixes(value);
+            } else if (providerFilterName.equals(name)) {
+                String value = getTextContent(n);
+                dcConfig.setProviderFilter(value);
+            }
+        }
+        config.setDistributedClassloadingConfig(dcConfig);
     }
 
     private void handleHotRestartPersistence(Node hrRoot) {
