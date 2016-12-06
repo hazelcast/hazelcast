@@ -18,11 +18,9 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 
-import java.util.Map;
+public class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> {
 
-public class MaxAggregator<T extends Comparable, K, V> extends AbstractAggregator<K, V, T> {
-
-    private T max;
+    private R max;
 
     public MaxAggregator() {
         super();
@@ -33,29 +31,29 @@ public class MaxAggregator<T extends Comparable, K, V> extends AbstractAggregato
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
-        T extractedValue = (T) extract(entry);
+    public void accumulate(I entry) {
+        R extractedValue = (R) extract(entry);
 
         if (isCurrentlyLessThan(extractedValue)) {
             max = extractedValue;
         }
     }
 
-    private boolean isCurrentlyLessThan(T extractedValue) {
+    private boolean isCurrentlyLessThan(R extractedValue) {
         return max == null || max.compareTo(extractedValue) < 0;
     }
 
     @Override
     public void combine(Aggregator aggregator) {
         MaxAggregator maxAggregator = (MaxAggregator) aggregator;
-        T valueFromOtherAggregator = (T) maxAggregator.max;
+        R valueFromOtherAggregator = (R) maxAggregator.max;
         if (isCurrentlyLessThan(valueFromOtherAggregator)) {
             this.max = valueFromOtherAggregator;
         }
     }
 
     @Override
-    public T aggregate() {
+    public R aggregate() {
         return max;
     }
 }

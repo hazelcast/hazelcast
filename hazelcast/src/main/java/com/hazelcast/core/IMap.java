@@ -1614,7 +1614,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(Aggregator<K, V, R> aggregator);
+    <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator);
 
     /**
      * Applies the aggregation logic on map entries filtered with the Predicated and returns the result
@@ -1630,7 +1630,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
      * @return the result of the given type
      * @since 3.8
      */
-    <R> R aggregate(Aggregator<K, V, R> aggregator, Predicate<K, V> predicate);
+    <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate);
 
     /**
      * Applies the projection logic on all map entries and returns the result

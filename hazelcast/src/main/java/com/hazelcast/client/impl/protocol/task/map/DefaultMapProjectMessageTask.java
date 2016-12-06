@@ -48,7 +48,7 @@ public abstract class DefaultMapProjectMessageTask<P>
     }
 
     @Override
-    protected Aggregator<?, ?, ?> getAggregator() {
+    protected Aggregator<?, ?> getAggregator() {
         return null;
     }
 

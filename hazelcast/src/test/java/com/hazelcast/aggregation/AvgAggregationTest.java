@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
@@ -61,12 +62,12 @@ public class AvgAggregationTest {
         BigDecimal expectation = Sums.sumBigDecimals(values)
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -79,12 +80,12 @@ public class AvgAggregationTest {
         BigDecimal sum = Sums.sumValueContainer(values, BIG_DECIMAL);
         BigDecimal expectation = sum.divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalAvg("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -97,12 +98,12 @@ public class AvgAggregationTest {
         BigDecimal expectation = new BigDecimal(Sums.sumBigIntegers(values))
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<BigInteger, BigInteger, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigInteger, BigInteger, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -116,12 +117,12 @@ public class AvgAggregationTest {
         BigDecimal expectation = new BigDecimal(sum)
                 .divide(BigDecimal.valueOf(values.size()));
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigIntegerAvg("bigInteger");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -133,12 +134,12 @@ public class AvgAggregationTest {
         List<Double> values = sampleDoubles();
         double expectation = Sums.sumDoubles(values) / (double) values.size();
 
-        Aggregator<Double, Double, Double> aggregation = Aggregators.doubleAvg();
+        Aggregator<Map.Entry<Double, Double>, Double> aggregation = Aggregators.doubleAvg();
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleAvg();
+        Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleAvg();
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
@@ -150,12 +151,12 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(DOUBLE);
         double expectation = (Double) Sums.sumValueContainer(values, DOUBLE) / (double) values.size();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.doubleAvg("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleAvg("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.doubleAvg("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleAvg("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -167,12 +168,12 @@ public class AvgAggregationTest {
         List<Integer> values = sampleIntegers();
         double expectation = (double) Sums.sumIntegers(values) / (double) values.size();
 
-        Aggregator<Integer, Integer, Double> aggregation = Aggregators.integerAvg();
+        Aggregator<Map.Entry<Integer, Integer>, Double> aggregation = Aggregators.integerAvg();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Integer, Integer, Double> resultAggregation = Aggregators.integerAvg();
+        Aggregator<Map.Entry<Integer, Integer>, Double> resultAggregation = Aggregators.integerAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -184,12 +185,12 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(INTEGER);
         double expectation = (Long) Sums.sumValueContainer(values, INTEGER) / (double) values.size();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.integerAvg("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.integerAvg("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.integerAvg("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.integerAvg("intValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -201,12 +202,12 @@ public class AvgAggregationTest {
         List<Long> values = sampleLongs();
         double expectation = (double) Sums.sumLongs(values) / (double) values.size();
 
-        Aggregator<Long, Long, Double> aggregation = Aggregators.longAvg();
+        Aggregator<Map.Entry<Long, Long>, Double> aggregation = Aggregators.longAvg();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.longAvg();
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -218,12 +219,12 @@ public class AvgAggregationTest {
         List<ValueContainer> values = sampleValueContainers(LONG);
         double expectation = (Long) Sums.sumValueContainer(values, LONG) / (double) values.size();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.longAvg("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.longAvg("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.longAvg("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.longAvg("longValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -238,12 +239,12 @@ public class AvgAggregationTest {
         values.addAll(sampleIntegers());
         double expectation = Sums.sumFloatingPointNumbers(values) / (double) values.size();
 
-        Aggregator<Number, Number, Double> aggregation = Aggregators.numberAvg();
+        Aggregator<Map.Entry<Number, Number>, Double> aggregation = Aggregators.numberAvg();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.numberAvg();
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -256,12 +257,12 @@ public class AvgAggregationTest {
         addValues(values, DOUBLE);
         double expectation = (Double) Sums.sumValueContainer(values, NUMBER) / (double) values.size();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.numberAvg("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.numberAvg("numberValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.numberAvg("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.numberAvg("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 

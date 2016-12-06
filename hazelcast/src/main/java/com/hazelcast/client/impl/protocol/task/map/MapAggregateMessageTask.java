@@ -36,7 +36,7 @@ public class MapAggregateMessageTask
     }
 
     @Override
-    protected Aggregator<?, ?, ?> getAggregator() {
+    protected Aggregator<?, ?> getAggregator() {
         return nodeEngine.getSerializationService().toObject(parameters.aggregator);
     }
 

@@ -756,7 +756,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public <R> R aggregate(Aggregator<K, V, R> aggregator) {
+    public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
 
         MapQueryEngine queryEngine = getMapQueryEngine();
@@ -773,7 +773,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public <R> R aggregate(Aggregator<K, V, R> aggregator, Predicate<K, V> predicate) {
+    public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 

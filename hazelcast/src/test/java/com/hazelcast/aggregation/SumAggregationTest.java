@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.aggregation.TestSamples.addValues;
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
@@ -60,12 +61,12 @@ public class SumAggregationTest {
         List<BigDecimal> values = sampleBigDecimals();
         BigDecimal expectation = Sums.sumBigDecimals(values);
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> aggregation = Aggregators.bigDecimalSum();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalSum();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalSum();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -77,12 +78,12 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(BIG_DECIMAL);
         BigDecimal expectation = Sums.sumValueContainer(values, BIG_DECIMAL);
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> aggregation = Aggregators.bigDecimalSum("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalSum("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> resultAggregation = Aggregators.bigDecimalSum("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalSum("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -94,12 +95,12 @@ public class SumAggregationTest {
         List<BigInteger> values = sampleBigIntegers();
         BigInteger expectation = Sums.sumBigIntegers(values);
 
-        Aggregator<BigInteger, BigInteger, BigInteger> aggregation = Aggregators.bigIntegerSum();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerSum();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigInteger, BigInteger, BigInteger> resultAggregation = Aggregators.bigIntegerSum();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerSum();
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -111,12 +112,12 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(BIG_INTEGER);
         BigInteger expectation = Sums.sumValueContainer(values, BIG_INTEGER);
 
-        Aggregator<ValueContainer, ValueContainer, BigInteger> aggregation = Aggregators.bigIntegerSum("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerSum("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigInteger> resultAggregation = Aggregators.bigIntegerSum("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation = Aggregators.bigIntegerSum("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -128,12 +129,12 @@ public class SumAggregationTest {
         List<Double> values = sampleDoubles();
         double expectation = Sums.sumDoubles(values);
 
-        Aggregator<Double, Double, Double> aggregation = Aggregators.doubleSum();
+        Aggregator<Map.Entry<Double, Double>, Double> aggregation = Aggregators.doubleSum();
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleSum();
+        Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleSum();
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
@@ -145,12 +146,12 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(DOUBLE);
         double expectation = Sums.sumValueContainer(values, DOUBLE).doubleValue();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.doubleSum("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleSum("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.doubleSum("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleSum("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -162,12 +163,12 @@ public class SumAggregationTest {
         List<Integer> values = sampleIntegers();
         long expectation = Sums.sumIntegers(values);
 
-        Aggregator<Integer, Integer, Long> aggregation = Aggregators.integerSum();
+        Aggregator<Map.Entry<Integer, Integer>, Long> aggregation = Aggregators.integerSum();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Integer, Integer, Long> resultAggregation = Aggregators.integerSum();
+        Aggregator<Map.Entry<Integer, Integer>, Long> resultAggregation = Aggregators.integerSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -179,12 +180,12 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(INTEGER);
         long expectation = Sums.sumValueContainer(values, INTEGER).intValue();
 
-        Aggregator<ValueContainer, ValueContainer, Long> aggregation = Aggregators.integerSum("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.integerSum("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Long> resultAggregation = Aggregators.integerSum("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.integerSum("intValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -196,12 +197,12 @@ public class SumAggregationTest {
         List<Long> values = sampleLongs();
         long expectation = Sums.sumLongs(values);
 
-        Aggregator<Long, Long, Long> aggregation = Aggregators.longSum();
+        Aggregator<Map.Entry<Long, Long>, Long> aggregation = Aggregators.longSum();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Long, Long, Long> resultAggregation = Aggregators.longSum();
+        Aggregator<Map.Entry<Long, Long>, Long> resultAggregation = Aggregators.longSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -213,12 +214,12 @@ public class SumAggregationTest {
         List<ValueContainer> values = sampleValueContainers(LONG);
         long expectation = Sums.sumValueContainer(values, LONG).longValue();
 
-        Aggregator<ValueContainer, ValueContainer, Long> aggregation = Aggregators.longSum("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longSum("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Long> resultAggregation = Aggregators.longSum("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longSum("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -233,12 +234,12 @@ public class SumAggregationTest {
         values.addAll(sampleBigIntegers());
         long expectation = Sums.sumFixedPointNumbers(values);
 
-        Aggregator<Number, Number, Long> aggregation = Aggregators.fixedPointSum();
+        Aggregator<Map.Entry<Number, Number>, Long> aggregation = Aggregators.fixedPointSum();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Number, Number, Long> resultAggregation = Aggregators.fixedPointSum();
+        Aggregator<Map.Entry<Number, Number>, Long> resultAggregation = Aggregators.fixedPointSum();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -251,12 +252,12 @@ public class SumAggregationTest {
         addValues(values, BIG_INTEGER);
         double expectation = Sums.sumValueContainer(values, NUMBER).doubleValue();
 
-        Aggregator<ValueContainer, ValueContainer, Long> aggregation = Aggregators.fixedPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.fixedPointSum("numberValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Long> resultAggregation = Aggregators.fixedPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.fixedPointSum("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -271,12 +272,12 @@ public class SumAggregationTest {
         values.addAll(sampleBigDecimals());
         double expectation = Sums.sumFloatingPointNumbers(values);
 
-        Aggregator<Number, Number, Double> aggregation = Aggregators.floatingPointSum();
+        Aggregator<Map.Entry<Number, Number>, Double> aggregation = Aggregators.floatingPointSum();
         for (Number value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Number, Number, Double> resultAggregation = Aggregators.floatingPointSum();
+        Aggregator<Map.Entry<Number, Number>, Double> resultAggregation = Aggregators.floatingPointSum();
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -289,12 +290,12 @@ public class SumAggregationTest {
         addValues(values, DOUBLE);
         double expectation = Sums.sumValueContainer(values, NUMBER).doubleValue();
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.floatingPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.floatingPointSum("numberValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.floatingPointSum("numberValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.floatingPointSum("numberValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 

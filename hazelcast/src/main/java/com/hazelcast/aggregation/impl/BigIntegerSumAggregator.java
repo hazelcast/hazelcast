@@ -19,9 +19,8 @@ package com.hazelcast.aggregation.impl;
 import com.hazelcast.aggregation.Aggregator;
 
 import java.math.BigInteger;
-import java.util.Map;
 
-public class BigIntegerSumAggregator<K, V> extends AbstractAggregator<K, V, BigInteger> {
+public class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigInteger> {
 
     private BigInteger sum = BigInteger.ZERO;
 
@@ -34,7 +33,7 @@ public class BigIntegerSumAggregator<K, V> extends AbstractAggregator<K, V, BigI
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         BigInteger extractedValue = (BigInteger) extract(entry);
         sum = sum.add(extractedValue);
     }

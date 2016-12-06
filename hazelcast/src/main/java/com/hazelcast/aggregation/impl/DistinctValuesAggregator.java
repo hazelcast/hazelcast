@@ -19,10 +19,9 @@ package com.hazelcast.aggregation.impl;
 import com.hazelcast.aggregation.Aggregator;
 
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-public class DistinctValuesAggregator<R, K, V> extends AbstractAggregator<K, V, Set<R>> {
+public class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, Set<R>> {
     Set<R> values = new HashSet<R>();
 
     public DistinctValuesAggregator() {
@@ -34,7 +33,7 @@ public class DistinctValuesAggregator<R, K, V> extends AbstractAggregator<K, V, 
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         R extractedValue = (R) extract(entry);
         values.add(extractedValue);
     }

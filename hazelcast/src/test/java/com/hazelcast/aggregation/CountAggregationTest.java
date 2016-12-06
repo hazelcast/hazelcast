@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
@@ -42,12 +43,12 @@ public class CountAggregationTest {
         List<BigDecimal> values = sampleBigDecimals();
         long expectation = values.size();
 
-        Aggregator<BigDecimal, BigDecimal, Long> aggregation = Aggregators.count();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> aggregation = Aggregators.count();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigDecimal, BigDecimal, Long> resultAggregation = Aggregators.count();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -59,12 +60,12 @@ public class CountAggregationTest {
         List<Person> values = samplePersons();
         long expectation = values.size();
 
-        Aggregator<Person, Person, Long> aggregation = Aggregators.count("age");
+        Aggregator<Map.Entry<Person, Person>, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
             aggregation.accumulate(createEntryWithValue(person));
         }
 
-        Aggregator<BigDecimal, BigDecimal, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
