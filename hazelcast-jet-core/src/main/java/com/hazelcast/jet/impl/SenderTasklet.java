@@ -65,7 +65,7 @@ public class SenderTasklet implements Tasklet {
         }
         do {
             fillBuffer();
-            Packet packet = new Packet(outputBuffer.toByteArray()).setFlag(Packet.FLAG_JET);
+            Packet packet = new Packet(outputBuffer.toByteArray()).setPacketType(Packet.Type.JET);
             connection.write(packet);
             outputBuffer.clear();
         } while (!inbox.isEmpty());
