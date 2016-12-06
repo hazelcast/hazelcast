@@ -300,9 +300,20 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             Data key = toData(resultingKeyValuePairs.get(i++));
             Data value = toData(resultingKeyValuePairs.get(i++));
 
-            boolean marked = keyStates.get(key);
+            boolean marked = keyStates.remove(key);
             if (marked) {
                 tryToPutNearCache(key, value);
+            }
+        }
+
+        unmarkRemainingMarkedKeys(keyStates);
+    }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.forceUnmark(entry.getKey());
             }
         }
     }

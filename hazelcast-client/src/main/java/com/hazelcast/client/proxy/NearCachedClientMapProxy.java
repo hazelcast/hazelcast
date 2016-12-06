@@ -309,17 +309,29 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
                 Data key = entry.getKey();
                 Data value = entry.getValue();
 
-                Boolean marked = markers.get(key);
+                Boolean marked = markers.remove(key);
                 if ((null != marked && marked)) {
                     tryToPutNearCache(key, value);
                 } else if (!invalidateOnChange) {
                     nearCache.put(key, value);
                 }
-
             }
         }
+
+        unmarkRemainingMarkedKeys(markers);
+
         return responses;
     }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.forceUnmark(entry.getKey());
+            }
+        }
+    }
+
 
     @Override
     public LocalMapStats getLocalMapStats() {
