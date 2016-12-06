@@ -360,10 +360,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     }
 
     private void handleHotRestartPersistence(Node hrRoot) {
-        HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig();
-        Node attrEnabled = hrRoot.getAttributes().getNamedItem("enabled");
-        boolean enabled = getBooleanValue(getTextContent(attrEnabled));
-        hrConfig.setEnabled(enabled);
+        final HotRestartPersistenceConfig hrConfig = new HotRestartPersistenceConfig()
+                .setEnabled(getBooleanValue(getAttribute(hrRoot, "enabled")));
 
         final String parallelismName = "parallelism";
         final String validationTimeoutName = "validation-timeout-seconds";
@@ -371,9 +369,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         final String clusterDataRecoveryPolicyName = "cluster-data-recovery-policy";
 
         for (Node n : childElements(hrRoot)) {
-            String name = cleanNodeName(n);
+            final String name = cleanNodeName(n);
             if ("base-dir".equals(name)) {
                 hrConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
+            } else if ("backup-dir".equals(name)) {
+                hrConfig.setBackupDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (parallelismName.equals(name)) {
                 hrConfig.setParallelism(getIntegerValue(parallelismName, getTextContent(n)));
             } else if (validationTimeoutName.equals(name)) {

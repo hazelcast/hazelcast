@@ -104,14 +104,14 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Base directory for all Hot Restart stores.
+     * Base directory for all Hot Restart stores. Can be an absolute or relative path to the node startup directory.
      */
     public File getBaseDir() {
         return baseDir;
     }
 
     /**
-     * Sets base directory for all Hot Restart stores.
+     * Sets base directory for all Hot Restart stores. Can be an absolute or relative path to the node startup directory.
      *
      * @param baseDir home directory
      * @return HotRestartConfig
@@ -123,7 +123,8 @@ public class HotRestartPersistenceConfig {
     }
 
     /**
-     * Base directory for all Hot Restart stores.
+     * Base directory for hot backups. Each new backup will be created in a separate directory inside this one.
+     * Can be an absolute or relative path to the node startup directory.
      */
     public File getBackupDir() {
         return backupDir;
