@@ -20,9 +20,8 @@ import com.hazelcast.aggregation.Aggregator;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Map;
 
-public class BigIntegerAverageAggregator<K, V> extends AbstractAggregator<K, V, BigDecimal> {
+public class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigDecimal> {
 
     private BigInteger sum = BigInteger.ZERO;
     private long count;
@@ -36,7 +35,7 @@ public class BigIntegerAverageAggregator<K, V> extends AbstractAggregator<K, V, 
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         count++;
 
         BigInteger extractedValue = (BigInteger) extract(entry);

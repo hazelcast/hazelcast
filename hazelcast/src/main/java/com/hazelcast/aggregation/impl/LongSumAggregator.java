@@ -18,9 +18,7 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 
-import java.util.Map;
-
-public class LongSumAggregator<K, V> extends AbstractAggregator<K, V, Long> {
+public class LongSumAggregator<I> extends AbstractAggregator<I, Long> {
 
     private long sum;
 
@@ -33,7 +31,7 @@ public class LongSumAggregator<K, V> extends AbstractAggregator<K, V, Long> {
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         Long extractedValue = (Long) extract(entry);
         sum += extractedValue;
     }

@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
@@ -60,12 +61,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(0);
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> aggregation = Aggregators.bigDecimalMin();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> aggregation = Aggregators.bigDecimalMin();
         for (BigDecimal value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigDecimal, BigDecimal, BigDecimal> resultAggregation = Aggregators.bigDecimalMin();
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, BigDecimal> resultAggregation = Aggregators.bigDecimalMin();
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -78,12 +79,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigDecimal expectation = values.get(0).bigDecimal;
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> aggregation = Aggregators.bigDecimalMin("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> aggregation = Aggregators.bigDecimalMin("bigDecimal");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigDecimal> resultAggregation = Aggregators.bigDecimalMin("bigDecimal");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigDecimal> resultAggregation = Aggregators.bigDecimalMin("bigDecimal");
         resultAggregation.combine(aggregation);
         BigDecimal result = resultAggregation.aggregate();
 
@@ -96,12 +97,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(0);
 
-        Aggregator<BigInteger, BigInteger, BigInteger> aggregation = Aggregators.bigIntegerMin();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> aggregation = Aggregators.bigIntegerMin();
         for (BigInteger value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<BigInteger, BigInteger, BigInteger> resultAggregation = Aggregators.bigIntegerMin();
+        Aggregator<Map.Entry<BigInteger, BigInteger>, BigInteger> resultAggregation = Aggregators.bigIntegerMin();
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -114,12 +115,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         BigInteger expectation = values.get(0).bigInteger;
 
-        Aggregator<ValueContainer, ValueContainer, BigInteger> aggregation = Aggregators.bigIntegerMin("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> aggregation = Aggregators.bigIntegerMin("bigInteger");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, BigInteger> resultAggregation = Aggregators.bigIntegerMin("bigInteger");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, BigInteger> resultAggregation = Aggregators.bigIntegerMin("bigInteger");
         resultAggregation.combine(aggregation);
         BigInteger result = resultAggregation.aggregate();
 
@@ -132,12 +133,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         double expectation = values.get(0);
 
-        Aggregator<Double, Double, Double> aggregation = Aggregators.doubleMin();
+        Aggregator<Map.Entry<Double, Double>, Double> aggregation = Aggregators.doubleMin();
         for (Double value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Double, Double, Double> resultAggregation = Aggregators.doubleMin();
+        Aggregator<Map.Entry<Double, Double>, Double> resultAggregation = Aggregators.doubleMin();
         resultAggregation.combine(aggregation);
         Double result = resultAggregation.aggregate();
 
@@ -150,12 +151,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         double expectation = values.get(0).doubleValue;
 
-        Aggregator<ValueContainer, ValueContainer, Double> aggregation = Aggregators.doubleMin("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> aggregation = Aggregators.doubleMin("doubleValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Double> resultAggregation = Aggregators.doubleMin("doubleValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Double> resultAggregation = Aggregators.doubleMin("doubleValue");
         resultAggregation.combine(aggregation);
         double result = resultAggregation.aggregate();
 
@@ -168,12 +169,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0);
 
-        Aggregator<Integer, Integer, Integer> aggregation = Aggregators.integerMin();
+        Aggregator<Map.Entry<Integer, Integer>, Integer> aggregation = Aggregators.integerMin();
         for (Integer value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Integer, Integer, Integer> resultAggregation = Aggregators.integerMin();
+        Aggregator<Map.Entry<Integer, Integer>, Integer> resultAggregation = Aggregators.integerMin();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -186,12 +187,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         int expectation = values.get(0).intValue;
 
-        Aggregator<ValueContainer, ValueContainer, Integer> aggregation = Aggregators.integerMin("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> aggregation = Aggregators.integerMin("intValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Integer> resultAggregation = Aggregators.integerMin("intValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Integer> resultAggregation = Aggregators.integerMin("intValue");
         resultAggregation.combine(aggregation);
         int result = resultAggregation.aggregate();
 
@@ -204,12 +205,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0);
 
-        Aggregator<Long, Long, Long> aggregation = Aggregators.longMin();
+        Aggregator<Map.Entry<Long, Long>, Long> aggregation = Aggregators.longMin();
         for (Long value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Long, Long, Long> resultAggregation = Aggregators.longMin();
+        Aggregator<Map.Entry<Long, Long>, Long> resultAggregation = Aggregators.longMin();
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -222,12 +223,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         long expectation = values.get(0).longValue;
 
-        Aggregator<ValueContainer, ValueContainer, Long> aggregation = Aggregators.longMin("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> aggregation = Aggregators.longMin("longValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, Long> resultAggregation = Aggregators.longMin("longValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, Long> resultAggregation = Aggregators.longMin("longValue");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -240,12 +241,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         String expectation = values.get(0);
 
-        Aggregator<String, String, String> aggregation = Aggregators.comparableMin();
+        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMin();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<String, String, String> resultAggregation = Aggregators.comparableMin();
+        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 
@@ -258,12 +259,12 @@ public class MinAggregationTest {
         Collections.sort(values);
         String expectation = values.get(0).stringValue;
 
-        Aggregator<ValueContainer, ValueContainer, String> aggregation = Aggregators.comparableMin("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
         for (ValueContainer value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<ValueContainer, ValueContainer, String> resultAggregation = Aggregators.comparableMin("stringValue");
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation = Aggregators.comparableMin("stringValue");
         resultAggregation.combine(aggregation);
         String result = resultAggregation.aggregate();
 

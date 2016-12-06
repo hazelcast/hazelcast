@@ -70,7 +70,7 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
 
     protected abstract Predicate getPredicate();
 
-    protected abstract Aggregator<?, ?, ?> getAggregator();
+    protected abstract Aggregator<?, ?> getAggregator();
 
     protected abstract Projection<?, ?> getProjection();
 

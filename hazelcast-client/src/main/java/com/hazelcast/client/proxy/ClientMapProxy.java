@@ -1305,7 +1305,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public <R> R aggregate(Aggregator<K, V, R> aggregator) {
+    public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
 
         ClientMessage request = MapAggregateCodec.encodeRequest(name, toData(aggregator));
@@ -1318,7 +1318,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public <R> R aggregate(Aggregator<K, V, R> aggregator, Predicate<K, V> predicate) {
+    public <R> R aggregate(Aggregator<Map.Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         checkNotNull(aggregator, NULL_AGGREGATOR_IS_NOT_ALLOWED);
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 

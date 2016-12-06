@@ -18,9 +18,7 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 
-import java.util.Map;
-
-public class DoubleSumAggregator<K, V> extends AbstractAggregator<K, V, Double> {
+public class DoubleSumAggregator<I> extends AbstractAggregator<I, Double> {
 
     private double sum;
 
@@ -33,7 +31,7 @@ public class DoubleSumAggregator<K, V> extends AbstractAggregator<K, V, Double> 
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         Double extractedValue = (Double) extract(entry);
         sum += extractedValue;
     }

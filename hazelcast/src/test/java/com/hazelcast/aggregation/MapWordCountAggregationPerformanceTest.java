@@ -149,7 +149,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         return word.replaceAll("[^A-Za-z0-9]", "");
     }
 
-    private static class WordCountAggregator extends AbstractAggregator<String, String, Map<String, MutableInt>> {
+    private static class WordCountAggregator extends AbstractAggregator<Map.Entry<String, String>, Map<String, MutableInt>> {
 
         Map<String, MutableInt> result = new HashMap<String, MutableInt>(1000);
 

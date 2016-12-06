@@ -18,9 +18,7 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 
-import java.util.Map;
-
-public class CountAggregator<K, V> extends AbstractAggregator<K, V, Long> {
+public class CountAggregator<I> extends AbstractAggregator<I, Long> {
     private long count;
 
     public CountAggregator() {
@@ -32,7 +30,7 @@ public class CountAggregator<K, V> extends AbstractAggregator<K, V, Long> {
     }
 
     @Override
-    public void accumulate(Map.Entry<K, V> entry) {
+    public void accumulate(I entry) {
         count++;
     }
 

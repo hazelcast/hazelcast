@@ -43,7 +43,8 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
         this.aggregator = aggregator;
     }
 
-    public <R> Aggregator<?, ?, R> getAggregator() {
+    @SuppressWarnings("unchecked")
+    public <R> Aggregator<?, R> getAggregator() {
         return aggregator;
     }
 

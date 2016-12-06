@@ -23,14 +23,13 @@ import java.util.Map;
 
 /**
  * Abstract class providing convenience for concrete implementations of an {@link Aggregator}
- * It also provides the extract() method that enables extracting values of the given attributePath from the entry.
+ * It also provides the extract() method that enables extracting values of the given attributePath from the input.
  * <p>
  *
- * @param <R> aggregation result
- * @param <K> entry key type
- * @param <V> entry value type
+ * @param <I> input type
+ * @param <R> result type
  */
-public abstract class AbstractAggregator<K, V, R> extends Aggregator<K, V, R> {
+public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
 
     private final String attributePath;
 
@@ -47,14 +46,15 @@ public abstract class AbstractAggregator<K, V, R> extends Aggregator<K, V, R> {
      * Extract the value of the given attributePath from the given entry.
      */
     @SuppressWarnings("unchecked")
-    protected final <T> T extract(Map.Entry<K, V> entry) {
+    protected final <T> T extract(I input) {
         if (attributePath == null) {
-            return (T) entry.getValue();
+            if (input instanceof Map.Entry) {
+                return (T) ((Map.Entry) input).getValue();
+            }
+        } else if (input instanceof Extractable) {
+            return (T) ((Extractable) input).getAttributeValue(attributePath);
         }
-        if (entry instanceof Extractable) {
-            return (T) ((Extractable) entry).getAttributeValue(attributePath);
-        }
-        throw new IllegalArgumentException("The given map entry is not extractable");
+        throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
     }
 
 }

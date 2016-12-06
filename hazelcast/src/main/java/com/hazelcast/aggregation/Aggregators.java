@@ -40,16 +40,16 @@ import java.util.Set;
 
 /**
  * A utility class to create basic {@link com.hazelcast.aggregation.Aggregator} instances.
- *
+ * <p>
  * Min/Max/Average aggregators are type specific, so an integerAvg() aggregator expects all elements to be integers.
  * There is no conversion executed while accumulating, so if there is any other type met an exception will be thrown.
- *
+ * <p>
  * In order to operate on a generic Number type use the fixedPointSum(), floatingPointSum() and numberAvg() aggregators.
  * All of them will convert the given number to either Long or Double during the accumulation phase.
  * It will result in a lot of allocations since each number has to be converted, but it enables the user
  * to operate on the whole family of numbers. It is especially useful if the numbers given to the aggregators
  * may not be of one type only.
- *
+ * <p>
  * The attributePath given in the factory method allows the aggregator to operate on the value extracted by navigating
  * to the given attributePath on each object that has been returned from a query.
  * The attribute path may be simple, e.g. "name", or nested "address.city".
@@ -62,231 +62,231 @@ public final class Aggregators {
     private Aggregators() {
     }
 
-    public static <K, V> Aggregator<K, V, Long> count() {
-        return new CountAggregator<K, V>();
+    public static <I> Aggregator<I, Long> count() {
+        return new CountAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> count(String attributePath) {
-        return new CountAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Long> count(String attributePath) {
+        return new CountAggregator<I>(attributePath);
     }
 
-    public static <K, V, R> Aggregator<K, V, Set<R>> distinct() {
-        return new DistinctValuesAggregator<R, K, V>();
+    public static <I, R> Aggregator<I, Set<R>> distinct() {
+        return new DistinctValuesAggregator<I, R>();
     }
 
-    public static <K, V, R> Aggregator<K, V, Set<R>> distinct(String attributePath) {
-        return new DistinctValuesAggregator<R, K, V>(attributePath);
+    public static <I, R> Aggregator<I, Set<R>> distinct(String attributePath) {
+        return new DistinctValuesAggregator<I, R>(attributePath);
     }
 
     //
     // average aggregators
     //
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalAvg() {
-        return new BigDecimalAverageAggregator<K, V>();
+    public static <I> Aggregator<I, BigDecimal> bigDecimalAvg() {
+        return new BigDecimalAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalAvg(String attributePath) {
-        return new BigDecimalAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, BigDecimal> bigDecimalAvg(String attributePath) {
+        return new BigDecimalAverageAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigIntegerAvg() {
-        return new BigIntegerAverageAggregator<K, V>();
+    public static <I> Aggregator<I, BigDecimal> bigIntegerAvg() {
+        return new BigIntegerAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigIntegerAvg(String attributePath) {
-        return new BigIntegerAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, BigDecimal> bigIntegerAvg(String attributePath) {
+        return new BigIntegerAverageAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleAvg() {
-        return new DoubleAverageAggregator<K, V>();
+    public static <I> Aggregator<I, Double> doubleAvg() {
+        return new DoubleAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleAvg(String attributePath) {
-        return new DoubleAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> doubleAvg(String attributePath) {
+        return new DoubleAverageAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> integerAvg() {
-        return new IntegerAverageAggregator<K, V>();
+    public static <I> Aggregator<I, Double> integerAvg() {
+        return new IntegerAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> integerAvg(String attributePath) {
-        return new IntegerAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> integerAvg(String attributePath) {
+        return new IntegerAverageAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> longAvg() {
-        return new LongAverageAggregator<K, V>();
+    public static <I> Aggregator<I, Double> longAvg() {
+        return new LongAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> longAvg(String attributePath) {
-        return new LongAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> longAvg(String attributePath) {
+        return new LongAverageAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> numberAvg() {
-        return new NumberAverageAggregator<K, V>();
+    public static <I> Aggregator<I, Double> numberAvg() {
+        return new NumberAverageAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> numberAvg(String attributePath) {
-        return new NumberAverageAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> numberAvg(String attributePath) {
+        return new NumberAverageAggregator<I>(attributePath);
     }
 
     //
     // max aggregators
     //
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalMax() {
-        return new MaxAggregator<BigDecimal, K, V>();
+    public static <I> Aggregator<I, BigDecimal> bigDecimalMax() {
+        return new MaxAggregator<I, BigDecimal>();
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalMax(String attributePath) {
-        return new MaxAggregator<BigDecimal, K, V>(attributePath);
+    public static <I> Aggregator<I, BigDecimal> bigDecimalMax(String attributePath) {
+        return new MaxAggregator<I, BigDecimal>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerMax() {
-        return new MaxAggregator<BigInteger, K, V>();
+    public static <I> Aggregator<I, BigInteger> bigIntegerMax() {
+        return new MaxAggregator<I, BigInteger>();
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerMax(String attributePath) {
-        return new MaxAggregator<BigInteger, K, V>(attributePath);
+    public static <I> Aggregator<I, BigInteger> bigIntegerMax(String attributePath) {
+        return new MaxAggregator<I, BigInteger>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleMax() {
-        return new MaxAggregator<Double, K, V>();
+    public static <I> Aggregator<I, Double> doubleMax() {
+        return new MaxAggregator<I, Double>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleMax(String attributePath) {
-        return new MaxAggregator<Double, K, V>(attributePath);
+    public static <I> Aggregator<I, Double> doubleMax(String attributePath) {
+        return new MaxAggregator<I, Double>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Integer> integerMax() {
-        return new MaxAggregator<Integer, K, V>();
+    public static <I> Aggregator<I, Integer> integerMax() {
+        return new MaxAggregator<I, Integer>();
     }
 
-    public static <K, V> Aggregator<K, V, Integer> integerMax(String attributePath) {
-        return new MaxAggregator<Integer, K, V>(attributePath);
+    public static <I> Aggregator<I, Integer> integerMax(String attributePath) {
+        return new MaxAggregator<I, Integer>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Long> longMax() {
-        return new MaxAggregator<Long, K, V>();
+    public static <I> Aggregator<I, Long> longMax() {
+        return new MaxAggregator<I, Long>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> longMax(String attributePath) {
-        return new MaxAggregator<Long, K, V>(attributePath);
+    public static <I> Aggregator<I, Long> longMax(String attributePath) {
+        return new MaxAggregator<I, Long>(attributePath);
     }
 
-    public static <K, V, R extends Comparable> Aggregator<K, V, R> comparableMax() {
-        return new MaxAggregator<R, K, V>();
+    public static <I, R extends Comparable> Aggregator<I, R> comparableMax() {
+        return new MaxAggregator<I, R>();
     }
 
-    public static <K, V, R extends Comparable> Aggregator<K, V, R> comparableMax(String attributePath) {
-        return new MaxAggregator<R, K, V>(attributePath);
+    public static <I, R extends Comparable> Aggregator<I, R> comparableMax(String attributePath) {
+        return new MaxAggregator<I, R>(attributePath);
     }
 
     //
     // min aggregators
     //
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalMin() {
-        return new MinAggregator<BigDecimal, K, V>();
+    public static <I> Aggregator<I, BigDecimal> bigDecimalMin() {
+        return new MinAggregator<I, BigDecimal>();
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalMin(String attributePath) {
-        return new MinAggregator<BigDecimal, K, V>(attributePath);
+    public static <I> Aggregator<I, BigDecimal> bigDecimalMin(String attributePath) {
+        return new MinAggregator<I, BigDecimal>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerMin() {
-        return new MinAggregator<BigInteger, K, V>();
+    public static <I> Aggregator<I, BigInteger> bigIntegerMin() {
+        return new MinAggregator<I, BigInteger>();
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerMin(String attributePath) {
-        return new MinAggregator<BigInteger, K, V>(attributePath);
+    public static <I> Aggregator<I, BigInteger> bigIntegerMin(String attributePath) {
+        return new MinAggregator<I, BigInteger>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleMin() {
-        return new MinAggregator<Double, K, V>();
+    public static <I> Aggregator<I, Double> doubleMin() {
+        return new MinAggregator<I, Double>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleMin(String attributePath) {
-        return new MinAggregator<Double, K, V>(attributePath);
+    public static <I> Aggregator<I, Double> doubleMin(String attributePath) {
+        return new MinAggregator<I, Double>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Integer> integerMin() {
-        return new MinAggregator<Integer, K, V>();
+    public static <I> Aggregator<I, Integer> integerMin() {
+        return new MinAggregator<I, Integer>();
     }
 
-    public static <K, V> Aggregator<K, V, Integer> integerMin(String attributePath) {
-        return new MinAggregator<Integer, K, V>(attributePath);
+    public static <I> Aggregator<I, Integer> integerMin(String attributePath) {
+        return new MinAggregator<I, Integer>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Long> longMin() {
-        return new MinAggregator<Long, K, V>();
+    public static <I> Aggregator<I, Long> longMin() {
+        return new MinAggregator<I, Long>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> longMin(String attributePath) {
-        return new MinAggregator<Long, K, V>(attributePath);
+    public static <I> Aggregator<I, Long> longMin(String attributePath) {
+        return new MinAggregator<I, Long>(attributePath);
     }
 
-    public static <K, V, R extends Comparable> Aggregator<K, V, R> comparableMin() {
-        return new MinAggregator<R, K, V>();
+    public static <I, R extends Comparable> Aggregator<I, R> comparableMin() {
+        return new MinAggregator<I, R>();
     }
 
-    public static <K, V, R extends Comparable> Aggregator<K, V, R> comparableMin(String attributePath) {
-        return new MinAggregator<R, K, V>(attributePath);
+    public static <I, R extends Comparable> Aggregator<I, R> comparableMin(String attributePath) {
+        return new MinAggregator<I, R>(attributePath);
     }
 
     //
     // sum aggregators
     //
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalSum() {
-        return new BigDecimalSumAggregator<K, V>();
+    public static <I> Aggregator<I, BigDecimal> bigDecimalSum() {
+        return new BigDecimalSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, BigDecimal> bigDecimalSum(String attributePath) {
-        return new BigDecimalSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, BigDecimal> bigDecimalSum(String attributePath) {
+        return new BigDecimalSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerSum() {
-        return new BigIntegerSumAggregator<K, V>();
+    public static <I> Aggregator<I, BigInteger> bigIntegerSum() {
+        return new BigIntegerSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, BigInteger> bigIntegerSum(String attributePath) {
-        return new BigIntegerSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, BigInteger> bigIntegerSum(String attributePath) {
+        return new BigIntegerSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleSum() {
-        return new DoubleSumAggregator<K, V>();
+    public static <I> Aggregator<I, Double> doubleSum() {
+        return new DoubleSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> doubleSum(String attributePath) {
-        return new DoubleSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> doubleSum(String attributePath) {
+        return new DoubleSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Long> integerSum() {
-        return new IntegerSumAggregator<K, V>();
+    public static <I> Aggregator<I, Long> integerSum() {
+        return new IntegerSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> integerSum(String attributePath) {
-        return new IntegerSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Long> integerSum(String attributePath) {
+        return new IntegerSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Long> longSum() {
-        return new LongSumAggregator<K, V>();
+    public static <I> Aggregator<I, Long> longSum() {
+        return new LongSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> longSum(String attributePath) {
-        return new LongSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Long> longSum(String attributePath) {
+        return new LongSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Long> fixedPointSum() {
-        return new FixedSumAggregator<K, V>();
+    public static <I> Aggregator<I, Long> fixedPointSum() {
+        return new FixedSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Long> fixedPointSum(String attributePath) {
-        return new FixedSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Long> fixedPointSum(String attributePath) {
+        return new FixedSumAggregator<I>(attributePath);
     }
 
-    public static <K, V> Aggregator<K, V, Double> floatingPointSum() {
-        return new FloatingPointSumAggregator<K, V>();
+    public static <I> Aggregator<I, Double> floatingPointSum() {
+        return new FloatingPointSumAggregator<I>();
     }
 
-    public static <K, V> Aggregator<K, V, Double> floatingPointSum(String attributePath) {
-        return new FloatingPointSumAggregator<K, V>(attributePath);
+    public static <I> Aggregator<I, Double> floatingPointSum(String attributePath) {
+        return new FloatingPointSumAggregator<I>(attributePath);
     }
 }

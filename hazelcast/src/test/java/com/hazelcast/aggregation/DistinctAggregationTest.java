@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
@@ -45,12 +46,12 @@ public class DistinctAggregationTest {
         List<String> values = repeatTimes(3, sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<String, String, Set<String>> aggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<String, String, Set<String>> resultAggregation = Aggregators.distinct();
+        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
@@ -64,12 +65,12 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Person, Person, Set<Double>> aggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Person, Person, Set<Double>> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 
