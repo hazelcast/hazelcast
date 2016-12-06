@@ -253,7 +253,6 @@ public class ClientScheduledExecutorProxy
     @Override
     public <V> IScheduledFuture<V> getScheduledFuture(ScheduledTaskHandler handler) {
         ClientScheduledFutureProxy<V> futureProxy = new ClientScheduledFutureProxy<V>(handler, getContext());
-        futureProxy.setHazelcastInstance(getClient());
         return futureProxy;
     }
 
@@ -313,7 +312,6 @@ public class ClientScheduledExecutorProxy
 
     private <V> IScheduledFuture<V> createFutureProxy(ScheduledTaskHandler handler) {
         ClientScheduledFutureProxy<V> proxy = new ClientScheduledFutureProxy<V>(handler, getContext());
-        proxy.setHazelcastInstance(getClient());
         return proxy;
     }
 

@@ -30,8 +30,6 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
@@ -57,8 +55,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class ClientScheduledFutureProxy<V>
         extends ClientProxy
-        implements IScheduledFuture<V>,
-                   HazelcastInstanceAware {
+        implements IScheduledFuture<V> {
 
     private static final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
         @Override
@@ -116,23 +113,12 @@ public class ClientScheduledFutureProxy<V>
         }
     };
 
-    private HazelcastInstance instance;
-
-    private String partitionLostRegistration;
-
-    private boolean partitionLost;
-
     private ScheduledTaskHandler handler;
 
     public ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
         super(DistributedScheduledExecutorService.SERVICE_NAME, handler.getSchedulerName());
         setContext(context);
         this.handler = handler;
-    }
-
-    @Override
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.instance = hazelcastInstance;
     }
 
     @Override
