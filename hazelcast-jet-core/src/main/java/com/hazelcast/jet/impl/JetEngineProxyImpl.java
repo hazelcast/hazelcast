@@ -38,7 +38,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> implements JetEngineProxy {
 
@@ -110,7 +111,10 @@ public class JetEngineProxyImpl extends AbstractDistributedObject<JetService> im
                       .map(member -> operationService
                               .createInvocationBuilder(JetService.SERVICE_NAME, supplier.get(), member.getAddress())
                               .<T>invoke())
-                      .map(Util::uncheckedGet).collect(Collectors.toList());
+                      .collect(toList())
+                      .stream()
+                      .map(Util::uncheckedGet)
+                      .collect(toList());
     }
 
 }

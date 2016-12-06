@@ -48,9 +48,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.JetEngineProxyImpl.ID_GENERATOR_PREFIX;
+import static java.util.stream.Collectors.toList;
 
 public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy {
     private IdGenerator idGenerator;
@@ -118,7 +118,10 @@ public class ClientJetEngineProxy extends ClientProxy implements JetEngineProxy 
                                                        Supplier<ClientMessage> messageSupplier) {
         return client.getCluster().getMembers().stream()
                      .map(m -> new ClientInvocation(client, messageSupplier.get(), m.getAddress()).invoke())
-                     .map(Util::uncheckedGet).collect(Collectors.toList());
+                     .collect(toList())
+                     .stream()
+                     .map(Util::uncheckedGet)
+                     .collect(toList());
     }
 
     private final class ExecutionFuture implements Future<Void> {
