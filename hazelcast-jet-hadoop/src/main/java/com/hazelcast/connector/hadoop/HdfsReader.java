@@ -219,7 +219,8 @@ public final class HdfsReader extends AbstractProducer {
                         // find member with most splits and remove from list
                         int indexWithMaxCount = indexes.stream().max(comparingInt(i -> counts[i]))
                                                        .orElseThrow(() -> new AssertionError("Empty indexes"));
-                        indexes.remove(indexWithMaxCount);
+                        // remove the item in the list which has the value "indexWithMaxCount"
+                        indexes.remove(Integer.valueOf(indexWithMaxCount));
                         counts[indexWithMaxCount]--;
                     }
                 }
