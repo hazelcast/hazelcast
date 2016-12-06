@@ -79,13 +79,9 @@ public class DescribeInstances {
     }
 
     void checkKeysFromIamRoles(Environment env) throws IOException {
-        if (awsConfig.getAccessKey() != null && awsConfig.getIamRole() != null) {
-            throw new InvalidConfigurationException("You should only define one of `<iam-role>` and `<access-key>`");
-        }
-        if (awsConfig.getAccessKey() != null) {
+        if (awsConfig.getAccessKey() != null && awsConfig.getIamRole() == null) {
             return;
         }
-
         // in case no IAM role has been defined, this will attempt to retrieve name of default role.
         tryGetDefaultIamRole();
 
