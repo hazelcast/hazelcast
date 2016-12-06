@@ -21,7 +21,7 @@ import com.hazelcast.aggregation.Aggregator;
 import java.math.BigDecimal;
 import java.util.Map;
 
-public class BigDecimalAverageAggregator<K, V> extends AbstractAggregator<BigDecimal, K, V> {
+public class BigDecimalAverageAggregator<K, V> extends AbstractAggregator<K, V, BigDecimal> {
 
     private BigDecimal sum = BigDecimal.ZERO;
     private long count;

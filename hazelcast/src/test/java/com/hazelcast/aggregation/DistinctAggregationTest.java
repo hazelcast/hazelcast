@@ -45,12 +45,12 @@ public class DistinctAggregationTest {
         List<String> values = repeatTimes(3, sampleStrings());
         Set<String> expectation = new HashSet<String>(values);
 
-        Aggregator<Set<String>, String, String> aggregation = Aggregators.distinct();
+        Aggregator<String, String, Set<String>> aggregation = Aggregators.distinct();
         for (String value : values) {
             aggregation.accumulate(createEntryWithValue(value));
         }
 
-        Aggregator<Set<String>, String, String> resultAggregation = Aggregators.distinct();
+        Aggregator<String, String, Set<String>> resultAggregation = Aggregators.distinct();
         resultAggregation.combine(aggregation);
         Set<String> result = resultAggregation.aggregate();
 
@@ -64,12 +64,12 @@ public class DistinctAggregationTest {
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
-        Aggregator<Set<Double>, Person, Person> aggregation = Aggregators.distinct("age");
+        Aggregator<Person, Person, Set<Double>> aggregation = Aggregators.distinct("age");
         for (Person value : values) {
             aggregation.accumulate(createExtractableEntryWithValue(value));
         }
 
-        Aggregator<Set<Double>, Person, Person> resultAggregation = Aggregators.distinct("age");
+        Aggregator<Person, Person, Set<Double>> resultAggregation = Aggregators.distinct("age");
         resultAggregation.combine(aggregation);
         Set<Double> result = resultAggregation.aggregate();
 

@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 
 import java.util.Map;
 
-public class CountAggregator<K, V> extends AbstractAggregator<Long, K, V> {
+public class CountAggregator<K, V> extends AbstractAggregator<K, V, Long> {
     private long count;
 
     public CountAggregator() {

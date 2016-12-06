@@ -20,7 +20,7 @@ import com.hazelcast.aggregation.Aggregator;
 
 import java.util.Map;
 
-public class IntegerAverageAggregator<K, V> extends AbstractAggregator<Double, K, V> {
+public class IntegerAverageAggregator<K, V> extends AbstractAggregator<K, V, Double> {
 
     private long sum;
 
