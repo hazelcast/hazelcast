@@ -29,11 +29,16 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
@@ -511,14 +516,19 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String[] strList = bytesToString(data).split("&");
         String wanConfigJson = URLDecoder.decode(strList[0], "UTF-8");
         try {
-            ManagementCenterService mcs = textCommandService.getNode().getNodeEngine().getManagementCenterService();
-            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            OperationService opService = textCommandService.getNode().getNodeEngine().getOperationService();
+            final Set<Member> members = textCommandService.getNode().getClusterService().getMembers();
             WanReplicationConfig wanReplicationConfig = new WanReplicationConfig();
             WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanReplicationConfig);
             dto.fromJson(Json.parse(wanConfigJson).asObject());
-
+            List<InternalCompletableFuture> futureList = new ArrayList<InternalCompletableFuture>(members.size());
             for (Member member : members) {
-                mcs.callOnMember(member, new AddWanConfigOperation(dto.getConfig()));
+                InternalCompletableFuture<Object> future = opService.invokeOnTarget(WanReplicationService.SERVICE_NAME,
+                        new AddWanConfigOperation(dto.getConfig()), member.getAddress());
+                futureList.add(future);
+            }
+            for (InternalCompletableFuture future : futureList) {
+                future.get();
             }
             res = res.replace("${STATUS}", "success");
             res = res.replace("${MESSAGE}", "WAN configuration added.");

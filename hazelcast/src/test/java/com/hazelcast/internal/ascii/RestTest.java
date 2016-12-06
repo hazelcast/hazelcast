@@ -325,12 +325,15 @@ public class RestTest extends HazelcastTestSupport {
         assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
     }
 
+    @Test
     public void addWanConfig() throws IOException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
-        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(new WanReplicationConfig());
-        String result = communicator.addWanConfig(dto.toJson().asString());
-        assertEquals("{\"status\":\"fail\",\"message\":\"Clearing WAN replication queues is not supported.\"}", result);
+        WanReplicationConfig wanConfig = new WanReplicationConfig();
+        wanConfig.setName("test");
+        WanReplicationConfigDTO dto = new WanReplicationConfigDTO(wanConfig);
+        String result = communicator.addWanConfig(dto.toJson().toString());
+        assertEquals("{\"status\":\"fail\",\"message\":\"java.lang.UnsupportedOperationException: Adding new WAN config is not supported.\"}", result);
     }
 
     @Test
