@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.3.0</client.protocol.version>
+        <client.protocol.version>1.3.3</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -942,6 +942,11 @@
             <id>snapshot-repository</id>
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+        <repository>
+            <id>sonatype-release-repository</id>
+            <name>Sonatype Release Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
         </repository>
     </repositories>
 
