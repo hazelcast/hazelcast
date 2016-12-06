@@ -1642,6 +1642,11 @@ https://hazelcast.org/documentation/.
     	Specifies the directory where the Hot Restart data will be stored. Its default value is hot-restart. 
     	You can use the default value, or you can specify another folder.
     	This directory will be created automatically if it does not exist.
+    * <backup-dir>:
+    	Specifies the directory where the Hot backup data will be stored. If this element is not defined, hot backup will
+    	be disabled. If a directory is defined which does not exist, it will be created on first backup. To avoid clashing data
+    	on multiple backups, each backup has a unique sequence ID which determines the name of the directory which will
+    	contain all hot restart data. This unique directory is created as a subdirectory of the configured `backup-dir`.
     * <parallelism>:
     	Level of parallelism in Hot Restart Persistence. There will be this many IO threads,
     	each writing in parallel to its own files. During the Hot Restart procedure, this many 
@@ -1653,10 +1658,22 @@ https://hazelcast.org/documentation/.
     * <data-load-timeout-seconds>:
     	Data load timeout for the Hot Restart process. All members in the cluster should finish restoring their local data 
     	before this timeout period.
+    * <cluster-data-recovery-policy>:
+        Specifies the data recovery policy that will be respected during Hot Restart cluster start. Valid values are;
+        FULL_RECOVERY_ONLY: Starts the cluster only when all expected members are present and correct. Otherwise, it fails.
+        This is the default value.
+        PARTIAL_RECOVERY_MOST_RECENT: Starts the cluster with the members which have most up-to-date partition table and
+        successfully restored their data. All other members will leave the cluster and force start themselves. If no member
+        restores its data successfully, cluster start fails.
+        PARTIAL_RECOVERY_MOST_COMPLETE: Starts the cluster with the largest group of members which have the same partition
+        table version and successfully restored their data. All other members will leave the cluster and force start themselves.
+        If no member restores its data successfully, cluster start fails.
 -->
     <hot-restart-persistence enabled="true">
-       <base-dir>/mnt/hot-restart</base-dir>
-       <validation-timeout-seconds>120</validation-timeout-seconds>
-       <data-load-timeout-seconds>900</data-load-timeout-seconds>
-   </hot-restart-persistence>
+        <base-dir>/mnt/hot-restart</base-dir>
+        <backup-dir>/mnt/hot-backup</backup-dir>
+        <validation-timeout-seconds>120</validation-timeout-seconds>
+        <data-load-timeout-seconds>900</data-load-timeout-seconds>
+        <cluster-data-recovery-policy>PARTIAL_RECOVERY_MOST_COMPLETE</cluster-data-recovery-policy>
+    </hot-restart-persistence>
 </hazelcast>

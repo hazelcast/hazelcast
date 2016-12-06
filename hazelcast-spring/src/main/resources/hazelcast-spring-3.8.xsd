@@ -2831,7 +2831,16 @@
             <xs:element name="base-dir" type="xs:string" minOccurs="0" maxOccurs="1" default="hot-restart">
                 <xs:annotation>
                     <xs:documentation>
-                        Base directory for all hot-restart data
+                        Base directory for all hot-restart data. Can be an absolute or relative path to the node startup
+                        directory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-dir" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Base directory for hot backups. Each new backup will be created in a separate directory inside this one.
+                        Can be an absolute or relative path to the node startup directory.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2859,6 +2868,28 @@
                     before this timeout.
                 </xs:documentation>
             </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="cluster-data-recovery-policy" default="FULL_RECOVERY_ONLY">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies the policy that will be respected during hot restart cluster start. Valid values are :
+                    FULL_RECOVERY_ONLY : Starts the cluster only when all expected nodes are present and correct.
+                    Otherwise, it fails.
+                    PARTIAL_RECOVERY_MOST_RECENT : Starts the cluster with the members which have most up-to-date
+                    partition table and successfully restored their data. All other members will leave the cluster and
+                    force-start themselves. If no member restores its data successfully, cluster start fails.
+                    PARTIAL_RECOVERY_MOST_COMPLETE : Starts the cluster with the largest group of members which have the
+                    same partition table version and successfully restored their data. All other members will leave the
+                    cluster and force-start themselves. If no member restores its data successfully, cluster start fails.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="FULL_RECOVERY_ONLY"/>
+                    <xs:enumeration value="PARTIAL_RECOVERY_MOST_RECENT"/>
+                    <xs:enumeration value="PARTIAL_RECOVERY_MOST_COMPLETE"/>
+                </xs:restriction>
+            </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="hot-restart">

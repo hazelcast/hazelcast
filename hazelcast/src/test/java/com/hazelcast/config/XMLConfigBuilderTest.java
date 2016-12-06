@@ -1342,14 +1342,16 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void testHotRestart() {
-        String dir = "/mnt/hot-restart-root/";
-        int parallelism = 3;
-        int validationTimeout = 13131;
-        int dataLoadTimeout = 45454;
-        HotRestartClusterDataRecoveryPolicy policy = HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
-        String xml = HAZELCAST_START_TAG
+        final String dir = "/mnt/hot-restart-root/";
+        final String backupDir = "/mnt/hot-restart-backup/";
+        final int parallelism = 3;
+        final int validationTimeout = 13131;
+        final int dataLoadTimeout = 45454;
+        final HotRestartClusterDataRecoveryPolicy policy = HotRestartClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_RECENT;
+        final String xml = HAZELCAST_START_TAG
                 + "<hot-restart-persistence enabled=\"true\">"
                 + "<base-dir>" + dir + "</base-dir>"
+                + "<backup-dir>" + backupDir + "</backup-dir>"
                 + "<parallelism>" + parallelism + "</parallelism>"
                 + "<validation-timeout-seconds>" + validationTimeout + "</validation-timeout-seconds>"
                 + "<data-load-timeout-seconds>" + dataLoadTimeout + "</data-load-timeout-seconds>"
@@ -1357,11 +1359,12 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "</hot-restart-persistence>\n" +
                 HAZELCAST_END_TAG;
 
-        Config config = new InMemoryXmlConfig(xml);
-        HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
+        final Config config = new InMemoryXmlConfig(xml);
+        final HotRestartPersistenceConfig hotRestartPersistenceConfig = config.getHotRestartPersistenceConfig();
 
         assertTrue(hotRestartPersistenceConfig.isEnabled());
         assertEquals(new File(dir).getAbsolutePath(), hotRestartPersistenceConfig.getBaseDir().getAbsolutePath());
+        assertEquals(new File(backupDir).getAbsolutePath(), hotRestartPersistenceConfig.getBackupDir().getAbsolutePath());
         assertEquals(parallelism, hotRestartPersistenceConfig.getParallelism());
         assertEquals(validationTimeout, hotRestartPersistenceConfig.getValidationTimeoutSeconds());
         assertEquals(dataLoadTimeout, hotRestartPersistenceConfig.getDataLoadTimeoutSeconds());

@@ -281,14 +281,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleHotRestartPersistence(Node node) {
-            BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartPersistenceConfig.class);
+            final BeanDefinitionBuilder hotRestartConfigBuilder = createBeanBuilder(HotRestartPersistenceConfig.class);
             fillAttributeValues(node, hotRestartConfigBuilder);
 
             for (Node child : childElements(node)) {
-                String name = cleanNodeName(child);
+                final String name = cleanNodeName(child);
                 if ("base-dir".equals(name)) {
-                    String value = getTextContent(child);
+                    final String value = getTextContent(child);
                     hotRestartConfigBuilder.addPropertyValue("baseDir", value);
+                } else if ("backup-dir".equals(name)) {
+                    hotRestartConfigBuilder.addPropertyValue("backupDir", getTextContent(child));
                 }
             }
             configBuilder.addPropertyValue("hotRestartPersistenceConfig", hotRestartConfigBuilder.getBeanDefinition());

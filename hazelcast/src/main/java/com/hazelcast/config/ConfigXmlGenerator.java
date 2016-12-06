@@ -814,17 +814,14 @@ public class ConfigXmlGenerator {
             return;
         }
         xml.append("<hot-restart-persistence enabled=\"").append(hrCfg.isEnabled()).append("\">");
-        xml.append("<base-dir>").append(hrCfg.getBaseDir().getAbsolutePath()).append("</base-dir>");
-        xml.append("<parallelism>").append(hrCfg.getParallelism()).append("</parallelism>");
-        xml.append("<validation-timeout-seconds>")
-                .append(hrCfg.getValidationTimeoutSeconds())
-                .append("</validation-timeout-seconds>");
-        xml.append("<data-load-timeout-seconds>")
-                .append(hrCfg.getDataLoadTimeoutSeconds())
-                .append("</data-load-timeout-seconds>");
-        xml.append("<cluster-data-recovery-policy>")
-                .append(hrCfg.getClusterDataRecoveryPolicy())
-                .append("</cluster-data-recovery-policy>");
+        appendNode(xml, "base-dir", hrCfg.getBaseDir().getAbsolutePath());
+        if (hrCfg.getBackupDir() != null) {
+            appendNode(xml, "backup-dir", hrCfg.getBackupDir().getAbsolutePath());
+        }
+        appendNode(xml, "parallelism", hrCfg.getParallelism());
+        appendNode(xml, "validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds());
+        appendNode(xml, "data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds());
+        appendNode(xml, "cluster-data-recovery-policy", hrCfg.getClusterDataRecoveryPolicy());
         xml.append("</hot-restart-persistence>");
     }
 
