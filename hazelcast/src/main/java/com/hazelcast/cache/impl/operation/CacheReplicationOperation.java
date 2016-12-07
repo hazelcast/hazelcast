@@ -87,6 +87,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
+            cache.clear();
             Map<Data, CacheRecord> map = entry.getValue();
 
             Iterator<Map.Entry<Data, CacheRecord>> iterator = map.entrySet().iterator();
