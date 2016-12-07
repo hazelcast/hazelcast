@@ -58,6 +58,7 @@ The following are the issues solved for 3.8-EA (Early Access) release.
 - Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
 - "Warning 2" in IMap::tryRemove method's code comments is not correct. This method returns only a boolean. [8884]
 - When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
+- Fixed `max-size` value behavior for Near Cache configuration. If you set 0 for the `max-size`, now, it is valued as `Integer.MAX_VALUE` as expected and documented. [8826]
 - Spring XML configuration: The smart routing attribute defaults to false while the documentation says it defaults to true. [8746]
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
 - Bulk get operation with 100 keys fails. [8535]
