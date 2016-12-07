@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -30,27 +28,37 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
-import static com.hazelcast.jet.impl.JetService.createHeader;
+import static com.hazelcast.jet.impl.JetService.createStreamPacketHeader;
+import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
+import static com.hazelcast.jet.impl.Util.getMemberConnection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class SenderTasklet implements Tasklet {
+class SenderTasklet implements Tasklet {
 
-    public static final int BUFFER_SIZE = 1 << 15;
     public static final int PACKET_SIZE_LIMIT = 1 << 14;
+    private static final int RECEIVE_WINDOW = 1 << 23;
+
     private final Connection connection;
     private final byte[] headerBytes;
     private final Queue<Object> inbox = new ArrayDeque<>();
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
 
-    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine engine, String engineName,
+    private int sentSeq;
+    private volatile int ackedSeq;
+
+    SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
                          Address destinationAddress, long executionId, int destinationVertexId
     ) {
         this.inboundEdgeStream = inboundEdgeStream;
-        this.connection = ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(destinationAddress);
-        this.headerBytes = createHeader(engineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
-        this.outputBuffer = ((InternalSerializationService) engine.getSerializationService())
-                .createObjectDataOutput(BUFFER_SIZE);
+        this.connection = getMemberConnection(nodeEngine, destinationAddress);
+        this.headerBytes = createStreamPacketHeader(
+                nodeEngine, jetEngineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
+        this.outputBuffer = createObjectDataOutput(nodeEngine);
+    }
+
+    void setAckedSeq(int ackedSeq) {
+        this.ackedSeq = ackedSeq;
     }
 
     @Nonnull
@@ -80,8 +88,10 @@ public class SenderTasklet implements Tasklet {
             outputBuffer.writeInt(0);
             int writtenCount = 0;
             for (Object item;
-                 outputBuffer.position() < PACKET_SIZE_LIMIT && (item = inbox.poll()) != null;
-                 writtenCount++
+                 outputBuffer.position() < PACKET_SIZE_LIMIT
+                     && isWithinWindow()
+                     && (item = inbox.poll()) != null;
+                 writtenCount++, sentSeq++
             ) {
                 ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
                 outputBuffer.writeObject(itemWithpId.getItem());
@@ -91,5 +101,15 @@ public class SenderTasklet implements Tasklet {
         } catch (IOException e) {
             throw rethrow(e);
         }
+    }
+
+    private boolean isWithinWindow() {
+        final long ackedSeq = this.ackedSeq;
+        long sentSeq = this.sentSeq;
+        if (sentSeq < 0 && ackedSeq > 0) {
+            // handle integer overflow case where sentSeq has wrapped around, but ackedSeq hasn't yet
+            sentSeq = Integer.toUnsignedLong(this.sentSeq);
+        }
+        return sentSeq < ackedSeq + RECEIVE_WINDOW;
     }
 }

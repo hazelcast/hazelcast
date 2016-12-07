@@ -16,49 +16,57 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.ObjectDataInputStream;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.util.concurrent.IdleStrategy;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class ReceiverTasklet implements Tasklet {
+/**
+ * Receives from all remote members the data associated with a single edge.
+ */
+class ReceiverTasklet implements Tasklet {
 
-    private final Queue<ByteArrayInputStream> incoming = new MPSCQueue<>(null);
-    private final InternalSerializationService serializationService;
-    private final OutboundCollector collector;
+    private final Queue<PacketWithSender> incoming = new MPSCQueue<>((IdleStrategy) null);
     private final ProgressTracker tracker = new ProgressTracker();
-    private final ArrayDeque<Object> inbox = new ArrayDeque<>();
+    private final ArrayDeque<ObjPtionAndSenderId> inbox = new ArrayDeque<>();
+    private final OutboundCollector collector;
+    private final AtomicInteger[] itemSeqsPerSender;
 
     private int remainingSenders;
 
-    public ReceiverTasklet(InternalSerializationService serializationService,
-                           OutboundCollector collector, int senderCount) {
-        this.serializationService = serializationService;
+    ReceiverTasklet(OutboundCollector collector, int senderCount) {
         this.collector = collector;
         this.remainingSenders = senderCount;
+        this.itemSeqsPerSender = new AtomicInteger[senderCount];
+        Arrays.setAll(itemSeqsPerSender, x -> new AtomicInteger());
     }
 
-    void addPacket(byte[] packetBuf, int offset) {
-        incoming.add(new ByteArrayInputStream(packetBuf, offset, packetBuf.length - offset));
+    void addPacket(ObjectDataInput packetInput, int senderId) {
+        incoming.add(new PacketWithSender(senderId, packetInput));
+    }
+
+    int ackedSeq(int senderId) {
+        return itemSeqsPerSender[senderId].get();
     }
 
     @Override
     public ProgressState call() {
         tracker.reset();
         tryFillInbox();
-        for (Object item; (item = inbox.peek()) != null; ) {
-            ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
-            if (itemWithpId.getItem() == DONE_ITEM) {
+        for (ObjPtionAndSenderId o; (o = inbox.peek()) != null; ) {
+            final Object item = o.getItem();
+            if (item == DONE_ITEM) {
                 remainingSenders--;
             } else {
-                ProgressState outcome = collector.offer(itemWithpId.getItem(), itemWithpId.getPartitionId());
+                ProgressState outcome = collector.offer(item, o.getPartitionId());
                 if (!outcome.isDone()) {
                     tracker.madeProgress(outcome.isMadeProgress());
                     break;
@@ -66,8 +74,9 @@ public class ReceiverTasklet implements Tasklet {
             }
             tracker.madeProgress();
             inbox.remove();
+            final AtomicInteger seq = itemSeqsPerSender[o.senderId];
+            seq.lazySet(seq.get() + 1);
         }
-
         if (remainingSenders == 0) {
             tracker.mergeWith(collector.close());
         } else {
@@ -79,19 +88,35 @@ public class ReceiverTasklet implements Tasklet {
 
     private void tryFillInbox() {
         try {
-            for (ByteArrayInputStream entry; (entry = incoming.poll()) != null; ) {
-                try (ObjectDataInputStream inputStream = new ObjectDataInputStream(entry, serializationService)) {
-                    int count = inputStream.readInt();
-                    for (int i = 0; i < count; i++) {
-                        Object item = inputStream.readObject();
-                        int partitionId = inputStream.readInt();
-                        inbox.add(new ObjectWithPartitionId(item, partitionId));
-                    }
-                    tracker.madeProgress();
+            for (PacketWithSender received; (received = incoming.poll()) != null; ) {
+                final ObjectDataInput in = received.payload;
+                final int itemCount = in.readInt();
+                for (int i = 0; i < itemCount; i++) {
+                    inbox.add(new ObjPtionAndSenderId(in.readObject(), in.readInt(), received.senderId));
                 }
+                tracker.madeProgress();
             }
         } catch (IOException e) {
             throw rethrow(e);
+        }
+    }
+
+    private static class PacketWithSender {
+        final int senderId;
+        final ObjectDataInput payload;
+
+        PacketWithSender(int senderId, ObjectDataInput payload) {
+            this.senderId = senderId;
+            this.payload = payload;
+        }
+    }
+
+    private static class ObjPtionAndSenderId extends ObjectWithPartitionId {
+        final int senderId;
+
+        ObjPtionAndSenderId(Object item, int partitionId, int senderId) {
+            super(item, partitionId);
+            this.senderId = senderId;
         }
     }
 }

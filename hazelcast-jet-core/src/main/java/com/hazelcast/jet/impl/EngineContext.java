@@ -27,7 +27,6 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
@@ -41,8 +40,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
-import static com.hazelcast.jet.impl.Util.uncheckRun;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 

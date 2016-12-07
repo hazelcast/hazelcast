@@ -18,8 +18,11 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Bits;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.LiveOperations;
@@ -30,16 +33,29 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
-import java.nio.charset.Charset;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.jet.impl.Util.createObjectDataIntput;
+import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
+import static com.hazelcast.jet.impl.Util.getMemberConnection;
+import static com.hazelcast.jet.impl.Util.getRemoteMembers;
+import static com.hazelcast.jet.impl.Util.sneakyThrow;
+import static com.hazelcast.jet.impl.Util.uncheckRun;
+import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.stream.IntStream.range;
+
 public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker, CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    public static final Charset CHARSET = Charset.forName("ISO-8859-1");
+    private static final int FLOW_CONTROL_PERIOD_MS = 100;
+    private static final byte[] EMPTY_BYTES = new byte[0];
+    final ILogger logger;
 
     private NodeEngineImpl nodeEngine;
 
@@ -50,10 +66,13 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     @Override
-    public void init(NodeEngine nodeEngine, Properties properties) {
+    public void init(NodeEngine engine, Properties properties) {
+        engine.getExecutionService().scheduleWithRepetition(
+                this::broadcastFlowControlPacket, 0, FLOW_CONTROL_PERIOD_MS, MILLISECONDS);
     }
 
     @Override
@@ -89,41 +108,23 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     @Override
-    public void handle(Packet packet) throws Exception {
-        byte[] bytes = packet.toByteArray();
-        int offset = 0;
-        int length = bytes[offset];
-        offset++;
-        String engineName = new String(bytes, offset, length, CHARSET);
-        offset += length;
-        long executionId = Bits.readLongL(bytes, offset);
-        offset += Bits.LONG_SIZE_IN_BYTES;
-        int vertexId = Bits.readIntL(bytes, offset);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        int ordinal = Bits.readIntL(bytes, offset);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        engineContexts.get(engineName)
-                      .getExecutionContext(executionId)
-                      .handlePacket(vertexId, ordinal, bytes, offset);
+    public boolean cancelOperation(Address caller, long callId) {
+        Optional<AsyncOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
+        operation.ifPresent(AsyncOperation::cancel);
+        return operation.isPresent();
     }
 
-    public static byte[] createHeader(String name, long executionId, int destinationVertexId, int ordinal) {
-        byte[] nameBytes = name.getBytes(CHARSET);
-        int length = Bits.BYTE_SIZE_IN_BYTES + nameBytes.length + Bits.LONG_SIZE_IN_BYTES + Bits.INT_SIZE_IN_BYTES
-                + Bits.INT_SIZE_IN_BYTES;
-        byte[] headerBytes = new byte[length];
-        int offset = 0;
-        assert nameBytes.length <= Byte.MAX_VALUE : "Length of encoded name in header exceeds " + Byte.MAX_VALUE;
-        headerBytes[offset] = (byte) nameBytes.length;
-        offset++;
-        System.arraycopy(nameBytes, 0, headerBytes, offset, nameBytes.length);
-        offset += nameBytes.length;
-        Bits.writeLongL(headerBytes, offset, executionId);
-        offset += Bits.LONG_SIZE_IN_BYTES;
-        Bits.writeIntL(headerBytes, offset, destinationVertexId);
-        offset += Bits.INT_SIZE_IN_BYTES;
-        Bits.writeIntL(headerBytes, offset, ordinal);
-        return headerBytes;
+    @Override
+    public void handle(Packet packet) throws Exception {
+        if (packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
+            handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
+        } else {
+            handleStreamPacket(packet);
+        }
+    }
+
+    public EngineContext getEngineContext(String name) {
+        return engineContexts.get(name);
     }
 
     boolean createContextIfAbsent(String name, JetEngineConfig config) {
@@ -133,10 +134,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
             return new EngineContext(name, nodeEngine, config);
         });
         return isNewContext[0];
-    }
-
-    public EngineContext getEngineContext(String name) {
-        return engineContexts.get(name);
     }
 
     void registerOperation(AsyncOperation operation) {
@@ -153,10 +150,97 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         }
     }
 
-    @Override
-    public boolean cancelOperation(Address caller, long callId) {
-        Optional<AsyncOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
-        operation.ifPresent(AsyncOperation::cancel);
-        return operation.isPresent();
+    private void handleStreamPacket(Packet packet) {
+        try {
+            ObjectDataInput in = createObjectDataIntput(nodeEngine, packet.toByteArray());
+            String engineName = in.readUTF();
+            long executionId = in.readLong();
+            int vertexId = in.readInt();
+            int ordinal = in.readInt();
+            engineContexts.get(engineName)
+                          .getExecutionContext(executionId)
+                          .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    static byte[] createStreamPacketHeader(
+            NodeEngine nodeEngine, String jetEngineName, long executionId, int destinationVertexId, int ordinal) {
+        ObjectDataOutput out = createObjectDataOutput(nodeEngine);
+        try {
+            out.writeUTF(jetEngineName);
+            out.writeLong(executionId);
+            out.writeInt(destinationVertexId);
+            out.writeInt(ordinal);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
+    }
+
+    private void broadcastFlowControlPacket() {
+        try {
+            getRemoteMembers(nodeEngine).forEach(member -> {
+                final byte[] packetBuf = createFlowControlPacket(member);
+                if (packetBuf.length == 0) {
+                    return;
+                }
+                Connection conn = getMemberConnection(nodeEngine, member);
+                conn.write(new Packet(packetBuf)
+                        .setPacketType(Packet.Type.JET)
+                        .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
+            });
+        } catch (Throwable t) {
+            logger.severe("Flow-control packet broadcast failed", t);
+        }
+    }
+
+    private byte[] createFlowControlPacket(Address member) {
+        final ObjectDataOutput out = createObjectDataOutput(nodeEngine);
+        final boolean[] hasData = {false};
+        uncheckRun(() -> out.writeInt(engineContexts.size()));
+        engineContexts.forEach((name, engCtx) -> uncheckRun(() -> {
+            out.writeUTF(name);
+            out.writeInt(engCtx.executionContexts.size());
+            engCtx.executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
+                final int memberId = exeCtx.getMemberId(member);
+                out.writeLong(execId);
+                out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
+                exeCtx.receiverMap().forEach((vertexId, m) ->
+                    m.forEach((ordinal, tasklet) -> uncheckRun(() -> {
+                        out.writeInt(vertexId);
+                        out.writeInt(ordinal);
+                        out.writeInt(tasklet.ackedSeq(memberId));
+                        hasData[0] = true;
+                    }
+                )));
+            }));
+        }));
+        return hasData[0] ? out.toByteArray() : EMPTY_BYTES;
+    }
+
+    private void handleFlowControlPacket(Address fromAddr, byte[] packet) {
+        final ObjectDataInput in = createObjectDataIntput(nodeEngine, packet);
+        uncheckRun(() ->
+            range(0, in.readInt()).forEach(x -> uncheckRun(() -> {
+                EngineContext engCtx = engineContexts.get(in.readUTF());
+                range(0, in.readInt()).forEach(x2 -> uncheckRun(() -> {
+                    final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = engCtx
+                            .executionContexts
+                            .get(in.readLong())
+                            .senderMap();
+                    range(0, in.readInt()).forEach(x3 -> uncheckRun(() -> {
+                        int destVertexId = in.readInt();
+                        int destOrdinal = in.readInt();
+                        int ackedSeq = in.readInt();
+                        senderMap.get(destVertexId)
+                                 .get(destOrdinal)
+                                 .get(fromAddr)
+                                 .setAckedSeq(ackedSeq);
+                    }));
+                }));
+            }))
+        );
     }
 }

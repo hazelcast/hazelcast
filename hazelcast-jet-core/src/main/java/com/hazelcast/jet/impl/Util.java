@@ -17,8 +17,16 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import static java.util.stream.Collectors.toList;
 
 public final class Util {
 
@@ -60,7 +68,7 @@ public final class Util {
         try {
             return callable.call();
         } catch (Exception e) {
-            return sneakyThrow(e);
+            throw sneakyThrow(e);
         }
     }
 
@@ -68,7 +76,7 @@ public final class Util {
         try {
             r.run();
         } catch (Exception e) {
-            sneakyThrow(e);
+            throw sneakyThrow(e);
         }
     }
 
@@ -81,6 +89,33 @@ public final class Util {
             return peel(e.getCause());
         }
         return e;
+    }
+
+    @SuppressWarnings("unchecked")
+    static <T extends Throwable> RuntimeException sneakyThrow(Throwable t) throws T {
+        throw (T) t;
+    }
+
+    public static List<Address> getRemoteMembers(NodeEngine engine) {
+        final Member localMember = engine.getLocalMember();
+        return engine.getClusterService().getMembers().stream()
+                     .filter(m -> !m.equals(localMember))
+                     .map(Member::getAddress)
+                     .collect(toList());
+    }
+
+    public static Connection getMemberConnection(NodeEngine engine, Address memberAddr) {
+        return ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(memberAddr);
+    }
+
+    public static BufferObjectDataOutput createObjectDataOutput(NodeEngine engine) {
+        return ((InternalSerializationService) engine.getSerializationService())
+                .createObjectDataOutput(BUFFER_SIZE);
+    }
+
+    public static ObjectDataInput createObjectDataIntput(NodeEngine engine, byte[] buf) {
+        return ((InternalSerializationService) engine.getSerializationService())
+                .createObjectDataInput(buf);
     }
 
     public static byte[] read(InputStream in, int count) throws IOException {
