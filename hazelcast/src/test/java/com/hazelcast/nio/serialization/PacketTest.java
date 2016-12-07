@@ -119,8 +119,8 @@ public class PacketTest {
         packet.raiseFlags(FLAG_URGENT);
 
         assertSame(Packet.Type.OPERATION, packet.getPacketType());
-        assertTrue(packet.isFlagSet(FLAG_URGENT));
-        assertFalse(packet.isFlagSet(FLAG_OP_CONTROL));
+        assertTrue(packet.isFlagRaised(FLAG_URGENT));
+        assertFalse(packet.isFlagRaised(FLAG_OP_CONTROL));
     }
 
     @Test

@@ -185,11 +185,11 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @param flagsToCheck the flags to check
      * @return {@code true} if any of the flags is set, {@code false} otherwise.
      */
-    public boolean isFlagSet(int flagsToCheck) {
-        return isFlagSet(flags, flagsToCheck);
+    public boolean isFlagRaised(int flagsToCheck) {
+        return isFlagRaised(flags, flagsToCheck);
     }
 
-    private static boolean isFlagSet(char flags, int flagsToCheck) {
+    private static boolean isFlagRaised(char flags, int flagsToCheck) {
         return (flags & flagsToCheck) != 0;
     }
 
@@ -211,7 +211,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     @Override
     public boolean isUrgent() {
-        return isFlagSet(FLAG_URGENT);
+        return isFlagRaised(FLAG_URGENT);
     }
 
     /**
@@ -407,8 +407,8 @@ public final class Packet extends HeapData implements OutboundFrame {
         OPERATION {
             @Override
             public String describeFlags(char flags) {
-                return "[isResponse=" + isFlagSet(flags, FLAG_OP_RESPONSE)
-                        + ", isOpControl=" + isFlagSet(flags, FLAG_OP_CONTROL) + ']';
+                return "[isResponse=" + isFlagRaised(flags, FLAG_OP_RESPONSE)
+                        + ", isOpControl=" + isFlagRaised(flags, FLAG_OP_CONTROL) + ']';
             }
         },
         /**
@@ -425,7 +425,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         JET {
             @Override
             public String describeFlags(char flags) {
-                return "[isFlowControl=" + isFlagSet(flags, FLAG_JET_FLOW_CONTROL) + ']';
+                return "[isFlowControl=" + isFlagRaised(flags, FLAG_JET_FLOW_CONTROL) + ']';
             }
         },
         /**

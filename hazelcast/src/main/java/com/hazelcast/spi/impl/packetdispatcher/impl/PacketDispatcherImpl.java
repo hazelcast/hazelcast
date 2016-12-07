@@ -59,9 +59,9 @@ public final class PacketDispatcherImpl implements PacketDispatcher {
         try {
             switch (packet.getPacketType()) {
                 case OPERATION:
-                    if (packet.isFlagSet(FLAG_OP_RESPONSE)) {
+                    if (packet.isFlagRaised(FLAG_OP_RESPONSE)) {
                         responseHandler.handle(packet);
-                    } else if (packet.isFlagSet(FLAG_OP_CONTROL)) {
+                    } else if (packet.isFlagRaised(FLAG_OP_CONTROL)) {
                         invocationMonitor.handle(packet);
                     } else {
                         operationExecutor.handle(packet);

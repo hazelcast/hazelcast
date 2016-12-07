@@ -84,7 +84,7 @@ public class AsyncInboundResponseHandler implements PacketHandler, MetricsProvid
     public void handle(Packet packet) {
         checkNotNull(packet, "packet can't be null");
         checkTrue(packet.getPacketType() == Packet.Type.OPERATION, "Packet type is not OPERATION");
-        checkTrue(packet.isFlagSet(FLAG_OP_RESPONSE), "FLAG_OP_RESPONSE is not set");
+        checkTrue(packet.isFlagRaised(FLAG_OP_RESPONSE), "FLAG_OP_RESPONSE is not set");
         responseThread.responseQueue.add(packet);
     }
 
