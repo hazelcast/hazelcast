@@ -1,48 +1,52 @@
 
 Document Revision History
 
-Chapter 1 - Preface
-- Updated the architecture diagram.
 
-Chapter 5 - Understanding Configuration
-- Added as a new chapter to provide the fundamentals of Hazelcast configuration.
+Chapter 7 - Rolling Member Upgrades		
+- Added as a new chapter.
 
-Chapter 6 - Setting Up Clusters
-- Added as a new chapter to provide all Hazelcast clusters related information.
+Chapter 8 - Distributed Data Structures	
+- Queue: Updated by adding split-brain protection content.
+- Ringbuffer: Added Ringbuffer with Persistent Datastore as a new section.
+- Locking Maps: Updated by adding split-brain protection content.
+- Added Overview of Hazelcast Distributed Objects, Loading and Destroying a Distributed Object and Controlling Partitions as new sections.
+- Lock: Updated by adding split-brain protection content.
 
-Chapter 7 - Distributed Data Structures
-- Replicated Map: Replicating instead of Partitioning updated by adding a note related to replicated map usage in a lite member. The whole section enhanced.
-- Lock: Added explanations related to the maximum lease time for locks.
-- Map: Added the new section Custom Eviction Policy to explain how a customized eviction policy can be plugged.
+Chapter 10 - Distributed Computing
+- Entry Processor: Added a warning to the introduction.
 
-Chapter 10 - Distributed Query	
-- ValueExtractor with Portable Serialization: Added as a new section.
+Chapter 11 - Distributed Query
+- Explanation for the __key attribute added under Querying with SQL section.
+- Fast-Aggregations: Added as a new section.
+- Projections: Added as a new section.
 
-Chapter 11 - Transactions
-- Integrating into J2EE: Added information related to class loaders.
+Chapter 15 - Storage
+- Hot Restart Persistence: Added example scenarios to give more idea on how the restart process and force start works. Added the new configuration element parallelism. Added the new section Moving/Copying Hot Restart Data. Added the new section Partial Start and the new configuration element cluster-data-recovery-policy. Added the new section Hot Backup.
+- Hazelcast Striim: Added as a new section.
 
-Chapter 12 - Hazelcast JCache	
-- ICache Configuration: Added description of the new element disable-per-entry-invalidation-events.
-- JCache - Hazelcast Instance Integration: Added as a new section.
+Chapter 19 - Management
+- Diagnostics:Added as a new section to explain the diagnostic utility of Hazelcast.
+- Partial start related content added to Using REST API for Cluster Management and Using the Script cluster.sh sections.
+- Using the Script cluster.sh: Updated by adding new operations and parameters related to Rolling Member Upgrade procedures.
 
-Chapter 14 - Storage	
-- Hot Restart Persistence: Added the new section Hot Restart Performance Considerations to summarize the results of performance tests of Hot Restart Persistence.
-- Configuring High-Density Memory Store: Enhanced the content for allocator-type configuration element.
+Chapter 21 - Performance
+- Near Cache: Added as a new section to consolidate all near cache related content in the Reference Manual. Added also a new content, Near Cache Eventual Consistency
 
-Chapter 15 - Hazelcast Java Client		
-- Enhanced the definition for the property hazelcast.client.invocation.timeout.seconds.
+Chapter 22 - Hazelcast Simulator
+- Moved the content to Simulator's own GitHub repository at Hazelcast Simulator.
 
-Chapter 16 - Other Client Implementations	
-- C++ Client: Added the new sections Serialization Support and Raw Pointer API.
+Chapter 27 - System Properties
+Added definitions for the following new properties: 
+- hazelcast.compatibility.3.6.server and hazelcast.compatibility.3.6.client: Please refer to the Upgrading from 3.x section.
+- hazelcast.http.healthcheck.enabled: Enabler for a simple HTTP based health check utility. Please refer to the System Properties chapter. 
+- hazelcast.invalidation.max.tolerated.miss.count 
+- hazelcast.invalidation.reconciliation.interval.seconds 
+- hazelcast.map.invalidation.batchfrequency.seconds 
+- hazelcast.map.invalidation.batch.enabled 
+- hazelcast.map.invalidation.batch.size
 
-Chapter 18 - Management
-- Management Center: Added information explaining how to configure Hazelcast Management Center when it is deployed onto an SSL-enabled web container.
-
-Chapter 26 - System Properties	
-- Added definition for the new property hazelcast.partition.migration.stale.read.disabled.
-
-Chapter 29 - FAQ
+Chapter 30 - FAQ
 - Added new questions/answers.
 
-Chapter 30 - Glossary		
+- Chapter 31 - Glossary
 - Added new glossary items.
