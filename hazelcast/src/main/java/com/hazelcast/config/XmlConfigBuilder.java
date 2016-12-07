@@ -234,7 +234,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private boolean shouldValidateTheSchema() {
         // in case of overridden hazelcast version there may be no schema with that version
         // this feature is used only in simulator testing.
-        return System.getProperty("hazelcast.version") == null;
+        return System.getProperty("hazelcast.internal.override.version") == null;
     }
 
     @Override
