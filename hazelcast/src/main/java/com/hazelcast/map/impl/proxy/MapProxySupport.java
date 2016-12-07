@@ -672,11 +672,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (keys.isEmpty()) {
             return;
         }
-        long time = System.currentTimeMillis();
         Collection<Integer> partitions = getPartitionsForKeys(keys);
         Map<Integer, Object> responses;
         try {
             OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, keys);
+            long time = System.currentTimeMillis();
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
