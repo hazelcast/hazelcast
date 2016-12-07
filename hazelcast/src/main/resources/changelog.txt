@@ -48,5 +48,5 @@ Added definitions for the following new properties:
 Chapter 30 - FAQ
 - Added new questions/answers.
 
-- Chapter 31 - Glossary
+Chapter 31 - Glossary
 - Added new glossary items.
