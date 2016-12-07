@@ -57,5 +57,13 @@ public interface MapEventPublisher {
      */
     void hintMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected, int partitionId);
 
+    /**
+     * Notifies {@link com.hazelcast.map.QueryCache} subscribers directly, without publishing an event to
+     * other map listeners. This is necessary in certain cases, such as when loading entries into a map.
+     *
+     * @param eventData the event to publish to query caches
+     */
+    void addEventToQueryCache(Object eventData);
+
     boolean hasEventListener(String mapName);
 }

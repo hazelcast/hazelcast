@@ -18,6 +18,8 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -35,6 +37,8 @@ import java.util.Iterator;
 
 import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
 import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
+import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
+import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
 
 /**
  * Defines migration behavior of map service.
@@ -84,6 +88,15 @@ class MapMigrationAwareService implements MigrationAwareService {
             recordStore.startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
+
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            int partitionId = event.getPartitionId();
+            flushAccumulator(publisherContext, partitionId);
+            removeAccumulator(publisherContext, partitionId);
+        }
     }
 
     @Override

@@ -27,7 +27,7 @@ import java.util.Set;
 
 /**
  * A concurrent, queryable data structure which is used to cache results of a continuous query executed
- * on an {@code IMap}. It can be also think of an always up to date view or snapshot of the {@code IMap}.
+ * on an {@code IMap}. It can be also thought of as an always up to date view or snapshot of the {@code IMap}.
  * <p/>
  * Typically, {@code QueryCache} is used for performance reasons.
  * <p/>

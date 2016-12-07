@@ -16,12 +16,20 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.IMapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.InterceptorRegistry;
+import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
+import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
+import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
+import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -31,6 +39,8 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +50,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
 
     private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
     private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
+    private List<AccumulatorInfo> infoList;
 
     @Override
     public String getServiceName() {
@@ -142,6 +153,39 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
                 }
             }
         }
+        createQueryCaches();
+    }
+
+    private void createQueryCaches() {
+        MapService mapService = getService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+        MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
+
+        for (AccumulatorInfo info : infoList) {
+            addAccumulatorInfo(queryCacheContext, info);
+
+            PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrCreate(info.getMapName());
+            publisherRegistry.getOrCreate(info.getCacheName());
+            // marker listener.
+            mapServiceContext.addLocalListenerAdapter(new ListenerAdapter<IMapEvent>() {
+                @Override
+                public void onEvent(IMapEvent event) {
+
+                }
+            }, info.getMapName());
+        }
+    }
+
+    private void addAccumulatorInfo(QueryCacheContext context, AccumulatorInfo info) {
+        PublisherContext publisherContext = context.getPublisherContext();
+        AccumulatorInfoSupplier infoSupplier = publisherContext.getAccumulatorInfoSupplier();
+        infoSupplier.putIfAbsent(info.getMapName(), info.getCacheName(), info);
+    }
+
+    public void setInfoList(List<AccumulatorInfo> infoList) {
+        this.infoList = infoList;
     }
 
     @Override
@@ -155,22 +199,37 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         for (InterceptorInfo interceptorInfo : interceptorInfoList) {
             interceptorInfo.writeData(out);
         }
+        int size = infoList.size();
+        out.writeInt(size);
+        for (AccumulatorInfo info : infoList) {
+            out.writeObject(info);
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        for (int i = 0; i < size; i++) {
+        int indexesCount = in.readInt();
+        for (int i = 0; i < indexesCount; i++) {
             MapIndexInfo mapIndexInfo = new MapIndexInfo();
             mapIndexInfo.readData(in);
             indexInfoList.add(mapIndexInfo);
         }
-        int size2 = in.readInt();
-        for (int i = 0; i < size2; i++) {
+        int interceptorsCount = in.readInt();
+        for (int i = 0; i < interceptorsCount; i++) {
             InterceptorInfo info = new InterceptorInfo();
             info.readData(in);
             interceptorInfoList.add(info);
+        }
+        int accumulatorsCount = in.readInt();
+        if (accumulatorsCount < 1) {
+            infoList = Collections.emptyList();
+            return;
+        }
+        infoList = new ArrayList<AccumulatorInfo>(accumulatorsCount);
+        for (int i = 0; i < accumulatorsCount; i++) {
+            AccumulatorInfo info = in.readObject();
+            infoList.add(info);
         }
     }
 

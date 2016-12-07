@@ -28,12 +28,18 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.EntryEventData;
+import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
+import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
+import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -59,6 +65,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
+import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 import static com.hazelcast.map.impl.mapstore.MapDataStores.EMPTY_MAP_DATA_STORE;
 import static com.hazelcast.util.MapUtil.createHashMap;
@@ -398,6 +405,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             evictEntries(key);
         }
+        // here, we are only publishing events for loaded entries. This is required for notifying query-caches
+        // otherwise query-caches cannot see loaded entries
+        if (!backup && record != null && hasQueryCache()) {
+            addEventToQueryCache(record);
+        }
         return record;
     }
 
@@ -677,6 +689,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             putFromLoad(key, value);
 
         }
+
+        if (hasQueryCache()) {
+            for (Data key : resultMap.keySet()) {
+                Record record = storage.get(key);
+                // here we are only publishing events for loaded entries. This is required for notifying query-caches
+                // otherwise query-caches cannot see loaded entries
+                addEventToQueryCache(record);
+            }
+        }
         return resultMap;
     }
 
@@ -711,6 +732,24 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         return contains;
+    }
+
+    /**
+     * @return {@code true} if this IMap has any query-cache, otherwise return {@code false}
+     */
+    private boolean hasQueryCache() {
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+        PublisherContext publisherContext = queryCacheContext.getPublisherContext();
+        MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
+        PublisherRegistry publisherRegistry = mapPublisherRegistry.getOrNull(name);
+        return publisherRegistry != null;
+    }
+
+    private void addEventToQueryCache(Record record) {
+        EntryEventData eventData = new EntryEventData(thisAddress.toString(), name, thisAddress,
+                record.getKey(), mapServiceContext.toData(record.getValue()), null, null, ADDED.getType());
+
+        mapEventPublisher.addEventToQueryCache(eventData);
     }
 
     @Override
