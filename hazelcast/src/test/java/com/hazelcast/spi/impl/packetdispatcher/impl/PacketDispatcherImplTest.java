@@ -14,7 +14,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
@@ -56,8 +55,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenOperationPacket() throws Exception {
-        Packet packet = new Packet()
-                .resetFlagsTo(FLAG_OP);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION);
 
         dispatcher.dispatch(packet);
 
@@ -68,8 +66,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenUrgentOperationPacket() throws Exception {
-        Packet packet = new Packet()
-                .resetFlagsTo(FLAG_OP | FLAG_URGENT);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_URGENT);
 
         dispatcher.dispatch(packet);
 
@@ -81,8 +78,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenOperationResponsePacket() throws Exception {
-        Packet packet = new Packet()
-                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE);
 
         dispatcher.dispatch(packet);
 
@@ -92,8 +88,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenUrgentOperationResponsePacket() throws Exception {
-        Packet packet = new Packet()
-                .resetFlagsTo(FLAG_OP | FLAG_OP_RESPONSE | FLAG_URGENT);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_RESPONSE | FLAG_URGENT);
 
         dispatcher.dispatch(packet);
 
@@ -104,8 +99,7 @@ public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     @Test
     public void whenOperationControlPacket() throws Exception {
-        Packet packet = new Packet()
-                .resetFlagsTo(FLAG_OP | FLAG_OP_CONTROL);
+        Packet packet = new Packet().setPacketType(Packet.Type.OPERATION).raiseFlags(FLAG_OP_CONTROL);
 
         dispatcher.dispatch(packet);
 

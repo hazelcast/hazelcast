@@ -66,7 +66,7 @@ public class MemberReadHandler implements ReadHandler {
     }
 
     protected void handlePacket(Packet packet) {
-        if (packet.isFlagSet(Packet.FLAG_URGENT)) {
+        if (packet.isFlagRaised(Packet.FLAG_URGENT)) {
             priorityPacketsRead.inc();
         } else {
             normalPacketsRead.inc();

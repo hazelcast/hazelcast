@@ -371,7 +371,7 @@ public class MockIOService implements IOService {
             @Override
             public void dispatch(Packet packet) {
                 try {
-                    if (packet.isFlagSet(Packet.FLAG_BIND)) {
+                    if (packet.getPacketType() == Packet.Type.BIND) {
                         connection.getConnectionManager().handle(packet);
                     } else {
                         PacketHandler handler = packetHandler;

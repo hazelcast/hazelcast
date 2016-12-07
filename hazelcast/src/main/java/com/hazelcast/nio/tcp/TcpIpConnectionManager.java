@@ -176,10 +176,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     public boolean isSocketInterceptorEnabled() {
         final SocketInterceptorConfig socketInterceptorConfig = ioService.getSocketInterceptorConfig();
-        if (socketInterceptorConfig != null && socketInterceptorConfig.isEnabled()) {
-            return true;
-        }
-        return false;
+        return socketInterceptorConfig != null && socketInterceptorConfig.isEnabled();
     }
 
     // just for testing
@@ -225,7 +222,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public void handle(Packet packet) throws Exception {
-        assert packet.isFlagSet(Packet.FLAG_BIND);
+        assert packet.getPacketType() == Packet.Type.BIND;
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
         bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());

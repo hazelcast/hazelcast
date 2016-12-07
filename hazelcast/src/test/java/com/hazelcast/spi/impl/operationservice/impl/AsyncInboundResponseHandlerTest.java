@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.Packet.FLAG_OP;
 import static com.hazelcast.nio.Packet.FLAG_OP_RESPONSE;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;

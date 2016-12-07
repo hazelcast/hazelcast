@@ -89,7 +89,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
 
         @Override
         public boolean allow(Packet packet, Address endpoint) {
-            return !packet.isFlagSet(Packet.FLAG_OP) || allowOperation(packet);
+            return packet.getPacketType() != Packet.Type.OPERATION || allowOperation(packet);
         }
 
         private boolean allowOperation(Packet packet) {
