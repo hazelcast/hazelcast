@@ -16,17 +16,19 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
-
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
 
 public final class IListWriter extends AbstractProcessor {
@@ -56,20 +58,48 @@ public final class IListWriter extends AbstractProcessor {
         return new Supplier(listName);
     }
 
+    public static ProcessorSupplier supplier(String listName, ClientConfig clientConfig) {
+        return new Supplier(listName, clientConfig);
+    }
+
     private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String name;
+        private final SerializableClientConfig clientConfig;
         private transient IList list;
+        private transient HazelcastInstance client;
 
         Supplier(String name) {
+            this(name, null);
+        }
+
+        Supplier(String name, ClientConfig clientConfig) {
             this.name = name;
+            this.clientConfig = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
+        }
+
+        private boolean isRemote() {
+            return clientConfig != null;
         }
 
         @Override
         public void init(Context context) {
-            list = context.getHazelcastInstance().getList(name);
+            HazelcastInstance instance;
+            if (isRemote()) {
+                instance = client = newHazelcastClient(clientConfig.asClientConfig());
+            } else {
+                instance = context.getHazelcastInstance();
+            }
+            list = instance.getList(name);
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            if (client != null) {
+                client.shutdown();
+            }
         }
 
         @Override
