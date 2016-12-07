@@ -25,6 +25,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -917,6 +918,11 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public ClusterVersion getClusterVersion() {
         return clusterStateManager.getClusterVersion();
+    }
+
+    @Override
+    public HotRestartService getHotRestartService() {
+        return node.getNodeExtension().getHotRestartBackupService();
     }
 
     @Override

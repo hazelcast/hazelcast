@@ -21,7 +21,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.hotrestart.HotRestartBackupService;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -247,10 +247,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res;
         try {
             if (checkCredentials(command)) {
-                final HotRestartBackupService backupService = textCommandService.getNode().getNodeExtension()
-                                                                                .getHotRestartBackupService();
-                if (backupService != null) {
-                    backupService.backup();
+                final HotRestartService hotRestartService = textCommandService.getNode().getNodeExtension()
+                                                                          .getHotRestartBackupService();
+                if (hotRestartService != null) {
+                    hotRestartService.backup();
                 }
                 res = "success";
             } else {
@@ -266,10 +266,10 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res;
         try {
             if (checkCredentials(command)) {
-                final HotRestartBackupService backupService = textCommandService.getNode().getNodeExtension()
-                                                                                .getHotRestartBackupService();
-                if (backupService != null) {
-                    backupService.interruptBackupTask();
+                final HotRestartService hotRestartService = textCommandService.getNode().getNodeExtension()
+                                                                          .getHotRestartBackupService();
+                if (hotRestartService != null) {
+                    hotRestartService.interruptBackupTask();
                 }
                 res = "success";
             } else {

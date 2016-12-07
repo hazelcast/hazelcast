@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -191,6 +192,15 @@ public interface Cluster {
      * @since 3.8
      */
     ClusterVersion getClusterVersion();
+
+    /**
+     * Returns the Hot Restart service for interacting with Hot Restart. Can return null if Hot Restart is not available
+     * (not EE) or not enabled.
+     *
+     * @return the hot restart service
+     * @throws UnsupportedOperationException if the hot restart service is not supported on this instance (e.g. on client)
+     */
+    HotRestartService getHotRestartService();
 
     /**
      * Changes state of the cluster to the {@link ClusterState#PASSIVE} transactionally,

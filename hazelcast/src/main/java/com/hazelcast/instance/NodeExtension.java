@@ -18,7 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.hotrestart.HotRestartBackupService;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
@@ -237,7 +237,7 @@ public interface NodeExtension {
      *
      * @return the hot restart data backup service
      */
-    HotRestartBackupService getHotRestartBackupService();
+    HotRestartService getHotRestartBackupService();
 
     /**
      * Creates a UUID for local member
