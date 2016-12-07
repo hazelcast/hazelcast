@@ -57,6 +57,7 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void dispatchEvent(Object eventData, ListenerAdapter listener) {
         if (eventData instanceof QueryCacheEventData) {
             dispatchQueryCacheEventData((QueryCacheEventData) eventData, listener);

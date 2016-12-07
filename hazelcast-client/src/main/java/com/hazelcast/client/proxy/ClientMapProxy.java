@@ -176,6 +176,7 @@ import static java.util.Collections.emptyMap;
  * @param <K> key
  * @param <V> value
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";

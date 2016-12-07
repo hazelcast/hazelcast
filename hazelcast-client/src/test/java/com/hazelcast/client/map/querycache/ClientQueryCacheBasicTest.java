@@ -96,7 +96,7 @@ public class ClientQueryCacheBasicTest extends HazelcastTestSupport {
         if (useNearCache) {
             clientConfig.addNearCacheConfig(new NearCacheConfig()
                     .setName(TEST_MAP_NAME)
-                    .setCacheLocalEntries(true));
+                    .setInvalidateOnChange(true));
         }
         clientConfig.setProperty(MapEventPublisherImpl.LISTENER_WITH_PREDICATE_PRODUCES_NATURAL_EVENT_TYPES.getName(),
                 Boolean.toString(useQueryCacheNaturalFilteringStrategy));

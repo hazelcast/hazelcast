@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
@@ -29,7 +28,6 @@ import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.EntryEventData;
-import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
