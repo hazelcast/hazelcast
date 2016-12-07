@@ -17,10 +17,10 @@
 package com.hazelcast.hotrestart;
 
 /**
- * Service for starting cluster-wide hot restart data backups, determining the local backup state and interrupting a currently
- * running local hot restart backup.
+ * Service for interacting with Hot Restart. For example - starting cluster-wide hot restart data backups, determining the
+ * local backup state and interrupting a currently running local hot restart backup.
  */
-public interface HotRestartBackupService {
+public interface HotRestartService {
     /** The prefix for each hot restart backup directory. The backup sequence is appended to this prefix. */
     String BACKUP_DIR_PREFIX = "backup-";
 

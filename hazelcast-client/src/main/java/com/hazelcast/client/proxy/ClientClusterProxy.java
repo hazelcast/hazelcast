@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.version.ClusterVersion;
 
@@ -77,6 +78,11 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public ClusterVersion getClusterVersion() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public HotRestartService getHotRestartService() {
         throw new UnsupportedOperationException();
     }
 
