@@ -23,7 +23,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
@@ -159,7 +158,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (logger.isFineEnabled()) {
             logger.fine("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         }
-        if (node.getState() != NodeState.ACTIVE) {
+        if (!node.isRunning()) {
             return;
         }
         if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
