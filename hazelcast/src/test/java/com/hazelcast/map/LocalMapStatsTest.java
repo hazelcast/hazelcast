@@ -91,6 +91,7 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
             Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
             putMap.put(i, i);
             putMap.put(100 + i, 100 + i);
+            map.putAll(putMap);
         }
         LocalMapStats localMapStats = map.getLocalMapStats();
         assertEquals(200, localMapStats.getPutOperationCount());
