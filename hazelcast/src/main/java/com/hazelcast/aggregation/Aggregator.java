@@ -22,10 +22,10 @@ import java.io.Serializable;
  * Base class for all aggregators. Exposes API for parallel two-phase aggregations:
  * - accumulation of input entries by multiple instance of aggregators
  * - combining all aggregators into one to calculate the final result
- *
+ * <p>
  * Aggregator does not have to be thread-safe.
  * accumulate() and combine() calls may be interwoven.
- *
+ * <p>
  * The very instance passed to an aggregate() method will not be used at all. It is just a prototype object
  * that will be cloned using serialization, since each partition gets its own instance of an aggregator.
  * In this way the aggregator is not used by multiple-threads. Each thread gets its own aggregator instance.
@@ -56,10 +56,12 @@ public abstract class Aggregator<I, R> implements Serializable {
 
     /**
      * Incorporates the intermediary result of the given aggregator to this instance of the aggregator.
+     * The given aggregator has to be of the same class as the one that the method is being called on.
      * Enables merging the intermediary state from a given aggregator.
      * It is used when the aggregation is split into a couple of aggregators.
      *
      * @param aggregator aggregator providing intermediary results to be combined into the results of this aggregator.
+     *                   The given aggregator has to be of the same class as the one that the method is being called on.
      */
     public abstract void combine(Aggregator aggregator);
 
