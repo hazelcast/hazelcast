@@ -36,11 +36,11 @@ public class TestClusterUpgradeUtils {
                                                          MemberVersion version,
                                                          Config config) {
         try {
-            System.setProperty("hazelcast.version", version.toString());
+            System.setProperty("hazelcast.internal.override.version", version.toString());
             return factory.newHazelcastInstance(config);
         }
         finally {
-            System.clearProperty("hazelcast.version");
+            System.clearProperty("hazelcast.internal.override.version");
         }
     }
 
@@ -53,7 +53,7 @@ public class TestClusterUpgradeUtils {
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
                                              MemberVersion version, Config config, boolean assertClusterSize) {
         try {
-            System.setProperty("hazelcast.version", version.toString());
+            System.setProperty("hazelcast.internal.override.version", version.toString());
             // upgrade one by one each member of the cluster to the next version
             for (int i = 0; i < membersToUpgrade.length; i++) {
                 membersToUpgrade[i].shutdown();
@@ -74,7 +74,7 @@ public class TestClusterUpgradeUtils {
             }
         }
         finally {
-            System.clearProperty("hazelcast.version");
+            System.clearProperty("hazelcast.internal.override.version");
         }
     }
 

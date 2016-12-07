@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
+import static com.hazelcast.config.XmlElements.DISTRIBUTED_CLASSLOADING;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
@@ -94,7 +95,6 @@ import static com.hazelcast.config.XmlElements.SERVICES;
 import static com.hazelcast.config.XmlElements.SET;
 import static com.hazelcast.config.XmlElements.TOPIC;
 import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
-import static com.hazelcast.config.XmlElements.DISTRIBUTED_CLASSLOADING;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -225,8 +225,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             domLevel3 = false;
         }
         process(root);
-        schemaValidation(root.getOwnerDocument());
+        if (shouldValidateTheSchema()) {
+            schemaValidation(root.getOwnerDocument());
+        }
         handleConfig(root);
+    }
+
+    private boolean shouldValidateTheSchema() {
+        // in case of overridden hazelcast version there may be no schema with that version
+        // this feature is used only in simulator testing.
+        return System.getProperty("hazelcast.internal.override.version") == null;
     }
 
     @Override

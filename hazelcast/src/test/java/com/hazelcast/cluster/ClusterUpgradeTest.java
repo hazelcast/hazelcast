@@ -59,7 +59,7 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        System.setProperty("hazelcast.version", VERSION_2_1_0.toString());
+        System.setProperty("hazelcast.internal.override.version", VERSION_2_1_0.toString());
         clusterMembers = new HazelcastInstance[CLUSTER_MEMBERS_COUNT];
         for (int i=0; i < CLUSTER_MEMBERS_COUNT; i++) {
             clusterMembers[i] = factory.newHazelcastInstance(getConfig());
@@ -81,7 +81,7 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     @Test
     public void test_addNodeOfLesserThanClusterVersion_notAllowed() {
-        System.setProperty("hazelcast.version", VERSION_2_0_5.toString());
+        System.setProperty("hazelcast.internal.override.version", VERSION_2_0_5.toString());
         expectedException.expect(IllegalStateException.class);
         factory.newHazelcastInstance(getConfig());
     }
@@ -100,6 +100,6 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        System.clearProperty("hazelcast.version");
+        System.clearProperty("hazelcast.internal.override.version");
     }
 }

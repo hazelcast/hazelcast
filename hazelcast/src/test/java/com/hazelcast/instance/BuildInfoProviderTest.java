@@ -95,10 +95,10 @@ public class BuildInfoProviderTest {
 
     @Test
     public void testOverrideBuildVersion() {
-        System.setProperty("hazelcast.version", "99.99.99");
+        System.setProperty("hazelcast.internal.override.version", "99.99.99");
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         assertEquals("99.99.99", buildInfo.getVersion());
-        System.clearProperty("hazelcast.version");
+        System.clearProperty("hazelcast.internal.override.version");
     }
 
     @After
