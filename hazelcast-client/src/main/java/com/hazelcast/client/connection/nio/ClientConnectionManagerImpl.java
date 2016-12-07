@@ -604,10 +604,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             fireConnectionAddedEvent(connection);
         } else {
+            //This part is hit when client sends authenticateion request again to an already
+            //connected server to upgrade itself to owner connection. In this case old new connection is same
+            assert connection.equals(oldConnection);
             if (logger.isFinestEnabled()) {
-                logger.finest("Authentication succeeded for " + connection + " and replaced " + oldConnection
-                    + " Closing the old connection.");
-                destroyConnection(oldConnection, "Replaced by newer connection", null);
+                logger.finest("ReAuthentication succeeded for " + connection + " and replaced " + oldConnection);
             }
         }
         connectionsInProgress.remove(target);
