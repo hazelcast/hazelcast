@@ -78,6 +78,8 @@ import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.querycache.ClientQueryCacheContext;
+import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEndToEndConstructor;
 import com.hazelcast.client.map.impl.ClientMapPartitionIterator;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -102,11 +104,17 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.query.AggregationResult;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
+import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
+import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
+import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -129,9 +137,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.collection.InflatableSet;
 
 import java.util.AbstractMap;
@@ -142,14 +152,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
 import static com.hazelcast.util.CollectionUtil.objectToDataCollection;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.ThreadUtil.getThreadId;
@@ -206,6 +221,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
             return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    /**
+     * Holds {@link QueryCacheContext} for this proxy.
+     * There should be only one {@link QueryCacheContext} instance.
+     */
+    private ConcurrentMap<String, QueryCacheContext> queryCacheContextHolder
+            = new ConcurrentHashMap<String, QueryCacheContext>(1);
+
+    private final ConstructorFunction<String, QueryCacheContext> queryCacheContextConstructorFunction
+            = new ConstructorFunction<String, QueryCacheContext>() {
+        @Override
+        public QueryCacheContext createNew(String arg) {
+            return new ClientQueryCacheContext(getContext());
         }
     };
 
@@ -1387,6 +1417,60 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         } catch (Exception e) {
             throw new HazelcastException(e);
         }
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name) {
+        checkNotNull(name, "name cannot be null");
+
+        return getQueryCacheInternal(name, null, null, null, this);
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(name, "name cannot be null");
+        checkNotNull(predicate, "predicate cannot be null");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+
+        return getQueryCacheInternal(name, null, predicate, includeValue, this);
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(name, "name cannot be null");
+        checkNotNull(predicate, "predicate cannot be null");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+
+        return getQueryCacheInternal(name, listener, predicate, includeValue, this);
+    }
+
+    private QueryCache getQueryCacheInternal(String name, MapListener listener, Predicate predicate,
+                                             Boolean includeValue, IMap map) {
+        QueryCacheContext context = getQueryContext();
+        QueryCacheRequest request = newQueryCacheRequest()
+                .withUserGivenCacheName(name)
+                .withCacheName(UuidUtil.newUnsecureUuidString())
+                .withListener(listener)
+                .withPredicate(predicate)
+                .withIncludeValue(includeValue)
+                .forMap(map)
+                .withContext(context);
+
+        return createQueryCache(request);
+    }
+
+
+    private QueryCache createQueryCache(QueryCacheRequest request) {
+        ConstructorFunction<String, InternalQueryCache> constructorFunction
+                = new ClientQueryCacheEndToEndConstructor(request);
+        SubscriberContext subscriberContext = getQueryContext().getSubscriberContext();
+        QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
+                request.getUserGivenCacheName(), constructorFunction);
+    }
+
+    public QueryCacheContext getQueryContext() {
+        return getOrPutIfAbsent(queryCacheContextHolder, "QueryCacheContext", queryCacheContextConstructorFunction);
     }
 
     @Override
