@@ -35,6 +35,8 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
 @PrivateApi
+// Declaration order suppressed due to private static int FLAG_TYPEx declarations
+@SuppressWarnings("checkstyle:declarationorder")
 public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
@@ -64,11 +66,11 @@ public final class Packet extends HeapData implements OutboundFrame {
     // header flags bitfield.
 
     /** Packet type bit 0. Historically the OPERATION type flag. */
-    public static final int FLAG_OP = 1 << 0;
+    private static final int FLAG_TYPE0 = 1 << 0;
     /** Packet type bit 1. Historically the EVENT type flag. */
-    public static final int FLAG_EVENT = 1 << 2;
+    private static final int FLAG_TYPE1 = 1 << 2;
     /** Packet type bit 2. Historically the BIND type flag. */
-    public static final int FLAG_BIND = 1 << 5;
+    private static final int FLAG_TYPE2 = 1 << 5;
 
     // 3. Type-specific flags. Same bits can be reused within each type
 
@@ -150,7 +152,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return {@code this} (for fluent interface)
      */
     public Packet setPacketType(Packet.Type type) {
-        int nonTypeFlags = flags & ~FLAG_OP & ~FLAG_EVENT & ~FLAG_BIND;
+        int nonTypeFlags = flags & (~FLAG_TYPE0 & ~FLAG_TYPE1 & ~FLAG_TYPE2);
         resetFlagsTo(type.headerEncoding | nonTypeFlags);
         return this;
     }
@@ -418,7 +420,7 @@ public final class Packet extends HeapData implements OutboundFrame {
         /**
          * The type of a Jet packet.
          * <p>
-         *  {@code ordinal = 3}
+         * {@code ordinal = 3}
          */
         JET {
             @Override
@@ -476,9 +478,9 @@ public final class Packet extends HeapData implements OutboundFrame {
 
         @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
         private static int headerDecode(int flags) {
-            return (flags & FLAG_OP)
-                 | (flags & FLAG_EVENT) >> 1
-                 | (flags & FLAG_BIND) >> 3;
+            return (flags & FLAG_TYPE0)
+                 | (flags & FLAG_TYPE1) >> 1
+                 | (flags & FLAG_TYPE2) >> 3;
         }
     }
 }
