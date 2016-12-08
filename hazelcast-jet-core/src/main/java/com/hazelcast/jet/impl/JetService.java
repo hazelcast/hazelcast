@@ -223,25 +223,66 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) {
         final ObjectDataInput in = createObjectDataInput(nodeEngine, packet);
-        uncheckRun(() ->
-            range(0, in.readInt()).forEach(x -> uncheckRun(() -> {
-                EngineContext engCtx = engineContexts.get(in.readUTF());
-                range(0, in.readInt()).forEach(x2 -> uncheckRun(() -> {
-                    final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = engCtx
-                            .executionContexts
-                            .get(in.readLong())
-                            .senderMap();
-                    range(0, in.readInt()).forEach(x3 -> uncheckRun(() -> {
+        uncheckRun(() -> {
+            final int engineCtxCount = in.readInt();
+            range(0, engineCtxCount).forEach(x -> uncheckRun(() -> {
+                final String engCtxName = in.readUTF();
+                EngineContext engCtx = engineContexts.get(engCtxName);
+                if (engCtx == null) {
+                    logMissingEngCtx(engCtxName);
+                    return;
+                }
+                final int executionCtxCount = in.readInt();
+                range(0, executionCtxCount).forEach(x2 -> uncheckRun(() -> {
+                    final long exeCtxId = in.readLong();
+                    final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
+                            Optional.of(engCtx.executionContexts)
+                                    .map(exeCtxs -> exeCtxs.get(exeCtxId))
+                                    .map(ExecutionContext::senderMap)
+                                    .orElse(null);
+                    if (senderMap == null) {
+                        logMissingExeCtx(exeCtxId);
+                        return;
+                    }
+                    final int flowCtlMsgCount = in.readInt();
+                    range(0, flowCtlMsgCount).forEach(x3 -> uncheckRun(() -> {
                         int destVertexId = in.readInt();
                         int destOrdinal = in.readInt();
                         int ackedSeq = in.readInt();
-                        senderMap.get(destVertexId)
-                                 .get(destOrdinal)
-                                 .get(fromAddr)
-                                 .setAckedSeqCompressed(ackedSeq);
+                        final SenderTasklet t = Optional.of(senderMap.get(destVertexId))
+                                                        .map(ordinalMap -> ordinalMap.get(destOrdinal))
+                                                        .map(addrMap -> addrMap.get(fromAddr))
+                                                        .orElse(null);
+                        if (t == null) {
+                            logMissingSenderTasklet(destVertexId, destOrdinal);
+                            return;
+                        }
+                        t.setAckedSeqCompressed(ackedSeq);
                     }));
                 }));
-            }))
-        );
+            }));
+        });
+    }
+
+    private void logMissingEngCtx(String engCtxName) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Ignoring flow control message applying to non-existent engine context "
+                    + engCtxName);
+        }
+    }
+
+    private void logMissingExeCtx(long exeCtxId) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Ignoring flow control message applying to non-existent execution context "
+                    + exeCtxId);
+        }
+    }
+
+    private void logMissingSenderTasklet(int destVertexId, int destOrdinal) {
+        if (logger.isFinestEnabled()) {
+            logger.finest(String.format(
+                    "Ignoring flow control message applying to non-existent sender tasklet (%d, %d)",
+                    destVertexId, destOrdinal));
+        }
     }
 }
