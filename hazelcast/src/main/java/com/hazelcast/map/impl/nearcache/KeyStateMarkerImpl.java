@@ -28,7 +28,7 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 public class KeyStateMarkerImpl implements KeyStateMarker {
 
     private final int markCount;
-    private volatile AtomicLongArray marks;
+    private final AtomicLongArray marks;
 
     public KeyStateMarkerImpl(int markCount) {
         this.markCount = markCount;
@@ -58,7 +58,10 @@ public class KeyStateMarkerImpl implements KeyStateMarker {
 
     @Override
     public void init() {
-        marks = new AtomicLongArray(markCount);
+        int slot = 0;
+        do {
+            marks.set(slot, UNMARKED.getState());
+        } while (++slot < marks.length());
     }
 
     private boolean casState(Object key, STATE expect, STATE update) {
@@ -69,5 +72,18 @@ public class KeyStateMarkerImpl implements KeyStateMarker {
     private int getSlot(Object key) {
         int hash = key instanceof Data ? ((Data) key).getPartitionHash() : key.hashCode();
         return hashToIndex(hash, markCount);
+    }
+
+    // only used for testing purposes.
+    public AtomicLongArray getMarks() {
+        return marks;
+    }
+
+    @Override
+    public String toString() {
+        return "KeyStateMarkerImpl{"
+                + "markCount=" + markCount
+                + ", marks=" + marks
+                + '}';
     }
 }

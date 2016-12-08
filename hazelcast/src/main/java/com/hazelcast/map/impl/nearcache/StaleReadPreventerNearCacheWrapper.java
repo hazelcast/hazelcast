@@ -100,4 +100,5 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache {
     public KeyStateMarker getKeyStateMarker() {
         return keyStateMarker;
     }
+
 }
