@@ -54,6 +54,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.map.impl.nearcache.StaleReadPreventerNearCacheWrapper.wrapAsStaleReadPreventerNearCache;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.emptyMap;
 
@@ -121,10 +122,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         boolean marked = keyStateMarker.tryMark(key);
 
-        V value = super.getInternal(key);
-
-        if (marked) {
-            tryToPutNearCache(key, value);
+        V value = null;
+        try {
+            value = super.getInternal(key);
+            if (marked) {
+                tryToPutNearCache(key, value);
+            }
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw rethrow(t);
         }
 
         return value;
@@ -159,8 +165,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         final boolean marked = keyStateMarker.tryMark(keyData);
+        ICompletableFuture<V> future;
+        try {
+            future = super.getAsyncInternal(keyData);
+        } catch (Throwable t) {
+            resetToUnmarkedState(keyData);
+            throw rethrow(t);
+        }
 
-        ICompletableFuture<V> future = super.getAsyncInternal(keyData);
         ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
@@ -171,7 +183,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
-
+                if (marked) {
+                    resetToUnmarkedState(keyData);
+                }
             }
         });
         return future;
@@ -277,44 +291,57 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
         Map<Data, Boolean> markers = EMPTY_MAP;
-
-        for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
-            List<Data> keyList = partitionKeyEntry.getValue();
-            Iterator<Data> iterator = keyList.iterator();
-            while (iterator.hasNext()) {
-                Data key = iterator.next();
-                Object cached = nearCache.get(key);
-                if (cached != null && NULL_OBJECT != cached) {
-                    result.put((K) toObject(key), (V) cached);
-                    iterator.remove();
-                } else if (invalidateOnChange) {
-                    if (markers == EMPTY_MAP) {
-                        markers = new HashMap<Data, Boolean>();
+        List<MapGetAllCodec.ResponseParameters> responses;
+        try {
+            for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
+                List<Data> keyList = partitionKeyEntry.getValue();
+                Iterator<Data> iterator = keyList.iterator();
+                while (iterator.hasNext()) {
+                    Data key = iterator.next();
+                    Object cached = nearCache.get(key);
+                    if (cached != null && NULL_OBJECT != cached) {
+                        result.put((K) toObject(key), (V) cached);
+                        iterator.remove();
+                    } else if (invalidateOnChange) {
+                        if (markers == EMPTY_MAP) {
+                            markers = new HashMap<Data, Boolean>();
+                        }
+                        markers.put(key, keyStateMarker.tryMark(key));
                     }
-
-                    markers.put(key, keyStateMarker.tryMark(key));
                 }
             }
-        }
 
-        List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
-        for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
-            for (Entry<Data, Data> entry : resultParameters.response) {
+            responses = super.getAllInternal(pIdToKeyData, result);
+            for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
+                for (Entry<Data, Data> entry : resultParameters.response) {
 
-                Data key = entry.getKey();
-                Data value = entry.getValue();
+                    Data key = entry.getKey();
+                    Data value = entry.getValue();
 
-                Boolean marked = markers.get(key);
-                if ((null != marked && marked)) {
-                    tryToPutNearCache(key, value);
-                } else if (!invalidateOnChange) {
-                    nearCache.put(key, value);
+                    Boolean marked = markers.remove(key);
+                    if ((null != marked && marked)) {
+                        tryToPutNearCache(key, value);
+                    } else if (!invalidateOnChange) {
+                        nearCache.put(key, value);
+                    }
                 }
-
             }
+        } finally {
+            unmarkRemainingMarkedKeys(markers);
         }
+
         return responses;
     }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.forceUnmark(entry.getKey());
+            }
+        }
+    }
+
 
     @Override
     public LocalMapStats getLocalMapStats() {
@@ -399,10 +426,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             nearCache.put(key, response);
         } finally {
-            if (!keyStateMarker.tryUnmark(key)) {
-                invalidateNearCache(key);
-                keyStateMarker.forceUnmark(key);
-            }
+            resetToUnmarkedState(key);
+        }
+    }
+
+    private void resetToUnmarkedState(Data key) {
+        if (!keyStateMarker.tryUnmark(key)) {
+            invalidateNearCache(key);
+            keyStateMarker.forceUnmark(key);
         }
     }
 

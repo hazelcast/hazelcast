@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.AbstractNearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheInvalidator;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
@@ -49,8 +50,11 @@ public class NearCacheBatchInvalidationOperation extends MapOperation implements
             NearCacheInvalidator nearCacheInvalidator = nearCacheProvider.getNearCacheInvalidator();
             ((AbstractNearCacheInvalidator) nearCacheInvalidator).invalidateLocal(name, null, keys);
         } else {
-            getLogger().warning("Cache clear operation has been accepted while near cache is not enabled for "
-                    + name + " map. Possible configuration conflict among nodes.");
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Near-cache invalidation operation has been accepted while near cache is not enabled for "
+                        + name + " map. Possible configuration conflict among nodes.");
+            }
         }
     }
 
