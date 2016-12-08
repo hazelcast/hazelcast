@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.waitAllForSafeState;
@@ -36,11 +37,11 @@ public class TestClusterUpgradeUtils {
                                                          MemberVersion version,
                                                          Config config) {
         try {
-            System.setProperty("hazelcast.internal.override.version", version.toString());
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, version.toString());
             return factory.newHazelcastInstance(config);
         }
         finally {
-            System.clearProperty("hazelcast.internal.override.version");
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         }
     }
 
@@ -53,7 +54,7 @@ public class TestClusterUpgradeUtils {
     public static void upgradeClusterMembers(TestHazelcastInstanceFactory factory, final HazelcastInstance[] membersToUpgrade,
                                              MemberVersion version, Config config, boolean assertClusterSize) {
         try {
-            System.setProperty("hazelcast.internal.override.version", version.toString());
+            System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, version.toString());
             // upgrade one by one each member of the cluster to the next version
             for (int i = 0; i < membersToUpgrade.length; i++) {
                 membersToUpgrade[i].shutdown();
@@ -74,7 +75,7 @@ public class TestClusterUpgradeUtils {
             }
         }
         finally {
-            System.clearProperty("hazelcast.internal.override.version");
+            System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         }
     }
 
