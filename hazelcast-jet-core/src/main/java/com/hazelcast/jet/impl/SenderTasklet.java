@@ -29,6 +29,9 @@ import java.util.Queue;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.JetService.createStreamPacketHeader;
+import static com.hazelcast.jet.impl.ReceiverTasklet.RECEIVE_WINDOW_COMPRESSED;
+import static com.hazelcast.jet.impl.ReceiverTasklet.compressSeq;
+import static com.hazelcast.jet.impl.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.Util.getMemberConnection;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -36,7 +39,6 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 class SenderTasklet implements Tasklet {
 
     public static final int PACKET_SIZE_LIMIT = 1 << 14;
-    private static final int RECEIVE_WINDOW = 1 << 23;
 
     private final Connection connection;
     private final byte[] headerBytes;
@@ -44,8 +46,8 @@ class SenderTasklet implements Tasklet {
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
 
-    private int sentSeq;
-    private volatile int ackedSeq;
+    private long sentSeq;
+    private volatile int ackedSeqCompressed;
 
     SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
                          Address destinationAddress, long executionId, int destinationVertexId
@@ -57,8 +59,8 @@ class SenderTasklet implements Tasklet {
         this.outputBuffer = createObjectDataOutput(nodeEngine);
     }
 
-    void setAckedSeq(int ackedSeq) {
-        this.ackedSeq = ackedSeq;
+    void setAckedSeqCompressed(int compressedSeq) {
+        this.ackedSeqCompressed = compressedSeq;
     }
 
     @Nonnull
@@ -89,12 +91,14 @@ class SenderTasklet implements Tasklet {
             int writtenCount = 0;
             for (Object item;
                  outputBuffer.position() < PACKET_SIZE_LIMIT
-                     && isWithinWindow()
+                     && isWithinWindow(sentSeq, ackedSeqCompressed)
                      && (item = inbox.poll()) != null;
-                 writtenCount++, sentSeq++
+                 writtenCount++
             ) {
                 ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
+                final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithpId.getItem());
+                sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
                 outputBuffer.writeInt(itemWithpId.getPartitionId());
             }
             outputBuffer.writeInt(headerBytes.length, writtenCount);
@@ -103,13 +107,11 @@ class SenderTasklet implements Tasklet {
         }
     }
 
-    private boolean isWithinWindow() {
-        final long ackedSeq = this.ackedSeq;
-        long sentSeq = this.sentSeq;
-        if (sentSeq < 0 && ackedSeq > 0) {
-            // handle integer overflow case where sentSeq has wrapped around, but ackedSeq hasn't yet
-            sentSeq = Integer.toUnsignedLong(this.sentSeq);
-        }
-        return sentSeq < ackedSeq + RECEIVE_WINDOW;
+    // The types in this method are carefully chosen to properly handle wrap-around that is
+    // allowed to happen on ackedSeqCompressed. Sign-extending the compressed int to long
+    // and then subtracting will yield the correct outcome.
+    static boolean isWithinWindow(long sentSeq, int ackedSeqCompressed) {
+        final int sentSeqCompressed = compressSeq(sentSeq);
+        return sentSeqCompressed - ackedSeqCompressed < RECEIVE_WINDOW_COMPRESSED;
     }
 }

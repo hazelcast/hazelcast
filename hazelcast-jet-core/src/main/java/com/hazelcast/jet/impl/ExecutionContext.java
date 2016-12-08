@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
@@ -89,7 +89,7 @@ class ExecutionContext {
         suppliers.forEach(s -> s.complete(error));
     }
 
-    void handlePacket(int vertexId, int ordinal, Address sender, ObjectDataInput in) {
+    void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
         receiverMap.get(vertexId)
                    .get(ordinal)
                    .addPacket(in, memberToId.get(sender));

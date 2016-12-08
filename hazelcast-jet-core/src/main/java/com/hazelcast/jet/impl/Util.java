@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -113,7 +114,7 @@ public final class Util {
                 .createObjectDataOutput(BUFFER_SIZE);
     }
 
-    public static ObjectDataInput createObjectDataIntput(NodeEngine engine, byte[] buf) {
+    public static BufferObjectDataInput createObjectDataInput(NodeEngine engine, byte[] buf) {
         return ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataInput(buf);
     }

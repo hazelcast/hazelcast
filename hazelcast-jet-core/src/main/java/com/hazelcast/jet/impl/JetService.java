@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,7 +40,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.jet.impl.Util.createObjectDataIntput;
+import static com.hazelcast.jet.impl.Util.createObjectDataInput;
 import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.Util.getMemberConnection;
 import static com.hazelcast.jet.impl.Util.getRemoteMembers;
@@ -152,7 +153,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     private void handleStreamPacket(Packet packet) {
         try {
-            ObjectDataInput in = createObjectDataIntput(nodeEngine, packet.toByteArray());
+            BufferObjectDataInput in = createObjectDataInput(nodeEngine, packet.toByteArray());
             String engineName = in.readUTF();
             long executionId = in.readLong();
             int vertexId = in.readInt();
@@ -221,7 +222,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) {
-        final ObjectDataInput in = createObjectDataIntput(nodeEngine, packet);
+        final ObjectDataInput in = createObjectDataInput(nodeEngine, packet);
         uncheckRun(() ->
             range(0, in.readInt()).forEach(x -> uncheckRun(() -> {
                 EngineContext engCtx = engineContexts.get(in.readUTF());
@@ -237,7 +238,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
                         senderMap.get(destVertexId)
                                  .get(destOrdinal)
                                  .get(fromAddr)
-                                 .setAckedSeq(ackedSeq);
+                                 .setAckedSeqCompressed(ackedSeq);
                     }));
                 }));
             }))
