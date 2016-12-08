@@ -37,8 +37,7 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache, KeyS
 
     private final NearCache nearCache;
     private final int markCount;
-
-    private volatile AtomicIntegerArray marks;
+    private final AtomicIntegerArray marks;
 
     private StaleReadPreventerNearCacheWrapper(NearCache nearCache, int markCount) {
         this.nearCache = nearCache;
@@ -131,7 +130,10 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache, KeyS
 
     @Override
     public void init() {
-        marks = new AtomicIntegerArray(markCount);
+        int slot = 0;
+        do {
+            marks.set(slot, UNMARKED.getState());
+        } while (++slot < marks.length());
     }
 
     private boolean casState(Object key, STATE expect, STATE update) {
@@ -146,5 +148,18 @@ public final class StaleReadPreventerNearCacheWrapper implements NearCache, KeyS
 
     public KeyStateMarker getKeyStateMarker() {
         return this;
+    }
+
+    // only used for testing purposes
+    public AtomicIntegerArray getMarks() {
+        return marks;
+    }
+
+    @Override
+    public String toString() {
+        return "StaleReadPreventerNearCacheWrapper{"
+                + "markCount=" + markCount
+                + ", marks=" + marks
+                + '}';
     }
 }
