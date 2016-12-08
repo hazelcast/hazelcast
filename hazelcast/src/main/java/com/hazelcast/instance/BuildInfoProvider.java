@@ -36,6 +36,8 @@ public final class BuildInfoProvider {
      */
     public static final BuildInfo BUILD_INFO;
 
+    public static final String HAZELCAST_INTERNAL_OVERRIDE_VERSION = "hazelcast.internal.override.version";
+
     private static final ILogger LOGGER;
 
     static {
@@ -86,7 +88,7 @@ public final class BuildInfoProvider {
         int buildNumber = Integer.parseInt(build);
 
         // override version with a system property
-        String overridingVersion = System.getProperty("hazelcast.internal.override.version");
+        String overridingVersion = System.getProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
         if (overridingVersion != null) {
             LOGGER.info("Overriding hazelcast version with system property value " + overridingVersion);
             version = overridingVersion;

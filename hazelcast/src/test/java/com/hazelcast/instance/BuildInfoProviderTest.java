@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.util.regex.Pattern;
 
+import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -95,10 +96,10 @@ public class BuildInfoProviderTest {
 
     @Test
     public void testOverrideBuildVersion() {
-        System.setProperty("hazelcast.internal.override.version", "99.99.99");
+        System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, "99.99.99");
         BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
         assertEquals("99.99.99", buildInfo.getVersion());
-        System.clearProperty("hazelcast.internal.override.version");
+        System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
     }
 
     @After
