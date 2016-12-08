@@ -446,12 +446,12 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
     }
 
     @Override
-    public <R> R aggregate(Aggregator<R, K, V> aggregator) {
+    public <R> R aggregate(Aggregator<Entry<K, V>, R> aggregator) {
         return map.aggregate(aggregator);
     }
 
     @Override
-    public <R> R aggregate(Aggregator<R, K, V> aggregator, Predicate<K, V> predicate) {
+    public <R> R aggregate(Aggregator<Entry<K, V>, R> aggregator, Predicate<K, V> predicate) {
         return map.aggregate(aggregator, predicate);
     }
 

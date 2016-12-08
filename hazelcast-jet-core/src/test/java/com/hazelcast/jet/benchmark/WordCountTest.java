@@ -214,7 +214,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
         logger.info("Test complete");
         System.out.println(times.stream()
-                                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
+                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
     }
 
     private void assertCounts(Map<String, Long> wordCounts) {
@@ -225,15 +225,14 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class WordCountAggregator extends Aggregator<Map<String, Long>,
-            Integer, String> {
+    private static class WordCountAggregator extends Aggregator<Map.Entry<Integer, String>, Map<String, Long>> {
         private static final Pattern PATTERN = Pattern.compile("\\w+");
 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public void accumulate(Entry<Integer, String> entry) {
-            String text = entry.getValue().toLowerCase();
+        public void accumulate(Entry<Integer, String> input) {
+            String text = input.getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
                 accumulate(m.group(), 1L);
