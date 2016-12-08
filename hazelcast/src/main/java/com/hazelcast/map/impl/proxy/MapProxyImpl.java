@@ -83,6 +83,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
@@ -845,6 +846,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
+        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
+
         HazelcastInstance hazelcastInstance = getNodeEngine().getHazelcastInstance();
         JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
         return aggregate(supplier, aggregation, jobTracker);
@@ -854,6 +857,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                                     Aggregation<K, SuppliedValue, Result> aggregation,
                                                     JobTracker jobTracker) {
+        checkTrue(NATIVE != mapConfig.getInMemoryFormat(), "NATIVE storage format is not supported for MapReduce");
+
         try {
             isNotNull(jobTracker, "jobTracker");
             KeyValueSource<K, V> keyValueSource = KeyValueSource.fromMap(this);
