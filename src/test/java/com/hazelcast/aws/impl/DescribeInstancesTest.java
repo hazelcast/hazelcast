@@ -124,21 +124,6 @@ public class DescribeInstancesTest {
         new DescribeInstances(awsConfig, "endpoint");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void test_whenBoth_AccessKey_And_IamRole_Are_Defined() throws IOException {
-        Environment mockedEnv = mock(Environment.class);
-        when(mockedEnv.getEnvVar(Constants.ECS_CREDENTIALS_ENV_VAR_NAME)).thenReturn(null);
-
-        AwsConfig awsConfig = new AwsConfig();
-        awsConfig.setAccessKey("accesskey");
-        awsConfig.setSecretKey("secretkey");
-        awsConfig.setIamRole("someRole");
-
-        DescribeInstances descriptor = new DescribeInstances(awsConfig);
-        descriptor.checkKeysFromIamRoles(mockedEnv);
-    }
-
-
     @Test
     public void test_whenIamRoleExistsInConfig() throws IOException {
         final String someRole = "someRole";
