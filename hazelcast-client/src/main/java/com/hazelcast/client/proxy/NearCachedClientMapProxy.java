@@ -39,6 +39,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 
@@ -118,11 +119,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         }
 
         boolean marked = keyStateMarker.tryMark(key);
-
-        V value = super.getInternal(key);
-
-        if (marked) {
-            tryToPutNearCache(key, value);
+        V value;
+        try {
+            value = super.getInternal(key);
+            if (marked) {
+                tryToPutNearCache(key, value);
+            }
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw ExceptionUtil.rethrow(t);
         }
 
         return value;
@@ -149,27 +154,35 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsyncInternal(final Data keyData) {
-        Object cached = nearCache.get(keyData);
+    public ICompletableFuture<V> getAsyncInternal(final Data key) {
+        Object cached = nearCache.get(key);
         if (cached != null && NULL_OBJECT != cached) {
             return new CompletedFuture<V>(getContext().getSerializationService(),
                     cached, getContext().getExecutionService().getAsyncExecutor());
         }
 
-        final boolean marked = keyStateMarker.tryMark(keyData);
+        final boolean marked = keyStateMarker.tryMark(key);
 
-        ICompletableFuture<V> future = super.getAsyncInternal(keyData);
+        ICompletableFuture<V> future;
+        try {
+            future = super.getAsyncInternal(key);
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw ExceptionUtil.rethrow(t);
+        }
         ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
                 if (marked) {
-                    tryToPutNearCache(keyData, response);
+                    tryToPutNearCache(key, response);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-
+                if (marked) {
+                    resetToUnmarkedState(key);
+                }
             }
         });
         return future;
@@ -282,44 +295,58 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
         Map<Data, Boolean> markers = EMPTY_MAP;
+        List<MapGetAllCodec.ResponseParameters> responses;
+        try {
 
-        for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
-            List<Data> keyList = partitionKeyEntry.getValue();
-            Iterator<Data> iterator = keyList.iterator();
-            while (iterator.hasNext()) {
-                Data key = iterator.next();
-                Object cached = nearCache.get(key);
-                if (cached != null && NULL_OBJECT != cached) {
-                    result.put((K) toObject(key), (V) cached);
-                    iterator.remove();
-                } else if (invalidateOnChange) {
-                    if (markers == EMPTY_MAP) {
-                        markers = new HashMap<Data, Boolean>();
+            for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
+                List<Data> keyList = partitionKeyEntry.getValue();
+                Iterator<Data> iterator = keyList.iterator();
+                while (iterator.hasNext()) {
+                    Data key = iterator.next();
+                    Object cached = nearCache.get(key);
+                    if (cached != null && NULL_OBJECT != cached) {
+                        result.put((K) toObject(key), (V) cached);
+                        iterator.remove();
+                    } else if (invalidateOnChange) {
+                        if (markers == EMPTY_MAP) {
+                            markers = new HashMap<Data, Boolean>();
+                        }
+                        markers.put(key, keyStateMarker.tryMark(key));
                     }
-
-                    markers.put(key, keyStateMarker.tryMark(key));
                 }
             }
-        }
 
-        List<MapGetAllCodec.ResponseParameters> responses = super.getAllInternal(pIdToKeyData, result);
-        for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
-            for (Entry<Data, Data> entry : resultParameters.response) {
+            responses = super.getAllInternal(pIdToKeyData, result);
+            for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
+                for (Entry<Data, Data> entry : resultParameters.response) {
 
-                Data key = entry.getKey();
-                Data value = entry.getValue();
+                    Data key = entry.getKey();
+                    Data value = entry.getValue();
 
-                Boolean marked = markers.get(key);
-                if ((null != marked && marked)) {
-                    tryToPutNearCache(key, value);
-                } else if (!invalidateOnChange) {
-                    nearCache.put(key, value);
+                    Boolean marked = markers.remove(key);
+                    if ((null != marked && marked)) {
+                        tryToPutNearCache(key, value);
+                    } else if (!invalidateOnChange) {
+                        nearCache.put(key, value);
+                    }
                 }
-
             }
+        } finally {
+            unmarkRemainingMarkedKeys(markers);
         }
+
         return responses;
     }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.forceUnmark(entry.getKey());
+            }
+        }
+    }
+
 
     @Override
     public LocalMapStats getLocalMapStats() {
@@ -404,10 +431,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             nearCache.put(key, response);
         } finally {
-            if (!keyStateMarker.tryUnmark(key)) {
-                invalidateNearCache(key);
-                keyStateMarker.forceUnmark(key);
-            }
+            resetToUnmarkedState(key);
+        }
+    }
+
+    private void resetToUnmarkedState(Data key) {
+        if (!keyStateMarker.tryUnmark(key)) {
+            invalidateNearCache(key);
+            keyStateMarker.forceUnmark(key);
         }
     }
 

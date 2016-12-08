@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -87,11 +88,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         }
 
         boolean marked = keyStateMarker.tryMark(key);
-
-        value = super.getInternal(key);
-
-        if (marked) {
-            tryToPutNearCache(key, value);
+        try {
+            value = super.getInternal(key);
+            if (marked) {
+                tryToPutNearCache(key, value);
+            }
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw rethrow(t);
         }
 
         return value;
@@ -103,10 +107,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 nearCache.put(key, value);
             }
         } finally {
-            if (!keyStateMarker.tryUnmark(key)) {
-                invalidateCache(key);
-                keyStateMarker.forceUnmark(key);
-            }
+            resetToUnmarkedState(key);
+        }
+    }
+
+    private void resetToUnmarkedState(Data key) {
+        if (!keyStateMarker.tryUnmark(key)) {
+            invalidateCache(key);
+            keyStateMarker.forceUnmark(key);
         }
     }
 
@@ -125,7 +133,14 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
         final boolean marked = keyStateMarker.tryMark(key);
 
-        ICompletableFuture<Data> future = super.getAsyncInternal(key);
+        ICompletableFuture<Data> future;
+        try {
+            future = super.getAsyncInternal(key);
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw rethrow(t);
+        }
+
         future.andThen(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data response) {
@@ -136,6 +151,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
+                if (marked) {
+                    resetToUnmarkedState(key);
+                }
             }
         });
         return future;
@@ -284,25 +302,37 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
-        getCachedValue(keys, resultingKeyValuePairs);
+        Map<Data, Boolean> keyStates = null;
+        try {
+            getCachedValue(keys, resultingKeyValuePairs);
+            keyStates = createHashMap(keys.size());
+            for (Data key : keys) {
+                keyStates.put(key, keyStateMarker.tryMark(key));
+            }
 
-        Map<Data, Boolean> keyStates = createHashMap(keys.size());
-        for (Data key : keys) {
-            keyStates.put(key, keyStateMarker.tryMark(key));
+            int currentSize = resultingKeyValuePairs.size();
+            super.getAllObjectInternal(keys, resultingKeyValuePairs);
+
+            // only add elements which are not in near-putCache
+            for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
+                Data key = toData(resultingKeyValuePairs.get(i++));
+                Data value = toData(resultingKeyValuePairs.get(i++));
+
+                boolean marked = keyStates.remove(key);
+                if (marked) {
+                    tryToPutNearCache(key, value);
+                }
+            }
+        } finally {
+            unmarkRemainingMarkedKeys(keyStates);
         }
+    }
 
-
-        int currentSize = resultingKeyValuePairs.size();
-        super.getAllObjectInternal(keys, resultingKeyValuePairs);
-
-        // only add elements which are not in near-putCache
-        for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
-            Data key = toData(resultingKeyValuePairs.get(i++));
-            Data value = toData(resultingKeyValuePairs.get(i++));
-
-            boolean marked = keyStates.get(key);
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
             if (marked) {
-                tryToPutNearCache(key, value);
+                keyStateMarker.forceUnmark(entry.getKey());
             }
         }
     }
