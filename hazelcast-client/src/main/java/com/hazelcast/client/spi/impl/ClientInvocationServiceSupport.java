@@ -49,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
-import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartbeat;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
@@ -205,19 +204,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                     continue;
                 }
 
-                boolean isAlive = connection.isAlive();
-                boolean isHeartbeating = connection.isHeartBeating();
-
-                /**
-                 * We could just use !connection.isClosed()condition if all connections were being closed when heartbeat fails
-                 * but as seen at
-                 * @see ClusterListenerSupport#heartbeatStopped(Connection)
-                 * @see ClientConnectionManagerImpl.Heartbeat#run()
-                 * non-owner connections are not closed but we want to set waiting invocation responses for these connections
-                 * as well so that these invocations will not wait forever. If connection close on heartbeatFailed logic changes
-                 * we can change this line.
-                 */
-                if (isHeartbeating || (!isAlive && !connection.isClosed())) {
+                if (connection.isHeartBeating()) {
                     continue;
                 }
 
@@ -236,38 +223,24 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
                 iter.remove();
 
-                notifyException(invocation, connection, isAlive);
-                Exception ex = newTargetDisconnectedExceptionCausedByHeartbeat(
-                        connection.getRemoteEndpoint(),
-                        connection.toString(),
-                        connection.getLastHeartbeatRequestedMillis(),
-                        connection.getLastHeartbeatReceivedMillis(),
-                        connection.lastReadTimeMillis(),
-                        connection.getCloseCause());
-                invocation.notifyException(ex);
+                notifyException(invocation, connection);
             }
             if (expiredConnections != null) {
                 logExpiredConnections(expiredConnections);
             }
         }
 
-        private void notifyException(ClientInvocation invocation, ClientConnection connection, boolean isAlive) {
+        private void notifyException(ClientInvocation invocation, ClientConnection connection) {
             Exception ex;
             /**
              * Connection may be closed(e.g. remote member shutdown) in which case the isAlive is set to false or the
              * heartbeat failure occurs. The order of the following check matters. We need to first check for isAlive since
              * the connection.isHeartBeating also checks for isAlive as well.
              */
-            if (!isAlive) {
+            if (!connection.isAlive()) {
                 ex = new TargetDisconnectedException(connection.getCloseReason(), connection.getCloseCause());
             } else {
-                ex = newTargetDisconnectedExceptionCausedByHeartbeat(
-                        connection.getRemoteEndpoint(),
-                        connection.toString(),
-                        connection.getLastHeartbeatRequestedMillis(),
-                        connection.getLastHeartbeatReceivedMillis(),
-                        connection.lastReadTimeMillis(),
-                        connection.getCloseCause());
+                ex = new TargetDisconnectedException("Heartbeat timed out to " + connection);
             }
 
             invocation.notifyException(ex);
