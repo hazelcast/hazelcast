@@ -27,6 +27,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.iterator.MapPartitionIterator;
@@ -36,6 +37,12 @@ import com.hazelcast.map.impl.query.Query;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultUtils;
 import com.hazelcast.map.impl.query.Target;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
+import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
+import com.hazelcast.map.impl.querycache.subscriber.NodeQueryCacheEndToEndConstructor;
+import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
+import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
+import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -60,8 +67,10 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
@@ -75,6 +84,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -886,5 +897,52 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     @Override
     public String toString() {
         return "IMap{name='" + name + '\'' + '}';
+    }
+
+    public QueryCache<K, V> getQueryCache(String name) {
+        checkNotNull(name, "name cannot be null");
+
+        return getQueryCacheInternal(name, null, null, null, this);
+    }
+
+    public QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(name, "name cannot be null");
+        checkNotNull(predicate, "predicate cannot be null");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+
+        return getQueryCacheInternal(name, null, predicate, includeValue, this);
+    }
+
+    public QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        checkNotNull(name, "name cannot be null");
+        checkNotNull(predicate, "predicate cannot be null");
+        checkNotInstanceOf(PagingPredicate.class, predicate, "predicate");
+
+        return getQueryCacheInternal(name, listener, predicate, includeValue, this);
+    }
+
+    private QueryCache<K, V> getQueryCacheInternal(String name, MapListener listener, Predicate<K, V> predicate,
+                                             Boolean includeValue, IMap<K, V> map) {
+        QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
+
+        QueryCacheRequest request = newQueryCacheRequest()
+                .forMap(map)
+                .withCacheName(UuidUtil.newUnsecureUuidString())
+                .withUserGivenCacheName(name)
+                .withListener(listener)
+                .withPredicate(predicate)
+                .withIncludeValue(includeValue)
+                .withContext(queryCacheContext);
+
+        return createQueryCache(request);
+    }
+
+    private QueryCache<K, V> createQueryCache(QueryCacheRequest request) {
+        ConstructorFunction<String, InternalQueryCache> constructorFunction = new NodeQueryCacheEndToEndConstructor(request);
+        QueryCacheContext queryCacheContext = request.getContext();
+        SubscriberContext subscriberContext = queryCacheContext.getSubscriberContext();
+        QueryCacheEndToEndProvider queryCacheEndToEndProvider = subscriberContext.getEndToEndQueryCacheProvider();
+        return queryCacheEndToEndProvider.getOrCreateQueryCache(request.getMapName(),
+                request.getUserGivenCacheName(), constructorFunction);
     }
 }

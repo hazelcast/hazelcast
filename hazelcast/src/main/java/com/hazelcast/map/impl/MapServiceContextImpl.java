@@ -49,6 +49,8 @@ import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultProcessor;
 import com.hazelcast.map.impl.query.QueryRunner;
 import com.hazelcast.map.impl.query.ResultProcessorRegistry;
+import com.hazelcast.map.impl.querycache.NodeQueryCacheContext;
+import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -128,6 +130,7 @@ class MapServiceContextImpl implements MapServiceContext {
     protected final QueryOptimizer queryOptimizer;
     protected final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     protected final PartitioningStrategyFactory partitioningStrategyFactory;
+    protected final QueryCacheContext queryCacheContext;
     protected MapEventPublisher mapEventPublisher;
     protected MapService mapService;
     protected EventService eventService;
@@ -136,6 +139,7 @@ class MapServiceContextImpl implements MapServiceContext {
 
     MapServiceContextImpl(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.queryCacheContext = new NodeQueryCacheContext(this);
         this.partitionContainers = createPartitionContainers();
         this.mapContainers = new ConcurrentHashMap<String, MapContainer>();
         this.ownedPartitions = new AtomicReference<Collection<Integer>>();
@@ -710,4 +714,31 @@ class MapServiceContextImpl implements MapServiceContext {
         return mapNearCacheManager;
     }
 
+    @Override
+    public String addListenerAdapter(ListenerAdapter listenerAdaptor, EventFilter eventFilter, String mapName) {
+        EventRegistration registration = getNodeEngine().getEventService().
+                registerListener(MapService.SERVICE_NAME, mapName, eventFilter, listenerAdaptor);
+        return registration.getId();
+    }
+
+    @Override
+    public String addListenerAdapter(String cacheName, ListenerAdapter listenerAdaptor) {
+        EventService eventService = getNodeEngine().getEventService();
+        EventRegistration registration
+                = eventService.registerListener(MapService.SERVICE_NAME,
+                cacheName, TrueEventFilter.INSTANCE, listenerAdaptor);
+        return registration.getId();
+    }
+
+    @Override
+    public String addLocalListenerAdapter(ListenerAdapter adapter, String mapName) {
+        EventService eventService = getNodeEngine().getEventService();
+        EventRegistration registration = eventService.registerLocalListener(MapService.SERVICE_NAME, mapName, adapter);
+        return registration.getId();
+    }
+
+    @Override
+    public QueryCacheContext getQueryCacheContext() {
+        return queryCacheContext;
+    }
 }

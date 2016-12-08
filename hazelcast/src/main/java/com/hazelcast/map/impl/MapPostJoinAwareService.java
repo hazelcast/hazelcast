@@ -17,9 +17,17 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.operation.PostJoinMapOperation;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
+import com.hazelcast.map.impl.querycache.publisher.MapPublisherRegistry;
+import com.hazelcast.map.impl.querycache.publisher.PartitionAccumulatorRegistry;
+import com.hazelcast.map.impl.querycache.publisher.PublisherContext;
+import com.hazelcast.map.impl.querycache.publisher.PublisherRegistry;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 class MapPostJoinAwareService implements PostJoinAwareService {
@@ -38,6 +46,25 @@ class MapPostJoinAwareService implements PostJoinAwareService {
             o.addMapIndex(mapContainer);
             o.addMapInterceptors(mapContainer);
         }
+        List<AccumulatorInfo> infoList = getAccumulatorInfoList();
+        o.setInfoList(infoList);
         return o;
+    }
+
+    private List<AccumulatorInfo> getAccumulatorInfoList() {
+        List<AccumulatorInfo> infoList = new ArrayList<AccumulatorInfo>();
+
+        PublisherContext publisherContext = mapServiceContext.getQueryCacheContext().getPublisherContext();
+        MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
+        Map<String, PublisherRegistry> cachesOfMaps = mapPublisherRegistry.getAll();
+        Collection<PublisherRegistry> publisherRegistries = cachesOfMaps.values();
+        for (PublisherRegistry publisherRegistry : publisherRegistries) {
+            Collection<PartitionAccumulatorRegistry> partitionAccumulatorRegistries = publisherRegistry.getAll().values();
+            for (PartitionAccumulatorRegistry accumulatorRegistry : partitionAccumulatorRegistries) {
+                AccumulatorInfo info = accumulatorRegistry.getInfo();
+                infoList.add(info);
+            }
+        }
+        return infoList;
     }
 }

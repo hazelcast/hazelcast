@@ -27,8 +27,17 @@ import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
+import com.hazelcast.map.impl.querycache.event.BatchEventData;
+import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
+import com.hazelcast.map.impl.querycache.event.LocalCacheWideEventData;
+import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
+import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.serialization.SerializationService;
+
+import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.createIMapEvent;
 
 /**
  * Contains map service event publishing service functionality.
@@ -39,14 +48,37 @@ public class MapEventPublishingService implements EventPublishingService<Object,
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
+    private final SerializationService serializationService;
 
     public MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = mapServiceContext.getNodeEngine().getSerializationService();
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void dispatchEvent(Object eventData, ListenerAdapter listener) {
+        if (eventData instanceof QueryCacheEventData) {
+            dispatchQueryCacheEventData((QueryCacheEventData) eventData, listener);
+            return;
+        }
+
+        if (eventData instanceof BatchEventData) {
+            dispatchBatchEventData((BatchEventData) eventData, listener);
+            return;
+        }
+
+        if (eventData instanceof LocalEntryEventData) {
+            dispatchLocalEventData(((LocalEntryEventData) eventData), listener);
+            return;
+        }
+
+        if (eventData instanceof LocalCacheWideEventData) {
+            dispatchLocalEventData(((LocalCacheWideEventData) eventData), listener);
+            return;
+        }
+
         if (eventData instanceof EntryEventData) {
             dispatchEntryEventData((EntryEventData) eventData, listener);
             return;
@@ -104,6 +136,37 @@ public class MapEventPublishingService implements EventPublishingService<Object,
     private MapPartitionLostEvent createMapPartitionLostEventData(MapPartitionEventData eventData, Member member) {
         return new MapPartitionLostEvent(eventData.getMapName(), member, eventData.getEventType(), eventData.getPartitionId());
     }
+
+    private void dispatchQueryCacheEventData(QueryCacheEventData eventData, ListenerAdapter listener) {
+        SingleIMapEvent mapEvent = createSingleIMapEvent(eventData);
+        listener.onEvent(mapEvent);
+    }
+
+    private SingleIMapEvent createSingleIMapEvent(QueryCacheEventData eventData) {
+        return new SingleIMapEvent(eventData);
+    }
+
+    /**
+     * Dispatches an event-data to {@link com.hazelcast.map.QueryCache QueryCache} listeners on this local
+     * node.
+     *
+     * @param eventData {@link EventData} to be dispatched
+     * @param listener  the listener which the event will be dispatched from
+     */
+    private void dispatchLocalEventData(EventData eventData, ListenerAdapter listener) {
+        IMapEvent event = createIMapEvent(eventData, null, nodeEngine.getLocalMember(), serializationService);
+        listener.onEvent(event);
+    }
+
+    private void dispatchBatchEventData(BatchEventData batchEventData, ListenerAdapter listener) {
+        BatchIMapEvent mapEvent = createBatchEvent(batchEventData);
+        listener.onEvent(mapEvent);
+    }
+
+    private BatchIMapEvent createBatchEvent(BatchEventData batchEventData) {
+        return new BatchIMapEvent(batchEventData);
+    }
+
 
     private void callListener(ListenerAdapter listener, IMapEvent event) {
         listener.onEvent(event);

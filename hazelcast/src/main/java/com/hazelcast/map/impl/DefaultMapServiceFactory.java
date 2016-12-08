@@ -106,7 +106,7 @@ class DefaultMapServiceFactory extends AbstractMapServiceFactory {
 
     @Override
     ClientAwareService createClientAwareService() {
-        return new MapClientAwareService();
+        return new MapClientAwareService(getMapServiceContext());
     }
 
 }

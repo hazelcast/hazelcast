@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
+import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
@@ -48,7 +49,6 @@ import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.EvictOperation;
 import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
-import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
@@ -61,6 +61,7 @@ import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperationFactory;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.map.impl.operation.MapIsEmptyOperation;
 import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
 import com.hazelcast.map.impl.operation.MapNearCacheStateHolder;
@@ -112,6 +113,12 @@ import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.impl.query.Target;
+import com.hazelcast.map.impl.querycache.subscriber.operation.DestroyQueryCacheOperation;
+import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperation;
+import com.hazelcast.map.impl.querycache.subscriber.operation.MadePublishableOperationFactory;
+import com.hazelcast.map.impl.querycache.subscriber.operation.PublisherCreateOperation;
+import com.hazelcast.map.impl.querycache.subscriber.operation.ReadAndResetAccumulatorOperation;
+import com.hazelcast.map.impl.querycache.subscriber.operation.SetReadCursorOperation;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.RecordReplicationInfo;
 import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
@@ -263,8 +270,15 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MAP_NEAR_CACHE_STATE_HOLDER = 120;
     public static final int MAP_ASSIGN_AND_GET_UUIDS = 121;
     public static final int MAP_ASSIGN_AND_GET_UUIDS_FACTORY = 122;
+    public static final int DESTROY_QUERY_CACHE = 123;
+    public static final int MADE_PUBLISHABLE = 124;
+    public static final int MADE_PUBLISHABLE_FACTORY = 125;
+    public static final int PUBLISHER_CREATE = 126;
+    public static final int READ_AND_RESET_ACCUMULATOR = 127;
+    public static final int SET_READ_CURSOR = 128;
+    public static final int ACCUMULATOR_CONSUMER = 129;
 
-    private static final int LEN = MAP_ASSIGN_AND_GET_UUIDS_FACTORY + 1;
+    private static final int LEN = ACCUMULATOR_CONSUMER + 1;
 
     @Override
     public int getFactoryId() {
@@ -885,6 +899,42 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new MapAssignAndGetUuidsOperation();
             }
         };
+        constructors[DESTROY_QUERY_CACHE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new DestroyQueryCacheOperation();
+            }
+        };
+        constructors[MADE_PUBLISHABLE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MadePublishableOperation();
+            }
+        };
+        constructors[MADE_PUBLISHABLE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MadePublishableOperationFactory();
+            }
+        };
+        constructors[PUBLISHER_CREATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PublisherCreateOperation();
+            }
+        };
+        constructors[READ_AND_RESET_ACCUMULATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ReadAndResetAccumulatorOperation();
+            }
+        };
+        constructors[SET_READ_CURSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetReadCursorOperation();
+            }
+        };
+        constructors[ACCUMULATOR_CONSUMER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AccumulatorConsumerOperation();
+            }
+        };
+
         return new ArrayDataSerializableFactory(constructors);
     }
 }

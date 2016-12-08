@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
@@ -64,6 +65,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     protected final SerializationService serializationService;
     protected final EventService eventService;
     protected final FilteringStrategy filteringStrategy;
+    protected final QueryCacheEventPublisher queryCacheEventPublisher;
 
     public MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
@@ -76,6 +78,9 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         } else {
             this.filteringStrategy = new DefaultEntryEventFilteringStrategy(serializationService, mapServiceContext);
         }
+        this.queryCacheEventPublisher = new QueryCacheEventPublisher(filteringStrategy,
+                mapServiceContext.getQueryCacheContext(),
+                (InternalSerializationService) serializationService);
     }
 
     @Override
@@ -192,10 +197,17 @@ public class MapEventPublisherImpl implements MapEventPublisher {
      */
     protected void postPublishEvent(Collection<EntryEventData> eventDataIncludingValues,
                                     Collection<EntryEventData> eventDataExcludingValues) {
-        // nop
+        // publish event data of interest to query caches; since query cache listener registrations
+        // include values (as these are required to properly filter according to the query cache's predicate),
+        // we do not take into account eventDataExcludingValues, if any were generated
+        if (eventDataIncludingValues != null) {
+            for (EntryEventData entryEventData : eventDataIncludingValues) {
+                queryCacheEventPublisher.addEventToQueryCache(entryEventData);
+            }
+        }
     }
 
-    protected boolean isIncludeValue(EventFilter filter) {
+    static boolean isIncludeValue(EventFilter filter) {
         // the order of the following ifs is important!
         // QueryEventFilter is instance of EntryEventFilter
         // SyntheticEventFilter wraps an event filter
@@ -235,7 +247,11 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     @Override
     public void hintMapEvent(Address caller, String mapName, EntryEventType eventType,
                              int numberOfEntriesAffected, int partitionId) {
-        // NOP
+        queryCacheEventPublisher.hintMapEvent(caller, mapName, eventType, numberOfEntriesAffected, partitionId);
+    }
+
+    public void addEventToQueryCache(Object eventData) {
+        queryCacheEventPublisher.addEventToQueryCache(eventData);
     }
 
     @Override
@@ -253,6 +269,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
 
     protected void publishEventInternal(Collection<EventRegistration> registrations, Object eventData, int orderKey) {
         eventService.publishEvent(SERVICE_NAME, registrations, eventData, orderKey);
+        queryCacheEventPublisher.addEventToQueryCache(eventData);
     }
 
     private String getThisNodesAddress() {

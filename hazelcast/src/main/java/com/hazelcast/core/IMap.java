@@ -19,6 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.LegacyAsyncMap;
 import com.hazelcast.map.listener.MapListener;
@@ -29,6 +30,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.properties.GroupProperty;
 
 import java.util.Collection;
@@ -1686,4 +1688,65 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     <SuppliedValue, Result> Result aggregate(Supplier<K, V, SuppliedValue> supplier,
                                              Aggregation<K, SuppliedValue, Result> aggregation,
                                              JobTracker jobTracker);
+
+    /**
+     * Returns corresponding {@code QueryCache} instance for the supplied {@code name} or null.
+     * <p/>
+     * If there is a previously created {@link QueryCache} with the supplied {@code name} or if a declarative
+     * configuration exists for the supplied {@code name} this method returns or creates the instance respectively,
+     * otherwise returns null.
+     *
+     * @param name the name of {@code QueryCache}
+     * @return the {@code QueryCache} instance or null if there is no corresponding {@code QueryCacheConfig}
+     * @throws NullPointerException if the specified {@code name} is {@code null}
+     * @see QueryCache
+     * @since 3.8
+     */
+    @Beta
+    QueryCache<K, V> getQueryCache(String name);
+
+    /**
+     * Creates an always up to date snapshot of this {@code IMap} according to the supplied parameters.
+     * <p/>
+     * If there is a previously created {@link QueryCache} with the supplied {@code name}, this method returns that
+     * {@link QueryCache} and ignores {@code predicate} and {@code includeValue} parameters. Otherwise it creates and returns
+     * a new {@link QueryCache} instance.
+     * <p/>
+     * Also note that if there exists a {@link com.hazelcast.config.QueryCacheConfig QueryCacheConfig} for the supplied
+     * {@code name}, {@code predicate} and {@code includeValue} parameters will overwrite corresponding ones
+     * in {@link com.hazelcast.config.QueryCacheConfig}.
+     *
+     * @param name         the name of {@code QueryCache}
+     * @param predicate    the predicate for filtering entries
+     * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of entries, otherwise {@code false}
+     * @return the {@code QueryCache} instance with the supplied {@code name}
+     * @throws NullPointerException if the specified {@code name} or {@code predicate} is null
+     * @see QueryCache
+     * @since 3.8
+     */
+    @Beta
+    QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     * Creates an always up to date snapshot of this {@code IMap} according to the supplied parameters.
+     * <p/>
+     * If there is a previously created {@link QueryCache} with the supplied {@code name}, this method returns that
+     * {@link QueryCache} and ignores {@code listener}, {@code predicate} and {@code includeValue} parameters.
+     * Otherwise it creates and returns a new {@link QueryCache} instance.
+     * <p/>
+     * Also note that if there exists a {@link com.hazelcast.config.QueryCacheConfig QueryCacheConfig} for the supplied
+     * {@code name}, {@code listener},{@code predicate} and {@code includeValue} parameters will overwrite corresponding ones
+     * in {@link com.hazelcast.config.QueryCacheConfig}.
+     *
+     * @param name         the name of {@code QueryCache}
+     * @param listener     the {@code MapListener} which will be used to listen this {@code QueryCache}
+     * @param predicate    the predicate for filtering entries
+     * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of entries, otherwise {@code false}
+     * @return the {@code QueryCache} instance with the supplied {@code name}
+     * @throws NullPointerException if the specified {@code name} or {@code listener} or {@code predicate} is null
+     * @see QueryCache
+     * @since 3.8
+     */
+    @Beta
+    QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue);
 }
