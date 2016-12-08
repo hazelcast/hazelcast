@@ -676,6 +676,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Map<Integer, Object> responses;
         try {
             OperationFactory operationFactory = operationProvider.createGetAllOperationFactory(name, keys);
+            long time = System.currentTimeMillis();
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
@@ -684,6 +685,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     resultingKeyValuePairs.add(toObject(entries.getValue(i)));
                 }
             }
+            localMapStats.incrementGets(keys.size(), System.currentTimeMillis() - time);
         } catch (Exception e) {
             throw rethrow(e);
         }

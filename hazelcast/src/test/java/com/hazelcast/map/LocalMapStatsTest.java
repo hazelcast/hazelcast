@@ -23,6 +23,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -80,6 +82,35 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         LocalMapStats localMapStats = map.getLocalMapStats();
         assertEquals(100, localMapStats.getGetOperationCount());
         assertEquals(100, localMapStats.getHits());
+    }
+
+    @Test
+    public void testPutAllGenerated() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 100; i++) {
+            Map<Integer, Integer> putMap = new HashMap<Integer, Integer>(2);
+            putMap.put(i, i);
+            putMap.put(100 + i, 100 + i);
+            map.putAll(putMap);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(200, localMapStats.getPutOperationCount());
+    }
+
+    @Test
+    public void testGetAllGenerated() throws Exception {
+        IMap<Integer, Integer> map = getMap();
+        for (int i = 0; i < 200; i++) {
+            map.put(i, i);
+        }
+        for (int i = 0; i < 100; i++) {
+            Set<Integer> keys = new HashSet<Integer>();
+            keys.add(i);
+            keys.add(100 + i);
+            map.getAll(keys);
+        }
+        LocalMapStats localMapStats = map.getLocalMapStats();
+        assertEquals(200, localMapStats.getGetOperationCount());
     }
 
     @Test
