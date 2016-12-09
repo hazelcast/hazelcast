@@ -45,8 +45,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static com.hazelcast.util.StringUtil.timeToStringFriendly;
@@ -58,9 +58,7 @@ import static com.hazelcast.util.StringUtil.timeToStringFriendly;
 public class ClientConnection implements SocketConnection, DiscardableMetricsProvider {
 
     @Probe
-    protected final int connectionId;
-    private final AtomicBoolean alive = new AtomicBoolean(true);
-    private volatile boolean closed;
+    private final int connectionId;
     private final ILogger logger;
 
     private final AtomicInteger pendingPacketCount = new AtomicInteger(0);
@@ -78,7 +76,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private volatile long lastHeartbeatReceivedMillis;
     private boolean isAuthenticatedAsOwner;
     @Probe(level = ProbeLevel.DEBUG)
-    private volatile long closedTime;
+    private final AtomicLong closedTime = new AtomicLong();
 
     private volatile Throwable closeCause;
     private volatile String closeReason;
@@ -164,7 +162,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
 
     @Override
     public boolean write(OutboundFrame frame) {
-        if (!alive.get()) {
+        if (!isAlive()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, dropping frame -> " + frame);
             }
@@ -191,7 +189,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
 
     @Override
     public boolean isAlive() {
-        return alive.get();
+        return closedTime.get() == 0;
     }
 
     @Override
@@ -252,14 +250,13 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
 
     @Override
     public void close(String reason, Throwable cause) {
-        if (!alive.compareAndSet(true, false)) {
+        if (!closedTime.compareAndSet(0, System.currentTimeMillis())) {
             return;
         }
 
         closeCause = cause;
         closeReason = reason;
 
-        closedTime = System.currentTimeMillis();
         String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (cause != null) {
             message += cause.getClass().getName() + '[' + cause.getMessage() + ']';
@@ -282,12 +279,6 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         connectionManager.onClose(this);
 
         client.getMetricsRegistry().discardMetrics(this);
-
-        closed = true;
-    }
-
-    public boolean isClosed() {
-        return closed;
     }
 
     protected void innerClose() throws IOException {
@@ -329,16 +320,8 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         lastHeartbeatRequestedMillis = Clock.currentTimeMillis();
     }
 
-    public long getLastHeartbeatRequestedMillis() {
-        return lastHeartbeatRequestedMillis;
-    }
-
-    public long getLastHeartbeatReceivedMillis() {
-        return lastHeartbeatReceivedMillis;
-    }
-
     public boolean isHeartBeating() {
-        return alive.get() && isHeartBeating;
+        return isAlive() && isHeartBeating;
     }
 
     public boolean isAuthenticatedAsOwner() {
@@ -375,21 +358,26 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     @Override
     public String toString() {
         return "ClientConnection{"
-                + "alive=" + alive
+                + "alive=" + isAlive()
                 + ", connectionId=" + connectionId
                 + ", socketChannel=" + socketChannel
                 + ", remoteEndpoint=" + remoteEndpoint
                 + ", lastReadTime=" + timeToStringFriendly(lastReadTimeMillis())
                 + ", lastWriteTime=" + timeToStringFriendly(lastWriteTimeMillis())
-                + ", closedTime=" + timeToStringFriendly(closedTime)
+                + ", closedTime=" + timeToStringFriendly(closedTime.get())
                 + ", lastHeartbeatRequested=" + timeToStringFriendly(lastHeartbeatRequestedMillis)
                 + ", lastHeartbeatReceived=" + timeToStringFriendly(lastHeartbeatReceivedMillis)
                 + ", connected server version=" + connectedServerVersionString
                 + '}';
     }
 
+    /**
+     * Closed time is the first time connection.close called.
+     *
+     * @return the closed time of connection, returns zero if not closed yet
+     */
     public long getClosedTime() {
-        return closedTime;
+        return closedTime.get();
     }
 
     public void setConnectedServerVersion(String connectedServerVersion) {

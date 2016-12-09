@@ -31,6 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
@@ -47,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
-import static com.hazelcast.spi.exception.TargetDisconnectedException.newTargetDisconnectedExceptionCausedByHeartbeat;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
@@ -248,15 +248,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     @Override
     public void heartbeatStopped(Connection connection) {
         if (connection.getEndPoint().equals(ownerConnectionAddress)) {
-            ClientConnection clientConnection = (ClientConnection) connection;
-            Exception ex = newTargetDisconnectedExceptionCausedByHeartbeat(
-                    clientConnection.getRemoteEndpoint(),
-                    clientConnection.toString(),
-                    clientConnection.getLastHeartbeatRequestedMillis(),
-                    clientConnection.getLastHeartbeatReceivedMillis(),
-                    clientConnection.lastReadTimeMillis(),
-                    clientConnection.getCloseCause());
-            connection.close(null, ex);
+            connection.close(null,
+                    new TargetDisconnectedException("Heartbeat timed out to owner connection " + connection));
         }
     }
 }
