@@ -120,7 +120,7 @@ public abstract class DiagnosticsLogWriter {
     private void appendDate() {
         write(calendar.get(DAY_OF_MONTH));
         write('-');
-        write(calendar.get(MONTH));
+        write(calendar.get(MONTH) + 1);
         write('-');
         write(calendar.get(YEAR));
     }
