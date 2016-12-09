@@ -5,6 +5,7 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 
 1. New Features
 
+- Continuous Query Cache: With this release, the previously Enterprise feature Continuous Query Cache becomes open source. Please refer to the Continuous Query Cache section.
 - Rolling Member Upgrades for Minor Releases: You can upgrade your Hazelcast members to the next minor release without service interruption. Please refer to the Rolling Member Upgrades chapter.
 - Restore Hot Restart Data in a Different Cluster: You will be able to restore Hot Restart data on a completely new cluster with different IP addresses or on a cluster of machines formed by existing and new IP addresses. Since this is a removal of a restriction or limitation, nothing will change for current Hot Restart Store users. Please refer to the Moving/Copying Hot Restart Data section.
 - HyperLogLog: HyperLogLog data structure is implemented on top of Hazelcast to estimate cardinality.
