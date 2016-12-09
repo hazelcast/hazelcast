@@ -16,8 +16,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 
 /**
  * User: sancar
@@ -73,16 +72,21 @@ public class PortableClassVersionTest {
     static void testDifferentClassVersions(SerializationService serializationService,
                                            SerializationService serializationService2) {
 
-        NamedPortable p1 = new NamedPortable("named-portable", 123);
-        Data data = serializationService.toData(p1);
+        NamedPortable portableV1 = new NamedPortable("named-portable", 123);
+        Data dataV1 = serializationService.toData(portableV1);
 
-        NamedPortableV2 p2 = new NamedPortableV2("named-portable", 123);
-        Data data2 = serializationService2.toData(p2);
+        NamedPortableV2 portableV2 = new NamedPortableV2("named-portable", 123, 500);
+        Data dataV2 = serializationService2.toData(portableV2);
 
-        NamedPortableV2 o1 = serializationService2.toObject(data);
-        NamedPortable o2 = serializationService.toObject(data2);
+        NamedPortable v1FromV2 = serializationService.toObject(dataV2);
+        assertEquals(portableV2.name, v1FromV2.name);
+        assertEquals(portableV2.k, v1FromV2.k);
 
-        assertEquals(o1.name, o2.name);
+        NamedPortableV2 v2FromV1 = serializationService2.toObject(dataV1);
+        assertEquals(portableV1.name, v2FromV1.name);
+        assertEquals(portableV1.k, v2FromV1.k);
+        assertNull(v2FromV1.v);
+
     }
 
     @Test
@@ -128,41 +132,39 @@ public class PortableClassVersionTest {
     static void testDifferentClassVersionsUsingDataWriteAndRead(InternalSerializationService serializationService,
                                                                 InternalSerializationService serializationService2) throws IOException {
 
-        NamedPortable p1 = new NamedPortable("portable-v1", 111);
-        Data data = serializationService.toData(p1);
+        NamedPortable portableV1 = new NamedPortable("portable-v1", 111);
+        Data dataV1 = serializationService.toData(portableV1);
 
         // emulate socket write by writing data to stream
         BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
-        out.writeData(data);
+        out.writeData(dataV1);
         byte[] bytes = out.toByteArray();
         // emulate socket read by reading data from stream
         BufferObjectDataInput in = serializationService2.createObjectDataInput(bytes);
-        data = in.readData();
-
-        // read data
-        Object object1 = serializationService2.toObject(data);
+        dataV1 = in.readData();
 
         // serialize new portable version
-        NamedPortableV2 p2 = new NamedPortableV2("portable-v2", 123);
-        Data data2 = serializationService2.toData(p2);
+        NamedPortableV2 portableV2 = new NamedPortableV2("portable-v2", 123, 500);
+        Data dataV2 = serializationService2.toData(portableV2);
 
-        // de-serialize back using old version
-        Object object2 = serializationService.toObject(data2);
 
-        assertNotNull("object1 should not be null!", object1);
-        assertNotNull("object2 should not be null!", object2);
+        NamedPortable v1FromV2 = serializationService.toObject(dataV2);
+        assertEquals(portableV2.name, v1FromV2.name);
+        assertEquals(portableV2.k, v1FromV2.k);
 
-        assertTrue("Should be instance of NamedPortableV2: " + object1.getClass(), object1 instanceof NamedPortableV2);
-        assertTrue("Should be instance of NamedPortable: " + object2.getClass(), object2 instanceof NamedPortable);
+        NamedPortableV2 v2FromV1 = serializationService2.toObject(dataV1);
+        assertEquals(portableV1.name, v2FromV1.name);
+        assertEquals(portableV1.k, v2FromV1.k);
+        assertNull(v2FromV1.v);
     }
 
     @Test
     public void testPreDefinedDifferentVersionsWithInnerPortable() {
         final InternalSerializationService serializationService = createSerializationService(1);
-        serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition());
+        serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(1));
 
         final InternalSerializationService serializationService2 = createSerializationService(2);
-        serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition());
+        serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(2));
 
         NamedPortable[] nn = new NamedPortable[1];
         nn[0] = new NamedPortable("name", 123);
@@ -178,13 +180,12 @@ public class PortableClassVersionTest {
 
     @Test
     public void testPreDefinedDifferentVersionsWithNullInnerPortable() {
-        ClassDefinition innerPortableClassDefinition = createInnerPortableClassDefinition();
 
         final InternalSerializationService serializationService = createSerializationService(1);
-        serializationService.getPortableContext().registerClassDefinition(innerPortableClassDefinition);
+        serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(1));
 
         final InternalSerializationService serializationService2 = createSerializationService(2);
-        serializationService2.getPortableContext().registerClassDefinition(innerPortableClassDefinition);
+        serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(2));
 
         final MainPortable mainWithNullInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main portable object created for testing!", null);
@@ -199,8 +200,8 @@ public class PortableClassVersionTest {
         assertEquals(mainPortable, serializationService2.toObject(data));
     }
 
-    static ClassDefinition createInnerPortableClassDefinition() {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE);
+    static ClassDefinition createInnerPortableClassDefinition(int portableVersion) {
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE, portableVersion);
         builder.addByteArrayField("b");
         builder.addCharArrayField("c");
         builder.addShortArrayField("s");
@@ -208,7 +209,7 @@ public class PortableClassVersionTest {
         builder.addLongArrayField("l");
         builder.addFloatArrayField("f");
         builder.addDoubleArrayField("d");
-        builder.addPortableArrayField("nn", createNamedPortableClassDefinition());
+        builder.addPortableArrayField("nn", createNamedPortableClassDefinition(portableVersion));
         return builder.build();
     }
 

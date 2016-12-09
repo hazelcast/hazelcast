@@ -45,4 +45,9 @@ public interface FieldDefinition {
      * @return factory id of this field's class
      */
     int getFactoryId();
+
+    /**
+     * @return version of this field's class
+     */
+    int getVersion();
 }

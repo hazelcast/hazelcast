@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClassAndFieldDefinitionTest {
 
+    int portableVersion = 1;
     private ClassDefinitionImpl classDefinition;
     private static String[] fieldNames = new String[]{"f1", "f2", "f3"};
 
@@ -35,13 +36,13 @@ public class ClassAndFieldDefinitionTest {
 
     @Test
     public void testClassDef_getter_setter() throws Exception {
-        ClassDefinitionImpl cd = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2).build();
+        ClassDefinitionImpl cd = (ClassDefinitionImpl) new ClassDefinitionBuilder(1, 2, portableVersion).build();
         cd.setVersionIfNotSet(3);
         cd.setVersionIfNotSet(5);
 
         assertEquals(1, cd.getFactoryId());
         assertEquals(2, cd.getClassId());
-        assertEquals(3, cd.getVersion());
+        assertEquals(portableVersion, cd.getVersion());
         assertEquals(3, classDefinition.getFieldCount());
     }
 
@@ -130,25 +131,28 @@ public class ClassAndFieldDefinitionTest {
         FieldDefinition field0 = classDefinition.getField(0);
         FieldDefinition field = classDefinition.getField("f1");
 
-        FieldDefinitionImpl fd = new FieldDefinitionImpl(9, "name", FieldType.PORTABLE, 5, 6);
-        FieldDefinitionImpl fd_nullName = new FieldDefinitionImpl(10, null, FieldType.PORTABLE, 15, 16);
+        FieldDefinitionImpl fd = new FieldDefinitionImpl(9, "name", FieldType.PORTABLE, 5, 6, 7);
+        FieldDefinitionImpl fd_nullName = new FieldDefinitionImpl(10, null, FieldType.PORTABLE, 15, 16, 17);
 
         assertEquals(field, field0);
 
         assertEquals(0, field.getFactoryId());
         assertEquals(0, field.getClassId());
+        assertEquals(3, field.getVersion());
         assertEquals(0, field.getIndex());
         assertEquals("f1", field.getName());
         assertEquals(FieldType.BYTE, field.getType());
 
         assertEquals(5, fd.getFactoryId());
         assertEquals(6, fd.getClassId());
+        assertEquals(7, fd.getVersion());
         assertEquals(9, fd.getIndex());
         assertEquals("name", fd.getName());
         assertEquals(FieldType.PORTABLE, fd.getType());
 
         assertEquals(15, fd_nullName.getFactoryId());
         assertEquals(16, fd_nullName.getClassId());
+        assertEquals(17, fd_nullName.getVersion());
         assertEquals(10, fd_nullName.getIndex());
         assertEquals(null, fd_nullName.getName());
         assertEquals(FieldType.PORTABLE, fd_nullName.getType());
@@ -156,10 +160,10 @@ public class ClassAndFieldDefinitionTest {
 
     @Test
     public void testFieldDef_equal_hashCode() throws Exception {
-        FieldDefinitionImpl fd0 = new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN);
-        FieldDefinitionImpl fd0_1 = new FieldDefinitionImpl(0, "name", FieldType.INT);
-        FieldDefinitionImpl fd1 = new FieldDefinitionImpl(1, "name", FieldType.BOOLEAN);
-        FieldDefinitionImpl fd2 = new FieldDefinitionImpl(0, "namex", FieldType.BOOLEAN);
+        FieldDefinitionImpl fd0 = new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN, portableVersion);
+        FieldDefinitionImpl fd0_1 = new FieldDefinitionImpl(0, "name", FieldType.INT, portableVersion);
+        FieldDefinitionImpl fd1 = new FieldDefinitionImpl(1, "name", FieldType.BOOLEAN, portableVersion);
+        FieldDefinitionImpl fd2 = new FieldDefinitionImpl(0, "namex", FieldType.BOOLEAN, portableVersion);
 
         assertNotEquals(fd0, fd0_1);
         assertNotEquals(fd0, fd1);
@@ -172,6 +176,6 @@ public class ClassAndFieldDefinitionTest {
 
     @Test
     public void testFieldDef_toString() throws Exception {
-        assertNotNull(new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN).toString());
+        assertNotNull(new FieldDefinitionImpl(0, "name", FieldType.BOOLEAN, portableVersion).toString());
     }
 }

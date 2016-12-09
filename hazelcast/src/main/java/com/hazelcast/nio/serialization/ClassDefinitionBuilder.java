@@ -39,12 +39,27 @@ public final class ClassDefinitionBuilder {
     private int index;
     private boolean done;
 
+    /**
+     * IMPORTANT: It uses a default portableVersion (0) for non-versioned classes.
+     * Make sure to specify the portableVersion in the constructor if you override the default portableVersion
+     * in the SerializationService
+     *
+     * @param factoryId factoryId to use
+     * @param classId   classId to use
+     */
     public ClassDefinitionBuilder(int factoryId, int classId) {
         this.factoryId = factoryId;
         this.classId = classId;
-        this.version = -1;
+        this.version = 0;
     }
 
+    /**
+     * IMPORTANT: Make sure that the version matches the portableVersion in the SerializationService
+     *
+     * @param factoryId factoryId to use
+     * @param classId   classId to use
+     * @param version   portableVersion to use
+     */
     public ClassDefinitionBuilder(int factoryId, int classId, int version) {
         this.factoryId = factoryId;
         this.classId = classId;
@@ -53,109 +68,109 @@ public final class ClassDefinitionBuilder {
 
     public ClassDefinitionBuilder addIntField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT, version));
         return this;
     }
 
     public ClassDefinitionBuilder addLongField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG, version));
         return this;
     }
 
     public ClassDefinitionBuilder addUTFField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF, version));
         return this;
     }
 
     public ClassDefinitionBuilder addBooleanField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN, version));
         return this;
     }
 
     public ClassDefinitionBuilder addByteField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE, version));
         return this;
     }
 
     public ClassDefinitionBuilder addBooleanArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addCharField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR, version));
         return this;
     }
 
     public ClassDefinitionBuilder addDoubleField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE, version));
         return this;
     }
 
     public ClassDefinitionBuilder addFloatField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT, version));
         return this;
     }
 
     public ClassDefinitionBuilder addShortField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT, version));
         return this;
     }
 
     public ClassDefinitionBuilder addByteArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addCharArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addIntArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addLongArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addDoubleArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addFloatArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addShortArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY, version));
         return this;
     }
 
     public ClassDefinitionBuilder addUTFArrayField(String fieldName) {
         check();
-        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF_ARRAY, version));
         return this;
     }
 
@@ -165,7 +180,7 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
+                FieldType.PORTABLE, def.getFactoryId(), def.getClassId(), def.getVersion()));
         return this;
     }
 
@@ -175,7 +190,7 @@ public final class ClassDefinitionBuilder {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
         fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName,
-                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
+                FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId(), def.getVersion()));
         return this;
     }
 
