@@ -29,6 +29,7 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.source.MapSourcePipeline;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.JobTracker;
@@ -476,6 +477,21 @@ public class MapDecorator<K, V> implements IStreamMap<K, V> {
                                                     Aggregation<K, SuppliedValue, Result> aggregation,
                                                     JobTracker jobTracker) {
         return map.aggregate(supplier, aggregation, jobTracker);
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name) {
+        return map.getQueryCache(name);
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue) {
+        return map.getQueryCache(name, predicate, includeValue);
+    }
+
+    @Override
+    public QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
+        return map.getQueryCache(name, listener, predicate, includeValue);
     }
 
     @Override
