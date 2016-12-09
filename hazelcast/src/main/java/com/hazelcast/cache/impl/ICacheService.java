@@ -19,7 +19,6 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CacheWanEventPublisher;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
@@ -54,7 +53,7 @@ public interface ICacheService
 
     CacheConfig getCacheConfig(String name);
 
-    CacheSimpleConfig findCacheConfig(String simpleName);
+    CacheConfig findCacheConfig(String simpleName);
 
     Collection<CacheConfig> getCacheConfigs();
 
