@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.impl.IListReader;
 import com.hazelcast.jet.impl.IListWriter;
 import com.hazelcast.jet.impl.IMapReader;
@@ -37,10 +38,24 @@ public final class Processors {
     }
 
     /**
+     * @return processors for partitioned reading from a remote Hazelcast IMap
+     */
+    public static ProcessorMetaSupplier mapReader(String mapName, ClientConfig clientConfig) {
+        return IMapReader.supplier(mapName, clientConfig);
+    }
+
+    /**
      * @return processors for  writing to a Hazelcast IMap
      */
     public static ProcessorMetaSupplier mapWriter(String mapName) {
         return IMapWriter.supplier(mapName);
+    }
+
+    /**
+     * @return processors for  writing to a remote Hazelcast IMap
+     */
+    public static ProcessorMetaSupplier mapWriter(String mapName, ClientConfig clientConfig) {
+        return IMapWriter.supplier(mapName, clientConfig);
     }
 
     /**
@@ -51,9 +66,23 @@ public final class Processors {
     }
 
     /**
+     * @return processors for reading from a remote Hazelcast IList
+     */
+    public static ProcessorMetaSupplier listReader(String listName, ClientConfig clientConfig) {
+        return IListReader.supplier(listName, clientConfig);
+    }
+
+    /**
      * @return a processor for writing to a Hazelcast IList
      */
     public static ProcessorSupplier listWriter(String listName) {
         return IListWriter.supplier(listName);
+    }
+
+    /**
+     * @return a processor for writing to a remote Hazelcast IList
+     */
+    public static ProcessorSupplier listWriter(String listName, ClientConfig clientConfig) {
+        return IListWriter.supplier(listName, clientConfig);
     }
 }

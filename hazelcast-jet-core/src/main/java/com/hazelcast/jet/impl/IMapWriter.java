@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
@@ -24,8 +26,6 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.Address;
-
-import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -34,7 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
 
 public final class IMapWriter extends AbstractProcessor {
@@ -78,23 +80,29 @@ public final class IMapWriter extends AbstractProcessor {
         return new MetaSupplier(mapName);
     }
 
+    public static ProcessorMetaSupplier supplier(String mapName, ClientConfig clientConfig) {
+        return new MetaSupplier(mapName, clientConfig);
+    }
+
     private static class MetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String mapName;
+        private SerializableClientConfig clientConfig;
 
         MetaSupplier(String mapName) {
+            this(mapName, null);
+        }
+
+        MetaSupplier(String mapName, ClientConfig clientConfig) {
             this.mapName = mapName;
+            this.clientConfig = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
         }
 
         @Override
         public ProcessorSupplier get(Address address) {
-            return new Supplier(mapName);
-        }
-
-        @Override
-        public void init(Context context) {
+            return new Supplier(mapName, clientConfig);
         }
     }
 
@@ -103,15 +111,35 @@ public final class IMapWriter extends AbstractProcessor {
         static final long serialVersionUID = 1L;
 
         private final String name;
+        private SerializableClientConfig clientConfig;
         private transient IMap map;
+        private transient HazelcastInstance client;
 
-        Supplier(String name) {
+        Supplier(String name, SerializableClientConfig clientConfig) {
             this.name = name;
+            this.clientConfig = clientConfig;
         }
 
         @Override
         public void init(Context context) {
-            map = context.getHazelcastInstance().getMap(name);
+            HazelcastInstance instance;
+            if (isRemote()) {
+                instance = client = newHazelcastClient(clientConfig.asClientConfig());
+            } else {
+                instance = context.getHazelcastInstance();
+            }
+            map = instance.getMap(name);
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            if (client != null) {
+                client.shutdown();
+            }
+        }
+
+        private boolean isRemote() {
+            return clientConfig != null;
         }
 
         @Override
@@ -152,4 +180,5 @@ public final class IMapWriter extends AbstractProcessor {
             }
         }
     }
+
 }
