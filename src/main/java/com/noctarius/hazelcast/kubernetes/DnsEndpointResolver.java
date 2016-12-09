@@ -47,6 +47,7 @@ final class DnsEndpointResolver
     List<DiscoveryNode> resolve() {
         try {
             Lookup lookup = new Lookup(serviceDns, Type.SRV);
+            lookup.setCache(null); // Avoid caching temporary DNS lookup failures indefinitely in global cache
             Record[] records = lookup.run();
 
             if (lookup.getResult() != Lookup.SUCCESSFUL) {
