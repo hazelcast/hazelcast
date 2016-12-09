@@ -70,6 +70,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
             }
         }
 
+        configs.addAll(segment.getCacheConfigs());
         nearCacheStateHolder.prepare(segment);
     }
 
