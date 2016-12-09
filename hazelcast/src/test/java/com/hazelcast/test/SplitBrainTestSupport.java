@@ -7,12 +7,15 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A support class for high-level split-brain tests.
@@ -37,6 +40,11 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
     private static final int DEFAULT_ITERATION_COUNT = 1;
     private HazelcastInstance[] instances;
     private int[] brains;
+    /**
+     * If new nodes have been created during split brain via {@link #createHazelcastInstanceInBrain(int)}, then their joiners
+     * are initialized with the other brain's addresses being blacklisted.
+     */
+    private boolean unblacklistHint = false;
 
     private static final SplitBrainAction BLOCK_COMMUNICATION = new SplitBrainAction() {
         @Override
@@ -56,6 +64,13 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         @Override
         public void apply(HazelcastInstance h1, HazelcastInstance h2) {
             closeConnectionBetween(h1, h2);
+        }
+    };
+
+    private static final SplitBrainAction UNBLACKLIST_MEMBERS = new SplitBrainAction() {
+        @Override
+        public void apply(HazelcastInstance h1, HazelcastInstance h2) {
+            unblacklistJoinerBetween(h1, h2);
         }
     };
 
@@ -169,7 +184,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     protected HazelcastInstance[] startInitialCluster(Config config, int clusterSize) {
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[clusterSize];
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(clusterSize);
+        factory = createHazelcastInstanceFactory(clusterSize);
         for (int i = 0; i < clusterSize; i++) {
             HazelcastInstance hz = factory.newHazelcastInstance(config);
             hazelcastInstances[i] = hz;
@@ -177,9 +192,37 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         return hazelcastInstances;
     }
 
+    /**
+     * Starts a new {@code HazelcastInstance} which is only able to communicate with members on one of the two brains.
+     *
+     * @param brain index of brain to start a new instance in (0 to start instance in first brain or 1 to start instance in
+     *              second brain)
+     * @return      a HazelcastInstance whose {@code MockJoiner} has blacklisted the other brain's members and its connection
+     *              manager blocks connections to other brain's members
+     * @see         TestHazelcastInstanceFactory#newHazelcastInstance(Address, Config, Address[])
+     */
+    protected HazelcastInstance createHazelcastInstanceInBrain(int brain) {
+        Address newMemberAddress = factory.nextAddress();
+        Brains brains = getBrains();
+        HazelcastInstance[] instancesToBlock = brain == 1 ? brains.firstHalf : brains.secondHalf;
+
+        List<Address> addressesToBlock = new ArrayList<Address>(instancesToBlock.length);
+        for (int i=0; i < instancesToBlock.length; i++) {
+            if (isInstanceActive(instancesToBlock[i])) {
+                addressesToBlock.add(getAddress(instancesToBlock[i]));
+                // block communication from these instances to the new address
+                getFireWalledConnectionManager(instancesToBlock[i]).block(newMemberAddress);
+            }
+        }
+        // indicate we need to unblacklist addresses from joiner when split-brain will be healed
+        unblacklistHint = true;
+        // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
+        return factory.newHazelcastInstance(config(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
+    }
+
     private void validateBrainsConfig(int[] clusterTopology) {
         if (clusterTopology.length != 2) {
-            throw new AssertionError("Only a simple topologies with 2 brains are supported. Current setup: "
+            throw new AssertionError("Only simple topologies with 2 brains are supported. Current setup: "
                     + Arrays.toString(clusterTopology));
         }
     }
@@ -220,6 +263,9 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     private void healSplitBrain() {
         unblockCommunication();
+        if (unblacklistHint) {
+            unblacklistMembers();
+        }
         if (shouldAssertAllNodesRejoined()) {
             for (HazelcastInstance hz : instances) {
                 assertClusterSizeEventually(instances.length, hz);
@@ -230,6 +276,10 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     private void unblockCommunication() {
         applyOnBrains(UNBLOCK_COMMUNICATION);
+    }
+
+    private void unblacklistMembers() {
+        applyOnBrains(UNBLACKLIST_MEMBERS);
     }
 
     private static FirewallingMockConnectionManager getFireWalledConnectionManager(HazelcastInstance hz) {
@@ -301,6 +351,13 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         Node h2Node = getNode(h2);
         h1CM.unblock(h2Node.getThisAddress());
         h2CM.unblock(h1Node.getThisAddress());
+    }
+
+    private static void unblacklistJoinerBetween(HazelcastInstance h1, HazelcastInstance h2) {
+        Node h1Node = getNode(h1);
+        Node h2Node = getNode(h2);
+        h1Node.getJoiner().unblacklist(h2Node.getThisAddress());
+        h2Node.getJoiner().unblacklist(h1Node.getThisAddress());
     }
 
     private interface SplitBrainAction {

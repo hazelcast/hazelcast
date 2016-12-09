@@ -41,8 +41,10 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     private volatile PacketFilter droppingPacketFilter;
     private volatile PacketFilter delayingPacketFilter;
 
-    public FirewallingMockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry) {
+    public FirewallingMockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry,
+                                            Set<Address> initiallyBlockedAddresses) {
         super(ioService, node, registry);
+        this.blockedAddresses.addAll(initiallyBlockedAddresses);
     }
 
     @Override

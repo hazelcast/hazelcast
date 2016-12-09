@@ -28,7 +28,9 @@ import com.hazelcast.test.mocknetwork.TestNodeRegistry;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,7 @@ import static com.hazelcast.instance.TestUtil.getNode;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableCollection;
 
@@ -130,6 +133,47 @@ public class TestHazelcastInstanceFactory {
         if (mockNetwork) {
             config = initOrCreateConfig(config);
             NodeContext nodeContext = registry.createNodeContext(address);
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
+        }
+        throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
+    }
+
+    /**
+     * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
+     * <ul>
+     *     <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
+     *     <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
+     * </ul>
+     * This is handy in split-brain tests, when a new instance should be started on a specific network partition
+     * of the split brain.
+     *
+     * @param config            the config to use; use {@code null} to get the default config
+     * @param blockedAddresses  addresses to which the new instance is allowed to communicate
+     */
+    public HazelcastInstance newHazelcastInstance(Config config, Address[] blockedAddresses) {
+        return newHazelcastInstance(null, config, blockedAddresses);
+    }
+
+    /**
+     * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
+     * <ul>
+     *     <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
+     *     <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
+     * </ul>
+     * This is handy in split-brain tests, when a new instance should be started on a specific network partition
+     * of the split brain.
+     *
+     * @param address           the address to use as Member's address; if {@code null}, then uses the next address
+     * @param config            the config to use; use {@code null} to get the default config
+     * @param blockedAddresses  addresses to which the new instance is allowed to communicate
+     */
+    public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
+        final String instanceName = config != null ? config.getInstanceName() : null;
+        final Address thisAddress = address != null ? address : nextAddress();
+        if (mockNetwork) {
+            config = initOrCreateConfig(config);
+            NodeContext nodeContext = registry.createNodeContext(thisAddress,
+                    blockedAddresses == null ? EMPTY_SET : new HashSet<Address>(Arrays.asList(blockedAddresses)));
             return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         throw new UnsupportedOperationException("Explicit address is only available for mock network setup!");
