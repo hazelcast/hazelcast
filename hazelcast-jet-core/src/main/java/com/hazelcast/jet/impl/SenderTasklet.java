@@ -108,8 +108,7 @@ class SenderTasklet implements Tasklet {
     }
 
     // The types in this method are carefully chosen to properly handle wrap-around that is
-    // allowed to happen on ackedSeqCompressed. Sign-extending the compressed int to long
-    // and then subtracting will yield the correct outcome.
+    // allowed to happen on ackedSeqCompressed.
     static boolean isWithinWindow(long sentSeq, int ackedSeqCompressed) {
         final int sentSeqCompressed = compressSeq(sentSeq);
         return sentSeqCompressed - ackedSeqCompressed < RECEIVE_WINDOW_COMPRESSED;
