@@ -62,23 +62,39 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             return;
         }
 
+        if (!checkValid()) {
+            return;
+        }
+
         processMemberUpdate();
     }
 
     protected final void processMemberUpdate() {
-        if (isValid()) {
-            final ClusterServiceImpl clusterService = getService();
-            clusterService.updateMembers(memberInfos);
-        }
+        ClusterServiceImpl clusterService = getService();
+        clusterService.updateMembers(memberInfos);
     }
 
-    protected final boolean isValid() {
+    protected final boolean checkValid() {
         final ClusterServiceImpl clusterService = getService();
         final Connection conn = getConnection();
-        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
+
         boolean isLocal = conn == null;
-        return isLocal
-                || (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
+
+        if (isLocal) {
+            return true;
+        }
+
+        Address endpoint = conn.getEndPoint();
+        Address masterAddress = clusterService.getMasterAddress();
+        boolean valid = (endpoint != null && endpoint.equals(masterAddress));
+        if (!valid) {
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.fine("Ignoring operation because sender: " + endpoint + " is not known master: " + masterAddress);
+            }
+        }
+
+        return valid;
     }
 
     @Override
