@@ -66,9 +66,4 @@ class SubscriberAccumulatorHandler implements AccumulatorHandler<QueryCacheEvent
                 throw new IllegalArgumentException("Not a known type EntryEventType." + entryEventType);
         }
     }
-
 }
-
-
-
-

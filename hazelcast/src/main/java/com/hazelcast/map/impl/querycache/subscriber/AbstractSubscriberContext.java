@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
-import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
+import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
 
 /**
  * Abstract implementation of {@code SubscriberContext}.
@@ -75,6 +75,4 @@ public abstract class AbstractSubscriberContext implements SubscriberContext {
     public QueryCacheConfigurator geQueryCacheConfigurator() {
         return queryCacheConfigurator;
     }
-
-
 }

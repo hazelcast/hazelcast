@@ -129,5 +129,4 @@ class DefaultQueryCacheRequest implements QueryCacheRequest {
     public QueryCacheContext getContext() {
         return context;
     }
-
 }

@@ -49,5 +49,4 @@ public interface QueryCacheEndToEndConstructor extends ConstructorFunction<Strin
      * @see com.hazelcast.map.impl.querycache.publisher.CoalescingPublisherAccumulator
      */
     void createPublisherAccumulator(AccumulatorInfo info) throws Exception;
-
 }

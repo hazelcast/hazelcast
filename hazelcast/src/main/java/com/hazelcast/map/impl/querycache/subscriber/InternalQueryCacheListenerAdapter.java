@@ -52,7 +52,6 @@ public class InternalQueryCacheListenerAdapter implements ListenerAdapter<IMapEv
             callListener(eventLostEvent, EventLostEvent.EVENT_TYPE);
             return;
         }
-
     }
 
     private void callListener(IMapEvent event, int eventType) {

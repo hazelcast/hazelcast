@@ -43,12 +43,11 @@ public interface SubscriberContextSupport {
      */
     Boolean resolveResponseForRecoveryOperation(Object response);
 
-
     /**
      * Creates recovery operation for event loss cases.
      *
-     * @param mapName     map name.
-     * @param cacheName   cache name.
+     * @param mapName   map name.
+     * @param cacheName cache name.
      * @return operation or request according to context.
      * @see QueryCache#tryRecover()
      */

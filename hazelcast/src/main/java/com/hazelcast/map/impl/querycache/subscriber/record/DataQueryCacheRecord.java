@@ -45,5 +45,4 @@ class DataQueryCacheRecord extends AbstractQueryCacheRecord {
     public final Data getKey() {
         return keyData;
     }
-
 }

@@ -58,5 +58,4 @@ abstract class AbstractQueryCacheRecord implements QueryCacheRecord {
     public void setAccessTime(long accessTime) {
         this.accessTime = accessTime;
     }
-
 }

@@ -33,7 +33,6 @@ import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.
 import static java.lang.String.format;
 import static java.util.logging.Level.WARNING;
 
-
 /**
  * If all incoming events are in the correct sequence order, this accumulator applies those events to
  * {@link com.hazelcast.map.QueryCache QueryCache}.
@@ -197,4 +196,3 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         return event.getSequence() == -1L;
     }
 }
-

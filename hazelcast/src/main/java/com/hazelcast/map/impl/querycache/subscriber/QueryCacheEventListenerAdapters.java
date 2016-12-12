@@ -53,7 +53,6 @@ public final class QueryCacheEventListenerAdapters {
     private QueryCacheEventListenerAdapters() {
     }
 
-
     static ListenerAdapter[] createQueryCacheListenerAdapters(MapListener mapListener) {
         ListenerAdapter[] mapListenerAdapters = MapListenerAdaptors.createListenerAdapters(mapListener);
         ListenerAdapter eventLostAdapter = EVENT_LOST_LISTENER_ADAPTER.createNew(mapListener);
@@ -62,7 +61,6 @@ public final class QueryCacheEventListenerAdapters {
         adapters[mapListenerAdapters.length] = eventLostAdapter;
         return adapters;
     }
-
 
     /**
      * Wraps a user defined {@link com.hazelcast.map.listener.MapListener}
@@ -75,5 +73,4 @@ public final class QueryCacheEventListenerAdapters {
     public static ListenerAdapter createQueryCacheListenerAdaptor(MapListener mapListener) {
         return new InternalQueryCacheListenerAdapter(mapListener);
     }
-
 }

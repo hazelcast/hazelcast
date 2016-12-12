@@ -85,7 +85,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         }
     }
 
-
     @Override
     public void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType) {
         checkNotNull(key, "key cannot be null");
@@ -477,4 +476,3 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         return recordStore.toString();
     }
 }
-

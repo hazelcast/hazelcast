@@ -101,7 +101,6 @@ public final class EventPublisherHelper {
                         EventLostEvent.EVENT_TYPE, partitionId, context), orderKey);
     }
 
-
     public static IMapEvent createIMapEvent(EventData eventData, EventFilter filter, Member member,
                                             SerializationService serializationService) {
         String source = eventData.getSource();
@@ -137,5 +136,4 @@ public final class EventPublisherHelper {
         }
         return true;
     }
-
 }

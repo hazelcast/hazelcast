@@ -141,5 +141,4 @@ public interface QueryCacheRequest {
      * @return the {@link QueryCacheContext} on this node/client.
      */
     QueryCacheContext getContext();
-
 }

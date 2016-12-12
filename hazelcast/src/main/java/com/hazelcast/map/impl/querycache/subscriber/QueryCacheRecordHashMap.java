@@ -99,7 +99,6 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
         public long getAccessHit() {
             return value.getAccessHit();
         }
-
     }
 
     @Override
@@ -129,5 +128,4 @@ public class QueryCacheRecordHashMap extends SampleableConcurrentHashMap<Data, Q
     public Iterable<QueryCacheEvictableSamplingEntry> sample(int sampleCount) {
         return super.getRandomSamples(sampleCount);
     }
-
 }

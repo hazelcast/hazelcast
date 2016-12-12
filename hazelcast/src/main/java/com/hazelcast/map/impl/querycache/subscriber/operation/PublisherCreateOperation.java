@@ -208,10 +208,10 @@ public class PublisherCreateOperation extends MapOperation {
         // values of the entries may be different if keyData-s are equal
         // so this `if` checks the existence of keyData in the set. If it is there, just removing it and adding
         // `the new row with the same keyData but possibly with the new value`.
-        //todo
-//        if (queryResultSet.contains(row)) {
-//            queryResultSet.remove(row);
-//        }
+        // TODO
+        //if (queryResultSet.contains(row)) {
+        //    queryResultSet.remove(row);
+        //}
         result.addRow(row);
     }
 
@@ -267,5 +267,4 @@ public class PublisherCreateOperation extends MapOperation {
     public int getId() {
         return MapDataSerializerHook.PUBLISHER_CREATE;
     }
-
 }

@@ -41,6 +41,4 @@ public interface QueryCacheRecord<V> extends Evictable {
      * Increases the access hit count of this {@link Evictable} as <code>1</code>.
      */
     void incrementAccessHit();
-
 }
-

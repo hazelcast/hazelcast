@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
 
 /**
  * Context contract for subscriber side of a {@link com.hazelcast.map.QueryCache QueryCache} implementation.

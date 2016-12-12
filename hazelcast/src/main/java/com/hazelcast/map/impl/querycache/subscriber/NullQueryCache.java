@@ -41,17 +41,14 @@ public final class NullQueryCache implements InternalQueryCache {
 
     @Override
     public void setInternal(Object key, Object value, boolean callDelegate, EntryEventType eventType) {
-
     }
 
     @Override
     public void deleteInternal(Object key, boolean callDelegate, EntryEventType eventType) {
-
     }
 
     @Override
     public void clearInternal(EntryEventType eventType) {
-
     }
 
     @Override
@@ -66,7 +63,6 @@ public final class NullQueryCache implements InternalQueryCache {
 
     @Override
     public void clear() {
-
     }
 
     @Override
@@ -96,7 +92,6 @@ public final class NullQueryCache implements InternalQueryCache {
 
     @Override
     public void addIndex(String attribute, boolean ordered) {
-
     }
 
     @Override
@@ -171,6 +166,5 @@ public final class NullQueryCache implements InternalQueryCache {
 
     @Override
     public void destroy() {
-
     }
 }

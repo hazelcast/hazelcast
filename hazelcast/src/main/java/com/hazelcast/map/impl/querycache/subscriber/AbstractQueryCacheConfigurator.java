@@ -90,7 +90,6 @@ public abstract class AbstractQueryCacheConfigurator implements QueryCacheConfig
         return null;
     }
 
-
     private <T extends EventListener> T getListener(ListenerConfig listenerConfig) {
         T listener = null;
         if (listenerConfig.getImplementation() != null) {
