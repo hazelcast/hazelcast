@@ -31,7 +31,12 @@ public enum WanSyncStatus {
      * Indicates a sync operation is in progress on the member. At this state
      * member will not accept new sync requests.
      */
-    IN_PROGRESS(1);
+    IN_PROGRESS(1),
+
+    /**
+     * Indicates sync operation is unsuccessfull.
+     */
+    FAILED(2);
 
     private int status;
 
