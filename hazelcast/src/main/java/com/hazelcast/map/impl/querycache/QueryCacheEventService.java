@@ -74,7 +74,6 @@ public interface QueryCacheEventService<E> {
      */
     String addListener(String mapName, String cacheName, MapListener listener, EventFilter filter);
 
-
     /**
      * Removes listener from this event service.
      *

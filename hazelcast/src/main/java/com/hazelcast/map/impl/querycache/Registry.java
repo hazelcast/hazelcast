@@ -49,7 +49,6 @@ public interface Registry<K, T> {
      */
     Map<K, T> getAll();
 
-
     /**
      * Removes the registration from this registry.
      *

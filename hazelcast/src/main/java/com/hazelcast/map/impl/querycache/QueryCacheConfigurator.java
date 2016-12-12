@@ -33,7 +33,6 @@ public interface QueryCacheConfigurator {
      */
     QueryCacheConfig getOrCreateConfiguration(String mapName, String cacheName);
 
-
     /**
      * Returns {@link QueryCacheConfig} for the requested query cache with cacheName or null.
      *
