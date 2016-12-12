@@ -38,6 +38,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -177,6 +178,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void stats_whenMemberOwned()
             throws ExecutionException, InterruptedException {
         double delay = 2.0;
