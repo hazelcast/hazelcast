@@ -20,6 +20,7 @@ package com.hazelcast.hotrestart;
  * The status of the hot restart backup task, including progress and state.
  */
 public class BackupTaskStatus {
+
     private final BackupTaskState state;
     private final int completed;
     private final int total;
