@@ -23,6 +23,11 @@ import static org.mockito.Mockito.when;
 public class MemberProviderFilterParserTest extends HazelcastTestSupport {
 
     @Test
+    public void testConstructor() {
+        assertUtilityConstructor(MemberProviderFilterParser.class);
+    }
+
+    @Test
     public void whenStringIsNull_thenReturnAlwaysMatchingInstance() {
         Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter(null);
         assertTrue(memberFilter instanceof AlwaysApplyFilter);
@@ -36,7 +41,7 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void whenStringHasUnknownPrefix_thenThrowIllegalArgumentException() {
-        Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter("FOOO");
+        MemberProviderFilterParser.parseMemberFilter("FOOO");
     }
 
     @Test
@@ -59,15 +64,9 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
         assertFalse(memberFilter.accept(mockMember));
     }
 
-    @Test
-    public void testConstructor() {
-        assertUtilityConstructor(MemberProviderFilterParser.class);
-    }
-
     private static Member createMockMemberWithAttributes(Map<String, Object> attributes) {
         Member mockMember = mock(Member.class);
         when(mockMember.getAttributes()).thenReturn(attributes);
         return mockMember;
     }
-
 }

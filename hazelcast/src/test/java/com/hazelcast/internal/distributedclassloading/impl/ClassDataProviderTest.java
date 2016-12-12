@@ -15,7 +15,8 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.config.DistributedClassloadingConfig.ProviderMode.LOCAL_AND_CACHED_CLASSES;
 import static com.hazelcast.config.DistributedClassloadingConfig.ProviderMode.LOCAL_CLASSES_ONLY;
 import static com.hazelcast.config.DistributedClassloadingConfig.ProviderMode.OFF;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -55,7 +56,6 @@ public class ClassDataProviderTest {
         assertNotNull(classData.getClassDefinition());
     }
 
-
     private ClassDataProvider createClassDataProvider(DistributedClassloadingConfig.ProviderMode providerMode,
                                                       String className, ClassSource classSource, ClassLoader parent) {
         ILogger logger = mock(ILogger.class);
@@ -67,5 +67,4 @@ public class ClassDataProviderTest {
     private static ClassSource newMockClassSource(String classname) {
         return new ClassSource(classname, new byte[0], null, null);
     }
-
 }
