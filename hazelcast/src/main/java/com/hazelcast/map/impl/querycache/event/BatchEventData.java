@@ -78,7 +78,6 @@ public class BatchEventData implements Sequenced, EventData {
         }
     }
 
-
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readUTF();

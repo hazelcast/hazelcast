@@ -41,7 +41,6 @@ public interface SubscriberSequencerProvider {
      */
     long getSequence(int partitionId);
 
-
     /**
      * Resets the sequence number for the supplied {@code partition} to zero.
      *
