@@ -84,6 +84,7 @@ public interface Accumulator<E extends Sequenced> extends Iterable<E> {
      *
      * @return an iterator over the items in this list accumulator in proper sequence.
      */
+    @Override
     Iterator<E> iterator();
 
     /**
