@@ -10,10 +10,10 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueryCacheEventListenerAdaptersTest extends HazelcastTestSupport {
+public class QueryCacheRequestsTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(QueryCacheEventListenerAdapters.class);
+        assertUtilityConstructor(QueryCacheRequests.class);
     }
 }
