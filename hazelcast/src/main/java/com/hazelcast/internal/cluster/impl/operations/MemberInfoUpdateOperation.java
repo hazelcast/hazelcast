@@ -68,9 +68,10 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             }
 
             return;
-        } else if (!node.getThisUuid().equals(targetUuid)) {
-            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + node.getThisUuid();
-            throw new IllegalStateException(msg);
+        }
+
+        if (!checkValid()) {
+            return;
         }
 
         processMemberUpdate();
@@ -79,10 +80,8 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     final void processMemberUpdate() {
-        if (isValid()) {
-            final ClusterServiceImpl clusterService = getService();
-            clusterService.updateMembers(memberInfos);
-        }
+        ClusterServiceImpl clusterService = getService();
+        clusterService.updateMembers(memberInfos);
     }
 
     final void processPartitionState() {
@@ -96,13 +95,32 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
     }
 
-    protected final boolean isValid() {
-        final ClusterServiceImpl clusterService = getService();
-        final Connection conn = getConnection();
-        final Address masterAddress = conn != null ? conn.getEndPoint() : null;
+    protected final boolean checkValid() {
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+        Node node = nodeEngine.getNode();
+        if (!node.getThisUuid().equals(targetUuid)) {
+            String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + node.getThisUuid();
+            throw new IllegalStateException(msg);
+        }
+
+        Connection conn = getConnection();
         boolean isLocal = conn == null;
-        return isLocal
-                || (masterAddress != null && masterAddress.equals(clusterService.getMasterAddress()));
+        if (isLocal) {
+            return true;
+        }
+
+        Address endpoint = conn.getEndPoint();
+        Address masterAddress = clusterService.getMasterAddress();
+        boolean valid = (endpoint != null && endpoint.equals(masterAddress));
+        if (!valid) {
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.fine("Ignoring operation because sender: " + endpoint + " is not known master: " + masterAddress);
+            }
+        }
+
+        return valid;
     }
 
     @Override
