@@ -29,7 +29,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * 2. Then it delegates to the parent classloader - that's usually a regular classloader loading classes
  *    from a local classpath only
  * 3. Finally it delegates to {@link ClassLocator} which may initiate a remote lookup
- *
  */
 public final class ClassSource extends ClassLoader {
 

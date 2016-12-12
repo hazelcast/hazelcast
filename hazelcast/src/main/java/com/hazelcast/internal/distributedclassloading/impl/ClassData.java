@@ -28,14 +28,12 @@ import java.io.IOException;
  *
  * It's wrapped inside own object as it allows to add additional metadata and maintain compatibility
  * with Hazelcast Rolling Upgrade.
- *
  */
 public class ClassData implements IdentifiedDataSerializable {
 
     private byte[] classDefinition;
 
     public ClassData() {
-
     }
 
     @SuppressFBWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})

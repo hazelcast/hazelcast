@@ -39,11 +39,11 @@ public class DistributedClassLoader extends ClassLoader {
         Class<?> clazz = null;
 
         if (distributedClassloadingService != null) {
-            //this looks racy, but it's an optimistic optimization - if the class is already loaded
-            //by the classloading service then it means the parent classloader failed to load it at some point in time.
+            // this looks racy, but it's an optimistic optimization - if the class is already loaded
+            // by the classloading service then it means the parent classloader failed to load it at some point in time.
             // -> we can use it directly without consulting the parent classloader
-            //when the class is not found then we will consult the parent classloader and eventually the classloading
-            //service
+            // when the class is not found then we will consult the parent classloader and eventually the classloading
+            // service
             clazz = distributedClassloadingService.findLoadedClass(name);
         }
         if (clazz == null) {

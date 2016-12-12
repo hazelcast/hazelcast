@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.filter.Filter;
 
 public class MemberAttributeFilter implements Filter<Member> {
+
     private final String attribute;
 
     public MemberAttributeFilter(String attribute) {

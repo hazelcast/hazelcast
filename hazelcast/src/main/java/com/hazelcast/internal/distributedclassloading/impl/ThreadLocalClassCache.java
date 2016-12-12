@@ -23,16 +23,15 @@ import java.util.Map;
  * Thread-Local Class Cache is useful when the regular class-cache is disabled - we want to keep classes cached
  * at very least for the duration of a single deserialization request. Otherwise things may get funky with e.g.
  * class hierarchies.
- *
  */
 public final class ThreadLocalClassCache {
+
     public static final ThreadLocal<ThreadLocalClassCache> THREAD_LOCAL_CLASS_CACHE = new ThreadLocal<ThreadLocalClassCache>();
 
     private int counter = 1;
     private Map<String, ClassSource> map = new HashMap<String, ClassSource>();
 
     private ThreadLocalClassCache() {
-
     }
 
     private int decCounter() {

@@ -30,7 +30,6 @@ import static com.hazelcast.nio.IOUtil.toByteArray;
  * Provides {@link ClassData} to remote members.
  *
  * It may consult a local class cache when enabled and then it delegates to a local classloader.
- *
  */
 public final class ClassDataProvider {
     private final DistributedClassloadingConfig.ProviderMode providerMode;

@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class ClassNameFilterParser {
+
     private static final String[] BUILTIN_BLACKLIST_PREFIXES = {
             "javax.",
             "java.",
@@ -33,7 +34,6 @@ public final class ClassNameFilterParser {
     };
 
     private ClassNameFilterParser() {
-
     }
 
     public static Filter<String> parseClassNameFilters(DistributedClassloadingConfig config) {

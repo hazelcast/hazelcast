@@ -21,16 +21,14 @@ import com.hazelcast.util.collection.ArrayUtils;
 
 /**
  * Match all classes unless they are in the explicit blacklist
- *
  */
 public class ClassBlacklistFilter implements Filter<String> {
 
     private final String[] blacklist;
 
-    public ClassBlacklistFilter(String...blacklisted) {
+    public ClassBlacklistFilter(String... blacklisted) {
         blacklist = ArrayUtils.createCopy(blacklisted);
     }
-
 
     @Override
     public boolean accept(String className) {

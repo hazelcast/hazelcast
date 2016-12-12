@@ -21,8 +21,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
 import com.hazelcast.internal.distributedclassloading.DistributedClassloadingService;
-import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.internal.distributedclassloading.impl.operation.ClassDataFinderOperation;
+import com.hazelcast.internal.util.filter.Filter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.NodeEngine;
@@ -41,7 +41,6 @@ import java.util.concurrent.Future;
  *
  * The current implementation can consult a cache and when the class is not found then it consults
  * remote members.
- *
  */
 public final class ClassLocator {
     private final ConcurrentMap<String, ClassSource> classSourceMap;
@@ -86,10 +85,9 @@ public final class ClassLocator {
     }
 
     private Class<?> tryToGetClassFromRemote(String name) throws ClassNotFoundException {
-        //we need to acquire a classloading lock before defining a class
-        //Java 7+ can use locks with per-class granularity while Java 6
-        //has to use a single lock.
-        //mutexFactory abstract these differences away
+        // we need to acquire a classloading lock before defining a class
+        // Java 7+ can use locks with per-class granularity while Java 6 has to use a single lock
+        // mutexFactory abstract these differences away
         Closeable classMutex = mutexFactory.getMutexForClass(name);
         try {
             synchronized (classMutex) {
@@ -127,7 +125,7 @@ public final class ClassLocator {
         return null;
     }
 
-    //called while holding class lock
+    // called while holding class lock
     private Class<?> defineAndCacheClass(String name, byte[] classDef) {
         ClassSource classSource = new ClassSource(name, classDef, parent, this);
         classSource.define();
@@ -139,7 +137,7 @@ public final class ClassLocator {
         return classSource.getClazz();
     }
 
-    //called while holding class lock
+    // called while holding class lock
     private byte[] fetchBytecodeFromRemote(String className) {
         ClusterService cluster = nodeEngine.getClusterService();
         ClassData classData;
@@ -163,7 +161,7 @@ public final class ClassLocator {
                     }
                 }
             } catch (InterruptedException e) {
-                //question: should we give-up on loading and this point and simply throw ClassNotFoundException?
+                // question: should we give-up on loading and this point and simply throw ClassNotFoundException?
                 interrupted = true;
             } catch (Exception e) {
                 if (logger.isFinestEnabled()) {

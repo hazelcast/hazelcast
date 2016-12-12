@@ -21,10 +21,10 @@ import com.hazelcast.internal.util.filter.AlwaysApplyFilter;
 import com.hazelcast.internal.util.filter.Filter;
 
 public final class MemberProviderFilterParser {
+
     private static final String HAS_ATTRIBUTE_PREFIX = "HAS_ATTRIBUTE:";
 
     private MemberProviderFilterParser() {
-
     }
 
     public static Filter<Member> parseMemberFilter(String providerFilter) {

@@ -21,16 +21,14 @@ import com.hazelcast.util.collection.ArrayUtils;
 
 /**
  * Match only classes in the whitelist. No other classes matches
- *
  */
 public class ClassWhitelistFilter implements Filter<String> {
 
     private final String[] whitelist;
 
-    public ClassWhitelistFilter(String...whitelisted) {
+    public ClassWhitelistFilter(String... whitelisted) {
         whitelist = ArrayUtils.createCopy(whitelisted);
     }
-
 
     @Override
     public boolean accept(String className) {

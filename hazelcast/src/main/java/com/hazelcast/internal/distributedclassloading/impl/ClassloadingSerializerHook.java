@@ -35,7 +35,6 @@ public class ClassloadingSerializerHook implements DataSerializerHook {
 
     public static final int LEN = CLASS_DATA_FINDER_OP + 1;
 
-
     @Override
     public int getFactoryId() {
         return F_ID;

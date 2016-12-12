@@ -27,7 +27,6 @@ import java.io.Closeable;
  * This abstraction provides a suitable mutex depending on the version of underlying platform.
  *
  * The provided mutexes are closeable as we want to know when the granular mutexes from Java are no longer needed.
- *
  */
 public class ClassloadingMutexProvider {
     private static final String JAVA_VERSION_WHERE_PARALLEL_CLASSLOADING_IS_NOT_POSSIBLE = "1.6";

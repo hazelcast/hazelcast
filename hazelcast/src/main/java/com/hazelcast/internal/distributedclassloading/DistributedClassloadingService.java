@@ -19,10 +19,10 @@ package com.hazelcast.internal.distributedclassloading;
 import com.hazelcast.config.DistributedClassloadingConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.distributedclassloading.impl.ClassData;
+import com.hazelcast.internal.distributedclassloading.impl.ClassDataProvider;
 import com.hazelcast.internal.distributedclassloading.impl.ClassLocator;
 import com.hazelcast.internal.distributedclassloading.impl.ClassSource;
 import com.hazelcast.internal.util.filter.Filter;
-import com.hazelcast.internal.distributedclassloading.impl.ClassDataProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -35,6 +35,7 @@ import static com.hazelcast.internal.distributedclassloading.impl.filter.ClassNa
 import static com.hazelcast.internal.distributedclassloading.impl.filter.MemberProviderFilterParser.parseMemberFilter;
 
 public final class DistributedClassloadingService implements ManagedService {
+
     public static final String SERVICE_NAME = "distributed-classloading-service";
 
     private volatile boolean enabled;
@@ -63,7 +64,7 @@ public final class DistributedClassloadingService implements ManagedService {
         enabled = config.isEnabled();
     }
 
-    //called by operations sent by other members
+    // called by operations sent by other members
     public ClassData getClassDataOrNull(String className) {
         if (!enabled) {
             return null;
@@ -71,7 +72,7 @@ public final class DistributedClassloadingService implements ManagedService {
         return provider.getClassDataOrNull(className);
     }
 
-    //called by distributed classloader on this member
+    // called by distributed classloader on this member
     public Class<?> handleClassNotFoundException(String name)
             throws ClassNotFoundException {
         if (!enabled) {
@@ -80,7 +81,7 @@ public final class DistributedClassloadingService implements ManagedService {
         return locator.handleClassNotFoundException(name);
     }
 
-    //called by distributed classloader on this member
+    // called by distributed classloader on this member
     public Class<?> findLoadedClass(String name) {
         if (!enabled) {
             return null;
@@ -90,11 +91,9 @@ public final class DistributedClassloadingService implements ManagedService {
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void shutdown(boolean terminate) {
-
     }
 }
