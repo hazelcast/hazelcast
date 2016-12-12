@@ -16,16 +16,16 @@
 
 package com.hazelcast.map.impl.querycache.publisher;
 
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.map.impl.querycache.accumulator.AccumulatorScannerTask;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfoSupplier;
+import com.hazelcast.map.impl.querycache.accumulator.AccumulatorScannerTask;
 import com.hazelcast.map.impl.querycache.accumulator.DefaultAccumulatorInfoSupplier;
 import com.hazelcast.spi.NodeEngine;
 
@@ -172,7 +172,6 @@ public class DefaultPublisherContext implements PublisherContext {
         }
     }
 
-
     private void cancelRemovalTask(String uuid) {
         removalCandidateFutures.remove(uuid);
     }
@@ -200,5 +199,4 @@ public class DefaultPublisherContext implements PublisherContext {
             }
         });
     }
-
 }

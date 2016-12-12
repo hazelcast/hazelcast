@@ -69,4 +69,3 @@ public class MapListenerRegistry implements Registry<String, QueryCacheListenerR
         return listeners.remove(id);
     }
 }
-

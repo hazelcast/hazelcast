@@ -61,7 +61,6 @@ public class PublisherRegistry implements Registry<String, PartitionAccumulatorR
         this.context = context;
         this.mapName = mapName;
         this.partitionAccumulators = new ConcurrentHashMap<String, PartitionAccumulatorRegistry>();
-
     }
 
     @Override

@@ -119,7 +119,6 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
         }
     }
 
-
     private String getThisNodesAddress() {
         Address thisAddress = context.getThisNodesAddress();
         return thisAddress.toString();

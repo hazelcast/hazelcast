@@ -59,5 +59,3 @@ public class EventPublisherAccumulatorProcessor implements AccumulatorProcessor<
         this.info = info;
     }
 }
-
-

@@ -86,7 +86,6 @@ public class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheE
         return new CoalescedEventAccumulatorProcessor(info, eventService);
     }
 
-
     /**
      * {@link EventPublisherAccumulatorProcessor} which additionally clears {@link #index} upon publishing.
      */

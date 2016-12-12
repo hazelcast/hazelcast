@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 public final class AccumulatorSweeper {
 
     private AccumulatorSweeper() {
-
     }
 
     public static void flushAllAccumulators(PublisherContext publisherContext) {
@@ -64,7 +63,6 @@ public final class AccumulatorSweeper {
         }
     }
 
-
     public static void flushAccumulator(PublisherContext publisherContext, int partitionId) {
         QueryCacheContext context = publisherContext.getContext();
         EventPublisherAccumulatorProcessor processor
@@ -90,11 +88,9 @@ public final class AccumulatorSweeper {
                 // send end event
                 QueryCacheEventData eventData = createEndOfSequenceEvent(partitionId);
                 processor.process(eventData);
-           }
+            }
         }
-
     }
-
 
     public static void removeAccumulator(PublisherContext publisherContext, int partitionId) {
         MapPublisherRegistry mapPublisherRegistry = publisherContext.getMapPublisherRegistry();
@@ -108,7 +104,6 @@ public final class AccumulatorSweeper {
         }
     }
 
-
     /**
      * In graceful shutdown, we are flushing all unsent events in an {@code Accumulator}. This event
      * will be the last event of an {@code Accumulator} upon flush and it is used to inform subscriber-side
@@ -121,5 +116,4 @@ public final class AccumulatorSweeper {
         return QueryCacheEventDataBuilder.newQueryCacheEventDataBuilder(false)
                 .withSequence(-1).withPartitionId(partitionId).build();
     }
-
 }

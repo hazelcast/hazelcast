@@ -49,6 +49,4 @@ public class PublisherAccumulatorFactory implements AccumulatorFactory {
             }
         }
     }
-
 }
-
