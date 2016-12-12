@@ -3,8 +3,7 @@ package distributedclassloading.whitelisted;
 import distributedclassloading.IncrementingEntryProcessor;
 
 /**
- * Used in test of distributed classloading blacklist/whitelisting
- *
+ * Used in tests of distributed classloading blacklisting and whitelisting.
  */
 public final class WhitelistedEP extends IncrementingEntryProcessor {
 }

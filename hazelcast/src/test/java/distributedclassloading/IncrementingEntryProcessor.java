@@ -6,9 +6,8 @@ import java.util.Map;
 
 /**
  * This test class is intentionally in its own package
- * as Hazelcast as a special rules for loading classes
- * from com.hazelcast.* package.
- *
+ * as Hazelcast has special rules for loading classes
+ * from the {@code com.hazelcast.*} package.
  */
 public class IncrementingEntryProcessor extends AbstractEntryProcessor<Integer, Integer> {
 
