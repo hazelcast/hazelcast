@@ -451,7 +451,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                                 logger.warning("Error receiving heartbeat for connection: " + connection, t);
                             }
                         }
-                    });
+                    }, executionService.getInternalExecutor());
                 } else {
                     if (!connection.isHeartBeating()) {
                         logger.warning("Heartbeat is back to healthy for connection : " + connection);
