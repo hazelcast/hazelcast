@@ -78,7 +78,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
 
     @Override
     public void run() throws Exception {
-        if (!isValid()) {
+        if (!checkValid()) {
             return;
         }
 
