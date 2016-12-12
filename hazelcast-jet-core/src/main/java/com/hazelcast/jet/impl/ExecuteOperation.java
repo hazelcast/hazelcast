@@ -47,8 +47,9 @@ class ExecuteOperation extends AsyncOperation {
     protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        executionFuture = engineContext.getExecutionContext(planId).execute();
-        executionFuture.whenComplete((r, error) -> doSendResponse(error != null ? error : null));
+        executionFuture = engineContext.getExecutionContext(planId)
+                                       .execute(f -> f.handle((r, error) -> error != null ? error : null)
+                                                      .thenAccept(this::doSendResponse));
     }
 
     @Override

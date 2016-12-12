@@ -17,15 +17,15 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,6 +56,8 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     private static final int NODE_COUNT = 2;
     private static final int PARALLELISM = 4;
 
+    private static final int TIMEOUT_MILLIS = 8000;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -67,7 +69,13 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         MockSupplier.initCount.set(0);
         MockSupplier.completeErrors.clear();
 
+        StuckProcessor.proceedLatch = new CountDownLatch(1);
+        StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
+
         factory = new TestHazelcastFactory();
+        Config config = new Config();
+        config.getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+                Integer.toString(TIMEOUT_MILLIS));
         HazelcastInstance instance = factory.newHazelcastInstance();
         factory.newHazelcastInstance();
 
@@ -237,14 +245,15 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     }
 
     private static final class StuckProcessor extends AbstractProducer {
-        private static CountDownLatch executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
-        private static CountDownLatch proceedLatch = new CountDownLatch(1);
+        static CountDownLatch executionStarted;
+        static CountDownLatch proceedLatch;
 
         @Override
         public boolean complete() {
             executionStarted.countDown();
             try {
                 proceedLatch.await();
+                Thread.sleep(1);
             } catch (InterruptedException e) {
                 throw rethrow(e);
             }

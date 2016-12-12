@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.util.concurrent.IdleStrategy;
+import com.hazelcast.util.function.Consumer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -71,13 +72,17 @@ class ExecutionService {
     /**
      * @return instance of {@code java.util.concurrent.CompletableFuture}
      */
-    CompletionStage<Void> execute(List<? extends Tasklet> tasklets) {
+    CompletionStage<Void> execute(List<? extends Tasklet> tasklets, Consumer<CompletionStage<Void>> doneCallback) {
         ensureStillRunning();
-        final JobFuture jobFuture = new JobFuture(tasklets.size());
+        final JobFuture jobFuture = new JobFuture(tasklets.size(), doneCallback);
         final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
         submitBlockingTasklets(jobFuture, byBlocking.get(true));
         submitNonblockingTasklets(jobFuture, byBlocking.get(false));
         return jobFuture;
+    }
+
+    CompletionStage<Void> execute(List<? extends Tasklet> tasklets) {
+        return execute(tasklets, null);
     }
 
     void shutdown() {
@@ -173,10 +178,11 @@ class ExecutionService {
                         IDLER.idle(++idleCount);
                     }
                 }
-                tracker.jobFuture.taskletDone();
             } catch (Throwable e) {
                 logger.warning("Exception in " + t, e);
                 tracker.jobFuture.completeExceptionally(e);
+            } finally {
+                tracker.jobFuture.taskletDone();
             }
         }
     }
@@ -282,9 +288,11 @@ class ExecutionService {
     private static final class JobFuture extends CompletableFuture<Void> {
 
         private final AtomicInteger completionLatch;
+        private final Consumer<CompletionStage<Void>> doneCallback;
         private List<Future> blockingFutures;
 
-        private JobFuture(int taskletCount) {
+        private JobFuture(int taskletCount, Consumer<CompletionStage<Void>> doneCallback) {
+            this.doneCallback = doneCallback;
             this.completionLatch = new AtomicInteger(taskletCount);
         }
 
@@ -301,6 +309,9 @@ class ExecutionService {
         private void taskletDone() {
             if (completionLatch.decrementAndGet() == 0) {
                 complete(null);
+                if (doneCallback != null) {
+                    doneCallback.accept(this);
+                }
             }
         }
     }

@@ -26,6 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.function.Consumer;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -71,8 +72,8 @@ class ExecutionContext {
         this.nodeEngine = context.getNodeEngine();
     }
 
-    CompletionStage<Void> execute() {
-        CompletionStage<Void> stage = context.getExecutionService().execute(tasklets);
+    CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
+        CompletionStage<Void> stage = context.getExecutionService().execute(tasklets, doneCallback);
         stage.whenComplete((r, e) -> tasklets.clear());
         return stage;
     }
@@ -131,23 +132,23 @@ class ExecutionContext {
                     // create a sender tasklet per destination address, each with a single conveyor with number of
                     // producers queues feeding it
                     final Map<Address, ConcurrentConveyor<Object>> senderConveyor = !edge.isDistributed() ? null :
-                        senderConveyorMap.computeIfAbsent(edgeId, k -> {
-                            final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
-                            for (Address destAddr : remoteMembers) {
-                                final ConcurrentConveyor<Object> conveyor =
-                                        createConveyorArray(1, parallelism, QUEUE_SIZE)[0];
-                                final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
-                                        edge.getOppositeEndOrdinal(), edge.getPriority(), conveyor);
-                                final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
-                                        context.getName(), destAddr, executionId, destVertexId);
-                                senderMap.computeIfAbsent(destVertexId, x -> new HashMap<>())
-                                         .computeIfAbsent(edge.getOppositeEndOrdinal(), x -> new HashMap<>())
-                                         .put(destAddr, t);
-                                tasklets.add(t);
-                                addrToConveyor.put(destAddr, conveyor);
-                            }
-                            return addrToConveyor;
-                        });
+                            senderConveyorMap.computeIfAbsent(edgeId, k -> {
+                                final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
+                                for (Address destAddr : remoteMembers) {
+                                    final ConcurrentConveyor<Object> conveyor =
+                                            createConveyorArray(1, parallelism, QUEUE_SIZE)[0];
+                                    final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
+                                            edge.getOppositeEndOrdinal(), edge.getPriority(), conveyor);
+                                    final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
+                                            context.getName(), destAddr, executionId, destVertexId);
+                                    senderMap.computeIfAbsent(destVertexId, x -> new HashMap<>())
+                                             .computeIfAbsent(edge.getOppositeEndOrdinal(), x -> new HashMap<>())
+                                             .put(destAddr, t);
+                                    tasklets.add(t);
+                                    addrToConveyor.put(destAddr, conveyor);
+                                }
+                                return addrToConveyor;
+                            });
                     outboundStreams.add(createOutboundEdgeStream(
                             vertex, destination, edge, taskletIndex, localConveyors, senderConveyor));
                 }

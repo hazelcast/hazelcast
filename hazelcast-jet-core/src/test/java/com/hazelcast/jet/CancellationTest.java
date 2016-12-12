@@ -17,13 +17,14 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.AbstractProducer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,13 +49,20 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 public class CancellationTest extends HazelcastTestSupport {
 
+    private static final int TIMEOUT_MILLIS = 8000;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     private TestHazelcastFactory factory;
+    private Config config;
 
     @Before
     public void setup() {
+        config = new Config();
+        config.getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+                Integer.toString(TIMEOUT_MILLIS));
+
         factory = new TestHazelcastFactory();
         StuckProcessor.callCounter.set(0);
     }
@@ -67,7 +75,7 @@ public class CancellationTest extends HazelcastTestSupport {
     @Test
     public void when_jobCancelledOnSingleNode_then_terminatedEventually() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance();
+        HazelcastInstance instance = newInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         DAG dag = new DAG();
@@ -86,11 +94,15 @@ public class CancellationTest extends HazelcastTestSupport {
         future.get();
     }
 
+    private HazelcastInstance newInstance() {
+        return factory.newHazelcastInstance(config);
+    }
+
     @Test
     public void when_jobCancelledOnMultipleNodes_then_terminatedEventually() throws Throwable {
         // Given
-        factory.newHazelcastInstance();
-        HazelcastInstance instance = factory.newHazelcastInstance();
+        newInstance();
+        HazelcastInstance instance = newInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         DAG dag = new DAG();
@@ -112,8 +124,8 @@ public class CancellationTest extends HazelcastTestSupport {
     @Test
     public void when_jobCancelledFromClient_then_terminatedEventually() throws Throwable {
         // Given
-        factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+        newInstance();
+        newInstance();
         HazelcastInstance client = factory.newHazelcastClient();
         JetEngine jetEngine = JetEngine.get(client, "jetEngine");
 
@@ -136,8 +148,8 @@ public class CancellationTest extends HazelcastTestSupport {
     @Test
     public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        HazelcastInstance other = factory.newHazelcastInstance();
+        HazelcastInstance instance = newInstance();
+        HazelcastInstance other = newInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         RuntimeException fault = new RuntimeException("fault");
@@ -166,8 +178,8 @@ public class CancellationTest extends HazelcastTestSupport {
     @Test
     public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        HazelcastInstance other = factory.newHazelcastInstance();
+        HazelcastInstance instance = newInstance();
+        HazelcastInstance other = newInstance();
         JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
 
         RuntimeException fault = new RuntimeException("fault");

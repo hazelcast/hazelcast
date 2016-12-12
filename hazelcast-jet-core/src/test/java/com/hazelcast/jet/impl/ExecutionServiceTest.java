@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -34,22 +35,26 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.ProgressState.DONE;
 import static com.hazelcast.jet.impl.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.ProgressState.NO_PROGRESS;
+import static com.hazelcast.jet.impl.Util.sneakyThrow;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class ExecutionServiceTest {
+public class ExecutionServiceTest extends JetTestSupport {
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
@@ -191,7 +196,7 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_blockingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+    public void when_blockingTaskletIsCancelled_then_completeEarly() throws ExecutionException, InterruptedException {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().blocking().callsBeforeDone(Integer.MAX_VALUE))
@@ -209,7 +214,7 @@ public class ExecutionServiceTest {
     }
 
     @Test
-    public void when_blockingSleepingTaskletIsCancelled_thenCompleteEarly() throws ExecutionException, InterruptedException {
+    public void when_blockingSleepingTaskletIsCancelled_then_completeEarly() throws ExecutionException, InterruptedException {
         // Given
         final List<MockTasklet> tasklets =
                 Stream.generate(() -> new MockTasklet().sleeping().callsBeforeDone(Integer.MAX_VALUE))
@@ -223,7 +228,36 @@ public class ExecutionServiceTest {
         tasklets.forEach(MockTasklet::assertNotDone);
         exceptionRule.expect(CancellationException.class);
         future.get();
+    }
 
+    @Test
+    public void when_nonBlockingCancelled_then_doneCallBackFiredAfterActualDone() throws ExecutionException, InterruptedException {
+        // Given
+        CountDownLatch proceedLatch = new CountDownLatch(1);
+        final List<MockTasklet> tasklets =
+                Stream.generate(() -> new MockTasklet().waitOnLatch(proceedLatch).callsBeforeDone(Integer.MAX_VALUE))
+                      .limit(100).collect(toList());
+
+        CompletableFuture<Void> doneFuture = new CompletableFuture<Void>();
+
+        // When
+        CompletableFuture<Void> future = es.execute(tasklets, f -> doneFuture.complete(null))
+                                           .toCompletableFuture();
+
+        future.cancel(true);
+
+        // Then
+        assertTrue("future returned from .execute() should be done", future.isDone());
+        assertFalse("doneFuture should not be completed until tasklets are completed.", doneFuture.isDone());
+
+        proceedLatch.countDown();
+
+        assertTrueEventually(() -> {
+            assertTrue("doneFuture should be completed eventually", doneFuture.isDone());
+        });
+
+        exceptionRule.expect(CancellationException.class);
+        future.get();
     }
 
     static class MockTasklet implements Tasklet {
@@ -235,6 +269,7 @@ public class ExecutionServiceTest {
 
         private boolean willMakeProgress = true;
         private boolean isSleeping;
+        private CountDownLatch latch;
 
         @Override
         public boolean isBlocking() {
@@ -251,6 +286,13 @@ public class ExecutionServiceTest {
                     Thread.currentThread().join();
                 } catch (InterruptedException e) {
                     return DONE;
+                }
+            }
+            if (latch != null) {
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw sneakyThrow(e);
                 }
             }
             willMakeProgress = !willMakeProgress;
@@ -274,6 +316,11 @@ public class ExecutionServiceTest {
         MockTasklet sleeping() {
             isSleeping = true;
             isBlocking = true;
+            return this;
+        }
+
+        MockTasklet waitOnLatch(CountDownLatch latch) {
+            this.latch = latch;
             return this;
         }
 

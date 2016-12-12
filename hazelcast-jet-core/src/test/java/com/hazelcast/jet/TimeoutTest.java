@@ -37,7 +37,7 @@ import static com.hazelcast.jet.TestUtil.executeAndPeel;
 @RunWith(HazelcastParallelClassRunner.class)
 public class TimeoutTest extends HazelcastTestSupport {
 
-    private static final int TIMEOUT_MILLIS = 1000;
+    private static final int TIMEOUT_MILLIS = 8000;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -85,7 +85,7 @@ public class TimeoutTest extends HazelcastTestSupport {
 
         @Override
         public boolean complete() {
-            sleepMillis(5 * TIMEOUT_MILLIS);
+            sleepMillis(2 * TIMEOUT_MILLIS);
             return true;
         }
     }
