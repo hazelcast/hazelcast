@@ -78,7 +78,7 @@ public abstract class DiagnosticsLogWriter {
     private void appendDate() {
         sb.append(calendar.get(DAY_OF_MONTH));
         sb.append('-');
-        sb.append(calendar.get(MONTH));
+        sb.append(calendar.get(MONTH) + 1);
         sb.append('-');
         sb.append(calendar.get(YEAR));
     }
