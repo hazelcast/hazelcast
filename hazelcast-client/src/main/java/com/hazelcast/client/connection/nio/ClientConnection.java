@@ -65,7 +65,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private final SocketWriter writer;
     private final SocketReader reader;
     private final SocketChannelWrapper socketChannel;
-    private final ClientConnectionManager connectionManager;
+    private final ClientConnectionManagerImpl connectionManager;
     private final LifecycleService lifecycleService;
     private final HazelcastClientInstanceImpl client;
 
@@ -95,7 +95,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
                             int connectionId,
                             SocketChannelWrapper socketChannel) throws IOException {
         this.client = client;
-        this.connectionManager = client.getConnectionManager();
+        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.socketChannel = socketChannel;
         this.connectionId = connectionId;
@@ -107,7 +107,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     public ClientConnection(HazelcastClientInstanceImpl client,
                             int connectionId) throws IOException {
         this.client = client;
-        this.connectionManager = client.getConnectionManager();
+        this.connectionManager = (ClientConnectionManagerImpl) client.getConnectionManager();
         this.lifecycleService = client.getLifecycleService();
         this.connectionId = connectionId;
         this.writer = null;
@@ -240,10 +240,6 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         this.remoteEndpoint = remoteEndpoint;
     }
 
-    public Address getRemoteEndpoint() {
-        return remoteEndpoint;
-    }
-
     public InetSocketAddress getLocalSocketAddress() {
         return (InetSocketAddress) socketChannel.socket().getLocalSocketAddress();
     }
@@ -257,7 +253,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         closeCause = cause;
         closeReason = reason;
 
-        String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
+        String message = this + " lost. Reason: ";
         if (cause != null) {
             message += cause.getClass().getName() + '[' + cause.getMessage() + ']';
         } else {

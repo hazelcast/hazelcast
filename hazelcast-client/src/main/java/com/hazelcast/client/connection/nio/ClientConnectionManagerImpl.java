@@ -112,7 +112,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private final ClientExecutionServiceImpl executionService;
     private final AddressTranslator addressTranslator;
-    private final ConcurrentMap<Address, ClientConnection> connections
+    private final ConcurrentMap<Address, ClientConnection> activeConnections
             = new ConcurrentHashMap<Address, ClientConnection>();
     private final ConcurrentMap<Address, AuthenticationFuture> connectionsInProgress =
             new ConcurrentHashMap<Address, AuthenticationFuture>();
@@ -223,7 +223,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = false;
-        for (ClientConnection connection : connections.values()) {
+        for (ClientConnection connection : activeConnections.values()) {
             connection.close("Hazelcast client is shutting down", null);
         }
         shutdownIOThreads();
@@ -240,7 +240,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         if (target == null) {
             return null;
         }
-        return connections.get(target);
+        return activeConnections.get(target);
     }
 
     @Override
@@ -272,13 +272,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         private Throwable throwable;
         private boolean authenticatedAsOwner;
 
-        public void onSuccess(Connection connection, boolean asOwner) {
+        void onSuccess(Connection connection, boolean asOwner) {
             this.connection = connection;
             this.authenticatedAsOwner = asOwner;
             countDownLatch.countDown();
         }
 
-        public void onFailure(Throwable throwable) {
+        void onFailure(Throwable throwable) {
             this.throwable = throwable;
             countDownLatch.countDown();
         }
@@ -290,6 +290,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             if (connection != null) {
                 return connection;
             }
+            assert throwable != null;
             throw throwable;
         }
     }
@@ -311,7 +312,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             throw new IllegalStateException("Address can not be null");
         }
 
-        ClientConnection connection = connections.get(target);
+        ClientConnection connection = activeConnections.get(target);
 
         if (connection != null) {
             if (!asOwner) {
@@ -332,7 +333,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationFuture callback = new AuthenticationFuture();
         AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
         if (firstCallback == null) {
-            ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
             executionService.executeInternal(new InitConnectionTask(target, asOwner, callback));
             return callback;
         }
@@ -393,15 +393,30 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         return bufferSize;
     }
 
-    @Override
-    public void onClose(Connection connection) {
-        Address endPoint = connection.getEndPoint();
+    void onClose(Connection connection) {
+        removeFromActiveConnections(connection);
+    }
 
-        if (endPoint != null && connections.remove(endPoint, connection)) {
-            logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
+    private void removeFromActiveConnections(Connection connection) {
+        Address endpoint = connection.getEndPoint();
+
+        if (endpoint == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying " + connection + " , but it has end-point set to null "
+                        + "-> not removing it from a connection map");
+            }
+            return;
+        }
+        if (activeConnections.remove(endpoint, connection)) {
+            logger.info("Removed connection to endpoint: " + endpoint + ", connection: " + connection);
 
             for (ConnectionListener listener : connectionListeners) {
                 listener.connectionRemoved(connection);
+            }
+        } else {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Destroying a connection, but there is no mapping " + endpoint + " -> " + connection
+                        + " in the connection map.");
             }
         }
     }
@@ -427,7 +442,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 return;
             }
             final long now = Clock.currentTimeMillis();
-            for (final ClientConnection connection : connections.values()) {
+            for (final ClientConnection connection : activeConnections.values()) {
                 if (!connection.isAlive()) {
                     continue;
                 }
@@ -493,21 +508,18 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         heartbeatListeners.add(connectionHeartbeatListener);
     }
 
-    private void authenticate(final Address target, final ClientConnection connection,
-                              final boolean asOwner,
+    private void authenticate(final Address target, final ClientConnection connection, final boolean asOwner,
                               final AuthenticationFuture callback) {
         SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         ClientPrincipal principal = clusterService.getPrincipal();
         byte serializationVersion = ((InternalSerializationService) client.getSerializationService()).getVersion();
-
         String uuid = null;
         String ownerUuid = null;
         if (principal != null) {
             uuid = principal.getUuid();
             ownerUuid = principal.getOwnerUuid();
         }
-
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, ss, serializationVersion, uuid, ownerUuid);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
@@ -518,14 +530,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
                 switch (authenticationStatus) {
                     case AUTHENTICATED:
-                        connection.setRemoteEndpoint(result.address);
                         if (asOwner) {
                             connection.setIsAuthenticatedAsOwner();
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
                         }
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
                         connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
-                        authenticated(target, connection);
+                        connection.setRemoteEndpoint(result.address);
+                        onAuthenticated(target, connection);
                         callback.onSuccess(connection, asOwner);
                         break;
                     case CREDENTIALS_FAILED:
@@ -580,7 +592,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         @Override
         public void run() {
-            ClientConnection connection = connections.get(target);
+            ClientConnection connection = activeConnections.get(target);
             if (connection == null) {
                 try {
                     connection = createSocketConnection(target);
@@ -602,19 +614,45 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private void authenticated(Address target, ClientConnection connection) {
-        ClientConnection oldConnection = connections.put(addressTranslator.translate(connection.getRemoteEndpoint()), connection);
+    private void onAuthenticated(Address target, ClientConnection connection) {
+        ClientConnection oldConnection =
+                activeConnections.put(addressTranslator.translate(connection.getEndPoint()), connection);
         if (oldConnection == null) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Authentication succeeded for " + connection
+                        + " and there was no old connection to this end-point");
+            }
             fireConnectionAddedEvent(connection);
+        } else {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Re-authentication succeeded for " + connection);
+            }
+            assert connection.equals(oldConnection);
         }
-        assert oldConnection == null || connection.equals(oldConnection);
+
         connectionsInProgress.remove(target);
-        logger.info("Authenticated with server " + connection.getRemoteEndpoint() + ", server version:" + connection
+        logger.info("Authenticated with server " + connection.getEndPoint() + ", server version:" + connection
                 .getConnectedServerVersionString() + " Local address: " + connection.getLocalSocketAddress());
+
+        /* check if connection is closed by remote before authentication complete, if that is the case
+        we need to remove it back from active connections.
+        Race description from https://github.com/hazelcast/hazelcast/pull/8832.(A little bit changed)
+        - open a connection client -> member
+        - send auth message
+        - receive auth reply -> reply processing is offloaded to an executor. Did not start to run yet.
+        - member closes the connection -> the connection is trying to removed from map
+                                                             but it was not there to begin with
+        - the executor start processing the auth reply -> it put the connection to the connection map.
+        - we end up with a closed connection in activeConnections map */
+        if (!connection.isAlive()) {
+            removeFromActiveConnections(connection);
+        }
     }
 
     private void onAuthenticationFailed(Address target, ClientConnection connection, Throwable cause) {
-        logger.finest(cause);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Authentication of " + connection + " failed.", cause);
+        }
         connection.close(null, cause);
         connectionsInProgress.remove(target);
     }
