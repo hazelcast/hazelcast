@@ -38,7 +38,6 @@ public interface AccumulatorInfoSupplier {
      */
     void putIfAbsent(String mapName, String cacheName, AccumulatorInfo info);
 
-
     /**
      * Removes {@link AccumulatorInfo} from this supplier.
      *

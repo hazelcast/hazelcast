@@ -151,7 +151,5 @@ public class AccumulatorScannerTask implements Runnable {
                 partitionAccumulators.clear();
             }
         }
-
     }
 }
-

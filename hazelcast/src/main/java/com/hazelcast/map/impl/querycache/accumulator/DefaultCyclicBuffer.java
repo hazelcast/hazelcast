@@ -157,5 +157,4 @@ public class DefaultCyclicBuffer<E extends Sequenced> implements CyclicBuffer<E>
     private int findIndex(long sequence) {
         return (int) (sequence % capacity);
     }
-
 }

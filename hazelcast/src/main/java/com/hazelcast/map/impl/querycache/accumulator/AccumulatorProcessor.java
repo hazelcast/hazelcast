@@ -32,5 +32,4 @@ public interface AccumulatorProcessor<T> {
      * @param event type of event.
      */
     void process(T event);
-
 }
