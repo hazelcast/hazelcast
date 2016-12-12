@@ -46,6 +46,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
@@ -61,6 +62,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAILABLE;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService
         implements  ICacheService,
                     PostJoinAwareService,
@@ -182,9 +184,8 @@ public abstract class AbstractCacheService
                     // If cache config is not created yet, remove Hazelcast prefix and get prefixed cache name.
                     String cacheName = fullCacheName.substring(HazelcastCacheManager.CACHE_MANAGER_PREFIX.length());
                     // Lookup prefixed cache name in the config.
-                    CacheSimpleConfig cacheSimpleConfig = findCacheConfig(cacheName);
-                    checkCacheSimpleConfig(cacheName, cacheSimpleConfig);
-                    cacheConfig = new CacheConfig(cacheSimpleConfig);
+                    cacheConfig = findCacheConfig(cacheName);
+                    checkCacheSimpleConfig(cacheName, cacheConfig);
                     cacheConfig.setManagerPrefix(HazelcastCacheManager.CACHE_MANAGER_PREFIX);
                 }
 
@@ -202,12 +203,12 @@ public abstract class AbstractCacheService
         return false;
     }
 
-    protected void checkCacheSimpleConfig(String cacheName, CacheSimpleConfig cacheSimpleConfig) {
-        if (cacheSimpleConfig == null) {
+    protected void checkCacheSimpleConfig(String cacheName, CacheConfig cacheConfig) {
+        if (cacheConfig == null) {
             throw new CacheNotExistsException("Couldn't find cache config with name " + cacheName);
         }
 
-        if (NATIVE == cacheSimpleConfig.getInMemoryFormat() && !isNativeInMemoryFormatSupported()) {
+        if (NATIVE == cacheConfig.getInMemoryFormat() && !isNativeInMemoryFormatSupported()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only. "
                     + "Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }
@@ -396,11 +397,20 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public CacheSimpleConfig findCacheConfig(String simpleName) {
+    public CacheConfig findCacheConfig(String simpleName) {
         if (simpleName == null) {
             return null;
         }
-        return nodeEngine.getConfig().findCacheConfig(simpleName);
+        CacheSimpleConfig cacheSimpleConfig = nodeEngine.getConfig().findCacheConfig(simpleName);
+        if (cacheSimpleConfig == null) {
+            return null;
+        }
+        try {
+            // Set name explicitly, because found config might have a wildcard name.
+            return new CacheConfig(cacheSimpleConfig).setName(simpleName);
+        } catch (Exception e) {
+            throw new CacheException(e);
+        }
     }
 
     public Collection<CacheConfig> getCacheConfigs() {
