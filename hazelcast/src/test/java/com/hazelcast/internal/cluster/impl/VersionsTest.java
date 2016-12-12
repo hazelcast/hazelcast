@@ -1,15 +1,27 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.nio.Version;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
-public class VersionsTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class VersionsTest extends HazelcastTestSupport {
 
     @Test
-    public void version_3_8() throws Exception {
-        assertEquals(Version.of(8), Versions.V3_8);
+    public void testConstructor() {
+        assertUtilityConstructor(Versions.class);
     }
 
+    @Test
+    public void version_3_8() {
+        assertEquals(Version.of(8), Versions.V3_8);
+    }
 }
