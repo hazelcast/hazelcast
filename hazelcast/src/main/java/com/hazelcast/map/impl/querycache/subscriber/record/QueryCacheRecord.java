@@ -28,6 +28,7 @@ public interface QueryCacheRecord<V> extends Evictable {
 
     Data getKey();
 
+    @Override
     V getValue();
 
     /**
