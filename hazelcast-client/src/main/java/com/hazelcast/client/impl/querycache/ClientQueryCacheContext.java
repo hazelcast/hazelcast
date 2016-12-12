@@ -48,7 +48,8 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     private final QueryCacheConfigurator queryCacheConfigurator;
     private final QueryCacheScheduler queryCacheScheduler;
     private final InvokerWrapper invokerWrapper;
-    // not final for testing purposes.
+
+    // not final for testing purposes
     private SubscriberContext subscriberContext;
 
     public ClientQueryCacheContext(ClientContext clientContext) {
@@ -118,14 +119,13 @@ public class ClientQueryCacheContext implements QueryCacheContext {
 
     @Override
     public PublisherContext getPublisherContext() {
-        // no need to implement this for client part.
+        // no need to implement this for client part
         throw new UnsupportedOperationException();
     }
 
     @Override
     public Address getThisNodesAddress() {
-        // no need to implement this for client part.
+        // no need to implement this for client part
         throw new UnsupportedOperationException();
     }
 }
-
