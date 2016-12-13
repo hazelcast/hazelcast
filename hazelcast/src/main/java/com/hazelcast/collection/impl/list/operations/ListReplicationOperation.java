@@ -16,15 +16,15 @@
 
 package com.hazelcast.collection.impl.list.operations;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.impl.collection.operations.CollectionReplicationOperation;
 import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class ListReplicationOperation extends CollectionReplicationOperation {
 
@@ -43,7 +43,7 @@ public class ListReplicationOperation extends CollectionReplicationOperation {
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, CollectionContainer>(mapSize);
+        migrationData = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             ListContainer container = new ListContainer();

@@ -16,6 +16,12 @@
 
 package com.hazelcast.collection.impl.collection;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.logging.Level;
+
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.core.ItemEvent;
@@ -36,13 +42,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.logging.Level;
+import com.hazelcast.util.MapUtil;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
         EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
@@ -120,9 +120,10 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     protected Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
-        Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final Map<String, ? extends CollectionContainer> containerMap = getContainerMap();
+        final Map<String, CollectionContainer> migrationData = MapUtil.createHashMap(Math.min(partitionService.getPartitionCount(), containerMap.size()));
+        for (Map.Entry<String, ? extends CollectionContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             CollectionContainer container = entry.getValue();

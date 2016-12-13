@@ -16,14 +16,15 @@
 
 package com.hazelcast.mapreduce.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Simple HashMap adapter class to implement DataSerializable serialization semantics
@@ -78,7 +79,7 @@ public class HashMapAdapter<K, V>
             throws IOException {
 
         int size = in.readInt();
-        Map<K, V> map = new HashMap<K, V>(size);
+        Map<K, V> map = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             K key = in.readObject();
             V value = in.readObject();

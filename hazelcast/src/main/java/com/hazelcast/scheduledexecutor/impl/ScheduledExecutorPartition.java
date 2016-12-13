@@ -16,6 +16,16 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
@@ -23,17 +33,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.util.MapUtil;
 
 public class ScheduledExecutorPartition implements ScheduledExecutorContainerHolder {
 
@@ -93,8 +93,7 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
-        Map<String, Map<String, ScheduledTaskDescriptor>> map =
-                new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
+        final Map<String, Map<String, ScheduledTaskDescriptor>> map = MapUtil.createHashMap(containers.size());
 
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {

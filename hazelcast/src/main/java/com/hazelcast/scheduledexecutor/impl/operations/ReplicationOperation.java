@@ -16,17 +16,17 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.hazelcast.util.MapUtil;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -66,12 +66,11 @@ public class ReplicationOperation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        map = new HashMap<String, Map<String, ScheduledTaskDescriptor>>(size);
+        map = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             int subSize = in.readInt();
-            Map<String, ScheduledTaskDescriptor> subMap =
-                    new HashMap<String, ScheduledTaskDescriptor>(subSize);
+            final Map<String, ScheduledTaskDescriptor> subMap = MapUtil.createHashMap(subSize);
             map.put(key, subMap);
             for (int k = 0; k < subSize; k++) {
                 subMap.put(in.readUTF(), (ScheduledTaskDescriptor) in.readObject());

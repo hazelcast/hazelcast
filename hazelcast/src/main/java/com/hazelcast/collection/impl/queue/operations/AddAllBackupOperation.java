@@ -16,6 +16,9 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,10 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Provides backup functionality for {@link AddAllOperation}
@@ -70,7 +70,7 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        dataMap = new HashMap<Long, Data>(size);
+        dataMap = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             long itemId = in.readLong();
             Data value = in.readData();

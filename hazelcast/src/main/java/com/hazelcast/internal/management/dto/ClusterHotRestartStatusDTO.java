@@ -16,17 +16,17 @@
 
 package com.hazelcast.internal.management.dto;
 
+import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+
+import java.util.Collections;
+import java.util.Map;
+
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.internal.management.JsonSerializable;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
+import com.hazelcast.util.MapUtil;
 
 /**
  * A DTO for Hot Restart status of cluster and all members.
@@ -116,7 +116,7 @@ public class ClusterHotRestartStatusDTO implements JsonSerializable {
         remainingDataLoadTimeMillis = root.getLong("remainingDataLoadTimeMillis", -1);
 
         JsonArray memberStatuses = (JsonArray) root.get("memberHotRestartStatuses");
-        memberHotRestartStatusMap = new HashMap<String, MemberHotRestartStatus>(memberStatuses.size());
+        memberHotRestartStatusMap = MapUtil.createHashMap(memberStatuses.size());
         for (JsonValue value : memberStatuses) {
             JsonObject memberStatus = (JsonObject) value;
             String member = memberStatus.getString("member", "<unknown>");

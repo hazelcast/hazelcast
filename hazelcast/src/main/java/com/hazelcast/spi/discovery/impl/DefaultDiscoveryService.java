@@ -16,6 +16,16 @@
 
 package com.hazelcast.spi.discovery.impl;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -31,17 +41,8 @@ import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.ServiceLoader;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class DefaultDiscoveryService
         implements DiscoveryService {
@@ -178,7 +179,7 @@ public class DefaultDiscoveryService
         }
 
         Map<String, Comparable> properties = config.getProperties();
-        Map<String, Comparable> mappedProperties = new HashMap<String, Comparable>();
+        Map<String, Comparable> mappedProperties = MapUtil.createHashMap(propertyDefinitions.size());
 
         for (PropertyDefinition propertyDefinition : propertyDefinitions) {
             String propertyKey = propertyDefinition.key();

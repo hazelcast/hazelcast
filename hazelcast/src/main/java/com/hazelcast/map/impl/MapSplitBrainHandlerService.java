@@ -16,6 +16,15 @@
 
 package com.hazelcast.map.impl;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -32,16 +41,7 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import com.hazelcast.util.MapUtil;
 
 class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
@@ -58,8 +58,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
         final long now = getNow();
 
         final Map<String, MapContainer> mapContainers = getMapContainers();
-        final Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer,
-                Collection<Record>>(mapContainers.size());
+        final Map<MapContainer, Collection<Record>> recordMap = MapUtil.createHashMap(mapContainers.size());
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();

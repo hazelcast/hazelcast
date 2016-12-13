@@ -22,6 +22,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import com.hazelcast.util.SetUtil;
 /**
  * Or result set for Predicates.
  */
@@ -53,7 +55,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
-                    entries = new HashSet<QueryableEntry>();
+                    entries = SetUtil.createHashSet(Math.max(16, indexedResults.size() * 4));
                     for (Set<QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }

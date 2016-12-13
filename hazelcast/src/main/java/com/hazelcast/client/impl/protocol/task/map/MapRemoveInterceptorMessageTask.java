@@ -16,6 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import java.security.Permission;
+import java.util.Collection;
+import java.util.Map;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
@@ -28,11 +32,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
-
-import java.security.Permission;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
+import com.hazelcast.util.SetUtil;
 
 public class MapRemoveInterceptorMessageTask
         extends AbstractMultiTargetMessageTask<MapRemoveInterceptorCodec.RequestParameters> {
@@ -59,7 +59,7 @@ public class MapRemoveInterceptorMessageTask
     @Override
     public Collection<Address> getTargets() {
         Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
-        Collection<Address> addresses = new HashSet<Address>();
+        Collection<Address> addresses = SetUtil.createHashSet(memberList.size());
         for (Member member : memberList) {
             addresses.add(member.getAddress());
         }

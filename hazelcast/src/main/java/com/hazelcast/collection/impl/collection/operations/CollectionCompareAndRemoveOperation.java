@@ -16,6 +16,10 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
@@ -23,11 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOperation {
 
@@ -88,7 +88,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
         super.readInternal(in);
         retain = in.readBoolean();
         final int size = in.readInt();
-        valueSet = new HashSet<Data>(size);
+        valueSet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data value = in.readData();
             valueSet.add(value);

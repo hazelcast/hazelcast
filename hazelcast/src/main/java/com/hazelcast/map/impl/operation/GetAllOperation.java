@@ -16,6 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,12 +29,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
@@ -48,7 +48,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        Set<Data> partitionKeySet = new HashSet<Data>();
+        int keyCount = Math.min(keys.size(), partitionService.getPartitionCount());
+        Set<Data> partitionKeySet = SetUtil.createHashSet(keyCount);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);

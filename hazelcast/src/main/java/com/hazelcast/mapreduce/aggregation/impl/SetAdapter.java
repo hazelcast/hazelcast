@@ -16,13 +16,14 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.SetUtil;
 
 /**
  * A simple adapter class to serialize values of a {@link java.util.Set} using
@@ -59,7 +60,7 @@ public class SetAdapter<E>
             throws IOException {
 
         int size = in.readInt();
-        Set<E> set = new HashSet<E>(size);
+        Set<E> set = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             set.add((E) in.readObject());
         }

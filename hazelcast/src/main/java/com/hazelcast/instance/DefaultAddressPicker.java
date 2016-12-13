@@ -16,17 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.AddressUtil;
+import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -41,13 +31,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
+import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.MapUtil;
 
 class DefaultAddressPicker implements AddressPicker {
 
@@ -206,9 +206,9 @@ class DefaultAddressPicker implements AddressPicker {
         Map<String, String> addressDomainMap;
         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
-            // LinkedHashMap is to guarantee order
-            addressDomainMap = new LinkedHashMap<String, String>();
             Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            // LinkedHashMap is to guarantee order
+            addressDomainMap = MapUtil.createLinkedHashMap(possibleAddresses.size());
             for (String possibleAddress : possibleAddresses) {
                 String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(addressHolder)) {

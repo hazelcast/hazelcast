@@ -16,6 +16,15 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
@@ -30,15 +39,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
-
-import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class MapExecuteOnKeysMessageTask
         extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
@@ -73,7 +74,7 @@ public class MapExecuteOnKeysMessageTask
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, parameters.keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = SetUtil.createHashSet(capacity);
         Iterator<Data> iterator = parameters.keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
             Data key = iterator.next();

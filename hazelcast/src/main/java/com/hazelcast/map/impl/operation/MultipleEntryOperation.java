@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -125,7 +126,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
         super.readInternal(in);
         entryProcessor = in.readObject();
         int size = in.readInt();
-        keys = new HashSet<Data>(size);
+        keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

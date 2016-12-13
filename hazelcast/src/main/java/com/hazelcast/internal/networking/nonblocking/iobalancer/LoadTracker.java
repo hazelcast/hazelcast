@@ -16,12 +16,8 @@
 
 package com.hazelcast.internal.networking.nonblocking.iobalancer;
 
-import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ItemCounter;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,7 +25,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ItemCounter;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.
@@ -66,7 +66,7 @@ class LoadTracker {
         this.ioThreads = new NonBlockingIOThread[ioThreads.length];
         System.arraycopy(ioThreads, 0, this.ioThreads, 0, ioThreads.length);
 
-        this.selectorToHandlers = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
+        this.selectorToHandlers = MapUtil.createHashMap(ioThreads.length);
         for (NonBlockingIOThread selector : ioThreads) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }

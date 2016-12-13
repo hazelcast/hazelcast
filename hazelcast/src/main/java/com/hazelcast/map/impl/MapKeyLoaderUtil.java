@@ -16,21 +16,21 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.UnmodifiableIterator;
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
+import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.core.IFunction;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.UnmodifiableIterator;
 
 
 public final class MapKeyLoaderUtil {
@@ -80,7 +80,7 @@ public final class MapKeyLoaderUtil {
 
     static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
 
-        Map<Integer, List<Data>> batch = new HashMap<Integer, List<Data>>();
+        Map<Integer, List<Data>> batch = MapUtil.createHashMap(maxBatch);
 
         while (entries.hasNext()) {
             Entry<Integer, Data> e = entries.next();

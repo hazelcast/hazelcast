@@ -16,6 +16,23 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.lang.Math.ceil;
+import static java.lang.Math.log10;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
@@ -45,24 +62,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.isNotNull;
-import static java.lang.Math.ceil;
-import static java.lang.Math.log10;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.ReplicatedMap} interface.
@@ -371,7 +371,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Set<K> keySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Set<K> keySet = new HashSet<K>();
+        Set<K> keySet = SetUtil.createHashSet(Math.max(16, stores.size() * 4));
         for (ReplicatedRecordStore store : stores) {
             keySet.addAll(store.keySet(true));
         }
@@ -381,7 +381,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Collection<V> values() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Collection<V> values = new ArrayList<V>();
+        Collection<V> values = new ArrayList<V>(Math.max(16, stores.size() * 4));
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(true));
         }
@@ -391,7 +391,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Collection<V> values(Comparator<V> comparator) {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<V> values = new ArrayList<V>();
+        List<V> values = new ArrayList<V>(Math.max(16, stores.size() * 4));
         for (ReplicatedRecordStore store : stores) {
             values.addAll(store.values(comparator));
         }
@@ -402,7 +402,7 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
     @Override
     public Set<Entry<K, V>> entrySet() {
         Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>();
+        List<Entry<K, V>> entries = new ArrayList<Entry<K, V>>(Math.max(16, stores.size() * 4));
         for (ReplicatedRecordStore store : stores) {
             entries.addAll(store.entrySet(true));
         }

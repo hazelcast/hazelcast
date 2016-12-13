@@ -16,19 +16,20 @@
 
 package com.hazelcast.collection.impl.set;
 
-import com.hazelcast.collection.impl.collection.CollectionContainer;
-import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.impl.collection.CollectionItem;
-import com.hazelcast.config.SetConfig;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.hazelcast.collection.impl.collection.CollectionContainer;
+import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.impl.collection.CollectionItem;
+import com.hazelcast.config.SetConfig;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.MapUtil;
 
 public class SetContainer extends CollectionContainer {
 
@@ -54,7 +55,7 @@ public class SetContainer extends CollectionContainer {
     @Override
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = MapUtil.createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -87,7 +88,7 @@ public class SetContainer extends CollectionContainer {
     protected Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemSet != null && !itemSet.isEmpty()) {
-                itemMap = new HashMap<Long, CollectionItem>(itemSet.size());
+                itemMap = MapUtil.createHashMap(itemSet.size());
                 for (CollectionItem item : itemSet) {
                     itemMap.put(item.getItemId(), item);
                 }

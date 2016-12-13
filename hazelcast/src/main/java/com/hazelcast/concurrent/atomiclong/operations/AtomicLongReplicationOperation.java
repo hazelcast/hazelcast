@@ -16,6 +16,9 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -23,10 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class AtomicLongReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
@@ -78,7 +78,7 @@ public class AtomicLongReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, Long>(mapSize);
+        migrationData = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             Long longContainer = in.readLong();

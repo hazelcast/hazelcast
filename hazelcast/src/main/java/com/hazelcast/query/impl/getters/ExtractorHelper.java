@@ -16,14 +16,14 @@
 
 package com.hazelcast.query.impl.getters;
 
+import java.util.List;
+import java.util.Map;
+
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.StringUtil;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public final class ExtractorHelper {
 
@@ -32,7 +32,7 @@ public final class ExtractorHelper {
 
     static Map<String, ValueExtractor> instantiateExtractors(List<MapAttributeConfig> mapAttributeConfigs,
                                                              ClassLoader classLoader) {
-        Map<String, ValueExtractor> extractors = new HashMap<String, ValueExtractor>();
+        final Map<String, ValueExtractor> extractors = MapUtil.createHashMap(mapAttributeConfigs.size());
         for (MapAttributeConfig config : mapAttributeConfigs) {
             if (extractors.containsKey(config.getName())) {
                 throw new IllegalArgumentException("Could not add " + config

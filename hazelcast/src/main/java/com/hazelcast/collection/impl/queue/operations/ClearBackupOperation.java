@@ -16,16 +16,16 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Store items' id as set when ClearOperation run.
@@ -67,7 +67,7 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        itemIdSet = new HashSet<Long>(size);
+        itemIdSet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             itemIdSet.add(in.readLong());
         }

@@ -16,20 +16,20 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
+import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
+import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
+
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
-import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
-import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
+import com.hazelcast.util.MapUtil;
 
 public class ReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
@@ -84,7 +84,7 @@ public class ReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, RingbufferContainer>(mapSize);
+        migrationData = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             RingbufferContainer container = new RingbufferContainer(name);

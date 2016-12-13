@@ -16,6 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
+import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -31,15 +39,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Holder for write-behind-specific state.
@@ -68,8 +68,8 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
     void prepare(PartitionContainer container, int replicaIndex) {
         int size = container.getMaps().size();
 
-        flushSequences = new HashMap<String, Queue<WriteBehindStore.Sequence>>(size);
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
+        flushSequences = MapUtil.createHashMap(size);
+        delayedEntries = MapUtil.createHashMap(size);
 
         for (Map.Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
             RecordStore recordStore = entry.getValue();
@@ -151,7 +151,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
 
-        delayedEntries = new HashMap<String, List<DelayedEntry>>(size);
+        delayedEntries = MapUtil.createHashMap(size);
 
         for (int i = 0; i < size; i++) {
             String mapName = in.readUTF();
@@ -173,7 +173,7 @@ public class WriteBehindStateHolder implements IdentifiedDataSerializable {
         }
 
         int expectedSize = in.readInt();
-        flushSequences = new HashMap<String, Queue<WriteBehindStore.Sequence>>(expectedSize);
+        flushSequences = MapUtil.createHashMap(expectedSize);
         for (int i = 0; i < expectedSize; i++) {
             String mapName = in.readUTF();
             int setSize = in.readInt();

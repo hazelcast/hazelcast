@@ -16,6 +16,26 @@
 
 package com.hazelcast.cache.impl;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+import java.lang.ref.WeakReference;
+import java.net.URI;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.cache.CacheException;
+import javax.cache.CacheManager;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.CompleteConfiguration;
+import javax.cache.configuration.Configuration;
+import javax.cache.spi.CachingProvider;
+
 import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.HazelcastCacheManager;
 import com.hazelcast.cache.ICache;
@@ -26,26 +46,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.util.EmptyStatement;
-
-import javax.cache.CacheException;
-import javax.cache.CacheManager;
-import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.CompleteConfiguration;
-import javax.cache.configuration.Configuration;
-import javax.cache.spi.CachingProvider;
-import java.lang.ref.WeakReference;
-import java.net.URI;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.util.SetUtil;
 
 /**
  * <p>
@@ -265,7 +266,7 @@ public abstract class AbstractHazelcastCacheManager
         if (isClosed()) {
             names = Collections.emptySet();
         } else {
-            names = new LinkedHashSet<String>();
+            names = SetUtil.createLinkedHashSet(caches.size());
             for (Map.Entry<String, ICacheInternal<?, ?>> entry : caches.entrySet()) {
                 String nameWithPrefix = entry.getKey();
                 int index = nameWithPrefix.indexOf(cacheNamePrefix) + cacheNamePrefix.length();

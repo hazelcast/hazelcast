@@ -16,6 +16,10 @@
 
 package com.hazelcast.multimap.impl;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.MultiMapConfig;
@@ -34,12 +38,8 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.ThreadUtil;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
 
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
@@ -111,7 +111,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                             MultiMapService.SERVICE_NAME,
                             new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET)
                     );
-            Set<Data> keySet = new HashSet<Data>();
+            Set<Data> keySet = SetUtil.createHashSet(Math.max(16, results.size() * 4));
             for (Object result : results.values()) {
                 if (result == null) {
                     continue;

@@ -16,6 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -23,10 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Factory implementation for {@link com.hazelcast.cache.impl.operation.CacheLoadAllOperation}.
@@ -85,7 +85,7 @@ public class CacheLoadAllOperationFactory
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            keys = SetUtil.createHashSet(size);
             for (int i = 0; i < size; i++) {
                 Data key = in.readData();
                 keys.add(key);

@@ -16,6 +16,17 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -31,18 +42,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Contains split-brain handling logic for {@link com.hazelcast.core.ReplicatedMap}
@@ -63,9 +63,9 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
 
     @Override
     public Runnable prepareMergeRunnable() {
-        HashMap<String, Collection<ReplicatedRecord>> recordMap = new HashMap<String, Collection<ReplicatedRecord>>();
         Address thisAddress = service.getNodeEngine().getThisAddress();
-        List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
+        final List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
+        final Map<String, Collection<ReplicatedRecord>> recordMap = MapUtil.createHashMap(partitions.size());
         for (Integer partition : partitions) {
             PartitionContainer partitionContainer = service.getPartitionContainer(partition);
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();

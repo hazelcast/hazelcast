@@ -16,18 +16,18 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import static java.util.Collections.unmodifiableSet;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import static java.util.Collections.unmodifiableSet;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Sends excluded member uuids to a member which is in that set.
@@ -66,7 +66,7 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        Set<String> excludedMemberUuids = new HashSet<String>();
+        Set<String> excludedMemberUuids = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             excludedMemberUuids.add(in.readUTF());
         }

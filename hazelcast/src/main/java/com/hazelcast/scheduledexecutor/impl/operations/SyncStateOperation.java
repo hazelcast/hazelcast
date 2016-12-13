@@ -16,18 +16,18 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
+
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
+import com.hazelcast.util.MapUtil;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
@@ -101,7 +101,7 @@ public class SyncStateOperation
         super.readInternal(in);
         this.taskName = in.readUTF();
         int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
+        this.state = MapUtil.createHashMap(stateSize);
         for (int i = 0; i < stateSize; i++) {
             this.state.put(in.readObject(), in.readObject());
         }

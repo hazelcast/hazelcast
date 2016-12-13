@@ -16,6 +16,14 @@
 
 package com.hazelcast.map.impl.operation;
 
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.InterceptorRegistry;
@@ -36,15 +44,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class PostJoinMapOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -72,7 +72,7 @@ public class PostJoinMapOperation extends Operation implements IdentifiedDataSer
         InterceptorRegistry interceptorRegistry = mapContainer.getInterceptorRegistry();
         List<MapInterceptor> interceptorList = interceptorRegistry.getInterceptors();
         Map<String, MapInterceptor> interceptorMap = interceptorRegistry.getId2InterceptorMap();
-        Map<MapInterceptor, String> revMap = new HashMap<MapInterceptor, String>();
+        Map<MapInterceptor, String> revMap = MapUtil.createHashMap(interceptorMap.size());
         for (Map.Entry<String, MapInterceptor> entry : interceptorMap.entrySet()) {
             revMap.put(entry.getValue(), entry.getKey());
         }

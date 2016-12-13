@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import java.security.Permission;
+import java.util.Map;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.instance.Node;
@@ -27,10 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
-
-import java.security.Permission;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class MapPutAllMessageTask
         extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {
@@ -78,7 +78,7 @@ public class MapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        HashMap<Data, Data> map = new HashMap<Data, Data>();
+        final Map<Data, Data> map = MapUtil.createHashMap(parameters.entries.size());
         for (Map.Entry<Data, Data> entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }

@@ -16,21 +16,22 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import static java.util.Collections.unmodifiableSet;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.version.MemberVersion;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 
@@ -86,14 +87,14 @@ public class JoinRequest extends JoinMessage {
         }
         tryCount = in.readInt();
         int size = in.readInt();
-        attributes = new HashMap<String, Object>();
+        attributes = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             Object value = in.readObject();
             attributes.put(key, value);
         }
         size = in.readInt();
-        Set<String> excludedMemberUuids = new HashSet<String>();
+        Set<String> excludedMemberUuids = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             excludedMemberUuids.add(in.readUTF());
         }

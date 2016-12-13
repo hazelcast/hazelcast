@@ -16,17 +16,17 @@
 
 package com.hazelcast.partition.membergroup;
 
-import com.hazelcast.core.Member;
-
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
+
+import com.hazelcast.core.Member;
+import com.hazelcast.util.SetUtil;
 
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 
     @Override
     public Set<MemberGroup> createMemberGroups(Collection<? extends Member> members) {
-        Set<MemberGroup> groups = new HashSet<MemberGroup>(members.size());
+        final Set<MemberGroup> groups = SetUtil.createHashSet(members.size());
         for (Member member : members) {
             groups.add(new SingleMemberGroup(member));
         }

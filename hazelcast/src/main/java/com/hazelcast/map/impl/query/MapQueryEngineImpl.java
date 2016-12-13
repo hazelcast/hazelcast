@@ -16,6 +16,14 @@
 
 package com.hazelcast.map.impl.query;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -28,15 +36,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Invokes and orchestrates the query logic returning the final result.
@@ -215,7 +215,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     private static Set<Integer> createSetWithPopulatedPartitionIds(int partitionCount) {
-        Set<Integer> partitionIds = new HashSet<Integer>(partitionCount);
+        final Set<Integer> partitionIds = SetUtil.createHashSet(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             partitionIds.add(i);
         }

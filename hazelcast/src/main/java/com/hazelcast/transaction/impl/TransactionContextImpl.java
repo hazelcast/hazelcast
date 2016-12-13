@@ -16,6 +16,12 @@
 
 package com.hazelcast.transaction.impl;
 
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+
+import java.util.Map;
+
+import javax.transaction.xa.XAResource;
+
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -36,19 +42,13 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.xa.XAService;
-
-import javax.transaction.xa.XAResource;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import com.hazelcast.util.MapUtil;
 
 final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
-    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = MapUtil.createHashMap(2);
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
                            TransactionOptions options, String ownerUuid, boolean originatedFromClient) {

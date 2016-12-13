@@ -16,6 +16,22 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
+import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.LifecycleMapper;
@@ -38,23 +54,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
-import static com.hazelcast.mapreduce.impl.MapReduceUtil.notifyRemoteException;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_MORE_PARTITIONS;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 /**
  * This class acutally executed the mapping-combine phase. It is responsible for opening / closing
@@ -167,7 +168,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
 
     public static <K, V> Map<Address, Map<K, V>> mapResultToMember(JobSupervisor supervisor, Map<K, V> result) {
 
-        Set<Object> unassignedKeys = new HashSet<Object>();
+        Set<Object> unassignedKeys = SetUtil.createHashSet(result.size());
         for (Map.Entry<K, V> entry : result.entrySet()) {
             Address address = supervisor.getReducerAddressByKey(entry.getKey());
             if (address == null) {
@@ -180,7 +181,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
 
         // Now assign all keys
-        Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
+        Map<Address, Map<K, V>> mapping = MapUtil.createHashMap(result.size());
         for (Map.Entry<K, V> entry : result.entrySet()) {
             Address address = supervisor.getReducerAddressByKey(entry.getKey());
             if (address != null) {

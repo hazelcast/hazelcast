@@ -16,6 +16,12 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.cache.expiry.ExpiryPolicy;
+
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
@@ -23,11 +29,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
-
-import javax.cache.expiry.ExpiryPolicy;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Gets all keys from the cache.
@@ -56,7 +58,8 @@ public class CacheGetAllOperation
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
 
         int partitionId = getPartitionId();
-        Set<Data> partitionKeySet = new HashSet<Data>();
+        final int setSize = Math.min(getNodeEngine().getPartitionService().getPartitionCount(), keys.size());
+        final Set<Data> partitionKeySet = SetUtil.createHashSet(setSize);
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
                 partitionKeySet.add(key);

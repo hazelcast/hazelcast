@@ -16,6 +16,10 @@
 
 package com.hazelcast.security.permission;
 
+import java.security.Permission;
+import java.util.Collections;
+import java.util.Map;
+
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.collection.impl.list.ListService;
@@ -35,10 +39,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.topic.impl.TopicService;
-
-import java.security.Permission;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public final class ActionConstants {
 
@@ -64,123 +65,126 @@ public final class ActionConstants {
     public static final String LISTENER_MEMBER = "member";
     public static final String LISTENER_MIGRATION = "migration";
 
-    private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<String, PermissionFactory>();
+    private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP;
 
     static {
-        PERMISSION_FACTORY_MAP.put(QueueService.SERVICE_NAME, new PermissionFactory() {
+        final Map<String, PermissionFactory> permissionFactory = MapUtil.createHashMap(19);
+        permissionFactory.put(QueueService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new QueuePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(MapService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(MapService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new MapPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(MultiMapService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(MultiMapService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new MultiMapPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(ListService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(ListService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new ListPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(SetService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(SetService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new SetPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(AtomicLongService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(AtomicLongService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicLongPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(CountDownLatchService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(CountDownLatchService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new CountDownLatchPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(SemaphoreService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(SemaphoreService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new SemaphorePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(TopicService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(TopicService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new TopicPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(LockService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(LockService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new LockPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(DistributedExecutorService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(DistributedExecutorService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new ExecutorServicePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(IdGeneratorService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(IdGeneratorService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME + name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(MapReduceService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new MapReducePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(ReplicatedMapService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(ReplicatedMapService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new ReplicatedMapPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(AtomicReferenceService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(AtomicReferenceService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new AtomicReferencePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(CacheService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(CacheService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new CachePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(RingbufferService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(RingbufferService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new RingBufferPermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(DistributedDurableExecutorService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(DistributedDurableExecutorService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new DurableExecutorServicePermission(name, actions);
             }
         });
-        PERMISSION_FACTORY_MAP.put(CardinalityEstimatorService.SERVICE_NAME, new PermissionFactory() {
+        permissionFactory.put(CardinalityEstimatorService.SERVICE_NAME, new PermissionFactory() {
             @Override
             public Permission create(String name, String... actions) {
                 return new CardinalityEstimatorPermission(name, actions);
             }
         });
+        //NOTE: remember to adjust size of backing map when adding new constants
+        PERMISSION_FACTORY_MAP = Collections.unmodifiableMap(permissionFactory);
     }
 
     private ActionConstants() {

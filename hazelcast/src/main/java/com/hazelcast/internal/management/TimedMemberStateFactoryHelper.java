@@ -16,6 +16,16 @@
 
 package com.hazelcast.internal.management;
 
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
+import java.util.Map;
+
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.dto.ConnectionManagerDTO;
 import com.hazelcast.internal.management.dto.EventServiceDTO;
@@ -31,18 +41,8 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
-
-import java.lang.management.ClassLoadingMXBean;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Helper class to be gather JMX related stats for {@link TimedMemberStateFactory}
@@ -104,7 +104,8 @@ final class TimedMemberStateFactoryHelper {
         MemoryMXBean memoryMxBean = ManagementFactory.getMemoryMXBean();
         MemoryUsage heapMemory = memoryMxBean.getHeapMemoryUsage();
         MemoryUsage nonHeapMemory = memoryMxBean.getNonHeapMemoryUsage();
-        Map<String, Long> map = new HashMap<String, Long>();
+        //TODO: resize this as new attributes added
+        final Map<String, Long> map = MapUtil.createHashMap(30);
         map.put("runtime.availableProcessors", Integer.valueOf(runtime.availableProcessors()).longValue());
         map.put("date.startTime", runtimeMxBean.getStartTime());
         map.put("seconds.upTime", runtimeMxBean.getUptime());

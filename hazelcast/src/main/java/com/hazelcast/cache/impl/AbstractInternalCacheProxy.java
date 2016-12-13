@@ -16,6 +16,26 @@
 
 package com.hazelcast.cache.impl;
 
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+
+import java.util.Collection;
+import java.util.EventListener;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.cache.CacheException;
+import javax.cache.CacheManager;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.expiry.ExpiryPolicy;
+
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
@@ -34,26 +54,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.cache.CacheException;
-import javax.cache.CacheManager;
-import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.expiry.ExpiryPolicy;
-import java.util.Collection;
-import java.util.EventListener;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -247,7 +248,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     protected void removeAllInternal(Set<? extends K> keys) {
         final Set<Data> keysData;
         if (keys != null) {
-            keysData = new HashSet<Data>();
+            keysData = SetUtil.createHashSet(keys.size());
             for (K key : keys) {
                 keysData.add(serializationService.toData(key));
             }

@@ -16,25 +16,24 @@
 
 package com.hazelcast.partition.membergroup;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.AddressUtil;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import com.hazelcast.util.MapUtil;
 
 public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
 
     public ConfigMemberGroupFactory(Collection<MemberGroupConfig> memberGroupConfigs) {
-        this.memberGroupConfigMap = new LinkedHashMap<Integer, MemberGroupConfig>();
+        this.memberGroupConfigMap = MapUtil.createLinkedHashMap(memberGroupConfigs.size());
         int key = 0;
         for (MemberGroupConfig groupConfig : memberGroupConfigs) {
             memberGroupConfigMap.put(key++, groupConfig);
@@ -43,7 +42,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> members) {
-        Map<Integer, MemberGroup> memberGroups = new HashMap<Integer, MemberGroup>();
+        Map<Integer, MemberGroup> memberGroups = MapUtil.createHashMap(members.size());
         for (Member member : members) {
             String host = ((MemberImpl) member).getAddress().getHost();
             for (Entry<Integer, MemberGroupConfig> entry : memberGroupConfigMap.entrySet()) {

@@ -16,15 +16,15 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class CollectionContainsOperation extends CollectionOperation {
 
@@ -62,7 +62,7 @@ public class CollectionContainsOperation extends CollectionOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();
-        valueSet = new HashSet<Data>(size);
+        valueSet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data value = in.readData();
             valueSet.add(value);

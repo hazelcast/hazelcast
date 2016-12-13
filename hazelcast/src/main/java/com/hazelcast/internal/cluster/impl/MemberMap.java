@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
+import static java.util.Collections.singletonMap;
+import static java.util.Collections.unmodifiableCollection;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -27,8 +27,9 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.Collections.singletonMap;
-import static java.util.Collections.unmodifiableCollection;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.util.MapUtil;
 
 /**
  * A special, immutable {@link MemberImpl} map type,
@@ -72,8 +73,8 @@ final class MemberMap {
      * @return a new {@code MemberMap}
      */
     static MemberMap createNew(MemberImpl... members) {
-        Map<Address, MemberImpl> addressMap = new LinkedHashMap<Address, MemberImpl>();
-        Map<String, MemberImpl> uuidMap = new LinkedHashMap<String, MemberImpl>();
+        Map<Address, MemberImpl> addressMap = MapUtil.createLinkedHashMap(members.length);
+        Map<String, MemberImpl> uuidMap = MapUtil.createLinkedHashMap(members.length);
 
         for (MemberImpl member : members) {
             putMember(addressMap, uuidMap, member);

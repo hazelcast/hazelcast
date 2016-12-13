@@ -16,6 +16,23 @@
 
 package com.hazelcast.nio.ascii;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
+
+import java.nio.ByteBuffer;
+import java.util.Map;
+
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -31,36 +48,19 @@ import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.StringUtil;
-
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.SET;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.STATS;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.TOUCH;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.VERSION;
 
 @PrivateApi
 public class TextReadHandler implements ReadHandler {
 
-    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
+    private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = MapUtil.createHashMap(18);
 
     private static final int CAPACITY = 500;
 

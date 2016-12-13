@@ -16,6 +16,25 @@
 
 package com.hazelcast.cache.impl;
 
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+
+import javax.cache.CacheException;
+import javax.cache.configuration.CacheEntryListenerConfiguration;
+import javax.cache.configuration.Configuration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CompletionListener;
+import javax.cache.processor.EntryProcessor;
+import javax.cache.processor.EntryProcessorException;
+import javax.cache.processor.EntryProcessorResult;
+
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
@@ -31,26 +50,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import javax.cache.CacheException;
-import javax.cache.configuration.CacheEntryListenerConfiguration;
-import javax.cache.configuration.Configuration;
-import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CompletionListener;
-import javax.cache.processor.EntryProcessor;
-import javax.cache.processor.EntryProcessorException;
-import javax.cache.processor.EntryProcessorResult;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 /**
  * <h1>ICache implementation</h1>
@@ -109,7 +110,7 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             CacheProxyUtil.validateConfiguredTypes(cacheConfig, key);
         }
-        HashSet<Data> keysData = new HashSet<Data>(keys.size());
+        final Set<Data> keysData = SetUtil.createHashSet(keys.size());
         for (K key : keys) {
             keysData.add(serializationService.toData(key));
         }
@@ -249,7 +250,7 @@ public class CacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
-        Map<K, EntryProcessorResult<T>> allResult = new HashMap<K, EntryProcessorResult<T>>();
+        Map<K, EntryProcessorResult<T>> allResult = MapUtil.createHashMap(keys.size());
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {

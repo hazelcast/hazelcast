@@ -16,6 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -24,13 +30,7 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
+import com.hazelcast.util.SetUtil;
 
 public class DefaultPortableWriter implements PortableWriter {
 
@@ -47,7 +47,7 @@ public class DefaultPortableWriter implements PortableWriter {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
-        this.writtenFields = new HashSet<String>(cd.getFieldCount());
+        this.writtenFields = SetUtil.createHashSet(cd.getFieldCount());
         this.begin = out.position();
 
         // room for final offset

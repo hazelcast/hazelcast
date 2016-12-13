@@ -16,6 +16,14 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
@@ -28,15 +36,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Wrapper for the Queue Store.
@@ -174,7 +174,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
             return;
         }
 
-        final Map<Long, Object> objectMap = new HashMap<Long, Object>(map.size());
+        final Map<Long, Object> objectMap = MapUtil.createHashMap(map.size());
         if (binary) {
             // WARNING: we can't pass original Data to the user
             // TODO: @mm - is there really an advantage of using binary storeAll?
@@ -230,7 +230,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         if (map == null) {
             return Collections.emptyMap();
         }
-        final Map<Long, Data> dataMap = new HashMap<Long, Data>(map.size());
+        final Map<Long, Data> dataMap = MapUtil.createHashMap(map.size());
         if (binary) {
             for (Map.Entry<Long, ?> entry : map.entrySet()) {
                 byte[] dataBuffer = (byte[]) entry.getValue();

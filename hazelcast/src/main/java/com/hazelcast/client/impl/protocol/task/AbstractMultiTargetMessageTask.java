@@ -16,6 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import static java.util.Collections.EMPTY_MAP;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
@@ -26,14 +33,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.EMPTY_MAP;
-import static java.util.Collections.synchronizedSet;
+import com.hazelcast.util.MapUtil;
 
 public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageTask<P> {
 
@@ -79,27 +79,29 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
     private final class MultiTargetCallback {
 
-        final Collection<Address> targets;
+        final Set<Address> targets;
         final Map<Address, Object> results;
 
         private MultiTargetCallback(Collection<Address> targets) {
-            this.targets = synchronizedSet(new HashSet<Address>(targets));
-            this.results = new ConcurrentHashMap<Address, Object>(targets.size());
+            this.targets = new HashSet<Address>(targets);
+            this.results = MapUtil.createHashMap(targets.size());
         }
 
         public void notify(Address target, Object result) {
-            if (targets.remove(target)) {
-                results.put(target, result);
-            } else {
-                if (results.containsKey(target)) {
-                    throw new IllegalArgumentException("Duplicate response from -> " + target);
+            synchronized(targets) {
+                if (targets.remove(target)) {
+                    results.put(target, result);
+                } else {
+                    if (results.containsKey(target)) {
+                        throw new IllegalArgumentException("Duplicate response from -> " + target);
+                    }
+                    throw new IllegalArgumentException("Unknown target! -> " + target);
                 }
-                throw new IllegalArgumentException("Unknown target! -> " + target);
-            }
-            try {
-                returnResponseIfNoTargetLeft(targets, results);
-            } catch (Throwable throwable) {
-                handleProcessingFailure(throwable);
+                try {
+                    returnResponseIfNoTargetLeft(targets, results);
+                } catch (Throwable throwable) {
+                    handleProcessingFailure(throwable);
+                }
             }
         }
     }

@@ -16,6 +16,11 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import java.security.Permission;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.instance.Node;
@@ -23,12 +28,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.partition.IPartition;
-
-import java.security.Permission;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class GetPartitionsMessageTask
         extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
@@ -41,9 +41,9 @@ public class GetPartitionsMessageTask
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
 
-        Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
-
-        for (IPartition partition : service.getPartitions()) {
+        final IPartition[] partitions = service.getPartitions();
+        final Map<Address, List<Integer>> partitionsMap = MapUtil.createHashMap(partitions.length);
+        for (IPartition partition : partitions) {
             Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 partitionsMap.clear();

@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.nio.serialization.Data;
+import static com.hazelcast.util.CollectionUtil.isNotEmpty;
+import static java.lang.Thread.currentThread;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,9 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.CollectionUtil.isNotEmpty;
-import static java.lang.Thread.currentThread;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Processes store operations.
@@ -175,8 +176,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private Map prepareBatchMap(DelayedEntry[] delayedEntries) {
-        final Map<Object, DelayedEntry> batchMap = new HashMap<Object, DelayedEntry>();
         final int length = delayedEntries.length;
+        final Map<Object, DelayedEntry> batchMap = MapUtil.createHashMap(length);
         // process in reverse order since we do want to process
         // last store operation on a specific key
         for (int i = length - 1; i >= 0; i--) {
@@ -220,7 +221,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private Map convertToObject(Map<Object, DelayedEntry> batchMap) {
-        final Map map = new HashMap();
+        final Map map = MapUtil.createHashMap(batchMap.size());
         for (DelayedEntry entry : batchMap.values()) {
             final Object key = toObject(entry.getKey());
             final Object value = toObject(entry.getValue());

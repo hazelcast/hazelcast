@@ -16,21 +16,21 @@
 
 package com.hazelcast.executor.impl;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.logging.ILogger;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.MapUtil;
 
 class ExecutionCallbackAdapterFactory {
 
@@ -67,7 +67,7 @@ class ExecutionCallbackAdapterFactory {
             return;
         }
 
-        Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
+        Map<Member, Object> realResponses = MapUtil.createHashMap(members.size());
         for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
             Member key = entry.getKey();
             Object value = entry.getValue().value;

@@ -16,17 +16,18 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
+import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.CONTAINER;
-import static com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook.F_ID;
+import com.hazelcast.config.SemaphoreConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 
 public class SemaphoreContainer implements IdentifiedDataSerializable {
 
@@ -185,7 +186,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String caller = in.readUTF();
             Integer val = in.readInt();

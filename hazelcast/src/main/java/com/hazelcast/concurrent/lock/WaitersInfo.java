@@ -16,21 +16,21 @@
 
 package com.hazelcast.concurrent.lock;
 
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
+
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
+import com.hazelcast.util.SetUtil;
 
 final class WaitersInfo implements IdentifiedDataSerializable {
 
     private String conditionId;
-    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
+    private Set<ConditionWaiter> waiters = SetUtil.createHashSet(2);
 
     public WaitersInfo() {
     }

@@ -16,6 +16,23 @@
 
 package com.hazelcast.client.impl;
 
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import javax.security.auth.login.LoginException;
+
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
@@ -70,22 +87,6 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.executor.ExecutorType;
-
-import javax.security.auth.login.LoginException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -309,11 +310,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public Collection<Client> getClients() {
-        final HashSet<Client> clients = new HashSet<Client>();
-        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
-            clients.add(endpoint);
-        }
-        return clients;
+        return new HashSet<Client>(endpointManager.getEndpoints());
     }
 
     @Override

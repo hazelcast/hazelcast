@@ -16,6 +16,17 @@
 
 package com.hazelcast.multimap.impl;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.isNotNull;
+
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastException;
@@ -42,18 +53,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.isNotNull;
+import com.hazelcast.util.SetUtil;
 
 public class ObjectMultiMapProxy<K, V>
         extends MultiMapProxySupport
@@ -168,7 +168,7 @@ public class ObjectMultiMapProxy<K, V>
     public Set<Map.Entry<K, V>> entrySet() {
         final NodeEngine nodeEngine = getNodeEngine();
         Map map = entrySetInternal();
-        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
+        Set<Map.Entry<K, V>> entrySet = SetUtil.createHashSet(Math.max(16, map.size() * 4));
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -360,7 +360,7 @@ public class ObjectMultiMapProxy<K, V>
 
     private Set<K> toObjectSet(Set<Data> dataSet) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Set<K> keySet = new HashSet<K>(dataSet.size());
+        Set<K> keySet = SetUtil.createHashSet(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
         }

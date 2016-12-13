@@ -16,17 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 /**
  * In Predicate
@@ -56,7 +56,7 @@ public class InPredicate extends AbstractIndexAwarePredicate {
         }
         Set<Comparable> set = convertedInValues;
         if (set == null) {
-            set = new HashSet<Comparable>(values.length);
+            set = SetUtil.createHashSet(values.length);
             for (Comparable value : values) {
                 set.add(convert(entry, attributeValue, value));
             }

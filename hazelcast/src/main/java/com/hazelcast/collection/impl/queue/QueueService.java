@@ -16,6 +16,15 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
 import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
@@ -57,16 +66,6 @@ import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * Provides important services via methods for the the Queue
@@ -156,8 +155,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final Map<String, QueueContainer> migrationData = MapUtil.createHashMap(Math.max(16, containerMap.size() / 3));
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

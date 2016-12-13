@@ -16,14 +16,15 @@
 
 package com.hazelcast.multimap.impl;
 
-import com.hazelcast.config.MultiMapConfig;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Multi-map values are backed by collections which are created by static factory methods in this class.
@@ -61,7 +62,7 @@ public final class ValueCollectionFactory {
                                                      int initialCapacity) {
         switch (collectionType) {
             case SET:
-                return initialCapacity <= 0 ? new HashSet<T>() : new HashSet<T>(initialCapacity);
+                return initialCapacity <= 0 ? new HashSet<T>() : SetUtil.<T>createHashSet(initialCapacity);
             case LIST:
                 return new LinkedList<T>();
             default:

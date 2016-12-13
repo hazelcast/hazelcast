@@ -17,26 +17,27 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.util.HashSet;
-import java.util.Set;
-
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.Set;
+
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.util.SetUtil;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * A metrics set for exposing {@link GarbageCollectorMXBean} metrics.
  */
 public final class GarbageCollectionMetricSet {
 
-    private static final Set<String> YOUNG_GC = new HashSet<String>(3);
-    private static final Set<String> OLD_GC = new HashSet<String>(3);
+    private static final Set<String> YOUNG_GC = SetUtil.createHashSet(3);
+    private static final Set<String> OLD_GC = SetUtil.createHashSet(3);
     private static final int PUBLISH_FREQUENCY_SECONDS = 1;
 
     static {

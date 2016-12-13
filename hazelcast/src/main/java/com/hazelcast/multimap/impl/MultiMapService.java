@@ -16,6 +16,16 @@
 
 package com.hazelcast.multimap.impl;
 
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
@@ -51,16 +61,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.EventListener;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import com.hazelcast.util.MapUtil;
 
 public class MultiMapService implements ManagedService, RemoteService, MigrationAwareService,
         EventPublishingService<EventData, EntryListener>, TransactionalService, StatisticsAwareService {
@@ -227,7 +228,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         if (partitionContainer == null) {
             return null;
         }
-        Map<String, Map> map = new HashMap<String, Map>(partitionContainer.containerMap.size());
+        Map<String, Map> map = MapUtil.createHashMap(partitionContainer.containerMap.size());
         for (Map.Entry<String, MultiMapContainer> entry : partitionContainer.containerMap.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = entry.getValue();

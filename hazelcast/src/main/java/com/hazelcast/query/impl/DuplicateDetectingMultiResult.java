@@ -16,21 +16,21 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.AbstractSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
 
 public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements MultiResultSet {
     private Map<Data, QueryableEntry> records;
 
     public void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet) {
         if (records == null) {
-            records = new HashMap<Data, QueryableEntry>(resultSet.size());
+            records = MapUtil.createHashMap(resultSet.size());
         }
 
         for (Map.Entry<Data, QueryableEntry> entry : resultSet.entrySet()) {
@@ -53,10 +53,10 @@ public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> i
     @Override
     public Iterator<QueryableEntry> iterator() {
         if (records == null) {
-            return new HashSet<QueryableEntry>().iterator();
-        } else {
-            return records.values().iterator();
+            return Collections.<QueryableEntry>emptyList().iterator();
         }
+        
+        return records.values().iterator();
     }
 
     @Override

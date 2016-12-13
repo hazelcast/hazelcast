@@ -16,6 +16,12 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+import javax.cache.CacheException;
+
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
@@ -31,13 +37,8 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
-
-import javax.cache.CacheException;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.
@@ -75,7 +76,8 @@ public class CacheLoadAllOperation
 
         Set<Data> filteredKeys = null;
         if (keys != null) {
-            filteredKeys = new HashSet<Data>();
+            final int setSize = Math.min(getNodeEngine().getPartitionService().getPartitionCount(), keys.size());
+            filteredKeys = SetUtil.createHashSet(setSize);
             for (Data k : keys) {
                 if (partitionService.getPartitionId(k) == partitionId) {
                     filteredKeys.add(k);
@@ -93,7 +95,7 @@ public class CacheLoadAllOperation
             Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             int loadedKeyCount = keysLoaded.size();
             if (loadedKeyCount > 0) {
-                backupRecords = new HashMap<Data, CacheRecord>(loadedKeyCount);
+                backupRecords = MapUtil.createHashMap(loadedKeyCount);
                 for (Data key : keysLoaded) {
                     CacheRecord record = cache.getRecord(key);
                     // Loaded keys may have been evicted, then record will be null.
@@ -163,7 +165,7 @@ public class CacheLoadAllOperation
         replaceExistingValues = in.readBoolean();
         if (in.readBoolean()) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            keys = SetUtil.createHashSet(size);
             for (int i = 0; i < size; i++) {
                 keys.add(in.readData());
             }

@@ -16,11 +16,27 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.FutureUtil.returnWithDeadline;
+import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
@@ -34,26 +50,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.UuidUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @SuppressWarnings("unchecked")
 public class ScheduledExecutorServiceProxy
@@ -228,7 +226,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
-        Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
+        Map<Member, IScheduledFuture<V>> futures = MapUtil.createHashMap(members.size());
         for (Member member : members) {
             TaskDefinition<V> definition = new TaskDefinition<V>(
                     TaskDefinition.Type.SINGLE_RUN, name, command, delay, unit);
@@ -250,7 +248,7 @@ public class ScheduledExecutorServiceProxy
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
-        Map<Member, IScheduledFuture<?>> futures = new HashMapAdapter<Member, IScheduledFuture<?>>();
+        Map<Member, IScheduledFuture<?>> futures = MapUtil.createHashMap(members.size());
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
@@ -274,9 +272,6 @@ public class ScheduledExecutorServiceProxy
     public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
 
-        Map<Member, List<IScheduledFuture<V>>> tasks =
-                new LinkedHashMap<Member, List<IScheduledFuture<V>>>();
-
         List<Member> members = new ArrayList<Member>(getNodeEngine().getClusterService().getMembers());
         List<Future<List<ScheduledTaskHandler>>> futures = new ArrayList<Future<List<ScheduledTaskHandler>>>();
         for (Member member : members) {
@@ -292,6 +287,8 @@ public class ScheduledExecutorServiceProxy
         List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
                 returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
 
+        final Map<Member, List<IScheduledFuture<V>>> tasks = MapUtil.createLinkedHashMap(resolvedFutures.size());
+        
         for (int i = 0; i < resolvedFutures.size(); i++) {
             Member member = members.get(i);
             List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);

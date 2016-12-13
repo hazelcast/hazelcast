@@ -16,17 +16,17 @@
 
 package com.hazelcast.map.impl.operation;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
-import java.io.IOException;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 
@@ -73,7 +73,7 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOpe
         super.readInternal(in);
         backupProcessor = in.readObject();
         int size = in.readInt();
-        keys = new LinkedHashSet<Data>(size);
+        keys = SetUtil.createLinkedHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

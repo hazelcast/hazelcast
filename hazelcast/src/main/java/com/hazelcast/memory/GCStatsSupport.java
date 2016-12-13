@@ -18,16 +18,17 @@ package com.hazelcast.memory;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
-import java.util.HashSet;
 import java.util.Set;
+
+import com.hazelcast.util.SetUtil;
 
 /**
  * Used to gather garbage collection statistics.
  */
 public final class GCStatsSupport {
 
-    private static final Set<String> YOUNG_GC = new HashSet<String>(3);
-    private static final Set<String> OLD_GC = new HashSet<String>(3);
+    private static final Set<String> YOUNG_GC = SetUtil.createHashSet(3);
+    private static final Set<String> OLD_GC = SetUtil.createHashSet(3);
 
     static {
         YOUNG_GC.add("PS Scavenge");

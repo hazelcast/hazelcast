@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl;
 
+import java.io.IOException;
+import java.util.Set;
+
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import com.hazelcast.util.SetUtil;
 
 public class MapKeySet implements IdentifiedDataSerializable {
 
@@ -52,7 +52,7 @@ public class MapKeySet implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        keySet = new HashSet<Data>(size);
+        keySet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data data = in.readData();
             keySet.add(data);

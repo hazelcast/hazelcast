@@ -16,17 +16,12 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Clock;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -34,8 +29,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 
@@ -168,7 +169,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
     void addAwait(String conditionId, String caller, long threadId) {
         if (waiters == null) {
-            waiters = new HashMap<String, WaitersInfo>(2);
+            waiters = MapUtil.createHashMap(2);
         }
 
         WaitersInfo condition = waiters.get(conditionId);
@@ -439,7 +440,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
         int len = in.readInt();
         if (len > 0) {
-            waiters = new HashMap<String, WaitersInfo>(len);
+            waiters = MapUtil.createHashMap(len);
             for (int i = 0; i < len; i++) {
                 WaitersInfo condition = new WaitersInfo();
                 condition.readData(in);
@@ -449,7 +450,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
 
         len = in.readInt();
         if (len > 0) {
-            conditionKeys = new HashSet<ConditionKey>(len);
+            conditionKeys = SetUtil.createHashSet(len);
             for (int i = 0; i < len; i++) {
                 conditionKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF(), in.readUTF(), in.readLong()));
             }

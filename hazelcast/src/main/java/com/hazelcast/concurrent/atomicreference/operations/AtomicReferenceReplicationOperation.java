@@ -16,6 +16,9 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -24,10 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class AtomicReferenceReplicationOperation extends Operation
         implements IdentifiedDataSerializable {
@@ -79,7 +79,7 @@ public class AtomicReferenceReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, Data>(mapSize);
+        migrationData = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             Data data = in.readData();

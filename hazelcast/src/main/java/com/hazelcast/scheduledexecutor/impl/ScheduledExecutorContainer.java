@@ -16,6 +16,20 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.DuplicateTaskException;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
@@ -29,20 +43,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+import com.hazelcast.util.MapUtil;
 
 public class ScheduledExecutorContainer {
 
@@ -278,7 +279,7 @@ public class ScheduledExecutorContainer {
     }
 
     Map<String, ScheduledTaskDescriptor> prepareForReplication(boolean migrationMode) {
-        Map<String, ScheduledTaskDescriptor> replicas = new HashMap<String, ScheduledTaskDescriptor>();
+        final Map<String, ScheduledTaskDescriptor> replicas = MapUtil.createHashMap(tasks.size());
 
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {

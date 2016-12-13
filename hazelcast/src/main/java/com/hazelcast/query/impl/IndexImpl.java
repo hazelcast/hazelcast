@@ -16,6 +16,13 @@
 
 package com.hazelcast.query.impl;
 
+import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,14 +32,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
+import com.hazelcast.util.SetUtil;
 
 public class IndexImpl implements Index {
 
@@ -93,7 +93,7 @@ public class IndexImpl implements Index {
             return getRecords(values[0]);
         } else {
             if (converter != null) {
-                Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
+                Set<Comparable> convertedValues = SetUtil.createHashSet(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }

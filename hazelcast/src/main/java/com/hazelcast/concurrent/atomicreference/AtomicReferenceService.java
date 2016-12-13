@@ -16,6 +16,15 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -29,15 +38,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicReferenceService implements ManagedService, RemoteService, MigrationAwareService {
 
@@ -95,7 +95,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
             return null;
         }
 
-        Map<String, Data> data = new HashMap<String, Data>();
+        Map<String, Data> data = new HashMap<String, Data>(Math.max(16, containers.size() / 3));
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, AtomicReferenceContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();

@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.task.queue;
 
+import java.security.Permission;
+import java.util.Collections;
+
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -23,14 +26,9 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ContainsOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
-
-import java.security.Permission;
-import java.util.Collection;
-import java.util.HashSet;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -45,9 +43,7 @@ public class QueueContainsMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        final Collection<Data> datList = new HashSet<Data>();
-        datList.add(parameters.value);
-        return new ContainsOperation(parameters.name, datList);
+        return new ContainsOperation(parameters.name, Collections.singleton(parameters.value));
     }
 
     @Override

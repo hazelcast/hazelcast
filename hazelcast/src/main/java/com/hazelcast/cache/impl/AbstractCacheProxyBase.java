@@ -16,6 +16,21 @@
 
 package com.hazelcast.cache.impl;
 
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.cache.CacheException;
+import javax.cache.integration.CompletionListener;
+
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -31,22 +46,9 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.executor.CompletableFutureTask;
-
-import javax.cache.CacheException;
-import javax.cache.integration.CompletionListener;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Abstract class providing cache open/close operations and {@link NodeEngine}, {@link CacheService} and
@@ -221,7 +223,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
                 IPartitionService partitionService = getNodeEngine().getPartitionService();
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-                Map<Integer, Object> results = new HashMap<Integer, Object>();
+                Map<Integer, Object> results = MapUtil.createHashMap(Math.max(16, memberPartitionsMap.size() * 3));
 
                 for (Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
                     Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
@@ -252,7 +254,7 @@ abstract class AbstractCacheProxyBase<K, V>
         }
 
         private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
-            Set<Data> ownerKeys = new HashSet<Data>();
+            final Set<Data> ownerKeys = SetUtil.createHashSet(Math.max(16, keysData.size() / 2));
             for (Data key: keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);
                 if (partitions.contains(keyPartitionId)) {

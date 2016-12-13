@@ -16,6 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
@@ -32,12 +37,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import com.hazelcast.util.MapUtil;
 
 /**
  * Handles split-brain functionality for cache.
@@ -56,7 +56,7 @@ class CacheSplitBrainHandler {
     }
 
     Runnable prepareMergeRunnable() {
-        final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
+        final Map<String, Map<Data, CacheRecord>> recordMap = MapUtil.createHashMap(configs.size());
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
@@ -74,7 +74,7 @@ class CacheSplitBrainHandler {
                     String cacheName = cacheRecordStore.getName();
                     Map<Data, CacheRecord> records = recordMap.get(cacheName);
                     if (records == null) {
-                        records = new HashMap<Data, CacheRecord>(cacheRecordStore.size());
+                        records = MapUtil.createHashMap(cacheRecordStore.size());
                         recordMap.put(cacheName, records);
                     }
                     for (Map.Entry<Data, CacheRecord> cacheRecordEntry : cacheRecordStore.getReadOnlyRecords().entrySet()) {

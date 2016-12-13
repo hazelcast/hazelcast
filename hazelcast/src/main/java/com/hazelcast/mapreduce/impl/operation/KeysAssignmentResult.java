@@ -16,16 +16,16 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 /**
  * This class is used to store assignment results in {@link com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation}
@@ -72,7 +72,7 @@ public class KeysAssignmentResult
             throws IOException {
         if (in.readBoolean()) {
             int size = in.readInt();
-            assignment = new HashMap<Object, Address>(size);
+            assignment = MapUtil.createHashMap(size);
             for (int i = 0; i < size; i++) {
                 assignment.put(in.readObject(), (Address) in.readObject());
             }

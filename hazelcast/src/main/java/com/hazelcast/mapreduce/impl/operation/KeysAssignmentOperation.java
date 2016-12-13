@@ -16,6 +16,15 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
+import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
 import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
@@ -25,17 +34,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.NoDataMemberInClusterException;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 /**
  * This operation is used to request assignment for keys on the job owners node. The job owner
@@ -71,7 +71,7 @@ public class KeysAssignmentOperation
             return;
         }
 
-        Map<Object, Address> assignment = new HashMap<Object, Address>();
+        final Map<Object, Address> assignment = MapUtil.createHashMap(keys.size());
 
         // Precheck if still all members are available
         if (!supervisor.checkAssignedMembersAvailable()) {
@@ -120,7 +120,7 @@ public class KeysAssignmentOperation
             throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keys = new HashSet<Object>();
+        keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readObject());
         }

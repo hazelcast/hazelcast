@@ -16,16 +16,16 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
+import java.io.IOException;
+import java.util.Map;
+
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.util.MapUtil;
 
 public class CollectionAddAllBackupOperation extends CollectionOperation implements BackupOperation {
 
@@ -64,7 +64,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();
-        valueMap = new HashMap<Long, Data>(size);
+        valueMap = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             final long itemId = in.readLong();
             final Data value = in.readData();
