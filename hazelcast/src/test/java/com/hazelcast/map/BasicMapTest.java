@@ -53,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -212,10 +213,10 @@ public class BasicMapTest extends HazelcastTestSupport {
             }
         }, true);
 
-        map.put("key", value1, 1, TimeUnit.SECONDS);
+        map.put("key", value1, 1, SECONDS);
         assertOpenEventually(latch1);
 
-        map.put("key", value2, 1, TimeUnit.SECONDS);
+        map.put("key", value2, 1, SECONDS);
         assertOpenEventually(latch2);
 
         assertEquals(value1, oldValue1.get());
@@ -277,11 +278,11 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("hello", "world");
         map.clear();
         try {
-            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
-            assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
-            assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
-            assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
-            assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
+            assertTrue(latchAdded.await(5, SECONDS));
+            assertTrue(latchUpdated.await(5, SECONDS));
+            assertTrue(latchRemoved.await(5, SECONDS));
+            assertTrue(latchEvicted.await(5, SECONDS));
+            assertTrue(latchCleared.await(5, SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
             assertFalse(e.getMessage(), true);
@@ -324,7 +325,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             map.remove(key);
             map.unlock(key);
         }
-        assertTrue("Listener events are missing! Remaining: " + latch.getCount(), latch.await(5, TimeUnit.SECONDS));
+        assertTrue("Listener events are missing! Remaining: " + latch.getCount(), latch.await(5, SECONDS));
     }
 
     @Test
@@ -425,10 +426,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    firstBool.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    firstBool.set(map.tryRemove("key1", 1, SECONDS));
                     latch2.countDown();
                     latch1.await();
-                    secondBool.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
+                    secondBool.set(map.tryRemove("key1", 1, SECONDS));
                     latch3.countDown();
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -553,6 +554,8 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testMapLockAndUnlockAndTryLock() throws Exception {
+        final int timeout = 10; //seconds
+
         final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlockAndTryLock");
         map.lock("key0");
         map.lock("key1");
@@ -565,21 +568,25 @@ public class BasicMapTest extends HazelcastTestSupport {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         final CountDownLatch latch3 = new CountDownLatch(1);
+        final CountDownLatch latch4 = new CountDownLatch(1);
+
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
                     check1.set(map.tryLock("key0"));
-                    check2.set(map.tryLock("key0", 3000, TimeUnit.MILLISECONDS));
                     latch0.countDown();
 
-                    map.put("key1", "value1");
+                    check2.set(map.tryLock("key0", timeout, SECONDS));
                     latch1.countDown();
 
-                    map.put("key2", "value2");
+                    map.put("key1", "value1");
                     latch2.countDown();
 
-                    map.put("key3", "value3");
+                    map.put("key2", "value2");
                     latch3.countDown();
+
+                    map.put("key3", "value3");
+                    latch4.countDown();
                 } catch (Exception e) {
                     fail(e.getMessage());
                 }
@@ -587,19 +594,19 @@ public class BasicMapTest extends HazelcastTestSupport {
         });
         thread.start();
 
-        sleepSeconds(1);
+        assertTrue(latch0.await(timeout, SECONDS));
         map.unlock("key0");
 
-        assertTrue(latch0.await(3, TimeUnit.SECONDS));
+        assertTrue(latch1.await(timeout, SECONDS));
         assertFalse(check1.get());
         assertTrue(check2.get());
 
         map.unlock("key1");
-        assertTrue(latch1.await(3, TimeUnit.SECONDS));
+        assertTrue(latch2.await(timeout, SECONDS));
         map.unlock("key2");
-        assertTrue(latch2.await(3, TimeUnit.SECONDS));
+        assertTrue(latch3.await(timeout, SECONDS));
         map.unlock("key3");
-        assertTrue(latch3.await(3, TimeUnit.SECONDS));
+        assertTrue(latch4.await(timeout, SECONDS));
     }
 
     @Test
@@ -715,7 +722,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                         counter.decrementAndGet();
                     }
 
-                    if (map.tryPut(key1, "value1", 5, TimeUnit.SECONDS)) {
+                    if (map.tryPut(key1, "value1", 5, SECONDS)) {
                         counter.decrementAndGet();
                     }
 
@@ -1129,7 +1136,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     public void testPutWithTtl() {
         final IMap<String, String> map = getInstance().getMap("testPutWithTtl");
 
-        map.put("key", "value", 2, TimeUnit.SECONDS);
+        map.put("key", "value", 2, SECONDS);
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -1277,14 +1284,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.putAsync(null, "value", 1, TimeUnit.SECONDS);
+                map.putAsync(null, "value", 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(null, \"value\", 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.putAsync("key", null, 1, TimeUnit.SECONDS);
+                map.putAsync("key", null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null, 1, TimeUnit.SECONDS)");
@@ -1298,35 +1305,35 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.tryRemove(null, 1, TimeUnit.SECONDS);
+                map.tryRemove(null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "tryRemove(null, 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.tryPut(null, "value", 1, TimeUnit.SECONDS);
+                map.tryPut(null, "value", 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(null, \"value\", 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.tryPut("key", null, 1, TimeUnit.SECONDS);
+                map.tryPut("key", null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(\"key\", null, 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.putTransient(null, "value", 1, TimeUnit.SECONDS);
+                map.putTransient(null, "value", 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(null, \"value\", 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.putTransient("key", null, 1, TimeUnit.SECONDS);
+                map.putTransient("key", null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(\"key\", null, 1, TimeUnit.SECONDS)");
@@ -1347,14 +1354,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.putIfAbsent(null, "value", 1, TimeUnit.SECONDS);
+                map.putIfAbsent(null, "value", 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(null, \"value\", 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.putIfAbsent("key", null, 1, TimeUnit.SECONDS);
+                map.putIfAbsent("key", null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(\"key\", null, 1, TimeUnit.SECONDS)");
@@ -1410,14 +1417,14 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.set(null, "value", 1, TimeUnit.SECONDS);
+                map.set(null, "value", 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "set(null, \"value\", 1, TimeUnit.SECONDS)");
 
         runnable = new Runnable() {
             public void run() {
-                map.set("key", null, 1, TimeUnit.SECONDS);
+                map.set("key", null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "set(\"key\", null, 1, TimeUnit.SECONDS)");
@@ -1431,7 +1438,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         runnable = new Runnable() {
             public void run() {
-                map.lock(null, 1, TimeUnit.SECONDS);
+                map.lock(null, 1, SECONDS);
             }
         };
         assertRunnableThrowsNullPointerException(runnable, "lock(null, 1, TimeUnit.SECONDS)");
@@ -1453,7 +1460,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         runnable = new Runnable() {
             public void run() {
                 try {
-                    map.tryLock(null, 1, TimeUnit.SECONDS);
+                    map.tryLock(null, 1, SECONDS);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
