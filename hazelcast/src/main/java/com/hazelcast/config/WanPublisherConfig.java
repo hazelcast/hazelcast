@@ -70,6 +70,11 @@ public class WanPublisherConfig implements DataSerializable {
         return properties;
     }
 
+    public WanPublisherConfig setProperties(Map<String, Comparable> properties) {
+        this.properties = properties;
+        return this;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -85,11 +90,6 @@ public class WanPublisherConfig implements DataSerializable {
 
     public WanPublisherConfig setImplementation(Object implementation) {
         this.implementation = implementation;
-        return this;
-    }
-
-    public WanPublisherConfig setProperties(Map<String, Comparable> properties) {
-        this.properties = properties;
         return this;
     }
 
