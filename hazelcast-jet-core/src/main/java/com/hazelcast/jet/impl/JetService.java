@@ -49,12 +49,11 @@ import static com.hazelcast.jet.impl.Util.uncheckRun;
 import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.stream.IntStream.range;
 
 public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker, CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    private static final int FLOW_CONTROL_PERIOD_MS = 100;
+    static final int FLOW_CONTROL_PERIOD_MS = 100;
     private static final byte[] EMPTY_BYTES = new byte[0];
     final ILogger logger;
 
@@ -117,11 +116,11 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public void handle(Packet packet) throws Exception {
-        if (packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
-            handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
-        } else {
+        if (!packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
             handleStreamPacket(packet);
+            return;
         }
+        handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
     }
 
     public EngineContext getEngineContext(String name) {
@@ -151,19 +150,15 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         }
     }
 
-    private void handleStreamPacket(Packet packet) {
-        try {
-            BufferObjectDataInput in = createObjectDataInput(nodeEngine, packet.toByteArray());
-            String engineName = in.readUTF();
-            long executionId = in.readLong();
-            int vertexId = in.readInt();
-            int ordinal = in.readInt();
-            engineContexts.get(engineName)
-                          .getExecutionContext(executionId)
-                          .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
+    private void handleStreamPacket(Packet packet) throws IOException {
+        BufferObjectDataInput in = createObjectDataInput(nodeEngine, packet.toByteArray());
+        String engineName = in.readUTF();
+        long executionId = in.readLong();
+        int vertexId = in.readInt();
+        int ordinal = in.readInt();
+        engineContexts.get(engineName)
+                      .getExecutionContext(executionId)
+                      .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
     }
 
     static byte[] createStreamPacketHeader(
@@ -182,7 +177,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     private void broadcastFlowControlPacket() {
         try {
-            getRemoteMembers(nodeEngine).forEach(member -> {
+            getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
                 final byte[] packetBuf = createFlowControlPacket(member);
                 if (packetBuf.length == 0) {
                     return;
@@ -191,28 +186,32 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
                 conn.write(new Packet(packetBuf)
                         .setPacketType(Packet.Type.JET)
                         .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
-            });
+            }));
         } catch (Throwable t) {
             logger.severe("Flow-control packet broadcast failed", t);
         }
     }
 
-    private byte[] createFlowControlPacket(Address member) {
+    private byte[] createFlowControlPacket(Address member) throws IOException {
         final ObjectDataOutput out = createObjectDataOutput(nodeEngine);
         final boolean[] hasData = {false};
-        uncheckRun(() -> out.writeInt(engineContexts.size()));
+        out.writeInt(engineContexts.size());
         engineContexts.forEach((name, engCtx) -> uncheckRun(() -> {
             out.writeUTF(name);
             out.writeInt(engCtx.executionContexts.size());
             engCtx.executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-                final int memberId = exeCtx.getMemberId(member);
+                final Integer memberId = exeCtx.getMemberId(member);
+                if (memberId == null) {
+                    // The target member is not involved in the job associated with this execution context
+                    return;
+                }
                 out.writeLong(execId);
                 out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
                 exeCtx.receiverMap().forEach((vertexId, m) ->
                     m.forEach((ordinal, tasklet) -> uncheckRun(() -> {
                         out.writeInt(vertexId);
                         out.writeInt(ordinal);
-                        out.writeInt(tasklet.ackedSeq(memberId));
+                        out.writeInt(tasklet.updateAndGetSendSeqLimitCompressed(memberId));
                         hasData[0] = true;
                     }
                 )));
@@ -221,47 +220,45 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return hasData[0] ? out.toByteArray() : EMPTY_BYTES;
     }
 
-    private void handleFlowControlPacket(Address fromAddr, byte[] packet) {
+    private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
         final ObjectDataInput in = createObjectDataInput(nodeEngine, packet);
-        uncheckRun(() -> {
-            final int engineCtxCount = in.readInt();
-            range(0, engineCtxCount).forEach(x -> uncheckRun(() -> {
-                final String engCtxName = in.readUTF();
-                EngineContext engCtx = engineContexts.get(engCtxName);
-                if (engCtx == null) {
-                    logMissingEngCtx(engCtxName);
-                    return;
+        final int engineCtxCount = in.readInt();
+        for (int i = 0; i < engineCtxCount; i++) {
+            final String engCtxName = in.readUTF();
+            EngineContext engCtx = engineContexts.get(engCtxName);
+            if (engCtx == null) {
+                logMissingEngCtx(engCtxName);
+                continue;
+            }
+            final int executionCtxCount = in.readInt();
+            for (int j = 0; j < executionCtxCount; j++) {
+                final long exeCtxId = in.readLong();
+                final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
+                        Optional.ofNullable(engCtx.executionContexts)
+                                .map(exeCtxs -> exeCtxs.get(exeCtxId))
+                                .map(ExecutionContext::senderMap)
+                                .orElse(null);
+                if (senderMap == null) {
+                    logMissingExeCtx(exeCtxId);
+                    continue;
                 }
-                final int executionCtxCount = in.readInt();
-                range(0, executionCtxCount).forEach(x2 -> uncheckRun(() -> {
-                    final long exeCtxId = in.readLong();
-                    final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
-                            Optional.of(engCtx.executionContexts)
-                                    .map(exeCtxs -> exeCtxs.get(exeCtxId))
-                                    .map(ExecutionContext::senderMap)
-                                    .orElse(null);
-                    if (senderMap == null) {
-                        logMissingExeCtx(exeCtxId);
+                final int flowCtlMsgCount = in.readInt();
+                for (int k = 0; k < flowCtlMsgCount; k++) {
+                    int destVertexId = in.readInt();
+                    int destOrdinal = in.readInt();
+                    int sendSeqLimitCompressed = in.readInt();
+                    final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
+                                                    .map(ordinalMap -> ordinalMap.get(destOrdinal))
+                                                    .map(addrMap -> addrMap.get(fromAddr))
+                                                    .orElse(null);
+                    if (t == null) {
+                        logMissingSenderTasklet(destVertexId, destOrdinal);
                         return;
                     }
-                    final int flowCtlMsgCount = in.readInt();
-                    range(0, flowCtlMsgCount).forEach(x3 -> uncheckRun(() -> {
-                        int destVertexId = in.readInt();
-                        int destOrdinal = in.readInt();
-                        int ackedSeq = in.readInt();
-                        final SenderTasklet t = Optional.of(senderMap.get(destVertexId))
-                                                        .map(ordinalMap -> ordinalMap.get(destOrdinal))
-                                                        .map(addrMap -> addrMap.get(fromAddr))
-                                                        .orElse(null);
-                        if (t == null) {
-                            logMissingSenderTasklet(destVertexId, destOrdinal);
-                            return;
-                        }
-                        t.setAckedSeqCompressed(ackedSeq);
-                    }));
-                }));
-            }));
-        });
+                    t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
+                }
+            }
+        }
     }
 
     private void logMissingEngCtx(String engCtxName) {

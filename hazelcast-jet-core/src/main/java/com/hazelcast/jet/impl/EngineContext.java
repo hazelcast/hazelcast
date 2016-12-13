@@ -143,12 +143,20 @@ public class EngineContext {
     }
 
     void initExecution(long executionId, ExecutionPlan plan) {
-        executionContexts.compute(executionId, (k, v) -> {
-            if (v != null) {
-                throw new IllegalStateException("Execution for " + executionId + ' ');
+        final ExecutionContext[] created = {null};
+        try {
+            executionContexts.compute(executionId, (k, v) -> {
+                if (v != null) {
+                    throw new IllegalStateException("Execution context " + executionId + " already exists");
+                }
+                return (created[0] = new ExecutionContext(executionId, this)).initialize(plan);
+            });
+        } catch (Throwable t) {
+            if (created[0] != null) {
+                executionContexts.put(executionId, created[0]);
             }
-            return new ExecutionContext(executionId, EngineContext.this);
-        }).initialize(plan);
+            throw t;
+        }
     }
 
     void completeExecution(long executionId, Throwable error) {

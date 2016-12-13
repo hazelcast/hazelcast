@@ -22,11 +22,15 @@ import com.hazelcast.util.concurrent.IdleStrategy;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.JetService.FLOW_CONTROL_PERIOD_MS;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.Math.ceil;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Receives from all remote members the data associated with a single edge.
@@ -39,37 +43,50 @@ class ReceiverTasklet implements Tasklet {
      * increments in terms of the estimated heap occupancy of each received item, in bytes.
      * However, to save on network traffic, the number reported to the sender is
      * coarser-grained: it counts in units of {@code 1 << COMPRESSED_SEQ_SHIFT}. For example,
-     * with the value 20 the unit is one megabyte.
+     * with the value 20 the unit is one megabyte. The coarse-grained seq is called "compressed seq".
      */
     static final int COMPRESSED_SEQ_UNIT_LOG2 = 20;
-
     /**
-     * The Receive Window, in analogy to TCP's RWIN, is the number of seq units the
-     * sender can be ahead of the acknowledged seq. The correspondence between a seq unit and
-     * bytes is defined by the constant {@link #COMPRESSED_SEQ_UNIT_LOG2}.
+     * The Receive Window, in analogy to TCP's RWIN, is the number of compressed seq units the
+     * sender can be ahead of the acknowledged seq. The correspondence between a compresesd seq unit
+     * and bytes is defined by the constant {@link ReceiverTasklet#COMPRESSED_SEQ_UNIT_LOG2}.
+     * <p>
+     * The receiver tasklet keeps an array of receive window sizes, one for each sender.
+     * <p>
+     * This constant specifies the initial size of the receive window. The window is constantly
+     * adapted according to the actual data flow through the receiver tasklet.
      */
-    static final int RECEIVE_WINDOW_COMPRESSED = 100;
+    private static final int INITIAL_RECEIVE_WINDOW_COMPRESSED = 100;
 
     private final Queue<PacketWithSender> incoming = new MPSCQueue<>((IdleStrategy) null);
     private final ProgressTracker tracker = new ProgressTracker();
     private final ArrayDeque<ObjPtionAndSenderId> inbox = new ArrayDeque<>();
     private final OutboundCollector collector;
-    private final AtomicLongArray itemSeqsPerSender;
 
     private int remainingSenders;
+
+
+    //                    FLOW-CONTROL STATE
+    //            All arrays are indexed by sender ID.
+
+    // read by a HZ networking thread, written by a task scheduler
+    private final AtomicLongArray ackedSeq;
+
+    // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially
+    private final int[] receiveWindowCompressed;
+    private final int[] prevAckedSeqCompressed;
+    private final long[] prevTimestamp;
+
+    //                 END FLOW-CONTROL STATE
 
     ReceiverTasklet(OutboundCollector collector, int senderCount) {
         this.collector = collector;
         this.remainingSenders = senderCount;
-        this.itemSeqsPerSender = new AtomicLongArray(senderCount);
-    }
-
-    void addPacket(BufferObjectDataInput packetInput, int senderId) {
-        incoming.add(new PacketWithSender(senderId, packetInput));
-    }
-
-    int ackedSeq(int senderId) {
-        return compressSeq(itemSeqsPerSender.get(senderId));
+        this.ackedSeq = new AtomicLongArray(senderCount);
+        this.receiveWindowCompressed = new int[senderCount];
+        Arrays.fill(receiveWindowCompressed, INITIAL_RECEIVE_WINDOW_COMPRESSED);
+        this.prevAckedSeqCompressed = new int[senderCount];
+        this.prevTimestamp = new long[senderCount];
     }
 
     @Override
@@ -89,8 +106,8 @@ class ReceiverTasklet implements Tasklet {
             }
             tracker.madeProgress();
             inbox.remove();
-            final long seq = itemSeqsPerSender.get(o.senderId);
-            itemSeqsPerSender.lazySet(o.senderId, seq + o.estimatedMemoryFootprint);
+            final long seq = ackedSeq.get(o.senderId);
+            ackedSeq.lazySet(o.senderId, seq + o.estimatedMemoryFootprint);
         }
         if (remainingSenders == 0) {
             tracker.mergeWith(collector.close());
@@ -98,6 +115,66 @@ class ReceiverTasklet implements Tasklet {
             tracker.notDone();
         }
         return tracker.toProgressState();
+    }
+
+    void receiveStreamPacket(BufferObjectDataInput packetInput, int senderId) {
+        incoming.add(new PacketWithSender(senderId, packetInput));
+    }
+
+    /**
+     * Calls {@link #updateAndGetSendSeqLimitCompressed(long, int)} with {@code System.nanotime()}
+     * and the current acked seq for the given sender ID.
+     */
+    int updateAndGetSendSeqLimitCompressed(int senderId) {
+        return updateAndGetSendSeqLimitCompressed(System.nanoTime(), senderId);
+    }
+
+    /**
+     * Calculates the upper limit for the compressed form of {@link SenderTasklet#sentSeq}, which
+     * constrains how much more data the remote sender tasklet can send to this tasklet.
+     * Steps to calculate the limit:
+     * <ol><li>
+     *     Calculate the following:
+     *     <ol type="a"><li>
+     *         {@code timeDelta} = difference between the timestamps of this and previous method call
+     *     </li><li>
+     *         {@code seqDelta} = amount of data processed by the receiver between the calls, measured in
+     *         compressed seq units (see {@link #COMPRESSED_SEQ_UNIT_LOG2})
+     *     </li><li>
+     *         {@code seqsPerAckPeriod = (seqDelta / timeDelta) * }{@link JetService#FLOW_CONTROL_PERIOD_MS},
+     *         projected amount of data processed by the receiver in one standard flow control period
+     *     </li></ol>
+     * </li><li>
+     *     Define the <emph>target receive window</emph> as {@code 3 * seqsPerAckPeriod}.
+     * </li><li>
+     *     Adjust the current receive window halfway toward the target receive window.
+     * </li><li>
+     *     Return the {@code sentSeq} limit as the current acked seq plus the current receive window.
+     * </li></ol>
+     *
+     * @param timestampNow value of the timestamp at the time the method is called. The timestamp must be
+     *                     obtained from {@code System.nanoTime()}.
+     * @param senderId ID of the member whose {@code sentSeq} limit to update and return
+     */
+    // Invoked sequentially by a task scheduler
+    int updateAndGetSendSeqLimitCompressed(long timestampNow, int senderId) {
+        final boolean hadPrevStats = prevTimestamp[senderId] != 0 || prevAckedSeqCompressed[senderId] != 0;
+        final int ackedSeqCompressed = compressSeq(ackedSeq.get(senderId));
+
+        final long ackTimeDelta = timestampNow - prevTimestamp[senderId];
+        prevTimestamp[senderId] = timestampNow;
+
+        final int ackedSeqCompressedDelta = ackedSeqCompressed - prevAckedSeqCompressed[senderId];
+        prevAckedSeqCompressed[senderId] = ackedSeqCompressed;
+
+        if (hadPrevStats) {
+            final double ackedSeqsPerAckPeriod = (double)
+                    MILLISECONDS.toNanos(FLOW_CONTROL_PERIOD_MS) * ackedSeqCompressedDelta / ackTimeDelta;
+            final int targetRwin = 3 * (int) ceil(ackedSeqsPerAckPeriod);
+            final int rwinDiff = targetRwin - receiveWindowCompressed[senderId];
+            receiveWindowCompressed[senderId] += rwinDiff / 2;
+        }
+        return ackedSeqCompressed + receiveWindowCompressed[senderId];
     }
 
     static int compressSeq(long seq) {

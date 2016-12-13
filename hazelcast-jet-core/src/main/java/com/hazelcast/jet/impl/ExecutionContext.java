@@ -93,10 +93,14 @@ class ExecutionContext {
     void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
         receiverMap.get(vertexId)
                    .get(ordinal)
-                   .addPacket(in, memberToId.get(sender));
+                   .receiveStreamPacket(in, memberToId.get(sender));
     }
 
-    void initialize(ExecutionPlan plan) {
+    Integer getMemberId(Address member) {
+        return memberToId != null ? memberToId.get(member) : null;
+    }
+
+    ExecutionContext initialize(ExecutionPlan plan) {
         // make a copy of all suppliers - required for complete() call
         suppliers.addAll(plan.getVertices().stream().map(VertexDef::getProcessorSupplier).collect(toList()));
 
@@ -165,10 +169,7 @@ class ExecutionContext {
         receiverMap = unmodifiableMap(receiverMap);
         senderMap = unmodifiableMap(senderMap);
         tasklets.addAll(receiverMap.values().stream().flatMap(e -> e.values().stream()).collect(toList()));
-    }
-
-    int getMemberId(Address member) {
-        return memberToId.get(member);
+        return this;
     }
 
     private int totalPartitionCount() {

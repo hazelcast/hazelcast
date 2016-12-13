@@ -29,7 +29,6 @@ import java.util.Queue;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.JetService.createStreamPacketHeader;
-import static com.hazelcast.jet.impl.ReceiverTasklet.RECEIVE_WINDOW_COMPRESSED;
 import static com.hazelcast.jet.impl.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
@@ -38,7 +37,7 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class SenderTasklet implements Tasklet {
 
-    public static final int PACKET_SIZE_LIMIT = 1 << 14;
+    private static final int PACKET_SIZE_LIMIT = 1 << 14;
 
     private final Connection connection;
     private final byte[] headerBytes;
@@ -46,21 +45,20 @@ class SenderTasklet implements Tasklet {
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
 
+    // read and written by Jet thread
     private long sentSeq;
-    private volatile int ackedSeqCompressed;
+
+    // Written by HZ networking thread, read by Jet thread
+    private volatile int sendSeqLimitCompressed;
 
     SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
-                         Address destinationAddress, long executionId, int destinationVertexId
+                  Address destinationAddress, long executionId, int destinationVertexId
     ) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.headerBytes = createStreamPacketHeader(
                 nodeEngine, jetEngineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
         this.outputBuffer = createObjectDataOutput(nodeEngine);
-    }
-
-    void setAckedSeqCompressed(int compressedSeq) {
-        this.ackedSeqCompressed = compressedSeq;
     }
 
     @Nonnull
@@ -91,7 +89,7 @@ class SenderTasklet implements Tasklet {
             int writtenCount = 0;
             for (Object item;
                  outputBuffer.position() < PACKET_SIZE_LIMIT
-                     && isWithinWindow(sentSeq, ackedSeqCompressed)
+                     && isWithinLimit(sentSeq, sendSeqLimitCompressed)
                      && (item = inbox.poll()) != null;
                  writtenCount++
             ) {
@@ -107,10 +105,25 @@ class SenderTasklet implements Tasklet {
         }
     }
 
-    // The types in this method are carefully chosen to properly handle wrap-around that is
-    // allowed to happen on ackedSeqCompressed.
-    static boolean isWithinWindow(long sentSeq, int ackedSeqCompressed) {
-        final int sentSeqCompressed = compressSeq(sentSeq);
-        return sentSeqCompressed - ackedSeqCompressed < RECEIVE_WINDOW_COMPRESSED;
+    /**
+     * Updates the upper limit on {@link #sentSeq}, which constrains how much more data this tasklet can send.
+     *
+     * @param sendSeqLimitCompressed the compressed seq read from a flow-control message. The method
+     *                               {@link #isWithinLimit(long, int)} derives the limit on the uncompressed
+     *                               {@code sentSeq} from the number supplied here.
+     */
+    // Called from HZ networking thread
+    void setSendSeqLimitCompressed(int sendSeqLimitCompressed) {
+        this.sendSeqLimitCompressed = sendSeqLimitCompressed;
+    }
+
+    /**
+     * Given an uncompressed {@code sentSeq} and a compressed {@code sendSeqLimit}, tells
+     * whether the {@code sentSeq} is within the limit specified by the compressed seq.
+     */
+    // The operations and types in this method must be carefully chosen to properly
+    // handle wrap-around that is allowed to happen on sendSeqLimitCompressed.
+    static boolean isWithinLimit(long sentSeq, int sendSeqLimitCompressed) {
+        return compressSeq(sentSeq) - sendSeqLimitCompressed <= 0;
     }
 }
