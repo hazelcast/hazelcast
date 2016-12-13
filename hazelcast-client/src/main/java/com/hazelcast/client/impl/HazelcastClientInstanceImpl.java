@@ -144,8 +144,10 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -580,9 +582,20 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
                     ClientGetDistributedObjectsCodec.decodeResponse(response);
 
-            Collection<DistributedObjectInfo> infoCollection = resultParameters.response;
-            for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
+            Collection<? extends DistributedObject> distributedObjects = proxyManager.getDistributedObjects();
+            Set<DistributedObjectInfo> localDistributedObjects = new HashSet<DistributedObjectInfo>();
+            for (DistributedObject localInfo : distributedObjects) {
+                localDistributedObjects.add(new DistributedObjectInfo(localInfo.getServiceName(), localInfo.getName()));
+            }
+
+            Collection<DistributedObjectInfo> newDistributedObjectInfo = resultParameters.response;
+            for (DistributedObjectInfo distributedObjectInfo : newDistributedObjectInfo) {
+                localDistributedObjects.remove(distributedObjectInfo);
                 getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
+            }
+
+            for (DistributedObjectInfo distributedObjectInfo : localDistributedObjects) {
+                proxyManager.removeProxy(distributedObjectInfo.getServiceName(), distributedObjectInfo.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
