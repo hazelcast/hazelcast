@@ -58,7 +58,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -1292,7 +1291,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         @Override
         public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            if (key.equals(NULL_KEY)) {
+            if (key == null) {
                 clearEventCount.incrementAndGet();
             }
         }
@@ -1300,11 +1299,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         @Override
         public void handle(Collection<Data> keys, Collection<String> sourceUuids,
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
-            for (Data key : keys) {
-                if (NULL_KEY.equals(key)) {
-                    clearEventCount.incrementAndGet();
-                }
-            }
         }
 
 

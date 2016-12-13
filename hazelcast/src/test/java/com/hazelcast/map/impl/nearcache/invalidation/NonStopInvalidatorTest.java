@@ -1,9 +1,10 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -28,9 +30,8 @@ public class NonStopInvalidatorTest extends HazelcastTestSupport {
         key = mock(Data.class);
 
         HazelcastInstance hz = createHazelcastInstance();
-        MapService service = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
-        MapServiceContext mapServiceContext = service.getMapServiceContext();
-        invalidator = new NonStopInvalidator(mapServiceContext);
+        NodeEngineImpl nodeEngineImpl = getNodeEngineImpl(hz);
+        invalidator = new NonStopInvalidator(MapService.SERVICE_NAME, TRUE_FILTER, nodeEngineImpl);
     }
 
     @RequireAssertEnabled
