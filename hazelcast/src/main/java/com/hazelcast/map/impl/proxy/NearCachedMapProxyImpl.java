@@ -302,10 +302,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
-        Map<Data, Boolean> keyStates = null;
+        Map<Data, Boolean> keyStates = createHashMap(keys.size());
         try {
             getCachedValue(keys, resultingKeyValuePairs);
-            keyStates = createHashMap(keys.size());
             for (Data key : keys) {
                 keyStates.put(key, keyStateMarker.tryMark(key));
             }
