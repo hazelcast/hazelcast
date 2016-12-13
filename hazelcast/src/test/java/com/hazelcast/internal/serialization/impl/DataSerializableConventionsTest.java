@@ -32,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -54,23 +53,26 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class})
 public class DataSerializableConventionsTest {
 
-    // verify that any class which is DataSerializable and is not annotated with @BinaryInterface
-    // is also an IdentifiedDataSerializable
+    /**
+     * Verifies that any class which is {@link DataSerializable} and is not annotated with {@link BinaryInterface}
+     * is also an {@link IdentifiedDataSerializable}.
+     */
     @Test
     public void test_dataSerializableClasses_areIdentifiedDataSerializable() {
-        Set dataSerializableClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
-        Set allIdDataSerializableClasses = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
+        Set<Class<? extends DataSerializable>> dataSerializableClasses = REFLECTIONS.getSubTypesOf(DataSerializable.class);
+        Set<Class<? extends IdentifiedDataSerializable>> allIdDataSerializableClasses
+                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
 
         dataSerializableClasses.removeAll(allIdDataSerializableClasses);
         // also remove IdentifiedDataSerializable itself
         dataSerializableClasses.remove(IdentifiedDataSerializable.class);
 
         // locate all classes annotated with BinaryInterface (and their subclasses) and remove those as well
-        Set allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, false);
+        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, false);
         dataSerializableClasses.removeAll(allAnnotatedClasses);
 
         // filter out public classes from public packages (i.e. not "impl" nor "internal" and not annotated with @PrivateApi)
-        Set publicClasses = new HashSet();
+        Set<Class> publicClasses = new HashSet<Class>();
         for (Object o : dataSerializableClasses) {
             Class klass = (Class) o;
             // if in public packages and not @PrivateApi ==> exclude from checks
@@ -96,19 +98,19 @@ public class DataSerializableConventionsTest {
         }
     }
 
-    // fails when IdentifiedDataSerializable classes:
-    // - do not have a default no-args constructor
-    // - factoryId/id pairs are not unique per class
+    /**
+     * Fails when {@link IdentifiedDataSerializable} classes:
+     * - do not have a default no-args constructor
+     * - factoryId/id pairs are not unique per class
+     */
     @Test
-    public void test_identifiedDataSerializables_haveUniqueFactoryAndTypeId()
-            throws IllegalAccessException, InvocationTargetException, ClassNotFoundException {
+    public void test_identifiedDataSerializables_haveUniqueFactoryAndTypeId() throws Exception {
         Set<String> classesWithInstantiationProblems = new TreeSet<String>();
         Set<String> classesThrowingUnsupportedOperationException = new TreeSet<String>();
 
         Multimap<Integer, Integer> factoryToTypeId = HashMultimap.create();
 
-        Set<Class> identifiedDataSerializables = getIDSConcreteClasses();
-
+        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             // exclude classes which are known to be meant for local use only
             if (!AbstractLocalOperation.class.isAssignableFrom(klass)) {
@@ -120,8 +122,8 @@ public class DataSerializableConventionsTest {
                     int factoryId = instance.getFactoryId();
                     int typeId = instance.getId();
                     if (factoryToTypeId.containsEntry(factoryId, typeId)) {
-                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass.toString() + " is already "
-                                + "registered in another type.");
+                        fail("Factory-Type ID pair {" + factoryId + ", " + typeId + "} from " + klass.toString() + " is already"
+                                + " registered in another type.");
                     } else {
                         factoryToTypeId.put(factoryId, typeId);
                     }
@@ -138,31 +140,31 @@ public class DataSerializableConventionsTest {
         }
 
         if (!classesThrowingUnsupportedOperationException.isEmpty()) {
-            System.out.println("INFO: " + classesThrowingUnsupportedOperationException.size() + " classes threw "
-                    + "UnsupportedOperationException in getFactoryId/getId invocation:");
+            System.out.println("INFO: " + classesThrowingUnsupportedOperationException.size() + " classes threw"
+                    + " UnsupportedOperationException in getFactoryId/getId invocation:");
             for (String className : classesThrowingUnsupportedOperationException) {
                 System.out.println(className);
             }
         }
 
         if (!classesWithInstantiationProblems.isEmpty()) {
-            System.out.println("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while "
-                    + "attempting to invoke a default no-args constructor. See console output for exception details. List of "
-                    + "problematic classes:");
+            System.out.println("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while"
+                    + " attempting to invoke a default no-args constructor. See console output for exception details."
+                    + " List of problematic classes:");
             for (String className : classesWithInstantiationProblems) {
                 System.out.println(className);
             }
-            fail("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while "
-                    + "attempting to invoke a default no-args constructor. See test output for exception details.");
+            fail("There are " + classesWithInstantiationProblems.size() + " classes which threw an exception while"
+                    + " attempting to invoke a default no-args constructor. See test output for exception details.");
         }
     }
 
-    // locates IdentifiedDataSerializable classes via reflection, iterates over them and asserts an instance created by
-    // a factory is of the same classes as an instance created via reflection
+    /**
+     * Locates {@link IdentifiedDataSerializable} classes via reflection, iterates over them and asserts an instance created by
+     * a factory is of the same classes as an instance created via reflection.
+     */
     @Test
-    public void test_identifiedDataSerializables_areInstancesOfSameClass_whenConstructedFromFactory()
-            throws IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchMethodException,
-            ClassNotFoundException {
+    public void test_identifiedDataSerializables_areInstancesOfSameClass_whenConstructedFromFactory() throws Exception {
         Set<Class<? extends DataSerializerHook>> dsHooks = REFLECTIONS.getSubTypesOf(DataSerializerHook.class);
         Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
@@ -172,7 +174,7 @@ public class DataSerializableConventionsTest {
             factories.put(dsHook.getFactoryId(), factory);
         }
 
-        Set<Class> identifiedDataSerializables = getIDSConcreteClasses();
+        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables = getIDSConcreteClasses();
         for (Class<? extends IdentifiedDataSerializable> klass : identifiedDataSerializables) {
             if (AbstractLocalOperation.class.isAssignableFrom(klass)) {
                 continue;
@@ -192,21 +194,26 @@ public class DataSerializableConventionsTest {
 
                 IdentifiedDataSerializable instanceFromFactory = factories.get(factoryId).create(typeId);
                 assertNotNull("Factory with ID " + factoryId + " returned null for type with ID " + typeId, instanceFromFactory);
-                assertTrue("Factory with ID " + factoryId + " instantiated an object of class " + instanceFromFactory.getClass() +
-                        " while expected type was " + instance.getClass(),
+                assertTrue("Factory with ID " + factoryId + " instantiated an object of " + instanceFromFactory.getClass() +
+                                " while expected type was " + instance.getClass(),
                         instanceFromFactory.getClass().equals(instance.getClass()));
-            } catch (UnsupportedOperationException e) {
+            } catch (UnsupportedOperationException ignored) {
                 // expected from local operation classes not meant for serialization
             }
         }
     }
 
-    // Returns all concrete classes which implement {@code IdentifiedDataSerializable} located by
-    // {@link com.hazelcast.test.ReflectionsHelper#REFLECTIONS}
-    private Set<Class> getIDSConcreteClasses() throws ClassNotFoundException {
-        Set identifiedDataSerializables = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
-        for (Iterator<Class> iterator = identifiedDataSerializables.iterator();
-             iterator.hasNext();) {
+    /**
+     * Returns all concrete classes which implement {@link IdentifiedDataSerializable} located by
+     * {@link com.hazelcast.test.ReflectionsHelper#REFLECTIONS}.
+     *
+     * @return a set of all {@link IdentifiedDataSerializable} classes
+     */
+    private Set<Class<? extends IdentifiedDataSerializable>> getIDSConcreteClasses() {
+        Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables
+                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
+        Iterator<Class<? extends IdentifiedDataSerializable>> iterator = identifiedDataSerializables.iterator();
+        while (iterator.hasNext()) {
             Class<? extends IdentifiedDataSerializable> klass = iterator.next();
             if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
                 iterator.remove();
