@@ -99,7 +99,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             return cached;
         }
 
-        final boolean marked = keyStateMarker.tryMark(keyData);
+        final boolean marked = keyStateMarker.markIfUnmarked(keyData);
         final Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         ClientInvocationFuture future;
@@ -109,8 +109,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             future = clientInvocation.invoke();
         } catch (Exception e) {
+            resetToUnmarkedState(keyData);
             throw rethrow(e);
         }
+
         SerializationService serializationService = clientContext.getSerializationService();
         ClientDelegatingFuture<V> delegatingFuture =
                 new ClientDelegatingFuture<V>(future, serializationService, cacheGetResponseDecoder);
@@ -125,6 +127,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                     }
 
                     public void onFailure(Throwable t) {
+                        resetToUnmarkedState(keyData);
                     }
                 });
             }
@@ -140,6 +143,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 }
                 return value;
             } catch (Throwable e) {
+                resetToUnmarkedState(keyData);
                 throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
             }
         }
@@ -262,27 +266,44 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             return result;
         }
 
+        List<Map.Entry<Data, Data>> entries;
         Map<Data, Boolean> markers = createHashMap(keySet.size());
-        for (Data key : keySet) {
-            markers.put(key, keyStateMarker.tryMark(key));
+        try {
+
+            for (Data key : keySet) {
+                markers.put(key, keyStateMarker.markIfUnmarked(key));
+            }
+
+            Data expiryPolicyData = toData(expiryPolicy);
+            ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
+            ClientMessage responseMessage = invoke(request);
+            entries = CacheGetAllCodec.decodeResponse(responseMessage).response;
+            for (Map.Entry<Data, Data> dataEntry : entries) {
+                Data keyData = dataEntry.getKey();
+                Data valueData = dataEntry.getValue();
+                K key = toObject(keyData);
+                V value = toObject(valueData);
+                result.put(key, value);
+                storeInNearCache(keyData, valueData, value, markers.remove(keyData));
+            }
+        } finally {
+            unmarkRemainingMarkedKeys(markers);
         }
-        Data expiryPolicyData = toData(expiryPolicy);
-        ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
-        ClientMessage responseMessage = invoke(request);
-        List<Map.Entry<Data, Data>> entries = CacheGetAllCodec.decodeResponse(responseMessage).response;
-        for (Map.Entry<Data, Data> dataEntry : entries) {
-            Data keyData = dataEntry.getKey();
-            Data valueData = dataEntry.getValue();
-            K key = toObject(keyData);
-            V value = toObject(valueData);
-            result.put(key, value);
-            storeInNearCache(keyData, valueData, value, markers.get(keyData));
-        }
+
         if (statisticsEnabled) {
             statistics.increaseCacheHits(entries.size());
             statistics.addGetTimeNanos(System.nanoTime() - start);
         }
         return result;
+    }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
+        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.unmarkForcibly(entry.getKey());
+            }
+        }
     }
 
     private Map<K, V> getAllFromNearCache(Set<Data> keySet) {
@@ -320,9 +341,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
 
         ClientPartitionService partitionService = clientContext.getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
-
+        Map<Data, Boolean> markers = createHashMap(map.size());
         try {
-            Map<Data, Boolean> markers = createHashMap(map.size());
             // First we fill entry set per partition
             List<Map.Entry<Data, Data>>[] entriesPerPartition =
                     groupDataToPartitions(map, partitionService, partitionCount);
@@ -331,6 +351,8 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start, markers);
         } catch (Exception e) {
             throw rethrow(e);
+        } finally {
+            unmarkRemainingMarkedKeys(markers);
         }
     }
 
@@ -385,13 +407,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             if (entries != null) {
                 for (Map.Entry<Data, Data> entry : entries) {
                     Data key = entry.getKey();
-                    markers.put(key, keyStateMarker.tryMark(key));
+                    markers.put(key, !cacheOnUpdate || keyStateMarker.markIfUnmarked(key));
                 }
 
                 int completionId = nextCompletionId();
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
-                ClientMessage request =
-                        CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
+                ClientMessage request = CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
                 Future f = invoke(request, partitionId, completionId);
                 futureEntriesTuples.add(new FutureEntriesTuple(f, entries));
             }

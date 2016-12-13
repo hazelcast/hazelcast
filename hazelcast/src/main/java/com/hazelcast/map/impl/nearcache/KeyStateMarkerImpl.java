@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.map.impl.nearcache.KeyStateMarker.STATE.MARKED;
 import static com.hazelcast.map.impl.nearcache.KeyStateMarker.STATE.REMOVED;
@@ -27,39 +27,39 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 
 public class KeyStateMarkerImpl implements KeyStateMarker {
 
-    private final int markCount;
+    private final AtomicIntegerArray marks;
 
-    private volatile AtomicLongArray marks;
-
-    public KeyStateMarkerImpl(int markCount) {
-        this.markCount = markCount;
-        this.marks = new AtomicLongArray(markCount);
+    public KeyStateMarkerImpl(int markerCount) {
+        this.marks = new AtomicIntegerArray(markerCount);
     }
 
     @Override
-    public boolean tryMark(Object key) {
+    public boolean markIfUnmarked(Object key) {
         return casState(key, UNMARKED, MARKED);
     }
 
     @Override
-    public boolean tryUnmark(Object key) {
+    public boolean unmarkIfMarked(Object key) {
         return casState(key, MARKED, UNMARKED);
     }
 
     @Override
-    public boolean tryRemove(Object key) {
+    public boolean removeIfMarked(Object key) {
         return casState(key, MARKED, REMOVED);
     }
 
     @Override
-    public void forceUnmark(Object key) {
+    public void unmarkForcibly(Object key) {
         int slot = getSlot(key);
         marks.set(slot, UNMARKED.getState());
     }
 
     @Override
-    public void init() {
-        marks = new AtomicLongArray(markCount);
+    public void unmarkAllForcibly() {
+        int slot = 0;
+        do {
+            marks.set(slot, UNMARKED.getState());
+        } while (++slot < marks.length());
     }
 
     private boolean casState(Object key, STATE expect, STATE update) {
@@ -69,6 +69,19 @@ public class KeyStateMarkerImpl implements KeyStateMarker {
 
     private int getSlot(Object key) {
         int hash = key instanceof Data ? ((Data) key).getPartitionHash() : key.hashCode();
-        return hashToIndex(hash, markCount);
+        return hashToIndex(hash, marks.length());
+    }
+
+    // only used for testing purposes
+    public AtomicIntegerArray getMarks() {
+        return marks;
+    }
+
+    @Override
+    public String toString() {
+        return "KeyStateMarkerImpl{"
+                + "markerCount=" + marks.length()
+                + ", marks=" + marks
+                + '}';
     }
 }
