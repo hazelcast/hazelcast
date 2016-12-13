@@ -32,7 +32,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
-import java.util.concurrent.TimeUnit;
 
 public class ScheduledExecutorTaskGetStatisticsMessageTask
         extends AbstractInvocationMessageTask<ScheduledExecutorGetStatsCodec.RequestParameters> {
@@ -70,10 +69,11 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
-        return ScheduledExecutorGetStatsCodec.encodeResponse(stats.getCreatedAtNanos(), stats.getFirstRunStartNanos(),
-                stats.getLastIdleTime(TimeUnit.NANOSECONDS), stats.getLastRunEndNanos(),
-                stats.getLastRunStartNanos(), stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
-                stats.getTotalRunTime(TimeUnit.NANOSECONDS));
+//        return ScheduledExecutorGetStatsCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),
+//                stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
+//                stats.getTotalRunTime(TimeUnit.NANOSECONDS));
+        // TODO will un-comment once client-protocol is ready.
+        return null;
     }
 
     @Override

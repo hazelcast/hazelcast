@@ -160,16 +160,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
-        double durationFromCreationToScheduleIn = TimeUnit.SECONDS.convert(
-                stats.getLastRunStartNanos() - stats.getCreatedAtNanos(), TimeUnit.NANOSECONDS);
 
         assertEquals(1, stats.getTotalRuns());
-        assertEquals(delay, durationFromCreationToScheduleIn, delayGracePeriod);
-        assertNotNull(stats.getCreatedAtNanos());
-        assertNotNull(stats.getFirstRunStartNanos());
         assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunStartNanos());
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));
@@ -189,16 +182,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
-        double durationFromCreationToScheduleIn = TimeUnit.SECONDS.convert(
-                stats.getLastRunStartNanos() - stats.getCreatedAtNanos(), TimeUnit.NANOSECONDS);
 
         assertEquals(1, stats.getTotalRuns());
-        assertEquals(delay, durationFromCreationToScheduleIn, delayGracePeriod);
-        assertNotNull(stats.getCreatedAtNanos());
-        assertNotNull(stats.getFirstRunStartNanos());
         assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunStartNanos());
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));

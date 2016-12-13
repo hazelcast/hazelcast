@@ -48,9 +48,9 @@ public class ScheduledTaskStatisticsImpl
     public ScheduledTaskStatisticsImpl() {
     }
 
-    public ScheduledTaskStatisticsImpl(ScheduledTaskStatistics copy) {
-        this(copy.getCreatedAtNanos(), copy.getTotalRuns(), copy.getFirstRunStartNanos(), copy.getLastRunStartNanos(),
-                copy.getLastRunEndNanos(), copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+    public ScheduledTaskStatisticsImpl(ScheduledTaskStatisticsImpl copy) {
+        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart,
+                copy.lastRunEnd, copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
                 copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
@@ -70,26 +70,6 @@ public class ScheduledTaskStatisticsImpl
     @Override
     public long getTotalRuns() {
         return runs;
-    }
-
-    @Override
-    public long getCreatedAtNanos() {
-        return createdAt;
-    }
-
-    @Override
-    public long getFirstRunStartNanos() {
-        return firstRunStart;
-    }
-
-    @Override
-    public long getLastRunStartNanos() {
-        return lastRunStart;
-    }
-
-    @Override
-    public long getLastRunEndNanos() {
-        return lastRunEnd;
     }
 
     @Override
@@ -128,10 +108,6 @@ public class ScheduledTaskStatisticsImpl
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeLong(runs);
-        out.writeLong(createdAt);
-        out.writeLong(firstRunStart);
-        out.writeLong(lastRunStart);
-        out.writeLong(lastRunEnd);
         out.writeLong(lastIdleTime);
         out.writeLong(totalIdleTime);
         out.writeLong(totalRunTime);
@@ -141,10 +117,6 @@ public class ScheduledTaskStatisticsImpl
     public void readData(ObjectDataInput in)
             throws IOException {
         runs = in.readLong();
-        createdAt = in.readLong();
-        firstRunStart = in.readLong();
-        lastRunStart = in.readLong();
-        lastRunEnd = in.readLong();
         lastIdleTime = in.readLong();
         totalIdleTime = in.readLong();
         totalRunTime = in.readLong();
