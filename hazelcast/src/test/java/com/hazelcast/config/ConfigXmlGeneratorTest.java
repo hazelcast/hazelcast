@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -79,6 +81,32 @@ public class ConfigXmlGeneratorTest {
 
         CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
         assertEquals("testMergePolicy", xmlCacheConfig.getMergePolicy());
+    }
+
+
+    @Test
+    public void testNativeMemory() {
+        NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig();
+        nativeMemoryConfig.setEnabled(true);
+        nativeMemoryConfig.setAllocatorType(NativeMemoryConfig.MemoryAllocatorType.STANDARD);
+        nativeMemoryConfig.setMetadataSpacePercentage((float) 12.5);
+        nativeMemoryConfig.setMinBlockSize(50);
+        nativeMemoryConfig.setPageSize(100);
+        nativeMemoryConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+
+        Config config = new Config()
+                .setNativeMemoryConfig(nativeMemoryConfig);
+
+        Config xmlConfig = getNewConfigViaXMLGenerator(config);
+
+        NativeMemoryConfig xmlNativeMemoryConfig = xmlConfig.getNativeMemoryConfig();
+        assertEquals(true, xmlNativeMemoryConfig.isEnabled());
+        assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());
+        assertEquals(12.5, nativeMemoryConfig.getMetadataSpacePercentage(),0.0001);
+        assertEquals(50, nativeMemoryConfig.getMinBlockSize());
+        assertEquals(100, nativeMemoryConfig.getPageSize());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), nativeMemoryConfig.getSize().getUnit());
+        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), nativeMemoryConfig.getSize().getValue());
     }
 
     @Test
