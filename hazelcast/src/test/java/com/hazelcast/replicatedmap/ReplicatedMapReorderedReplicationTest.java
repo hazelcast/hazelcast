@@ -20,6 +20,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,6 +37,20 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport {
+
+    // if data serializable factory of ReplicatedMapDataSerializerHook is replaced by updateFactory()
+    // during a test, this field stores its original value to be restored on test tear down
+    private DataSerializableFactory replicatedMapDataSerializableFactory;
+    private Field field;
+
+    @After
+    public void tearDown() throws IllegalAccessException {
+        // if updateFactory() has been executed, field & replicatedMapDataSerializableFactory are populated
+        if (replicatedMapDataSerializableFactory != null && field != null) {
+            // restore original value of ReplicatedMapDataSerializerHook.FACTORY
+            field.set(null, replicatedMapDataSerializableFactory);
+        }
+    }
 
     @Test
     public void testNonConvergingReplicatedMaps()
@@ -122,7 +137,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
     }
 
     private void updateFactory() throws NoSuchFieldException, IllegalAccessException {
-        Field field = ReplicatedMapDataSerializerHook.class.getDeclaredField("FACTORY");
+        field = ReplicatedMapDataSerializerHook.class.getDeclaredField("FACTORY");
 
         // remove final modifier from field
         Field modifiersField = Field.class.getDeclaredField("modifiers");
@@ -131,6 +146,7 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         field.setAccessible(true);
         final DataSerializableFactory factory = (DataSerializableFactory) field.get(null);
+        replicatedMapDataSerializableFactory = factory;
         field.set(null, new TestReplicatedMapDataSerializerFactory(factory));
 
     }
