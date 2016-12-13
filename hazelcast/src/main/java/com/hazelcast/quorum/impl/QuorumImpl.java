@@ -17,6 +17,8 @@
 package com.hazelcast.quorum.impl;
 
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
@@ -59,7 +61,7 @@ public class QuorumImpl implements Quorum {
         this.config = config;
         this.quorumName = config.getName();
         this.size = config.getSize();
-        initializeQuorumFunction();
+        initializeQuorumFunction(nodeEngine.getHazelcastInstance());
     }
 
     /**
@@ -189,7 +191,7 @@ public class QuorumImpl implements Quorum {
         eventService.publishEvent(QuorumServiceImpl.SERVICE_NAME, quorumName, quorumEvent, quorumEvent.hashCode());
     }
 
-    private void initializeQuorumFunction() {
+    private void initializeQuorumFunction(HazelcastInstance hazelcastInstance) {
         if (config.getQuorumFunctionImplementation() != null) {
             quorumFunction = config.getQuorumFunctionImplementation();
         } else if (config.getQuorumFunctionClassName() != null) {
@@ -202,6 +204,9 @@ public class QuorumImpl implements Quorum {
         }
         if (quorumFunction == null) {
             quorumFunction = new MemberCountQuorumFunction();
+        }
+        if (quorumFunction instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) quorumFunction).setHazelcastInstance(hazelcastInstance);
         }
     }
 
