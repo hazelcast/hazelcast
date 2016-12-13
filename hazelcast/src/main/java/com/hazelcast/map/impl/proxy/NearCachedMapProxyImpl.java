@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper.asInvalidationAware;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
 /**
@@ -101,10 +102,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             return value;
         }
 
-        boolean marked = keyStateMarker.tryMark(key);
-        value = super.getInternal(key);
-        if (marked) {
-            tryToPutNearCache(key, value);
+        boolean marked = keyStateMarker.markIfUnmarked(key);
+        try {
+            value = super.getInternal(key);
+            if (marked) {
+                tryToPutNearCache(key, value);
+            }
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw rethrow(t);
         }
 
         return value;
@@ -123,8 +129,15 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                     getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
 
-        final boolean marked = keyStateMarker.tryMark(key);
-        InternalCompletableFuture<Data> future = super.getAsyncInternal(key);
+        final boolean marked = keyStateMarker.markIfUnmarked(key);
+        InternalCompletableFuture<Data> future;
+        try {
+            future = super.getAsyncInternal(key);
+        } catch (Throwable t) {
+            resetToUnmarkedState(key);
+            throw rethrow(t);
+        }
+
         future.andThen(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data value) {
@@ -135,8 +148,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
             @Override
             public void onFailure(Throwable t) {
+                resetToUnmarkedState(key);
             }
         });
+
         return future;
     }
 
@@ -292,22 +307,35 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         getCachedValue(keys, resultingKeyValuePairs);
 
         Map<Data, Boolean> keyStates = createHashMap(keys.size());
-        for (Data key : keys) {
-            keyStates.put(key, keyStateMarker.tryMark(key));
-        }
+        try {
 
-        int currentSize = resultingKeyValuePairs.size();
-        super.getAllObjectInternal(keys, resultingKeyValuePairs);
-
-        // only add elements which are not in near-putCache
-        for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
-            Data key = toData(resultingKeyValuePairs.get(i++));
-            Data value = toData(resultingKeyValuePairs.get(i++));
-            boolean marked = keyStates.get(key);
-            if (marked) {
-                tryToPutNearCache(key, value);
+            for (Data key : keys) {
+                keyStates.put(key, keyStateMarker.markIfUnmarked(key));
             }
 
+            int currentSize = resultingKeyValuePairs.size();
+
+            super.getAllObjectInternal(keys, resultingKeyValuePairs);
+            // only add elements which are not in near-putCache
+            for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
+                Data key = toData(resultingKeyValuePairs.get(i++));
+                Data value = toData(resultingKeyValuePairs.get(i++));
+                boolean marked = keyStates.remove(key);
+                if (marked) {
+                    tryToPutNearCache(key, value);
+                }
+            }
+        } finally {
+            unmarkRemainingMarkedKeys(keyStates);
+        }
+    }
+
+    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> keyStates) {
+        for (Entry<Data, Boolean> entry : keyStates.entrySet()) {
+            Boolean marked = entry.getValue();
+            if (marked) {
+                keyStateMarker.unmarkForcibly(entry.getKey());
+            }
         }
     }
 
@@ -418,20 +446,27 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return nearCache;
     }
 
-    private void tryToPutNearCache(Data key, Object value) {
+    private void tryToPutNearCache(Data key, Object response) {
         try {
             if (!isOwn(key) || cacheLocalEntries) {
-                nearCache.put(key, value);
+                nearCache.put(key, response);
             }
         } finally {
-            if (!keyStateMarker.tryUnmark(key)) {
-                invalidateCache(key);
-                keyStateMarker.forceUnmark(key);
-            }
+            resetToUnmarkedState(key);
         }
     }
 
-    private KeyStateMarker getKeyStateMarker() {
+    private void resetToUnmarkedState(Data key) {
+        if (keyStateMarker.unmarkIfMarked(key)) {
+            return;
+        }
+
+        invalidateCache(key);
+        keyStateMarker.unmarkForcibly(key);
+    }
+
+    // public for testing purposes
+    public KeyStateMarker getKeyStateMarker() {
         return ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
     }
 
