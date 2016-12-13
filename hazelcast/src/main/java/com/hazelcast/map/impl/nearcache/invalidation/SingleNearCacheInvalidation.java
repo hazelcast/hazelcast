@@ -23,27 +23,22 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static com.hazelcast.map.impl.MapDataSerializerHook.NEAR_CACHE_SINGLE_INVALIDATION;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Represents a single key invalidation.
  */
 public class SingleNearCacheInvalidation extends Invalidation {
 
-    private Data key = NULL_KEY;
+    private Data key;
 
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
-        super(mapName, sourceUuid, partitionUuid, sequence);
-    }
-
     public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
         super(mapName, sourceUuid, partitionUuid, sequence);
-        this.key = checkNotNull(key, "key cannot be null");
+        // key can be null when null it means this event is a clear event.
+        this.key = key;
     }
 
     @Override

@@ -37,7 +37,6 @@ import java.util.UUID;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
 import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 
 /**
  * Deprecated class is here to provide backward compatibility.
@@ -101,27 +100,19 @@ public class MapAddNearCacheEntryListenerMessageTask
         private void sendEvent(Invalidation invalidation) {
             if (invalidation instanceof BatchNearCacheInvalidation) {
                 List<Data> keys = getKeys((BatchNearCacheInvalidation) invalidation);
-                if (keys == null) {
-                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
-                            invalidation.getPartitionUuid(), NO_SEQUENCE));
-                } else {
-                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys, Collections.<String>emptyList(),
-                            Collections.<UUID>emptyList(), Collections.<Long>emptyList()));
-                }
+                sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys, Collections.<String>emptyList(),
+                        Collections.<UUID>emptyList(), Collections.<Long>emptyList()));
+
                 return;
             }
 
             if (!getEndpoint().getUuid().equals(invalidation.getSourceUuid())) {
                 if (invalidation instanceof SingleNearCacheInvalidation) {
-                    Data key = invalidation.getKey();
-                    if (NULL_KEY.equals(key)) {
-                        sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
-                                invalidation.getPartitionUuid(), NO_SEQUENCE));
-                    } else {
-                        sendClientMessage(key, encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
-                                invalidation.getPartitionUuid(), NO_SEQUENCE));
-                    }
+                    sendClientMessage(parameters.name,
+                            encodeIMapInvalidationEvent(invalidation.getKey(), invalidation.getSourceUuid(),
+                                    invalidation.getPartitionUuid(), NO_SEQUENCE));
                 }
+
                 return;
             }
         }
@@ -130,12 +121,7 @@ public class MapAddNearCacheEntryListenerMessageTask
             List<Invalidation> invalidations = invalidation.getInvalidations();
             List<Data> keys = new ArrayList<Data>(invalidations.size());
             for (Invalidation single : invalidations) {
-                Data key = single.getKey();
-                if (NULL_KEY.equals(key)) {
-                    return null;
-                } else {
-                    keys.add(key);
-                }
+                keys.add(single.getKey());
             }
             return keys;
         }

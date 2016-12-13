@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheService;
-import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
-import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -39,7 +39,6 @@ import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 
 public class CacheAddInvalidationListenerTask
         extends AbstractCallableMessageTask<CacheAddInvalidationListenerCodec.RequestParameters> {
@@ -73,34 +72,29 @@ public class CacheAddInvalidationListenerTask
 
         @Override
         public void handleEvent(Object eventObject) {
-            if (!endpoint.isAlive() || !(eventObject instanceof CacheInvalidationMessage)) {
+            if (!endpoint.isAlive() || !(eventObject instanceof Invalidation)) {
                 return;
             }
 
-            CacheInvalidationMessage invalidationMessage = (CacheInvalidationMessage) eventObject;
-            ClientMessage message = getClientMessage(invalidationMessage);
+            ClientMessage message = getClientMessage(eventObject);
             if (message != null) {
-                sendClientMessage(invalidationMessage.getName(), message);
+                sendClientMessage(((Invalidation) eventObject).getName(), message);
             }
         }
 
         private ClientMessage getClientMessage(Object eventObject) {
-
-            if (eventObject instanceof CacheSingleInvalidationMessage) {
-                CacheSingleInvalidationMessage message = (CacheSingleInvalidationMessage) eventObject;
-                Data messageKey = message.getKey();
-                Data key = messageKey == null ? NULL_KEY : message.getKey();
-
+            if (eventObject instanceof SingleNearCacheInvalidation) {
+                SingleNearCacheInvalidation message = (SingleNearCacheInvalidation) eventObject;
                 // Since we already filtered as source uuid, no need to send source uuid to client
                 // TODO Maybe don't send name also to client
-                return encodeCacheInvalidationEvent(message.getName(), key, message.getSourceUuid(),
+                return encodeCacheInvalidationEvent(message.getName(), message.getKey(), message.getSourceUuid(),
                         message.getPartitionUuid(), message.getSequence());
             }
 
 
-            if (eventObject instanceof CacheBatchInvalidationMessage) {
-                CacheBatchInvalidationMessage message = (CacheBatchInvalidationMessage) eventObject;
-                List<CacheSingleInvalidationMessage> invalidationMessages = message.getInvalidationMessages();
+            if (eventObject instanceof BatchNearCacheInvalidation) {
+                BatchNearCacheInvalidation message = (BatchNearCacheInvalidation) eventObject;
+                List<Invalidation> invalidationMessages = message.getInvalidations();
 
                 int size = invalidationMessages.size();
                 List<Data> filteredKeys = new ArrayList<Data>(size);
@@ -108,7 +102,7 @@ public class CacheAddInvalidationListenerTask
                 List<UUID> partitionUuids = new ArrayList<UUID>(invalidationMessages.size());
                 List<Long> sequences = new ArrayList<Long>(invalidationMessages.size());
 
-                for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
+                for (Invalidation invalidationMessage : invalidationMessages) {
                     filteredKeys.add(invalidationMessage.getKey());
                     sourceUuids.add(invalidationMessage.getSourceUuid());
                     partitionUuids.add(invalidationMessage.getPartitionUuid());

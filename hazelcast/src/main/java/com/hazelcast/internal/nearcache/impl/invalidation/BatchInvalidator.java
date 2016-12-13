@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache.invalidation;
+package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.ArrayList;
@@ -38,9 +40,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Math.min;
@@ -72,15 +71,16 @@ public class BatchInvalidator extends Invalidator {
             = new ConcurrentHashMap<String, InvalidationQueue>();
 
     private final int batchSize;
+    private final int batchFrequencySeconds;
     private final String nodeShutdownListenerId;
-    private final ExecutionService executionService;
 
-    public BatchInvalidator(MapServiceContext mapServiceContext) {
-        super(mapServiceContext);
+    public BatchInvalidator(String serviceName, int batchSize, int batchFrequencySeconds,
+                            IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+        super(serviceName, eventFilter, nodeEngine);
 
-        this.batchSize = getBatchSize();
+        this.batchSize = batchSize;
+        this.batchFrequencySeconds = batchFrequencySeconds;
         this.nodeShutdownListenerId = registerNodeShutdownListener();
-        this.executionService = nodeEngine.getExecutionService();
         startBackgroundBatchProcessor();
     }
 
@@ -91,11 +91,11 @@ public class BatchInvalidator extends Invalidator {
         invalidationQueue.offer(invalidation);
 
         if (invalidationQueue.size() >= batchSize) {
-            createAndSendInvalidations(mapName, invalidationQueue, true);
+            createAndSendInvalidations(mapName, invalidationQueue);
         }
     }
 
-    private void createAndSendInvalidations(String mapName, InvalidationQueue invalidationQueue, boolean offloadEventSending) {
+    private void createAndSendInvalidations(String mapName, InvalidationQueue invalidationQueue) {
         assert invalidationQueue != null;
 
         if (!invalidationQueue.tryAcquire()) {
@@ -106,7 +106,7 @@ public class BatchInvalidator extends Invalidator {
         try {
             List<Invalidation> invalidations = createInvalidations(invalidationQueue);
             if (!isEmpty(invalidations)) {
-                sendInvalidations(mapName, invalidations, offloadEventSending);
+                sendInvalidations(mapName, invalidations);
             }
         } finally {
             invalidationQueue.release();
@@ -133,53 +133,16 @@ public class BatchInvalidator extends Invalidator {
         return invalidations;
     }
 
-    private void sendInvalidations(String mapName, List<Invalidation> invalidations, boolean offloadEventSending) {
-        if (offloadEventSending) {
-            executionService.execute(mapName, new EventSender(mapName, invalidations));
-        } else {
-            sendInvalidations(mapName, invalidations);
-        }
-    }
-
-    private final class EventSender implements Runnable {
-
-        private final String mapName;
-        private final List<Invalidation> invalidations;
-
-        public EventSender(String mapName, List<Invalidation> invalidations) {
-            this.mapName = mapName;
-            this.invalidations = invalidations;
-        }
-
-        @Override
-        public void run() {
-            sendInvalidations(mapName, invalidations);
-        }
-    }
-
     private void sendInvalidations(String mapName, List<Invalidation> invalidations) {
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, mapName);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
         for (EventRegistration registration : registrations) {
-            List<Invalidation> selection = filterInvalidations(invalidations, registration.getFilter());
-            if (selection != null) {
-                Invalidation invalidation = new BatchNearCacheInvalidation(mapName, selection);
-                eventService.publishEvent(SERVICE_NAME, registration, invalidation, mapName.hashCode());
+            if (eventFilter.apply(registration)) {
+                Invalidation invalidation = new BatchNearCacheInvalidation(mapName, invalidations);
+                eventService.publishEvent(serviceName, registration, invalidation, mapName.hashCode());
             }
         }
     }
 
-    private List<Invalidation> filterInvalidations(List<Invalidation> invalidations, EventFilter filter) {
-        List<Invalidation> selection = null;
-        for (Invalidation invalidation : invalidations) {
-            if (canSendInvalidation(filter)) {
-                if (selection == null) {
-                    selection = new ArrayList<Invalidation>();
-                }
-                selection.add(invalidation);
-            }
-        }
-        return selection;
-    }
 
     /**
      * Sends remaining invalidation events in this invalidator's queues to the recipients.
@@ -193,33 +156,24 @@ public class BatchInvalidator extends Invalidator {
                 if (event.getState() == LifecycleEvent.LifecycleState.SHUTTING_DOWN) {
                     Set<Map.Entry<String, InvalidationQueue>> entries = invalidationQueues.entrySet();
                     for (Map.Entry<String, InvalidationQueue> entry : entries) {
-                        createAndSendInvalidations(entry.getKey(), entry.getValue(), false);
+                        createAndSendInvalidations(entry.getKey(), entry.getValue());
                     }
                 }
             }
         });
     }
 
-    private int getBatchSize() {
-        return nodeEngine.getProperties().getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
-    }
-
-    private int getBackgroundProcessorRunPeriodSeconds() {
-        return nodeEngine.getProperties().getInteger(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
-    }
-
     private void startBackgroundBatchProcessor() {
-        int periodSeconds = getBackgroundProcessorRunPeriodSeconds();
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.scheduleWithRepetition(INVALIDATION_EXECUTOR_NAME,
-                new MapBatchInvalidationEventSender(), periodSeconds, periodSeconds, TimeUnit.SECONDS);
+                new BatchInvalidationEventSender(), batchFrequencySeconds, batchFrequencySeconds, TimeUnit.SECONDS);
 
     }
 
     /**
      * A background runner which runs periodically and consumes invalidation queues.
      */
-    private class MapBatchInvalidationEventSender implements Runnable {
+    private class BatchInvalidationEventSender implements Runnable {
 
         @Override
         public void run() {
@@ -227,10 +181,10 @@ public class BatchInvalidator extends Invalidator {
                 if (currentThread().isInterrupted()) {
                     break;
                 }
-                String mapName = entry.getKey();
+                String name = entry.getKey();
                 InvalidationQueue invalidationQueue = entry.getValue();
                 if (invalidationQueue.size() > 0) {
-                    createAndSendInvalidations(mapName, invalidationQueue, false);
+                    createAndSendInvalidations(name, invalidationQueue);
                 }
             }
         }
@@ -261,7 +215,7 @@ public class BatchInvalidator extends Invalidator {
         invalidationQueues.clear();
     }
 
-    private static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
+    public static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
 

@@ -52,15 +52,17 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     public Invalidation(String mapName, String sourceUuid, UUID partitionUuid) {
         this.mapName = checkNotNull(mapName, "mapName cannot be null");
-        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
+        // sourceUuid & partitionUuid can be null.
+        this.sourceUuid = sourceUuid;
         this.partitionUuid = partitionUuid;
     }
 
     public Invalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
         this.mapName = checkNotNull(mapName, "mapName cannot be null");
+        // sourceUuid can be null.
+        this.sourceUuid = sourceUuid;
         this.partitionUuid = checkNotNull(partitionUuid, "partitionUuid cannot be null");
         this.sequence = checkPositive(sequence, "sequence should be positive");
-        this.sourceUuid = checkNotNull(sourceUuid, "sourceUuid cannot be null");
     }
 
     public final UUID getPartitionUuid() {

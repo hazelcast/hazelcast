@@ -89,6 +89,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         });
         threads.add(shadowMember);
 
+        // populates client near-cache
         for (int i = 0; i < POPULATOR_THREAD_COUNT; i++) {
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
@@ -102,8 +103,6 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
             threads.add(populateClientNearCache);
         }
-        // populates client near-cache
-
 
         // updates map data from member.
         Thread putFromMember = new Thread(new Runnable() {
@@ -117,8 +116,19 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
                 }
             }
         });
-
         threads.add(putFromMember);
+
+
+        Thread clearFromMember = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    memberMap.clear();
+                    sleepSeconds(5);
+                }
+            }
+        });
+        threads.add(clearFromMember);
+
 
         for (Thread thread : threads) {
             thread.start();

@@ -149,6 +149,16 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
         });
         threads.add(putFromMember);
 
+        Thread clearFromMember = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    memberCache.clear();
+                    sleepSeconds(5);
+                }
+            }
+        });
+        threads.add(clearFromMember);
+
 
         // start threads
         for (Thread thread : threads) {
