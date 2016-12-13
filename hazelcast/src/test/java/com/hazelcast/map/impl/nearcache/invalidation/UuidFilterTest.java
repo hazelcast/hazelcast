@@ -8,13 +8,25 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class UuidFilterTest {
 
-    private UuidFilter uuidFilter = new UuidFilter();
+    private UuidFilter uuidFilter = new UuidFilter("sourceUuid");
+
+    @Test
+    public void testEval() {
+        assertTrue(uuidFilter.eval("sourceUuid"));
+    }
+
+    @Test
+    public void testEval_withNonMatchingParameter() {
+        assertFalse(uuidFilter.eval("otherUuid"));
+    }
 
     @RequireAssertEnabled
     @Test(expected = AssertionError.class)
