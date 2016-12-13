@@ -51,15 +51,14 @@ public class WanReplicationConfig implements DataSerializable {
         return this;
     }
 
-    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
-        if (wanPublisherConfigs != null
-                && !wanPublisherConfigs.isEmpty()) {
-            this.wanPublisherConfigs = wanPublisherConfigs;
-        }
-    }
-
     public List<WanPublisherConfig> getWanPublisherConfigs() {
         return wanPublisherConfigs;
+    }
+
+    public void setWanPublisherConfigs(List<WanPublisherConfig> wanPublisherConfigs) {
+        if (wanPublisherConfigs != null && !wanPublisherConfigs.isEmpty()) {
+            this.wanPublisherConfigs = wanPublisherConfigs;
+        }
     }
 
     public WanReplicationConfig addWanPublisherConfig(WanPublisherConfig wanPublisherConfig) {

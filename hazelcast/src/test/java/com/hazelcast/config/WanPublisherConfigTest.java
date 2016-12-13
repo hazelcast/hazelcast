@@ -37,12 +37,16 @@ public class WanPublisherConfigTest {
         Data serialized = serializationService.toData(config);
         WanPublisherConfig deserialized = serializationService.toObject(serialized);
 
-        assertEquals(config.getGroupName(), deserialized.getGroupName());
-        assertEquals(config.getQueueCapacity(), deserialized.getQueueCapacity());
-        assertEquals(config.getQueueFullBehavior(), deserialized.getQueueFullBehavior());
-        assertEquals(config.getProperties(), deserialized.getProperties());
-        assertEquals(config.getClassName(), deserialized.getClassName());
-        assertEquals(config.getImplementation(), deserialized.getImplementation());
-        assertEquals(config.toString(), deserialized.toString());
+        assertWanPublisherConfig(config, deserialized);
+    }
+
+    static void assertWanPublisherConfig(WanPublisherConfig expected, WanPublisherConfig actual) {
+        assertEquals(expected.getGroupName(), actual.getGroupName());
+        assertEquals(expected.getQueueCapacity(), actual.getQueueCapacity());
+        assertEquals(expected.getQueueFullBehavior(), actual.getQueueFullBehavior());
+        assertEquals(expected.getProperties(), actual.getProperties());
+        assertEquals(expected.getClassName(), actual.getClassName());
+        assertEquals(expected.getImplementation(), actual.getImplementation());
+        assertEquals(expected.toString(), actual.toString());
     }
 }

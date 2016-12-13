@@ -34,9 +34,16 @@ public class WanConsumerConfigTest {
         Data serialized = serializationService.toData(config);
         WanConsumerConfig deserialized = serializationService.toObject(serialized);
 
-        assertEquals(config.getProperties(), deserialized.getProperties());
-        assertEquals(config.getClassName(), deserialized.getClassName());
-        assertEquals(config.getImplementation(), deserialized.getImplementation());
-        assertEquals(config.toString(), deserialized.toString());
+        assertWanConsumerConfig(config, deserialized);
+    }
+
+    static void assertWanConsumerConfig(WanConsumerConfig expected, WanConsumerConfig actual) {
+        if (expected == null) {
+            return;
+        }
+        assertEquals(expected.getProperties(), actual.getProperties());
+        assertEquals(expected.getClassName(), actual.getClassName());
+        assertEquals(expected.getImplementation(), actual.getImplementation());
+        assertEquals(expected.toString(), actual.toString());
     }
 }
