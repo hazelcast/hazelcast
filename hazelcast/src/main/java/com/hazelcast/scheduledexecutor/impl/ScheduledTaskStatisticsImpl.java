@@ -31,7 +31,7 @@ public class ScheduledTaskStatisticsImpl
 
     private long runs;
 
-    private long createdAt = System.nanoTime();
+    private long createdAt;
 
     private long firstRunStart;
 
@@ -49,14 +49,15 @@ public class ScheduledTaskStatisticsImpl
     }
 
     public ScheduledTaskStatisticsImpl(ScheduledTaskStatistics copy) {
-        this(copy.getTotalRuns(), copy.getFirstRunStartNanos(), copy.getLastRunStartNanos(), copy.getLastRunEndNanos(),
-                copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+        this(copy.getCreatedAtNanos(), copy.getTotalRuns(), copy.getFirstRunStartNanos(), copy.getLastRunStartNanos(),
+                copy.getLastRunEndNanos(), copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
                 copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long firstRunStartNanos, long lastRunStartNanos,
+    public ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
                                        long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
                                        long totalIdleTimeNanos) {
+        this.createdAt = createdAt;
         this.runs = runs;
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
@@ -147,6 +148,11 @@ public class ScheduledTaskStatisticsImpl
         lastIdleTime = in.readLong();
         totalIdleTime = in.readLong();
         totalRunTime = in.readLong();
+    }
+
+    @Override
+    public void onInit() {
+        this.createdAt  = System.nanoTime();
     }
 
     @Override
