@@ -24,7 +24,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class LockConfig {
 
-
     private String name;
     private String quorumName;
 
@@ -115,7 +114,6 @@ public class LockConfig {
         return new LockConfigReadonly(this);
     }
 
-
     @Override
     public String toString() {
         return "LockConfig{"
@@ -138,6 +136,9 @@ public class LockConfig {
             throw new UnsupportedOperationException("This config is read-only");
         }
 
-
+        @Override
+        public LockConfig setQuorumName(String quorumName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }
