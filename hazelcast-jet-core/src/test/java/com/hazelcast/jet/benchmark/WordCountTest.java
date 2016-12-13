@@ -18,6 +18,7 @@ package com.hazelcast.jet.benchmark;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -32,11 +33,9 @@ import com.hazelcast.jet.impl.IMapWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,27 +67,20 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private static final int COUNT = 1_000_000;
     private static final int DISTINCT = 100_000;
 
-    private static TestHazelcastInstanceFactory factory;
     private JetEngine jetEngine;
     private HazelcastInstance instance;
 
-    @BeforeClass
-    public static void setupFactory() {
-        factory = new TestHazelcastInstanceFactory();
-    }
-
     @AfterClass
-    public static void shutdownFactory() {
-        factory.shutdownAll();
+    public static void afterClass() {
         Hazelcast.shutdownAll();
     }
 
     @Before
     public void setUp() {
         Config hazelcastConfig = new Config();
-        hazelcastConfig.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        hazelcastConfig.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         for (int i = 0; i < NODE_COUNT; i++) {
             instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
         }
@@ -120,7 +112,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
     @Test
-    public void testJet() throws Throwable {
+    public void testJet() {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Generator::new);
@@ -150,7 +142,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
     @Test
-    public void testJetTwoPhaseAggregation() throws Throwable {
+    public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Mapper::new);
@@ -160,7 +152,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .parallelism(1);
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"))
                 .parallelism(1);
-
         dag
                 .addVertex(producer)
                 .addVertex(generator)
@@ -181,7 +172,6 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }
-
 
     private void benchmark(String label, Runnable run) {
         List<Long> times = new ArrayList<>();
@@ -217,7 +207,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
     }
 
-    private void assertCounts(Map<String, Long> wordCounts) {
+    private static void assertCounts(Map<String, Long> wordCounts) {
         for (int i = 0; i < DISTINCT; i++) {
             Long count = wordCounts.get(Integer.toString(i));
             assertNotNull("Missing count for " + i, count);
@@ -272,7 +262,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class Combiner extends AbstractProcessor {
+    static class Combiner extends AbstractProcessor {
         private Map<String, Long> counts = new HashMap<>();
         private Iterator<Map.Entry<String, Long>> iterator;
 

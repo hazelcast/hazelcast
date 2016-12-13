@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
@@ -33,6 +34,7 @@ import static com.hazelcast.jet.impl.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.Util.getMemberConnection;
+import static com.hazelcast.jet.impl.Util.uncheckRun;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class SenderTasklet implements Tasklet {
@@ -40,11 +42,13 @@ class SenderTasklet implements Tasklet {
     private static final int PACKET_SIZE_LIMIT = 1 << 14;
 
     private final Connection connection;
-    private final byte[] headerBytes;
     private final Queue<Object> inbox = new ArrayDeque<>();
+    private final ProgressTracker progTracker = new ProgressTracker();
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
+    private final int bufPosPastHeader;
 
+    private boolean instreamExhausted;
     // read and written by Jet thread
     private long sentSeq;
 
@@ -56,36 +60,48 @@ class SenderTasklet implements Tasklet {
     ) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
-        this.headerBytes = createStreamPacketHeader(
-                nodeEngine, jetEngineName, executionId, destinationVertexId, inboundEdgeStream.ordinal());
         this.outputBuffer = createObjectDataOutput(nodeEngine);
+        uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
+                nodeEngine, jetEngineName, executionId, destinationVertexId, inboundEdgeStream.ordinal())));
+        bufPosPastHeader = outputBuffer.position();
     }
 
     @Nonnull
     @Override
     public ProgressState call() {
-        ProgressState progressState = inboundEdgeStream.drainTo(inbox);
-        if (progressState.isDone()) {
-            inbox.add(new ObjectWithPartitionId(DONE_ITEM, -1));
+        progTracker.reset();
+        tryFillInbox();
+        if (progTracker.isDone()) {
+            return progTracker.toProgressState();
         }
-        if (!progressState.isMadeProgress()) {
-            return progressState;
+        if (tryFillOutputBuffer()) {
+            progTracker.madeProgress();
+            connection.write(new Packet(outputBuffer.toByteArray()).setPacketType(Packet.Type.JET));
         }
-        do {
-            fillBuffer();
-            Packet packet = new Packet(outputBuffer.toByteArray()).setPacketType(Packet.Type.JET);
-            connection.write(packet);
-            outputBuffer.clear();
-        } while (!inbox.isEmpty());
-
-        return progressState;
+        return progTracker.toProgressState();
     }
 
-    private void fillBuffer() {
+    private void tryFillInbox() {
+        if (!inbox.isEmpty()) {
+            progTracker.notDone();
+            return;
+        }
+        if (instreamExhausted) {
+            return;
+        }
+        progTracker.notDone();
+        final ProgressState result = inboundEdgeStream.drainTo(inbox);
+        progTracker.madeProgress(result.isMadeProgress());
+        instreamExhausted = result.isDone();
+        if (instreamExhausted) {
+            inbox.add(new ObjectWithPartitionId(DONE_ITEM, -1));
+        }
+    }
+
+    private boolean tryFillOutputBuffer() {
         try {
-            outputBuffer.write(headerBytes);
-            // length will be filled in later
-            outputBuffer.writeInt(0);
+            // header size + slot for writtenCount
+            outputBuffer.position(bufPosPastHeader + Bits.INT_SIZE_IN_BYTES);
             int writtenCount = 0;
             for (Object item;
                  outputBuffer.position() < PACKET_SIZE_LIMIT
@@ -99,7 +115,8 @@ class SenderTasklet implements Tasklet {
                 sentSeq += estimatedMemoryFootprint(outputBuffer.position() - mark);
                 outputBuffer.writeInt(itemWithpId.getPartitionId());
             }
-            outputBuffer.writeInt(headerBytes.length, writtenCount);
+            outputBuffer.writeInt(bufPosPastHeader, writtenCount);
+            return writtenCount > 0;
         } catch (IOException e) {
             throw rethrow(e);
         }

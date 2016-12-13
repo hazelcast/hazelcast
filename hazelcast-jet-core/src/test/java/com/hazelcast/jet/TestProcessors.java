@@ -49,4 +49,7 @@ public class TestProcessors {
             throw e;
         }
     }
+
+    public static class NoopProducer extends AbstractProducer {
+    }
 }
