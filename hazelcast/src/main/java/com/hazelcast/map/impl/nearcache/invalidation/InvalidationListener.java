@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.nearcache.invalidation;
 
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.map.listener.MapListener;
 
 /**

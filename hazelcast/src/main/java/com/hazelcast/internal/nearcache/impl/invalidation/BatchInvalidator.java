@@ -21,8 +21,6 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -51,7 +49,7 @@ import static java.util.Collections.emptyList;
  */
 public class BatchInvalidator extends Invalidator {
 
-    private static final String INVALIDATION_EXECUTOR_NAME = BatchInvalidator.class.getName();
+    private final String invalidationExecutorName;
 
     /**
      * Creates an invalidation-queue for a map.
@@ -81,6 +79,7 @@ public class BatchInvalidator extends Invalidator {
         this.batchSize = batchSize;
         this.batchFrequencySeconds = batchFrequencySeconds;
         this.nodeShutdownListenerId = registerNodeShutdownListener();
+        this.invalidationExecutorName = serviceName + getClass();
         startBackgroundBatchProcessor();
     }
 
@@ -165,7 +164,7 @@ public class BatchInvalidator extends Invalidator {
 
     private void startBackgroundBatchProcessor() {
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.scheduleWithRepetition(INVALIDATION_EXECUTOR_NAME,
+        executionService.scheduleWithRepetition(invalidationExecutorName,
                 new BatchInvalidationEventSender(), batchFrequencySeconds, batchFrequencySeconds, TimeUnit.SECONDS);
 
     }
@@ -201,7 +200,7 @@ public class BatchInvalidator extends Invalidator {
     @Override
     public void shutdown() {
         ExecutionService executionService = nodeEngine.getExecutionService();
-        executionService.shutdownExecutor(INVALIDATION_EXECUTOR_NAME);
+        executionService.shutdownExecutor(invalidationExecutorName);
 
         HazelcastInstance node = nodeEngine.getHazelcastInstance();
         LifecycleService lifecycleService = node.getLifecycleService();
