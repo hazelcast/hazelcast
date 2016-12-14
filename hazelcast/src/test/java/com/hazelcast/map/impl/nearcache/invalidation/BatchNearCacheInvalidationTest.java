@@ -17,6 +17,9 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;

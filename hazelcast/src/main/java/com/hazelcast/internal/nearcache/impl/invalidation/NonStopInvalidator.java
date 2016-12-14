@@ -17,7 +17,6 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 

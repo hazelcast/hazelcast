@@ -21,8 +21,11 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionService;
+import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
@@ -30,10 +33,7 @@ import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
-import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.MemberMapMetaDataFetcher;
-import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -43,13 +43,16 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 public class MapNearCacheManager extends DefaultNearCacheManager {
+    /**
+     * Filters out listeners other than invalidation related ones.
+     */
+    private static final InvalidationAcceptorFilter INVALIDATION_ACCEPTOR = new InvalidationAcceptorFilter();
 
     protected final int partitionCount;
     protected final NodeEngine nodeEngine;
@@ -57,7 +60,6 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     protected final Invalidator invalidator;
     protected final RepairingTask repairingTask;
     protected final MinimalPartitionService partitionService;
-    protected final IFunction<EventRegistration, Boolean> filter;
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
@@ -68,22 +70,6 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         this.partitionCount = partitionService.getPartitionCount();
         this.invalidator = createInvalidator();
         this.repairingTask = createRepairingInvalidationTask();
-        this.filter = new IFunction<EventRegistration, Boolean>() {
-            @Override
-            public Boolean apply(EventRegistration eventRegistration) {
-                EventFilter filter = eventRegistration.getFilter();
-
-                if (!(filter instanceof EventListenerFilter)) {
-                    return false;
-                }
-
-                if (!filter.eval(INVALIDATION.getType())) {
-                    return false;
-                }
-
-                return true;
-            }
-        };
     }
 
     private Invalidator createInvalidator() {
@@ -93,9 +79,30 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         boolean batchingEnabled = hazelcastProperties.getBoolean(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED) && batchSize > 1;
 
         if (batchingEnabled) {
-            return new BatchInvalidator(SERVICE_NAME, batchSize, batchFrequencySeconds, TRUE_FILTER, nodeEngine);
+            return new BatchInvalidator(SERVICE_NAME, batchSize, batchFrequencySeconds, INVALIDATION_ACCEPTOR, nodeEngine);
         } else {
-            return new NonStopInvalidator(SERVICE_NAME, TRUE_FILTER, nodeEngine);
+            return new NonStopInvalidator(SERVICE_NAME, INVALIDATION_ACCEPTOR, nodeEngine);
+        }
+    }
+
+    /**
+     * Filters out listeners other than invalidation related ones.
+     */
+    private static class InvalidationAcceptorFilter implements IFunction<EventRegistration, Boolean> {
+
+        @Override
+        public Boolean apply(EventRegistration eventRegistration) {
+            EventFilter filter = eventRegistration.getFilter();
+
+            if (!(filter instanceof EventListenerFilter)) {
+                return false;
+            }
+
+            if (!filter.eval(INVALIDATION.getType())) {
+                return false;
+            }
+
+            return true;
         }
     }
 
@@ -109,12 +116,6 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         MetaDataFetcher metaDataFetcher = new MemberMapMetaDataFetcher(clusterService, operationService, logger);
         String localUuid = nodeEngine.getLocalMember().getUuid();
         return new RepairingTask(metaDataFetcher, executionService, partitionService, properties, localUuid, logger);
-    }
-
-    private boolean isBatchingEnabled() {
-        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
-        int batchSize = hazelcastProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
-        return hazelcastProperties.getBoolean(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED) && batchSize > 1;
     }
 
     /**

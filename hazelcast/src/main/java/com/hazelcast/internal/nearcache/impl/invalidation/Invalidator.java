@@ -18,8 +18,6 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -61,6 +59,8 @@ public abstract class Invalidator {
         this.metaDataGenerator = new MetaDataGenerator(partitionCount);
     }
 
+    protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
+
     /**
      * Invalidates supplied key from near-caches of supplied map name.
      *
@@ -88,13 +88,11 @@ public abstract class Invalidator {
         sendImmediately(invalidation, orderKey);
     }
 
-    protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
-
-    public MetaDataGenerator getMetaDataGenerator() {
+    public final MetaDataGenerator getMetaDataGenerator() {
         return metaDataGenerator;
     }
 
-    protected final Invalidation newKeyInvalidation(Data key, String mapName, String sourceUuid) {
+    private Invalidation newKeyInvalidation(Data key, String mapName, String sourceUuid) {
         int partitionId = getPartitionId(key);
         long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
@@ -112,11 +110,11 @@ public abstract class Invalidator {
         return new SingleNearCacheInvalidation(null, mapName, sourceUuid, partitionUuid, sequence);
     }
 
-    protected final int getPartitionId(Data o) {
+    private int getPartitionId(Data o) {
         return partitionService.getPartitionId(o);
     }
 
-    protected final int getPartitionId(Object o) {
+    private int getPartitionId(Object o) {
         return partitionService.getPartitionId(o);
     }
 
