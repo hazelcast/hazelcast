@@ -122,6 +122,10 @@
             <hz:cache name="cacheWithComparatorBean">
                 <hz:eviction size="50" max-size-policy="ENTRY_COUNT" comparator-bean="myEvictionPolicyComparator"/>
             </hz:cache>
+            <hz:cache name="cacheWithSimpleWriterAndLoader"
+                      cache-loader="com.hazelcast.config.CacheConfigTest$MyCacheLoader"
+                      cache-writer="com.hazelcast.config.CacheConfigTest$EmptyCacheWriter"
+            />
         </hz:config>
     </hz:hazelcast>
 

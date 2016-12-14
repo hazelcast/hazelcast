@@ -79,6 +79,9 @@ public class CacheSimpleConfig {
     private String cacheLoaderFactory;
     private String cacheWriterFactory;
 
+    private String cacheLoader;
+    private String cacheWriter;
+
     private ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig;
     private List<CacheSimpleEntryListenerConfig> cacheEntryListeners;
 
@@ -310,7 +313,35 @@ public class CacheSimpleConfig {
      * @return The current cache config instance.
      */
     public CacheSimpleConfig setCacheLoaderFactory(String cacheLoaderFactory) {
+        if (cacheLoader != null && cacheLoaderFactory != null) {
+            throw new IllegalStateException("Cannot set cacheLoaderFactory to '" + cacheLoaderFactory
+                    + "', because cacheLoader is already set to '" + cacheLoader + "'.");
+        }
         this.cacheLoaderFactory = cacheLoaderFactory;
+        return this;
+    }
+
+    /**
+     * Get classname of a class to be used as {@link javax.cache.integration.CacheLoader}.
+     *
+     * @return classname to be used as {@link javax.cache.integration.CacheLoader}.
+     */
+    public String getCacheLoader() {
+        return cacheLoader;
+    }
+
+    /**
+     * Set classname of a class to be used as {@link javax.cache.integration.CacheLoader}.
+     *
+     * @param cacheLoader classname to be used as {@link javax.cache.integration.CacheLoader}.
+     * @return The current cache config instance.
+     */
+    public CacheSimpleConfig setCacheLoader(String cacheLoader) {
+        if (cacheLoader != null && cacheLoaderFactory != null) {
+            throw new IllegalStateException("Cannot set cacheLoader to '" + cacheLoader
+                    + "', because cacheLoaderFactory is already set to '" + cacheLoaderFactory + "'.");
+        }
+        this.cacheLoader = cacheLoader;
         return this;
     }
 
@@ -330,7 +361,36 @@ public class CacheSimpleConfig {
      * @return The current cache config instance.
      */
     public CacheSimpleConfig setCacheWriterFactory(String cacheWriterFactory) {
+        if (cacheWriter != null && cacheWriterFactory != null) {
+            throw new IllegalStateException("Cannot set cacheWriterFactory to '" + cacheWriterFactory
+                    + "', because cacheWriter is already set to '" + cacheWriter + "'.");
+        }
         this.cacheWriterFactory = cacheWriterFactory;
+        return this;
+    }
+
+    /**
+     * Get classname of a class to be used as {@link javax.cache.integration.CacheWriter}.
+     *
+     * @return classname to be used as {@link javax.cache.integration.CacheWriter}.
+     */
+    public String getCacheWriter() {
+        return cacheWriter;
+    }
+
+    /**
+     * Set classname of a class to be used as {@link javax.cache.integration.CacheWriter}.
+     *
+     * @param cacheWriter classname to be used as {@link javax.cache.integration.CacheWriter}.
+     * @return The current cache config instance.
+     *
+     */
+    public CacheSimpleConfig setCacheWriter(String cacheWriter) {
+        if (cacheWriter != null && cacheWriterFactory != null) {
+            throw new IllegalStateException("Cannot set cacheWriter to '" + cacheWriter
+                    + "', because cacheWriterFactory is already set to '" + cacheWriterFactory + "'.");
+        }
+        this.cacheWriter = cacheWriter;
         return this;
     }
 

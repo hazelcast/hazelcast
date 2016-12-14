@@ -1287,8 +1287,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setWriteThrough(getBooleanValue(value));
             } else if ("cache-loader-factory".equals(nodeName)) {
                 cacheConfig.setCacheLoaderFactory(getAttribute(n, "class-name"));
+            } else if ("cache-loader".equals(nodeName)) {
+                cacheConfig.setCacheLoader(getAttribute(n, "class-name"));
             } else if ("cache-writer-factory".equals(nodeName)) {
                 cacheConfig.setCacheWriterFactory(getAttribute(n, "class-name"));
+            } else if ("cache-writer".equals(nodeName)) {
+                cacheConfig.setCacheWriter(getAttribute(n, "class-name"));
             } else if ("expiry-policy-factory".equals(nodeName)) {
                 cacheConfig.setExpiryPolicyFactoryConfig(getExpiryPolicyFactoryConfig(n));
             } else if ("cache-entry-listeners".equals(nodeName)) {

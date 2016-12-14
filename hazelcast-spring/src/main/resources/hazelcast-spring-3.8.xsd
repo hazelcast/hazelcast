@@ -880,10 +880,24 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="cache-loader" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache loader class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="cache-writer-factory" type="xs:string" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Defines the cache writer factory class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-writer" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache writer class name.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>

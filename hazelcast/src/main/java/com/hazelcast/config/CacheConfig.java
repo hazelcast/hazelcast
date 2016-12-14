@@ -27,6 +27,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
 import javax.cache.configuration.Factory;
+import javax.cache.configuration.FactoryBuilder;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
@@ -114,6 +115,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         }
     }
 
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public CacheConfig(CacheSimpleConfig simpleConfig) throws Exception {
         this.name = simpleConfig.getName();
         if (simpleConfig.getKeyType() != null) {
@@ -129,8 +131,14 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
         if (simpleConfig.getCacheLoaderFactory() != null) {
             this.cacheLoaderFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheLoaderFactory());
         }
+        if (simpleConfig.getCacheLoader() != null) {
+            this.cacheLoaderFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheLoader());
+        }
         if (simpleConfig.getCacheWriterFactory() != null) {
             this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
+        }
+        if (simpleConfig.getCacheWriter() != null) {
+            this.cacheWriterFactory = FactoryBuilder.factoryOf(simpleConfig.getCacheWriter());
         }
         initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
