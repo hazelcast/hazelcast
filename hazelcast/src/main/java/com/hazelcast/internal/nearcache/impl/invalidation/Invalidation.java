@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache.invalidation;
+package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMapEvent;
@@ -48,13 +48,6 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     public Invalidation(String mapName) {
         this.mapName = checkNotNull(mapName, "mapName cannot be null");
-    }
-
-    public Invalidation(String mapName, String sourceUuid, UUID partitionUuid) {
-        this.mapName = checkNotNull(mapName, "mapName cannot be null");
-        // sourceUuid & partitionUuid can be null.
-        this.sourceUuid = sourceUuid;
-        this.partitionUuid = partitionUuid;
     }
 
     public Invalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
