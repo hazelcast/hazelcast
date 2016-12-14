@@ -17,7 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
@@ -461,12 +461,12 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return MapAddNearCacheInvalidationListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
+                return MapAddNearCacheEntryListenerCodec.encodeRequest(name, INVALIDATION.getType(), localOnly);
             }
 
             @Override
             public String decodeAddResponse(ClientMessage clientMessage) {
-                return MapAddNearCacheInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                return MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
@@ -512,7 +512,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
-    private final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler
+    private final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         @Override

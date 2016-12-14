@@ -18,7 +18,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -1282,7 +1282,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     private static class ClearEventCounterEventHandler
-            extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
+            extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
 
         private final AtomicInteger clearEventCount = new AtomicInteger();
 
