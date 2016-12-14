@@ -65,7 +65,7 @@ public final class InvalidationAwareWrapper<K, V> implements NearCache<K, V> {
 
     @Override
     public boolean remove(K key) {
-        keyStateMarker.tryRemove(key);
+        keyStateMarker.removeIfMarked(key);
         return nearCache.remove(key);
     }
 
@@ -76,13 +76,13 @@ public final class InvalidationAwareWrapper<K, V> implements NearCache<K, V> {
 
     @Override
     public void clear() {
-        keyStateMarker.init();
+        keyStateMarker.unmarkAllForcibly();
         nearCache.clear();
     }
 
     @Override
     public void destroy() {
-        keyStateMarker.init();
+        keyStateMarker.unmarkAllForcibly();
         nearCache.destroy();
     }
 

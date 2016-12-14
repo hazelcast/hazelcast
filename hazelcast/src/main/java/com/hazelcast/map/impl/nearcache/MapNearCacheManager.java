@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
@@ -25,20 +26,27 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MinimalPartitionServic
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.EventListenerFilter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapManagedService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.invalidation.BatchInvalidator;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.nearcache.invalidation.MemberMapMetaDataFetcher;
-import com.hazelcast.map.impl.nearcache.invalidation.NonStopInvalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.NonStopInvalidator;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
+import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.TRUE_FILTER;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 public class MapNearCacheManager extends DefaultNearCacheManager {
@@ -49,6 +57,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     protected final Invalidator invalidator;
     protected final RepairingTask repairingTask;
     protected final MinimalPartitionService partitionService;
+    protected final IFunction<EventRegistration, Boolean> filter;
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
@@ -57,9 +66,37 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
         this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
         this.mapServiceContext = mapServiceContext;
         this.partitionCount = partitionService.getPartitionCount();
-        this.invalidator = isBatchingEnabled()
-                ? new BatchInvalidator(mapServiceContext) : new NonStopInvalidator(mapServiceContext);
+        this.invalidator = createInvalidator();
         this.repairingTask = createRepairingInvalidationTask();
+        this.filter = new IFunction<EventRegistration, Boolean>() {
+            @Override
+            public Boolean apply(EventRegistration eventRegistration) {
+                EventFilter filter = eventRegistration.getFilter();
+
+                if (!(filter instanceof EventListenerFilter)) {
+                    return false;
+                }
+
+                if (!filter.eval(INVALIDATION.getType())) {
+                    return false;
+                }
+
+                return true;
+            }
+        };
+    }
+
+    private Invalidator createInvalidator() {
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        int batchSize = hazelcastProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_SIZE);
+        int batchFrequencySeconds = hazelcastProperties.getInteger(MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
+        boolean batchingEnabled = hazelcastProperties.getBoolean(MAP_INVALIDATION_MESSAGE_BATCH_ENABLED) && batchSize > 1;
+
+        if (batchingEnabled) {
+            return new BatchInvalidator(SERVICE_NAME, batchSize, batchFrequencySeconds, TRUE_FILTER, nodeEngine);
+        } else {
+            return new NonStopInvalidator(SERVICE_NAME, TRUE_FILTER, nodeEngine);
+        }
     }
 
     private RepairingTask createRepairingInvalidationTask() {

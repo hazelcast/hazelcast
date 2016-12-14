@@ -83,7 +83,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl {
         ClientInvocationFuture future = invocation.invoke();
         String registrationId = registrationKey.getCodec().decodeAddResponse(future.get());
         handler.onListenerRegister();
-        Address address = future.getInvocation().getSendConnection().getRemoteEndpoint();
+        Address address = future.getInvocation().getSendConnection().getEndPoint();
         Member member = client.getClientClusterService().getMember(address);
         return new ClientEventRegistration(registrationId,
                 request.getCorrelationId(), member, registrationKey.getCodec());

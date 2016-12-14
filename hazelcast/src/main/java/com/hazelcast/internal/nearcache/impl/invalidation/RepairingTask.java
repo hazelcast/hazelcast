@@ -91,7 +91,7 @@ public final class RepairingTask implements Runnable {
         this.localUuid = localUuid;
     }
 
-    protected int checkMaxToleratedMissCount(HazelcastProperties properties) {
+    private int checkMaxToleratedMissCount(HazelcastProperties properties) {
         int maxToleratedMissCount = properties.getInteger(MAX_TOLERATED_MISS_COUNT);
         return checkNotNegative(maxToleratedMissCount,
                 format("max-tolerated-miss-count cannot be < 0 but found %d", maxToleratedMissCount));

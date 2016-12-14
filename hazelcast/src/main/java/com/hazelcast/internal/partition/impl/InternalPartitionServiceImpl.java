@@ -24,6 +24,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -684,6 +685,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             searchUnknownAddressesInPartitionTable(sender, unknownAddresses, partitionId, replicas);
         }
         logUnknownAddressesInPartitionTable(sender, unknownAddresses);
+
+        if (!unknownAddresses.isEmpty()) {
+            Address masterAddress = node.getMasterAddress();
+            // If node is shutting down, master can be null.
+            if (masterAddress != null && !masterAddress.equals(node.getThisAddress())) {
+                // unknown addresses found in partition table, request a new member-list from master
+                nodeEngine.getOperationService().send(new TriggerMemberListPublishOperation(), masterAddress);
+            }
+        }
     }
 
     private void logUnknownAddressesInPartitionTable(Address sender, Set<Address> unknownAddresses) {

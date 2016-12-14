@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Config to be used by WanReplicationConsumer instances. (EE only)
+ * Config to be used by WanReplicationConsumer instances (EE only).
  */
 public class WanConsumerConfig implements DataSerializable {
 
@@ -35,6 +35,11 @@ public class WanConsumerConfig implements DataSerializable {
 
     public Map<String, Comparable> getProperties() {
         return properties;
+    }
+
+    public WanConsumerConfig setProperties(Map<String, Comparable> properties) {
+        this.properties = properties;
+        return this;
     }
 
     public String getClassName() {
@@ -52,11 +57,6 @@ public class WanConsumerConfig implements DataSerializable {
 
     public WanConsumerConfig setImplementation(Object implementation) {
         this.implementation = implementation;
-        return this;
-    }
-
-    public WanConsumerConfig setProperties(Map<String, Comparable> properties) {
-        this.properties = properties;
         return this;
     }
 

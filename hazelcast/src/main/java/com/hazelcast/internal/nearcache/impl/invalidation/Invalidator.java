@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache.invalidation;
+package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
+import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static java.lang.String.format;
 
 
@@ -39,18 +39,20 @@ import static java.lang.String.format;
  */
 public abstract class Invalidator {
 
-    protected final ILogger logger;
     protected final int partitionCount;
-    protected final MapServiceContext mapServiceContext;
+    protected final String serviceName;
+    protected final ILogger logger;
     protected final NodeEngine nodeEngine;
     protected final EventService eventService;
     protected final SerializationService serializationService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
+    protected final IFunction<EventRegistration, Boolean> eventFilter;
 
-    public Invalidator(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = mapServiceContext.getNodeEngine();
+    public Invalidator(String serviceName, IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+        this.serviceName = serviceName;
+        this.eventFilter = eventFilter;
+        this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
         this.eventService = nodeEngine.getEventService();
@@ -83,7 +85,7 @@ public abstract class Invalidator {
 
         int orderKey = getPartitionId(mapName);
         Invalidation invalidation = newClearInvalidation(mapName, sourceUuid);
-        invalidateInternal(invalidation, orderKey);
+        sendImmediately(invalidation, orderKey);
     }
 
     protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
@@ -107,7 +109,7 @@ public abstract class Invalidator {
         int partitionId = getPartitionId(mapName);
         long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(mapName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(null, mapName, sourceUuid, partitionUuid, sequence);
     }
 
     protected final int getPartitionId(Data o) {
@@ -118,16 +120,15 @@ public abstract class Invalidator {
         return partitionService.getPartitionId(o);
     }
 
-    protected final boolean canSendInvalidation(final EventFilter filter) {
-        if (!(filter instanceof EventListenerFilter)) {
-            return false;
-        }
+    protected final void sendImmediately(Invalidation invalidation, int orderKey) {
+        String mapName = invalidation.getName();
 
-        if (!filter.eval(INVALIDATION.getType())) {
-            return false;
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
+        for (EventRegistration registration : registrations) {
+            if (eventFilter.apply(registration)) {
+                eventService.publishEvent(serviceName, registration, invalidation, orderKey);
+            }
         }
-
-        return true;
     }
 
     private Data toHeapData(Data key) {

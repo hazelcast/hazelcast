@@ -53,7 +53,7 @@ import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseH
 
 abstract class ClientInvocationServiceSupport implements ClientInvocationService {
 
-    public static final HazelcastProperty IDLE_STRATEGY
+    private static final HazelcastProperty IDLE_STRATEGY
             = new HazelcastProperty("hazelcast.client.responsequeue.idlestrategy", "block");
 
     private static final int WAIT_TIME_FOR_PACKETS_TO_BE_CONSUMED_THRESHOLD = 5000;
@@ -63,8 +63,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     protected ClientConnectionManager connectionManager;
     protected ClientPartitionService partitionService;
-    protected ClientExecutionService executionService;
-    protected ClientListenerServiceImpl clientListenerService;
+    private ClientListenerServiceImpl clientListenerService;
 
     private final CallIdSequence callIdSequence;
 
@@ -89,13 +88,13 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     @Override
     public void start() {
         connectionManager = client.getConnectionManager();
-        executionService = client.getClientExecutionService();
         clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         partitionService = client.getClientPartitionService();
         clientExceptionFactory = initClientExceptionFactory();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
+        ClientExecutionService executionService = client.getClientExecutionService();
         executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
     }
 
@@ -121,7 +120,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
                 callIdSequence.complete();
-                throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
+                throw new IOException("Packet not send to " + connection.getEndPoint());
             } else {
                 if (invocationLogger.isFinestEnabled()) {
                     invocationLogger.finest("Invocation not found to deregister for call id " + callId);
@@ -252,7 +251,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 if (pendingPacketCount != 0) {
                     invocationLogger.warning("There are " + pendingPacketCount
                             + " packets which are not processed on "
-                            + expiredConnection.getRemoteEndpoint());
+                            + expiredConnection.getEndPoint());
                 }
             }
         }

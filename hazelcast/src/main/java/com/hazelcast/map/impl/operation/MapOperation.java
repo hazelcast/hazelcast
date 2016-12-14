@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

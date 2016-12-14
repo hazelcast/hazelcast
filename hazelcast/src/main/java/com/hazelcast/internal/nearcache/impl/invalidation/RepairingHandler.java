@@ -25,17 +25,16 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static java.lang.String.format;
 
 /**
  * Handler used on near-cache side. Observes local and remote invalidations and registers relevant
  * data to {@link MetaDataContainer}s
- * <p>
+ *
  * Used to repair near-cache in the event of invalidation-event-miss
  * or partition uuid changes. Here repairing is done by making relevant near-cache data unreachable. To make
  * stale data unreachable {@link StaleReadDetectorImpl} is used.
- * <p>
+ *
  * An instance of this class is created per near-cache and can concurrently be used by many threads.
  *
  * @see StaleReadDetectorImpl
@@ -88,16 +87,25 @@ public final class RepairingHandler {
         // immediately. No need to invalidate them twice.
         if (!localUuid.equals(sourceUuid)) {
             // sourceUuid is allowed to be null.
-            if (NULL_KEY.equals(key)) {
+            if (key == null) {
                 nearCache.clear();
             } else {
                 nearCache.remove(key);
             }
         }
 
-        int partitionId = partitionService.getPartitionId(key);
+        int partitionId = getPartitionIdOrDefault(key);
         checkOrRepairUuid(partitionId, partitionUuid);
         checkOrRepairSequence(partitionId, sequence, false);
+    }
+
+    private int getPartitionIdOrDefault(Data key) {
+        if (key == null) {
+            // `name` is used to determine partition-id of map-wide events like clear.
+            // since key is null, we are using `name` to find partition-id
+            return partitionService.getPartitionId(name);
+        }
+        return partitionService.getPartitionId(key);
     }
 
     /**

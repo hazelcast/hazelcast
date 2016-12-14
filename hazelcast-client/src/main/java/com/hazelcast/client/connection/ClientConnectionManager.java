@@ -77,6 +77,4 @@ public interface ClientConnectionManager extends ConnectionListenable {
     void handleClientMessage(ClientMessage message, Connection connection);
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
-
-    void onClose(Connection connection);
 }

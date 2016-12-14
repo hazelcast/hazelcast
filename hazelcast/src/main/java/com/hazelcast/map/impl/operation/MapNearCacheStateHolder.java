@@ -22,7 +22,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
