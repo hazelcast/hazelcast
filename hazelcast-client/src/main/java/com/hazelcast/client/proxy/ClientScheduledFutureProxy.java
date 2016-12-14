@@ -84,11 +84,8 @@ public class ClientScheduledFutureProxy<V>
             ScheduledExecutorGetStatsCodec.ResponseParameters responseParameters =
                     ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage);
 
-            return new ScheduledTaskStatisticsImpl(responseParameters.createdAt,
-                    responseParameters.totalRuns, responseParameters.firstRunStartNanos,
-                    responseParameters.lastRunStartNanos, responseParameters.lastRunEndNanos,
-                    responseParameters.lastIdleTimeNanos, responseParameters.totalRunTimeNanos,
-                    responseParameters.totalIdleTimeNanos);
+            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
         }
     };
 

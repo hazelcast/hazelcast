@@ -54,7 +54,15 @@ public class ScheduledTaskStatisticsImpl
                 copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
+    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos,
+                                       long totalIdleTimeNanos) {
+        this.runs = runs;
+        this.lastIdleTime = lastIdleTimeNanos;
+        this.totalRunTime = totalRunTimeNanos;
+        this.totalIdleTime = totalIdleTimeNanos;
+    }
+
+    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
                                        long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
                                        long totalIdleTimeNanos) {
         this.createdAt = createdAt;
