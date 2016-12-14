@@ -4824,7 +4824,7 @@ public class ServerCompatibilityNullTest_1_0 {
         assertTrue(isEqual(Arrays.copyOfRange(clientMessage.buffer().byteArray(), FRAME_LEN_FIELD_SIZE, length), bytes));
      }
     {
-        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent( aString ,  datas ,  null ,  null ,  longs   );
+        ClientMessage clientMessage = CacheAddInvalidationListenerCodec.encodeCacheBatchInvalidationEvent( aString ,  datas ,  null ,  uuids ,  longs   );
         int length = inputStream.readInt();
         // Since the test is generated for protocol version (1.0) which is earlier than latest change in the message
         // (version 1.4), only the bytes after frame length fields are compared
