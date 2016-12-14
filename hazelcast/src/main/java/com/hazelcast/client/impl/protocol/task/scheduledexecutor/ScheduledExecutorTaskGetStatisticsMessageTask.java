@@ -71,9 +71,7 @@ public class ScheduledExecutorTaskGetStatisticsMessageTask
     protected ClientMessage encodeResponse(Object response) {
         ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
         return ScheduledExecutorGetStatsCodec.encodeResponse(stats.getCreatedAtNanos(), stats.getFirstRunStartNanos(),
-                stats.getLastIdleTime(TimeUnit.NANOSECONDS), stats.getLastRunEndNanos(),
-                stats.getLastRunStartNanos(), stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
-                stats.getTotalRunTime(TimeUnit.NANOSECONDS));
+                stats.getLastIdleTime(TimeUnit.NANOSECONDS), stats.getLastRunEndNanos());
     }
 
     @Override

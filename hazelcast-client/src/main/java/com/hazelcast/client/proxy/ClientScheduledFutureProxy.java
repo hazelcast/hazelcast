@@ -85,8 +85,8 @@ public class ClientScheduledFutureProxy<V>
                     ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage);
 
             return new ScheduledTaskStatisticsImpl(
-                    responseParameters.totalRuns, responseParameters.firstRunStartNanos,
-                    responseParameters.lastRunStartNanos, responseParameters.lastRunEndNanos,
+                    responseParameters.totalRuns, 0,
+                    0, 0,
                     responseParameters.lastIdleTimeNanos, responseParameters.totalRunTimeNanos,
                     responseParameters.totalIdleTimeNanos);
         }
