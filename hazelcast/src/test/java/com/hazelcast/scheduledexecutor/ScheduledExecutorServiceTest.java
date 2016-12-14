@@ -208,6 +208,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         assertNotNull(stats.getTotalRuns());
     }
 
+    @Ignore
     @Test
     public void stats_manyRepetitionsTask()
             throws ExecutionException, InterruptedException {
@@ -228,6 +229,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         assertEquals(6, stats.getTotalRuns());
     }
 
+    @Ignore
     @Test
     public void stats_longRunningTask_durable()
             throws ExecutionException, InterruptedException {
