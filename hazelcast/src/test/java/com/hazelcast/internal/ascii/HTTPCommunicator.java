@@ -212,22 +212,22 @@ public class HTTPCommunicator {
     }
 
     public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
-        String url = address + "wan/sync/map";
+        String url = address + "mancenter/wan/sync/map";
         return doPost(url, wanRepName, targetGroupName, mapName);
     }
 
     public String syncMapsOverWAN(String wanRepName, String targetGroupName) throws IOException {
-        String url = address + "wan/sync/allmaps";
+        String url = address + "mancenter/wan/sync/allmaps";
         return doPost(url, wanRepName, targetGroupName);
     }
 
     public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
-        String url = address + "mancenter/clearWanQueues";
+        String url = address + "mancenter/wan/clearWanQueues";
         return doPost(url, wanRepName, targetGroupName);
     }
 
     public String addWanConfig(String wanRepConfigJson) throws IOException {
-        String url = address + "wan/addWanConfig";
+        String url = address + "mancenter/wan/addWanConfig";
         return doPost(url, wanRepConfigJson);
     }
 
