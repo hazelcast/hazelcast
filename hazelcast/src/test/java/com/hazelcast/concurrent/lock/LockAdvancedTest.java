@@ -388,7 +388,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         t.start();
         sleepMillis(5000);
         t.interrupt();
-        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
     }
 
     @Test
