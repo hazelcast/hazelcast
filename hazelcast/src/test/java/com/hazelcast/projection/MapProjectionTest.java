@@ -154,8 +154,13 @@ public class MapProjectionTest extends HazelcastTestSupport {
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
 
+        doWithConfig(config);
+
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");
+    }
+
+    public void doWithConfig(Config config) {
     }
 
     public static class Person implements DataSerializable {
