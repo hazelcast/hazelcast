@@ -30,20 +30,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
 
-/**
- * Deprecated class is here to provide backward compatibility.
- *
- * @see MapAddNearCacheInvalidationListenerMessageTask
- */
-@Deprecated
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
 
@@ -97,41 +89,64 @@ public class MapAddNearCacheEntryListenerMessageTask
         private ClientNearCacheInvalidationListenerImpl() {
         }
 
-        private void sendEvent(Invalidation invalidation) {
-            if (invalidation instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = getKeys((BatchNearCacheInvalidation) invalidation);
-                sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys, Collections.<String>emptyList(),
-                        Collections.<UUID>emptyList(), Collections.<Long>emptyList()));
-
-                return;
-            }
-
-            if (!getEndpoint().getUuid().equals(invalidation.getSourceUuid())) {
-                if (invalidation instanceof SingleNearCacheInvalidation) {
-                    sendClientMessage(parameters.name,
-                            encodeIMapInvalidationEvent(invalidation.getKey(), invalidation.getSourceUuid(),
-                                    invalidation.getPartitionUuid(), NO_SEQUENCE));
-                }
-
-                return;
-            }
-        }
-
-        private List<Data> getKeys(BatchNearCacheInvalidation invalidation) {
-            List<Invalidation> invalidations = invalidation.getInvalidations();
-            List<Data> keys = new ArrayList<Data>(invalidations.size());
-            for (Invalidation single : invalidations) {
-                keys.add(single.getKey());
-            }
-            return keys;
-        }
-
         @Override
         public void onInvalidate(Invalidation invalidation) {
             if (!endpoint.isAlive()) {
                 return;
             }
-            sendEvent(invalidation);
+
+            if (invalidation instanceof BatchNearCacheInvalidation) {
+                ExtractedParams params = extractParams(((BatchNearCacheInvalidation) invalidation));
+                ClientMessage message = encodeIMapBatchInvalidationEvent(params.keys, params.sourceUuids,
+                        params.partitionUuids, params.sequences);
+                sendClientMessage(invalidation.getName(), message);
+                return;
+            }
+
+            if (invalidation instanceof SingleNearCacheInvalidation) {
+                Data key = invalidation.getKey();
+                ClientMessage message = encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
+                        invalidation.getPartitionUuid(), invalidation.getSequence());
+                sendClientMessage(key, message);
+                return;
+            }
+
+            throw new IllegalArgumentException("Unknown invalidation message type " + invalidation);
+
+        }
+
+        private ExtractedParams extractParams(BatchNearCacheInvalidation batch) {
+            List<Invalidation> invalidations = batch.getInvalidations();
+
+            int size = invalidations.size();
+            List<Data> keys = new ArrayList<Data>(size);
+            List<String> sourceUuids = new ArrayList<String>(size);
+            List<UUID> partitionUuids = new ArrayList<UUID>(size);
+            List<Long> sequences = new ArrayList<Long>(size);
+
+            for (Invalidation invalidation : invalidations) {
+                keys.add(invalidation.getKey());
+                sourceUuids.add(invalidation.getSourceUuid());
+                partitionUuids.add(invalidation.getPartitionUuid());
+                sequences.add(invalidation.getSequence());
+            }
+
+            return new ExtractedParams(keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private final class ExtractedParams {
+            private final List<Data> keys;
+            private final List<String> sourceUuids;
+            private final List<UUID> partitionUuids;
+            private final List<Long> sequences;
+
+            public ExtractedParams(List<Data> keys, List<String> sourceUuids,
+                                   List<UUID> partitionUuids, List<Long> sequences) {
+                this.keys = keys;
+                this.sourceUuids = sourceUuids;
+                this.partitionUuids = partitionUuids;
+                this.sequences = sequences;
+            }
         }
 
     }
