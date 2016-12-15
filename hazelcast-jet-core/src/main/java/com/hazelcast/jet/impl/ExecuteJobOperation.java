@@ -151,11 +151,11 @@ public class ExecuteJobOperation extends AsyncOperation {
                 }
             }
         }, e -> {
+            firstError.compareAndSet(null, e);
             // cancel all other futures immediately when an error is detected
             if (propagateError) {
                 futures.forEach(sub -> sub.cancel(true));
             }
-            firstError.compareAndSet(null, e);
             if (completionLatch.decrementAndGet() == 0) {
                 compositeFuture.completeExceptionally(firstError.get());
             }
