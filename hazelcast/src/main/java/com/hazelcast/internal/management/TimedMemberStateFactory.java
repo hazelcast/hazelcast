@@ -26,8 +26,6 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -179,9 +177,8 @@ public class TimedMemberStateFactory {
 
     private void createHotRestartState(MemberStateImpl memberState) {
         final HotRestartService backupService = instance.node.getNodeExtension().getHotRestartBackupService();
-        final HotRestartStateImpl state = new HotRestartStateImpl(backupService != null
-                ? backupService.getBackupTaskStatus()
-                : new BackupTaskStatus(BackupTaskState.NOT_STARTED, 0, 0));
+        final HotRestartStateImpl state = new HotRestartStateImpl(
+                backupService != null ? backupService.getBackupTaskStatus() : null);
         memberState.setHotRestartState(state);
     }
 
