@@ -38,14 +38,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 class ReceiverTasklet implements Tasklet {
 
     /**
-     * The {@code itemSeqsPerSender} array holds, per sending member, the sequence number
+     * The {@code ackedSeq} atomic array holds, per sending member, the sequence number
      * acknowledged to the sender as having been received and processed. The sequence
      * increments in terms of the estimated heap occupancy of each received item, in bytes.
      * However, to save on network traffic, the number reported to the sender is
-     * coarser-grained: it counts in units of {@code 1 << COMPRESSED_SEQ_SHIFT}. For example,
-     * with the value 20 the unit is one megabyte. The coarse-grained seq is called "compressed seq".
+     * coarser-grained: it counts in units of {@code 1 << COMPRESSED_SEQ_UNIT_LOG2}. For example,
+     * with a value of 20 the unit would be one megabyte. The coarse-grained seq is called "compressed seq".
      */
-    static final int COMPRESSED_SEQ_UNIT_LOG2 = 20;
+    static final int COMPRESSED_SEQ_UNIT_LOG2 = 16;
     /**
      * The Receive Window, in analogy to TCP's RWIN, is the number of compressed seq units the
      * sender can be ahead of the acknowledged seq. The correspondence between a compresesd seq unit
@@ -56,7 +56,7 @@ class ReceiverTasklet implements Tasklet {
      * This constant specifies the initial size of the receive window. The window is constantly
      * adapted according to the actual data flow through the receiver tasklet.
      */
-    private static final int INITIAL_RECEIVE_WINDOW_COMPRESSED = 100;
+    private static final int INITIAL_RECEIVE_WINDOW_COMPRESSED = 800;
 
     private final Queue<PacketWithSender> incoming = new MPSCQueue<>((IdleStrategy) null);
     private final ProgressTracker tracker = new ProgressTracker();
@@ -69,10 +69,10 @@ class ReceiverTasklet implements Tasklet {
     //                    FLOW-CONTROL STATE
     //            All arrays are indexed by sender ID.
 
-    // read by a HZ networking thread, written by a task scheduler
+    // read by a task scheduler thread, written by a tasklet execution thread
     private final AtomicLongArray ackedSeq;
 
-    // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially
+    // read and written by updateAndGetSendSeqLimitCompressed(), which is invoked sequentially by a task scheduler
     private final int[] receiveWindowCompressed;
     private final int[] prevAckedSeqCompressed;
     private final long[] prevTimestamp;

@@ -18,13 +18,21 @@ package com.hazelcast.jet.impl;
 
 /**
  * Tracks the overall progress and completion state of a multi-stage operation.
- * The operation as a whole made progress if any stage made progress.
- * The operation as a whole is done if each stage is done.
+ * <ul><li>
+ *     The operation as a whole made progress if any stage made progress.
+ * </li><li>
+ *     The operation as a whole is done if each stage is done.
+ * </li></ul>
+ * The initial state of the progress tracker is "done without progress"
+ * (equivalent to {@link ProgressState#WAS_ALREADY_DONE}).
  */
 class ProgressTracker {
     private boolean isMadeProgress;
     private boolean isDone = true;
 
+    /**
+     * Resets the progress tracker to the initial state of "done without progress".
+     */
     public void reset() {
         isMadeProgress = false;
         isDone = true;

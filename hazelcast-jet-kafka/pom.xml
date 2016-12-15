@@ -61,13 +61,6 @@
 
         <!-- TEST -->
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <scope>test</scope>
-            <version>${hazelcast.version}</version>
-            <classifier>tests</classifier>
-        </dependency>
-        <dependency>
             <groupId>com.github.charithe</groupId>
             <artifactId>kafka-junit</artifactId>
             <version>3.0.0</version>
