@@ -52,6 +52,8 @@ public abstract class AsyncOperation extends EngineOperation {
 
     abstract void cancel();
 
+    abstract void completeExceptionally(Throwable throwable);
+
     protected abstract void doRun() throws Exception;
 
     protected final void doSendResponse(Object value) {
