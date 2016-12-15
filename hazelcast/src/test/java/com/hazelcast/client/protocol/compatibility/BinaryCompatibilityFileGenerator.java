@@ -137,7 +137,6 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicate
 import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
@@ -270,6 +269,17 @@ import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainPermitsCodec;
@@ -368,8 +378,7 @@ import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strin
 import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
 
 
-public class
-BinaryCompatibilityFileGenerator {
+public class BinaryCompatibilityFileGenerator {
     public static void main(String[] args) throws IOException {
         OutputStream out = new FileOutputStream("1.4.protocol.compatibility.binary");
         DataOutputStream outputStream = new DataOutputStream(out);
@@ -1349,30 +1358,6 @@ BinaryCompatibilityFileGenerator {
     ClientMessage clientMessage = MapProjectWithPredicateCodec.encodeResponse(    datas   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
-}
-
-
-{
-    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
-     outputStream.writeInt(clientMessage.getFrameLength());
-     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
-}
-{
-    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
-    outputStream.writeInt(clientMessage.getFrameLength());
-    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
-}
-{
-    {
-        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapInvalidationEvent( aData ,  aString ,  aUUID ,  aLong   );
-        outputStream.writeInt(clientMessage.getFrameLength());
-        outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
-     }
-    {
-        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
-        outputStream.writeInt(clientMessage.getFrameLength());
-        outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
-     }
 }
 
 
@@ -4618,6 +4603,138 @@ BinaryCompatibilityFileGenerator {
 }
 {
     ClientMessage clientMessage = CardinalityEstimatorEstimateCodec.encodeResponse(    aLong   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorShutdownCodec.encodeRequest(    aString ,    anAddress   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorShutdownCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(    aString ,    aData   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorSubmitToPartitionCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorSubmitToAddressCodec.encodeRequest(    aString ,    anAddress ,    aData   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorSubmitToAddressCodec.encodeResponse( );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(    aString ,    anAddress   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    strings   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorGetStatsCodec.encodeRequest(    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetStatsCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorGetDelayCodec.encodeRequest(    aString ,    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetDelayCodec.encodeResponse(    aLong   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorCancelCodec.encodeRequest(    aString ,    aBoolean   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorCancelCodec.encodeResponse(    aBoolean   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorIsCancelledCodec.encodeRequest(    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorIsCancelledCodec.encodeResponse(    aBoolean   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorIsDoneCodec.encodeRequest(    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorIsDoneCodec.encodeResponse(    aBoolean   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorGetResultCodec.encodeRequest(    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetResultCodec.encodeResponse(    aData   );
+    outputStream.writeInt(clientMessage.getFrameLength());
+    outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+
+
+{
+    ClientMessage clientMessage = ScheduledExecutorDisposeCodec.encodeRequest(    aString   );
+     outputStream.writeInt(clientMessage.getFrameLength());
+     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorDisposeCodec.encodeResponse( );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }

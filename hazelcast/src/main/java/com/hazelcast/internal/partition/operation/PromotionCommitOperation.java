@@ -22,7 +22,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.MigrationCycleOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -117,8 +116,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             logger.fine("Submitting before promotion tasks for " + promotions.size() + " promotions.");
         }
         for (MigrationInfo promotion : promotions) {
-            InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(promotion.getPartitionId());
-            partition.setMigrating(true);
+            partitionStateManager.setMigratingFlag(promotion.getPartitionId());
             operationService.execute(new BeforePromotionTask(this, promotion, nodeEngine, tasks));
         }
     }

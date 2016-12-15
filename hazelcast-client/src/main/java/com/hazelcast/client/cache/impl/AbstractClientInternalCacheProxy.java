@@ -205,10 +205,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         if (nearCacheConfig != null) {
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
-            int partitionCount = getContext().getPartitionService().getPartitionCount();
-            nearCache = asInvalidationAware(nearCacheManager.getOrCreateNearCache(nameWithPrefix,
-                    nearCacheConfig, adapter), partitionCount);
-            keyStateMarker = ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
+            nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
             registerInvalidationListener();
         }
     }
@@ -944,6 +941,10 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         if (nearCache == null || !nearCache.isInvalidatedOnChange()) {
             return;
         }
+
+        int partitionCount = getContext().getPartitionService().getPartitionCount();
+        nearCache = asInvalidationAware(nearCache, partitionCount);
+        keyStateMarker = ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
 
         RepairingTask repairingTask = clientContext.getRepairingTask(SERVICE_NAME);
         repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
