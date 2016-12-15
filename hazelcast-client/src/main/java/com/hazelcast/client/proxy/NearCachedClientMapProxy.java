@@ -72,7 +72,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     private boolean invalidateOnChange;
     private NearCache<Object, Object> nearCache;
     private RepairingHandler repairingHandler;
-    private KeyStateMarker keyStateMarker;
+    private KeyStateMarker keyStateMarker = KeyStateMarker.TRUE_MARKER;
 
     private volatile String invalidationListenerId;
 
@@ -88,12 +88,13 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheConfig nearCacheConfig = context.getClientConfig().getNearCacheConfig(name);
         NearCacheManager nearCacheManager = context.getNearCacheManager();
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
-        int partitionCount = context.getPartitionService().getPartitionCount();
-        nearCache = asInvalidationAware(nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter), partitionCount);
-        keyStateMarker = getKeyStateMarker();
-
+        nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
         invalidateOnChange = nearCache.isInvalidatedOnChange();
         if (invalidateOnChange) {
+            int partitionCount = context.getPartitionService().getPartitionCount();
+            nearCache = asInvalidationAware(nearCache, partitionCount);
+            keyStateMarker = getKeyStateMarker();
+
             repairingHandler = context.getRepairingTask(SERVICE_NAME).registerAndGetHandler(name, nearCache);
             addNearCacheInvalidationListener(new ClientMapAddNearCacheEventHandler());
         }

@@ -62,7 +62,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     private boolean cacheLocalEntries;
     private boolean invalidateOnChange;
-    private KeyStateMarker keyStateMarker;
+    private KeyStateMarker keyStateMarker = KeyStateMarker.TRUE_MARKER;
     private NearCache<Object, Object> nearCache;
     private MapNearCacheManager mapNearCacheManager;
     private RepairingHandler repairingHandler;
@@ -81,11 +81,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         int partitionCount = partitionService.getPartitionCount();
-        nearCache = asInvalidationAware(mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig), partitionCount);
-        keyStateMarker = getKeyStateMarker();
-
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
         invalidateOnChange = nearCache.isInvalidatedOnChange();
         if (invalidateOnChange) {
+            nearCache = asInvalidationAware(nearCache, partitionCount);
+            keyStateMarker = getKeyStateMarker();
+
             addNearCacheInvalidateListener();
         }
     }
