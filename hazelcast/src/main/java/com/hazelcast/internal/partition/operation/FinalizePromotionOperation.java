@@ -17,7 +17,6 @@
 package com.hazelcast.internal.partition.operation;
 
 import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -54,13 +53,9 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
         this.success = success;
     }
 
-    private void initLogger() {
-        logger = getLogger();
-    }
-
     @Override
     public void beforeRun() throws Exception {
-        initLogger();
+        logger = getLogger();
     }
 
     @Override
@@ -138,9 +133,8 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
     }
 
     private void clearPartitionMigratingFlag() {
-        final InternalPartitionServiceImpl service = getService();
+        InternalPartitionServiceImpl service = getService();
         PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
-        partition.setMigrating(false);
+        partitionStateManager.clearMigratingFlag(getPartitionId());
     }
 }
