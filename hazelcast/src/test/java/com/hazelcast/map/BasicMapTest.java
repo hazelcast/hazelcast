@@ -702,6 +702,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         final AtomicInteger counter = new AtomicInteger(6);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch waitTryPutFailure = new CountDownLatch(1);
+        final StringBuilder failureMessageBuilder = new StringBuilder();
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
@@ -724,6 +725,11 @@ public class BasicMapTest extends HazelcastTestSupport {
 
                     if (map.tryPut(key1, "value1", 5, SECONDS)) {
                         counter.decrementAndGet();
+                    } else {
+                        failureMessageBuilder.append("tryPut timed out while waiting to acquire lock on key1.");
+                        // immediately end the test
+                        latch.countDown();
+                        return;
                     }
 
                     if (map.get(key1).equals("value1")) {
@@ -733,7 +739,7 @@ public class BasicMapTest extends HazelcastTestSupport {
                     latch.countDown();
                 } catch (Exception e) {
                     e.printStackTrace();
-                    fail(e.getMessage());
+                    failureMessageBuilder.append("Exception: " + e.getMessage() + " when counter was " + counter.get() + ".");
                 }
             }
         });
@@ -742,8 +748,17 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertOpenEventually(waitTryPutFailure);
 
         map.unlock("key1");
-        assertOpenEventually(latch);
+        try {
+            boolean completed = latch.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
+            assertTrue("tryPut operations were not completed in time, counter was " + counter.get() + " and failure"
+                    + "message is \"" + failureMessageBuilder.toString() + "\".", completed);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
+        // if successful, nothing should have been written to failureMessageBuilder
+        String failures = failureMessageBuilder.toString();
+        assertEquals(failures, "", failures);
         assertEquals(0, counter.get());
         assertJoinable(thread);
     }
