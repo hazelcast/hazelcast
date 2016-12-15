@@ -56,17 +56,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <!-- TEST -->
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <scope>test</scope>
-            <version>${hazelcast.version}</version>
-            <classifier>tests</classifier>
-        </dependency>
-
-
     </dependencies>
 
 </project>
