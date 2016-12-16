@@ -62,6 +62,12 @@ public class KeyStateMarkerImpl implements KeyStateMarker {
         } while (++slot < marks.length());
     }
 
+    @Override
+    public boolean isUnmarked(Object key) {
+        int slot = getSlot(key);
+        return marks.get(slot) == UNMARKED.getState();
+    }
+
     private boolean casState(Object key, STATE expect, STATE update) {
         int slot = getSlot(key);
         return marks.compareAndSet(slot, expect.getState(), update.getState());

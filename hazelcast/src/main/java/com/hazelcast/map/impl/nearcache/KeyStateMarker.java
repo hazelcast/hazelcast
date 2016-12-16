@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.nearcache;
 
 /**
  * Used to assign a {@link STATE} to a key.
- *
+ * <p>
  * That {@link STATE} is used when deciding whether or not a key can be put-able to near cache.
  * Because there is a possibility that an invalidation for a key can be received before putting that
  * key into near cache, in that case, key should not be put into near cache.
@@ -46,12 +46,15 @@ public interface KeyStateMarker {
 
         @Override
         public void unmarkForcibly(Object key) {
-
         }
 
         @Override
         public void unmarkAllForcibly() {
+        }
 
+        @Override
+        public boolean isUnmarked(Object key) {
+            return true;
         }
     };
 
@@ -64,6 +67,8 @@ public interface KeyStateMarker {
     void unmarkForcibly(Object key);
 
     void unmarkAllForcibly();
+
+    boolean isUnmarked(Object key);
 
     enum STATE {
         UNMARKED(0),
