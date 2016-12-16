@@ -138,6 +138,7 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -277,8 +278,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int READ_AND_RESET_ACCUMULATOR = 127;
     public static final int SET_READ_CURSOR = 128;
     public static final int ACCUMULATOR_CONSUMER = 129;
+    public static final int CACHED_QUERY_ENTRY = 130;
+    public static final int LAZY_MAP_ENTRY = 131;
 
-    private static final int LEN = ACCUMULATOR_CONSUMER + 1;
+    private static final int LEN = LAZY_MAP_ENTRY + 1;
 
     @Override
     public int getFactoryId() {
@@ -932,6 +935,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ACCUMULATOR_CONSUMER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AccumulatorConsumerOperation();
+            }
+        };
+        constructors[CACHED_QUERY_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachedQueryEntry();
+            }
+        };
+        constructors[LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LazyMapEntry();
             }
         };
 
