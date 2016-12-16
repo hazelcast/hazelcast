@@ -25,7 +25,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
-import java.security.Permission;
 import java.util.List;
 
 /**
@@ -98,8 +97,4 @@ public class AuthenticationCustomCredentialsMessageTask
         return null;
     }
 
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
 }
