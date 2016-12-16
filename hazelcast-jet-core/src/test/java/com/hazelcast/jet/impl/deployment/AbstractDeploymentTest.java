@@ -10,8 +10,6 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -19,6 +17,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.junit.Test;
 
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static org.junit.Assert.assertNotNull;
@@ -34,7 +33,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Distribution() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -48,7 +47,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Distribution() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -65,7 +64,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Distribution() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("apachev1", ApacheV1Isolated::new));
@@ -80,7 +79,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Isolation_Between_Engines() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -106,7 +105,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Isolation_Between_Engines() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -139,7 +138,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Isolation_Between_Engines() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("apachev1", ApacheV1Isolated::new));
@@ -166,7 +165,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Sharing_Between_Jobs() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("load person and car", LoadPersonAndCar::new));
@@ -188,8 +187,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Sharing_Between_Jobs() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
-
+        createCluster(3);
 
         URL classUrl1 = this.getClass().getResource("/cp1/");
         URLClassLoader urlClassLoader1 = new URLClassLoader(new URL[]{classUrl1}, null);
@@ -221,7 +219,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Sharing_Between_Jobs() throws Throwable {
-        getFactory().newInstances(new Config(), 3);
+        createCluster(3);
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("apachev1andv2", ApacheV1andV2::new));
@@ -240,6 +238,13 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
         executeAndPeel(job1);
         executeAndPeel(job2);
+    }
+
+    private void createCluster(int nodeCount) {
+        HazelcastInstance[] instances = getFactory().newInstances(new Config(), nodeCount);
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(nodeCount, instance);
+        }
     }
 
 

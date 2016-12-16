@@ -59,7 +59,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .addEdge(new Edge(producer, consumer));
 
         jetEngine.newJob(dag).execute();
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(10);
 
         File file = new File(directory, randomName());
         writeNewLine(file, "hello", "world");
@@ -97,7 +97,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .addEdge(new Edge(producer, consumer));
 
         jetEngine.newJob(dag).execute();
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(10);
 
         writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");
@@ -137,7 +137,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .addEdge(new Edge(producer, consumer));
 
         jetEngine.newJob(dag).execute();
-        sleepAtLeastSeconds(5);
+        sleepAtLeastSeconds(10);
 
         writeNewLine(file, "hello", "world");
         IList<Object> list = instance.getList("consumer");

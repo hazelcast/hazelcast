@@ -106,7 +106,7 @@ public class FileStreamReader extends AbstractProducer {
                 try {
                     key = watcher.take();
                 } catch (InterruptedException x) {
-                    return false;
+                    return true;
                 }
 
                 for (WatchEvent<?> event : key.pollEvents()) {
@@ -146,10 +146,6 @@ public class FileStreamReader extends AbstractProducer {
                             readFile(resolved, fileOffsets.computeIfAbsent(resolved.toString(), s -> 0L));
                             return !key.reset();
                         }
-                    } else if (kind == ENTRY_DELETE) {
-                        LOGGER.info("Directory (" + filePath + ") deleted, stopped watching");
-                        watcher.close();
-                        return true;
                     }
                 }
                 boolean valid = key.reset();
