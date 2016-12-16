@@ -133,10 +133,11 @@ public class BatchInvalidator extends Invalidator {
     }
 
     private void sendInvalidations(String mapName, List<Invalidation> invalidations) {
+        Invalidation invalidation = new BatchNearCacheInvalidation(mapName, invalidations);
+
         Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
         for (EventRegistration registration : registrations) {
             if (eventFilter.apply(registration)) {
-                Invalidation invalidation = new BatchNearCacheInvalidation(mapName, invalidations);
                 eventService.publishEvent(serviceName, registration, invalidation, mapName.hashCode());
             }
         }
