@@ -121,7 +121,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 30);
     }
 
 
@@ -166,7 +166,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         latch2.await(3, TimeUnit.SECONDS);
         Thread.sleep(500);
         lock.unlock();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 5);
     }
 
     //todo:   what does isLocked2 test?
@@ -223,7 +223,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         t.start();
         Thread.sleep(2000);
         t.interrupt();
-        assertTrue("tryLock() is not interrupted!", latch.await(30, TimeUnit.SECONDS));
+        assertOpenEventually("tryLock() is not interrupted!", latch, 30);
         lock.unlock();
         assertTrue("Could not acquire lock!", lock.tryLock());
     }
@@ -252,7 +252,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         });
         t.start();
         lockOwner.shutdown();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 10);
     }
 
     @Test(timeout = 100000)
@@ -278,7 +278,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         });
         t.start();
         lockOwner.shutdown();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 10);
     }
 
     private void assertAllLocked(ILock... locks) {
@@ -329,7 +329,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 10);
     }
 
     @Test(timeout = 100000)
@@ -388,7 +388,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         t.start();
         sleepMillis(5000);
         t.interrupt();
-        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        assertOpenEventually(latch, 30);
     }
 
     @Test
