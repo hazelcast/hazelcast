@@ -21,6 +21,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -35,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -68,6 +70,7 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         final String name = randomString();
         final ITopic<Object> topic = instance.getTopic(name);
         assertOpenEventually(createdLatch, 10);
+        assertEquals(1, client.getDistributedObjects().size());
         topic.destroy();
         assertOpenEventually(destroyedLatch, 10);
         assertTrueAllTheTime(new AssertTask() {
@@ -79,4 +82,36 @@ public class DistributedObjectListenerTest extends HazelcastTestSupport {
         }, 5);
     }
 
+
+    @Test
+    public void testGetDistributedObjectsAfterRemove_FromNode() {
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        IMap firstMap = server.getMap("firstMap");
+        server.getMap("secondMap");
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        assertEquals(2, client.getDistributedObjects().size());
+
+        firstMap.destroy();
+
+        assertEquals(1, client.getDistributedObjects().size());
+
+    }
+
+    @Test
+    public void testGetDistributedObjectsAfterRemove_fromClient() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
+        IMap<Object, Object> firstMap = client1.getMap("firstMap");
+        client1.getMap("secondMap");
+
+        HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
+        assertEquals(2, client1.getDistributedObjects().size());
+        assertEquals(2, client2.getDistributedObjects().size());
+
+        firstMap.destroy();
+
+        assertEquals(1, client1.getDistributedObjects().size());
+        assertEquals(1, client2.getDistributedObjects().size());
+    }
 }
