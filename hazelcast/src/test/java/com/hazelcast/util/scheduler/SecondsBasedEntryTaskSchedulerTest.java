@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static com.hazelcast.util.scheduler.ScheduleType.FOR_EACH;
 import static com.hazelcast.util.scheduler.ScheduleType.POSTPONE;
 import static com.hazelcast.util.scheduler.SecondsBasedEntryTaskScheduler.findRelativeSecond;
@@ -68,23 +69,31 @@ public class SecondsBasedEntryTaskSchedulerTest {
     @Test(timeout = 10000)
     public void test_doNotRescheduleEntryWithinSameSecond_postpone() {
         scheduler = new SecondsBasedEntryTaskScheduler<Integer, Integer>(executorService, entryProcessor, POSTPONE);
-        int delayMillis = 0;
+        final int delayMillis = 0;
+        final int key = 1;
 
         int startSecond;
         boolean firstResult;
         boolean secondResult;
-        int stopSecond;
+        int stopSecond = 0;
+
         do {
+            // startSecond must be greater than stopSecond on each trial round
+            // to guarantee the first schedule attempt to be successful.
+            while ((startSecond = findRelativeSecond(delayMillis)) == stopSecond) {
+                sleepMillis(1);
+            }
+
             // we can just assert the second result if the relative second is still the same,
-            // otherwise we may create a false negative failure since the second could have passed after the schedule() call
-            startSecond = findRelativeSecond(delayMillis);
-            firstResult = scheduler.schedule(delayMillis, 1, 1);
-            secondResult = scheduler.schedule(delayMillis, 1, 1);
+            // otherwise we may create a false negative failure since the second could have passed after the schedule() call.
+            firstResult = scheduler.schedule(delayMillis, key, 1);
+            secondResult = scheduler.schedule(delayMillis, key, 1);
             stopSecond = findRelativeSecond(delayMillis);
         } while (startSecond != stopSecond);
+
         assertTrue("First schedule() call should always be successful", firstResult);
         assertFalse("Second schedule() call should not be successful within the same second", secondResult);
-        assertNotNull(scheduler.get(1));
+        assertNotNull(scheduler.get(key));
         assertEquals(1, scheduler.size());
     }
 
