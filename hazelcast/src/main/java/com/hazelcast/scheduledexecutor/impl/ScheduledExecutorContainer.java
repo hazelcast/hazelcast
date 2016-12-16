@@ -379,6 +379,7 @@ public class ScheduledExecutorContainer {
             this.original = descriptor.getDefinition().getCommand();
             this.taskName = descriptor.getDefinition().getName();
             this.statistics = descriptor.getStatsSnapshot();
+            statistics.onInit();
         }
 
         @Override

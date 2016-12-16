@@ -31,7 +31,7 @@ public class ScheduledTaskStatisticsImpl
 
     private long runs;
 
-    private long createdAt = System.nanoTime();
+    private long createdAt;
 
     private long firstRunStart;
 
@@ -48,15 +48,24 @@ public class ScheduledTaskStatisticsImpl
     public ScheduledTaskStatisticsImpl() {
     }
 
-    public ScheduledTaskStatisticsImpl(ScheduledTaskStatistics copy) {
-        this(copy.getTotalRuns(), copy.getFirstRunStartNanos(), copy.getLastRunStartNanos(), copy.getLastRunEndNanos(),
-                copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
+    public ScheduledTaskStatisticsImpl(ScheduledTaskStatisticsImpl copy) {
+        this(copy.createdAt, copy.getTotalRuns(), copy.firstRunStart, copy.lastRunStart,
+                copy.lastRunEnd, copy.getLastIdleTime(MEASUREMENT_UNIT), copy.getTotalRunTime(MEASUREMENT_UNIT),
                 copy.getTotalIdleTime(MEASUREMENT_UNIT));
     }
 
-    public ScheduledTaskStatisticsImpl(long runs, long firstRunStartNanos, long lastRunStartNanos,
+    public ScheduledTaskStatisticsImpl(long runs, long lastIdleTimeNanos, long totalRunTimeNanos,
+                                       long totalIdleTimeNanos) {
+        this.runs = runs;
+        this.lastIdleTime = lastIdleTimeNanos;
+        this.totalRunTime = totalRunTimeNanos;
+        this.totalIdleTime = totalIdleTimeNanos;
+    }
+
+    ScheduledTaskStatisticsImpl(long createdAt, long runs, long firstRunStartNanos, long lastRunStartNanos,
                                        long lastRunEndNanos, long lastIdleTimeNanos, long totalRunTimeNanos,
                                        long totalIdleTimeNanos) {
+        this.createdAt = createdAt;
         this.runs = runs;
         this.firstRunStart = firstRunStartNanos;
         this.lastRunStart = lastRunStartNanos;
@@ -69,26 +78,6 @@ public class ScheduledTaskStatisticsImpl
     @Override
     public long getTotalRuns() {
         return runs;
-    }
-
-    @Override
-    public long getCreatedAtNanos() {
-        return createdAt;
-    }
-
-    @Override
-    public long getFirstRunStartNanos() {
-        return firstRunStart;
-    }
-
-    @Override
-    public long getLastRunStartNanos() {
-        return lastRunStart;
-    }
-
-    @Override
-    public long getLastRunEndNanos() {
-        return lastRunEnd;
     }
 
     @Override
@@ -127,10 +116,6 @@ public class ScheduledTaskStatisticsImpl
     public void writeData(ObjectDataOutput out)
             throws IOException {
         out.writeLong(runs);
-        out.writeLong(createdAt);
-        out.writeLong(firstRunStart);
-        out.writeLong(lastRunStart);
-        out.writeLong(lastRunEnd);
         out.writeLong(lastIdleTime);
         out.writeLong(totalIdleTime);
         out.writeLong(totalRunTime);
@@ -140,13 +125,14 @@ public class ScheduledTaskStatisticsImpl
     public void readData(ObjectDataInput in)
             throws IOException {
         runs = in.readLong();
-        createdAt = in.readLong();
-        firstRunStart = in.readLong();
-        lastRunStart = in.readLong();
-        lastRunEnd = in.readLong();
         lastIdleTime = in.readLong();
         totalIdleTime = in.readLong();
         totalRunTime = in.readLong();
+    }
+
+    @Override
+    public void onInit() {
+        this.createdAt  = System.nanoTime();
     }
 
     @Override
