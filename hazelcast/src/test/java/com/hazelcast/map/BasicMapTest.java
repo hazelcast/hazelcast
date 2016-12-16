@@ -45,12 +45,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -693,74 +693,64 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapTryPut() {
-        final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
-        final String key1 = "key1";
-        final String key2 = "key2";
-        map.lock(key1);
+    public void testTryPut_whenKeyNotLocked() {
+        IMap<Object, Object> map = getInstance().getMap(randomMapName());
+        String key = "key";
+        String value = "value";
 
-        final AtomicInteger counter = new AtomicInteger(6);
-        final CountDownLatch latch = new CountDownLatch(1);
-        final CountDownLatch waitTryPutFailure = new CountDownLatch(1);
-        final StringBuilder failureMessageBuilder = new StringBuilder();
-        Thread thread = new Thread(new Runnable() {
-            public void run() {
+        assertTrue(map.tryPut(key, value, 1, SECONDS));
+        assertEquals(value, map.get(key));
+    }
+
+    @Test
+    public void testTryPut_fails_whenKeyLocked() throws Exception {
+        final IMap<Object, Object> map = getInstance().getMap(randomMapName());
+        final String key = "key";
+        final String value = "value";
+
+        // lock the key
+        spawn(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                map.lock(key);
+                return null;
+            }
+        }).get(30, SECONDS);
+
+        assertFalse(map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testTryPut_whenKeyLocked_thenUnlocked() throws Exception {
+        final IMap<Object, Object> map = getInstance().getMap(randomMapName());
+        final String key = "key";
+        final String value = "value";
+
+        map.lock(key);
+
+        final CountDownLatch tryPutFailureLatch = new CountDownLatch(1);
+
+        Future<Object> future = spawn(new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
                 try {
-                    if (!map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS)) {
-                        counter.decrementAndGet();
-                        waitTryPutFailure.countDown();
-                    }
-
-                    if (map.get(key1) == null) {
-                        counter.decrementAndGet();
-                    }
-
-                    if (map.tryPut(key2, "value", 100, TimeUnit.MILLISECONDS)) {
-                        counter.decrementAndGet();
-                    }
-
-                    if (map.get(key2).equals("value")) {
-                        counter.decrementAndGet();
-                    }
-
-                    if (map.tryPut(key1, "value1", 5, SECONDS)) {
-                        counter.decrementAndGet();
-                    } else {
-                        failureMessageBuilder.append("tryPut timed out while waiting to acquire lock on key1.");
-                        // immediately end the test
-                        latch.countDown();
-                        return;
-                    }
-
-                    if (map.get(key1).equals("value1")) {
-                        counter.decrementAndGet();
-                    }
-
-                    latch.countDown();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    failureMessageBuilder.append("Exception: " + e.getMessage() + " when counter was " + counter.get() + ".");
+                    assertFalse("tryPut() on a locked key should fail!",
+                            map.tryPut(key, value, 100, TimeUnit.MILLISECONDS));
+                } finally {
+                    tryPutFailureLatch.countDown();
                 }
+
+                assertTrue("tryPut() should have been succeeded, key is already unlocked!",
+                        map.tryPut(key, value, 30, SECONDS));
+                return null;
             }
         });
 
-        thread.start();
-        assertOpenEventually(waitTryPutFailure);
+        tryPutFailureLatch.await(30, SECONDS);
+        map.unlock(key);
 
-        map.unlock("key1");
-        try {
-            boolean completed = latch.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS);
-            assertTrue("tryPut operations were not completed in time, counter was " + counter.get() + " and failure"
-                    + "message is \"" + failureMessageBuilder.toString() + "\".", completed);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-        // if successful, nothing should have been written to failureMessageBuilder
-        String failures = failureMessageBuilder.toString();
-        assertEquals(failures, "", failures);
-        assertEquals(0, counter.get());
-        assertJoinable(thread);
+        future.get(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
+        assertEquals(value, map.get(key));
     }
 
     @Test
