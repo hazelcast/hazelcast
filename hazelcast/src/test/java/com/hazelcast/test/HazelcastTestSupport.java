@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import org.apache.log4j.Level;
@@ -46,6 +47,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.ComparisonFailure;
+import org.junit.Rule;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -85,6 +87,9 @@ public abstract class HazelcastTestSupport {
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
 
     private static Level logLevel;
+
+    @Rule
+    public JitterRule jitterRule = new JitterRule();
 
     static {
         ASSERT_TRUE_EVENTUALLY_TIMEOUT = Integer.getInteger("hazelcast.assertTrueEventually.timeout", 120);
