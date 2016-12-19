@@ -252,7 +252,7 @@ public class RestTest extends HazelcastTestSupport {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         HazelcastTestSupport.waitInstanceForSafeState(instance1);
-        String result = String.format("{\"status\":\"success\" \"response\":\"[%s]\n%s\n%s\"}",
+        String result = String.format("{\"status\":\"success\",\"response\":\"[%s]\n%s\n%s\"}",
                 instance1.getCluster().getLocalMember().toString(),
                 BuildInfoProvider.getBuildInfo().getVersion(),
                 System.getProperty("java.version"));
@@ -264,7 +264,7 @@ public class RestTest extends HazelcastTestSupport {
         final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         HazelcastTestSupport.waitInstanceForSafeState(instance1);
-        assertEquals("{\"status\":\"forbidden\" \"response\":\"null\"}", communicator.listClusterNodes("dev1", "dev-pass"));
+        assertEquals("{\"status\":\"forbidden\"}", communicator.listClusterNodes("dev1", "dev-pass"));
     }
 
     @Test
