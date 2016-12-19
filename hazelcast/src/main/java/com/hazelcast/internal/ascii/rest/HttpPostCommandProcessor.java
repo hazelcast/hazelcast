@@ -21,7 +21,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
@@ -196,7 +195,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!checkCredentials(command)) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                boolean success = node.getNodeExtension().triggerForceStart();
+                boolean success = node.getNodeExtension().getInternalHotRestartService().triggerForceStart();
                 res = response(success ? ResponseType.SUCCESS : ResponseType.FAIL);
             }
         } catch (Throwable throwable) {
@@ -213,7 +212,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!checkCredentials(command)) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                boolean success = node.getNodeExtension().triggerPartialStart();
+                boolean success = node.getNodeExtension().getInternalHotRestartService().triggerPartialStart();
                 res = response(success ? ResponseType.SUCCESS : ResponseType.FAIL);
             }
         } catch (Throwable throwable) {
@@ -227,11 +226,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res;
         try {
             if (checkCredentials(command)) {
-                final HotRestartService hotRestartService = textCommandService.getNode().getNodeExtension()
-                                                                              .getHotRestartBackupService();
-                if (hotRestartService != null) {
-                    hotRestartService.backup();
-                }
+                textCommandService.getNode().getNodeExtension().getHotRestartService().backup();
                 res = response(ResponseType.SUCCESS);
             } else {
                 res = response(ResponseType.FORBIDDEN);
@@ -247,11 +242,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         String res;
         try {
             if (checkCredentials(command)) {
-                final HotRestartService hotRestartService = textCommandService.getNode().getNodeExtension()
-                                                                              .getHotRestartBackupService();
-                if (hotRestartService != null) {
-                    hotRestartService.interruptBackupTask();
-                }
+                textCommandService.getNode().getNodeExtension().getHotRestartService().interruptBackupTask();
                 res = response(ResponseType.SUCCESS);
             } else {
                 res = response(ResponseType.FORBIDDEN);

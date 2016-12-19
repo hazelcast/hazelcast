@@ -55,11 +55,8 @@ public class ForceStartNodeRequest implements ConsoleRequest {
         String resultString;
         HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
         try {
-            if (instance.node.getNodeExtension().triggerForceStart()) {
-                resultString = SUCCESS_RESULT;
-            } else {
-                resultString = FAILED_RESULT;
-            }
+            resultString = instance.node.getNodeExtension().getInternalHotRestartService().triggerForceStart()
+                    ? SUCCESS_RESULT : FAILED_RESULT;
         } catch (Exception e) {
             ILogger logger = instance.node.getLogger(getClass());
             logger.warning("Problem on force start: ", e);

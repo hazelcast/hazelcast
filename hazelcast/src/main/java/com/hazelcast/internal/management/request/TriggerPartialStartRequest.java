@@ -17,8 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.management.ManagementCenterService;
 
 import java.io.IOException;
@@ -46,8 +46,8 @@ public class TriggerPartialStartRequest implements ConsoleRequest {
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
         Node node = mcs.getHazelcastInstance().node;
-        NodeExtension nodeExtension = node.getNodeExtension();
-        boolean done = nodeExtension.triggerPartialStart();
+        final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        final boolean done = hotRestartService.triggerPartialStart();
         String result = done ? SUCCESS_RESULT : FAILED_RESULT;
         out.add("result", result);
     }

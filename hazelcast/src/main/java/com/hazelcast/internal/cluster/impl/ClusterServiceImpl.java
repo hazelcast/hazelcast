@@ -26,6 +26,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -557,7 +558,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                         logger.fine(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
                     }
 
-                    if (!node.getNodeExtension().isMemberExcluded(deadAddress, deadMember.getUuid())) {
+                    final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+                    if (!hotRestartService.isMemberExcluded(deadAddress, deadMember.getUuid())) {
                         MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
                         membersRemovedInNotActiveStateRef
                                 .set(MemberMap.cloneAdding(membersRemovedInNotActiveState, deadMember));
@@ -922,7 +924,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public HotRestartService getHotRestartService() {
-        return node.getNodeExtension().getHotRestartBackupService();
+        return node.getNodeExtension().getHotRestartService();
     }
 
     @Override

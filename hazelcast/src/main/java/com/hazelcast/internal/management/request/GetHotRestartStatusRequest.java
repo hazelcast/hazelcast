@@ -17,8 +17,8 @@
 package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
-import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 
@@ -36,10 +36,9 @@ public class GetHotRestartStatusRequest implements ConsoleRequest {
 
     @Override
     public void writeResponse(ManagementCenterService mcs, JsonObject out) throws Exception {
-        Node node = mcs.getHazelcastInstance().node;
-        NodeExtension nodeExtension = node.getNodeExtension();
-        ClusterHotRestartStatusDTO hotRestartStatus = nodeExtension.getCurrentClusterHotRestartStatus();
-        out.add("result", hotRestartStatus.toJson());
+        final Node node = mcs.getHazelcastInstance().node;
+        final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        out.add("result", hotRestartService.getCurrentClusterHotRestartStatus().toJson());
     }
 
     @Override
