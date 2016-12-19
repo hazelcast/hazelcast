@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import org.xbill.DNS.ExtendedResolver;
 import org.xbill.DNS.Lookup;
 import org.xbill.DNS.Record;
 import org.xbill.DNS.SRVRecord;
@@ -39,15 +40,20 @@ final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
 
     private final String serviceDns;
+    private final int serviceDnsTimeout;
 
-    public DnsEndpointResolver(ILogger logger, String serviceDns) {
+    public DnsEndpointResolver(ILogger logger, String serviceDns, int serviceDnsTimeout) {
         super(logger);
         this.serviceDns = serviceDns;
+        this.serviceDnsTimeout = serviceDnsTimeout;
     }
 
     List<DiscoveryNode> resolve() {
         try {
+            ExtendedResolver resolver = new ExtendedResolver();
+            resolver.setTimeout(serviceDnsTimeout);
             Lookup lookup = new Lookup(serviceDns, Type.SRV);
+            lookup.setResolver(resolver);
             lookup.setCache(null); // Avoid caching temporary DNS lookup failures indefinitely in global cache
             Record[] records = lookup.run();
 

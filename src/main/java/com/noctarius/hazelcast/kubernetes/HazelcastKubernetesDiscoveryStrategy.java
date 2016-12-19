@@ -33,6 +33,7 @@ import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
@@ -49,6 +50,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         super(logger, properties);
 
         String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
+        int serviceDnsTimeout = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_TIMEOUT, 5);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
@@ -58,6 +60,7 @@ final class HazelcastKubernetesDiscoveryStrategy
 
         logger.info("Kubernetes Discovery properties: { " //
                 + "service-dns: " + serviceDns + ", " //
+                + "service-dns-timeout: " + serviceDnsTimeout + ", " //
                 + "service-name: " + serviceName + ", " //
                 + "service-label: " + serviceLabel + ", " //
                 + "service-label-value: " + serviceLabelValue + ", " //
@@ -65,7 +68,7 @@ final class HazelcastKubernetesDiscoveryStrategy
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
-            endpointResolver = new DnsEndpointResolver(logger, serviceDns);
+            endpointResolver = new DnsEndpointResolver(logger, serviceDns, serviceDnsTimeout);
         } else {
             endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue, namespace,
                     kubernetesMaster, apiToken);

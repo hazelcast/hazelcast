@@ -146,6 +146,7 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
           <properties>
             <!-- configure discovery service API lookup -->
             <property name="service-dns">MY-SERVICE-DNS-NAME</property>
+            <property name="service-dns-timeout">10</property>
           </properties>
         </discovery-strategy>
       </discovery-strategies>

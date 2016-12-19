@@ -20,6 +20,7 @@ import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
 import com.hazelcast.core.TypeConverter;
 
+import static com.hazelcast.config.properties.PropertyTypeConverter.INTEGER;
 import static com.hazelcast.config.properties.PropertyTypeConverter.STRING;
 
 /**
@@ -54,6 +55,12 @@ public final class KubernetesProperties {
      * <a href="https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns">here</a>.
      */
     public static final PropertyDefinition SERVICE_DNS = property("service-dns", STRING);
+
+    /**
+     * <p>Configuration key: <tt>service-dns-timeout</tt></p>
+     * Defines the DNS service lookup timeout in seconds.
+     */
+    public static final PropertyDefinition SERVICE_DNS_TIMEOUT = property("service-dns-timeout", INTEGER);
 
     /**
      * <p>Configuration key: <tt>service-name</tt></p>
