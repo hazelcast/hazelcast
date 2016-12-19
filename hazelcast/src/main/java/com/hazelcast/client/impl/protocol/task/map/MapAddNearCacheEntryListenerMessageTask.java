@@ -86,6 +86,15 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
 
+        /**
+         * This listener is called by member and in the listener we are sending invalidations to client.
+         * `batchOrderKey` is used by clients'-striped-executor to find a worker for processing invalidation.
+         * By using `batchOrderKey` we are putting all invalidations coming from the same member into the same workers' queue.
+         * So if there is more than one member all members will have their own worker to process invalidations. This provides
+         * more granular processing.
+         */
+        private final int batchOrderKey = nodeEngine.getLocalMember().hashCode();
+
         private ClientNearCacheInvalidationListenerImpl() {
         }
 
@@ -99,7 +108,8 @@ public class MapAddNearCacheEntryListenerMessageTask
                 ExtractedParams params = extractParams(((BatchNearCacheInvalidation) invalidation));
                 ClientMessage message = encodeIMapBatchInvalidationEvent(params.keys, params.sourceUuids,
                         params.partitionUuids, params.sequences);
-                sendClientMessage(invalidation.getName(), message);
+
+                sendClientMessage(batchOrderKey, message);
                 return;
             }
 
@@ -107,12 +117,12 @@ public class MapAddNearCacheEntryListenerMessageTask
                 Data key = invalidation.getKey();
                 ClientMessage message = encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
                         invalidation.getPartitionUuid(), invalidation.getSequence());
+
                 sendClientMessage(key, message);
                 return;
             }
 
             throw new IllegalArgumentException("Unknown invalidation message type " + invalidation);
-
         }
 
         private ExtractedParams extractParams(BatchNearCacheInvalidation batch) {
