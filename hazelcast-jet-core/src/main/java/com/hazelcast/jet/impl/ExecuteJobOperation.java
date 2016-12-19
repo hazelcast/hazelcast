@@ -42,7 +42,7 @@ public class ExecuteJobOperation extends AsyncOperation {
     private DAG dag;
     private long executionId;
     private volatile CompletableFuture<Object> executionInvocationFuture;
-    private Throwable throwable;
+    private Throwable cachedExceptionResult;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
@@ -86,8 +86,8 @@ public class ExecuteJobOperation extends AsyncOperation {
 
         // Exception from ExecuteOperation should have precedence
         execution.thenAcceptBoth(completion, (e1, e2) -> doSendResponse(e1 == null ? e2 : e1));
-        if (throwable != null) {
-            executionInvocationFuture.completeExceptionally(throwable);
+        if (cachedExceptionResult != null) {
+            executionInvocationFuture.completeExceptionally(cachedExceptionResult);
         }
     }
 
@@ -125,7 +125,7 @@ public class ExecuteJobOperation extends AsyncOperation {
     @Override
     void completeExceptionally(Throwable throwable) {
         if (executionInvocationFuture == null) {
-            this.throwable = throwable;
+            this.cachedExceptionResult = throwable;
         } else {
             executionInvocationFuture.completeExceptionally(throwable);
         }

@@ -25,7 +25,7 @@ class ExecuteOperation extends AsyncOperation {
 
     private long planId;
     private volatile CompletionStage<Void> executionFuture;
-    private Throwable throwable;
+    private Throwable cachedExceptionResult;
 
     ExecuteOperation(String engineName, long executionId) {
         super(engineName);
@@ -46,7 +46,7 @@ class ExecuteOperation extends AsyncOperation {
     @Override
     void completeExceptionally(Throwable throwable) {
         if (executionFuture == null) {
-            this.throwable = throwable;
+            this.cachedExceptionResult = throwable;
         } else {
             executionFuture.toCompletableFuture().completeExceptionally(throwable);
         }
@@ -59,8 +59,8 @@ class ExecuteOperation extends AsyncOperation {
         executionFuture = engineContext.getExecutionContext(planId)
                                        .execute(f -> f.handle((r, error) -> error != null ? error : null)
                                                       .thenAccept(this::doSendResponse));
-        if (throwable != null) {
-            executionFuture.toCompletableFuture().completeExceptionally(throwable);
+        if (cachedExceptionResult != null) {
+            executionFuture.toCompletableFuture().completeExceptionally(cachedExceptionResult);
         }
     }
 
