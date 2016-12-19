@@ -145,7 +145,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             loadingFutures.add(f);
         }
 
-        keyLoader.trackLoading(false, null);
+        // We should not track key loading here. IT's not key loading but values loading.
+        // Apart from that it's irrelevant for RECEIVER nodes. SENDER and SENDER_BACKUP will track the key-loading anyway.
+        // Fixes https://github.com/hazelcast/hazelcast/issues/9255
     }
 
     @Override
