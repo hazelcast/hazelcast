@@ -72,6 +72,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance[] ownerAndReplicas = findOwnerAndReplicas(instances, name);
         ownerAndReplicas[0].getLifecycleService().terminate();
         ownerAndReplicas[1].getLifecycleService().terminate();
+        assertClusterSizeEventually(3, ownerAndReplicas[3]);
 
         map = ownerAndReplicas[3].getMap(name);
         map.loadAll(false);
