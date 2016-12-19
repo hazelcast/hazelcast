@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.CachedQueryEntry;
@@ -68,7 +70,6 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
         return oldValue;
     }
 
-
     /**
      * Similar to calling {@link #setValue} with null but doesn't return old-value hence no extra deserialization.
      */
@@ -107,16 +108,28 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable, Iden
         return getKey() + "=" + getValue();
     }
 
-    private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        keyObject = s.readObject();
-        valueObject = s.readObject();
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        keyObject = in.readObject();
+        valueObject = in.readObject();
     }
 
-    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
-        s.defaultWriteObject();
-        s.writeObject(getKey());
-        s.writeObject(getValue());
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeObject(getKey());
+        out.writeObject(getValue());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        keyObject = in.readObject();
+        valueObject = in.readObject();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(getKey());
+        out.writeObject(getValue());
     }
 
     @Override
