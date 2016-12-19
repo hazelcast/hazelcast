@@ -17,7 +17,10 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -33,7 +36,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -50,7 +53,8 @@ import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker, CanCancelOperations {
+public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker,
+        CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     static final int FLOW_CONTROL_PERIOD_MS = 100;
@@ -61,8 +65,8 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
-    private ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -73,6 +77,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     public void init(NodeEngine engine, Properties properties) {
         engine.getExecutionService().scheduleWithRepetition(
                 this::broadcastFlowControlPacket, 0, FLOW_CONTROL_PERIOD_MS, MILLISECONDS);
+        engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
     }
 
     @Override
@@ -81,9 +86,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public void shutdown(boolean terminate) {
-        for (EngineContext engineContext : engineContexts.values()) {
-            engineContext.destroy();
-        }
+        engineContexts.values().forEach(EngineContext::destroy);
     }
 
     @Override
@@ -103,7 +106,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     @Override
     public void populate(LiveOperations liveOperations) {
         this.liveOperations.entrySet().forEach(entry ->
-                entry.getValue().keySet().stream().forEach(callId -> liveOperations.add(entry.getKey(), callId))
+                entry.getValue().keySet().forEach(callId -> liveOperations.add(entry.getKey(), callId))
         );
     }
 
@@ -282,4 +285,29 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
                     destVertexId, destOrdinal));
         }
     }
+
+
+    private class CancelJobsMigrationListener implements MigrationListener {
+
+        @Override
+        @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
+        public void migrationStarted(MigrationEvent migrationEvent) {
+            synchronized (liveOperations) {
+                liveOperations.values().forEach(map -> map.values().forEach(
+                        op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed"))
+                ));
+            }
+        }
+
+        @Override
+        public void migrationCompleted(MigrationEvent migrationEvent) {
+
+        }
+
+        @Override
+        public void migrationFailed(MigrationEvent migrationEvent) {
+
+        }
+    }
+
 }

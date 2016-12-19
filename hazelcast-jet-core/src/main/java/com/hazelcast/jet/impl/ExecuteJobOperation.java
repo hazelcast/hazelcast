@@ -23,7 +23,6 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
@@ -35,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static java.util.stream.Collectors.toList;
 
 public class ExecuteJobOperation extends AsyncOperation {
@@ -42,6 +42,7 @@ public class ExecuteJobOperation extends AsyncOperation {
     private DAG dag;
     private long executionId;
     private volatile CompletableFuture<Object> executionInvocationFuture;
+    private Throwable throwable;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
         super(engineName);
@@ -62,7 +63,7 @@ public class ExecuteJobOperation extends AsyncOperation {
 
         // Future that is signalled on a failure during Init
         CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,
-                plan -> new InitOperation(engineName, executionId, plan));
+                plan -> new InitOperation(engineName, executionId, plan), DEFAULT_TRY_COUNT);
         CompletableFuture<Throwable> initFailed = onException(init);
 
         // Future that is completed on the real completion of all Execute operations
@@ -70,7 +71,7 @@ public class ExecuteJobOperation extends AsyncOperation {
         CompletableFuture<Throwable> execution =
                 // ExecuteOperation should only be run if InitOperation succeeded
                 init.thenCompose(x -> executionInvocationFuture = invokeOnCluster(executionPlanMap,
-                        plan -> new ExecuteOperation(engineName, executionId), executionDone, true))
+                        plan -> new ExecuteOperation(engineName, executionId), executionDone, true, DEFAULT_TRY_COUNT))
                     .handle((v, e) -> Util.peel(e));
 
         // CompleteOperation is fired regardless of success of previous operations
@@ -80,19 +81,24 @@ public class ExecuteJobOperation extends AsyncOperation {
                 CompletableFuture.anyOf(initFailed, executionDone)
                                  .thenCombine(execution, (r, e) -> e)
                                  .thenCompose(e -> invokeOnCluster(executionPlanMap, plan ->
-                                         new CompleteOperation(engineName, executionId, e)))
+                                         new CompleteOperation(engineName, executionId, e), 3))
                                  .handle((v, e) -> Util.peel(e));
 
         // Exception from ExecuteOperation should have precedence
         execution.thenAcceptBoth(completion, (e1, e2) -> doSendResponse(e1 == null ? e2 : e1));
-    }
-
-    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func) {
-        return invokeOnCluster(memberMap, func, new CompletableFuture<>(), false);
+        if (throwable != null) {
+            executionInvocationFuture.completeExceptionally(throwable);
+        }
     }
 
     private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,
-                                                          CompletableFuture<Void> doneFuture, boolean propagateError) {
+                                                          int tryCount) {
+        return invokeOnCluster(memberMap, func, new CompletableFuture<>(), false, tryCount);
+    }
+
+    private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,
+                                                          CompletableFuture<Void> doneFuture, boolean propagateError,
+                                                          int tryCount) {
         AtomicInteger doneLatch = new AtomicInteger(memberMap.size());
         final Stream<ICompletableFuture> futures =
                 memberMap.entrySet().stream().map(e -> getNodeEngine()
@@ -104,6 +110,7 @@ public class ExecuteJobOperation extends AsyncOperation {
                                 doneFuture.complete(null);
                             }
                         })
+                        .setTryCount(tryCount)
                         .invoke());
         return allOf(futures.collect(toList()), propagateError);
     }
@@ -114,6 +121,16 @@ public class ExecuteJobOperation extends AsyncOperation {
             executionInvocationFuture.cancel(true);
         }
     }
+
+    @Override
+    void completeExceptionally(Throwable throwable) {
+        if (executionInvocationFuture == null) {
+            this.throwable = throwable;
+        } else {
+            executionInvocationFuture.completeExceptionally(throwable);
+        }
+    }
+
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
