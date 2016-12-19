@@ -59,7 +59,6 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
     private static final int PARALLEL_REPLICATIONS = 10;
     private static final int BACKUP_SYNC_INTERVAL = 1;
-    private static final int MEMBER_LIST_PUBLISH_INTERVAL_SECONDS = 60;
 
     TestHazelcastInstanceFactory factory;
 
@@ -307,7 +306,6 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
         config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), String.valueOf(BACKUP_SYNC_INTERVAL));
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS));
 
         int parallelReplications = antiEntropyEnabled ? PARALLEL_REPLICATIONS : 0;
         config.setProperty(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS.getName(), String.valueOf(parallelReplications));
