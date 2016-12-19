@@ -288,4 +288,15 @@ public class TestJCache {
         assertEquals(MyEvictionPolicyComparator.class, evictionConfig.getComparator().getClass());
     }
 
+    @Test
+    public void cacheConfigXmlTest_SimpleWriterLoader() throws IOException {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig config =
+                instance1.getConfig().getCacheConfig("cacheWithSimpleWriterAndLoader");
+        assertNotNull(config);
+
+        assertEquals("com.hazelcast.config.CacheConfigTest$EmptyCacheWriter", config.getCacheWriter());
+        assertEquals("com.hazelcast.config.CacheConfigTest$MyCacheLoader", config.getCacheLoader());
+    }
 }

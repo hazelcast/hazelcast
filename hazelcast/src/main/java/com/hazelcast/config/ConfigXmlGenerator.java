@@ -509,7 +509,9 @@ public class ConfigXmlGenerator {
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             checkAndFillCacheLoaderFactoryConfigXml(xml, c.getCacheLoaderFactory());
+            checkAndFillCacheLoaderConfigXml(xml, c.getCacheLoader());
             checkAndFillCacheWriterFactoryConfigXml(xml, c.getCacheWriterFactory());
+            checkAndFillCacheWriterConfigXml(xml, c.getCacheWriter());
             cacheExpiryPolicyFactoryConfigXmlGenerator(xml, c.getExpiryPolicyFactoryConfig());
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
@@ -545,11 +547,22 @@ public class ConfigXmlGenerator {
         }
     }
 
+    private void checkAndFillCacheWriterConfigXml(StringBuilder xml, String cacheWriter) {
+        if (!StringUtil.isNullOrEmpty(cacheWriter)) {
+            xml.append("<cache-writer class-name=\"").append(cacheWriter).append("\"/>");
+        }
+    }
+
     private void checkAndFillCacheLoaderFactoryConfigXml(StringBuilder xml, String cacheLoader) {
         if (!StringUtil.isNullOrEmpty(cacheLoader)) {
             xml.append("<cache-loader-factory class-name=\"").append(cacheLoader).append("\"/>");
         }
+    }
 
+    private void checkAndFillCacheLoaderConfigXml(StringBuilder xml, String cacheLoader) {
+        if (!StringUtil.isNullOrEmpty(cacheLoader)) {
+            xml.append("<cache-loader class-name=\"").append(cacheLoader).append("\"/>");
+        }
     }
 
     private void cacheExpiryPolicyFactoryConfigXmlGenerator(StringBuilder xml,

@@ -429,12 +429,34 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="cache-loader" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache loader class name.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="cache-writer-factory" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:attribute name="class-name" use="required">
                         <xs:annotation>
                             <xs:documentation>
                                 The cache writer factory class name.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cache-writer" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache writer class name.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
