@@ -153,7 +153,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         //stop threads
         stopTest.set(true);
         shadowMember.join();
-        clearFromMember.start();
+        clearFromMember.join();
         populateClientNearCache.join();
         putFromMember.join();
 
