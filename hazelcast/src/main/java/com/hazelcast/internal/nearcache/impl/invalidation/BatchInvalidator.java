@@ -133,6 +133,9 @@ public class BatchInvalidator extends Invalidator {
     }
 
     private void sendInvalidations(String mapName, List<Invalidation> invalidations) {
+        // There will always be at least one listener which listens invalidations. This is the reason behind eager creation
+        // of BatchNearCacheInvalidation instance here. There is a causality between listener and invalidation. Only if we have
+        // a listener, we can have an invalidation, otherwise invalidations are not generated.
         Invalidation invalidation = new BatchNearCacheInvalidation(mapName, invalidations);
 
         Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
