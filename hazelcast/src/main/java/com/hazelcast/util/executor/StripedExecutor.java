@@ -29,13 +29,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static java.lang.Math.ceil;
 
 /**
  * The StripedExecutor internally uses a stripe of queues and each queue has its own private worker-thread.
  * When a task is 'executed' on the StripedExecutor, the task is checked if it is a StripedRunnable. If it
  * is, the right worker is looked up and the task put in the queue of that worker. If the task is not a
  * StripedRunnable, a random worker is looked up.
- * <p/>
+ *
  * If the queue is full and the runnable implements TimeoutRunnable, then a configurable amount of blocking is
  * done on the queue. If the runnable doesn't implement TimeoutRunnable or when the blocking times out,
  * then the task is rejected and a RejectedExecutionException is thrown.
@@ -45,20 +47,27 @@ public final class StripedExecutor implements Executor {
     public static final AtomicLong THREAD_ID_GENERATOR = new AtomicLong();
 
     private final int size;
+    private final ILogger logger;
     private final Worker[] workers;
     private final Random rand = new Random();
-    private final int maximumQueueSize;
-    private final ILogger logger;
+
     private volatile boolean live = true;
 
-    public StripedExecutor(ILogger logger, String threadNamePrefix, ThreadGroup threadGroup
-            , int threadCount, int maximumQueueSize) {
+    public StripedExecutor(ILogger logger, String threadNamePrefix, ThreadGroup threadGroup,
+                           int threadCount, int maximumQueueCapacity) {
+        checkPositive(threadCount, "threadCount should be positive but found " + threadCount);
+        checkPositive(maximumQueueCapacity, "maximumQueueCapacity should be positive but found " + maximumQueueCapacity);
+
         this.logger = logger;
-        this.maximumQueueSize = maximumQueueSize;
         this.size = threadCount;
         this.workers = new Worker[threadCount];
+
+        // `maximumQueueCapacity` is the given max capacity for this executor. Each worker in this executor should consume
+        // only a portion of that capacity. Otherwise we will have `threadCount * maximumQueueCapacity` instead of
+        // `maximumQueueCapacity`.
+        final int perThreadMaxQueueCapacity = (int) ceil(1D * maximumQueueCapacity / threadCount);
         for (int i = 0; i < threadCount; i++) {
-            Worker worker = new Worker(threadGroup, threadNamePrefix);
+            Worker worker = new Worker(threadGroup, threadNamePrefix, perThreadMaxQueueCapacity);
             worker.start();
             workers[i] = worker;
         }
@@ -79,6 +88,7 @@ public final class StripedExecutor implements Executor {
 
     /**
      * Returns the total number of processed events.
+     *
      * @return
      */
     public long processedCount() {
@@ -140,14 +150,24 @@ public final class StripedExecutor implements Executor {
         return workers[index];
     }
 
-    private final class Worker extends Thread {
+    // used in tests.
+    Worker[] getWorkers() {
+        return workers;
+    }
 
-        private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
+    final class Worker extends Thread {
+
+        private final BlockingQueue<Runnable> workQueue;
         private final SwCounter processed = SwCounter.newSwCounter();
-        private Worker(ThreadGroup threadGroup, String threadNamePrefix) {
+        private final int queueCapacity;
+
+        private Worker(ThreadGroup threadGroup, String threadNamePrefix, int queueCapacity) {
             super(threadGroup, threadNamePrefix
                     + "-"
                     + THREAD_ID_GENERATOR.incrementAndGet());
+
+            this.workQueue = new LinkedBlockingQueue<Runnable>(queueCapacity);
+            this.queueCapacity = queueCapacity;
         }
 
         private void schedule(Runnable command) {
@@ -203,6 +223,11 @@ public final class StripedExecutor implements Executor {
                 OutOfMemoryErrorDispatcher.inspectOutOfMemoryError(e);
                 logger.severe(getName() + " caught an exception while processing task:" + task, e);
             }
+        }
+
+        // used in tests.
+        int getQueueCapacity() {
+            return queueCapacity;
         }
     }
 }
