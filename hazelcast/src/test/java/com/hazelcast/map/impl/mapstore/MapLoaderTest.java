@@ -226,7 +226,6 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = MINUTE)
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/5453
     public void testMapCanBeLoaded_whenLoadAllKeysThrowsExceptionFirstTime() throws InterruptedException {
         Config config = getConfig();
         MapLoader failingMapLoader = new FailingMapLoader();
