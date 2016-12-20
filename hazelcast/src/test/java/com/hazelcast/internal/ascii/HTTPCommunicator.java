@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 
@@ -29,10 +28,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+@SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
 
-    final HazelcastInstance instance;
-    final String address;
+    private final HazelcastInstance instance;
+    private final String address;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this.instance = instance;
@@ -41,19 +41,17 @@ public class HTTPCommunicator {
 
     public String poll(String queueName, long timeout) throws IOException {
         String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-        String result = doGet(url);
-        return result;
+        return doGet(url);
     }
 
     public int size(String queueName) throws IOException {
         String url = address + "queues/" + queueName + "/size";
-        Integer result = Integer.parseInt(doGet(url));
-        return result;
+        return Integer.parseInt(doGet(url));
     }
 
     public int offer(String queueName, String data) throws IOException {
         String url = address + "queues/" + queueName;
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
         urlConnection.setDoOutput(true);
@@ -62,41 +60,35 @@ public class HTTPCommunicator {
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-        /** post the data */
-        OutputStream out = null;
-        out = urlConnection.getOutputStream();
+        // post the data
+        OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         writer.write(data);
         writer.close();
         out.close();
-
 
         return urlConnection.getResponseCode();
     }
 
     public String get(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        String result = doGet(url);
-        return result;
+        return doGet(url);
     }
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
         return doGet(url);
-
     }
 
     public String getClusterHealth() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
         return doGet(url);
-
     }
 
     public int put(String mapName, String key, String value) throws IOException {
-
         String url = address + "maps/" + mapName + "/" + key;
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
         urlConnection.setDoOutput(true);
@@ -105,7 +97,7 @@ public class HTTPCommunicator {
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-        /** post the data */
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         writer.write(value);
@@ -116,9 +108,8 @@ public class HTTPCommunicator {
     }
 
     public int deleteAll(String mapName) throws IOException {
-
         String url = address + "maps/" + mapName;
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("DELETE");
         urlConnection.setDoOutput(true);
@@ -131,9 +122,8 @@ public class HTTPCommunicator {
     }
 
     public int delete(String mapName, String key) throws IOException {
-
         String url = address + "maps/" + mapName + "/" + key;
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("DELETE");
         urlConnection.setDoOutput(true);
@@ -146,9 +136,8 @@ public class HTTPCommunicator {
     }
 
     public int shutdownCluster(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/clusterShutdown";
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
         urlConnection.setDoOutput(true);
@@ -157,7 +146,7 @@ public class HTTPCommunicator {
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-        /** post the data */
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8");
@@ -169,22 +158,18 @@ public class HTTPCommunicator {
     }
 
     public String shutdownMember(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/memberShutdown";
         return doPost(url, groupName, groupPassword);
     }
 
     public String getClusterState(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/state";
         return doPost(url, groupName, groupPassword);
-
     }
 
     public int changeClusterState(String groupName, String groupPassword, String newState) throws IOException {
-
         String url = address + "management/cluster/changeState";
-        /** set up the http connection parameters */
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
         urlConnection.setDoOutput(true);
@@ -193,7 +178,7 @@ public class HTTPCommunicator {
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
-        /** post the data */
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8") +
@@ -206,7 +191,6 @@ public class HTTPCommunicator {
     }
 
     public String listClusterNodes(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/nodes";
         return doPost(url, groupName, groupPassword);
     }
@@ -231,7 +215,7 @@ public class HTTPCommunicator {
         return doPost(url, wanRepConfigJson);
     }
 
-    private String doGet(final String url) throws IOException {
+    private String doGet(String url) throws IOException {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {
             InputStream inputStream = httpUrlConnection.getInputStream();
@@ -243,8 +227,8 @@ public class HTTPCommunicator {
         }
     }
 
-    private String doPost(final String url, String... params) throws IOException {
-        /** set up the http connection parameters */
+    private String doPost(String url, String... params) throws IOException {
+        // set up the http connection parameters
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         urlConnection.setRequestMethod("POST");
         urlConnection.setDoOutput(true);
@@ -252,7 +236,7 @@ public class HTTPCommunicator {
         urlConnection.setUseCaches(false);
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-        /** post the data */
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         String data = "";
