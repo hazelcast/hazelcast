@@ -40,8 +40,9 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
-import java.util.Map;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -56,10 +57,25 @@ import static org.junit.Assert.assertEquals;
 public class MemcacheTest extends HazelcastTestSupport {
 
     final static Config config = new XmlConfigBuilder().build();
+    final static List<String> manyKeys = new ArrayList<String>();
 
     @BeforeClass
-    public static void setup() throws IOException {
+    public static void setup() throws IOException, NoSuchAlgorithmException {
         config.setProperty(GroupProperty.MEMCACHE_ENABLED.getName(), "true");
+        MessageDigest md5 = MessageDigest.getInstance("MD5");
+
+        for (Integer x = 0; x < 100; x++) {
+            md5.update(x.toString().getBytes());
+            byte[] digest = md5.digest();
+
+            StringBuffer sb = new StringBuffer();
+            for (int i = 0; i < digest.length; i++) {
+                sb.append(Integer.toString((digest[i] & 0xff) + 0x100, 16).substring(1));
+            }
+
+            manyKeys.add(sb.toString());
+            md5.reset();
+        }
     }
 
     @AfterClass
@@ -258,6 +274,19 @@ public class MemcacheTest extends HazelcastTestSupport {
                     assertEquals(null, client.get(String.valueOf(0)));
                 }
             });
+        } finally {
+            client.shutdown();
+        }
+    }
+
+    @Test
+    public void testBigMultiGet() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final MemcachedClient client = getMemcacheClient(instance);
+
+        try {
+            Map<String, Object> result = client.getBulk(manyKeys);
+            assertEquals("No keys could be fetched", result.size(), 0);
         } finally {
             client.shutdown();
         }
