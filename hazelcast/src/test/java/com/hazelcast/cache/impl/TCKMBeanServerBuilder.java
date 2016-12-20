@@ -28,7 +28,6 @@ import javax.management.NotificationListener;
 /**
  * An MBeanServer builder required by TCK tests. Has no function in the implementation itself.
  */
-//TODO should we move this into tests?
 public class TCKMBeanServerBuilder
         extends MBeanServerBuilder {
 
