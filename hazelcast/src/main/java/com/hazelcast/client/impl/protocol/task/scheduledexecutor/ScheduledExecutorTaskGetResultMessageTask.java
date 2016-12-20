@@ -80,7 +80,7 @@ public class ScheduledExecutorTaskGetResultMessageTask
     @Override
     public Permission getRequiredPermission() {
         final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_MODIFY);
+        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_READ);
     }
 
     @Override
