@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 /**
@@ -80,11 +81,11 @@ public final class PartitionIteratingOperation extends Operation implements Iden
     public void run() throws Exception {
         getOperationServiceImpl().onStartAsyncOperation(this);
 
-        PartitionAwareOperationFactory partitionAware = getPartitionAwareFactoryOrNull();
-        if (partitionAware == null) {
-            executeOperations();
+        PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
+        if (partitionAwareFactory != null) {
+            executePartitionAwareOperations(partitionAwareFactory);
         } else {
-            executePartitionAwareOperations(partitionAware);
+            executeOperations();
         }
     }
 
@@ -97,21 +98,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         sendResponse(new ErrorResponse(cause, getCallId(), isUrgent()));
 
         getLogger().severe(cause);
-    }
-
-    private PartitionAwareOperationFactory getPartitionAwareFactoryOrNull() {
-        if (operationFactory instanceof PartitionAwareOperationFactory) {
-            return ((PartitionAwareOperationFactory) operationFactory);
-        }
-
-        if (operationFactory instanceof OperationFactoryWrapper) {
-            OperationFactory factory = ((OperationFactoryWrapper) operationFactory).getOperationFactory();
-            if (factory instanceof PartitionAwareOperationFactory) {
-                return ((PartitionAwareOperationFactory) factory);
-            }
-        }
-
-        return null;
     }
 
     private void executeOperations() {
