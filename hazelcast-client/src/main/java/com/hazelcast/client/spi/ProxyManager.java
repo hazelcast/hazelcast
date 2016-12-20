@@ -157,7 +157,7 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, createServiceProxyFactory(MapService.class));
-        if (JCacheDetector.isJcacheAvailable(config.getClassLoader())) {
+        if (JCacheDetector.isJCacheAvailable(config.getClassLoader())) {
             register(ICacheService.SERVICE_NAME, new ClientCacheProxyFactory(client));
         }
         register(QueueService.SERVICE_NAME, ClientQueueProxy.class);

@@ -14,7 +14,7 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static com.hazelcast.cache.impl.JCacheDetector.isJcacheAvailable;
+import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -46,7 +46,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true);
 
-        assertTrue(isJcacheAvailable(classLoader));
+        assertTrue(isJCacheAvailable(classLoader));
     }
 
     @Test
@@ -55,21 +55,21 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true);
 
-        assertTrue(isJcacheAvailable(classLoader, logger));
+        assertTrue(isJCacheAvailable(classLoader, logger));
     }
 
     @Test
     public void testIsJCacheAvailable_notFound() throws Exception {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(false);
-        assertFalse(isJcacheAvailable(classLoader));
+        assertFalse(isJCacheAvailable(classLoader));
     }
 
     @Test
     public void testIsJCacheAvailable_notFound_withLogger() throws Exception {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(false);
-        assertFalse(isJcacheAvailable(classLoader, logger));
+        assertFalse(isJCacheAvailable(classLoader, logger));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
                 .thenReturn(true)
                 .thenReturn(false);
 
-        assertFalse(isJcacheAvailable(classLoader));
+        assertFalse(isJCacheAvailable(classLoader));
     }
 
     @Test
@@ -88,6 +88,6 @@ public class JCacheDetectorTest extends HazelcastTestSupport {
         when(ClassLoaderUtil.isClassAvailable(any(ClassLoader.class), anyString()))
                 .thenReturn(true)
                 .thenReturn(false);
-        assertFalse(isJcacheAvailable(classLoader, logger));
+        assertFalse(isJCacheAvailable(classLoader, logger));
     }
 }
