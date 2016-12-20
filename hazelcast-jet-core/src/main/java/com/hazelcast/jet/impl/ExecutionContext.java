@@ -65,6 +65,7 @@ class ExecutionContext {
     private final EngineContext context;
     private final List<ProcessorSupplier> suppliers = new ArrayList<>();
     private final List<Tasklet> tasklets = new ArrayList<>();
+    private CompletionStage<Void> executionCompletionStage;
 
     ExecutionContext(long executionId, EngineContext context) {
         this.executionId = executionId;
@@ -73,9 +74,13 @@ class ExecutionContext {
     }
 
     CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
-        CompletionStage<Void> stage = context.getExecutionService().execute(tasklets, doneCallback);
-        stage.whenComplete((r, e) -> tasklets.clear());
-        return stage;
+        executionCompletionStage = context.getExecutionService().execute(tasklets, doneCallback);
+        executionCompletionStage.whenComplete((r, e) -> tasklets.clear());
+        return executionCompletionStage;
+    }
+
+    public CompletionStage<Void> getExecutionCompletionStage() {
+        return executionCompletionStage;
     }
 
     Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap() {

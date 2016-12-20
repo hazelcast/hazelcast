@@ -37,16 +37,14 @@ import java.util.stream.Stream;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static java.util.stream.Collectors.toList;
 
-public class ExecuteJobOperation extends AsyncOperation {
+public class ExecuteJobOperation extends AsyncExecutionOperation {
 
     private DAG dag;
-    private long executionId;
     private volatile CompletableFuture<Object> executionInvocationFuture;
     private Throwable cachedExceptionResult;
 
     public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
-        super(engineName);
-        this.executionId = executionId;
+        super(engineName, executionId);
         this.dag = dag;
     }
 
@@ -135,14 +133,12 @@ public class ExecuteJobOperation extends AsyncOperation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(executionId);
         out.writeObject(dag);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        executionId = in.readLong();
         dag = in.readObject();
     }
 

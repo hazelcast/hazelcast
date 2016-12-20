@@ -33,6 +33,10 @@ public abstract class EngineOperation extends Operation {
         this.engineName = engineName;
     }
 
+    public String getEngineName() {
+        return engineName;
+    }
+
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);

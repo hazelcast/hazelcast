@@ -42,7 +42,9 @@ public interface ProcessorSupplier extends Serializable {
     List<Processor> get(int count);
 
     /**
-     * Called after execution is finished on all the nodes
+     * Called after execution is finished on all the nodes.
+     * In case of topology change on the cluster, the method will be
+     * called eagerly without waiting all other nodes to complete.
      * @param error Exception if execution finished with an error
      */
     default void complete(Throwable error) {

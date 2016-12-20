@@ -16,13 +16,20 @@
 
 package com.hazelcast.jet.impl;
 
-public abstract class AsyncOperation extends EngineOperation {
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import java.io.IOException;
 
-    protected AsyncOperation() {
+public abstract class AsyncExecutionOperation extends EngineOperation {
+
+    protected long executionId;
+
+    protected AsyncExecutionOperation() {
     }
 
-    public AsyncOperation(String engineName) {
+    public AsyncExecutionOperation(String engineName, long executionId) {
         super(engineName);
+        this.executionId = executionId;
     }
 
     @Override
@@ -56,11 +63,27 @@ public abstract class AsyncOperation extends EngineOperation {
 
     protected abstract void doRun() throws Exception;
 
+    public long getExecutionId() {
+        return executionId;
+    }
+
     protected final void doSendResponse(Object value) {
         try {
             sendResponse(value);
         } finally {
             this.<JetService>getService().deregisterOperation(this);
         }
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(executionId);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        executionId = in.readLong();
     }
 }

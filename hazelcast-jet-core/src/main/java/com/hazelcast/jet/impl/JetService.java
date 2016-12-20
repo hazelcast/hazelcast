@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.jet.JetEngineConfig;
@@ -36,12 +37,13 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.Util.createObjectDataInput;
 import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
@@ -66,7 +68,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
     private final ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Address, Map<Long, AsyncOperation>> liveOperations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Address, Map<Long, AsyncExecutionOperation>> liveOperations = new ConcurrentHashMap<>();
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -112,8 +114,8 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public boolean cancelOperation(Address caller, long callId) {
-        Optional<AsyncOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
-        operation.ifPresent(AsyncOperation::cancel);
+        Optional<AsyncExecutionOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
+        operation.ifPresent(AsyncExecutionOperation::cancel);
         return operation.isPresent();
     }
 
@@ -139,15 +141,15 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return isNewContext[0];
     }
 
-    void registerOperation(AsyncOperation operation) {
-        Map<Long, AsyncOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
+    void registerOperation(AsyncExecutionOperation operation) {
+        Map<Long, AsyncExecutionOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
                 (key) -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
             throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
         }
     }
 
-    void deregisterOperation(AsyncOperation operation) {
+    void deregisterOperation(AsyncExecutionOperation operation) {
         if (liveOperations.get(operation.getCallerAddress()).remove(operation.getCallId()) == null) {
             throw new IllegalStateException("Missing operation during de-registration of operation=" + operation);
         }
@@ -290,13 +292,28 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     private class CancelJobsMigrationListener implements MigrationListener {
 
         @Override
-        @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
         public void migrationStarted(MigrationEvent migrationEvent) {
-            synchronized (liveOperations) {
-                liveOperations.values().forEach(map -> map.values().forEach(
-                        op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed"))
-                ));
-            }
+            Set<Address> addresses = nodeEngine.getClusterService().getMembers().stream()
+                                               .map(Member::getAddress)
+                                               .collect(Collectors.toSet());
+            // complete the processors, whose caller is dead, with TopologyChangedException
+            liveOperations
+                    .entrySet().stream()
+                    .filter(e -> !addresses.contains(e.getKey()))
+                    .flatMap(e -> e.getValue().values().stream())
+                    .forEach(op -> {
+                        EngineContext engineContext = engineContexts.get(op.getEngineName());
+                        Optional.ofNullable(engineContext)
+                                .map(ctx -> ctx.getExecutionContext(op.getExecutionId()))
+                                .map(ExecutionContext::getExecutionCompletionStage)
+                                .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
+                                        engineContext.completeExecution(op.getExecutionId(),
+                                                new TopologyChangedException("Topology has been changed"))));
+                    });
+            // send exception result to all operations
+            liveOperations.values().forEach(map -> map.values().forEach(
+                    op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed"))
+            ));
         }
 
         @Override

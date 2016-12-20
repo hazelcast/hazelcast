@@ -31,7 +31,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -141,7 +140,6 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    @Ignore
     public void when_removeCallingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
         DAG dag = new DAG();
