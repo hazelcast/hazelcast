@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -75,7 +76,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         map = ownerAndReplicas[3].getMap(name);
         map.loadAll(false);
-        assertEquals(DummyMapLoader.SIZE, map.size());
+        assertEquals(DummyMapLoader.DEFAULT_SIZE, map.size());
     }
 
     private HazelcastInstance[] findOwnerAndReplicas(HazelcastInstance[] instances, String name) {
@@ -88,6 +89,33 @@ public class MapLoaderTest extends HazelcastTestSupport {
             ownerAndReplicas[i] = getInstanceForAddress(instances, partition.getReplicaAddress(i));
         }
         return ownerAndReplicas;
+    }
+
+    @Test
+    public void givenSpecificKeysWereReloaded_whenLoadAllIsCalled_thenAllEntriesAreLoadedFromTheStore() {
+        String name = randomString();
+        int keysInMapStore = 10000;
+
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new DummyMapLoader(keysInMapStore));
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = instanceFactory.newInstances(config);
+        IMap<Integer, Integer> map = instances[0].getMap(name);
+
+        //load specific keys
+        map.loadAll(setOfValuesBetween(0, keysInMapStore), true);
+
+        //remove everything
+        map.clear();
+
+        //assert loadAll with load all entries provided by the mapLoader
+        map.loadAll(true);
+        assertEquals(keysInMapStore, map.size());
     }
 
     private HazelcastInstance getInstanceForAddress(HazelcastInstance[] instances, Address address) {
@@ -278,14 +306,18 @@ public class MapLoaderTest extends HazelcastTestSupport {
         });
     }
 
-    private static class DummyMapLoader implements MapLoader<Integer, Integer> {
+    public static class DummyMapLoader implements MapLoader<Integer, Integer> {
 
-        static final int SIZE = 1000;
+        static final int DEFAULT_SIZE = 1000;
 
-        final Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>(SIZE);
+        final Map<Integer, Integer> map = new ConcurrentHashMap<Integer, Integer>(DEFAULT_SIZE);
 
         public DummyMapLoader() {
-            for (int i = 0; i < SIZE; i++) {
+            this(DEFAULT_SIZE);
+        }
+
+        public DummyMapLoader(int size) {
+            for (int i = 0; i < size; i++) {
                 map.put(i, i);
             }
         }
