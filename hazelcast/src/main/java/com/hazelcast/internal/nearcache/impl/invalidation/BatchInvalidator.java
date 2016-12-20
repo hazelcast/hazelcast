@@ -40,9 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static java.lang.Math.min;
 import static java.lang.Thread.currentThread;
-import static java.util.Collections.emptyList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -114,10 +112,7 @@ public class BatchInvalidator extends Invalidator {
     }
 
     private List<Invalidation> pollInvalidations(InvalidationQueue invalidationQueue) {
-        final int size = min(batchSize, invalidationQueue.size());
-        if (size == 0) {
-            return emptyList();
-        }
+        final int size = invalidationQueue.size();
 
         List<Invalidation> invalidations = new ArrayList<Invalidation>(size);
 
@@ -128,8 +123,8 @@ public class BatchInvalidator extends Invalidator {
             }
 
             invalidations.add(invalidation);
-
         }
+
         return invalidations;
     }
 
