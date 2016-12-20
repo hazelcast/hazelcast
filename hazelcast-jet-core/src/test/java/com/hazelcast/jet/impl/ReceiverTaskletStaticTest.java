@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ReceiverTaskletTest {
+public class ReceiverTaskletStaticTest {
 
     @Test
     public void testCompressSeq() throws Exception {
