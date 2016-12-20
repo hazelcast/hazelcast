@@ -68,7 +68,7 @@ public class PostJoinCacheOperationTest {
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheAvailable_noWarningIsLogged() throws Exception {
         // JCacheDetector finds JCache in classpath
-        when(JCacheDetector.isJcacheAvailable(classLoader)).thenReturn(true);
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
         // node engine returns mock CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
 
@@ -85,7 +85,7 @@ public class PostJoinCacheOperationTest {
 
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheNotAvailable_noCacheConfigs() throws Exception {
-        when(JCacheDetector.isJcacheAvailable(classLoader)).thenReturn(false);
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
 
         PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
         postJoinCacheOperation.setNodeEngine(nodeEngine);
@@ -102,7 +102,7 @@ public class PostJoinCacheOperationTest {
     @Test
     public void test_cachePostJoinOperationFails_whenJCacheNotAvailable_withCacheConfigs() throws Exception {
         // JCache is not available in classpath
-        when(JCacheDetector.isJcacheAvailable(classLoader)).thenReturn(false);
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
         // node engine throws HazelcastException due to missing CacheService
         when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
 

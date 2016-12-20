@@ -101,7 +101,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJcacheAvailable(client.getClientConfig().getClassLoader());
+        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(client.getClientConfig().getClassLoader());
         return new ClientExceptionFactory(jcacheAvailable);
     }
 

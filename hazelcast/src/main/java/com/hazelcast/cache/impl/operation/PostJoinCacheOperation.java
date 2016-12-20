@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
-import static com.hazelcast.cache.impl.JCacheDetector.isJcacheAvailable;
+import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 
 public class PostJoinCacheOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -48,7 +48,7 @@ public class PostJoinCacheOperation extends Operation implements IdentifiedDataS
 
     @Override
     public void run() throws Exception {
-        if (isJcacheAvailable(getNodeEngine().getConfigClassLoader())) {
+        if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
             ICacheService cacheService = getService();
             for (CacheConfig cacheConfig : configs) {
                 cacheService.putCacheConfigIfAbsent(cacheConfig);
