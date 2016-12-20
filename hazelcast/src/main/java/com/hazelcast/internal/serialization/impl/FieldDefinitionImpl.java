@@ -26,18 +26,19 @@ public class FieldDefinitionImpl implements FieldDefinition {
     FieldType type;
     int classId;
     int factoryId;
+    int version;
 
-    public FieldDefinitionImpl(int index, String fieldName, FieldType type) {
-        this(index, fieldName, type, 0, 0);
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int version) {
+        this(index, fieldName, type, 0, 0, version);
     }
 
-    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId) {
+    public FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId, int version) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
         this.factoryId = factoryId;
-
+        this.version = version;
     }
 
     @Override
@@ -65,6 +66,11 @@ public class FieldDefinitionImpl implements FieldDefinition {
         return classId;
     }
 
+    @Override
+    public int getVersion() {
+        return version;
+    }
+
     //CHECKSTYLE:OFF
     //Generated equals method has too high NPath Complexity
     @Override
@@ -87,6 +93,9 @@ public class FieldDefinitionImpl implements FieldDefinition {
         if (factoryId != that.factoryId) {
             return false;
         }
+        if (version != that.version) {
+            return false;
+        }
         if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) {
             return false;
         }
@@ -100,6 +109,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + classId;
         result = 31 * result + factoryId;
+        result = 31 * result + version;
         return result;
     }
 
@@ -111,6 +121,7 @@ public class FieldDefinitionImpl implements FieldDefinition {
                 + ", type=" + type
                 + ", classId=" + classId
                 + ", factoryId=" + factoryId
+                + ", version=" + version
                 + '}';
     }
 }
