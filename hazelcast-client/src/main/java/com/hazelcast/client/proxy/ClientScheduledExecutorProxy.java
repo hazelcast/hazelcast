@@ -68,6 +68,7 @@ public class ClientScheduledExecutorProxy
         implements IScheduledExecutorService {
 
     private static final int GET_ALL_SCHEDULED_TIMEOUT = 10;
+    private static final int SHUTDOWN_TIMEOUT = 10;
 
     private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
             logAllExceptions("Exception while ScheduledExecutor Service shutdown", Level.FINEST);
@@ -301,7 +302,7 @@ public class ClientScheduledExecutorProxy
             calls.add(doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()));
         }
 
-        waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+        waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
     }
 
     private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {
