@@ -135,8 +135,7 @@ public abstract class AbstractJoiner implements Joiner {
         doJoin();
         if (!node.joined() && shouldResetHotRestartData()) {
             logger.warning("Could not join to the cluster because hot restart data must be reset.");
-            NodeExtension nodeExtension = node.getNodeExtension();
-            nodeExtension.resetHotRestartData();
+            node.getNodeExtension().getInternalHotRestartService().resetHotRestartData();
             reset();
             doJoin();
         }
@@ -148,8 +147,9 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     private boolean shouldResetHotRestartData() {
-        NodeExtension nodeExtension = node.getNodeExtension();
-        return !nodeExtension.isStartCompleted() && nodeExtension.isMemberExcluded(node.getThisAddress(), node.getThisUuid());
+        final NodeExtension nodeExtension = node.getNodeExtension();
+        return !nodeExtension.isStartCompleted()
+                && nodeExtension.getInternalHotRestartService().isMemberExcluded(node.getThisAddress(), node.getThisUuid());
     }
 
     private void postJoin() {

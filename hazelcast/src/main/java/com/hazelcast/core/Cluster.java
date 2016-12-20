@@ -194,8 +194,7 @@ public interface Cluster {
     ClusterVersion getClusterVersion();
 
     /**
-     * Returns the Hot Restart service for interacting with Hot Restart. Can return null if Hot Restart is not available
-     * (not EE) or not enabled.
+     * Returns the Hot Restart service for interacting with Hot Restart.
      *
      * @return the hot restart service
      * @throws UnsupportedOperationException if the hot restart service is not supported on this instance (e.g. on client)

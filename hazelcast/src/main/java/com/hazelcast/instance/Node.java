@@ -41,8 +41,8 @@ import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
 import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
-import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
+import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
@@ -80,6 +80,7 @@ import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -666,10 +667,11 @@ public class Node {
     public JoinRequest createJoinRequest(boolean withCredentials) {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
+        final Set<String> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), nodeExtension.getExcludedMemberUuids());
+                localMember.getAttributes(), excludedMemberUuids);
     }
 
     public ConfigCheck createConfigCheck() {
@@ -762,7 +764,7 @@ public class Node {
         } else if (nodeExtension.isStartCompleted()) {
             logger.severe("Cannot set new local member since start completed.");
             return;
-        } else if (!nodeExtension.isMemberExcluded(getThisAddress(), getThisUuid())) {
+        } else if (!nodeExtension.getInternalHotRestartService().isMemberExcluded(getThisAddress(), getThisUuid())) {
             logger.severe("Cannot set new local member since this member is not excluded.");
             return;
         }

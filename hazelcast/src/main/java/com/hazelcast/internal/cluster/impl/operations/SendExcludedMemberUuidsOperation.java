@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,9 +48,10 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        NodeExtension nodeExtension = nodeEngine.getNode().getNodeExtension();
-        nodeExtension.handleExcludedMemberUuids(getCallerAddress(), excludedMemberUuids);
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final InternalHotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension()
+                                                                      .getInternalHotRestartService();
+        hotRestartService.handleExcludedMemberUuids(getCallerAddress(), excludedMemberUuids);
     }
 
     @Override
