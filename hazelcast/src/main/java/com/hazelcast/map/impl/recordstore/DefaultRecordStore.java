@@ -144,8 +144,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             Future f = recordStoreLoader.loadValues(keys);
             loadingFutures.add(f);
         }
-
-        keyLoader.trackLoading(false, null);
     }
 
     @Override
