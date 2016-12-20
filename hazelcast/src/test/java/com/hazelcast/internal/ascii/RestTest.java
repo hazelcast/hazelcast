@@ -19,6 +19,7 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.EntryAdapter;
@@ -42,6 +43,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.SocketException;
@@ -57,12 +59,16 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public class RestTest extends HazelcastTestSupport {
 
-    private Config config = new XmlConfigBuilder().build();
+    private final static Config config = new XmlConfigBuilder().build();
+    public static final String STATUS_FORBIDDEN = "{\"status\":\"forbidden\"}";
 
     @Before
     public void setup() {
         config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
         config.setProperty(GroupProperty.HTTP_HEALTHCHECK_ENABLED.getName(), "true");
+        final JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1").setConnectionTimeoutSeconds(3000);
     }
 
     @After
@@ -225,7 +231,8 @@ public class RestTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
 
-        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen"));
+        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterState("dev1", "dev-pass", "frozen").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen").responseCode);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -234,6 +241,53 @@ public class RestTest extends HazelcastTestSupport {
                 assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
             }
         });
+    }
+
+    @Test
+    public void testGetClusterVersion() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        final String expected = "{\"status\":\"success\","
+                + "\"version\":\"" + instance.getCluster().getClusterVersion().toString() + "\"}";
+        assertEquals(expected, communicator.getClusterVersion());
+    }
+
+    @Test
+    public void testChangeClusterVersion() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterVersion("dev", "dev-pass",
+                instance.getCluster().getClusterVersion().toString()).responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.changeClusterVersion("dev1", "dev-pass", "1.2.3").response);
+    }
+
+    @Test
+    public void testHotBackup() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackup("dev", "dev-pass").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.hotBackup("dev1", "dev-pass").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.hotBackupInterrupt("dev", "dev-pass").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.hotBackupInterrupt("dev1", "dev-pass").response);
+    }
+
+    @Test
+    public void testForceAndPartialStart() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.forceStart("dev", "dev-pass").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.forceStart("dev1", "dev-pass").response);
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.partialStart("dev", "dev-pass").responseCode);
+        assertEquals(STATUS_FORBIDDEN, communicator.partialStart("dev1", "dev-pass").response);
+    }
+
+    @Test
+    public void testManagementCenterUrlChange() throws IOException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        final HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        assertEquals(HttpURLConnection.HTTP_NO_CONTENT,
+                communicator.changeManagementCenterUrl("dev", "dev-pass", "http://bla").responseCode);
     }
 
     @Test
@@ -253,7 +307,7 @@ public class RestTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance1);
         HazelcastTestSupport.waitInstanceForSafeState(instance1);
-        assertEquals("{\"status\":\"forbidden\"}", communicator.listClusterNodes("dev1", "dev-pass"));
+        assertEquals(STATUS_FORBIDDEN, communicator.listClusterNodes("dev1", "dev-pass"));
     }
 
     @Test
@@ -286,7 +340,7 @@ public class RestTest extends HazelcastTestSupport {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
 
-        assertEquals("{\"status\":\"forbidden\"}", communicator.shutdownMember("dev1", "dev-pass"));
+        assertEquals(STATUS_FORBIDDEN, communicator.shutdownMember("dev1", "dev-pass"));
     }
 
     @Test
