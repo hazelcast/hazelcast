@@ -18,7 +18,6 @@ package com.noctarius.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
@@ -30,12 +29,14 @@ import org.xbill.DNS.Type;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
-
-    private static final ILogger LOGGER = Logger.getLogger(DnsEndpointResolver.class);
 
     private final String serviceDns;
 
@@ -51,7 +52,7 @@ final class DnsEndpointResolver
             Record[] records = lookup.run();
 
             if (lookup.getResult() != Lookup.SUCCESSFUL) {
-                LOGGER.warning("DNS lookup for serviceDns '" + serviceDns + "' failed");
+                logger.warning("DNS lookup for serviceDns '" + serviceDns + "' failed");
                 return Collections.emptyList();
             }
 
@@ -75,15 +76,15 @@ final class DnsEndpointResolver
                 for (InetAddress i : inetAddress) {
                     Address address = new Address(i, port);
 
-                    if (LOGGER.isFinestEnabled()) {
-                        LOGGER.finest("Found node ip-address is: " + address);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("Found node ip-address is: " + address);
                     }
                     discoveredAddresses.add(address);
                 }
 
             }
             if (discoveredAddresses.isEmpty()) {
-                LOGGER.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
+                logger.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
                 return Collections.EMPTY_LIST;
             }
 
@@ -115,7 +116,7 @@ final class DnsEndpointResolver
         try {
             return org.xbill.DNS.Address.getAllByName(srv.getTarget().canonicalize().toString(true));
         } catch (UnknownHostException e) {
-            LOGGER.severe("Parsing DNS records failed", e);
+            logger.severe("Parsing DNS records failed", e);
             throw e;
         }
     }

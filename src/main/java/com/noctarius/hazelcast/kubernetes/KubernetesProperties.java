@@ -77,8 +77,18 @@ public final class KubernetesProperties {
      */
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
-	public static final PropertyDefinition KUBERNETES_MASTER_URL = property("kubernetes-master", STRING);
-	public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
+    /**
+     * <p>Configuration key: <tt>kubernetes-master</tt></p>
+     * Defines an alternative address for the kubernetes master. Defaults to: <tt>https://kubernetes.default.svc</tt>
+     */
+    public static final PropertyDefinition KUBERNETES_MASTER_URL = property("kubernetes-master", STRING);
+
+    /**
+     * <p>Configuration key: <tt>api-token</tt></p>
+     * Defines an oauth token for the kubernetes client to access the kubernetes REST API. Defaults to reading the
+     * token from the auto-injected file at: <tt>/var/run/secrets/kubernetes.io/serviceaccount/token</tt>
+     */
+    public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
 
     // Prevent instantiation
     private KubernetesProperties() {

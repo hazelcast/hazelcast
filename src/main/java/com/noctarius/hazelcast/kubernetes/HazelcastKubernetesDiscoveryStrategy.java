@@ -28,6 +28,7 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
@@ -35,11 +36,11 @@ import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DN
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
 
+    private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
 
     private final EndpointResolver endpointResolver;
@@ -53,23 +54,21 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
         String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
-		String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, "https://kubernetes.default.svc");
+        String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
 
         logger.info("Kubernetes Discovery properties: { " //
                 + "service-dns: " + serviceDns + ", " //
                 + "service-name: " + serviceName + ", " //
                 + "service-label: " + serviceLabel + ", " //
                 + "service-label-value: " + serviceLabelValue + ", " //
-                + "namespace: " + namespace + ", "
-				+ "kubernetes-master: " + kubernetesMaster
-                + "}");
+                + "namespace: " + namespace + ", " + "kubernetes-master: " + kubernetesMaster + "}");
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel,
-					serviceLabelValue, namespace, kubernetesMaster, apiToken);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue, namespace,
+                    kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;
@@ -153,7 +152,7 @@ final class HazelcastKubernetesDiscoveryStrategy
     }
 
     static abstract class EndpointResolver {
-        private final ILogger logger;
+        protected final ILogger logger;
 
         EndpointResolver(ILogger logger) {
             this.logger = logger;
