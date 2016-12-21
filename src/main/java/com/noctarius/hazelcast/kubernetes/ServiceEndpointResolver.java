@@ -16,19 +16,6 @@
  */
 package com.noctarius.hazelcast.kubernetes;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveryNode;
-import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
-import io.fabric8.kubernetes.api.model.EndpointAddress;
-import io.fabric8.kubernetes.api.model.EndpointSubset;
-import io.fabric8.kubernetes.api.model.Endpoints;
-import io.fabric8.kubernetes.api.model.EndpointsList;
-import io.fabric8.kubernetes.client.Config;
-import io.fabric8.kubernetes.client.ConfigBuilder;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -38,6 +25,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.util.StringUtil;
+
+import io.fabric8.kubernetes.api.model.EndpointAddress;
+import io.fabric8.kubernetes.api.model.EndpointSubset;
+import io.fabric8.kubernetes.api.model.Endpoints;
+import io.fabric8.kubernetes.api.model.EndpointsList;
+import io.fabric8.kubernetes.client.Config;
+import io.fabric8.kubernetes.client.ConfigBuilder;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClient;
 
 class ServiceEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -49,8 +51,9 @@ class ServiceEndpointResolver
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, //
-                                   String serviceLabelValue, String namespace) {
+    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel,
+                                   String serviceLabelValue, String namespace,
+								   String kubernetesMaster, String apiToken) {
 
         super(logger);
 
@@ -59,9 +62,9 @@ class ServiceEndpointResolver
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
 
-        String accountToken = getAccountToken();
-        logger.info("Kubernetes Discovery: Bearer Token { " + accountToken + " }");
-        Config config = new ConfigBuilder().withOauthToken(accountToken).build();
+		apiToken = !StringUtil.isNullOrEmpty(apiToken) ? apiToken : getAccountToken();
+        logger.info("Kubernetes Discovery: Bearer Token { " + apiToken + " }");
+        Config config = new ConfigBuilder().withOauthToken(apiToken).withMasterUrl(kubernetesMaster).build();
         this.client = new DefaultKubernetesClient(config);
     }
 

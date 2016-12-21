@@ -28,12 +28,14 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
@@ -49,21 +51,25 @@ final class HazelcastKubernetesDiscoveryStrategy
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
+        String apiToken = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN, null);
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
+		String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, "https://kubernetes.default.svc");
 
         logger.info("Kubernetes Discovery properties: { " //
                 + "service-dns: " + serviceDns + ", " //
                 + "service-name: " + serviceName + ", " //
                 + "service-label: " + serviceLabel + ", " //
                 + "service-label-value: " + serviceLabelValue + ", " //
-                + "namespace: " + namespace //
+                + "namespace: " + namespace + ", "
+				+ "kubernetes-master: " + kubernetesMaster
                 + "}");
 
         EndpointResolver endpointResolver;
         if (serviceDns != null) {
             endpointResolver = new DnsEndpointResolver(logger, serviceDns);
         } else {
-            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel, serviceLabelValue, namespace);
+            endpointResolver = new ServiceEndpointResolver(logger, serviceName, serviceLabel,
+					serviceLabelValue, namespace, kubernetesMaster, apiToken);
         }
         logger.info("Kubernetes Discovery activated resolver: " + endpointResolver.getClass().getSimpleName());
         this.endpointResolver = endpointResolver;

@@ -77,6 +77,9 @@ public final class KubernetesProperties {
      */
     public static final PropertyDefinition NAMESPACE = property("namespace", STRING);
 
+	public static final PropertyDefinition KUBERNETES_MASTER_URL = property("kubernetes-master", STRING);
+	public static final PropertyDefinition KUBERNETES_API_TOKEN = property("api-token", STRING);
+
     // Prevent instantiation
     private KubernetesProperties() {
     }
