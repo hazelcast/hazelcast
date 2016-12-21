@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
@@ -44,28 +43,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 /**
- * A test that verifies how well Hazelcast is able to deal with a cluster where
- * members are joining an leaving all the time, so partitions are moving. On this
- * cluster, partitioned calls are made and therefor it happens frequently that calls
- * are send to the wrong machine.
+ * Verifies how well Hazelcast is able to deal with a cluster where members
+ * are joining and leaving all the time, so partitions are moving.
+ *
+ * In this cluster, partitioned calls are made and therefor it happens
+ * frequently that calls are sent to the wrong machine.
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class RepartitioningStressTest extends HazelcastTestSupport {
 
+    private static final int INITIAL_MEMBER_COUNT = 5;
+    private static final int THREAD_COUNT = 10;
+    private static final int DURATION_SECONDS = 120;
+
     private BlockingQueue<HazelcastInstance> queue = new LinkedBlockingQueue<HazelcastInstance>();
-    private HazelcastInstance hz;
+
     private TestHazelcastInstanceFactory instanceFactory;
-
-    private final static long DURATION_SECONDS = 120;
-    private final static int THREAD_COUNT = 10;
     private Config config;
-
-    @After
-    public void tearDown() throws IOException {
-        Hazelcast.shutdownAll();
-    }
+    private HazelcastInstance hz;
 
     @Before
     public void setUp() {
@@ -79,55 +75,57 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         config.addMapConfig(mapConfig);
         hz = createHazelcastInstance();
 
-        for (int k = 0; k < INITIAL_MEMBER_COUNT(); k++) {
+        for (int i = 0; i < INITIAL_MEMBER_COUNT; i++) {
             queue.add(createHazelcastInstance());
         }
     }
 
-    private int INITIAL_MEMBER_COUNT() {
-        return 5;
+    @After
+    public void tearDown() {
+        Hazelcast.shutdownAll();
     }
 
+    @Override
     public HazelcastInstance createHazelcastInstance() {
         return instanceFactory.newHazelcastInstance(config);
     }
 
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/3683
-    public void callWithBackups() throws InterruptedException {
-        final ConcurrentMap<Integer, Integer> map = hz.getMap("map");
-        final int itemCount = 10000;
+    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/3683")
+    public void callWithBackups() throws Exception {
+        int itemCount = 10000;
+        ConcurrentMap<Integer, Integer> map = hz.getMap("map");
 
-        for (int k = 0; k < itemCount; k++) {
-            map.put(k, 0);
+        for (int i = 0; i < itemCount; i++) {
+            map.put(i, 0);
         }
 
         RestartThread restartThread = new RestartThread();
         restartThread.start();
 
         UpdateThread[] testThreads = new UpdateThread[THREAD_COUNT];
-        for (int l = 0; l < testThreads.length; l++) {
-            testThreads[l] = new UpdateThread(l, itemCount, map);
-            testThreads[l].start();
+        for (int i = 0; i < testThreads.length; i++) {
+            testThreads[i] = new UpdateThread(i, itemCount, map);
+            testThreads[i].start();
         }
 
-        Thread.sleep(TimeUnit.SECONDS.toMillis(DURATION_SECONDS));
+        sleepSeconds(DURATION_SECONDS);
 
-        for (TestThread t : testThreads) {
-            t.join(TimeUnit.MINUTES.toMillis(1));
-            t.assertDiedPeacefully();
+        for (TestThread thread : testThreads) {
+            thread.join(TimeUnit.MINUTES.toMillis(1));
+            thread.assertDiedPeacefully();
         }
 
         int[] expectedValues = new int[itemCount];
         for (UpdateThread t : testThreads) {
-            for (int k = 0; k < itemCount; k++) {
-                expectedValues[k] += t.values[k];
+            for (int i = 0; i < itemCount; i++) {
+                expectedValues[i] += t.values[i];
             }
         }
 
-        for (int k = 0; k < itemCount; k++) {
-            int expected = expectedValues[k];
-            int found = map.get(k);
+        for (int i = 0; i < itemCount; i++) {
+            int expected = expectedValues[i];
+            int found = map.get(i);
             assertEquals("value not the same", expected, found);
         }
 
@@ -135,25 +133,26 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void callWithoutBackups() throws InterruptedException {
-        final Map<Integer, Integer> map = hz.getMap("map");
+    public void callWithoutBackups() throws Exception {
         final int itemCount = 10000;
-        for (int k = 0; k < itemCount; k++) {
-            map.put(k, k);
+        final Map<Integer, Integer> map = hz.getMap("map");
+
+        for (int i = 0; i < itemCount; i++) {
+            map.put(i, i);
         }
 
         RestartThread restartThread = new RestartThread();
         restartThread.start();
 
         TestThread[] testThreads = new TestThread[THREAD_COUNT];
-        for (int k = 0; k < testThreads.length; k++) {
-            testThreads[k] = new TestThread("GetThread-" + k) {
+        for (int i = 0; i < testThreads.length; i++) {
+            testThreads[i] = new TestThread("GetThread-" + i) {
                 @Override
                 void doRun() {
                     long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
                     Random random = new Random();
-                    for (; ; ) {
+                    while (true) {
                         int key = random.nextInt(itemCount);
                         assertEquals(new Integer(key), map.get(key));
                         if (System.currentTimeMillis() > endTime) {
@@ -162,21 +161,22 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
                     }
                 }
             };
-            testThreads[k].start();
+            testThreads[i].start();
         }
 
-        Thread.sleep(TimeUnit.SECONDS.toMillis(DURATION_SECONDS));
+        sleepSeconds(DURATION_SECONDS);
 
-        for (TestThread t : testThreads) {
-            t.join(TimeUnit.MINUTES.toMillis(1));
-            t.assertDiedPeacefully();
+        for (TestThread thread : testThreads) {
+            thread.join(TimeUnit.MINUTES.toMillis(1));
+            thread.assertDiedPeacefully();
         }
 
         restartThread.stop = true;
     }
 
     private abstract class TestThread extends Thread {
-        private volatile Throwable t;
+
+        private volatile Throwable throwable;
 
         protected TestThread(String name) {
             super(name);
@@ -187,19 +187,19 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             try {
                 doRun();
             } catch (Throwable t) {
-                this.t = t;
+                throwable = t;
                 t.printStackTrace();
             }
         }
 
         abstract void doRun();
 
-        public void assertDiedPeacefully() {
+        void assertDiedPeacefully() {
             assertFalse(isAlive());
 
-            if (t != null) {
-                t.printStackTrace();
-                fail(getName() + " failed with an exception:" + t.getMessage());
+            if (throwable != null) {
+                throwable.printStackTrace();
+                fail(getName() + " failed with an exception: " + throwable.getMessage());
             }
         }
     }
@@ -212,23 +212,24 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         public void run() {
             while (!stop) {
                 try {
-                    Thread.sleep(10000);
+                    sleepSeconds(10);
                     HazelcastInstance hz = queue.take();
                     hz.shutdown();
                     queue.add(createHazelcastInstance());
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             }
         }
     }
 
     private class UpdateThread extends RepartitioningStressTest.TestThread {
+
         private final int itemCount;
         private final ConcurrentMap<Integer, Integer> map;
         private final int[] values;
 
-        public UpdateThread(int l, int itemCount, ConcurrentMap<Integer, Integer> map) {
-            super("Thread-" + l);
+        UpdateThread(int id, int itemCount, ConcurrentMap<Integer, Integer> map) {
+            super("Thread-" + id);
             this.itemCount = itemCount;
             this.map = map;
             this.values = new int[itemCount];
@@ -236,18 +237,19 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
         @Override
         void doRun() {
-
             long endTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(DURATION_SECONDS);
 
             Random random = new Random();
-            for (; ; ) {
+            while (true) {
                 int key = random.nextInt(itemCount);
                 int increment = random.nextInt(100);
                 values[key] += increment;
 
-                for (; ; ) {
+                while (true) {
                     Integer value = map.get(key);
-                    if (value == null) value = 0;
+                    if (value == null) {
+                        value = 0;
+                    }
                     if (map.replace(key, value, value + increment)) {
                         break;
                     }
