@@ -33,7 +33,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Distribution() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -47,7 +47,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Distribution() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -64,7 +64,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Distribution() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag = new DAG();
         dag.addVertex(new Vertex("apachev1", ApacheV1Isolated::new));
@@ -79,7 +79,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Isolation_Between_Engines() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -105,7 +105,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Isolation_Between_Engines() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("create and print person", LoadPersonIsolated::new));
@@ -138,7 +138,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Isolation_Between_Engines() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("apachev1", ApacheV1Isolated::new));
@@ -165,7 +165,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Jar_Sharing_Between_Jobs() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("load person and car", LoadPersonAndCar::new));
@@ -187,7 +187,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Class_Sharing_Between_Jobs() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         URL classUrl1 = this.getClass().getResource("/cp1/");
         URLClassLoader urlClassLoader1 = new URLClassLoader(new URL[]{classUrl1}, null);
@@ -219,7 +219,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     @Test
     public void test_Resource_Sharing_Between_Jobs() throws Throwable {
-        createCluster(3);
+        createCluster(2); 
 
         DAG dag1 = new DAG();
         dag1.addVertex(new Vertex("apachev1andv2", ApacheV1andV2::new));
