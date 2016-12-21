@@ -66,8 +66,7 @@ This fragment will add the discovery plugin as well as necessary transitive depe
 ----
 <hazelcast>
   <properties>
-    <!-- at the moment the discovery needs to be activated explicitly -->
-     <property name="hazelcast.rest.enabled">true</property>
+    <!-- only necessary prior Hazelcast 3.8 -->
     <property name="hazelcast.discovery.enabled">true</property>
   </properties>
 
@@ -129,7 +128,7 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
 ----
 <hazelcast>
   <properties>
-    <!-- at the moment the discovery needs to be activated explicitly -->
+    <!-- only necessary prior Hazelcast 3.8 -->
     <property name="hazelcast.discovery.enabled">true</property>
   </properties>
 
