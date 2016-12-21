@@ -97,8 +97,12 @@ public class CustomSerializationTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             Foo foo1 = (Foo) o;
 
@@ -112,6 +116,7 @@ public class CustomSerializationTest {
         }
     }
 
+    @SuppressWarnings("unused")
     public static class FooDataSerializable extends Foo implements DataSerializable {
 
         AtomicInteger serializationCount = new AtomicInteger();
@@ -124,23 +129,27 @@ public class CustomSerializationTest {
             this.foo = foo;
         }
 
+        @Override
         public String getFoo() {
             return foo;
         }
 
+        @Override
         public void setFoo(String foo) {
             this.foo = foo;
         }
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
-            Foo foo1 = (Foo) o;
-
-            return !(foo != null ? !foo.equals(foo1.foo) : foo1.foo != null);
-
+            Foo that = (Foo) o;
+            return !(foo != null ? !foo.equals(that.foo) : that.foo != null);
         }
 
         @Override
@@ -166,7 +175,6 @@ public class CustomSerializationTest {
                     '}';
         }
     }
-
 
     public static class FooXmlSerializer implements StreamSerializer<Foo> {
 

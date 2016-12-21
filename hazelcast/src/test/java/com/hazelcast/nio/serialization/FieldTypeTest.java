@@ -82,6 +82,4 @@ public class FieldTypeTest {
         assertEquals("Wrong types count! See isArrayType() implementation for details what will break",
                 20, values().length);
     }
-
-
 }

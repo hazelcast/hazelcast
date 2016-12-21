@@ -11,23 +11,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 import static com.hazelcast.nio.serialization.PortableTest.createNamedPortableClassDefinition;
 import static com.hazelcast.nio.serialization.PortableTest.createSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-/**
- * User: sancar
- * Date: 21/05/14
- * Time: 17:17
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PortableClassVersionTest {
 
-    static final int FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
+    private static final int FACTORY_ID = TestSerializationConstants.PORTABLE_FACTORY_ID;
 
     @Test
     public void testDifferentClassVersions() {
@@ -36,7 +29,6 @@ public class PortableClassVersionTest {
                     public Portable create(int classId) {
                         return new NamedPortable();
                     }
-
                 }).build();
 
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
@@ -56,7 +48,6 @@ public class PortableClassVersionTest {
                     public Portable create(int classId) {
                         return new NamedPortable();
                     }
-
                 }).build();
 
         SerializationService serializationService2 = new DefaultSerializationServiceBuilder().setPortableVersion(2)
@@ -69,9 +60,9 @@ public class PortableClassVersionTest {
         testDifferentClassVersions(serializationService, serializationService2);
     }
 
+    // used in EE, so needs to be package private
     static void testDifferentClassVersions(SerializationService serializationService,
                                            SerializationService serializationService2) {
-
         NamedPortable portableV1 = new NamedPortable("named-portable", 123);
         Data dataV1 = serializationService.toData(portableV1);
 
@@ -86,17 +77,15 @@ public class PortableClassVersionTest {
         assertEquals(portableV1.name, v2FromV1.name);
         assertEquals(portableV1.k, v2FromV1.k);
         assertNull(v2FromV1.v);
-
     }
 
     @Test
-    public void testDifferentClassVersionsUsingDataWriteAndRead() throws IOException {
+    public void testDifferentClassVersionsUsingDataWriteAndRead() throws Exception {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
                     }
-
                 }).build();
 
         InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder()
@@ -110,13 +99,12 @@ public class PortableClassVersionTest {
     }
 
     @Test
-    public void testDifferentClassAndServiceVersionsUsingDataWriteAndRead() throws IOException {
+    public void testDifferentClassAndServiceVersionsUsingDataWriteAndRead() throws Exception {
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setPortableVersion(1)
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
                     }
-
                 }).build();
 
         InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder().setPortableVersion(2)
@@ -129,9 +117,10 @@ public class PortableClassVersionTest {
         testDifferentClassVersionsUsingDataWriteAndRead(serializationService, serializationService2);
     }
 
+    // used in EE, so needs to be package private
     static void testDifferentClassVersionsUsingDataWriteAndRead(InternalSerializationService serializationService,
-                                                                InternalSerializationService serializationService2) throws IOException {
-
+                                                                InternalSerializationService serializationService2)
+            throws Exception {
         NamedPortable portableV1 = new NamedPortable("portable-v1", 111);
         Data dataV1 = serializationService.toData(portableV1);
 
@@ -147,7 +136,6 @@ public class PortableClassVersionTest {
         NamedPortableV2 portableV2 = new NamedPortableV2("portable-v2", 123, 500);
         Data dataV2 = serializationService2.toData(portableV2);
 
-
         NamedPortable v1FromV2 = serializationService.toObject(dataV2);
         assertEquals(portableV2.name, v1FromV2.name);
         assertEquals(portableV2.k, v1FromV2.k);
@@ -160,10 +148,10 @@ public class PortableClassVersionTest {
 
     @Test
     public void testPreDefinedDifferentVersionsWithInnerPortable() {
-        final InternalSerializationService serializationService = createSerializationService(1);
+        InternalSerializationService serializationService = createSerializationService(1);
         serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(1));
 
-        final InternalSerializationService serializationService2 = createSerializationService(2);
+        InternalSerializationService serializationService2 = createSerializationService(2);
         serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(2));
 
         NamedPortable[] nn = new NamedPortable[1];
@@ -172,7 +160,7 @@ public class PortableClassVersionTest {
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, nn);
 
-        final MainPortable mainWithInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
+        MainPortable mainWithInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main portable object created for testing!", inner);
 
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithInner);
@@ -180,28 +168,30 @@ public class PortableClassVersionTest {
 
     @Test
     public void testPreDefinedDifferentVersionsWithNullInnerPortable() {
-
-        final InternalSerializationService serializationService = createSerializationService(1);
+        InternalSerializationService serializationService = createSerializationService(1);
         serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(1));
 
-        final InternalSerializationService serializationService2 = createSerializationService(2);
+        InternalSerializationService serializationService2 = createSerializationService(2);
         serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition(2));
 
-        final MainPortable mainWithNullInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
+        MainPortable mainWithNullInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main portable object created for testing!", null);
 
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithNullInner);
     }
 
-    static void testPreDefinedDifferentVersions(SerializationService serializationService,
-                                                SerializationService serializationService2, MainPortable mainPortable) {
-        final Data data = serializationService.toData(mainPortable);
+    private static void testPreDefinedDifferentVersions(SerializationService serializationService,
+                                                        SerializationService serializationService2,
+                                                        MainPortable mainPortable) {
+        Data data = serializationService.toData(mainPortable);
 
         assertEquals(mainPortable, serializationService2.toObject(data));
     }
 
+    // used in EE, so needs to be package private
     static ClassDefinition createInnerPortableClassDefinition(int portableVersion) {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE, portableVersion);
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(FACTORY_ID, TestSerializationConstants.INNER_PORTABLE,
+                portableVersion);
         builder.addByteArrayField("b");
         builder.addCharArrayField("c");
         builder.addShortArrayField("s");
@@ -212,6 +202,4 @@ public class PortableClassVersionTest {
         builder.addPortableArrayField("nn", createNamedPortableClassDefinition(portableVersion));
         return builder.build();
     }
-
-
 }

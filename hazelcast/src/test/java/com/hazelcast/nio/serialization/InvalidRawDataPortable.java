@@ -4,10 +4,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 22/05/14
- */
 class InvalidRawDataPortable extends RawDataPortable {
+
     InvalidRawDataPortable() {
     }
 
@@ -15,10 +13,12 @@ class InvalidRawDataPortable extends RawDataPortable {
         super(l, c, p, k, s, sds);
     }
 
+    @Override
     public int getClassId() {
         return TestSerializationConstants.INVALID_RAW_DATA_PORTABLE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeLong("l", l);
         final ObjectDataOutput output = writer.getRawDataOutput();

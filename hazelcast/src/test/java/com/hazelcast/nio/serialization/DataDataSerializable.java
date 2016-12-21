@@ -21,7 +21,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+@SuppressWarnings("unused")
 class DataDataSerializable implements DataSerializable {
+
     Data data;
 
     DataDataSerializable() {
@@ -31,10 +33,12 @@ class DataDataSerializable implements DataSerializable {
         this.data = data;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeData(data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         data = in.readData();
     }

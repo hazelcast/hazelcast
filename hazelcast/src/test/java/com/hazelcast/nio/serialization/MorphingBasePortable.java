@@ -17,8 +17,8 @@ public class MorphingBasePortable implements Portable {
     double aDouble;
     String aString;
 
-    public MorphingBasePortable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong, float aFloat,
-                                double aDouble, String aString) {
+    public MorphingBasePortable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong,
+                                float aFloat, double aDouble, String aString) {
         this.aByte = aByte;
         this.aBoolean = aBoolean;
         this.character = character;

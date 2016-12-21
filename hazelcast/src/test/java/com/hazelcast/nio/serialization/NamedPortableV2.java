@@ -2,9 +2,6 @@ package com.hazelcast.nio.serialization;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 22/05/14
- */
 class NamedPortableV2 extends NamedPortable implements VersionedPortable {
 
     public Integer v;
@@ -35,11 +32,12 @@ class NamedPortableV2 extends NamedPortable implements VersionedPortable {
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
-        if(reader.hasField("v")) {
+        if (reader.hasField("v")) {
             v = reader.readInt("v");
         }
     }
 
+    @Override
     public int getFactoryId() {
         return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }

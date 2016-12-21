@@ -36,9 +36,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author mdogan 1/4/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PortableTest {
@@ -173,7 +170,6 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionConfigWithErrors() throws Exception {
-        int portableVersion = 1;
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
@@ -184,7 +180,7 @@ public class PortableTest {
         try {
             new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
             fail("Should throw HazelcastSerializationException!");
-        } catch (HazelcastSerializationException e) {
+        } catch (HazelcastSerializationException ignored) {
         }
 
         new DefaultSerializationServiceBuilder().setConfig(serializationConfig).setCheckClassDefErrors(false).build();
@@ -554,11 +550,11 @@ public class PortableTest {
         public void readPortable(PortableReader reader) throws IOException {
             throw new UnsupportedOperationException();
         }
-
     }
 
     public static class TestPortableFactory implements PortableFactory {
 
+        @Override
         public Portable create(int classId) {
             switch (classId) {
                 case TestSerializationConstants.MAIN_PORTABLE:

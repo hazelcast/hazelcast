@@ -5,9 +5,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 22/05/14
- */
+@SuppressWarnings("unused")
 class ComplexDataSerializable implements DataSerializable {
 
     private DataSerializable ds;
@@ -39,14 +37,23 @@ class ComplexDataSerializable implements DataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ComplexDataSerializable that = (ComplexDataSerializable) o;
-
-        if (ds != null ? !ds.equals(that.ds) : that.ds != null) return false;
-        if (ds2 != null ? !ds2.equals(that.ds2) : that.ds2 != null) return false;
-        if (portable != null ? !portable.equals(that.portable) : that.portable != null) return false;
+        if (ds != null ? !ds.equals(that.ds) : that.ds != null) {
+            return false;
+        }
+        if (ds2 != null ? !ds2.equals(that.ds2) : that.ds2 != null) {
+            return false;
+        }
+        if (portable != null ? !portable.equals(that.portable) : that.portable != null) {
+            return false;
+        }
 
         return true;
     }
@@ -61,11 +68,9 @@ class ComplexDataSerializable implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("ComplexDataSerializable{");
-        sb.append("ds=").append(ds);
-        sb.append(", portable=").append(portable);
-        sb.append(", ds2=").append(ds2);
-        sb.append('}');
-        return sb.toString();
+        return "ComplexDataSerializable{" + "ds=" + ds
+                + ", portable=" + portable
+                + ", ds2=" + ds2
+                + '}';
     }
 }
