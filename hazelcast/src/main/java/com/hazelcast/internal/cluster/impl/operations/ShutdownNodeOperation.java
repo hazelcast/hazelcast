@@ -47,7 +47,7 @@ public class ShutdownNodeOperation
                         final Node node = nodeEngine.getNode();
                         node.hazelcastInstance.getLifecycleService().shutdown();
                     }
-                }).start();
+                }, nodeEngine.getNode().getHazelcastThreadGroup().getThreadNamePrefix(".clusterShutdown")).start();
             } else {
                 logger.info("Node is already shutting down. NodeState: " + nodeEngine.getNode().getState());
             }
