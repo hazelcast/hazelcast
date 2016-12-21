@@ -35,8 +35,9 @@ public class SingleNearCacheInvalidation extends Invalidation {
     public SingleNearCacheInvalidation() {
     }
 
-    public SingleNearCacheInvalidation(Data key, String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
-        super(mapName, sourceUuid, partitionUuid, sequence);
+    public SingleNearCacheInvalidation(Data key, String dataStructureName, String sourceUuid,
+                                       UUID partitionUuid, long sequence) {
+        super(dataStructureName, sourceUuid, partitionUuid, sequence);
         // key can be null when null it means this event is a clear event.
         this.key = key;
     }

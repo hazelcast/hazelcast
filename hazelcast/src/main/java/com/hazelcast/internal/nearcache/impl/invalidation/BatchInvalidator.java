@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
-import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -51,18 +50,18 @@ public class BatchInvalidator extends Invalidator {
     private final String invalidationExecutorName;
 
     /**
-     * Creates an invalidation-queue for a map.
+     * Creates an invalidation-queue per data-structure-name.
      */
     private final ConstructorFunction<String, InvalidationQueue> invalidationQueueConstructor
             = new ConstructorFunction<String, InvalidationQueue>() {
         @Override
-        public InvalidationQueue createNew(String mapName) {
+        public InvalidationQueue createNew(String dataStructureName) {
             return new InvalidationQueue();
         }
     };
 
     /**
-     * map-name to invalidation-queue mappings.
+     * data-structure-name to invalidation-queue mappings.
      */
     private final ConcurrentMap<String, InvalidationQueue> invalidationQueues
             = new ConcurrentHashMap<String, InvalidationQueue>();
@@ -84,31 +83,34 @@ public class BatchInvalidator extends Invalidator {
 
     @Override
     protected void invalidateInternal(Invalidation invalidation, int orderKey) {
-        String mapName = invalidation.getName();
-        InvalidationQueue invalidationQueue = getOrPutIfAbsent(invalidationQueues, mapName, invalidationQueueConstructor);
+        String dataStructureName = invalidation.getName();
+        InvalidationQueue invalidationQueue = invalidationQueueOf(dataStructureName);
         invalidationQueue.offer(invalidation);
 
         if (invalidationQueue.size() >= batchSize) {
-            pollAndSendInvalidations(mapName, invalidationQueue);
+            pollAndSendInvalidations(dataStructureName, invalidationQueue);
         }
     }
 
-    private void pollAndSendInvalidations(String mapName, InvalidationQueue invalidationQueue) {
+    private InvalidationQueue invalidationQueueOf(String dataStructureName) {
+        return getOrPutIfAbsent(invalidationQueues, dataStructureName, invalidationQueueConstructor);
+    }
+
+    private void pollAndSendInvalidations(String dataStructureName, InvalidationQueue invalidationQueue) {
         assert invalidationQueue != null;
 
         if (!invalidationQueue.tryAcquire()) {
-            // if still in progress, no need to another attempt, so just return
             return;
         }
 
+        List<Invalidation> invalidations;
         try {
-            List<Invalidation> invalidations = pollInvalidations(invalidationQueue);
-            if (!isEmpty(invalidations)) {
-                sendInvalidations(mapName, invalidations);
-            }
+            invalidations = pollInvalidations(invalidationQueue);
         } finally {
             invalidationQueue.release();
         }
+
+        sendInvalidations(dataStructureName, invalidations);
     }
 
     private List<Invalidation> pollInvalidations(InvalidationQueue invalidationQueue) {
@@ -128,13 +130,13 @@ public class BatchInvalidator extends Invalidator {
         return invalidations;
     }
 
-    private void sendInvalidations(String mapName, List<Invalidation> invalidations) {
+    private void sendInvalidations(String dataStructureName, List<Invalidation> invalidations) {
         // There will always be at least one listener which listens invalidations. This is the reason behind eager creation
         // of BatchNearCacheInvalidation instance here. There is a causality between listener and invalidation. Only if we have
         // a listener, we can have an invalidation, otherwise invalidations are not generated.
-        Invalidation invalidation = new BatchNearCacheInvalidation(mapName, invalidations);
+        Invalidation invalidation = new BatchNearCacheInvalidation(dataStructureName, invalidations);
 
-        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
         for (EventRegistration registration : registrations) {
             if (eventFilter.apply(registration)) {
                 // find worker queue of striped executor by using subscribers' address.
@@ -193,10 +195,10 @@ public class BatchInvalidator extends Invalidator {
     }
 
     @Override
-    public void destroy(String mapName, String sourceUuid) {
-        InvalidationQueue invalidationQueue = invalidationQueues.remove(mapName);
+    public void destroy(String dataStructureName, String sourceUuid) {
+        InvalidationQueue invalidationQueue = invalidationQueues.remove(dataStructureName);
         if (invalidationQueue != null) {
-            invalidateInternal(newClearInvalidation(mapName, sourceUuid), mapName.hashCode());
+            invalidateInternal(newClearInvalidation(dataStructureName, sourceUuid), dataStructureName.hashCode());
         }
     }
 
