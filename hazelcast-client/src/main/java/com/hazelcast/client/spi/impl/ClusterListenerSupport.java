@@ -51,7 +51,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+    public static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     protected final HazelcastClientInstanceImpl client;
 
@@ -233,7 +233,16 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                             connectToCluster();
                         } catch (Exception e) {
                             logger.warning("Could not re-connect to cluster shutting down the client", e);
-                            client.getLifecycleService().shutdown();
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        client.getLifecycleService().shutdown();
+                                    } catch (Exception exception) {
+                                        logger.severe("Exception during client shutdown ", exception);
+                                    }
+                                }
+                            }, client.getName() + ".clientShutdown-").start();
                         }
                     }
                 });

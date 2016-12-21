@@ -255,7 +255,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
             });
         } catch (RejectedExecutionException e) {
-            logger.warning("Execution of callback: " + callback + " is rejected!", e);
+            callback.onFailure(e);
         }
     }
 

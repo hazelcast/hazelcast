@@ -46,7 +46,7 @@ public class ShutdownNodeOperation extends AbstractClusterOperation implements A
                         final Node node = nodeEngine.getNode();
                         node.hazelcastInstance.getLifecycleService().shutdown();
                     }
-                }).start();
+                }, nodeEngine.getHazelcastThreadGroup().getThreadNamePrefix(".clusterShutdown")).start();
             } else {
                 logger.info("Node is already shutting down. NodeState: " + nodeEngine.getNode().getState());
             }
