@@ -56,13 +56,12 @@ class ReceiverTasklet implements Tasklet {
      * adapted according to the actual data flow through the receiver tasklet.
      */
     static final int INITIAL_RECEIVE_WINDOW_COMPRESSED = 800;
+
     /**
      * Receive Window converges towards the amount of data processed per flow-control period multiplied by this number.
      */
-    static final int RWIN_MULTIPLIER = 3;
-
-    static final double FLOW_CONTROL_PERIOD_NS = (double) MILLISECONDS.toNanos(JetService.FLOW_CONTROL_PERIOD_MS);
-
+    private final int rwinMultiplier;
+    private final double flowControlPeriodNs;
 
     private final Queue<PacketWithSender> incoming = new MPSCQueue<>((IdleStrategy) null);
     private final ProgressTracker tracker = new ProgressTracker();
@@ -85,8 +84,10 @@ class ReceiverTasklet implements Tasklet {
 
     //                 END FLOW-CONTROL STATE
 
-    ReceiverTasklet(OutboundCollector collector, int senderCount) {
+    ReceiverTasklet(OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs, int senderCount) {
         this.collector = collector;
+        this.rwinMultiplier = rwinMultiplier;
+        this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);
         this.remainingSenders = senderCount;
         this.ackedSeq = new AtomicLongArray(senderCount);
         this.receiveWindowCompressed = new int[senderCount];
@@ -173,8 +174,8 @@ class ReceiverTasklet implements Tasklet {
         prevAckedSeqCompressed[senderId] = ackedSeqCompressed;
 
         if (hadPrevStats) {
-            final double ackedSeqsPerAckPeriod = FLOW_CONTROL_PERIOD_NS * ackedSeqCompressedDelta / ackTimeDelta;
-            final int targetRwin = RWIN_MULTIPLIER * (int) ceil(ackedSeqsPerAckPeriod);
+            final double ackedSeqsPerAckPeriod = flowControlPeriodNs * ackedSeqCompressedDelta / ackTimeDelta;
+            final int targetRwin = rwinMultiplier * (int) ceil(ackedSeqsPerAckPeriod);
             final int rwinDiff = targetRwin - receiveWindowCompressed[senderId];
             receiveWindowCompressed[senderId] += rwinDiff / 2;
         }

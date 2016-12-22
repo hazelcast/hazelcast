@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 import static java.util.Comparator.comparing;
@@ -34,8 +35,6 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toCollection;
 
 public class ProcessorTasklet implements Tasklet {
-
-    private static final int DEFAULT_HIGH_WATER_MARK = 2048;
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox();
     private final ProgressTracker progTracker = new ProgressTracker();
@@ -60,10 +59,13 @@ public class ProcessorTasklet implements Tasklet {
                 .entrySet().stream()
                 .map(Entry::getValue)
                 .collect(toCollection(ArrayDeque::new));
-        this.outbox = new ArrayDequeOutbox(outstreams.size(), DEFAULT_HIGH_WATER_MARK);
+
         this.outstreams = outstreams.stream()
                                     .sorted(comparing(OutboundEdgeStream::ordinal))
                                     .toArray(OutboundEdgeStream[]::new);
+
+        int[] highWaterMarks = Stream.of(this.outstreams).mapToInt(OutboundEdgeStream::getHighWaterMark).toArray();
+        this.outbox = new ArrayDequeOutbox(outstreams.size(), highWaterMarks);
         this.instreamCursor = popInstreamGroup();
     }
 

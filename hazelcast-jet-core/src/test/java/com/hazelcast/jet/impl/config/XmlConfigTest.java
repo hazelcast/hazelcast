@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.config;
 
+import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.impl.Util;
 import org.junit.Test;
@@ -82,6 +83,21 @@ public class XmlConfigTest {
         JetConfig jetConfig = builder.getJetConfig();
 
         assertConfig(jetConfig);
+    }
+
+    @Test
+    public void when_edgeDefaultsSpecified_usesSpecified() {
+        Properties properties = new Properties();
+        properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
+        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(properties);
+        JetConfig jetConfig = builder.getJetConfig();
+
+        EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
+
+        assertEquals("queueSize", 999 , edgeConfig.getQueueSize());
+        assertEquals("highWaterMark",  998 , edgeConfig.getHighWaterMark());
+        assertEquals("packetSizeLimit", 997 , edgeConfig.getPacketSizeLimit());
+        assertEquals("receiveWindowMultiplier", 996 , edgeConfig.getReceiveWindowMultiplier());
     }
 
     private void assertConfig(JetConfig jetConfig) {

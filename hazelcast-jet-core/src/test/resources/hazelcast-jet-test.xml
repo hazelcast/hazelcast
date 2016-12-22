@@ -26,4 +26,11 @@
         <property name="property1">value1</property>
         <property name="property2">value2</property>
     </properties>
+
+    <edge-defaults>
+        <queue-size>999</queue-size>
+        <high-water-mark>998</high-water-mark>
+        <packet-size-limit>997</packet-size-limit>
+        <receive-window-multiplier>996</receive-window-multiplier>
+    </edge-defaults>
 </hazelcast-jet>

@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.ReceiverTasklet.COMPRESSED_SEQ_UNIT_LOG2;
 import static com.hazelcast.jet.impl.ReceiverTasklet.INITIAL_RECEIVE_WINDOW_COMPRESSED;
-import static com.hazelcast.jet.impl.ReceiverTasklet.RWIN_MULTIPLIER;
 import static java.lang.Math.abs;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -39,12 +38,14 @@ public class ReceiverTaskletSendLimitTest {
 
     private static final long START = SECONDS.toNanos(10);
     private static final long ACK_PERIOD = MILLISECONDS.toNanos(JetService.FLOW_CONTROL_PERIOD_MS);
+    private static final int RWIN_MULTIPLIER = 3;
+    private static final int FLOW_CONTROL_PERIOD_MS = 100;
 
     ReceiverTasklet tasklet;
 
     @Before
     public void before() {
-        tasklet = new ReceiverTasklet(null, 2);
+        tasklet = new ReceiverTasklet(null, RWIN_MULTIPLIER, FLOW_CONTROL_PERIOD_MS, 2);
     }
 
     @Test

@@ -25,9 +25,16 @@ import java.util.Properties;
  */
 public class JetConfig {
 
+    /**
+     * Javadoc pending
+     */
+    public static final int DEFAULT_FLOW_CONTROL_PERIOD_MS = 100;
+
     private final Config hazelcastConfig;
     private int threadCount = Runtime.getRuntime().availableProcessors();
+    private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private String resourceDirectory;
+    private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private Properties properties = new Properties();
 
     /**
@@ -70,16 +77,16 @@ public class JetConfig {
     /**
      * Javadoc pending
      */
-    public JetConfig setExecutionThreadCount(int size) {
-        this.threadCount = size;
-        return this;
+    public int getExecutionThreadCount() {
+        return threadCount;
     }
 
     /**
      * Javadoc pending
      */
-    public int getExecutionThreadCount() {
-        return threadCount;
+    public JetConfig setExecutionThreadCount(int size) {
+        this.threadCount = size;
+        return this;
     }
 
     /**
@@ -97,4 +104,39 @@ public class JetConfig {
         return this;
     }
 
+    /**
+     * @return
+     */
+    public int getFlowControlPeriodMs() {
+        return flowControlPeriodMs;
+    }
+
+    /**
+     * Javadoc pending
+     *
+     * @param flowControlPeriodMs
+     */
+    public JetConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
+        this.flowControlPeriodMs = flowControlPeriodMs;
+        return this;
+    }
+
+    /**
+     * Javadoc pending*
+     *
+     * @return
+     */
+    public EdgeConfig getDefaultEdgeConfig() {
+        return defaultEdgeConfig;
+    }
+
+    /**
+     * Javadoc pending
+     *
+     * @param defaultEdgeConfig
+     */
+    public JetConfig setDefaultEdgeConfig(EdgeConfig defaultEdgeConfig) {
+        this.defaultEdgeConfig = defaultEdgeConfig;
+        return this;
+    }
 }

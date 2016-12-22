@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -30,9 +31,7 @@ import org.w3c.dom.Node;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
-import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getConfigStream;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -43,8 +42,6 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 public class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlJetConfigBuilder.class);
-
-    private final Set<String> occurrenceSet = new HashSet<>();
 
     private final Properties properties;
 
@@ -130,54 +127,59 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private void handleConfig(Element docElement) throws Exception {
         for (Node node : childElements(docElement)) {
-            String nodeName = cleanNodeName(node);
-            if (occurrenceSet.contains(nodeName)) {
-                throw new InvalidConfigurationException("Duplicate '" + nodeName + "' definition found in XML configuration. ");
-            }
-            handleXmlNode(node, nodeName);
-            if (!JetXmlElements.canOccurMultipleTimes(nodeName)) {
-                occurrenceSet.add(nodeName);
+            String name = cleanNodeName(node);
+            switch (name) {
+                case "execution-thread-count":
+                    jetConfig.setExecutionThreadCount(getIntValue(node));
+                    break;
+                case "resource-directory":
+                    jetConfig.setResourceDirectory(getStringValue(node));
+                    break;
+                case "flow-control-period":
+                    jetConfig.setFlowControlPeriodMs(getIntValue(node));
+                    break;
+                case "properties":
+                    fillProperties(node, jetConfig.getProperties());
+                    break;
+                case "edge-defaults":
+                    jetConfig.setDefaultEdgeConfig(parseEdgeDefaults(node));
+                    break;
+                default:
+                    break;
             }
         }
     }
 
-    private void handleXmlNode(Node node, String nodeName) throws Exception {
-        if (JetXmlElements.EXECUTION_THREAD_COUNT.isEqual(nodeName)) {
-            jetConfig.setExecutionThreadCount(Integer.parseInt(getTextContent(node)));
-        } else if (JetXmlElements.RESOURCE_DIRECTORY.isEqual(nodeName)) {
-            jetConfig.setResourceDirectory(getTextContent(node));
-        }
-        if (JetXmlElements.PROPERTIES.isEqual(nodeName)) {
-            fillProperties(node, jetConfig.getProperties());
-        }
-    }
-
-    private enum JetXmlElements {
-        HAZELCAST_JET("hazelcast-jet", false),
-        EXECUTION_THREAD_COUNT("execution-thread-count", false),
-        RESOURCE_DIRECTORY("resource-directory", false),
-        PROPERTIES("properties", false);
-
-        final String name;
-        final boolean multipleOccurrence;
-
-        JetXmlElements(String name, boolean multipleOccurrence) {
-            this.name = name;
-            this.multipleOccurrence = multipleOccurrence;
-        }
-
-        public static boolean canOccurMultipleTimes(String name) {
-            for (JetXmlElements element : values()) {
-                if (name.equals(element.name)) {
-                    return element.multipleOccurrence;
-                }
+    private EdgeConfig parseEdgeDefaults(Node edgeNode) {
+        EdgeConfig config = new EdgeConfig();
+        for (Node child : childElements(edgeNode)) {
+            String name = cleanNodeName(child);
+            switch (name) {
+                case "queue-size":
+                    config.setQueueSize(getIntValue(child));
+                    break;
+                case "packet-size-limit":
+                    config.setPacketSizeLimit(getIntValue(child));
+                    break;
+                case "high-water-mark":
+                    config.setHighWaterMark(getIntValue(child));
+                    break;
+                case "receive-window-multiplier":
+                    config.setReceiveWindowMultiplier(getIntValue(child));
+                    break;
+                default:
+                    break;
             }
-            return true;
         }
-
-        public boolean isEqual(String name) {
-            return this.name.equals(name);
-        }
-
+        return config;
     }
+
+    private int getIntValue(Node node) {
+        return Integer.parseInt(getStringValue(node));
+    }
+
+    private String getStringValue(Node node) {
+        return getTextContent(node);
+    }
+
 }

@@ -39,14 +39,13 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 class SenderTasklet implements Tasklet {
 
-    private static final int PACKET_SIZE_LIMIT = 1 << 14;
-
     private final Connection connection;
     private final Queue<Object> inbox = new ArrayDeque<>();
     private final ProgressTracker progTracker = new ProgressTracker();
     private final InboundEdgeStream inboundEdgeStream;
     private final BufferObjectDataOutput outputBuffer;
     private final int bufPosPastHeader;
+    private final int packetSizeLimit;
 
     private boolean instreamExhausted;
     // read and written by Jet thread
@@ -56,9 +55,9 @@ class SenderTasklet implements Tasklet {
     private volatile int sendSeqLimitCompressed;
 
     SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
-                  Address destinationAddress, long executionId, int destinationVertexId
-    ) {
+                  Address destinationAddress, long executionId, int destinationVertexId, int packetSizeLimit) {
         this.inboundEdgeStream = inboundEdgeStream;
+        this.packetSizeLimit = packetSizeLimit;
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.outputBuffer = createObjectDataOutput(nodeEngine);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
@@ -104,11 +103,11 @@ class SenderTasklet implements Tasklet {
             outputBuffer.position(bufPosPastHeader + Bits.INT_SIZE_IN_BYTES);
             int writtenCount = 0;
             for (Object item;
-                 outputBuffer.position() < PACKET_SIZE_LIMIT
-                     && isWithinLimit(sentSeq, sendSeqLimitCompressed)
-                     && (item = inbox.poll()) != null;
+                 outputBuffer.position() < packetSizeLimit
+                         && isWithinLimit(sentSeq, sendSeqLimitCompressed)
+                         && (item = inbox.poll()) != null;
                  writtenCount++
-            ) {
+                    ) {
                 ObjectWithPartitionId itemWithpId = (ObjectWithPartitionId) item;
                 final int mark = outputBuffer.position();
                 outputBuffer.writeObject(itemWithpId.getItem());

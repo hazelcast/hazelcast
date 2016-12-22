@@ -28,11 +28,11 @@ import java.util.Queue;
 class ArrayDequeOutbox implements Outbox {
 
     private final ArrayDeque<Object>[] queues;
-    private final int highWaterMark;
+    private final int[] highWaterMarks;
 
-    ArrayDequeOutbox(int length, int highWaterMark) {
-        this.highWaterMark = highWaterMark;
-        this.queues = new ArrayDeque[length];
+    ArrayDequeOutbox(int size, int[] highWaterMarks) {
+        this.highWaterMarks = highWaterMarks;
+        this.queues = new ArrayDeque[size];
         Arrays.setAll(queues, i -> new ArrayDeque());
     }
 
@@ -50,8 +50,8 @@ class ArrayDequeOutbox implements Outbox {
 
     @Override
     public boolean isHighWater() {
-        for (ArrayDeque<Object> queue : queues) {
-            if (queue.size() >= highWaterMark) {
+        for (int i = 0; i < queues.length; i++) {
+            if (queues[i].size() >= highWaterMarks[i]) {
                 return true;
             }
         }
@@ -60,7 +60,7 @@ class ArrayDequeOutbox implements Outbox {
 
     @Override
     public boolean isHighWater(int ordinal) {
-        return queues[ordinal].size() >= highWaterMark;
+        return queues[ordinal].size() >= highWaterMarks[ordinal];
     }
 
     int queueCount() {

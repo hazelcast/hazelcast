@@ -50,8 +50,6 @@ import static java.util.stream.Collectors.toMap;
 
 class ExecutionContext {
 
-    private static final int QUEUE_SIZE = 1024;
-
     // vertex id --> ordinal --> receiver tasklet
     private Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap;
 
@@ -136,7 +134,8 @@ class ExecutionContext {
                     // one conveyor per consumer - each conveyor has one queue per producer
                     // giving a total of number of producers * number of consumers queues
                     final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edgeId,
-                            e -> createConveyorArray(localConsumerCount, parallelism + receiverCount, QUEUE_SIZE));
+                            e -> createConveyorArray(localConsumerCount, parallelism + receiverCount,
+                                    edge.getConfig().getQueueSize()));
 
                     // create a sender tasklet per destination address, each with a single conveyor with number of
                     // producers queues feeding it
@@ -145,11 +144,12 @@ class ExecutionContext {
                                 final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
                                 for (Address destAddr : remoteMembers) {
                                     final ConcurrentConveyor<Object> conveyor =
-                                            createConveyorArray(1, parallelism, QUEUE_SIZE)[0];
+                                            createConveyorArray(1, parallelism, edge.getConfig().getQueueSize())[0];
                                     final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
                                             edge.getOppositeEndOrdinal(), edge.getPriority(), conveyor);
                                     final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
-                                            context.getName(), destAddr, executionId, destVertexId);
+                                            context.getName(), destAddr, executionId, destVertexId,
+                                            edge.getConfig().getPacketSizeLimit());
                                     senderMap.computeIfAbsent(destVertexId, x -> new HashMap<>())
                                              .computeIfAbsent(edge.getOppositeEndOrdinal(), x -> new HashMap<>())
                                              .put(destAddr, t);
@@ -228,7 +228,9 @@ class ExecutionContext {
                                    new ConveyorCollector(localConveyors[n], parallelism, localPartitions.get(n)));
                            final OutboundCollector collector = compositeCollector(receivers, edge, partitionCount);
                            final int senderCount = nodeEngine.getClusterService().getSize() - 1;
-                           return new ReceiverTasklet(collector, senderCount);
+                           //TODO: fix FLOW_CONTROL_PERIOD after JetConfig is integrated
+                           return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
+                                   JetService.FLOW_CONTROL_PERIOD_MS, senderCount);
                        });
             // distribute remote partitions
             final Map<Address, int[]> remotePartitions = addrToPartitions();
@@ -240,7 +242,8 @@ class ExecutionContext {
                         taskletIndex, entry.getValue());
             }
         }
-        return new OutboundEdgeStream(edge.getOrdinal(), compositeCollector(allCollectors, edge, partitionCount));
+        return new OutboundEdgeStream(edge.getOrdinal(), edge.getConfig().getHighWaterMark(),
+                compositeCollector(allCollectors, edge, partitionCount));
     }
 
     private void initializePartitioner(VertexDef vertex) {

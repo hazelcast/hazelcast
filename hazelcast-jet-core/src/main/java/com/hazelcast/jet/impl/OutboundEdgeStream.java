@@ -24,10 +24,12 @@ class OutboundEdgeStream {
 
     private final int ordinal;
     private final OutboundCollector collector;
+    private final int highWaterMark;
 
-    OutboundEdgeStream(int ordinal, OutboundCollector collector) {
+    OutboundEdgeStream(int ordinal, int highWaterMark, OutboundCollector collector) {
         this.ordinal = ordinal;
         this.collector = collector;
+        this.highWaterMark = highWaterMark;
     }
 
     int ordinal() {
@@ -38,4 +40,7 @@ class OutboundEdgeStream {
         return collector;
     }
 
+    int getHighWaterMark() {
+        return highWaterMark;
+    }
 }

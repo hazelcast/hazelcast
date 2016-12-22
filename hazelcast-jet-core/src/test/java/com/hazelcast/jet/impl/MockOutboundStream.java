@@ -24,11 +24,11 @@ import static com.hazelcast.jet.impl.DoneItem.DONE_ITEM;
 public class MockOutboundStream extends OutboundEdgeStream {
 
     public MockOutboundStream(int ordinal, int capacity) {
-        super(ordinal, new MockOutboundCollector(capacity));
+        super(ordinal, 1024, new MockOutboundCollector(capacity));
     }
 
     public List<Object> getBuffer() {
-        return ((MockOutboundCollector)getCollector()).getBuffer();
+        return ((MockOutboundCollector) getCollector()).getBuffer();
     }
 
     private static class MockOutboundCollector implements OutboundCollector {

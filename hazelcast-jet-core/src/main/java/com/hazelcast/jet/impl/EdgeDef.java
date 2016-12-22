@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,12 +34,14 @@ class EdgeDef implements IdentifiedDataSerializable {
     private boolean isDistributed;
     private Edge.ForwardingPattern forwardingPattern;
     private Partitioner partitioner;
+    private EdgeConfig config;
 
     EdgeDef() {
     }
 
     EdgeDef(int oppositeVertexId, int ordinal, int oppositeEndOrdinal, int priority,
-            boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner) {
+            boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner,
+            EdgeConfig config) {
         this.oppositeVertexId = oppositeVertexId;
         this.oppositeEndOrdinal = oppositeEndOrdinal;
         this.ordinal = ordinal;
@@ -46,6 +49,7 @@ class EdgeDef implements IdentifiedDataSerializable {
         this.isDistributed = isDistributed;
         this.forwardingPattern = forwardingPattern;
         this.partitioner = partitioner;
+        this.config = config;
     }
 
     int getOrdinal() {
@@ -76,7 +80,9 @@ class EdgeDef implements IdentifiedDataSerializable {
         return isDistributed;
     }
 
-
+    public EdgeConfig getConfig() {
+        return config;
+    }
     // IdentifiedDataSerializable implementation
 
     @Override
@@ -98,6 +104,7 @@ class EdgeDef implements IdentifiedDataSerializable {
         out.writeBoolean(isDistributed);
         out.writeObject(forwardingPattern);
         CustomClassLoadedObject.write(out, partitioner);
+        out.writeObject(config);
     }
 
     @Override
@@ -109,5 +116,6 @@ class EdgeDef implements IdentifiedDataSerializable {
         isDistributed = in.readBoolean();
         forwardingPattern = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
+        config = in.readObject();
     }
 }

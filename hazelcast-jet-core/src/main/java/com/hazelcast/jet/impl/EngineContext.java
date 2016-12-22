@@ -20,6 +20,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorMetaSupplier.Context;
@@ -127,13 +128,15 @@ public class EngineContext {
             final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int oppositeVertexId = vertexIdMap.get(edge.getDestination());
                 return new EdgeDef(oppositeVertexId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
+                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
+                        getConfig(edge));
             }).collect(toList());
 
             final List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
                 final int otherEndId = vertexIdMap.get(edge.getSource());
                 return new EdgeDef(otherEndId, edge.getInputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner());
+                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
+                        getConfig(edge));
             }).collect(toList());
 
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
@@ -177,6 +180,11 @@ public class EngineContext {
 
     ExecutionService getExecutionService() {
         return executionService;
+    }
+
+    private EdgeConfig getConfig(Edge edge) {
+        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
+        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
     }
 
     private boolean isDistributed(Edge edge) {

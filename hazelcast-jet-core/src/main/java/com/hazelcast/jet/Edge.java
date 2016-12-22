@@ -41,6 +41,8 @@ public class Edge implements IdentifiedDataSerializable {
     private Partitioner partitioner;
     private boolean isDistributed;
 
+    private EdgeConfig config;
+
     Edge() {
 
     }
@@ -202,30 +204,26 @@ public class Edge implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(source);
         out.writeInt(outputOrdinal);
-
         out.writeUTF(destination);
         out.writeInt(inputOrdinal);
-
         out.writeInt(priority);
         out.writeBoolean(isDistributed);
-
         out.writeObject(forwardingPattern);
         CustomClassLoadedObject.write(out, partitioner);
+        out.writeObject(config);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readUTF();
         outputOrdinal = in.readInt();
-
         destination = in.readUTF();
         inputOrdinal = in.readInt();
-
         priority = in.readInt();
         isDistributed = in.readBoolean();
-
         forwardingPattern = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
+        config = in.readObject();
     }
 
     @Override
@@ -236,6 +234,22 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetDataSerializerHook.EDGE;
+    }
+
+    /**
+     * @return
+     */
+    public EdgeConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * @param config
+     * @return
+     */
+    public Edge setConfig(EdgeConfig config) {
+        this.config = config;
+        return this;
     }
 
 
