@@ -38,7 +38,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  */
 public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializable {
 
-    private String mapName;
+    private String dataStructureName;
     private String sourceUuid;
     private UUID partitionUuid;
     private long sequence = NO_SEQUENCE;
@@ -46,12 +46,12 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
     public Invalidation() {
     }
 
-    public Invalidation(String mapName) {
-        this.mapName = checkNotNull(mapName, "mapName cannot be null");
+    public Invalidation(String dataStructureName) {
+        this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
     }
 
-    public Invalidation(String mapName, String sourceUuid, UUID partitionUuid, long sequence) {
-        this.mapName = checkNotNull(mapName, "mapName cannot be null");
+    public Invalidation(String dataStructureName, String sourceUuid, UUID partitionUuid, long sequence) {
+        this.dataStructureName = checkNotNull(dataStructureName, "dataStructureName cannot be null");
         // sourceUuid can be null.
         this.sourceUuid = sourceUuid;
         this.partitionUuid = checkNotNull(partitionUuid, "partitionUuid cannot be null");
@@ -76,7 +76,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public final String getName() {
-        return mapName;
+        return dataStructureName;
     }
 
     @Override
@@ -91,7 +91,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(mapName);
+        out.writeUTF(dataStructureName);
         out.writeUTF(sourceUuid);
         out.writeLong(sequence);
 
@@ -105,7 +105,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        mapName = in.readUTF();
+        dataStructureName = in.readUTF();
         sourceUuid = in.readUTF();
         sequence = in.readLong();
         boolean nullUuid = in.readBoolean();
@@ -121,7 +121,7 @@ public abstract class Invalidation implements IMapEvent, IdentifiedDataSerializa
 
     @Override
     public String toString() {
-        return "mapName='" + mapName + "', sourceUuid='" + sourceUuid
+        return "dataStructureName='" + dataStructureName + "', sourceUuid='" + sourceUuid
                 + "', partitionUuid='" + partitionUuid + ", sequence=" + sequence;
     }
 }

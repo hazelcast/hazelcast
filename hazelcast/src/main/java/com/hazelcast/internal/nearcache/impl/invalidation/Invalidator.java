@@ -62,29 +62,29 @@ public abstract class Invalidator {
     protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
 
     /**
-     * Invalidates supplied key from near-caches of supplied map name.
+     * Invalidates supplied key from near-caches of supplied data structure name.
      *
      * @param key     key of the entry to be removed from near-cache
-     * @param mapName name of the map to be invalidated
+     * @param dataStructureName name of the data structure to be invalidated
      */
-    public final void invalidateKey(Data key, String mapName, String sourceUuid) {
+    public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
         assert key != null;
-        assert mapName != null;
+        assert dataStructureName != null;
 
-        Invalidation invalidation = newKeyInvalidation(key, mapName, sourceUuid);
+        Invalidation invalidation = newKeyInvalidation(key, dataStructureName, sourceUuid);
         invalidateInternal(invalidation, getPartitionId(key));
     }
 
     /**
-     * Invalidates all keys from near-caches of supplied map name.
+     * Invalidates all keys from near-caches of supplied data structure name.
      *
-     * @param mapName name of the map to be cleared
+     * @param dataStructureName name of the data structure to be cleared
      */
-    public final void invalidateAllKeys(String mapName, String sourceUuid) {
-        assert mapName != null;
+    public final void invalidateAllKeys(String dataStructureName, String sourceUuid) {
+        assert dataStructureName != null;
 
-        int orderKey = getPartitionId(mapName);
-        Invalidation invalidation = newClearInvalidation(mapName, sourceUuid);
+        int orderKey = getPartitionId(dataStructureName);
+        Invalidation invalidation = newClearInvalidation(dataStructureName, sourceUuid);
         sendImmediately(invalidation, orderKey);
     }
 
@@ -92,22 +92,22 @@ public abstract class Invalidator {
         return metaDataGenerator;
     }
 
-    private Invalidation newKeyInvalidation(Data key, String mapName, String sourceUuid) {
+    private Invalidation newKeyInvalidation(Data key, String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(key);
-        long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
+        long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
         if (logger.isFinestEnabled()) {
-            logger.finest(format("mapName=%s, partition=%d, sequence=%d, uuid=%s",
-                    mapName, partitionId, sequence, partitionUuid));
+            logger.finest(format("dataStructureName=%s, partition=%d, sequence=%d, uuid=%s",
+                    dataStructureName, partitionId, sequence, partitionUuid));
         }
-        return new SingleNearCacheInvalidation(toHeapData(key), mapName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
-    protected final Invalidation newClearInvalidation(String mapName, String sourceUuid) {
-        int partitionId = getPartitionId(mapName);
-        long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
+    protected final Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
+        int partitionId = getPartitionId(dataStructureName);
+        long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(null, mapName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(null, dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
     private int getPartitionId(Data o) {
@@ -119,9 +119,9 @@ public abstract class Invalidator {
     }
 
     protected final void sendImmediately(Invalidation invalidation, int orderKey) {
-        String mapName = invalidation.getName();
+        String dataStructureName = invalidation.getName();
 
-        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, mapName);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
         for (EventRegistration registration : registrations) {
             if (eventFilter.apply(registration)) {
                 eventService.publishEvent(serviceName, registration, invalidation, orderKey);
@@ -134,14 +134,14 @@ public abstract class Invalidator {
     }
 
     /**
-     * Removes supplied maps invalidation queue and flushes its content.
-     * This method is called when removing a Near Cache with
+     * Removes supplied data structures invalidation queues and flushes their content.
+     * This method is called when removing a Near Cache for example with
      * {@link com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)}
      *
-     * @param mapName name of the map.
+     * @param dataStructureName name of the data structure.
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
-    public void destroy(String mapName, String sourceUuid) {
+    public void destroy(String dataStructureName, String sourceUuid) {
         // nop.
     }
 
