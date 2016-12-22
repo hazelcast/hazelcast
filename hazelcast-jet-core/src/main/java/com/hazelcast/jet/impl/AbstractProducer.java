@@ -26,7 +26,7 @@ public abstract class AbstractProducer extends AbstractProcessor {
     }
 
     @Override
-    public boolean complete(int ordinal) {
+    public boolean completeEdge(int ordinal) {
         throw new UnsupportedOperationException("complete(int)");
     }
 

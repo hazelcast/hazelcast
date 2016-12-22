@@ -42,7 +42,7 @@ public class ListConsumer extends AbstractProcessor {
     }
 
     @Override
-    public boolean complete(int ordinal) {
+    public boolean completeEdge(int ordinal) {
         return true;
     }
 

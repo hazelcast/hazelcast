@@ -327,7 +327,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         @Override
-        public boolean complete(int ordinal) {
+        public boolean completeEdge(int ordinal) {
             emit(new SimpleImmutableEntry<>("result", counts));
             return true;
         }

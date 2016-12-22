@@ -89,7 +89,7 @@ public class ProcessorTasklet implements Tasklet {
             tryProcessInbox();
         } else if (currInstreamExhausted) {
             progTracker.madeProgress(true);
-            if (processor.complete(currInstream.ordinal())) {
+            if (processor.completeEdge(currInstream.ordinal())) {
                 currInstream = null;
             }
         }

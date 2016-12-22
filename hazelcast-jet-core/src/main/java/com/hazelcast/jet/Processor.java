@@ -19,37 +19,41 @@ package com.hazelcast.jet;
 import javax.annotation.Nonnull;
 
 /**
- * Does the computation needed to transform zero or more named input data streams into one
- * output stream.
+ * Does the computation needed to transform zero or more input data streams into one
+ * output stream. Each input stream corresponds to one incoming edge of the vertex
+ * represented by this processor. The edges are identified by their ordinals.
  * <p>
- * The processing methods should limit the amount of processing time and data they output per
- * one invocation. A method should return <code>false</code> to signal it's not done with the
- * current step/item. When the caller is ready to invoke the method again, it will invoke it with
- * the same arguments as the previous time.
+ * If this processor is non-blocking, the processing methods should limit the amount of
+ * processing time and data they output per one invocation. A {@code boolean}-returning method
+ * ({@link #completeEdge(int)}, {@link #complete()}) should return <code>false</code> to signal
+ * it's not done with its work. The method {@link #process(int, Inbox)} should not remove an item
+ * from inbox until it is done with it.
  */
 public interface Processor {
 
     /**
-     * Initialize the processor with an {@link Outbox} that
-     * can accept processing results. This method will be called exactly once and strictly before any
-     * calls to {@link #process(int, Inbox)} or {@link #complete(int)}.
+     * Initializes this processor with an outbox which will accept its
+     * output. This method will be called exactly once and strictly before any
+     * calls to processing methods ({@link #process(int, Inbox)}, {@link #completeEdge(int)},
+     * {@link #complete()}).
      */
     void init(@Nonnull Outbox outbox);
 
     /**
      * Processes some items in the supplied inbox. Removes the items it's done with.
+     * Does not remove an item until it is done with it.
      *
-     * @param ordinal ordinal of the input where the item originates from
+     * @param ordinal ordinal of the edge the item comes from
      * @param inbox   the inbox containing the pending items
      */
-    void process(int ordinal, Inbox inbox);
+    void process(int ordinal, @Nonnull Inbox inbox);
 
     /**
-     * Called after the input with the supplied <code>ordinal</code> is exhausted.
+     * Called after the edge input with the supplied <code>ordinal</code> is exhausted.
      *
      * @return <code>true</code> if completing this input is now done, <code>false</code> otherwise.
      */
-    default boolean complete(int ordinal) {
+    default boolean completeEdge(int ordinal) {
         return true;
     }
 
@@ -63,9 +67,13 @@ public interface Processor {
     }
 
     /**
-     * Tells whether this processor performs any blocking operations
-     * (such as using a blocking I/O). By returning <code>false</code> the processor promises
-     * not to spend any time waiting for a blocking operation to complete.
+     * Tells whether this processor performs any blocking operations (such as using
+     * blocking I/O). By returning <code>false</code> the processor promises not to
+     * spend any time waiting for a blocking operation to complete.
+     * <p>
+     * Depending on the result of this method call, the processor will be driven either
+     * by a non-blocking tasklet in a cooperative multithreading scheme, or allocated
+     * its own Java thread.
      */
     default boolean isBlocking() {
         return false;

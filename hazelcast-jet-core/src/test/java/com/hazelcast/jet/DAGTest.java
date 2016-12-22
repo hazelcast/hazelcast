@@ -210,7 +210,7 @@ public class DAGTest {
         }
 
         @Override
-        public boolean complete(int ordinal) {
+        public boolean completeEdge(int ordinal) {
             return true;
         }
 
