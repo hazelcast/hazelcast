@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 public interface Inbox {
 
     /**
-     * @return {@code true} if this collection contains no elements; {@code false} otherwise
+     * @return {@code true} if this inbox contains no elements; {@code false} otherwise
      */
     boolean isEmpty();
 

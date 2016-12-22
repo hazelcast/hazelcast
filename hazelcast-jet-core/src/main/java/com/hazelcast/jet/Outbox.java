@@ -17,25 +17,25 @@
 package com.hazelcast.jet;
 
 /**
- * Single-threaded object which acts as a data sink for a {@link Processor}. While handling
- * an invocation of {@link Processor#process(int, Inbox)} the processor must deliver all the
- * output data, separated by destination edge, into the outbox by calling {@link #add(int, Object)}
- * or the convenience method {@link #add(Object)}. After each invocation of
- * {@link Processor#process(int, Inbox)} the execution engine will try to flush the outbox into
- * concurrent queues and/or network pipes.
+ * Single-threaded object which acts as a data sink for a {@link Processor}. The outbox
+ * consists of individual output buckets, one per outbound edge of the vertex represented
+ * by the associated processor. The processor must deliver its output items,
+ * separated by destination edge, into the outbox by calling {@link #add(int, Object)}
+ * or {@link #add(Object)}.
  * <p>
- * Although not strictly required, the processor is advised to check {@link #isHighWater(int)}
- * regularly and refrain from outputting more data if it returns true.
+ * The execution engine will not try to flush the outbox into downstream queues until the
+ * processing method returns. Therefore the processor is advised to check {@link #isHighWater(int)}
+ * regularly and refrain from outputting more data when it returns true.
  */
 public interface Outbox {
 
     /**
-     * Convenience for {@code add(item, 0)}.
+     * Adds the supplied item to all the output buckets.
      */
     void add(Object item);
 
     /**
-     * Adds an item addressed at edge with given ordinal to this outbox.
+     * Adds the supplied item to the output bucket with the supplied ordinal.
      */
     void add(int ordinal, Object item);
 

@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Queue;
 
 /**
- * Javadoc pending.
+ * Implements {@code Outbox} with an {@link ArrayDeque}.
  */
 class ArrayDequeOutbox implements Outbox {
 
@@ -62,6 +62,9 @@ class ArrayDequeOutbox implements Outbox {
     public boolean isHighWater(int ordinal) {
         return queues[ordinal].size() >= highWaterMarks[ordinal];
     }
+
+
+    // Private API that exposes the ArrayDeques to the ProcessorTasklet
 
     int queueCount() {
         return queues.length;
