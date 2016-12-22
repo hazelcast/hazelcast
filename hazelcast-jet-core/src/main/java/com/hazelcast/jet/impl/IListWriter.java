@@ -50,8 +50,8 @@ public final class IListWriter extends AbstractProcessor {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     public static ProcessorSupplier supplier(String listName) {

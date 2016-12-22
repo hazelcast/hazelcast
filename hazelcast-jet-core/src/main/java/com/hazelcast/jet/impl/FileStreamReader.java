@@ -176,8 +176,8 @@ public class FileStreamReader extends AbstractProducer {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     /**

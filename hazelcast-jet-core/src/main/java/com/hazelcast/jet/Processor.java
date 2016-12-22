@@ -23,19 +23,24 @@ import javax.annotation.Nonnull;
  * output stream. Each input stream corresponds to one incoming edge of the vertex
  * represented by this processor. The edges are identified by their ordinals.
  * <p>
- * If this processor is non-blocking, the processing methods should limit the amount of
- * processing time and data they output per one invocation. A {@code boolean}-returning method
- * ({@link #completeEdge(int)}, {@link #complete()}) should return <code>false</code> to signal
- * it's not done with its work. The method {@link #process(int, Inbox)} should not remove an item
- * from inbox until it is done with it.
+ * The processing methods should limit the amount of data they output per invocation.
+ * Specifically, {@code Outbox} has a method {@link Outbox#isHighWater} that can be
+ * tested to see whether it's time to stop pushing more data into it. Outbox will not be
+ * emptied until the processor yields control back to its caller. There is also a
+ * finer-grained method {@link Outbox#isHighWater(int)}, which tells the state of an
+ * individual output bucket.
+ * <p>
+ * If this processor declares itself as "cooperative" ({@link #isCooperative()} returns
+ * {@code true}), it should also limit the amount of processing time it spends per call
+ * because it will participate in a cooperative multithreading scheme.
  */
 public interface Processor {
 
     /**
-     * Initializes this processor with an outbox which will accept its
-     * output. This method will be called exactly once and strictly before any
-     * calls to processing methods ({@link #process(int, Inbox)}, {@link #completeEdge(int)},
-     * {@link #complete()}).
+     * Initializes this processor with the outbox that the processing methods
+     * must use to deposit their output items. This method will be called exactly
+     * once and strictly before any calls to processing methods ({@link #process(int, Inbox)},
+     * {@link #completeEdge(int)}, {@link #complete()}).
      */
     void init(@Nonnull Outbox outbox);
 
@@ -49,33 +54,39 @@ public interface Processor {
     void process(int ordinal, @Nonnull Inbox inbox);
 
     /**
-     * Called after the edge input with the supplied <code>ordinal</code> is exhausted.
+     * Called after the edge input with the supplied {@code ordinal} is exhausted. If
+     * it returns {@code false}, it will be invoked again until it returns {@code true},
+     * and until it does, no other methods will be invoked on the processor.
      *
-     * @return <code>true</code> if completing this input is now done, <code>false</code> otherwise.
+     * @return {@code true} if the processor is now done completing this input,
+     * {@code false} otherwise.
      */
     default boolean completeEdge(int ordinal) {
         return true;
     }
 
     /**
-     * Called after all the inputs are exhausted.
+     * Called after all the inputs are exhausted. If it returns {@code false}, it will be
+     * invoked again until it returns {@code true}. After this method is called, no other
+     * processing methods will be called on this processor.
      *
-     * @return <code>true</code> if the completing is now done, <code>false</code> otherwise.
+     * @return {@code true} if the completing step is now done, {@code false} otherwise.
      */
     default boolean complete() {
         return true;
     }
 
     /**
-     * Tells whether this processor performs any blocking operations (such as using
-     * blocking I/O). By returning <code>false</code> the processor promises not to
-     * spend any time waiting for a blocking operation to complete.
+     * Tells whether this processor is able to participate in cooperative multithreading.
+     * This means that each invocation of a processing method will take a reasonably small
+     * amount of time (up to a millisecond). A cooperative processor should not attempt
+     * any blocking I/O operations.
      * <p>
-     * Depending on the result of this method call, the processor will be driven either
-     * by a non-blocking tasklet in a cooperative multithreading scheme, or allocated
-     * its own Java thread.
+     * If this processor declares itself non-cooperative, it will be allocated a dedicated
+     * Java thread. Otherwise it will be allocated a tasklet which shares a thread with other
+     * tasklets.
      */
-    default boolean isBlocking() {
-        return false;
+    default boolean isCooperative() {
+        return true;
     }
 }

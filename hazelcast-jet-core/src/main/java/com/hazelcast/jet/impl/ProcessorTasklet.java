@@ -75,8 +75,8 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     @Override
-    public boolean isBlocking() {
-        return processor.isBlocking();
+    public boolean isCooperative() {
+        return processor.isCooperative();
     }
 
     @Override

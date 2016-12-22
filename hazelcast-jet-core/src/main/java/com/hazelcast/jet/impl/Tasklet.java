@@ -29,7 +29,7 @@ interface Tasklet extends Callable<ProgressState> {
     @Nonnull
     ProgressState call();
 
-    default boolean isBlocking() {
-        return false;
+    default boolean isCooperative() {
+        return true;
     }
 }

@@ -272,8 +272,8 @@ public class ExecutionServiceTest extends JetTestSupport {
         private CountDownLatch latch;
 
         @Override
-        public boolean isBlocking() {
-            return isBlocking;
+        public boolean isCooperative() {
+            return !isBlocking;
         }
 
         @Override

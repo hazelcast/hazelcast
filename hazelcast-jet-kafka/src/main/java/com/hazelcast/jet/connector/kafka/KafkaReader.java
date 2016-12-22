@@ -98,8 +98,8 @@ public class KafkaReader<K, V> extends AbstractProducer {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

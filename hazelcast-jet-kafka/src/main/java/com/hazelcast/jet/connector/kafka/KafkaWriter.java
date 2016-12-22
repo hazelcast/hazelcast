@@ -73,8 +73,8 @@ public class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     @Override

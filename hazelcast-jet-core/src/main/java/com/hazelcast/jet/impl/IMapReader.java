@@ -84,8 +84,8 @@ public final class IMapReader extends AbstractProducer {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     public static ProcessorMetaSupplier supplier(String mapName) {

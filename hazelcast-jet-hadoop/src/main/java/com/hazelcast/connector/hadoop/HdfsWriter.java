@@ -92,8 +92,8 @@ public final class HdfsWriter extends AbstractProcessor {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     /**

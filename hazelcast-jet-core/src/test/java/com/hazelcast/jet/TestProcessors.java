@@ -30,8 +30,8 @@ public class TestProcessors {
 
     public static class BlockingIdentity extends Identity {
         @Override
-        public boolean isBlocking() {
-            return true;
+        public boolean isCooperative() {
+            return false;
         }
     }
 

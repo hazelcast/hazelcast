@@ -113,8 +113,8 @@ public final class HdfsReader extends AbstractProducer {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     /**

@@ -49,7 +49,7 @@ class ExecutionService {
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
-    private final NonBlockingWorker[] workers;
+    private final CooperativeWorker[] workers;
     private final Thread[] threads;
     private final String hzInstanceName;
     private final String name;
@@ -58,7 +58,7 @@ class ExecutionService {
     ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
         this.hzInstanceName = hz.getName();
         this.name = name;
-        this.workers = new NonBlockingWorker[cfg.getParallelism()];
+        this.workers = new CooperativeWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
         this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
     }
@@ -69,9 +69,9 @@ class ExecutionService {
     CompletionStage<Void> execute(List<? extends Tasklet> tasklets, Consumer<CompletionStage<Void>> doneCallback) {
         ensureStillRunning();
         final JobFuture jobFuture = new JobFuture(tasklets.size(), doneCallback);
-        final Map<Boolean, List<Tasklet>> byBlocking = tasklets.stream().collect(partitioningBy(Tasklet::isBlocking));
-        submitBlockingTasklets(jobFuture, byBlocking.get(true));
-        submitNonblockingTasklets(jobFuture, byBlocking.get(false));
+        final Map<Boolean, List<Tasklet>> byCooperation = tasklets.stream().collect(partitioningBy(Tasklet::isCooperative));
+        submitCooperativeTasklets(jobFuture, byCooperation.get(true));
+        submitBlockingTasklets(jobFuture, byCooperation.get(false));
         return jobFuture;
     }
 
@@ -82,7 +82,7 @@ class ExecutionService {
     void shutdown() {
         blockingTaskletExecutor.shutdown();
         synchronized (this) {
-            for (NonBlockingWorker worker : workers) {
+            for (CooperativeWorker worker : workers) {
                 if (worker != null) {
                     worker.isShutdown = true;
                 }
@@ -103,7 +103,7 @@ class ExecutionService {
                                             .collect(Collectors.toList());
     }
 
-    private void submitNonblockingTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
+    private void submitCooperativeTasklets(JobFuture jobFuture, List<Tasklet> tasklets) {
         ensureThreadsStarted();
         final List<TaskletTracker>[] trackersByThread = new List[workers.length];
         Arrays.setAll(trackersByThread, i -> new ArrayList());
@@ -123,7 +123,7 @@ class ExecutionService {
         if (workers[0] != null) {
             return;
         }
-        Arrays.setAll(workers, i -> new NonBlockingWorker(workers));
+        Arrays.setAll(workers, i -> new CooperativeWorker(workers));
         Arrays.setAll(threads, i -> createThread(workers[i], "nonblocking-executor", i));
         Arrays.stream(threads).forEach(Thread::start);
     }
@@ -177,12 +177,12 @@ class ExecutionService {
         }
     }
 
-    private class NonBlockingWorker implements Runnable {
+    private class CooperativeWorker implements Runnable {
         private final List<TaskletTracker> trackers;
-        private final NonBlockingWorker[] colleagues;
+        private final CooperativeWorker[] colleagues;
         private volatile boolean isShutdown;
 
-        NonBlockingWorker(NonBlockingWorker[] colleagues) {
+        CooperativeWorker(CooperativeWorker[] colleagues) {
             this.colleagues = colleagues;
             this.trackers = new CopyOnWriteArrayList<>();
         }
@@ -193,7 +193,7 @@ class ExecutionService {
             while (!isShutdown) {
                 boolean madeProgress = false;
                 for (TaskletTracker t : trackers) {
-                    final NonBlockingWorker stealingWorker = t.stealingWorker.get();
+                    final CooperativeWorker stealingWorker = t.stealingWorker.get();
                     if (stealingWorker != null) {
                         t.stealingWorker.set(null);
                         trackers.remove(t);
@@ -236,7 +236,7 @@ class ExecutionService {
             while (true) {
                 // start with own tasklet list, try to find a longer one
                 List<TaskletTracker> toStealFrom = trackers;
-                for (NonBlockingWorker w : colleagues) {
+                for (CooperativeWorker w : colleagues) {
                     if (w.trackers.size() > toStealFrom.size()) {
                         toStealFrom = w.trackers;
                     }
@@ -258,7 +258,7 @@ class ExecutionService {
     private static final class TaskletTracker {
         final Tasklet tasklet;
         final JobFuture jobFuture;
-        final AtomicReference<NonBlockingWorker> stealingWorker = new AtomicReference<>();
+        final AtomicReference<CooperativeWorker> stealingWorker = new AtomicReference<>();
 
         TaskletTracker(Tasklet tasklet, JobFuture jobFuture) {
             this.tasklet = tasklet;

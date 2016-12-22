@@ -66,8 +66,8 @@ public final class IMapWriter extends AbstractProcessor {
     }
 
     @Override
-    public boolean isBlocking() {
-        return true;
+    public boolean isCooperative() {
+        return false;
     }
 
     private void flush() {
