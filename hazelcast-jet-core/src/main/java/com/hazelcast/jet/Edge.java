@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -209,7 +210,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeBoolean(isDistributed);
 
         out.writeObject(forwardingPattern);
-        out.writeObject(partitioner);
+        CustomClassLoadedObject.write(out, partitioner);
     }
 
     @Override
@@ -224,7 +225,7 @@ public class Edge implements IdentifiedDataSerializable {
         isDistributed = in.readBoolean();
 
         forwardingPattern = in.readObject();
-        partitioner = in.readObject();
+        partitioner = CustomClassLoadedObject.read(in);
     }
 
     @Override

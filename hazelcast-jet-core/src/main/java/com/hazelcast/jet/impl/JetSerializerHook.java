@@ -29,7 +29,11 @@ import java.util.Map.Entry;
 
 public final class JetSerializerHook {
 
-    private static final int MAP_ENTRY = -300;
+    public static final int MAP_ENTRY = -300;
+    public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
+
+    private JetSerializerHook() {
+    }
 
     public static final class MapEntry implements SerializerHook<Map.Entry> {
 
@@ -71,5 +75,4 @@ public final class JetSerializerHook {
             return true;
         }
     }
-
 }

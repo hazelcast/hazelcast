@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -109,14 +110,14 @@ public class Vertex implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(supplier);
+        CustomClassLoadedObject.write(out, supplier);
         out.writeInt(parallelism);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        supplier = in.readObject();
+        supplier = CustomClassLoadedObject.read(in);
         parallelism = in.readInt();
     }
 

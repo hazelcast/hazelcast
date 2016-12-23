@@ -31,6 +31,7 @@ import cascading.pipe.Pipe;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static data.InputData.*;
@@ -57,6 +58,7 @@ public class ClasspathPlatformTest extends PlatformTestCase
     }
 
   @Test
+  @Ignore
   public void testSimpleClasspath() throws Exception
     {
     getPlatform().copyFromLocal( inputFileApache );

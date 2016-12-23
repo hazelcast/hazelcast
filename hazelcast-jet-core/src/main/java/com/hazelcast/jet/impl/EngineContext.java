@@ -51,6 +51,7 @@ public class EngineContext {
     // keeps track of active invocations from client for cancellation support
     private final ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
     private final String name;
+    private final ClassLoader classloader;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private ResourceStore resourceStore;
@@ -61,9 +62,9 @@ public class EngineContext {
         this.nodeEngine = nodeEngine;
         this.config = config;
         this.resourceStore = new ResourceStore(config.getResourceDirectory());
-        final ClassLoader cl = AccessController.doPrivileged(
+        this.classloader = AccessController.doPrivileged(
                 (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
-        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config, cl);
+        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
     }
 
     public String getName() {
@@ -76,6 +77,10 @@ public class EngineContext {
 
     public ResourceStore getResourceStore() {
         return resourceStore;
+    }
+
+    public ClassLoader getClassLoader() {
+        return classloader;
     }
 
     public JetEngineConfig getConfig() {

@@ -15,3 +15,4 @@
 #
 
 com.hazelcast.jet.impl.JetSerializerHook$MapEntry
+com.hazelcast.jet.impl.CustomClassLoadedObject$Hook

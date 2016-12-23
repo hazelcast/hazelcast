@@ -88,7 +88,7 @@ class VertexDef implements IdentifiedDataSerializable {
         out.writeInt(id);
         writeList(out, inputs);
         writeList(out, outputs);
-        out.writeObject(processorSupplier);
+        CustomClassLoadedObject.write(out, processorSupplier);
         out.writeInt(parallelism);
     }
 
@@ -97,7 +97,7 @@ class VertexDef implements IdentifiedDataSerializable {
         id = in.readInt();
         inputs = readList(in);
         outputs = readList(in);
-        processorSupplier = in.readObject();
+        processorSupplier = CustomClassLoadedObject.read(in);
         parallelism = in.readInt();
     }
 }
