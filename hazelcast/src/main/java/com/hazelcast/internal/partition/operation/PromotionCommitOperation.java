@@ -116,7 +116,6 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             logger.fine("Submitting before promotion tasks for " + promotions.size() + " promotions.");
         }
         for (MigrationInfo promotion : promotions) {
-            partitionStateManager.setMigratingFlag(promotion.getPartitionId());
             operationService.execute(new BeforePromotionTask(this, promotion, nodeEngine, tasks));
         }
     }

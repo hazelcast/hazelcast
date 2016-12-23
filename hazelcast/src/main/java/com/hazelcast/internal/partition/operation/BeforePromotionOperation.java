@@ -41,6 +41,10 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
     @Override
     public void beforeRun() throws Exception {
         sendMigrationEvent(STARTED);
+
+        InternalPartitionServiceImpl service = getService();
+        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
+        partitionStateManager.setMigratingFlag(getPartitionId());
     }
 
     @Override
