@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -123,9 +124,11 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
         @Override
         public void sendResponse(Operation operation, Object response) {
             assert operation instanceof DummyPartitionAwareOperation : "Invalid operation: " + operation;
-            if (!(response instanceof RetryableHazelcastException)) {
+            NodeEngine nodeEngine = operation.getNodeEngine();
+            if (!(response instanceof RetryableHazelcastException) && nodeEngine.isRunning()) {
                 DummyPartitionAwareOperation op = (DummyPartitionAwareOperation) operation;
-                failures.add("Response: " + response + ", Event: " + op.event + ", Type: " + op.type);
+                failures.add("Unexpected response: " + response + ". Node: " + nodeEngine.getThisAddress()
+                        + ", Event: " + op.event + ", Type: " + op.type);
             }
         }
     }
@@ -158,24 +161,45 @@ public class MigrationAwareServiceEventTest extends HazelcastTestSupport {
 
         @Override
         public void commitMigration(PartitionMigrationEvent event) {
-            executePartitionOperation(event, TYPE_COMMIT);
-        }
-
-        private void executePartitionOperation(PartitionMigrationEvent event, String type) {
-            if (event.getNewReplicaIndex() != 0 && event.getCurrentReplicaIndex() != 0) {
-                return;
-            }
-
-            DummyPartitionAwareOperation op = new DummyPartitionAwareOperation(event, type);
-            int replicaIndex = type.equals(TYPE_COMMIT) ? event.getNewReplicaIndex() : event.getCurrentReplicaIndex();
-            op.setPartitionId(event.getPartitionId()).setReplicaIndex(replicaIndex);
-            op.setOperationResponseHandler(responseHandler);
-            nodeEngine.getOperationService().run(op);
+            checkPartition(event, TYPE_COMMIT);
         }
 
         @Override
         public void rollbackMigration(PartitionMigrationEvent event) {
-            executePartitionOperation(event, TYPE_ROLLBACK);
+            checkPartition(event, TYPE_ROLLBACK);
+        }
+
+        private void checkPartition(PartitionMigrationEvent event, String type) {
+            if (event.getNewReplicaIndex() != 0 && event.getCurrentReplicaIndex() != 0) {
+                return;
+            }
+
+            checkPartitionMigrating(event, type);
+
+            if (event.getCurrentReplicaIndex() != -1) {
+                runPartitionOperation(event, type, event.getCurrentReplicaIndex());
+            }
+            if (event.getNewReplicaIndex() != -1) {
+                runPartitionOperation(event, type, event.getNewReplicaIndex());
+            }
+        }
+
+        private void runPartitionOperation(PartitionMigrationEvent event, String type, int replicaIndex) {
+            DummyPartitionAwareOperation op = new DummyPartitionAwareOperation(event, type);
+            op.setNodeEngine(nodeEngine).setPartitionId(event.getPartitionId()).setReplicaIndex(replicaIndex);
+            op.setOperationResponseHandler(responseHandler);
+            nodeEngine.getOperationService().run(op);
+        }
+
+        private void checkPartitionMigrating(PartitionMigrationEvent event, String type) {
+            InternalPartitionServiceImpl partitionService =
+                    (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
+
+            InternalPartition partition = partitionService.getPartition(event.getPartitionId());
+            if (!partition.isMigrating() && nodeEngine.isRunning()) {
+                responseHandler.failures.add("Migrating flag is not set. Node: " + nodeEngine.getThisAddress()
+                        + ", Event: " + event + ", Type: " + type);
+            }
         }
 
         @Override
