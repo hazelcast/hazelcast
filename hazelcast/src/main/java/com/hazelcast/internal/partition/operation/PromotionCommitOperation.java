@@ -117,8 +117,6 @@ public class PromotionCommitOperation extends AbstractOperation implements Migra
             logger.fine("Submitting before promotion tasks for " + promotions.size() + " promotions.");
         }
         for (MigrationInfo promotion : promotions) {
-            InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(promotion.getPartitionId());
-            partition.setMigrating(true);
             operationService.execute(new BeforePromotionTask(this, promotion, nodeEngine, tasks));
         }
     }

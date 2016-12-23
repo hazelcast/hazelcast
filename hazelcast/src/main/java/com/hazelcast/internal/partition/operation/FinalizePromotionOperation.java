@@ -70,9 +70,11 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
     @Override
     public void afterRun() throws Exception {
-        clearPartitionMigratingFlag();
-        MigrationEvent.MigrationStatus status = success ? COMPLETED : FAILED;
-        sendMigrationEvent(status);
+        InternalPartitionServiceImpl service = getService();
+        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
+        partitionStateManager.clearMigratingFlag(getPartitionId());
+
+        sendMigrationEvent(success ? COMPLETED : FAILED);
     }
 
     private void shiftUpReplicaVersions() {
@@ -126,12 +128,5 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
                 logger.warning("While promoting partitionId=" + getPartitionId(), e);
             }
         }
-    }
-
-    private void clearPartitionMigratingFlag() {
-        final InternalPartitionServiceImpl service = getService();
-        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(getPartitionId());
-        partition.setMigrating(false);
     }
 }
