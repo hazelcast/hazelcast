@@ -18,18 +18,22 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
+import java.util.function.Supplier;
+
+import static com.hazelcast.jet.impl.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
 class InitOperation extends EngineOperation {
 
     private long executionId;
-    private ExecutionPlan plan;
+    private Supplier<ExecutionPlan> planSupplier;
 
     InitOperation(String engineName, long executionId, ExecutionPlan plan) {
         super(engineName);
         this.executionId = executionId;
-        this.plan = plan;
+        this.planSupplier = () -> plan;
     }
 
     private InitOperation() {
@@ -40,7 +44,7 @@ class InitOperation extends EngineOperation {
     public void run() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        engineContext.initExecution(executionId, plan);
+        engineContext.initExecution(executionId, planSupplier.get());
     }
 
     @Override
@@ -48,14 +52,20 @@ class InitOperation extends EngineOperation {
         super.writeInternal(out);
 
         out.writeLong(executionId);
-        out.writeObject(plan);
+        Data planBlob = getNodeEngine().getSerializationService().toData(planSupplier.get());
+        out.writeData(planBlob);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-
         executionId = in.readLong();
-        plan = in.readObject();
+
+        final Data planBlob = in.readData();
+        planSupplier = () -> {
+            JetService service = getService();
+            ClassLoader cl = service.getEngineContext(engineName).getClassLoader();
+            return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
+        };
     }
 }

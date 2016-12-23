@@ -97,7 +97,7 @@ class EdgeDef implements IdentifiedDataSerializable {
         out.writeInt(priority);
         out.writeBoolean(isDistributed);
         out.writeObject(forwardingPattern);
-        out.writeObject(partitioner);
+        CustomClassLoadedObject.write(out, partitioner);
     }
 
     @Override
@@ -108,6 +108,6 @@ class EdgeDef implements IdentifiedDataSerializable {
         priority = in.readInt();
         isDistributed = in.readBoolean();
         forwardingPattern = in.readObject();
-        partitioner = in.readObject();
+        partitioner = CustomClassLoadedObject.read(in);
     }
 }

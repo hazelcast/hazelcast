@@ -20,12 +20,16 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec.RequestParameters;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.ExecuteJobOperation;
+import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+
+import static com.hazelcast.jet.impl.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
 public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
     protected JetExecuteJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -35,7 +39,10 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
 
     @Override
     protected Operation prepareOperation() {
-        return new ExecuteJobOperation(parameters.engineName, parameters.executionId, toObject(parameters.dag));
+        JetService service = getService(JetService.SERVICE_NAME);
+        ClassLoader cl = service.getEngineContext(parameters.engineName).getClassLoader();
+        DAG dag = deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), cl, parameters.dag);
+        return new ExecuteJobOperation(parameters.engineName, parameters.executionId, dag);
     }
 
     @Override

@@ -49,24 +49,18 @@ class ExecutionService {
     private static final IdleStrategy IDLER =
             new BackoffIdleStrategy(0, 0, MICROSECONDS.toNanos(1), MILLISECONDS.toNanos(1));
     private final ExecutorService blockingTaskletExecutor = newCachedThreadPool(new BlockingTaskThreadFactory());
-    private final ClassLoader contextClassLoader;
     private final NonBlockingWorker[] workers;
     private final Thread[] threads;
     private final String hzInstanceName;
     private final String name;
     private final ILogger logger;
 
-    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg, ClassLoader contextClassLoader) {
+    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
         this.hzInstanceName = hz.getName();
         this.name = name;
         this.workers = new NonBlockingWorker[cfg.getParallelism()];
         this.threads = new Thread[cfg.getParallelism()];
-        this.contextClassLoader = contextClassLoader;
         this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
-    }
-
-    ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
-        this(hz, name, cfg, null);
     }
 
     /**
@@ -135,11 +129,7 @@ class ExecutionService {
     }
 
     private Thread createThread(Runnable r, String executorName, int seq) {
-        Thread t = new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
-        if (contextClassLoader != null) {
-            t.setContextClassLoader(contextClassLoader);
-        }
-        return t;
+        return new Thread(r, threadNamePrefix() + executorName + ".thread-" + seq);
     }
 
     private String threadNamePrefix() {
@@ -171,7 +161,7 @@ class ExecutionService {
                 long idleCount = 0;
                 for (ProgressState result;
                      !(result = t.call()).isDone() && !tracker.jobFuture.isCompletedExceptionally();
-                ) {
+                        ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {
