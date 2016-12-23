@@ -266,10 +266,16 @@ public class PartitionStateManager {
     }
 
     public void setMigratingFlag(int partitionId) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Setting partition-migrating flag. partitionId=" + partitionId);
+        }
         partitions[partitionId].setMigrating(true);
     }
 
     public void clearMigratingFlag(int partitionId) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Clearing partition-migrating flag. partitionId=" + partitionId);
+        }
         partitions[partitionId].setMigrating(false);
     }
 

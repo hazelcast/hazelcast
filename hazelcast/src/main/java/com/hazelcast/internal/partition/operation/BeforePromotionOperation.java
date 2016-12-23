@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.partition.operation;
 
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
@@ -26,6 +28,8 @@ import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 // before applying promotion result to the partition table.
 final class BeforePromotionOperation extends AbstractPromotionOperation {
 
+    private Runnable beforePromotionsCallback;
+
     /**
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
      * coding conventions.
@@ -34,8 +38,9 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
         super(-1);
     }
 
-    BeforePromotionOperation(int currentReplicaIndex) {
+    BeforePromotionOperation(int currentReplicaIndex, Runnable beforePromotionsCallback) {
         super(currentReplicaIndex);
+        this.beforePromotionsCallback = beforePromotionsCallback;
     }
 
     @Override
@@ -59,8 +64,15 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.beforeMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (beforePromotionsCallback != null) {
+            beforePromotionsCallback.run();
         }
     }
 }
