@@ -170,4 +170,9 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
     public void deregisterRepairingHandler(String name) {
         repairingTask.deregisterHandler(name);
     }
+
+    // used in tests
+    public RepairingTask getRepairingTask() {
+        return repairingTask;
+    }
 }

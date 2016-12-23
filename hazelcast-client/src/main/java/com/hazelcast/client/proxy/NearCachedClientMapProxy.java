@@ -537,4 +537,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
     }
+
+    // used in tests.
+    public ClientContext getClientContext() {
+        return getContext();
+    }
 }
