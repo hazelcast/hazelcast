@@ -28,8 +28,11 @@ import static com.hazelcast.core.MigrationEvent.MigrationStatus.STARTED;
 // before applying promotion result to the partition table.
 final class BeforePromotionOperation extends AbstractPromotionOperation {
 
-    BeforePromotionOperation(int currentReplicaIndex) {
+    private Runnable beforePromotionsCallback;
+
+    BeforePromotionOperation(int currentReplicaIndex, Runnable beforePromotionsCallback) {
         super(currentReplicaIndex);
+        this.beforePromotionsCallback = beforePromotionsCallback;
     }
 
     @Override
@@ -53,8 +56,15 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.beforeMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
+        }
+    }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (beforePromotionsCallback != null) {
+            beforePromotionsCallback.run();
         }
     }
 }

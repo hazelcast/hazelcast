@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.internal.partition.impl.InternalPartitionImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -114,7 +112,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.commitMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
         }
     }
@@ -125,7 +123,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.rollbackMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
         }
     }
