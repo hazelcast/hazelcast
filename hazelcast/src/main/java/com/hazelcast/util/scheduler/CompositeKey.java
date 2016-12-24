@@ -17,9 +17,9 @@
 package com.hazelcast.util.scheduler;
 
 /**
- * This object is first needed for having different key objects that are created for the same key updated in
- * different times so should be persisted consequently.
- * So using ScheduleType.FOR_EACH, all the updates will be scheduled separately.
+ * Represents a composite key composed of an object and a long identifier. This object is used in case the
+ * {@link SecondsBasedEntryTaskScheduler} is instantiated with {@link ScheduleType#FOR_EACH}. In this case, the scheduler
+ * will be able to schedule the same key with different times, each of them with the same key but different {@code id}'s.
  */
 final class CompositeKey {
 

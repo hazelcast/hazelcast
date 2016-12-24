@@ -162,6 +162,7 @@ public class InternalPartitionImpl implements InternalPartition {
         return getReplicaIndex(addresses, address);
     }
 
+    /** Return the index of the {@code address} in {@code addresses} or -1 if the {@code address} is null or not present */
     public static int getReplicaIndex(Address[] addresses, Address address) {
         if (address == null) {
             return -1;

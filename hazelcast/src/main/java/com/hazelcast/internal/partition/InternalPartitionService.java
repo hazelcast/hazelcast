@@ -32,17 +32,17 @@ public interface InternalPartitionService extends IPartitionService {
     int MIGRATION_RETRY_COUNT = 12;
 
     /**
-     * Retry pause for migration operations.
+     * Retry pause for migration operations in milliseconds.
      */
     long MIGRATION_RETRY_PAUSE = 10000;
 
     /**
-     * Delay for anti-entropy replica synchronization.
+     * Delay for anti-entropy replica synchronization in milliseconds.
      */
     long DEFAULT_REPLICA_SYNC_DELAY = 5000L;
 
     /**
-     * Retry delay for replica synchronization.
+     * Retry delay for replica synchronization in milliseconds.
      */
     long REPLICA_SYNC_RETRY_DELAY = 500L;
 
@@ -62,8 +62,10 @@ public interface InternalPartitionService extends IPartitionService {
 
     int getMemberGroupsSize();
 
+    /** Pause all migrations */
     void pauseMigration();
 
+    /** Resume all migrations */
     void resumeMigration();
 
     boolean isMemberAllowedToJoin(Address address);
@@ -84,6 +86,13 @@ public interface InternalPartitionService extends IPartitionService {
 
     long[] getPartitionReplicaVersions(int partitionId);
 
+    /**
+     * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
+     * received version is not expected and this node might have missed an update)
+     * @param partitionId the id of the partition for which we received a new version
+     * @param replicaVersions the received replica versions
+     * @param replicaIndex the index of this replica
+     */
     void updatePartitionReplicaVersions(int partitionId, long[] replicaVersions, int replicaIndex);
 
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);

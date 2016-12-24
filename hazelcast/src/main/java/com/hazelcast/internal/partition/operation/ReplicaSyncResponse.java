@@ -45,6 +45,16 @@ import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 
+/**
+ * The replica synchronization response sent from the partition owner to a replica. It will execute the received operation
+ * list if the replica index hasn't changed. If the current replica index is not the one sent by the partition owner, it will :
+ * <ul>
+ * <li>fail all received operations</li>
+ * <li>cancel the current replica sync request</li>
+ * <li>if the node is still a replica it will reschedule the replica synchronization request</li>
+ * <li>if the node is not a replica anymore it will clear the replica versions for the partition</li>
+ * </ul>
+ */
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, AllowedDuringPassiveState {
@@ -102,6 +112,7 @@ public class ReplicaSyncResponse extends AbstractPartitionOperation
         }
     }
 
+    /** Fail all replication operations with the exception that this node is no longer the replica with the sent index */
     private void nodeNotOwnsBackup(InternalPartitionImpl partition) {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();

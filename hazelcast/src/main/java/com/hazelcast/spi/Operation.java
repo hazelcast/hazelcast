@@ -314,18 +314,18 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
-     * Gets the OperationResponseHandler tied to this Operation. The returned value can be null.
+     * Gets the {@link OperationResponseHandler} tied to this Operation. The returned value can be null.
      *
-     * @return the OperationResponseHandler
+     * @return the {@link OperationResponseHandler}
      */
     public final OperationResponseHandler getOperationResponseHandler() {
         return responseHandler;
     }
 
     /**
-     * Sets the OperationResponseHandler. Value is allowed to be null.
+     * Sets the {@link OperationResponseHandler}. Value is allowed to be null.
      *
-     * @param responseHandler the OperationResponseHandler to set.
+     * @param responseHandler the {@link OperationResponseHandler} to set.
      * @return this instance.
      */
     public final Operation setOperationResponseHandler(OperationResponseHandler responseHandler) {

@@ -32,6 +32,10 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
+/**
+ * The response to a {@link ReplicaSyncRequest} that the replica should retry. This will reset the current ongoing
+ * synchronization request state and retry the request if this node is still a replica of this partition.
+ */
 public class ReplicaSyncRetryResponse extends AbstractPartitionOperation
         implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
 

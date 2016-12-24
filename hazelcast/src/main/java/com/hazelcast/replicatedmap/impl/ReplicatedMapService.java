@@ -129,6 +129,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
+    /** Send an operation to all replicas to check their replica versions for all partitions for which this node is the owner */
     public void triggerAntiEntropy() {
         if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 1) {
             return;
