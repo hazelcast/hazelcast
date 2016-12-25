@@ -115,7 +115,7 @@ public class ForwardingTest extends HazelcastTestSupport {
 
         dag.addVertex(producer)
            .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer).partitioned(
+           .addEdge(new Edge(producer, consumer).partitionedByCustom(
                    (item, numPartitions) -> (int) item % numPartitions
            ));
 

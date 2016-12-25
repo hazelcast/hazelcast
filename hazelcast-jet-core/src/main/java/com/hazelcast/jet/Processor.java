@@ -19,20 +19,28 @@ package com.hazelcast.jet;
 import javax.annotation.Nonnull;
 
 /**
- * Does the computation needed to transform zero or more input data streams into one
- * output stream. Each input stream corresponds to one incoming edge of the vertex
- * represented by this processor. The edges are identified by their ordinals.
+ * Does the computation needed to transform zero or more input data streams into
+ * zero or more output streams. Each input/output stream corresponds to one edge
+ * of the vertex represented by this processor. The correspondence between a stream
+ * and an edge is established via the edge's <em>ordinal</em>.
  * <p>
- * The processing methods should limit the amount of data they output per invocation.
- * Specifically, {@code Outbox} has a method {@link Outbox#isHighWater} that can be
- * tested to see whether it's time to stop pushing more data into it. Outbox will not be
- * emptied until the processor yields control back to its caller. There is also a
- * finer-grained method {@link Outbox#isHighWater(int)}, which tells the state of an
- * individual output bucket.
+ * The special case of zero input streams applies to a <em>source</em> vertex, which
+ * gets its data from the environment. The special case of zero output streams applies
+ * to a <em>sink</em> vertex, which pushes its data to the environment.
+ * <p>
+ * The processor accepts input from instances of {@link Inbox} and pushes its output
+ * to an instance of {@link Outbox}.
+ * <p>
+ * The processing methods should limit the amount of data they output per invocation
+ * because the outbox will not be emptied until the processor yields control back to
+ * its caller. Specifically, {@code Outbox} has a method {@link Outbox#isHighWater isHighWater()}
+ * that can be tested to see whether it's time to stop pushing more data into it.  There is
+ * also a finer-grained method {@link Outbox#isHighWater(int) isHighWater(ordinal)}, which
+ * tells the state of an individual output bucket.
  * <p>
  * If this processor declares itself as "cooperative" ({@link #isCooperative()} returns
- * {@code true}), it should also limit the amount of processing time it spends per call
- * because it will participate in a cooperative multithreading scheme.
+ * {@code true}), it should also limit the amount of time it spends per call because it
+ * will participate in a cooperative multithreading scheme.
  */
 public interface Processor {
 

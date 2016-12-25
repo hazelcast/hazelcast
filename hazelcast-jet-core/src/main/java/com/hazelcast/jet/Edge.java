@@ -26,7 +26,22 @@ import java.io.IOException;
 import java.io.Serializable;
 
 /**
- * Represents an edge between two vertices in a DAG
+ * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
+ * Conceptually, data travels over the edge from the source vertex to the
+ * destination vertex. Practically, since the vertex is distributed across
+ * the cluster and across threads in each cluster member, the edge is
+ * implemented by a number of concurrent queues and network sender/receiver pairs.
+ * <p>
+ * It is often desirable to arrange that all items belonging to the same collation
+ * key are received by the same processing unit (instance of {@link Processor}).
+ * This is achieved by configuring an appropriate {@link Partitioner} on the edge.
+ * The partitioner will determine the partition ID of each item and all items with
+ * the same partition ID will be routed to the same {@code Processor} instance.
+ * Depending on the value of edge's <em>distributed</em> property, the processor
+ * will be unique cluster-wide, or only within each member.
+ * <p>
+ * A newly instantiated Edge is non-distributed with a
+ * {@link ForwardingPattern#VARIABLE_UNICAST VARIABLE_UNICAST} forwarding pattern.
  */
 public class Edge implements IdentifiedDataSerializable {
 
@@ -37,14 +52,13 @@ public class Edge implements IdentifiedDataSerializable {
 
     private int priority = Integer.MAX_VALUE;
 
-    private ForwardingPattern forwardingPattern = ForwardingPattern.ALTERNATING_SINGLE;
+    private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
     private Partitioner partitioner;
     private boolean isDistributed;
 
     private EdgeConfig config;
 
     Edge() {
-
     }
 
     /**
@@ -53,8 +67,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @param source      the source vertex
      * @param destination the destination vertex
      */
-    public Edge(Vertex source,
-                Vertex destination) {
+    public Edge(Vertex source, Vertex destination) {
         this(source, 0, destination, 0);
     }
 
@@ -66,8 +79,7 @@ public class Edge implements IdentifiedDataSerializable {
      * @param destination   the destination vertex
      * @param inputOrdinal  ordinal at the destination
      */
-    public Edge(Vertex source, int outputOrdinal,
-                Vertex destination, int inputOrdinal) {
+    public Edge(Vertex source, int outputOrdinal, Vertex destination, int inputOrdinal) {
         this.source = source.getName();
         this.outputOrdinal = outputOrdinal;
 
@@ -76,36 +88,40 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return Javadoc pending
+     * @return the name of the source vertex
      */
     public String getSource() {
         return source;
     }
 
     /**
-     * @return Javadoc pending
+     * @return ordinal of the edge at the source vertex
      */
     public int getOutputOrdinal() {
         return outputOrdinal;
     }
 
     /**
-     * @return Javadoc pending
+     * @return the name of the destination vertex
      */
     public String getDestination() {
         return destination;
     }
 
     /**
-     * @return Javadoc pending
+     * @return ordinal of the edge at the destination vertex
      */
     public int getInputOrdinal() {
         return inputOrdinal;
     }
 
     /**
-     * Sets the priority number for the edge.
-     * The edges with the lower priority number will be processed before all others.
+     * Sets the priority of the edge. A lower number means higher priority
+     * and the default is {@code Integer.MAX_VALUE}, the lowest possible priority.
+     * <p>
+     * Example: there two incoming edges on a vertex, with priorities 1 and 2. The
+     * data from the edge with priority 1 will be processed in full before accepting
+     * any data from the edge with priority 2.
      */
     public Edge priority(int priority) {
         this.priority = priority;
@@ -113,7 +129,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Partition the edge with the default {@link Partitioner}
+     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
+     * pattern and applies the default Hazelcast partitioning strategy.
      */
     public Edge partitioned() {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
@@ -122,34 +139,39 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Partition the edge with the given {@link Partitioner}
+     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
+     * pattern and applies the default Hazelcast partitioning strategy. The strategy
+     * is not applied directly to the item, but to the return value of the supplied
+     * {@code KeyExtractor}'s method.
      */
-    public Edge partitioned(Partitioner partitioner) {
-        this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = partitioner;
-        return this;
-    }
-
-    /**
-     * Partition the edge with the default {@link Partitioner}
-     * and applies the provided function before partitioning
-     */
-    public Edge partitioned(KeyExtractor extractor) {
+    public Edge partitionedByKey(KeyExtractor extractor) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
         this.partitioner = new Keyed(extractor);
         return this;
     }
 
     /**
-     * Forward the edge to a single point
+     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
+     * pattern and applies the provided custom partitioning strategy.
+     */
+    public Edge partitionedByCustom(Partitioner partitioner) {
+        this.forwardingPattern = ForwardingPattern.PARTITIONED;
+        this.partitioner = partitioner;
+        return this;
+    }
+
+    /**
+     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
+     * pattern. All items will be assigned the same, randomly chosen partition ID.
      */
     public Edge allToOne() {
-        return partitioned(new Single());
+        return partitionedByCustom(new Single());
     }
 
 
     /**
-     * Javadoc pending
+     * Activates the {@link ForwardingPattern#BROADCAST BROADCAST} forwarding
+     * pattern.
      */
     public Edge broadcast() {
         forwardingPattern = ForwardingPattern.BROADCAST;
@@ -157,7 +179,17 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Javadoc pending
+     * Declares that the edge is distributed. A non-distributed edge only transfers
+     * data within the same member. If the data source running on local member is
+     * distributed (produces only a slice of all the data on any given member), the
+     * local processors will not observe all the data. The same holds true when the data
+     * originates from an upstream distributed edge.
+     * <p>
+     * A <em>distributed</em> edge allows all the data to be observed by all the processors
+     * (using the {@link ForwardingPattern#BROADCAST BROADCAST} forwarding pattern) and,
+     * more attractively, all the data with a given partition ID to be observed by the same
+     * unique processor, regardless of whether it is running on the local or a remote member
+     * (using the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding pattern).
      */
     public Edge distributed() {
         isDistributed = true;
@@ -165,28 +197,31 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return the partitioned for the edge
+     * Returns the instance encapsulating the partitioning strategy in effect
+     * on this edge.
      */
     public Partitioner getPartitioner() {
         return partitioner;
     }
 
     /**
-     * @return the {@link ForwardingPattern} for the edge
+     * Returns the {@link ForwardingPattern} in effect on the edge.
      */
     public ForwardingPattern getForwardingPattern() {
         return forwardingPattern;
     }
 
     /**
-     * @return Javadoc pending
+     * Says whether this edge is <em>distributed</em>. The effects of this
+     * property are discussed in {@link #distributed()}.
      */
     public boolean isDistributed() {
         return isDistributed;
     }
 
     /**
-     * @return the priority for the edge
+     * @return the value of edge's <em>priority</em>, as explained on
+     * {@link #priority(int)}.
      */
     public int getPriority() {
         return priority;
@@ -254,24 +289,26 @@ public class Edge implements IdentifiedDataSerializable {
 
 
     /**
-     * Javadoc pending
+     * Enumerates the supported patterns of forwarding data items along an edge. Since there
+     * are many {@code Processor} instances doing the work of the same destination vertex, a
+     * choice can be made which processor(s) to send the item to.
+     * <p>
+     * If the edge is not distributed, candidate processors are only those running within
+     * the same cluster member.
      */
     public enum ForwardingPattern implements Serializable {
-
         /**
-         * Output of the source tasklet is only available to a single destination tasklet,
-         * but not necessarily always the same one
+         * For each item a single destination processor is chosen, with no restriction on the choice.
          */
-        ALTERNATING_SINGLE,
-
+        VARIABLE_UNICAST,
         /**
-         * Output of the source tasklet is only available to the destination tasklet with the partition id
-         * given by the {@link Partitioner}
+         * Each item is sent to the one processor responsible for the item's partition ID. On
+         * a distributed edge, the processor is unique across the cluster; on a non-distributed
+         * edge the processor is unique only within a member.
          */
         PARTITIONED,
-
         /**
-         * Output of the source tasklet is available to all destination tasklets.
+         * Each item is sent to all candidate processors.
          */
         BROADCAST
     }
@@ -279,16 +316,16 @@ public class Edge implements IdentifiedDataSerializable {
     private static class Default implements Partitioner {
         private static final long serialVersionUID = 1L;
 
-        protected transient PartitionLookup lookup;
+        protected transient DefaultPartitionStrategy defaultPartitioning;
 
         @Override
-        public void init(PartitionLookup lookup) {
-            this.lookup = lookup;
+        public void init(DefaultPartitionStrategy defaultPartitioning) {
+            this.defaultPartitioning = defaultPartitioning;
         }
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return lookup.getPartition(item);
+            return defaultPartitioning.getPartition(item);
         }
     }
 
@@ -301,7 +338,7 @@ public class Edge implements IdentifiedDataSerializable {
 
         @Override
         public int getPartition(Object item, int numPartitions) {
-            return lookup.getPartition(extractor.extract(item));
+            return defaultPartitioning.getPartition(extractor.extract(item));
         }
     }
 
@@ -316,9 +353,8 @@ public class Edge implements IdentifiedDataSerializable {
             key = UuidUtil.newUnsecureUuidString();
         }
 
-
         @Override
-        public void init(PartitionLookup service) {
+        public void init(DefaultPartitionStrategy service) {
             partition = service.getPartition(key);
         }
 

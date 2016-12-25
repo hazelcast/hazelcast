@@ -17,13 +17,14 @@
 package com.hazelcast.jet;
 
 /**
- * Provides partition information about an object
+ * A facade that hides the details of Hazelcast partitioning SPI and exposes
+ * just the partitioning strategy.
  */
 @FunctionalInterface
-public interface PartitionLookup {
+public interface DefaultPartitionStrategy {
 
     /**
-     * @return the Hazelcast partition for the given object
+     * @return the Hazelcast partition ID of the given object
      */
     int getPartition(Object object);
 }

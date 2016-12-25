@@ -66,8 +66,8 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         dag.addVertex(merger)
            .addVertex(combiner)
            .addVertex(writer)
-           .addEdge(new Edge(previous, merger).partitioned(item -> keyMapper.apply((T) item)))
-           .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
+           .addEdge(new Edge(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
+           .addEdge(new Edge(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
            .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;

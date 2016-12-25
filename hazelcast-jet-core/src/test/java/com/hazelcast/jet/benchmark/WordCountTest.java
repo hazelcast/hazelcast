@@ -128,10 +128,10 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addVertex(consumer)
                 .addEdge(new Edge(producer, generator))
                 .addEdge(new Edge(generator, accumulator)
-                        .partitioned((item, n) -> Math.abs(((Entry) item).getKey().hashCode()) % n))
+                        .partitionedByCustom((item, n) -> Math.abs(((Entry) item).getKey().hashCode()) % n))
                 .addEdge(new Edge(accumulator, combiner)
                         .distributed()
-                        .partitioned(item -> ((Entry) item).getKey()))
+                        .partitionedByKey(item -> ((Entry) item).getKey()))
                 .addEdge(new Edge(combiner, consumer));
 
         benchmark("jet", () -> {

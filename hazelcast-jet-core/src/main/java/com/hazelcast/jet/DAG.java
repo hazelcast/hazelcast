@@ -42,7 +42,28 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Javadoc pending
+ * Describes a computation to be performed by the Jet computation engine.
+ * A {@link Vertex vertex} represents a unit of data processing and an
+ * {@link Edge edge} represents the path along which the data travels to
+ * the next vertex.
+ * <p>
+ * The work of a single vertex is parallelized and distributed, so that on
+ * each member there are several instances of the {@link Processor} type
+ * corresponding to it. Whenever possible, each instance should be
+ * tasked with only a slice of the total data and a partitioning strategy
+ * can be employed to ensure that the data sent to each vertex is collated
+ * by a partitioning key.
+ * <p>
+ * There are three basic kind of vertex:
+ * <ol><li>
+ *     <em>source</em> with just outbound edges;
+ * </li><li>
+ *     <em>processor</em> with both inbound and outbound edges;
+ * </li><li>
+ *     <em>sink</em> with just inbound edges.
+ * </li></ol>
+ * Data travels from sources to sinks and is transformed and reshaped
+ * as it passes through the vertices.
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 

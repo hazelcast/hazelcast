@@ -54,7 +54,7 @@ interface OutboundCollector {
             OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
     ) {
         switch (outboundEdge.getForwardingPattern()) {
-            case ALTERNATING_SINGLE:
+            case VARIABLE_UNICAST:
                 return new RoundRobin(collectors);
             case PARTITIONED:
                 return new Partitioned(collectors, outboundEdge.getPartitioner(), partitionCount);

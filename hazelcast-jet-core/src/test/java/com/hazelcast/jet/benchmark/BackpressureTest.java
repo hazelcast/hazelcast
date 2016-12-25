@@ -36,15 +36,12 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.LockSupport;
 
 import static com.hazelcast.jet.impl.Util.uncheckedGet;
 import static java.util.Arrays.asList;
@@ -109,7 +106,7 @@ public class BackpressureTest extends HazelcastTestSupport {
                 .addVertex(consumer)
                 .addEdge(new Edge(generator, hiccuper)
                         .distributed()
-                        .partitioned((x, y) -> ptionOwnedByMember2))
+                        .partitionedByCustom((x, y) -> ptionOwnedByMember2))
                 .addEdge(new Edge(hiccuper, consumer));
 
         uncheckedGet(jetEngine.newJob(dag).execute());

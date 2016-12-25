@@ -19,21 +19,34 @@ package com.hazelcast.jet;
 import java.io.Serializable;
 
 /**
- * Javadoc pending
+ * Encapsulates the logic associated with a {@link DAG DAG} edge that decides
+ * on the partition ID of an item traveling over it. The partition ID
+ * determines which cluster member and which instance of {@link Processor} on
+ * that member an item will be forwarded to.
+ * <p>
+ * Jet's partitioning piggybacks on Hazelcast partitioning. Standard Hazelcast
+ * protocols are used to distribute partition ownership over the members of the
+ * cluster. However, if a DAG edge is configured as non-distributed, then on each
+ * member there will be some destination processor responsible for any given partition.
  */
 @FunctionalInterface
 public interface Partitioner extends Serializable {
 
     /**
-     * Initialize the partitioner state
+     * Callback that injects the Hazelcast's default partitioning strategy into
+     * this partitioner so it can be consulted by the {@link #getPartition(Object, int)} method.
+     * <p>
+     * The creation of instances of the {@code Partitioner} type is done in user's code,
+     * but the Hazelcast partitioning strategy only becomes available after the partitioner
+     * is deserialized on each target member. This method solves the lifecycle mismatch.
      */
-    default void init(PartitionLookup lookup) {
+    default void init(DefaultPartitionStrategy lookup) {
     }
 
     /**
-     * @param numPartitions total number of partitions,
-     *                      which is always equal to the total number of Hazelcast partitions
-     * @return the partition for the given object
+     * @param item the item for which to determine the partition ID
+     * @param numPartitions the total number of partitions as configured for the underlying Hazelcast instance
+     * @return the partition ID of the given item
      */
     int getPartition(Object item, int numPartitions);
 
