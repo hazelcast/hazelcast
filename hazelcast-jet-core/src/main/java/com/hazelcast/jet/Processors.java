@@ -23,7 +23,7 @@ import com.hazelcast.jet.impl.IMapReader;
 import com.hazelcast.jet.impl.IMapWriter;
 
 /**
- * Contains various predefined processors
+ * Static utility class with factory methods for a number of predefined processors.
  */
 public final class Processors {
 

@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Javadoc pending.
+ *
  */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {

@@ -19,7 +19,16 @@ package com.hazelcast.jet;
 import javax.annotation.Nonnull;
 
 /**
- * Javadoc pending
+ * Base class to implement custom processors. Simplifies the contract of
+ * {@code Processor} by abstracting away {@code Inbox} and {@code Outbox},
+ * instead requiring a simple {@link #process(int, Object)} callback to
+ * be implemented. The implementation should use the {@code emit()} methods
+ * to emit its output. There are two overloads of {@code emit()} and each
+ * delegates to the overload of {@code Outbox.add()} with the same signature.
+ * <p>
+ * Processors which cannot be implemented in terms of the simplified API can
+ * directly override Processor's {@code process()} method while still being
+ * spared of the {@code init()}-related boilerplate.
  */
 public abstract class AbstractProcessor implements Processor {
 
@@ -31,9 +40,8 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * {@inheritDoc}
-     * <p>
-     * The default implementation delegates to the item-at-a-time {@link #process(int, Object)}.
+     * Implements the boilerplate of taking items from the
+     * inbox and processing them one by one.
      */
     @Override
     public void process(int ordinal, Inbox inbox) {
@@ -50,20 +58,29 @@ public abstract class AbstractProcessor implements Processor {
      *
      * @param ordinal ordinal of the input where the item originates from
      * @param item    item to be processed
-     * @return <code>true</code> if this item has now been processed, <code>false</code> otherwise.
+     * @return {@code true} if this item has now been processed, {@code false} otherwise.
      */
     protected boolean process(int ordinal, Object item) {
         throw new UnsupportedOperationException("");
     }
 
+    /**
+     * @return the outbox received in the {@code init()} method call.
+     */
     protected Outbox getOutbox() {
         return outbox;
     }
 
+    /**
+     * Delegates directly to {@link Outbox#add(int, Object)}.
+     */
     protected void emit(int ordinal, Object item) {
         outbox.add(ordinal, item);
     }
 
+    /**
+     * Delegates directly to {@link Outbox#add(Object)}.
+     */
     protected void emit(Object item) {
         outbox.add(item);
     }
