@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
@@ -47,6 +48,7 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -209,6 +211,10 @@ public abstract class HazelcastTestSupport {
     public static ClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
+    }
+
+    public static ClientEngineImpl getClientEngineImpl(HazelcastInstance instance) {
+        return getNode(instance).clientEngine;
     }
 
     public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
@@ -625,7 +631,7 @@ public abstract class HazelcastTestSupport {
     public static void waitAllForSafeState(final Collection<HazelcastInstance> instances, int timeoutInSeconds) {
         assertTrueEventually(new AssertTask() {
             public void run() {
-               assertAllInSafeState(instances);
+                assertAllInSafeState(instances);
             }
         }, timeoutInSeconds);
     }
@@ -985,7 +991,7 @@ public abstract class HazelcastTestSupport {
     public static void ignore(Throwable ignored) {
     }
 
-    public static void assertWaitingOperationCountEventually(int expectedOpsCount, HazelcastInstance...instances) {
+    public static void assertWaitingOperationCountEventually(int expectedOpsCount, HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             assertWaitingOperationCountEventually(expectedOpsCount, instance);
         }
@@ -1004,5 +1010,12 @@ public abstract class HazelcastTestSupport {
     private static WaitNotifyServiceImpl getWaitNotifyService(HazelcastInstance instance) {
         Node node = getNode(instance);
         return (WaitNotifyServiceImpl) node.getNodeEngine().getWaitNotifyService();
+    }
+
+    public static class DummySerializableCallable implements Callable, Serializable {
+        @Override
+        public Object call() throws Exception {
+            return null;
+        }
     }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
@@ -45,7 +44,6 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
     @Override
     protected void processMessage() throws Throwable {
-        ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = createOperationFactory();
         Collection<Address> targets = getTargets();
 
@@ -56,7 +54,6 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         MultiTargetCallback callback = new MultiTargetCallback(targets);
         for (Address target : targets) {
             Operation op = operationFactory.createOperation();
-            op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)

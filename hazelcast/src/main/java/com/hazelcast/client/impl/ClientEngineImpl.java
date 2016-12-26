@@ -364,6 +364,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
     }
 
+    //implemented for test purpose
+    public String getOwnerUuid(String clientUuid) {
+        return ownershipMappings.get(clientUuid);
+    }
+
     public TransactionManagerService getTransactionManagerService() {
         return node.nodeEngine.getTransactionManagerService();
     }
