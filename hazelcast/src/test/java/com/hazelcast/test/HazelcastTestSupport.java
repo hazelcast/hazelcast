@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
@@ -48,6 +49,7 @@ import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -210,6 +212,10 @@ public abstract class HazelcastTestSupport {
     public static ClusterService getClusterService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.clusterService;
+    }
+
+    public static ClientEngineImpl getClientEngineImpl(HazelcastInstance instance) {
+        return getNode(instance).clientEngine;
     }
 
     public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
@@ -1022,6 +1028,13 @@ public abstract class HazelcastTestSupport {
                 break;
             }
             sleepSeconds(1);
+        }
+    }
+
+    public static class DummySerializableCallable implements Callable, Serializable {
+        @Override
+        public Object call() throws Exception {
+            return null;
         }
     }
 }
