@@ -43,6 +43,16 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * The request sent from a replica to the partition owner to synchronize the replica data. The partition owner can send a
+ * response to the replica to retry the sync operation when:
+ * <ul>
+ * <li>the replica sync is not allowed (because migrations are not allowed)</li>
+ * <li>the operation was received by a node which is not the partition owner</li>
+ * <li>the maximum number of parallel synchronizations has already been reached</li>
+ * </ul>
+ * An empty response can be sent if the current replica version is 0.
+ */
 public final class ReplicaSyncRequest extends AbstractPartitionOperation
         implements PartitionAwareOperation, MigrationCycleOperation {
 
@@ -58,8 +68,8 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
     public void beforeRun() throws Exception {
         int syncReplicaIndex = getReplicaIndex();
         if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("Replica index should be in range [1-"
-                    + InternalPartition.MAX_BACKUP_COUNT + "]");
+            throw new IllegalArgumentException("Replica index " + syncReplicaIndex
+                    + " should be in the range [1-" + InternalPartition.MAX_BACKUP_COUNT + "]");
         }
     }
 
@@ -96,6 +106,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         }
     }
 
+    /** Checks if we can continue with the replication or not. Can send a retry or empty response to the replica in some cases */
     private boolean preCheckReplicaSync(NodeEngineImpl nodeEngine, int partitionId, int replicaIndex) throws IOException {
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) nodeEngine.getPartitionService();
         PartitionStateManager partitionStateManager = partitionService.getPartitionStateManager();
@@ -134,6 +145,7 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         return true;
     }
 
+    /** Send a response to the replica to retry the replica sync */
     private void sendRetryResponse() {
         NodeEngine nodeEngine = getNodeEngine();
         int partitionId = getPartitionId();
@@ -162,10 +174,12 @@ public final class ReplicaSyncRequest extends AbstractPartitionOperation
         return tasks;
     }
 
+    /** Send a noop synchronization response to the caller replica */
     private void sendEmptyResponse() throws IOException {
         sendResponse(null);
     }
 
+    /** Send a synchronization response to the caller replica containing the replication operations to be executed */
     private void sendResponse(List<Operation> data) throws IOException {
         NodeEngine nodeEngine = getNodeEngine();
 

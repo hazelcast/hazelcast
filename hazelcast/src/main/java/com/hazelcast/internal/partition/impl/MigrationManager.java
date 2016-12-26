@@ -171,6 +171,7 @@ public class MigrationManager {
         delayedResumeMigrationTrigger.executeWithDelay();
     }
 
+    /** Is a migration allowed. The migration is not allowed during repartitioning or a node joining the cluster */
     boolean isMigrationAllowed() {
         return migrationAllowed.get();
     }

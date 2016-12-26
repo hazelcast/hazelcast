@@ -20,8 +20,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Entry wrapper with schedule time information to be used in SecondsBasedEntryTaskScheduler.
- * See SecondsBasedEntryTaskScheduler
+ * Entry wrapper with schedule time information to be used in {@link SecondsBasedEntryTaskScheduler}.
  *
  * @param <K> key type of scheduled entry
  * @param <V> value type of scheduled entry

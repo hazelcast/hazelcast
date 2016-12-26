@@ -83,6 +83,7 @@ final class PartitionReplicaVersions {
         return !dirty;
     }
 
+    /** Change versions for all replicas with an index greater than {@code fromReplica} to the new replica versions */
     private void setVersions(long[] newVersions, int fromReplica) {
         int fromIndex = fromReplica - 1;
         int len = newVersions.length - fromIndex;
