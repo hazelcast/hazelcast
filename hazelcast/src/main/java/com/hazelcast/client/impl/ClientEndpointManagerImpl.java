@@ -31,7 +31,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -144,18 +143,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
                 endpoint.getSocketAddress(),
                 endpoint.getClientType());
         clientEngine.sendClientEvent(event);
-    }
-
-    public void removeEndpoints(String memberUuid) {
-        Iterator<ClientEndpoint> iterator = endpoints.values().iterator();
-        while (iterator.hasNext()) {
-            ClientEndpoint endpoint = iterator.next();
-            String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
-            if (memberUuid.equals(ownerUuid)) {
-                iterator.remove();
-                removeEndpoint(endpoint, true, "Cleanup of disconnected client resources");
-            }
-        }
     }
 
     @Override

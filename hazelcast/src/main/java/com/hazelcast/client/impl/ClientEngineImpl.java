@@ -75,7 +75,6 @@ import javax.security.auth.login.LoginException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -442,24 +441,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private class DestroyEndpointTask implements Runnable {
         private final String deadMemberUuid;
 
-        public DestroyEndpointTask(String deadMemberUuid) {
+        DestroyEndpointTask(String deadMemberUuid) {
             this.deadMemberUuid = deadMemberUuid;
         }
 
         @Override
         public void run() {
-            endpointManager.removeEndpoints(deadMemberUuid);
-            removeMappings();
-        }
-
-        void removeMappings() {
-            Iterator<Map.Entry<String, String>> iterator = ownershipMappings.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.next();
+            for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
                 String clientUuid = entry.getKey();
                 String memberUuid = entry.getValue();
                 if (deadMemberUuid.equals(memberUuid)) {
-                    iterator.remove();
                     ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, deadMemberUuid);
                     nodeEngine.getOperationService().run(op);
                 }
