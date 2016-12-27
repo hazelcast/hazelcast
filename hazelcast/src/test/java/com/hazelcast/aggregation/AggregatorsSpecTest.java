@@ -11,7 +11,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -29,19 +28,10 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatorsSpecTest extends HazelcastTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-
-    @After
-    public void tearDown() {
-        if (factory != null) {
-            factory.terminateAll();
-        }
-    }
-
     @Test
     public void testAggregators_withParallelAccumulation() {
         IMap<Integer, Person> map = getMapWithNodeCount(3, true);
-        populateMapWithPersons(map, 1000);
+        populateMapWithPersons(map);
 
         assertMinAggregators(map);
         assertMaxAggregators(map);
@@ -54,7 +44,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     @Test
     public void testAggregators_withCallerRunsAccumulation() {
         IMap<Integer, Person> map = getMapWithNodeCount(2, false);
-        populateMapWithPersons(map, 1000);
+        populateMapWithPersons(map);
 
         assertMinAggregators(map);
         assertMaxAggregators(map);
@@ -69,7 +59,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
             throw new IllegalArgumentException("node count < 1");
         }
 
-        factory = createHazelcastInstanceFactory(nodeCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
         MapConfig mapConfig = new MapConfig()
                 .setName("aggr")
@@ -174,8 +164,8 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Comparable>distinct("comparableValue")));
     }
 
-    private static void populateMapWithPersons(IMap<Integer, Person> map, int count) {
-        for (int i = 1; i < count; i++) {
+    private static void populateMapWithPersons(IMap<Integer, Person> map) {
+        for (int i = 1; i < 1000; i++) {
             map.put(i, new Person(i));
         }
     }
