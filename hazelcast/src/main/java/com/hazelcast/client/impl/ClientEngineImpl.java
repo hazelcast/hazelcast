@@ -69,6 +69,8 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -84,6 +86,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
@@ -102,7 +105,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
-
+    private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
+            new ConstructorFunction<String, AtomicLong>() {
+                @Override
+                public AtomicLong createNew(String arg) {
+                    return new AtomicLong();
+                }
+            };
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -110,6 +119,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final SerializationService serializationService;
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
+    //// client uuid -> last authentication correlation id
+    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
+            = new ConcurrentHashMap<String, AtomicLong>();
 
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
@@ -347,11 +359,19 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ownershipMappings.clear();
     }
 
+    public boolean trySetLastAuthenticationCorrelationId(String clientUuid, long newCorrelationId) {
+        AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
+                clientUuid,
+                LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
+        return ConcurrencyUtil.setIfGreaterThan(lastCorrelationId, newCorrelationId);
+    }
+
     public String addOwnershipMapping(String clientUuid, String ownerUuid) {
         return ownershipMappings.put(clientUuid, ownerUuid);
     }
 
     public boolean removeOwnershipMapping(String clientUuid, String memberUuid) {
+        lastAuthenticationCorrelationIds.remove(clientUuid);
         return ownershipMappings.remove(clientUuid, memberUuid);
     }
 

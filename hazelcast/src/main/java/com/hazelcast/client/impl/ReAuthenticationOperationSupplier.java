@@ -23,13 +23,15 @@ import com.hazelcast.util.function.Supplier;
 public class ReAuthenticationOperationSupplier implements Supplier<Operation> {
 
     private final String uuid;
+    private final long authCorrelationId;
 
-    public ReAuthenticationOperationSupplier(String uuid) {
+    public ReAuthenticationOperationSupplier(String uuid, long authCorrelationId) {
         this.uuid = uuid;
+        this.authCorrelationId = authCorrelationId;
     }
 
     @Override
     public Operation get() {
-        return new ClientReAuthOperation(uuid);
+        return new ClientReAuthOperation(uuid, authCorrelationId);
     }
 }

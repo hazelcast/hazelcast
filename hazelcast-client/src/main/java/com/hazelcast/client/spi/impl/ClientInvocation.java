@@ -208,7 +208,7 @@ public class ClientInvocation implements Runnable {
         executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
-    protected boolean shouldRetry() {
+    private boolean shouldRetry() {
         return System.currentTimeMillis() < retryTimeoutPointInMillis;
     }
 
