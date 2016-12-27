@@ -116,6 +116,12 @@ public class NearCachePreloader<KS> {
      * @param adapter the {@link DataStructureAdapter} to load the values from
      */
     public void loadKeys(DataStructureAdapter<Data, ?> adapter) {
+        if (!storeFile.exists()) {
+            logger.info(format("Skipped loading keys of Near Cache %s since storage file doesn't exist (%s)", nearCacheName,
+                    storeFile.getAbsolutePath()));
+            return;
+        }
+
         long startedNanos = System.nanoTime();
         BufferingInputStream bis = null;
         try {
