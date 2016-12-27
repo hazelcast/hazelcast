@@ -360,12 +360,10 @@ public final class IOUtil {
         if (!fileNow.exists()) {
             throw new HazelcastException(format("Failed to rename %s to %s because %s doesn't exist.",
                     fileNow, fileToBe, fileNow));
-
         }
         if (!fileToBe.exists()) {
             throw new HazelcastException(format("Failed to rename %s to %s even though %s doesn't exist.",
                     fileNow, fileToBe, fileToBe));
-
         }
         if (!fileToBe.delete()) {
             throw new HazelcastException(format("Failed to rename %s to %s. %s exists and could not be deleted.",
@@ -481,7 +479,6 @@ public final class IOUtil {
             output.write(buffer, 0, n);
         }
     }
-
 
     private static final class ClassLoaderAwareObjectInputStream extends ObjectInputStream {
 
