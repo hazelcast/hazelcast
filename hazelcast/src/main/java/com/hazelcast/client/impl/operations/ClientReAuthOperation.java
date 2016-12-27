@@ -33,7 +33,7 @@ public class ClientReAuthOperation
         implements UrgentSystemOperation, AllowedDuringPassiveState {
 
     private String clientUuid;
-    private boolean clientDisconnectOperationRun;
+    private boolean noResourcesExistForClient;
 
     public ClientReAuthOperation() {
     }
@@ -52,7 +52,26 @@ public class ClientReAuthOperation
             endpoint.authenticated(principal);
         }
         String previousMemberUuid = engine.addOwnershipMapping(clientUuid, memberUuid);
-        clientDisconnectOperationRun = previousMemberUuid == null;
+        noResourcesExistForClient = previousMemberUuid == null;
+        if (!noResourcesExistForClient) {
+            // This code handles this case:
+            // During a previous authentication (AuthenticationMessageTask run), ClientReAuthOperation failed at some member
+            // while the ClientReAuthOperation succeeded for this member. In this case, the owner member was changed at this
+            // member in the previous authentication (which we normally do not desire). Check if the resources (such as listeners)
+            // exist to handle this case.
+            boolean resourceExist = false;
+            for (ClientEndpoint endpoint : endpoints) {
+                if (endpoint.resourcesExist()) {
+                    resourceExist = true;
+                    break;
+                }
+            }
+            if (!resourceExist) {
+                // no resource exist for this client at the member, hence we can assume that the cleanup is done or there was no
+                // registered listeners at all.
+                noResourcesExistForClient = true;
+            }
+        }
     }
 
     @Override
@@ -62,7 +81,7 @@ public class ClientReAuthOperation
 
     @Override
     public Object getResponse() {
-        return clientDisconnectOperationRun;
+        return noResourcesExistForClient;
     }
 
     @Override
