@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -39,7 +40,8 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Collection<Double> result = map.project(Projections.<Map.Entry<String, Person>, Double>singleAttribute("age"));
 
@@ -48,7 +50,8 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute_key() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Collection<String> result = map.project(Projections.<Map.Entry<String, Person>, String>singleAttribute("__key"));
 
@@ -57,7 +60,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute_this() {
-        IMap<String, Integer> map = getMapWithNodeCount(1);
+        IMap<String, Integer> map = getMapWithNodeCount();
         map.put("key1", 1);
         map.put("key2", 2);
 
@@ -68,7 +71,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute_emptyMap() {
-        IMap<String, Person> map = getMapWithNodeCount(1);
+        IMap<String, Person> map = getMapWithNodeCount();
 
         Collection<Double> result = map.project(Projections.<Map.Entry<String, Person>, Double>singleAttribute("age"));
 
@@ -77,7 +80,7 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute_null() {
-        IMap<String, Person> map = getMapWithNodeCount(1);
+        IMap<String, Person> map = getMapWithNodeCount();
         map.put("key1", new Person(1.0d));
         map.put("007", new Person(null));
 
@@ -88,7 +91,8 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void singleAttribute_nonExistingProperty() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Projection<Map.Entry<String, Person>, Double> projection = Projections.singleAttribute("age123");
 
@@ -96,33 +100,29 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
         map.project(projection);
     }
 
-    private IMap<String, Person> populateMapWithPersons(IMap map) {
-        map.put("key1", new Person(1.0d));
-        map.put("key2", new Person(4.0d));
-        map.put("key3", new Person(7.0d));
-        return map;
-    }
+    private <K, V> IMap<K, V> getMapWithNodeCount() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
-    public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
-        if (nodeCount < 1) {
-            throw new IllegalArgumentException("node count < 1");
-        }
+        MapConfig mapConfig = new MapConfig()
+                .setName("aggr")
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-
-
-        Config config = new Config();
-        config.setProperty("hazelcast.partition.count", "3");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("aggr");
-        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        config.addMapConfig(mapConfig);
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "3")
+                .addMapConfig(mapConfig);
 
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");
     }
 
+    private void populateMapWithPersons(IMap<String, Person> map) {
+        map.put("key1", new Person(1.0d));
+        map.put("key2", new Person(4.0d));
+        map.put("key3", new Person(7.0d));
+    }
+
     public static class Person implements DataSerializable {
+
         public Double age;
 
         public Person() {
@@ -142,5 +142,4 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
             age = in.readObject();
         }
     }
-
 }

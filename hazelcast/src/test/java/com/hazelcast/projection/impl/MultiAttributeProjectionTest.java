@@ -23,10 +23,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -40,7 +40,8 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void multiAttribute() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
         assertThat(result, containsInAnyOrder(new Object[]{1.0d, 190}, new Object[]{4.0d, 123}));
@@ -48,17 +49,17 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void multiAttribute_emptyMap() {
-        IMap<String, Person> map = getMapWithNodeCount(1);
+        IMap<String, Person> map = getMapWithNodeCount();
 
         Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("age", "height"));
 
         assertEquals(0, result.size());
     }
 
-
     @Test
     public void multiAttribute_key() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Collection<Object[]> result = map.project(Projections.<Map.Entry<String, Person>>multiAttribute("__key"));
 
@@ -67,7 +68,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void multiAttribute_this() {
-        IMap<String, Integer> map = getMapWithNodeCount(1);
+        IMap<String, Integer> map = getMapWithNodeCount();
         map.put("key1", 1);
         map.put("key2", 2);
 
@@ -78,7 +79,7 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void multiAttribute_null() {
-        IMap<String, Person> map = getMapWithNodeCount(1);
+        IMap<String, Person> map = getMapWithNodeCount();
         map.put("key1", new Person(1.0d, null));
         map.put("007", new Person(null, 144));
 
@@ -89,7 +90,8 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
 
     @Test
     public void multiAttribute_nonExistingProperty() {
-        IMap<String, Person> map = populateMapWithPersons(getMapWithNodeCount(1));
+        IMap<String, Person> map = getMapWithNodeCount();
+        populateMapWithPersons(map);
 
         Projection<Map.Entry<String, Person>, Object[]> projection = Projections.multiAttribute("age", "height123");
 
@@ -97,40 +99,28 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
         map.project(projection);
     }
 
-    private IMap<String, Person> populateMapWithPersons(IMap map) {
-        map.put("key1", new Person(1.0d, 190));
-        map.put("key2", new Person(4.0d, 123));
-        return map;
-    }
+    private <K, V> IMap<K, V> getMapWithNodeCount() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
-    public <R> Collection<R> getAxis(int axis, Collection<Object[]> input) {
-        Collection result = new ArrayList();
-        for (Object[] o : input) {
-            result.add(o[axis]);
-        }
-        return result;
-    }
+        MapConfig mapConfig = new MapConfig()
+                .setName("aggr")
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
 
-    public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
-        if (nodeCount < 1) {
-            throw new IllegalArgumentException("node count < 1");
-        }
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-
-
-        Config config = new Config();
-        config.setProperty("hazelcast.partition.count", "3");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("aggr");
-        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        config.addMapConfig(mapConfig);
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "3")
+                .addMapConfig(mapConfig);
 
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");
     }
 
+    private void populateMapWithPersons(IMap<String, Person> map) {
+        map.put("key1", new Person(1.0d, 190));
+        map.put("key2", new Person(4.0d, 123));
+    }
+
     public static class Person implements DataSerializable {
+
         public Double age;
         public Integer height;
 
@@ -154,5 +144,4 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
             height = in.readObject();
         }
     }
-
 }

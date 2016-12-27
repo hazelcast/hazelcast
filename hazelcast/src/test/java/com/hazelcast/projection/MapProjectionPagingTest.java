@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -50,16 +49,14 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
     private static int size = 50;
     private static int pageSize = 5;
 
-    private HazelcastInstance local;
-    private HazelcastInstance remote;
     private IMap<Integer, Integer> map;
 
     @Before
     public void setup() {
         Config config = getConfig();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        local = nodeFactory.newHazelcastInstance(config);
-        remote = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance local = nodeFactory.newHazelcastInstance(config);
+        nodeFactory.newHazelcastInstance(config);
         map = local.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -94,7 +91,6 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
         for (Integer val : values) {
             assertEquals(value++, val);
         }
-
     }
 
     @Test
@@ -119,7 +115,8 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
     public void testPagingWithFilteringAndComparator() {
         Projection<Map.Entry<Integer, Integer>, Integer> projection = new TestProjection();
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
+        TestComparator comparator = new TestComparator(false, IterationType.VALUE);
+        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize);
 
         Collection<Integer> values = map.project(projection, predicate);
         assertIterableEquals(values, 8, 7, 6, 5, 4);
@@ -156,7 +153,8 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
     @Test
     public void testEqualValuesPaging() {
         Projection<Map.Entry<Integer, Integer>, Integer> projection = new TestProjection();
-        for (int i = size; i < 2 * size; i++) { //keys[50-99] values[0-49]
+        // keys[50-99] values[0-49]
+        for (int i = size; i < 2 * size; i++) {
             map.put(i, i - size);
         }
 
@@ -184,8 +182,8 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
     public void testNextPageAfterResultSetEmpty() {
         Projection<Map.Entry<Integer, Integer>, Integer> projection = new TestProjection();
         Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 3); // entries which has value less than 3
-        TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
-        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); //pageSize = 5
+        TestComparator comparator = new TestComparator(true, IterationType.VALUE); // ascending values
+        PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); // pageSize = 5
 
         Collection<Integer> values = map.project(projection, predicate);
         assertIterableEquals(values, 0, 1, 2, 3);
@@ -220,6 +218,7 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
             this.iterationType = iterationType;
         }
 
+        @Override
         public int compare(Map.Entry<Integer, Integer> e1, Map.Entry<Integer, Integer> e2) {
             Map.Entry<Integer, Integer> o1 = e1;
             Map.Entry<Integer, Integer> o2 = e2;
@@ -238,5 +237,4 @@ public class MapProjectionPagingTest extends HazelcastTestSupport {
             }
         }
     }
-
 }
