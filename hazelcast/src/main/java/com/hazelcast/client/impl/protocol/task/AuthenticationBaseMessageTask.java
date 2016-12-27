@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.ReAuthenticationOperationSupplier;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
@@ -66,7 +66,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
     @Override
     protected Supplier<Operation> createOperationSupplier() {
-        return new ReAuthenticationOperationSupplier(getUuid());
+        return new ReAuthenticationOperationSupplier(getUuid(), clientMessage.getCorrelationId());
     }
 
     @Override
@@ -79,8 +79,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
                     cleanedUpMembers.add(member);
                     continue;
                 }
-                logger.warning("Failed to get response for invocation to member:" + member, (Throwable) response);
-                return prepareUnauthenticatedClientMessage();
+                throw (Throwable) response;
             }
             boolean isClientDisconnectOperationRun = (Boolean) response;
             if (isClientDisconnectOperationRun) {
@@ -225,7 +224,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
         endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion);
         setConnectionType();
-        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
+        logger.info("Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
                 + ", owner connection : " + isOwnerConnection() + ", client version : " + clientVersion);
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
