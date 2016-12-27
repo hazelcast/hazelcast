@@ -51,7 +51,6 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         addAllRows(queryResult.getRows());
     }
 
-
     // just for testing
     Collection<QueryResultRow> getRows() {
         return rows;

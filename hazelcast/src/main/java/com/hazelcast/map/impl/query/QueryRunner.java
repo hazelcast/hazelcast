@@ -233,5 +233,4 @@ public class QueryRunner {
             localStats.incrementOtherOperations();
         }
     }
-
 }

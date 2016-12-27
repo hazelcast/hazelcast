@@ -128,6 +128,4 @@ final class QueryDispatcher {
     private static boolean shouldSkipPartitionsQuery(Collection<Integer> partitionIds) {
         return partitionIds == null || partitionIds.isEmpty();
     }
-
-
 }

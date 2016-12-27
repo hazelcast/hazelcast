@@ -127,5 +127,4 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
             return aggregator;
         }
     }
-
 }

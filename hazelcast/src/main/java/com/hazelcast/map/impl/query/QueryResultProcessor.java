@@ -24,7 +24,6 @@ import java.util.Collection;
 /**
  * Responsible for populating {@link QueryResult}s
  */
-
 public class QueryResultProcessor implements ResultProcessor<QueryResult> {
 
     private final SerializationService serializationService;

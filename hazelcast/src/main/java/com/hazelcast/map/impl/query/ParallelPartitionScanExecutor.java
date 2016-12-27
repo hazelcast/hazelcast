@@ -104,5 +104,4 @@ public class ParallelPartitionScanExecutor implements PartitionScanExecutor {
             return partitionScanRunner.run(name, predicate, partition);
         }
     }
-
 }

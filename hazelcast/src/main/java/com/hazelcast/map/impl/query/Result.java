@@ -34,5 +34,4 @@ public interface Result<T extends Result> extends IdentifiedDataSerializable {
     void combine(T result);
 
     void onCombineFinished();
-
 }
