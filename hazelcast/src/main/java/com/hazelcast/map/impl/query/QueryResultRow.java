@@ -42,10 +42,12 @@ public class QueryResultRow implements IdentifiedDataSerializable, Map.Entry<Dat
         this.value = valueData;
     }
 
+    @Override
     public Data getKey() {
         return key;
     }
 
+    @Override
     public Data getValue() {
         return value;
     }

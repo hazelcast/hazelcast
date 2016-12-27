@@ -50,6 +50,7 @@ public class ParallelAccumulationExecutor implements AccumulationExecutor {
         this.callTimeoutInMillis = callTimeoutInMillis;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
             Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
