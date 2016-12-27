@@ -34,9 +34,7 @@ import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -71,16 +69,13 @@ public class CacheAddEntryListenerMessageTask
         return registrationId;
     }
 
-    @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
-            justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
             NotifiableEventListener<CacheService>,
-            ListenerWrapperEventFilter,
-            Serializable {
+            ListenerWrapperEventFilter {
 
-        private final transient ClientEndpoint endpoint;
-        private final transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;
+        private final ClientEndpoint endpoint;
+        private final CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;
 
         private CacheEntryListener(ClientEndpoint endpoint,
                                    CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask) {

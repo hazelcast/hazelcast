@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -76,8 +77,7 @@ public class DataSerializableConventionsTest {
         for (Object o : dataSerializableClasses) {
             Class klass = (Class) o;
             // if in public packages and not @PrivateApi ==> exclude from checks
-            if (!klass.getName().contains("impl") && !klass.getName().contains("internal") && (
-                    klass.getAnnotation(PrivateApi.class) == null)) {
+            if (isPublicClass(klass)) {
                 publicClasses.add(klass);
             }
         }
@@ -94,6 +94,54 @@ public class DataSerializableConventionsTest {
                 System.out.println(s);
             }
             fail("There are " + dataSerializableClasses.size() + " classes which are DataSerializable, not @BinaryInterface-"
+                    + "annotated and are not IdentifiedDataSerializable.");
+        }
+    }
+
+    /**
+     * Verifies that any class which is {@link Serializable} and is not annotated with {@link BinaryInterface}
+     * is also an {@link IdentifiedDataSerializable}.
+     */
+    @Test
+    public void test_serializableClasses_areIdentifiedDataSerializable() {
+        Set<Class<? extends Serializable>> serializableClasses = REFLECTIONS.getSubTypesOf(Serializable.class);
+        Set<Class<? extends IdentifiedDataSerializable>> allIdDataSerializableClasses
+                = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
+
+        serializableClasses.removeAll(allIdDataSerializableClasses);
+
+        // locate all classes annotated with BinaryInterface (and their subclasses) and remove those as well
+        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, false);
+        serializableClasses.removeAll(allAnnotatedClasses);
+
+        // filter out public classes from public packages (i.e. not "impl" nor "internal" and not annotated with @PrivateApi)
+        Set<Class> publicClasses = new HashSet<Class>();
+        for (Object o : serializableClasses) {
+            Class klass = (Class) o;
+            // if in public packages and not @PrivateApi ==> exclude from checks
+            if (isPublicClass(klass)) {
+                publicClasses.add(klass);
+            }
+            else {
+                // if not a public class but inherits Serializable from a public class, also exclude
+                if (inheritsClassFromPublicClass(klass, Serializable.class)) {
+                    publicClasses.add(klass);
+                }
+            }
+        }
+        serializableClasses.removeAll(publicClasses);
+
+        if (serializableClasses.size() > 0) {
+            SortedSet<String> nonCompliantClassNames = new TreeSet<String>();
+            for (Object o : serializableClasses) {
+                nonCompliantClassNames.add(o.toString());
+            }
+            System.out.println("The following classes are Serializable and should be IdentifiedDataSerializable:");
+            // failure - output non-compliant classes to standard output and fail the test
+            for (String s : nonCompliantClassNames) {
+                System.out.println(s);
+            }
+            fail("There are " + serializableClasses.size() + " classes which are Serializable, not @BinaryInterface-"
                     + "annotated and are not IdentifiedDataSerializable.");
         }
     }
@@ -220,5 +268,44 @@ public class DataSerializableConventionsTest {
             }
         }
         return identifiedDataSerializables;
+    }
+
+    /**
+     *
+     * @param klass
+     * @param inheritedClass
+     * @return {@code true} when klass has a superclass that implements or is itself of type {@code inheritedClass}
+     */
+    private boolean inheritsClassFromPublicClass(Class klass, Class inheritedClass) {
+        // check interfaces implemented by klass: if one of these implements inheritedClass and is public, then true
+        Class[] interfaces = klass.getInterfaces();
+        if (interfaces != null) {
+            for (Class implementedInterface : interfaces) {
+                if (implementedInterface.equals(inheritedClass)) {
+                    return false;
+                } else if (inheritedClass.isAssignableFrom(implementedInterface) && isPublicClass(implementedInterface)) {
+                    return true;
+                }
+            }
+        }
+        
+        // use hierarchyIteratingClass to iterate up the klass hierarchy
+        Class hierarchyIteratingClass = klass;
+        while (hierarchyIteratingClass.getSuperclass() != null) {
+            if (hierarchyIteratingClass.getSuperclass().equals(inheritedClass)) {
+                return true;
+            }
+            if (inheritedClass.isAssignableFrom(hierarchyIteratingClass.getSuperclass()) &&
+                    isPublicClass(hierarchyIteratingClass.getSuperclass())) {
+                return true;
+            }
+            hierarchyIteratingClass = hierarchyIteratingClass.getSuperclass();
+        }
+        return false;
+    }
+
+    private boolean isPublicClass(Class klass) {
+        return !klass.getName().contains(".impl.") && !klass.getName().contains(".internal.")
+                && klass.getAnnotation(PrivateApi.class) == null;
     }
 }
