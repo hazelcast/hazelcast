@@ -120,7 +120,7 @@ public class Vertex implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Vertex{name='" + name + '\'' + '}';
+        return "Vertex " + name;
     }
 
     @Override

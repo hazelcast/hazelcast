@@ -45,7 +45,7 @@ class VertexDef implements IdentifiedDataSerializable {
         this.parallelism = parallelism;
     }
 
-    int getVertexId() {
+    int vertexId() {
         return id;
     }
 
@@ -57,19 +57,19 @@ class VertexDef implements IdentifiedDataSerializable {
         this.outputs.addAll(outputs);
     }
 
-    List<EdgeDef> getInputs() {
+    List<EdgeDef> inputs() {
         return inputs;
     }
 
-    List<EdgeDef> getOutputs() {
+    List<EdgeDef> outputs() {
         return outputs;
     }
 
-    ProcessorSupplier getProcessorSupplier() {
+    ProcessorSupplier processorSupplier() {
         return processorSupplier;
     }
 
-    int getParallelism() {
+    int parallelism() {
         return parallelism;
     }
 

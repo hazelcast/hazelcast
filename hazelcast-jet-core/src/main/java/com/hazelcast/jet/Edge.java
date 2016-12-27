@@ -229,10 +229,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Edge{"
-                + "source=" + source
-                + ", destination=" + destination
-                + '}';
+        return '(' + source + ", " + outputOrdinal + ") -> (" + destination + ", " + inputOrdinal + ')';
     }
 
     @Override

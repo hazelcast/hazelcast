@@ -53,15 +53,15 @@ interface OutboundCollector {
     static OutboundCollector compositeCollector(
             OutboundCollector[] collectors, EdgeDef outboundEdge, int partitionCount
     ) {
-        switch (outboundEdge.getForwardingPattern()) {
+        switch (outboundEdge.forwardingPattern()) {
             case VARIABLE_UNICAST:
                 return new RoundRobin(collectors);
             case PARTITIONED:
-                return new Partitioned(collectors, outboundEdge.getPartitioner(), partitionCount);
+                return new Partitioned(collectors, outboundEdge.partitioner(), partitionCount);
             case BROADCAST:
                 return new Broadcast(collectors);
             default:
-                throw new AssertionError("Missing case label for " + outboundEdge.getForwardingPattern());
+                throw new AssertionError("Missing case label for " + outboundEdge.forwardingPattern());
         }
     }
 

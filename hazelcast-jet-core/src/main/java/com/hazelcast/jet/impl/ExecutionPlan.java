@@ -16,16 +16,23 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import static com.hazelcast.jet.impl.Util.readList;
 import static com.hazelcast.jet.impl.Util.writeList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 class ExecutionPlan implements IdentifiedDataSerializable {
     private List<VertexDef> vertices = new ArrayList<>();
@@ -60,5 +67,36 @@ class ExecutionPlan implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         vertices = readList(in);
     }
+
+    /**
+     * Initializes partitioners on edges and processor suppliers on vertices. Populates
+     * the transient fields on edges.
+     *
+     * @return all processor suppliers found in the plan
+     */
+    List<ProcessorSupplier> init(NodeEngine nodeEngine) {
+        final Map<Integer, VertexDef> vMap = getVertices().stream().collect(toMap(VertexDef::vertexId, v -> v));
+        getVertices().stream().forEach(v -> {
+            v.inputs().forEach(e -> e.initTransientFields(vMap, v, false));
+            v.outputs().forEach(e -> e.initTransientFields(vMap, v, true));
+        });
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        getVertices().stream()
+                     .map(VertexDef::outputs)
+                     .flatMap(List::stream)
+                     .map(EdgeDef::partitioner)
+                     .filter(Objects::nonNull)
+                     .forEach(p -> p.init(partitionService::getPartitionId));
+        return getVertices()
+                .stream()
+                .peek(v -> {
+                    final ProcessorSupplier sup = v.processorSupplier();
+                    final int parallelism = v.parallelism();
+                    sup.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(), parallelism));
+                })
+                .map(VertexDef::processorSupplier)
+                .collect(toList());
+    }
+
 }
 

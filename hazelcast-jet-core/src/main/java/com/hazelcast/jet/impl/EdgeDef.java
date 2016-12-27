@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
+import java.util.Map;
 
 class EdgeDef implements IdentifiedDataSerializable {
 
@@ -35,6 +36,14 @@ class EdgeDef implements IdentifiedDataSerializable {
     private Edge.ForwardingPattern forwardingPattern;
     private Partitioner partitioner;
     private EdgeConfig config;
+
+    // transient fields populated and used after deserialization
+    private transient String id;
+    private transient VertexDef sourceVertex;
+    private transient VertexDef destVertex;
+    private transient int sourceOrdinal;
+    private transient int destOrdinal;
+
 
     EdgeDef() {
     }
@@ -52,27 +61,44 @@ class EdgeDef implements IdentifiedDataSerializable {
         this.config = config;
     }
 
-    int getOrdinal() {
-        return ordinal;
+    void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutput) {
+        final VertexDef farVertex = vMap.get(oppositeVertexId);
+        this.sourceVertex = isOutput ? nearVertex : farVertex;
+        this.sourceOrdinal = isOutput ? ordinal : oppositeEndOrdinal;
+        this.destVertex = isOutput ? farVertex : nearVertex;
+        this.destOrdinal = isOutput ? oppositeEndOrdinal : ordinal;
+        this.id = sourceVertex.vertexId() + ":" + destVertex.vertexId();
     }
 
-    int getOppositeEndOrdinal() {
-        return oppositeEndOrdinal;
+    String edgeId() {
+        return id;
     }
 
-    int getOppositeVertexId() {
-        return oppositeVertexId;
+    VertexDef sourceVertex() {
+        return sourceVertex;
     }
 
-    Edge.ForwardingPattern getForwardingPattern() {
+    int sourceOrdinal() {
+        return sourceOrdinal;
+    }
+
+    VertexDef destVertex() {
+        return destVertex;
+    }
+
+    int destOrdinal() {
+        return destOrdinal;
+    }
+
+    Edge.ForwardingPattern forwardingPattern() {
         return forwardingPattern;
     }
 
-    Partitioner getPartitioner() {
+    Partitioner partitioner() {
         return partitioner;
     }
 
-    int getPriority() {
+    int priority() {
         return priority;
     }
 
@@ -80,9 +106,11 @@ class EdgeDef implements IdentifiedDataSerializable {
         return isDistributed;
     }
 
-    public EdgeConfig getConfig() {
+    EdgeConfig getConfig() {
         return config;
     }
+
+
     // IdentifiedDataSerializable implementation
 
     @Override

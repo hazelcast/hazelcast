@@ -25,15 +25,14 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.function.Consumer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
@@ -57,7 +56,8 @@ class ExecutionContext {
     private final long executionId;
     private final NodeEngine nodeEngine;
     private final EngineContext context;
-    private final List<ProcessorSupplier> suppliers = new ArrayList<>();
+    // populated at init time with all processor suppliers; required during complete()
+    private final List<ProcessorSupplier> procSuppliers = new ArrayList<>();
     private final List<Tasklet> tasklets = new ArrayList<>();
     private CompletionStage<Void> executionCompletionStage;
 
@@ -86,7 +86,7 @@ class ExecutionContext {
     }
 
     void complete(Throwable error) {
-        suppliers.forEach(s -> s.complete(error));
+        procSuppliers.forEach(s -> s.complete(error));
     }
 
     void handlePacket(int vertexId, int ordinal, Address sender, BufferObjectDataInput in) {
@@ -100,76 +100,31 @@ class ExecutionContext {
     }
 
     ExecutionContext initialize(ExecutionPlan plan) {
-        // make a copy of all suppliers - required for complete() call
-        suppliers.addAll(plan.getVertices().stream().map(VertexDef::getProcessorSupplier).collect(toList()));
+        procSuppliers.addAll(plan.init(nodeEngine));
+        populateMemberToId();
+        final PartitionArrangement ptionArrgmt = new PartitionArrangement(nodeEngine);
+
         receiverMap = new HashMap<>();
         senderMap = new HashMap<>();
-        final PartitionArrangement ptionArrgmt = new PartitionArrangement(nodeEngine);
         final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
-        final Map<String, Map<Address, ConcurrentConveyor<Object>>> senderConveyorMap = new HashMap<>();
-        final Map<Integer, VertexDef> vMap = plan.getVertices().stream().collect(toMap(VertexDef::getVertexId, v -> v));
-        final List<Address> remoteMembers = getRemoteMembers(nodeEngine);
-        populateMemberToId(remoteMembers);
-        for (VertexDef vertex : plan.getVertices()) {
-            final List<EdgeDef> inputs = vertex.getInputs();
-            final List<EdgeDef> outputs = vertex.getOutputs();
-            final int parallelism = vertex.getParallelism();
-            final List<Processor> processors = initVertex(vertex);
-            for (int processorIdx = 0; processorIdx < processors.size(); processorIdx++) {
-                final Processor p = processors.get(processorIdx);
-                final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
-                final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
-                for (EdgeDef edge : outputs) {
-                    final int destVertexId = edge.getOppositeVertexId();
-                    final String edgeId = vertex.getVertexId() + ":" + edge.getOppositeVertexId();
-                    final VertexDef destination = vMap.get(destVertexId);
-                    final int localProcessorCount = destination.getParallelism();
-                    final int receiverCount = edge.isDistributed() ? 1 : 0;
+        final Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap = new HashMap<>();
 
-                    // each edge has an array of conveyors
-                    // one conveyor per consumer - each conveyor has one queue per producer
-                    // giving the total number of queues = producers * consumers
-                    final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edgeId,
-                            e -> createConveyorArray(localProcessorCount, parallelism + receiverCount,
-                                    edge.getConfig().getQueueSize()));
-
-                    // create a sender tasklet per destination address, each with a single conveyor with number of
-                    // producers queues feeding it
-                    final Map<Address, ConcurrentConveyor<Object>> senderConveyor = !edge.isDistributed() ? null :
-                            senderConveyorMap.computeIfAbsent(edgeId, k -> {
-                                final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
-                                for (Address destAddr : remoteMembers) {
-                                    final ConcurrentConveyor<Object> conveyor =
-                                            createConveyorArray(1, parallelism, edge.getConfig().getQueueSize())[0];
-                                    final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
-                                            edge.getOppositeEndOrdinal(), edge.getPriority(), conveyor);
-                                    final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
-                                            context.getName(), destAddr, executionId, destVertexId,
-                                            edge.getConfig().getPacketSizeLimit());
-                                    senderMap.computeIfAbsent(destVertexId, x -> new HashMap<>())
-                                             .computeIfAbsent(edge.getOppositeEndOrdinal(), x -> new HashMap<>())
-                                             .put(destAddr, t);
-                                    tasklets.add(t);
-                                    addrToConveyor.put(destAddr, conveyor);
-                                }
-                                return addrToConveyor;
-                            });
-                    outboundStreams.add(createOutboundEdgeStream(
-                            vertex, destination, edge, processorIdx, localConveyors, senderConveyor, ptionArrgmt));
-                }
-                for (EdgeDef input : inputs) {
-                    // each tasklet will have one input conveyor per edge
-                    // and one InboundEmitter per queue on the conveyor
-                    final String id = input.getOppositeVertexId() + ":" + vertex.getVertexId();
-                    final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(id)[processorIdx];
-                    inboundStreams.add(createInboundEdgeStream(input.getOrdinal(), input.getPriority(), conveyor));
-                }
+        for (VertexDef srcVertex : plan.getVertices()) {
+            int processorIdx = -1;
+            for (Processor p : createProcessors(srcVertex, srcVertex.parallelism())) {
+                processorIdx++;
+                // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
+                // Also populates instance fields: senderMap, receiverMap, tasklets.
+                final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
+                        localConveyorMap, edgeSenderConveyorMap, ptionArrgmt, srcVertex, processorIdx);
+                final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(
+                        localConveyorMap, srcVertex, processorIdx);
                 tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
             }
         }
         receiverMap = unmodifiableMap(receiverMap);
         senderMap = unmodifiableMap(senderMap);
-        tasklets.addAll(receiverMap.values().stream().flatMap(e -> e.values().stream()).collect(toList()));
+        tasklets.addAll(receiverMap.values().stream().map(Map::values).flatMap(Collection::stream).collect(toList()));
         return this;
     }
 
@@ -177,83 +132,77 @@ class ExecutionContext {
         return nodeEngine.getPartitionService().getPartitionCount();
     }
 
-    private void populateMemberToId(List<Address> remoteMembers) {
+    private void populateMemberToId() {
         final Map<Address, Integer> memberToId = new HashMap<>();
         int id = 0;
-        for (Address member : remoteMembers) {
+        for (Address member : getRemoteMembers(nodeEngine)) {
             memberToId.put(member, id++);
         }
         this.memberToId = unmodifiableMap(memberToId);
     }
 
-    private static ConcurrentInboundEdgeStream createInboundEdgeStream(
-            int ordinal, int priority, ConcurrentConveyor<Object> conveyor
-    ) {
-        final InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
-        Arrays.setAll(emitters, n -> new ConveyorEmitter(conveyor, n));
-        return new ConcurrentInboundEdgeStream(emitters, ordinal, priority);
-    }
-
-    private OutboundEdgeStream createOutboundEdgeStream(
-            VertexDef source, VertexDef destination, EdgeDef edge, int taskletIndex,
-            ConcurrentConveyor<Object>[] localConveyors,
-            Map<Address, ConcurrentConveyor<Object>> senderConveyorMap, PartitionArrangement ptionArrgmt
-    ) {
-        final int totalPtionCount = totalPartitionCount();
-        final int processorCount = destination.getParallelism();
-        final int[][] ptionsPerProcessor = ptionArrgmt.assignPartitionsToProcessors(processorCount, edge.isDistributed());
-        final int ordinalAtDestination = edge.getOppositeEndOrdinal();
-        final OutboundCollector[] localCollectors = new OutboundCollector[processorCount];
-        Arrays.setAll(localCollectors, n ->
-                new ConveyorCollector(localConveyors[n], taskletIndex, ptionsPerProcessor[n]));
-
-        final int parallelism = source.getParallelism();
-        final int destVertexId = edge.getOppositeVertexId();
-        final OutboundCollector[] allCollectors;
-        if (!edge.isDistributed()) {
-            allCollectors = localCollectors;
-        } else {
-            // create the receiver tasklet for the edge, if not already created
-            receiverMap.computeIfAbsent(destVertexId, x -> new HashMap<>())
-                       .computeIfAbsent(ordinalAtDestination, x -> {
-                           final OutboundCollector[] receivers = new OutboundCollector[processorCount];
-                           Arrays.setAll(receivers, n ->
-                                   new ConveyorCollector(localConveyors[n], parallelism, ptionsPerProcessor[n]));
-                           final OutboundCollector collector = compositeCollector(receivers, edge, totalPtionCount);
-                           final int senderCount = nodeEngine.getClusterService().getSize() - 1;
-                           //TODO: fix FLOW_CONTROL_PERIOD after JetConfig is integrated
-                           return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
-                                   JetService.FLOW_CONTROL_PERIOD_MS, senderCount);
-                       });
-            // assign remote partitions to outbound data collectors
-            final Map<Address, int[]> remotePartitions = ptionArrgmt.remotePartitionAssignment.get();
-            allCollectors = new OutboundCollector[remotePartitions.size() + 1];
-            allCollectors[0] = compositeCollector(localCollectors, edge, totalPtionCount);
-            int index = 1;
-            for (Map.Entry<Address, int[]> entry : remotePartitions.entrySet()) {
-                allCollectors[index++] = new ConveyorCollectorWithPartition(senderConveyorMap.get(entry.getKey()),
-                        taskletIndex, entry.getValue());
-            }
-        }
-        return new OutboundEdgeStream(edge.getOrdinal(), edge.getConfig().getHighWaterMark(),
-                compositeCollector(allCollectors, edge, totalPtionCount));
-    }
-
-    private List<Processor> initVertex(VertexDef vertexDef) {
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
-        vertexDef.getOutputs().stream()
-                 .map(EdgeDef::getPartitioner)
-                 .filter(Objects::nonNull)
-                 .forEach(p -> p.init(partitionService::getPartitionId));
-        final ProcessorSupplier processorSupplier = vertexDef.getProcessorSupplier();
-        final int parallelism = vertexDef.getParallelism();
-        processorSupplier.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(), parallelism));
-        final List<Processor> processors = processorSupplier.get(parallelism);
+    private static List<Processor> createProcessors(VertexDef vertexDef, int parallelism) {
+        final List<Processor> processors = vertexDef.processorSupplier().get(parallelism);
         if (processors.size() != parallelism) {
             throw new HazelcastException("ProcessorSupplier failed to return the requested number of processors." +
                     " Requested: " + parallelism + ", returned: " + processors.size());
         }
         return processors;
+    }
+
+    /**
+     * NOTE: populates {@code localConveyorMap}, {@code edgeSenderConveyorMap}.
+     * Populates {@link #senderMap} and {@link #tasklets} fields.
+     */
+    private List<OutboundEdgeStream> createOutboundEdgeStreams(
+            Map<String, ConcurrentConveyor<Object>[]> localConveyorMap,
+            Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap,
+            PartitionArrangement ptionArrgmt, VertexDef srcVertex, int processorIdx
+    ) {
+        final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
+        for (EdgeDef edge : srcVertex.outputs()) {
+            // each edge has an array of conveyors
+            // one conveyor per consumer - each conveyor has one queue per producer
+            // giving the total number of queues = producers * consumers
+            final ConcurrentConveyor<Object>[] localConveyors = localConveyorMap.computeIfAbsent(edge.edgeId(),
+                    e -> createConveyorArray(edge.destVertex().parallelism(),
+                            srcVertex.parallelism() + (edge.isDistributed() ? 1 : 0),
+                            edge.getConfig().getQueueSize()));
+            final Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap =
+                    edge.isDistributed() ? memberToSenderConveyorMap(edgeSenderConveyorMap, edge) : null;
+            outboundStreams.add(createOutboundEdgeStream(
+                    edge, processorIdx, localConveyors, memberToSenderConveyorMap, ptionArrgmt));
+        }
+        return outboundStreams;
+    }
+
+    /**
+     * Creates (if absent) for the given edge one sender tasklet per remote member,
+     * each with a single conveyor with a number of producer queues feeding it.
+     * Updates the {@link #senderMap} and {@link #tasklets} fields.
+     */
+    private Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap(
+            Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap, EdgeDef edge
+    ) {
+        assert edge.isDistributed() : "Edge is not distributed";
+        return edgeSenderConveyorMap.computeIfAbsent(edge.edgeId(), x -> {
+            final Map<Address, ConcurrentConveyor<Object>> addrToConveyor = new HashMap<>();
+            for (Address destAddr : getRemoteMembers(nodeEngine)) {
+                final ConcurrentConveyor<Object> conveyor =
+                        createConveyorArray(1, edge.sourceVertex().parallelism(), edge.getConfig().getQueueSize())[0];
+                final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
+                        edge.destOrdinal(), edge.priority(), conveyor);
+                final int destVertexId = edge.destVertex().vertexId();
+                final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, context.getName(),
+                        destAddr, executionId, destVertexId, edge.getConfig().getPacketSizeLimit());
+                senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
+                         .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())
+                         .put(destAddr, t);
+                tasklets.add(t);
+                addrToConveyor.put(destAddr, conveyor);
+            }
+            return addrToConveyor;
+        });
     }
 
     @SuppressWarnings("unchecked")
@@ -265,5 +214,72 @@ class ExecutionContext {
             return concurrentConveyor(DONE_ITEM, queues);
         });
         return concurrentConveyors;
+    }
+
+    private OutboundEdgeStream createOutboundEdgeStream(
+            EdgeDef edge, int processorIndex, ConcurrentConveyor<Object>[] localConveyors,
+            Map<Address, ConcurrentConveyor<Object>> senderConveyorMap, PartitionArrangement ptionArrgmt
+    ) {
+        final int totalPtionCount = totalPartitionCount();
+        final int processorCount = edge.destVertex().parallelism();
+        final int[][] ptionsPerProcessor = ptionArrgmt.assignPartitionsToProcessors(processorCount, edge.isDistributed());
+        final OutboundCollector[] localCollectors = new OutboundCollector[processorCount];
+        Arrays.setAll(localCollectors, n ->
+                new ConveyorCollector(localConveyors[n], processorIndex, ptionsPerProcessor[n]));
+
+        final OutboundCollector[] allCollectors;
+        if (!edge.isDistributed()) {
+            allCollectors = localCollectors;
+        } else {
+            createIfAbsentReceiverTasklet(edge, localConveyors, ptionsPerProcessor, totalPtionCount);
+            // assign remote partitions to outbound data collectors
+            final Map<Address, int[]> memberToPartitions = ptionArrgmt.remotePartitionAssignment.get();
+            allCollectors = new OutboundCollector[memberToPartitions.size() + 1];
+            allCollectors[0] = compositeCollector(localCollectors, edge, totalPtionCount);
+            int index = 1;
+            for (Map.Entry<Address, int[]> entry : memberToPartitions.entrySet()) {
+                allCollectors[index++] = new ConveyorCollectorWithPartition(senderConveyorMap.get(entry.getKey()),
+                        processorIndex, entry.getValue());
+            }
+        }
+        return new OutboundEdgeStream(edge.sourceOrdinal(), edge.getConfig().getHighWaterMark(),
+                compositeCollector(allCollectors, edge, totalPtionCount));
+    }
+
+    private void createIfAbsentReceiverTasklet(
+            EdgeDef edge, ConcurrentConveyor<Object>[] localConveyors, int[][] ptionsPerProcessor, int totalPtionCount
+    ) {
+        receiverMap.computeIfAbsent(edge.destVertex().vertexId(), x -> new HashMap<>())
+                   .computeIfAbsent(edge.destOrdinal(), x -> {
+                       final OutboundCollector[] collectors = new OutboundCollector[ptionsPerProcessor.length];
+                       Arrays.setAll(collectors, n -> new ConveyorCollector(
+                               localConveyors[n], localConveyors[n].queueCount() - 1, ptionsPerProcessor[n]));
+                       final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount);
+                       final int senderCount = nodeEngine.getClusterService().getSize() - 1;
+                       //TODO: fix FLOW_CONTROL_PERIOD after JetConfig is integrated
+                       return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
+                               JetService.FLOW_CONTROL_PERIOD_MS, senderCount);
+                   });
+    }
+
+    private static List<InboundEdgeStream> createInboundEdgeStreams(
+            Map<String, ConcurrentConveyor<Object>[]> localConveyorMap, VertexDef srcVertex, int processorIdx
+    ) {
+        final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
+        for (EdgeDef inEdge : srcVertex.inputs()) {
+            // each tasklet will have one input conveyor per edge
+            // and one InboundEmitter per queue on the conveyor
+            final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[processorIdx];
+            inboundStreams.add(createInboundEdgeStream(inEdge.destOrdinal(), inEdge.priority(), conveyor));
+        }
+        return inboundStreams;
+    }
+
+    private static ConcurrentInboundEdgeStream createInboundEdgeStream(
+            int ordinal, int priority, ConcurrentConveyor<Object> conveyor
+    ) {
+        final InboundEmitter[] emitters = new InboundEmitter[conveyor.queueCount()];
+        Arrays.setAll(emitters, n -> new ConveyorEmitter(conveyor, n));
+        return new ConcurrentInboundEdgeStream(emitters, ordinal, priority);
     }
 }

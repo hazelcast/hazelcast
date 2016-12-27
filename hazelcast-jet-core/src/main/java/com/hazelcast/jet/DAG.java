@@ -168,6 +168,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Returns iterator for vertices in reverse topological order
      */
+    @Override
     public Iterator<Vertex> iterator() {
         validate();
         List<Vertex> vertices = new ArrayList<>(topologicalVertexStack);
@@ -187,10 +188,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                         .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
     }
 
+    @Override
+    public String toString() {
+        return "Vertices " + vertices + "\nEdges " + edges.toString();
+    }
+
     private boolean containsVertex(String vertexName) {
         return vertices.containsKey(vertexName);
     }
-
 
     private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outgoingEdgeMap) {
         for (Map.Entry<String, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
