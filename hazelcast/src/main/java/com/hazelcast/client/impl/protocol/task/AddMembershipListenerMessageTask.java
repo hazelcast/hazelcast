@@ -147,8 +147,7 @@ public class AddMembershipListenerMessageTask
             }
 
             ClusterService clusterService = clientEngine.getClusterService();
-            boolean currentMemberIsMaster = clusterService.getMasterAddress().equals(clientEngine.getThisAddress());
-            if (parameters.localOnly && !currentMemberIsMaster) {
+            if (parameters.localOnly && !clusterService.isMaster()) {
                 //if client registered localOnly, only master is allowed to send request
                 return false;
             }
