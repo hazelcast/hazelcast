@@ -11,6 +11,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,15 +21,26 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
 
+import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatorsSpecTest extends HazelcastTestSupport {
 
+    private TestHazelcastInstanceFactory factory;
+
+    @After
+    public void tearDown() {
+        if (factory != null) {
+            factory.terminateAll();
+        }
+    }
+
     @Test
-    public void average_3Nodes() {
-        IMap<Integer, Person> map = getMapWithNodeCount(3);
+    public void testAggregators_withParallelAccumulation() {
+        IMap<Integer, Person> map = getMapWithNodeCount(3, true);
         populateMapWithPersons(map, 1000);
 
         assertMinAggregators(map);
@@ -39,7 +51,40 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertDistinctAggregators(map);
     }
 
-    private void assertMinAggregators(IMap<Integer, Person> map) {
+    @Test
+    public void testAggregators_withCallerRunsAccumulation() {
+        IMap<Integer, Person> map = getMapWithNodeCount(2, false);
+        populateMapWithPersons(map, 1000);
+
+        assertMinAggregators(map);
+        assertMaxAggregators(map);
+        assertSumAggregators(map);
+        assertAverageAggregators(map);
+        assertCountAggregators(map);
+        assertDistinctAggregators(map);
+    }
+
+    private <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation) {
+        if (nodeCount < 1) {
+            throw new IllegalArgumentException("node count < 1");
+        }
+
+        factory = createHazelcastInstanceFactory(nodeCount);
+
+        MapConfig mapConfig = new MapConfig()
+                .setName("aggr")
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), String.valueOf(nodeCount))
+                .setProperty(AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION.getName(), String.valueOf(parallelAccumulation))
+                .addMapConfig(mapConfig);
+
+        HazelcastInstance instance = factory.newInstances(config)[0];
+        return instance.getMap("aggr");
+    }
+
+    private static void assertMinAggregators(IMap<Integer, Person> map) {
         assertEquals(Double.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMin("doubleValue")));
         assertEquals(Long.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMin("longValue")));
         assertEquals(Integer.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMin("intValue")));
@@ -53,10 +98,9 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(BigInteger.valueOf(1), map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>comparableMin("bigIntegerValue")));
 
         assertEquals("1", map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMin("comparableValue")));
-
     }
 
-    private void assertMaxAggregators(IMap<Integer, Person> map) {
+    private static void assertMaxAggregators(IMap<Integer, Person> map) {
         assertEquals(Double.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleMax("doubleValue")));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longMax("longValue")));
         assertEquals(Integer.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerMax("intValue")));
@@ -72,7 +116,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals("999", map.aggregate(Aggregators.<Map.Entry<Integer, Person>, String>comparableMax("comparableValue")));
     }
 
-    private void assertSumAggregators(IMap<Integer, Person> map) {
+    private static void assertSumAggregators(IMap<Integer, Person> map) {
         assertEquals(Double.valueOf(499500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleSum("doubleValue")));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longSum("longValue")));
         assertEquals(Long.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerSum("intValue")));
@@ -92,7 +136,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(499500), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>floatingPointSum("bigDecimalValue")));
     }
 
-    private void assertAverageAggregators(IMap<Integer, Person> map) {
+    private static void assertAverageAggregators(IMap<Integer, Person> map) {
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>doubleAvg("doubleValue")));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>longAvg("longValue")));
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>integerAvg("intValue")));
@@ -106,7 +150,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Double.valueOf(500.0d), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>numberAvg("bigIntegerValue")));
     }
 
-    private void assertCountAggregators(IMap<Integer, Person> map) {
+    private static void assertCountAggregators(IMap<Integer, Person> map) {
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("doubleValue")));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("longValue")));
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("intValue")));
@@ -115,7 +159,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertEquals(Long.valueOf(999), map.aggregate(Aggregators.<Map.Entry<Integer, Person>>count("comparableValue")));
     }
 
-    private void assertDistinctAggregators(IMap<Integer, Person> map) {
+    private static void assertDistinctAggregators(IMap<Integer, Person> map) {
         assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue")),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue")));
         assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute("longValue")),
@@ -130,14 +174,14 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Comparable>distinct("comparableValue")));
     }
 
-    private static IMap<Integer, Person> populateMapWithPersons(IMap<Integer, Person> map, int count) {
+    private static void populateMapWithPersons(IMap<Integer, Person> map, int count) {
         for (int i = 1; i < count; i++) {
             map.put(i, new Person(i));
         }
-        return map;
     }
 
     public static class Person implements Serializable {
+
         public int intValue;
         public double doubleValue;
         public long longValue;
@@ -157,23 +201,4 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
             this.comparableValue = String.valueOf(numberValue);
         }
     }
-
-    public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
-        if (nodeCount < 1) {
-            throw new IllegalArgumentException("node count < 1");
-        }
-
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
-
-        Config config = new Config();
-        config.setProperty("hazelcast.partition.count", "3");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("aggr");
-        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        config.addMapConfig(mapConfig);
-
-        HazelcastInstance instance = factory.newInstances(config)[0];
-        return instance.getMap("aggr");
-    }
-
 }
