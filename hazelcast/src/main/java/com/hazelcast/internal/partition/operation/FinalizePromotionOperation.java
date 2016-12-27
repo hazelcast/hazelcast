@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.partition.operation;
 
-import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionEventManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
@@ -74,9 +73,11 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
     @Override
     public void afterRun() throws Exception {
-        clearPartitionMigratingFlag();
-        MigrationEvent.MigrationStatus status = success ? COMPLETED : FAILED;
-        sendMigrationEvent(status);
+        InternalPartitionServiceImpl service = getService();
+        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
+        partitionStateManager.clearMigratingFlag(getPartitionId());
+
+        sendMigrationEvent(success ? COMPLETED : FAILED);
     }
 
     private void shiftUpReplicaVersions() {
@@ -116,7 +117,7 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.commitMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
         }
     }
@@ -127,14 +128,8 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
             try {
                 service.rollbackMigration(event);
             } catch (Throwable e) {
-                logger.warning("While promoting partitionId=" + getPartitionId(), e);
+                logger.warning("While promoting " + getPartitionMigrationEvent(), e);
             }
         }
-    }
-
-    private void clearPartitionMigratingFlag() {
-        InternalPartitionServiceImpl service = getService();
-        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        partitionStateManager.clearMigratingFlag(getPartitionId());
     }
 }
