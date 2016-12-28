@@ -83,11 +83,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
 
     @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys() {
         storeAndLoad(2342, false);
     }
 
     @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
     public void testStoreAndLoad_withStringKeys() {
         storeAndLoad(4223, true);
     }
@@ -115,6 +117,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
     public void testCreateStoreFile_withInvalidFileName() {
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(1)
