@@ -34,6 +34,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
@@ -43,6 +44,7 @@ import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -52,7 +54,6 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.partition.impl.InternalMigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -69,7 +70,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
-import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
@@ -641,7 +641,8 @@ public class Node {
         }
         if (joiner == null) {
             logger.warning("No join method is enabled! Starting standalone.");
-            setAsMaster();
+            ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
+            clusterJoinManager.setAsMaster();
             return;
         }
 
@@ -691,14 +692,6 @@ public class Node {
             }
         }
         return null;
-    }
-
-    public void setAsMaster() {
-        logger.finest("This node is being set as the master");
-        masterAddress = address;
-        setJoined();
-        getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-        getClusterService().setClusterId(UuidUtil.createClusterUuid());
     }
 
     public Config getConfig() {
