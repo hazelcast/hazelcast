@@ -262,7 +262,7 @@ public class XmlClientConfigBuilderTest {
 
         assertNotNull(nearCacheConfig.getPreloaderConfig());
         assertTrue(nearCacheConfig.getPreloaderConfig().isEnabled());
-        assertEquals("myNearCache.store", nearCacheConfig.getPreloaderConfig().getFileName());
+        assertEquals("myNearCache.store", nearCacheConfig.getPreloaderConfig().getFilename());
         assertEquals(2342, nearCacheConfig.getPreloaderConfig().getStoreInitialDelaySeconds());
         assertEquals(4223, nearCacheConfig.getPreloaderConfig().getStoreIntervalSeconds());
     }

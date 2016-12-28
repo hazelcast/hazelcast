@@ -406,7 +406,7 @@
 
     <xs:complexType name="preloader">
         <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
-        <xs:attribute name="file-name" type="xs:string" use="optional"/>
+        <xs:attribute name="filename" type="xs:string" use="optional"/>
         <xs:attribute name="store-initial-delay-seconds" type="xs:positiveInteger" default="600" use="optional"/>
         <xs:attribute name="store-interval-seconds" type="xs:positiveInteger" default="600" use="optional"/>
     </xs:complexType>

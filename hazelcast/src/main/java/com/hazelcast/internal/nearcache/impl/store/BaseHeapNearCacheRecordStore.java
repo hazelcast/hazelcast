@@ -125,4 +125,12 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             nearCachePreloader.storeKeys(records);
         }
     }
+
+    @Override
+    public void destroy() {
+        super.destroy();
+        if (nearCachePreloader != null) {
+            nearCachePreloader.destroy();
+        }
+    }
 }

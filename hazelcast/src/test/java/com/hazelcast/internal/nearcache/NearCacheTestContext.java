@@ -81,7 +81,7 @@ public class NearCacheTestContext<K, V, NK, NV> {
         this.hasLocalData = hasLocalData;
 
         this.nearCache = nearCache;
-        this.stats = nearCache.getNearCacheStats();
+        this.stats = (nearCache == null) ? null : nearCache.getNearCacheStats();
         this.nearCacheManager = nearCacheManager;
         this.cacheManager = cacheManager;
         this.memberCacheManager = memberCacheManager;
