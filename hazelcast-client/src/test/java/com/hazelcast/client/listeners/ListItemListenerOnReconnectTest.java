@@ -25,8 +25,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ListItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
@@ -34,7 +32,7 @@ public class ListItemListenerOnReconnectTest extends AbstractListenersOnReconnec
     private IList<String> iList;
 
     @Override
-    protected String addListener(final AtomicInteger eventCount) {
+    protected String addListener() {
         iList = client.getList(randomString());
 
         ItemListener<String> listener = new ItemListener<String>() {
