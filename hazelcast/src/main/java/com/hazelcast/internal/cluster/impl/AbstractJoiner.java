@@ -147,7 +147,7 @@ public abstract class AbstractJoiner implements Joiner {
         }
         if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
             logger.warning("Join try count exceed limit, setting this node as master!");
-            node.setAsMaster();
+            clusterJoinManager.setAsMaster();
         }
 
         if (node.joined()) {

@@ -101,9 +101,10 @@ public class NodeMulticastListener implements MulticastListener {
             if (!node.joined() && node.getMasterAddress() == null) {
                 String masterHost = joinMessage.getAddress().getHost();
                 if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {
+                    ClusterJoinManager clusterJoinManager = node.getClusterService().getClusterJoinManager();
                     //todo: why are we making a copy here of address?
                     Address masterAddress = new Address(joinMessage.getAddress());
-                    node.setMasterAddress(masterAddress);
+                    clusterJoinManager.setMasterAddress(masterAddress);
                 } else {
                     logJoinMessageDropped(masterHost);
                 }

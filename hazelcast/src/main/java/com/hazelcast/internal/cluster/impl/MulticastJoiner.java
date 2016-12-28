@@ -55,16 +55,16 @@ public class MulticastJoiner extends AbstractJoiner {
                 && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
             // clear master node
-            node.setMasterAddress(null);
+            clusterJoinManager.setMasterAddress(null);
 
             Address masterAddress = getTargetAddress();
             if (masterAddress == null) {
                 masterAddress = findMasterWithMulticast();
             }
-            node.setMasterAddress(masterAddress);
+            clusterJoinManager.setMasterAddress(masterAddress);
 
             if (masterAddress == null || thisAddress.equals(masterAddress)) {
-                node.setAsMaster();
+                clusterJoinManager.setAsMaster();
                 return;
             }
 
@@ -97,7 +97,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
 
             if (isBlacklisted(master)) {
-                node.setMasterAddress(null);
+                clusterJoinManager.setMasterAddress(null);
                 return;
             }
         }

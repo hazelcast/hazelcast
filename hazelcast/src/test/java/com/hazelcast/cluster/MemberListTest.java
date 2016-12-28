@@ -169,7 +169,7 @@ public class MemberListTest {
         members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
         members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap()));
         members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
-        n2.clusterService.updateMembers(members);
+        n2.clusterService.updateMembers(members, n2.getMasterAddress());
         n2.setMasterAddress(m2.getAddress());
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
@@ -212,7 +212,7 @@ public class MemberListTest {
         List<MemberInfo> members = new ArrayList<MemberInfo>();
         members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap()));
         members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap()));
-        n2.clusterService.updateMembers(members);
+        n2.clusterService.updateMembers(members, n2.getMasterAddress());
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
         sleepSeconds(30);

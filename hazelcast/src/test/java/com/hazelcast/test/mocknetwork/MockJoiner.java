@@ -55,15 +55,14 @@ class MockJoiner extends AbstractJoiner {
 
                     if (node.getThisAddress().equals(joinAddress)) {
                         logger.fine("This node is found as master, no need to join.");
-                        node.setJoined();
-                        node.setAsMaster();
+                        clusterJoinManager.setAsMaster();
                         break;
                     }
 
                     logger.fine("Sending join request to " + joinAddress);
                     if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
                         logger.fine("Could not send join request to " + joinAddress);
-                        node.setMasterAddress(null);
+                        clusterJoinManager.setMasterAddress(null);
                     }
 
                     Thread.sleep(500);
@@ -86,6 +85,9 @@ class MockJoiner extends AbstractJoiner {
         logger.fine("Known master address is: " + joinAddress);
         if (joinAddress == null) {
             joinAddress = lookupJoinAddress();
+            if (!node.getThisAddress().equals(joinAddress)) {
+                clusterJoinManager.sendMasterQuestion(joinAddress);
+            }
         }
         return joinAddress;
     }

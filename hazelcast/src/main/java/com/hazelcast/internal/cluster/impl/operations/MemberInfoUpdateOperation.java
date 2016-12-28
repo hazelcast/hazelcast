@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -50,51 +50,17 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public void run() throws Exception {
-        final ClusterServiceImpl clusterService = getService();
-        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
-
-        if (!nodeEngine.getNode().joined()) {
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring member info update since not joined yet...");
-            }
-
-            return;
-        }
-
-        if (!checkValid()) {
-            return;
-        }
-
-        processMemberUpdate();
-    }
-
-    protected final void processMemberUpdate() {
         ClusterServiceImpl clusterService = getService();
-        clusterService.updateMembers(memberInfos);
+        Address callerAddress = getConnectionEndpointOrThisAddress();
+        clusterService.updateMembers(memberInfos, callerAddress);
     }
 
-    protected final boolean checkValid() {
-        final ClusterServiceImpl clusterService = getService();
-        final Connection conn = getConnection();
-
-        boolean isLocal = conn == null;
-
-        if (isLocal) {
-            return true;
-        }
-
-        Address endpoint = conn.getEndPoint();
-        Address masterAddress = clusterService.getMasterAddress();
-        boolean valid = (endpoint != null && endpoint.equals(masterAddress));
-        if (!valid) {
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring operation because sender: " + endpoint + " is not known master: " + masterAddress);
-            }
-        }
-
-        return valid;
+    final Address getConnectionEndpointOrThisAddress() {
+        ClusterServiceImpl clusterService = getService();
+        NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
+        Node node = nodeEngine.getNode();
+        Connection conn = getConnection();
+        return conn != null ? conn.getEndPoint() : node.getThisAddress();
     }
 
     @Override
