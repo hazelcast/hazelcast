@@ -19,7 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -42,7 +42,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.jet.impl.Util.peel;
+import static com.hazelcast.jet.impl.util.Util.peel;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)

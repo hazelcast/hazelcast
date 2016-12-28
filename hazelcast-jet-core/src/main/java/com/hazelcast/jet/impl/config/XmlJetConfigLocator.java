@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.jet.impl.Util;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 

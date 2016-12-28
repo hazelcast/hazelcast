@@ -27,6 +27,12 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.ExecutionService;
+import com.hazelcast.jet.impl.jobinit.EdgeDef;
+import com.hazelcast.jet.impl.jobinit.ExecutionPlan;
+import com.hazelcast.jet.impl.jobinit.ProcMetaSupplierContext;
+import com.hazelcast.jet.impl.jobinit.VertexDef;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
@@ -108,11 +114,10 @@ public class EngineContext {
         executionService.shutdown();
     }
 
-    Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
+    public Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
-        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m ->
-                new ExecutionPlan()));
+        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
@@ -149,7 +154,7 @@ public class EngineContext {
         return plans;
     }
 
-    void initExecution(long executionId, ExecutionPlan plan) {
+    public void initExecution(long executionId, ExecutionPlan plan) {
         final ExecutionContext[] created = {null};
         try {
             executionContexts.compute(executionId, (k, v) -> {
@@ -166,22 +171,22 @@ public class EngineContext {
         }
     }
 
-    void completeExecution(long executionId, Throwable error) {
+    public void completeExecution(long executionId, Throwable error) {
         ExecutionContext context = executionContexts.remove(executionId);
         if (context != null) {
             context.complete(error);
         }
     }
 
-    ExecutionContext getExecutionContext(long id) {
+    public ExecutionContext getExecutionContext(long id) {
         return executionContexts.get(id);
     }
 
-    ExecutionService getExecutionService() {
+    public ExecutionService getExecutionService() {
         return executionService;
     }
 
-    private EdgeConfig getConfig(Edge edge) {
+    private static EdgeConfig getConfig(Edge edge) {
         //TODO: use default EdgeConfig from JetConfig, once config work is integrated
         return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
     }

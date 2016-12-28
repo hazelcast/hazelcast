@@ -18,7 +18,7 @@ package com.hazelcast.jet;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.Util.peel;
+import static com.hazelcast.jet.impl.util.Util.peel;
 
 public final class TestUtil {
 

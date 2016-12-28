@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.ProcSupplierContext;
 
 import java.io.Serializable;
 import java.util.List;

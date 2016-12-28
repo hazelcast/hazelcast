@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetConfig;
-import com.hazelcast.jet.impl.Util;
+import com.hazelcast.jet.impl.util.Util;
 import org.junit.Test;
 
 import java.io.File;

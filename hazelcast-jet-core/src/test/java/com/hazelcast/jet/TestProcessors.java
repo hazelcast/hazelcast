@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.jet.impl.connector.AbstractProducer;
 
 public class TestProcessors {
 

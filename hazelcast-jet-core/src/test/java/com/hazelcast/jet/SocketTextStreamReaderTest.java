@@ -18,8 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.impl.IListWriter;
-import com.hazelcast.jet.impl.SocketTextStreamReader;
+import com.hazelcast.jet.impl.connector.IListWriter;
+import com.hazelcast.jet.impl.connector.SocketTextStreamReader;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

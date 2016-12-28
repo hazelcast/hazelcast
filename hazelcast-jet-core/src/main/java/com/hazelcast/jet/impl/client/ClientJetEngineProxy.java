@@ -36,7 +36,7 @@ import com.hazelcast.jet.ResourceConfig;
 import com.hazelcast.jet.impl.JetEngineProxy;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.JobImpl;
-import com.hazelcast.jet.impl.Util;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.impl.deployment.ResourceIterator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;

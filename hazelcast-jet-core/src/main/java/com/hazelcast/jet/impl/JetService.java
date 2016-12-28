@@ -22,6 +22,9 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.impl.execution.SenderTasklet;
+import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -45,12 +48,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.Util.createObjectDataInput;
-import static com.hazelcast.jet.impl.Util.createObjectDataOutput;
-import static com.hazelcast.jet.impl.Util.getMemberConnection;
-import static com.hazelcast.jet.impl.Util.getRemoteMembers;
-import static com.hazelcast.jet.impl.Util.sneakyThrow;
-import static com.hazelcast.jet.impl.Util.uncheckRun;
+import static com.hazelcast.jet.impl.util.Util.createObjectDataInput;
+import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
+import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
+import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
+import static com.hazelcast.jet.impl.util.Util.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -59,7 +62,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    static final int FLOW_CONTROL_PERIOD_MS = 100;
+    public static final int FLOW_CONTROL_PERIOD_MS = 100;
     private static final byte[] EMPTY_BYTES = new byte[0];
     final ILogger logger;
 
@@ -132,7 +135,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return engineContexts.get(name);
     }
 
-    boolean createContextIfAbsent(String name, JetEngineConfig config) {
+    public boolean createContextIfAbsent(String name, JetEngineConfig config) {
         boolean[] isNewContext = new boolean[1];
         engineContexts.computeIfAbsent(name, (key) -> {
             isNewContext[0] = true;
@@ -141,7 +144,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         return isNewContext[0];
     }
 
-    void registerOperation(AsyncExecutionOperation operation) {
+    public void registerOperation(AsyncExecutionOperation operation) {
         Map<Long, AsyncExecutionOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
                 (key) -> new ConcurrentHashMap<>());
         if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
@@ -149,7 +152,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         }
     }
 
-    void deregisterOperation(AsyncExecutionOperation operation) {
+    public void deregisterOperation(AsyncExecutionOperation operation) {
         if (liveOperations.get(operation.getCallerAddress()).remove(operation.getCallId()) == null) {
             throw new IllegalStateException("Missing operation during de-registration of operation=" + operation);
         }
@@ -166,7 +169,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
                       .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
     }
 
-    static byte[] createStreamPacketHeader(
+    public static byte[] createStreamPacketHeader(
             NodeEngine nodeEngine, String jetEngineName, long executionId, int destinationVertexId, int ordinal) {
         ObjectDataOutput out = createObjectDataOutput(nodeEngine);
         try {

@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.jet.TestProcessors.Identity;
-import com.hazelcast.jet.impl.AbstractProducer;
+import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,7 +42,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.Util.peel;
+import static com.hazelcast.jet.impl.util.Util.peel;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;

@@ -17,9 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.ProcMetaSupplierContext;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.Serializable;

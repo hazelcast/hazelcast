@@ -28,8 +28,8 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.IMapReader;
-import com.hazelcast.jet.impl.IMapWriter;
+import com.hazelcast.jet.impl.connector.IMapReader;
+import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -52,7 +52,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.hazelcast.jet.impl.Util.uncheckedGet;
+import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 

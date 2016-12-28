@@ -27,7 +27,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.IMapReader;
+import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
