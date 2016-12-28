@@ -25,15 +25,15 @@ import java.util.Collection;
  * {@code InboundEdgeStream} implemented in terms of a {@code ConcurrentConveyor}. The conveyor has as many
  * 1-to-1 concurrent queues as there are upstream tasklets contributing to it.
  */
-class ConcurrentInboundEdgeStream implements InboundEdgeStream {
+public class ConcurrentInboundEdgeStream implements InboundEdgeStream {
 
     private final int ordinal;
     private final int priority;
     private final InboundEmitter[] producers;
     private final ProgressTracker tracker;
 
-    ConcurrentInboundEdgeStream(InboundEmitter[] producers, int ordinal, int priority) {
-        this.producers = producers;
+    public ConcurrentInboundEdgeStream(InboundEmitter[] producers, int ordinal, int priority) {
+        this.producers = producers.clone();
         this.ordinal = ordinal;
         this.priority = priority;
         this.tracker = new ProgressTracker();

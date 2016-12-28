@@ -20,13 +20,13 @@ package com.hazelcast.jet.impl.execution;
  * The outbound side of a data stream corresponding to the origin of a single DAG edge identified by its ordinal.
  * A thin wrapper around an {@link OutboundCollector}
  */
-class OutboundEdgeStream {
+public class OutboundEdgeStream {
 
     private final int ordinal;
     private final OutboundCollector collector;
     private final int highWaterMark;
 
-    OutboundEdgeStream(int ordinal, int highWaterMark, OutboundCollector collector) {
+    public OutboundEdgeStream(int ordinal, int highWaterMark, OutboundCollector collector) {
         this.ordinal = ordinal;
         this.collector = collector;
         this.highWaterMark = highWaterMark;

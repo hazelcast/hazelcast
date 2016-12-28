@@ -21,13 +21,13 @@ import com.hazelcast.jet.impl.util.ProgressState;
 
 import java.util.Collection;
 
-class ConveyorEmitter implements InboundEmitter {
+public class ConveyorEmitter implements InboundEmitter {
 
     private final CollectionWithDoneDetector doneDetector = new CollectionWithDoneDetector();
     private final ConcurrentConveyor<Object> conveyor;
     private final int queueIndex;
 
-    ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
+    public ConveyorEmitter(ConcurrentConveyor<Object> conveyor, int queueIndex) {
         this.conveyor = conveyor;
         this.queueIndex = queueIndex;
     }

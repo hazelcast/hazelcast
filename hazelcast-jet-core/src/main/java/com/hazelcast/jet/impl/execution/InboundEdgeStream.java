@@ -25,7 +25,7 @@ import java.util.Collection;
  * {@code ProcessorTasklet} it corresponds to the target of an edge; in {@code SenderTasklet} it corresponds to the
  * origin of an edge.
  */
-interface InboundEdgeStream {
+public interface InboundEdgeStream {
 
     /**
      * Drains all currently available items to the supplied destination collection.

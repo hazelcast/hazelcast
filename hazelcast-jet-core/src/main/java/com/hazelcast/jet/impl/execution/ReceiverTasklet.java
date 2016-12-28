@@ -88,7 +88,7 @@ public class ReceiverTasklet implements Tasklet {
 
     //                 END FLOW-CONTROL STATE
 
-    ReceiverTasklet(OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs, int senderCount) {
+    public ReceiverTasklet(OutboundCollector collector, int rwinMultiplier, int flowControlPeriodMs, int senderCount) {
         this.collector = collector;
         this.rwinMultiplier = rwinMultiplier;
         this.flowControlPeriodNs = (double) MILLISECONDS.toNanos(flowControlPeriodMs);

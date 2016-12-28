@@ -57,8 +57,8 @@ public class SenderTasklet implements Tasklet {
     // Written by HZ networking thread, read by Jet thread
     private volatile int sendSeqLimitCompressed;
 
-    SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
-                  Address destinationAddress, long executionId, int destinationVertexId, int packetSizeLimit) {
+    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
+                         Address destinationAddress, long executionId, int destinationVertexId, int packetSizeLimit) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.packetSizeLimit = packetSizeLimit;
         this.connection = getMemberConnection(nodeEngine, destinationAddress);

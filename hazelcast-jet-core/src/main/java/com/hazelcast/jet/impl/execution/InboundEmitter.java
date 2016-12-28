@@ -20,6 +20,6 @@ import com.hazelcast.jet.impl.util.ProgressState;
 
 import java.util.Collection;
 
-interface InboundEmitter {
+public interface InboundEmitter {
     ProgressState drainTo(Collection<Object> dest);
 }

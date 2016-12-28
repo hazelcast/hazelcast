@@ -16,22 +16,31 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
+import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 
-import javax.annotation.Nonnull;
-import java.util.concurrent.Callable;
+/**
+ * Javadoc pending.
+ */
+public class ConveyorCollectorWithPartition extends ConveyorCollector {
 
-public interface Tasklet extends Callable<ProgressState> {
-
-    default void init() {
-
+    public ConveyorCollectorWithPartition(ConcurrentConveyor<Object> conveyor, int queueIndex, int[] partitions) {
+        super(conveyor, queueIndex, partitions);
     }
 
     @Override
-    @Nonnull
-    ProgressState call();
+    public ProgressState offer(Object item, int partitionId) {
+        return super.offer(new ObjectWithPartitionId(item, partitionId));
+    }
 
-    default boolean isCooperative() {
-        return true;
+    @Override
+    public ProgressState offer(Object item) {
+        return offer(item, -1);
+    }
+
+    @Override
+    public ProgressState close() {
+        return super.offer(doneItem);
     }
 }

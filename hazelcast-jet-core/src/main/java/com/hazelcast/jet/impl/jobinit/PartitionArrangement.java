@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.execution;
+package com.hazelcast.jet.impl.jobinit;
 
+import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 

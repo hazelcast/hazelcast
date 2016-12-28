@@ -28,7 +28,7 @@ import java.util.BitSet;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-interface OutboundCollector {
+public interface OutboundCollector {
     /**
      * Offers an item to this collector.
      * If the collector cannot complete the operation, the call must be retried later.
