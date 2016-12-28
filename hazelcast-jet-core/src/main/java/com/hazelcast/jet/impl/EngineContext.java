@@ -29,10 +29,10 @@ import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
-import com.hazelcast.jet.impl.jobinit.EdgeDef;
-import com.hazelcast.jet.impl.jobinit.ExecutionPlan;
-import com.hazelcast.jet.impl.jobinit.ProcMetaSupplierContext;
-import com.hazelcast.jet.impl.jobinit.VertexDef;
+import com.hazelcast.jet.impl.execution.init.EdgeDef;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ProcMetaSupplierContext;
+import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 

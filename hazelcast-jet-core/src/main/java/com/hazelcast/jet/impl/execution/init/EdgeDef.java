@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobinit;
+package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.EdgeConfig;

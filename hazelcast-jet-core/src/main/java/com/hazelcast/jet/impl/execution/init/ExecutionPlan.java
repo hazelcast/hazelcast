@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobinit;
+package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
@@ -122,8 +122,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 processorIdx++;
                 // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
-                final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(
-                        srcVertex, processorIdx);
+                final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
                 final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
                 tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
             }

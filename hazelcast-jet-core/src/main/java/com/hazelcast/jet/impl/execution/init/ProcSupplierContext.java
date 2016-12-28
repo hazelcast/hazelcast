@@ -14,40 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl.jobinit;
+package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.ProcessorMetaSupplier.Context;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.jet.ProcessorSupplier.Context;
 
 /**
- * Simple implementation of ProcessorMetaSupplier's initialization context object.
+ * Simple implementation of ProcessorSupplier's initialization context object.
  */
-public class ProcMetaSupplierContext implements Context {
-    private final NodeEngine nodeEngine;
-    private final int totalParallelism;
+class ProcSupplierContext implements Context {
+    private final HazelcastInstance instance;
     private final int perNodeParallelism;
 
-    public ProcMetaSupplierContext(NodeEngine nodeEngine, int totalParallelism, int perNodeParallelism) {
-        this.nodeEngine = nodeEngine;
-        this.totalParallelism = totalParallelism;
+    ProcSupplierContext(HazelcastInstance instance, int perNodeParallelism) {
+        this.instance = instance;
         this.perNodeParallelism = perNodeParallelism;
     }
 
     @Override
     public HazelcastInstance getHazelcastInstance() {
-        return nodeEngine.getHazelcastInstance();
-    }
-
-    @Override
-    public IPartitionService getPartitionServce() {
-        return nodeEngine.getPartitionService();
-    }
-
-    @Override
-    public int totalParallelism() {
-        return totalParallelism;
+        return instance;
     }
 
     @Override

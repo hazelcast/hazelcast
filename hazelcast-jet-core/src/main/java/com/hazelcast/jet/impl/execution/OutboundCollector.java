@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.Partitioner;
-import com.hazelcast.jet.impl.jobinit.EdgeDef;
+import com.hazelcast.jet.impl.execution.init.EdgeDef;
 import com.hazelcast.jet.impl.util.CircularCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;

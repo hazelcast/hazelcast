@@ -21,7 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.jobinit.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.ObjectDataInput;

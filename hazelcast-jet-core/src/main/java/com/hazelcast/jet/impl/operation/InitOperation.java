@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.jobinit.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,7 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.jobinit.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
 class InitOperation extends EngineOperation {
 

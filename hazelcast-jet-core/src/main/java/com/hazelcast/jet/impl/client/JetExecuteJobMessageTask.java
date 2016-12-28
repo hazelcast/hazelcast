@@ -29,7 +29,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-import static com.hazelcast.jet.impl.jobinit.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
 public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
     protected JetExecuteJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

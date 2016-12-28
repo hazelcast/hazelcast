@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.jobinit.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
