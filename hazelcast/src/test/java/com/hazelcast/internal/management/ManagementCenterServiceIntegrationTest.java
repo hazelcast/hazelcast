@@ -81,6 +81,21 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
         });
     }
 
+    @Test
+    public void testGetTaskUrlEncodes() {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                CloseableHttpClient client = HttpClientBuilder.create().disableRedirectHandling().build();
+                HttpUriRequest request = new HttpGet("http://localhost:" + portNum + "/mancen/getClusterName");
+                HttpResponse response = client.execute(request);
+                HttpEntity entity = response.getEntity();
+                String responseString = EntityUtils.toString(entity);
+                assertEquals("Session Integration (AWS discovery)", responseString);
+            }
+        });
+    }
+
     private int availablePort() throws IOException {
         while (true) {
             int port = (int) (65536 * Math.random());
@@ -96,6 +111,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     private Config getManagementCenterConfig() {
         Config config = new Config();
+        config.getGroupConfig().setName("Session Integration (AWS discovery)").setPassword("1234");
         config.getManagementCenterConfig().setEnabled(true);
         config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", portNum, "/mancen"));
         return config;
