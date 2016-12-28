@@ -61,7 +61,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed, {@code false} otherwise.
      */
     protected boolean process(int ordinal, Object item) {
-        throw new UnsupportedOperationException("");
+        throw new UnsupportedOperationException("Missing implementation");
     }
 
     /**

@@ -26,10 +26,10 @@ public abstract class EngineOperation extends Operation {
 
     protected String engineName;
 
-    public EngineOperation() {
+    protected EngineOperation() {
     }
 
-    public EngineOperation(String engineName) {
+    protected EngineOperation(String engineName) {
         this.engineName = engineName;
     }
 

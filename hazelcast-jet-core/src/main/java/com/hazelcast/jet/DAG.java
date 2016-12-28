@@ -63,7 +63,7 @@ import static java.util.stream.Collectors.toMap;
  *     <em>sink</em> with just inbound edges.
  * </li></ol>
  * Data travels from sources to sinks and is transformed and reshaped
- * as it passes through the vertices.
+ * as it passes through the processors.
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
@@ -73,7 +73,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
 
     /**
-     * Adds the given vertex
+     * Adds a vertex to the DAG. The vertex name must be unique.
      */
     public DAG addVertex(Vertex vertex) {
         if (vertices.containsKey(vertex.getName())) {
@@ -85,80 +85,80 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Adds the given edge
+     * Adds an edge to the DAG. The vertices it connects must already be present
+     * in the DAG. It is an error to add an edge that connects the same two
+     * vertices as another existing edge. It is an error to connect an edge to
+     * a vertex at the same ordinal as another existing edge. However, inbound
+     * and outbound ordinals are independent, so there can be two edges at the
+     * same ordinal, one inbound and one outbound.
      */
     public DAG addEdge(Edge edge) {
         if (!containsVertex(edge.getSource())) {
             throw new IllegalArgumentException("Source vertex " + edge.getSource() + " doesn't exist!");
         }
-
         if (!containsVertex(edge.getDestination())) {
             throw new IllegalArgumentException("Destination vertex " + edge.getDestination() + " doesn't exist!");
         }
-
         if (edges.contains(edge)) {
             throw new IllegalArgumentException("Edge " + edge + " already defined!");
         }
-
         if (getInboundEdges(edge.getDestination())
                 .stream().anyMatch(e -> e.getInputOrdinal() == edge.getInputOrdinal())) {
             throw new IllegalArgumentException("Another edge with same destination ordinal "
                     + edge.getInputOrdinal() + " exists");
         }
-
         if (getOutboundEdges(edge.getSource())
                 .stream().anyMatch(e -> e.getOutputOrdinal() == edge.getOutputOrdinal())) {
             throw new IllegalArgumentException("Another edge with same source ordinal "
                     + edge.getOutputOrdinal() + " exists");
         }
-
         edges.add(edge);
         return this;
     }
 
     /**
-     * Returns the input edges for a given vertexId
+     * Returns the inbound edges connected to the vertex with the given name.
      */
-    public List<Edge> getInboundEdges(String vertexId) {
-        if (!containsVertex(vertexId)) {
-            throw new IllegalArgumentException("Given vertexId " + vertexId + " could not be found in this DAG");
+    public List<Edge> getInboundEdges(String vertexName) {
+        if (!containsVertex(vertexName)) {
+            throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
 
-        List<Edge> inputEdges = new ArrayList<>();
+        List<Edge> inboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getDestination().equals(vertexId)) {
-                inputEdges.add(edge);
+            if (edge.getDestination().equals(vertexName)) {
+                inboundEdges.add(edge);
             }
         }
-        return inputEdges;
+        return inboundEdges;
     }
 
     /**
-     * Returns the output edges for a given vertexId
+     * Returns the outbound edges connected to the vertex with the given name.
      */
-    public List<Edge> getOutboundEdges(String vertexId) {
-        if (!containsVertex(vertexId)) {
-            throw new IllegalArgumentException("Given vertexId " + vertexId + " could not be found in this DAG");
+    public List<Edge> getOutboundEdges(String vertexName) {
+        if (!containsVertex(vertexName)) {
+            throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
 
-        List<Edge> inputEdges = new ArrayList<>();
+        List<Edge> outboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getSource().equals(vertexId)) {
-                inputEdges.add(edge);
+            if (edge.getSource().equals(vertexName)) {
+                outboundEdges.add(edge);
             }
         }
-        return inputEdges;
+        return outboundEdges;
     }
 
     /**
-     * Returns the vertex with the given name
+     * Returns the vertex with the given name.
      */
     public Vertex getVertex(String vertexName) {
         return vertices.get(vertexName);
     }
 
     /**
-     * Returns iterator for vertices in topological order
+     * Returns an iterator over the DAG's vertices in topological order.
      */
     public Iterator<Vertex> reverseIterator() {
         validate();
@@ -166,7 +166,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns iterator for vertices in reverse topological order
+     * Returns an iterator over the DAG's vertices in reverse topological order.
      */
     @Override
     public Iterator<Vertex> iterator() {

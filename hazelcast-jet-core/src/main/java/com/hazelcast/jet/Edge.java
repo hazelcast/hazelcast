@@ -75,16 +75,16 @@ public class Edge implements IdentifiedDataSerializable {
      * Creates an edge between two vertices.
      *
      * @param source        the source vertex
-     * @param outputOrdinal ordinal at the source
+     * @param sourceOrdinal ordinal at the source
      * @param destination   the destination vertex
-     * @param inputOrdinal  ordinal at the destination
+     * @param destOrdinal   ordinal at the destination
      */
-    public Edge(Vertex source, int outputOrdinal, Vertex destination, int inputOrdinal) {
+    public Edge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
         this.source = source.getName();
-        this.outputOrdinal = outputOrdinal;
+        this.outputOrdinal = sourceOrdinal;
 
         this.destination = destination.getName();
-        this.inputOrdinal = inputOrdinal;
+        this.inputOrdinal = destOrdinal;
     }
 
     /**
@@ -227,9 +227,38 @@ public class Edge implements IdentifiedDataSerializable {
         return priority;
     }
 
+    /**
+     * @return the {@code EdgeConfig} instance associated with this edge.
+     */
+    public EdgeConfig getConfig() {
+        return config;
+    }
+
+    /**
+     * Assigns an {@code EdgeConfig} to this edge.
+     */
+    public Edge setConfig(EdgeConfig config) {
+        this.config = config;
+        return this;
+    }
+
     @Override
     public String toString() {
         return '(' + source + ", " + outputOrdinal + ") -> (" + destination + ", " + inputOrdinal + ')';
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        final Edge that;
+        return this == obj
+                || obj instanceof Edge
+                    && this.source.equals((that = (Edge) obj).source)
+                    && this.destination.equals(that.destination);
+    }
+
+    @Override
+    public int hashCode() {
+        return 37 * source.hashCode() + destination.hashCode();
     }
 
     @Override
@@ -266,22 +295,6 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public int getId() {
         return JetDataSerializerHook.EDGE;
-    }
-
-    /**
-     * @return
-     */
-    public EdgeConfig getConfig() {
-        return config;
-    }
-
-    /**
-     * @param config
-     * @return
-     */
-    public Edge setConfig(EdgeConfig config) {
-        this.config = config;
-        return this;
     }
 
 
