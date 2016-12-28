@@ -2898,9 +2898,9 @@
             <xs:element name="class-cache-mode" default="ETERNAL">
                 <xs:annotation>
                     <xs:documentation>
-                        Controls caching of caches loaded from remote members
+                        Controls caching of classes loaded from remote members.
 
-                        OFF: Never caches loaded classes. This is suitable for loading runnables, callebles,
+                        OFF: Never caches loaded classes. This is suitable for loading runnables, callables,
                         entry processors, etc.
                         ETERNAL: Cache indefinitely. This is suitable when you load long-living objects,
                         such as domain objects stored in a map.
