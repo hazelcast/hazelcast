@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.createObjectDataInput;
@@ -67,6 +68,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     final ILogger logger;
 
     private NodeEngineImpl nodeEngine;
+    private ScheduledFuture<?> flowControlSender;
 
     // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
@@ -80,7 +82,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public void init(NodeEngine engine, Properties properties) {
-        engine.getExecutionService().scheduleWithRepetition(
+        flowControlSender = engine.getExecutionService().scheduleWithRepetition(
                 this::broadcastFlowControlPacket, 0, FLOW_CONTROL_PERIOD_MS, MILLISECONDS);
         engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
     }
@@ -91,6 +93,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     @Override
     public void shutdown(boolean terminate) {
+        flowControlSender.cancel(false);
         engineContexts.values().forEach(EngineContext::destroy);
     }
 
@@ -184,6 +187,9 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     private void broadcastFlowControlPacket() {
+        if (engineContexts.isEmpty()) {
+            return;
+        }
         try {
             getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
                 final byte[] packetBuf = createFlowControlPacket(member);
