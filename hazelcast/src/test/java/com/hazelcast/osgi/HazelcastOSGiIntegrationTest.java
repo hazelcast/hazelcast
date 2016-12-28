@@ -1,7 +1,9 @@
 package com.hazelcast.osgi;
 
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
@@ -11,8 +13,6 @@ import org.ops4j.pax.exam.spi.reactors.AllConfinedStagedReactorFactory;
 import org.ops4j.pax.exam.util.PathUtils;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
 import javax.inject.Inject;
@@ -23,6 +23,7 @@ import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
 @RunWith(JUnit4TestRunner.class)
+@Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
 public class HazelcastOSGiIntegrationTest {
 
@@ -36,13 +37,19 @@ public class HazelcastOSGiIntegrationTest {
     }
 
     @After
-    public void tearDown() throws BundleException {
+    public void tearDown() throws Exception {
         for (Bundle bundle : bundleContext.getBundles()) {
             if ("com.hazelcast".equals(bundle.getSymbolicName())) {
                 bundle.uninstall();
                 break;
             }
         }
+    }
+
+    @Test
+    public void serviceRetrievedSuccessfully() {
+        HazelcastOSGiService service = getService();
+        assertNotNull(service);
     }
 
     private HazelcastOSGiService getService() {
@@ -52,11 +59,4 @@ public class HazelcastOSGiIntegrationTest {
         }
         return (HazelcastOSGiService) bundleContext.getService(serviceRef);
     }
-
-    @Test
-    public void serviceRetrievedSuccessfully() throws InvalidSyntaxException {
-        HazelcastOSGiService service = getService();
-        assertNotNull(service);
-    }
-
 }
