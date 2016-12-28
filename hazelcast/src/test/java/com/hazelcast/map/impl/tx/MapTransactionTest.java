@@ -42,6 +42,7 @@ import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -391,15 +392,16 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
     @Test
     public void testPutTTL() throws TransactionException {
-        Config config = getConfig();
+        final String mapName = "putWithTTL";
+        final Config config = getConfig();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("putWithTTL");
+        final IMap map2 = h2.getMap(mapName);
 
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("putWithTTL");
+                final TransactionalMap<Object, Object> txMap = context.getMap(mapName);
                 txMap.put("1", "value", 5, TimeUnit.SECONDS);
                 assertEquals("value", txMap.get("1"));
                 assertEquals(1, txMap.size());
@@ -408,14 +410,12 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertTrue(b);
 
-        IMap map1 = h2.getMap("putWithTTL");
-        assertEquals("value", map1.get("1"));
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        assertNull(map1.get("1"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map2.get("1"));
+            }
+        });
     }
 
     // =================== getForUpdate ===============================
@@ -1395,5 +1395,4 @@ public class MapTransactionTest extends HazelcastTestSupport {
             return containsKeyOperation;
         }
     }
-
 }
