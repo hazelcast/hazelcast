@@ -2,6 +2,7 @@ package com.hazelcast.osgi;
 
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -25,6 +26,7 @@ import static org.ops4j.pax.exam.CoreOptions.options;
 @RunWith(JUnit4TestRunner.class)
 @Category(QuickTest.class)
 @ExamReactorStrategy(AllConfinedStagedReactorFactory.class)
+@Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9537")
 public class HazelcastOSGiIntegrationTest {
 
     @Inject
