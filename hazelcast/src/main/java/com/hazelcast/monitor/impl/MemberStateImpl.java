@@ -21,6 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.LocalCacheStats;
@@ -68,6 +69,7 @@ public class MemberStateImpl implements MemberState {
     private LocalOperationStats operationStats = new LocalOperationStatsImpl();
     private NodeState nodeState = new NodeStateImpl();
     private HotRestartState hotRestartState = new HotRestartStateImpl();
+    private ClusterHotRestartStatusDTO clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
     private WanSyncState wanSyncState = new WanSyncStateImpl();
 
     public MemberStateImpl() {
@@ -222,6 +224,15 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public ClusterHotRestartStatusDTO getClusterHotRestartStatus() {
+        return clusterHotRestartStatus;
+    }
+
+    public void setClusterHotRestartStatus(ClusterHotRestartStatusDTO clusterHotRestartStatus) {
+        this.clusterHotRestartStatus = clusterHotRestartStatus;
+    }
+
+    @Override
     public WanSyncState getWanSyncState() {
         return wanSyncState;
     }
@@ -260,6 +271,7 @@ public class MemberStateImpl implements MemberState {
         root.add("memberPartitionState", memberPartitionState.toJson());
         root.add("nodeState", nodeState.toJson());
         root.add("hotRestartState", hotRestartState.toJson());
+        root.add("clusterHotRestartStatus", clusterHotRestartStatus.toJson());
         root.add("wanSyncState", wanSyncState.toJson());
         return root;
     }
@@ -350,6 +362,11 @@ public class MemberStateImpl implements MemberState {
             hotRestartState = new HotRestartStateImpl();
             hotRestartState.fromJson(jsonHotRestartState);
         }
+        JsonObject jsonClusterHotRestartStatus = getObject(json, "clusterHotRestartStatus", null);
+        if (jsonClusterHotRestartStatus != null) {
+            clusterHotRestartStatus = new ClusterHotRestartStatusDTO();
+            clusterHotRestartStatus.fromJson(jsonClusterHotRestartStatus);
+        }
         JsonObject jsonWanSyncState = getObject(json, "wanSyncState", null);
         if (jsonWanSyncState != null) {
             wanSyncState = new WanSyncStateImpl();
@@ -375,6 +392,7 @@ public class MemberStateImpl implements MemberState {
                 + ", memberPartitionState=" + memberPartitionState
                 + ", nodeState=" + nodeState
                 + ", hotRestartState=" + hotRestartState
+                + ", clusterHotRestartStatus=" + clusterHotRestartStatus
                 + ", wanSyncState=" + wanSyncState
                 + '}';
     }

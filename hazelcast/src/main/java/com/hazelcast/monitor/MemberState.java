@@ -18,6 +18,7 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
 
 import java.util.Collection;
@@ -63,6 +64,8 @@ public interface MemberState extends JsonSerializable {
     NodeState getNodeState();
 
     HotRestartState getHotRestartState();
+
+    ClusterHotRestartStatusDTO getClusterHotRestartStatus();
 
     WanSyncState getWanSyncState();
 }
