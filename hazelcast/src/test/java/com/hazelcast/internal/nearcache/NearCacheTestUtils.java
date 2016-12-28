@@ -88,7 +88,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
                 long ownedEntryCount = context.stats.getOwnedEntryCount();
                 assertTrue(format("Near Cache owned entry count didn't reach the desired value (%d vs. %d) (%s)",
                         ownedEntryCount, nearCacheSize, context.stats),
-                        ownedEntryCount >= nearCacheSize);
+                        ownedEntryCount == nearCacheSize);
             }
         });
     }
