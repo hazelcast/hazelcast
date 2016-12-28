@@ -35,6 +35,7 @@ import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.ConfigCheck;
 import com.hazelcast.internal.cluster.impl.DiscoveryJoiner;
@@ -688,7 +689,8 @@ public class Node {
         }
         if (joiner == null) {
             logger.warning("No join method is enabled! Starting standalone.");
-            setAsMaster();
+            ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
+            clusterJoinManager.setAsMaster();
             return;
         }
 
@@ -738,17 +740,6 @@ public class Node {
             }
         }
         return null;
-    }
-
-    public void setAsMaster() {
-        logger.finest("This node is being set as the master");
-        masterAddress = address;
-        if (getClusterService().getClusterVersion() == null) {
-            getClusterService().getClusterStateManager().setClusterVersion(version.asClusterVersion());
-        }
-        setJoined();
-        getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
-        getClusterService().setClusterId(UuidUtil.createClusterUuid());
     }
 
     public String getThisUuid() {
