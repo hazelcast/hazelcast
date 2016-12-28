@@ -9,8 +9,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
@@ -18,7 +16,7 @@ public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnRec
     private MultiMap multiMap;
 
     @Override
-    protected String addListener(final AtomicInteger eventCount) {
+    protected String addListener() {
         multiMap = client.getMultiMap(randomString());
         final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
             public void onEntryEvent(EntryEvent<Object, Object> event) {
