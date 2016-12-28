@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.ProcSupplierContext;
 
 import java.io.Serializable;
 import java.util.List;
@@ -65,17 +66,6 @@ public interface ProcessorSupplier extends Serializable {
 
         int perNodeParallelism();
 
-        static Context of(HazelcastInstance instance, int perNodeParallelism) {
-            return new Context() {
-                @Override
-                public HazelcastInstance getHazelcastInstance() {
-                    return instance;
-                }
-                @Override
-                public int perNodeParallelism() {
-                    return perNodeParallelism;
-                }
-            };
-        }
     }
+
 }

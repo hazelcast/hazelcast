@@ -23,7 +23,6 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.ProcessorMetaSupplier.Context;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
@@ -123,7 +122,7 @@ public class EngineContext {
             final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
             final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(Context.of(nodeEngine, totalParallelism, perNodeParallelism));
+            supplier.init(new ProcMetaSupplierContext(nodeEngine, totalParallelism, perNodeParallelism));
 
             final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
                 int oppositeVertexId = vertexIdMap.get(edge.getDestination());

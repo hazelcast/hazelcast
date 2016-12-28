@@ -92,7 +92,7 @@ class ExecutionPlan implements IdentifiedDataSerializable {
                 .peek(v -> {
                     final ProcessorSupplier sup = v.processorSupplier();
                     final int parallelism = v.parallelism();
-                    sup.init(ProcessorSupplier.Context.of(nodeEngine.getHazelcastInstance(), parallelism));
+                    sup.init(new ProcSupplierContext(nodeEngine.getHazelcastInstance(), parallelism));
                 })
                 .map(VertexDef::processorSupplier)
                 .collect(toList());

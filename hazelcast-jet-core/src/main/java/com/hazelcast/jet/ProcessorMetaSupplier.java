@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.ProcMetaSupplierContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -112,32 +113,6 @@ public interface ProcessorMetaSupplier extends Serializable {
          * on each cluster member.
          */
         int perNodeParallelism();
-
-        /**
-         * Factory to create the context from a {@code NodeEngine} and parallelism parameters.
-         */
-        static Context of(NodeEngine nodeEngine, int totalParallelism, int perNodeParallelism) {
-            return new Context() {
-                @Override
-                public HazelcastInstance getHazelcastInstance() {
-                    return nodeEngine.getHazelcastInstance();
-                }
-
-                @Override
-                public IPartitionService getPartitionServce() {
-                    return nodeEngine.getPartitionService();
-                }
-
-                @Override
-                public int totalParallelism() {
-                    return totalParallelism;
-                }
-
-                @Override
-                public int perNodeParallelism() {
-                    return perNodeParallelism;
-                }
-            };
-        }
     }
+
 }
