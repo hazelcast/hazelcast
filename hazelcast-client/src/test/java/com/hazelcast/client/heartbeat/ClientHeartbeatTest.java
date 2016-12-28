@@ -220,6 +220,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
     public void testAuthentication_whenHeartbeatResumed() throws Exception {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().setRedoOperation(true);
         config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
         HazelcastClientInstanceImpl hazelcastClientInstanceImpl = getHazelcastClientInstanceImpl(client);

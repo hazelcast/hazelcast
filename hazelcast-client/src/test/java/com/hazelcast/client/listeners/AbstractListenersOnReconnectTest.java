@@ -32,6 +32,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import org.junit.After;
 import org.junit.Test;
@@ -396,17 +397,22 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 Collection<ClientEventRegistration> registrations = getClientEventRegistrations(client,
                         registrationId);
                 assertEquals(size, registrations.size());
+
                 if (smartRouting) {
                     Collection<Member> members = clientInstanceImpl.getClientClusterService().getMemberList();
                     for (ClientEventRegistration registration : registrations) {
-                        Member registeredSubscriber = registration.getSubscriber();
+                        Address registeredSubscriber = registration.getSubscriber();
+                        boolean inside = false;
+                        for (Member member : members) {
+                            inside = inside || member.getAddress().equals(registeredSubscriber);
+                        }
                         assertTrue("Registered member " + registeredSubscriber + " is not in the cluster member list " + members,
-                                members.contains(registeredSubscriber));
+                                inside);
                     }
                 } else {
                     ClientEventRegistration registration = registrations.iterator().next();
                     assertEquals(clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress(),
-                            registration.getSubscriber().getAddress());
+                            registration.getSubscriber());
                 }
             }
         });

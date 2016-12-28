@@ -536,7 +536,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 switch (authenticationStatus) {
                     case AUTHENTICATED:
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                        connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
                         connection.setRemoteEndpoint(result.address);
                         if (asOwner) {
                             if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {
