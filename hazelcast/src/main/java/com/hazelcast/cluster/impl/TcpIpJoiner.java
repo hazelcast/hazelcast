@@ -103,7 +103,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.fine("Joining over target member " + targetAddress);
             }
             if (targetAddress.equals(node.getThisAddress()) || isLocalAddress(targetAddress)) {
-                node.setAsMaster();
+                clusterJoinManager.setAsMaster();
                 return;
             }
             long joinStartTime = Clock.currentTimeMillis();
@@ -136,7 +136,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             boolean foundConnection = tryInitialConnection(possibleAddresses);
             if (!foundConnection) {
                 logger.fine("This node will assume master role since no possible member where connected to.");
-                node.setAsMaster();
+                clusterJoinManager.setAsMaster();
                 return;
             }
 
@@ -153,7 +153,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (isAllBlacklisted(possibleAddresses)) {
                     logger.fine(
                             "This node will assume master role since none of the possible members accepted join request.");
-                    node.setAsMaster();
+                    clusterJoinManager.setAsMaster();
                     return;
                 }
 
@@ -167,7 +167,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                             logger.fine("Setting myself as master after consensus!"
                                     + " Voting endpoints: " + votingEndpoints);
                         }
-                        node.setAsMaster();
+                        clusterJoinManager.setAsMaster();
                         claimingMaster = false;
                         return;
                     }
@@ -314,7 +314,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (logger.isFineEnabled()) {
                 logger.fine("Setting myself as master! No possible addresses remaining to connect...");
             }
-            node.setAsMaster();
+            clusterJoinManager.setAsMaster();
             return;
         }
 

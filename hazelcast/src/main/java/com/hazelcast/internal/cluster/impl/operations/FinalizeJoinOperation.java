@@ -19,11 +19,10 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.ClusterClockImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -79,38 +78,22 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
 
     @Override
     public void run() throws Exception {
-        if (!checkValid()) {
+        checkLocalMemberUuid();
+
+        ClusterServiceImpl clusterService = getService();
+        Address callerAddress = getConnectionEndpointOrThisAddress();
+
+        boolean finalized = clusterService.finalizeJoin(memberInfos, callerAddress, clusterId, clusterState,
+                                                        clusterVersion, clusterStartTime, masterTime);
+        if (!finalized) {
             return;
         }
-
-        final ClusterServiceImpl clusterService = getService();
-        final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
-
-        if (nodeEngine.getNode().joined()) {
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Node is already joined... No need to finalize join...");
-            }
-            return;
-        }
-
-        initClusterStates(clusterService);
-
-        processMemberUpdate();
 
         processPartitionState();
 
         sendPostJoinOperations();
 
         runPostJoinOp();
-    }
-
-    private void initClusterStates(ClusterServiceImpl clusterService) {
-        clusterService.initialClusterState(clusterState, clusterVersion);
-        clusterService.setClusterId(clusterId);
-        ClusterClockImpl clusterClock = clusterService.getClusterClock();
-        clusterClock.setClusterStartTime(clusterStartTime);
-        clusterClock.setMasterTime(masterTime);
     }
 
     private void runPostJoinOp() {

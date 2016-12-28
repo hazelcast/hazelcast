@@ -21,7 +21,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -57,31 +56,21 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public void run() throws Exception {
+        checkLocalMemberUuid();
+
+        ClusterServiceImpl clusterService = getService();
+        Address callerAddress = getConnectionEndpointOrThisAddress();
+        if (clusterService.updateMembers(memberInfos, callerAddress)) {
+            processPartitionState();
+        }
+    }
+
+    final Address getConnectionEndpointOrThisAddress() {
         ClusterServiceImpl clusterService = getService();
         NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         Node node = nodeEngine.getNode();
-
-        if (!node.joined()) {
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring member info update since not joined yet...");
-            }
-
-            return;
-        }
-
-        if (!checkValid()) {
-            return;
-        }
-
-        processMemberUpdate();
-
-        processPartitionState();
-    }
-
-    final void processMemberUpdate() {
-        ClusterServiceImpl clusterService = getService();
-        clusterService.updateMembers(memberInfos);
+        Connection conn = getConnection();
+        return conn != null ? conn.getEndPoint() : node.getThisAddress();
     }
 
     final void processPartitionState() {
@@ -95,7 +84,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         node.partitionService.processPartitionRuntimeState(partitionRuntimeState);
     }
 
-    protected final boolean checkValid() {
+    final void checkLocalMemberUuid() {
         ClusterServiceImpl clusterService = getService();
         NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         Node node = nodeEngine.getNode();
@@ -103,24 +92,6 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             String msg = "targetUuid: " + targetUuid + " is different than this node's uuid: " + node.getThisUuid();
             throw new IllegalStateException(msg);
         }
-
-        Connection conn = getConnection();
-        boolean isLocal = conn == null;
-        if (isLocal) {
-            return true;
-        }
-
-        Address endpoint = conn.getEndPoint();
-        Address masterAddress = clusterService.getMasterAddress();
-        boolean valid = (endpoint != null && endpoint.equals(masterAddress));
-        if (!valid) {
-            ILogger logger = getLogger();
-            if (logger.isFineEnabled()) {
-                logger.fine("Ignoring operation because sender: " + endpoint + " is not known master: " + masterAddress);
-            }
-        }
-
-        return valid;
     }
 
     @Override

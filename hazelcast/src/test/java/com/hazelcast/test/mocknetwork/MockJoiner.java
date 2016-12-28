@@ -19,7 +19,6 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
-import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
@@ -46,7 +45,6 @@ class MockJoiner extends AbstractJoiner {
     public void doJoin() {
         registry.registerNode(node);
 
-        ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
         final long joinStartTime = Clock.currentTimeMillis();
         final long maxJoinMillis = getMaxJoinMillis();
 
@@ -64,21 +62,21 @@ class MockJoiner extends AbstractJoiner {
 
                 if (node.getThisAddress().equals(joinAddress)) {
                     logger.fine("This node is found as master, no need to join.");
-                    node.setAsMaster();
+                    clusterJoinManager.setAsMaster();
                     break;
                 }
 
                 logger.fine("Sending join request to " + joinAddress);
                 if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
                     logger.fine("Could not send join request to " + joinAddress);
-                    node.setMasterAddress(null);
+                    clusterJoinManager.setMasterAddress(null);
                 }
 
                 if (Clock.currentTimeMillis() > joinAddressTimeout) {
                     logger.warning("Resetting master address because join address timeout");
                     previousJoinAddress = null;
                     joinAddressTimeout = 0;
-                    node.setMasterAddress(null);
+                    clusterJoinManager.setMasterAddress(null);
                 }
             }
             try {
