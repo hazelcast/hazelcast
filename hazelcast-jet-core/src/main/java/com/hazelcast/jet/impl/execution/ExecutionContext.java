@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl.execution;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
@@ -30,25 +31,28 @@ import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
 import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.stream.Collectors.toList;
 
 public class ExecutionContext {
 
     // vertex id --> ordinal --> receiver tasklet
-    private Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap;
+    private Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap = emptyMap();
 
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
-    private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap;
+    private Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = emptyMap();
 
-    private Map<Address, Integer> memberToId;
+    private List<ProcessorSupplier> procSuppliers = emptyList();
+    private Map<Address, Integer> memberToId = emptyMap();
+    private List<Tasklet> tasklets;
+    private CompletionStage<Void> executionCompletionStage;
 
     private final long executionId;
     private final NodeEngine nodeEngine;
     private final EngineContext engineCtx;
-    private List<ProcessorSupplier> procSuppliers;
-    private List<Tasklet> tasklets;
-    private CompletionStage<Void> executionCompletionStage;
 
     public ExecutionContext(long executionId, EngineContext engineCtx) {
         this.executionId = executionId;
@@ -90,10 +94,12 @@ public class ExecutionContext {
 
     public ExecutionContext initialize(ExecutionPlan plan) {
         populateMemberToId();
+        // Must be populated early, so all processor suppliers are
+        // available to be completed in the case of init failure
+        procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
         plan.initialize(nodeEngine, engineCtx.getName(), executionId);
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
-        procSuppliers = unmodifiableList(plan.getProcSuppliers());
         tasklets = plan.getTasklets();
         return this;
     }

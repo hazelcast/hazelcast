@@ -61,7 +61,6 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class ExecutionPlan implements IdentifiedDataSerializable {
-    private final List<ProcessorSupplier> procSuppliers = new ArrayList<>();
     private final List<Tasklet> tasklets = new ArrayList<>();
     // vertex id --> ordinal --> receiver tasklet
     private final Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap = new HashMap<>();
@@ -81,13 +80,50 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public ExecutionPlan() {
     }
 
-    public List<VertexDef> getVertices() {
-        return vertices;
-    }
-
     public void addVertex(VertexDef vertex) {
         vertices.add(vertex);
     }
+
+    public void initialize(NodeEngine nodeEngine, String jetEngineName, long executionId) {
+        this.nodeEngine = nodeEngine;
+        this.jetEngineName = jetEngineName;
+        this.executionId = executionId;
+        initProcSuppliers();
+        initDag();
+
+        this.ptionArrgmt = new PartitionArrangement(nodeEngine);
+        for (VertexDef srcVertex : vertices) {
+            int processorIdx = -1;
+            for (Processor p : createProcessors(srcVertex, srcVertex.parallelism())) {
+                processorIdx++;
+                // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
+                // Also populates instance fields: senderMap, receiverMap, tasklets.
+                final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
+                final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
+                tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
+            }
+        }
+        tasklets.addAll(receiverMap.values().stream().map(Map::values).flatMap(Collection::stream).collect(toList()));
+    }
+
+    public List<ProcessorSupplier> getProcessorSuppliers() {
+        return vertices.stream().map(VertexDef::processorSupplier).collect(toList());
+    }
+
+    public Map<Integer, Map<Integer, ReceiverTasklet>> getReceiverMap() {
+        return receiverMap;
+    }
+
+    public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap() {
+        return senderMap;
+    }
+
+    public List<Tasklet> getTasklets() {
+        return tasklets;
+    }
+
+
+    // Implementation of IdentifiedDataSerializable
 
     @Override
     public int getFactoryId() {
@@ -109,70 +145,27 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         vertices = readList(in);
     }
 
-    public void initialize(NodeEngine nodeEngine, String jetEngineName, long executionId) {
-        this.nodeEngine = nodeEngine;
-        this.jetEngineName = jetEngineName;
-        this.executionId = executionId;
-        this.ptionArrgmt = new PartitionArrangement(nodeEngine);
-        initDag();
+    // End implementation of IdentifiedDataSerializable
 
-        for (VertexDef srcVertex : getVertices()) {
-            int processorIdx = -1;
-            for (Processor p : createProcessors(srcVertex, srcVertex.parallelism())) {
-                processorIdx++;
-                // createOutboundEdgeStreams() populates localConveyorMap and edgeSenderConveyorMap.
-                // Also populates instance fields: senderMap, receiverMap, tasklets.
-                final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
-                final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
-                tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
-            }
-        }
-        tasklets.addAll(receiverMap.values().stream().map(Map::values).flatMap(Collection::stream).collect(toList()));
+
+    private void initProcSuppliers() {
+        vertices.stream().forEach(v -> v.processorSupplier().init(
+                new ProcSupplierContext(nodeEngine.getHazelcastInstance(), v.parallelism())));
     }
 
-    public List<ProcessorSupplier> getProcSuppliers() {
-        return procSuppliers;
-    }
-
-    public Map<Integer, Map<Integer, ReceiverTasklet>> getReceiverMap() {
-        return receiverMap;
-    }
-
-    public Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> getSenderMap() {
-        return senderMap;
-    }
-
-    public List<Tasklet> getTasklets() {
-        return tasklets;
-    }
-
-    /**
-     * Initializes partitioners on edges and processor suppliers on vertices. Populates
-     * the transient fields on edges. Populates {@code procSuppliers} with all processor
-     * suppliers found in the plan.
-     */
     private void initDag() {
-        final Map<Integer, VertexDef> vMap = getVertices().stream().collect(toMap(VertexDef::vertexId, v -> v));
-        getVertices().stream().forEach(v -> {
+        final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
+        vertices.stream().forEach(v -> {
             v.inputs().forEach(e -> e.initTransientFields(vMap, v, false));
             v.outputs().forEach(e -> e.initTransientFields(vMap, v, true));
         });
         final IPartitionService partitionService = nodeEngine.getPartitionService();
-        getVertices().stream()
+        vertices.stream()
                      .map(VertexDef::outputs)
                      .flatMap(List::stream)
                      .map(EdgeDef::partitioner)
                      .filter(Objects::nonNull)
                      .forEach(p -> p.init(partitionService::getPartitionId));
-        procSuppliers.addAll(getVertices()
-                .stream()
-                .peek(v -> {
-                    final ProcessorSupplier sup = v.processorSupplier();
-                    final int parallelism = v.parallelism();
-                    sup.init(new ProcSupplierContext(nodeEngine.getHazelcastInstance(), parallelism));
-                })
-                .map(VertexDef::processorSupplier)
-                .collect(toList()));
     }
 
     private static List<Processor> createProcessors(VertexDef vertexDef, int parallelism) {
