@@ -23,6 +23,7 @@ public interface NearCacheStats extends LocalInstanceStats {
      *
      * @return creation time of this Near Cache on this member.
      */
+    @Override
     long getCreationTime();
 
     /**
