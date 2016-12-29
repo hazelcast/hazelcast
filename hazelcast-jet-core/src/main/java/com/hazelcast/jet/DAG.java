@@ -190,7 +190,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public String toString() {
-        return "Vertices " + vertices + "\nEdges " + edges.toString();
+        return "Vertices " + vertices + "\nEdges " + edges;
     }
 
     private boolean containsVertex(String vertexName) {

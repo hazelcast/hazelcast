@@ -25,46 +25,61 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- *
+ * Factory of {@link Processor} instances. Part of the initialization
+ * chain as explained on {@link ProcessorMetaSupplier}.
  */
 @FunctionalInterface
 public interface ProcessorSupplier extends Serializable {
 
     /**
-     * Javadoc pending.
+     * Called on each cluster member after deserialization.
      */
     default void init(Context context) {
     }
 
     /**
-     * Javadoc pending.
+     * Called after {@link #init(Context)} to retrieve instances of
+     * {@link Processor} that will be used during the execution of the Jet job.
+     *
+     * @param count the number of processor this method is required to create
+     *              and return
      */
     List<Processor> get(int count);
 
     /**
-     * Called after execution is finished on all the nodes.
-     * In case of topology change on the cluster, the method will be
-     * called eagerly without waiting all other nodes to complete.
-     * @param error Exception if execution finished with an error
+     * Called after execution is finished on all the nodes, whether successfully
+     * or not. Execution can also be <em>aborted</em>, for example if a topology
+     * change is detected in the cluster. In such a case this method will be
+     * called immediately, without waiting for completion on other members.
+     *
+     * @param error the exception (if any) that caused the job to fail;
+     *              {@code null} in the case of successful job completion
      */
     default void complete(Throwable error) {
     }
 
     /**
-     * Javadoc pending.
+     * Returns a {@code ProcessorSupplier} which will delegate to the given
+     * {@code SimpleProcessorSupplier} to create all {@code Processor} instances.
      */
-    static ProcessorSupplier of(final SimpleProcessorSupplier processorSupplier) {
+    static ProcessorSupplier of(SimpleProcessorSupplier processorSupplier) {
         return count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
     }
+
     /**
-     * Javadoc pending.
+     * Context passed to the supplier in the {@link #init(Context) init()} call.
      */
     interface Context {
 
+        /**
+         * @return the Hazelcast instance
+         */
         HazelcastInstance getHazelcastInstance();
 
-        int perNodeParallelism();
-
+        /**
+         * Returns the number of processors that the associated {@code ProcessorSupplier}
+         * will be asked to create.
+         */
+        int localParallelism();
     }
-
 }

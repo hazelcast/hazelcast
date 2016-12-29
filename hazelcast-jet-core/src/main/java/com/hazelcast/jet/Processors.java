@@ -24,7 +24,7 @@ import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 
 /**
- * Static utility class with factory methods for a number of predefined processors.
+ * Static utility class with factory methods for predefined processors.
  */
 public final class Processors {
 
@@ -87,6 +87,9 @@ public final class Processors {
         return IListWriter.supplier(listName, clientConfig);
     }
 
+    /**
+     * A producer what won't produce any data items.
+     */
     public static class NoopProducer extends AbstractProducer {
     }
 }

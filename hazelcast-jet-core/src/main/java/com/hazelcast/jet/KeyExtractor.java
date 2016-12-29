@@ -19,7 +19,8 @@ package com.hazelcast.jet;
 import java.io.Serializable;
 
 /**
- * Javadoc pending.
+ * A function from a data item to its partitioning key. Used by
+ * {@link Edge#partitionedByKey(KeyExtractor)}.
  */
 @FunctionalInterface
 public interface KeyExtractor extends Serializable {

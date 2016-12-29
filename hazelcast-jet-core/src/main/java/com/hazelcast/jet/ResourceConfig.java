@@ -38,7 +38,7 @@ public class ResourceConfig implements Serializable {
      * @param type type of the resource
      * @throws IOException if IO error happens
      */
-    public ResourceConfig(URL url, String id, ResourceType type) throws IOException {
+    public ResourceConfig(URL url, String id, ResourceType type) {
         this.descriptor = new ResourceDescriptor(id, type);
         this.url = url;
     }
@@ -47,7 +47,7 @@ public class ResourceConfig implements Serializable {
      * @param clazz class file to deploy
      * @throws IOException if IO error happens
      */
-    public ResourceConfig(Class clazz) throws IOException {
+    public ResourceConfig(Class clazz) {
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
         this.url = clazz.getClassLoader().getResource(classAsPath);
         checkNotNull(this.url, "URL is null");

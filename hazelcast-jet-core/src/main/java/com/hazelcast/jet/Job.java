@@ -19,13 +19,15 @@ package com.hazelcast.jet;
 import java.util.concurrent.Future;
 
 /**
- * Javadoc pending
+ * A Jet computation job created from a {@link DAG},
+ * ready to be executed.
  */
 public interface Job {
-
     /**
-     * Executes the job
+     * Executes the job.
+     *
+     * @return a future that can be inspected for job completion status
+     * and cancelled to prematurely end the job.
      */
     Future<Void> execute();
-
 }

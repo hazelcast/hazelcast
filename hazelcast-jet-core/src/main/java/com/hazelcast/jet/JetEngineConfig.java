@@ -19,7 +19,6 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.impl.deployment.ResourceType;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -93,11 +92,7 @@ public class JetEngineConfig implements Serializable {
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
-            try {
-                resourceConfigs.add(new ResourceConfig(clazz));
-            } catch (IOException e) {
-                throw rethrow(e);
-            }
+            resourceConfigs.add(new ResourceConfig(clazz));
         }
     }
 
@@ -263,11 +258,7 @@ public class JetEngineConfig implements Serializable {
     }
 
     private void add(URL url, String id, ResourceType type) {
-        try {
-            resourceConfigs.add(new ResourceConfig(url, id, type));
-        } catch (IOException e) {
-            throw rethrow(e);
-        }
+        resourceConfigs.add(new ResourceConfig(url, id, type));
     }
 
     private String getFileName(URL url) {

@@ -95,14 +95,14 @@ public interface ProcessorMetaSupplier extends Serializable {
         HazelcastInstance getHazelcastInstance();
 
         /**
-         * Returns the total number of {@code Processor}s that will be
-         * created across the cluster.
+         * @return the total number of {@code Processor}s that will be
+         * created across the cluster
          */
         int totalParallelism();
 
         /**
-         * Returns the number of {@code Processor}s that will be created
-         * on each cluster member.
+         * Returns the number of processors that each {@code ProcessorSupplier}
+         * will be asked to create once deserialized on each member.
          */
         int localParallelism();
     }

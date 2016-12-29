@@ -141,8 +141,8 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
      * pattern and applies the default Hazelcast partitioning strategy. The strategy
-     * is not applied directly to the item, but to the return value of the supplied
-     * {@code KeyExtractor}'s method.
+     * is not applied directly to the item, but to the result of the supplied
+     * {@code KeyExtractor} function.
      */
     public Edge partitionedByKey(KeyExtractor extractor) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
