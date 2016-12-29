@@ -23,10 +23,13 @@ import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Processors.NoopProducer;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.Collections.singletonList;
@@ -125,8 +128,9 @@ public final class IListReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            int partitionId = context.getPartitionServce().getPartitionId(name);
-            ownerAddress = context.getPartitionServce().getPartitionOwnerOrWait(partitionId);
+            String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
+            ownerAddress = context.getHazelcastInstance().getPartitionService()
+                                  .getPartition(partitionKey).getOwner().getAddress();
         }
 
         @Override

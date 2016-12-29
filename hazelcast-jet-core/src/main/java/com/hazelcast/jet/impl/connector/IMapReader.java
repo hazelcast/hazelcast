@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -29,14 +30,14 @@ import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.CircularCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.partition.IPartitionService;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 
 import static java.util.AbstractMap.SimpleImmutableEntry;
 import static java.util.Collections.emptyList;
@@ -188,7 +189,7 @@ public final class IMapReader extends AbstractProducer {
         private final String name;
         private final int fetchSize;
 
-        private transient IPartitionService partitionService;
+        private transient Map<Address, List<Integer>> membersToPartitions;
 
         MetaSupplier(String name, int fetchSize) {
             this.name = name;
@@ -197,13 +198,15 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            partitionService = context.getPartitionServce();
+            membersToPartitions = context
+                    .getHazelcastInstance().getPartitionService()
+                    .getPartitions().stream()
+                    .collect(groupingBy(p -> p.getOwner().getAddress(), mapping(Partition::getPartitionId, toList())));
         }
 
         @Override
         public ProcessorSupplier get(Address address) {
-            List<Integer> ownedPartitions = partitionService.getMemberPartitionsMap().get(address);
-            return new Supplier(name, ownedPartitions, fetchSize);
+            return new Supplier(name, membersToPartitions.get(address), fetchSize);
         }
     }
 

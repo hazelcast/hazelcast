@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.jet.impl.connector.IListReader;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.IMapReader;
@@ -84,5 +85,8 @@ public final class Processors {
      */
     public static ProcessorSupplier listWriter(String listName, ClientConfig clientConfig) {
         return IListWriter.supplier(listName, clientConfig);
+    }
+
+    public static class NoopProducer extends AbstractProducer {
     }
 }

@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier.Context;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.partition.IPartitionService;
 
 /**
  * Simple implementation of ProcessorMetaSupplier's initialization context object.
@@ -38,11 +37,6 @@ public class ProcMetaSupplierContext implements Context {
     @Override
     public HazelcastInstance getHazelcastInstance() {
         return nodeEngine.getHazelcastInstance();
-    }
-
-    @Override
-    public IPartitionService getPartitionServce() {
-        return nodeEngine.getPartitionService();
     }
 
     @Override

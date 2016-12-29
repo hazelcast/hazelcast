@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.Serializable;
 
@@ -94,11 +93,6 @@ public interface ProcessorMetaSupplier extends Serializable {
          * @return the Hazelcast instance
          */
         HazelcastInstance getHazelcastInstance();
-
-        /**
-         * @return the Hazelcast SPI-level partition service
-         */
-        IPartitionService getPartitionServce();
 
         /**
          * Returns the total number of {@code Processor}s that will be
