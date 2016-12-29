@@ -169,6 +169,11 @@ public class TestClientRegistry {
         public void unblock(Address address) {
             stateMap.remove(address);
             LOGGER.info("Unblocked messages from " + address);
+            ClientConnection connection = getConnection(address);
+            if (connection != null) {
+                MockedClientConnection clientConnection = (MockedClientConnection) connection;
+                clientConnection.processBufferedIncomingMessages();
+            }
         }
 
         /**
@@ -222,13 +227,17 @@ public class TestClientRegistry {
                 incomingMessages.add(clientMessage);
                 return;
             }
+            processBufferedIncomingMessages();
+            lastReadTime = System.currentTimeMillis();
+            getConnectionManager().handleClientMessage(clientMessage, this);
+        }
+
+        private void processBufferedIncomingMessages() {
             ClientMessage message;
             while ((message = incomingMessages.poll()) != null) {
                 lastReadTime = System.currentTimeMillis();
                 getConnectionManager().handleClientMessage(message, this);
             }
-            lastReadTime = System.currentTimeMillis();
-            getConnectionManager().handleClientMessage(clientMessage, this);
         }
 
         private State getState() {

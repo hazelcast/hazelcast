@@ -25,7 +25,6 @@ import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
@@ -47,7 +46,6 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -260,11 +258,6 @@ public class ClientHeartbeatTest extends ClientTestSupport {
 
         //unblock instance 2 for authentication response.
         unblockMessagesFromInstance(instance2, client);
-
-        //trigger incoming messages from instance2
-        IExecutorService executorService = client.getExecutorService("s");
-        Future f = executorService.submitToMember(new DummySerializableCallable(), instance2.getCluster().getLocalMember());
-        f.get();
 
         //late authentication response from instance2 should not be able to change state in both client and cluster
         assertTrueEventually(new AssertTask() {
