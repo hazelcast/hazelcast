@@ -222,7 +222,7 @@ class MapServiceContextImpl implements MapServiceContext {
             accumulationExecutor = new CallerRunsAccumulationExecutor(ss);
         }
 
-        return new AggregationResultProcessor(accumulationExecutor);
+        return new AggregationResultProcessor(accumulationExecutor, nodeEngine.getSerializationService());
     }
 
     private PartitionContainer[] createPartitionContainers() {
