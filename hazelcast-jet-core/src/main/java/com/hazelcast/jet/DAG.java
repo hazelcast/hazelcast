@@ -103,14 +103,14 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             throw new IllegalArgumentException("Edge " + edge + " already defined!");
         }
         if (getInboundEdges(edge.getDestination())
-                .stream().anyMatch(e -> e.getInputOrdinal() == edge.getInputOrdinal())) {
+                .stream().anyMatch(e -> e.getDestOrdinal() == edge.getDestOrdinal())) {
             throw new IllegalArgumentException("Another edge with same destination ordinal "
-                    + edge.getInputOrdinal() + " exists");
+                    + edge.getDestOrdinal() + " exists");
         }
         if (getOutboundEdges(edge.getSource())
-                .stream().anyMatch(e -> e.getOutputOrdinal() == edge.getOutputOrdinal())) {
+                .stream().anyMatch(e -> e.getSourceOrdinal() == edge.getSourceOrdinal())) {
             throw new IllegalArgumentException("Another edge with same source ordinal "
-                    + edge.getOutputOrdinal() + " exists");
+                    + edge.getSourceOrdinal() + " exists");
         }
         edges.add(edge);
         return this;
@@ -200,7 +200,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outgoingEdgeMap) {
         for (Map.Entry<String, List<Edge>> entry : outgoingEdgeMap.entrySet()) {
             String vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getOutputOrdinal).sorted().toArray();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getSourceOrdinal).sorted().toArray();
             for (int i = 0; i < ordinals.length; i++) {
                 if (ordinals[i] != i) {
                     throw new IllegalArgumentException("Output ordinals for vertex " + vertex + " are not ordered. "
@@ -343,7 +343,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private static void validateInboundEdgeOrdinals(Map<String, List<Edge>> incomingEdgeMap) {
         for (Map.Entry<String, List<Edge>> entry : incomingEdgeMap.entrySet()) {
             String vertex = entry.getKey();
-            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getInputOrdinal).sorted().toArray();
+            int[] ordinals = entry.getValue().stream().mapToInt(Edge::getDestOrdinal).sorted().toArray();
             for (int i = 0; i < ordinals.length; i++) {
                 if (ordinals[i] != i) {
                     throw new IllegalArgumentException("Input ordinals for vertex " + vertex + " are not ordered. "

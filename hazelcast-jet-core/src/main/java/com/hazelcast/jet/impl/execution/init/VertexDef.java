@@ -31,8 +31,8 @@ import static com.hazelcast.jet.impl.util.Util.writeList;
 public class VertexDef implements IdentifiedDataSerializable {
 
     private int id;
-    private List<EdgeDef> inputs = new ArrayList<>();
-    private List<EdgeDef> outputs = new ArrayList<>();
+    private List<EdgeDef> inboundEdges = new ArrayList<>();
+    private List<EdgeDef> outboundEdges = new ArrayList<>();
     private ProcessorSupplier processorSupplier;
     private int parallelism;
 
@@ -49,20 +49,20 @@ public class VertexDef implements IdentifiedDataSerializable {
         return id;
     }
 
-    public void addInputs(List<EdgeDef> inputs) {
-        this.inputs.addAll(inputs);
+    public void addInboundEdges(List<EdgeDef> edges) {
+        this.inboundEdges.addAll(edges);
     }
 
-    public void addOutputs(List<EdgeDef> outputs) {
-        this.outputs.addAll(outputs);
+    public void addOutboundEdges(List<EdgeDef> edges) {
+        this.outboundEdges.addAll(edges);
     }
 
-    public List<EdgeDef> inputs() {
-        return inputs;
+    public List<EdgeDef> inboundEdges() {
+        return inboundEdges;
     }
 
-    public List<EdgeDef> outputs() {
-        return outputs;
+    public List<EdgeDef> outboundEdges() {
+        return outboundEdges;
     }
 
     public ProcessorSupplier processorSupplier() {
@@ -86,8 +86,8 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(id);
-        writeList(out, inputs);
-        writeList(out, outputs);
+        writeList(out, inboundEdges);
+        writeList(out, outboundEdges);
         CustomClassLoadedObject.write(out, processorSupplier);
         out.writeInt(parallelism);
     }
@@ -95,8 +95,8 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readInt();
-        inputs = readList(in);
-        outputs = readList(in);
+        inboundEdges = readList(in);
+        outboundEdges = readList(in);
         processorSupplier = CustomClassLoadedObject.read(in);
         parallelism = in.readInt();
     }

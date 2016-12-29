@@ -156,12 +156,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private void initDag() {
         final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
         vertices.stream().forEach(v -> {
-            v.inputs().forEach(e -> e.initTransientFields(vMap, v, false));
-            v.outputs().forEach(e -> e.initTransientFields(vMap, v, true));
+            v.inboundEdges().forEach(e -> e.initTransientFields(vMap, v, false));
+            v.outboundEdges().forEach(e -> e.initTransientFields(vMap, v, true));
         });
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         vertices.stream()
-                     .map(VertexDef::outputs)
+                     .map(VertexDef::outboundEdges)
                      .flatMap(List::stream)
                      .map(EdgeDef::partitioner)
                      .filter(Objects::nonNull)
@@ -183,7 +183,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
      */
     private List<OutboundEdgeStream> createOutboundEdgeStreams(VertexDef srcVertex, int processorIdx) {
         final List<OutboundEdgeStream> outboundStreams = new ArrayList<>();
-        for (EdgeDef edge : srcVertex.outputs()) {
+        for (EdgeDef edge : srcVertex.outboundEdges()) {
             // each edge has an array of conveyors
             // one conveyor per consumer - each conveyor has one queue per producer
             // giving the total number of queues = producers * consumers
@@ -285,7 +285,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int processorIdx) {
         final List<InboundEdgeStream> inboundStreams = new ArrayList<>();
-        for (EdgeDef inEdge : srcVertex.inputs()) {
+        for (EdgeDef inEdge : srcVertex.inboundEdges()) {
             // each tasklet will have one input conveyor per edge
             // and one InboundEmitter per queue on the conveyor
             final ConcurrentConveyor<Object> conveyor = localConveyorMap.get(inEdge.edgeId())[processorIdx];

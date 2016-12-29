@@ -51,7 +51,7 @@ public class ProcMetaSupplierContext implements Context {
     }
 
     @Override
-    public int perNodeParallelism() {
+    public int localParallelism() {
         return perNodeParallelism;
     }
 }

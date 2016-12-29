@@ -110,7 +110,7 @@ public interface ProcessorMetaSupplier extends Serializable {
          * Returns the number of {@code Processor}s that will be created
          * on each cluster member.
          */
-        int perNodeParallelism();
+        int localParallelism();
     }
 
 }

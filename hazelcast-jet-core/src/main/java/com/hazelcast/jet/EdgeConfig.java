@@ -79,6 +79,8 @@ public class EdgeConfig implements Serializable {
      * by a well-behaving processor. When its outbox reaches the high water mark,
      * the processor should yield control back to its caller. This method sets
      * the value of the high water mark.
+     * <p>
+     * The default value is {@value #DEFAULT_HIGH_WATER_MARK}.
      */
     public EdgeConfig setHighWaterMark(int highWaterMark) {
         this.highWaterMark = highWaterMark;
@@ -111,7 +113,8 @@ public class EdgeConfig implements Serializable {
      * multiplier determines the number of ackworths the sender can be ahead of
      * the last acked byte.
      * <p>
-     * This setting has no effect on a non-distributed edge.
+     * The default value is {@value #DEFAULT_RECEIVE_WINDOW_MULTIPLIER}. This
+     * setting has no effect on a non-distributed edge.
      */
     public EdgeConfig setReceiveWindowMultiplier(int receiveWindowMultiplier) {
         this.receiveWindowMultiplier = receiveWindowMultiplier;
@@ -135,10 +138,12 @@ public class EdgeConfig implements Serializable {
      * Note that a single item cannot straddle packets, therefore the maximum packet size
      * can exceed the value configured here by the size of a single data item.
      * <p>
-     * This setting has no effect on a non-distributed edge.
+     * The default value is {@value #DEFAULT_PACKET_SIZE_LIMIT}. This setting has no effect
+     * on a non-distributed edge.
      */
-    public void setPacketSizeLimit(int packetSizeLimit) {
+    public EdgeConfig setPacketSizeLimit(int packetSizeLimit) {
         this.packetSizeLimit = packetSizeLimit;
+        return this;
     }
 
     /**

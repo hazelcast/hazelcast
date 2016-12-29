@@ -46,9 +46,9 @@ import java.io.Serializable;
 public class Edge implements IdentifiedDataSerializable {
 
     private String source;
-    private int outputOrdinal;
+    private int sourceOrdinal;
     private String destination;
-    private int inputOrdinal;
+    private int destOrdinal;
 
     private int priority = Integer.MAX_VALUE;
 
@@ -81,10 +81,10 @@ public class Edge implements IdentifiedDataSerializable {
      */
     public Edge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
         this.source = source.getName();
-        this.outputOrdinal = sourceOrdinal;
+        this.sourceOrdinal = sourceOrdinal;
 
         this.destination = destination.getName();
-        this.inputOrdinal = destOrdinal;
+        this.destOrdinal = destOrdinal;
     }
 
     /**
@@ -97,8 +97,8 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * @return ordinal of the edge at the source vertex
      */
-    public int getOutputOrdinal() {
-        return outputOrdinal;
+    public int getSourceOrdinal() {
+        return sourceOrdinal;
     }
 
     /**
@@ -111,8 +111,8 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * @return ordinal of the edge at the destination vertex
      */
-    public int getInputOrdinal() {
-        return inputOrdinal;
+    public int getDestOrdinal() {
+        return destOrdinal;
     }
 
     /**
@@ -244,7 +244,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return '(' + source + ", " + outputOrdinal + ") -> (" + destination + ", " + inputOrdinal + ')';
+        return '(' + source + ", " + sourceOrdinal + ") -> (" + destination + ", " + destOrdinal + ')';
     }
 
     @Override
@@ -264,9 +264,9 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(source);
-        out.writeInt(outputOrdinal);
+        out.writeInt(sourceOrdinal);
         out.writeUTF(destination);
-        out.writeInt(inputOrdinal);
+        out.writeInt(destOrdinal);
         out.writeInt(priority);
         out.writeBoolean(isDistributed);
         out.writeObject(forwardingPattern);
@@ -277,9 +277,9 @@ public class Edge implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         source = in.readUTF();
-        outputOrdinal = in.readInt();
+        sourceOrdinal = in.readInt();
         destination = in.readUTF();
-        inputOrdinal = in.readInt();
+        destOrdinal = in.readInt();
         priority = in.readInt();
         isDistributed = in.readBoolean();
         forwardingPattern = in.readObject();
