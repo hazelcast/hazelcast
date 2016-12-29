@@ -89,7 +89,6 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 @PrivateApi
@@ -132,9 +131,9 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
         try {
             logger = node.getLogger(getClass().getName());
-            lifecycleService.fireLifecycleEvent(STARTING);
 
             node.start();
+
             if (!node.isRunning()) {
                     throw new IllegalStateException("Node failed to start!");
             }
