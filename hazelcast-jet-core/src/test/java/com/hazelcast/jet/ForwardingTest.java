@@ -17,8 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.impl.ListConsumer;
-import com.hazelcast.jet.impl.ListProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -115,7 +113,7 @@ public class ForwardingTest extends HazelcastTestSupport {
 
         dag.addVertex(producer)
            .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer).partitioned(
+           .addEdge(new Edge(producer, consumer).partitionedByCustom(
                    (item, numPartitions) -> (int) item % numPartitions
            ));
 

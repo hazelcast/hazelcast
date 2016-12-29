@@ -18,92 +18,99 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.Serializable;
 
 /**
- * Javadoc pending.
+ * Factory of {@link ProcessorSupplier} instances. The starting point of
+ * the chain leading to the eventual creation of {@code Processor} instances
+ * on each cluster member:
+ * <ol><li>
+ *     client creates {@code ProcessorMetaSupplier} as a part of the DAG;
+ * </li><li>
+ *     serializes it and sends to a cluster member;
+ * </li<li>
+ *     the member deserializes and uses it to create one {@code ProcessorSupplier}
+ *     for each cluster member;
+ * </li><li>
+ *     serializes each {@code ProcessorSupplier} and sends it to its target member;
+ * </li><li>
+ *     the target member deserializes and uses it to instantiate as many instances
+ *     of {@code Processor} as requested by the <em>parallelism</em> property on
+ *     the corresponding {@code Vertex}.
+ * </li></ol>
+ * Before being asked to create {@code ProcessorSupplier}s this meta-supplier will
+ * be given access to the Hazelcast instance and, in particular, its cluster topology
+ * and partitioning services. It can use the information from these services to
+ * precisely parameterize each {@code Processor} instance that will be created on
+ * each member.
  */
 @FunctionalInterface
 public interface ProcessorMetaSupplier extends Serializable {
 
     /**
-     * Javadoc pending.
+     * Called on the cluster member that receives the client request, after
+     * deserializing the meta-supplier instance. Gives access to the Hazelcast
+     * instance's services and provides the parallelism parameters determined
+     * from the cluster size.
      */
     default void init(Context context) {
     }
 
     /**
-     * Javadoc pending.
+     * Called to create a {@link ProcessorSupplier} which will be sent to the
+     * cluster member with the supplied address. All calls of this method are
+     * made on the cluster member that received the job request, after calling
+     * {@code init()}.
      */
     ProcessorSupplier get(Address address);
 
     /**
-     * Javadoc pending.
+     * Factory method that wraps the given {@code ProcessorSupplier}
+     * and returns it as a constant from each {@link #get(Address)} call.
      */
-    static ProcessorMetaSupplier of(final ProcessorSupplier listSupplier) {
-        return address -> listSupplier;
+    static ProcessorMetaSupplier of(ProcessorSupplier procSupplier) {
+        return address -> procSupplier;
     }
 
     /**
-     * Javadoc pending.
+     * Factory method that wraps the given {@code SimpleProcessorSupplier}
+     * and uses it as the supplier of all {@code Processor} instances.
+     * Specifically, returns a meta-supplier that will always return the
+     * result of calling {@link ProcessorSupplier#of(SimpleProcessorSupplier)}.
      */
-    static ProcessorMetaSupplier of(final SimpleProcessorSupplier processorSupplier) {
-        return address -> ProcessorSupplier.of(processorSupplier);
+    static ProcessorMetaSupplier of(SimpleProcessorSupplier procSupplier) {
+        return address -> ProcessorSupplier.of(procSupplier);
     }
 
     /**
-     * Javadoc pending.
+     * Context passed to the meta-supplier at init time on the member that
+     * received a job request from the client.
      */
     interface Context {
 
         /**
-         * Javadoc pending.
+         * @return the Hazelcast instance
          */
         HazelcastInstance getHazelcastInstance();
 
         /**
-         * Javadoc pending.
+         * @return the Hazelcast SPI-level partition service
          */
         IPartitionService getPartitionServce();
 
         /**
-         * Javadoc pending.
+         * Returns the total number of {@code Processor}s that will be
+         * created across the cluster.
          */
         int totalParallelism();
 
         /**
-         * Javadoc pending.
+         * Returns the number of {@code Processor}s that will be created
+         * on each cluster member.
          */
-        int perNodeParallelism();
-
-        /**
-         * Javadoc pending.
-         */
-        static Context of(NodeEngine nodeEngine, int totalParallelism, int perNodeParallelism) {
-            return new Context() {
-                @Override
-                public HazelcastInstance getHazelcastInstance() {
-                    return nodeEngine.getHazelcastInstance();
-                }
-
-                @Override
-                public IPartitionService getPartitionServce() {
-                    return nodeEngine.getPartitionService();
-                }
-
-                @Override
-                public int totalParallelism() {
-                    return totalParallelism;
-                }
-
-                @Override
-                public int perNodeParallelism() {
-                    return perNodeParallelism;
-                }
-            };
-        }
+        int localParallelism();
     }
+
 }

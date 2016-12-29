@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.impl.EngineOperation;
+import com.hazelcast.jet.impl.operation.EngineOperation;
 import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;

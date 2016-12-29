@@ -22,14 +22,14 @@ import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec.RequestParame
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.ExecuteJobOperation;
+import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-import static com.hazelcast.jet.impl.CustomClassLoadedObject.deserializeWithCustomClassLoader;
+import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
 public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestParameters> {
     protected JetExecuteJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

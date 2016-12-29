@@ -192,14 +192,13 @@ public class DAGTest {
         Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
         dag.addVertex(a)
            .addVertex(b)
-           .addEdge(new Edge(a, 0, b, 0))
-           .addEdge(new Edge(a, 1, b, 1));
+           .addEdge(new Edge(a, 0, b, 0));
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
 
         // When
-        dag.validate();
+        dag.addEdge(new Edge(a, 1, b, 1));
     }
 
     private static class TestProcessor extends AbstractProcessor {

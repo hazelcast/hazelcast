@@ -68,8 +68,8 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         dag.addVertex(merger)
            .addVertex(combiner)
            .addVertex(writer)
-           .addEdge(new Edge(previous, merger).partitioned(item -> classifier.apply((T) item)))
-           .addEdge(new Edge(merger, combiner).distributed().partitioned(item -> ((Map.Entry) item).getKey()))
+           .addEdge(new Edge(previous, merger).partitionedByKey(item -> classifier.apply((T) item)))
+           .addEdge(new Edge(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
            .addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
         return target;

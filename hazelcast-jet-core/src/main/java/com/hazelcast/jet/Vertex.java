@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.CustomClassLoadedObject;
+import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -26,7 +26,23 @@ import java.io.IOException;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Javadoc pending
+ * Represents a unit of data processing in a Jet computation job. Conceptually,
+ * a vertex receives data items over its inbound {@link Edge edges} and pushes
+ * data items to its outbound edges. Practically, a single vertex is represented
+ * by a set of instances of {@link Processor}. The {@code parallelism} property
+ * determines the number of processor instances running on each cluster member.
+ * <p>
+ * Each instance of processor is assigned a set of partition IDs it is responsible
+ * for. When an inbound edge is <em>partitioned</em>, the processor will receive
+ * only those data items whose partition ID it is responsible for. For data traveling
+ * over a partitioned edge which is also <em>distributed</em>, the whole cluster
+ * contains a single unique processor instance responsible for any given partition ID.
+ * For non-distributed edges, the processor is unique only within a member and each
+ * member has its own processor for any given partition ID.
+ * <p>
+ * There is also a guarantee of collation across all the partitioned edges impinging
+ * on a vertex: within each member, all the data with a given partition ID is
+ * received by the same processor.
  */
 public class Vertex implements IdentifiedDataSerializable {
 
@@ -104,7 +120,7 @@ public class Vertex implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "Vertex{name='" + name + '\'' + '}';
+        return "Vertex " + name;
     }
 
     @Override

@@ -46,7 +46,7 @@ import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetEngineConfig;
-import com.hazelcast.jet.PartitionLookup;
+import com.hazelcast.jet.DefaultPartitionStrategy;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -232,7 +232,7 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
             Edge edge = new Edge(sourceVertex.vertex, sourceVertex.currOutput,
                     targetVertex.vertex, targetVertex.currInput)
-                    .partitioned(getPartitioner(processEdge, targetNode, element))
+                    .partitionedByCustom(getPartitioner(processEdge, targetNode, element))
                     .distributed();
             if (isAccumulated) {
                 edge = edge.broadcast().priority(0);
@@ -401,10 +401,10 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
         private static final long serialVersionUID = 1L;
 
-        private transient PartitionLookup lookup;
+        private transient DefaultPartitionStrategy lookup;
 
         @Override
-        public void init(PartitionLookup lookup) {
+        public void init(DefaultPartitionStrategy lookup) {
             this.lookup = lookup;
         }
 

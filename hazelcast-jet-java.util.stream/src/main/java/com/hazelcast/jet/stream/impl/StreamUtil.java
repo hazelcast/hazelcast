@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.Util.unchecked;
+import static com.hazelcast.jet.impl.util.Util.unchecked;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {

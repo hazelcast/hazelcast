@@ -42,8 +42,8 @@ import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
-import static com.hazelcast.jet.impl.Util.uncheckCall;
-import static com.hazelcast.jet.impl.Util.unchecked;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.Util.unchecked;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;

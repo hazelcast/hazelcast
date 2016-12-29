@@ -26,7 +26,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.IListWriter;
+import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

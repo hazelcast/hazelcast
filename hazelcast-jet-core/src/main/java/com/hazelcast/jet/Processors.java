@@ -17,13 +17,13 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.jet.impl.IListReader;
-import com.hazelcast.jet.impl.IListWriter;
-import com.hazelcast.jet.impl.IMapReader;
-import com.hazelcast.jet.impl.IMapWriter;
+import com.hazelcast.jet.impl.connector.IListReader;
+import com.hazelcast.jet.impl.connector.IListWriter;
+import com.hazelcast.jet.impl.connector.IMapReader;
+import com.hazelcast.jet.impl.connector.IMapWriter;
 
 /**
- * Contains various predefined processors
+ * Static utility class with factory methods for a number of predefined processors.
  */
 public final class Processors {
 

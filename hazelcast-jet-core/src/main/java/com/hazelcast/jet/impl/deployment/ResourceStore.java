@@ -36,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import static com.hazelcast.jet.impl.Util.read;
+import static com.hazelcast.jet.impl.util.Util.read;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ResourceStore {
