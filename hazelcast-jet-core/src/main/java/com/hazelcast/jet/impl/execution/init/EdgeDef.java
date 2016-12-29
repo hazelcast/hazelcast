@@ -29,8 +29,8 @@ import java.util.Map;
 public class EdgeDef implements IdentifiedDataSerializable {
 
     private int oppositeVertexId;
-    private int oppositeEndOrdinal;
-    private int ordinal;
+    private int sourceOrdinal;
+    private int destOrdinal;
     private int priority;
     private boolean isDistributed;
     private Edge.ForwardingPattern forwardingPattern;
@@ -41,19 +41,18 @@ public class EdgeDef implements IdentifiedDataSerializable {
     private transient String id;
     private transient VertexDef sourceVertex;
     private transient VertexDef destVertex;
-    private transient int sourceOrdinal;
-    private transient int destOrdinal;
 
 
     EdgeDef() {
     }
 
-    public EdgeDef(int oppositeVertexId, int ordinal, int oppositeEndOrdinal, int priority,
-            boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner,
-            EdgeConfig config) {
+    public EdgeDef(int oppositeVertexId, int sourceOrdinal, int destOrdinal, int priority,
+                   boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner,
+                   EdgeConfig config
+    ) {
         this.oppositeVertexId = oppositeVertexId;
-        this.oppositeEndOrdinal = oppositeEndOrdinal;
-        this.ordinal = ordinal;
+        this.sourceOrdinal = sourceOrdinal;
+        this.destOrdinal = destOrdinal;
         this.priority = priority;
         this.isDistributed = isDistributed;
         this.forwardingPattern = forwardingPattern;
@@ -61,12 +60,10 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.config = config;
     }
 
-    void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutput) {
+    void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutbound) {
         final VertexDef farVertex = vMap.get(oppositeVertexId);
-        this.sourceVertex = isOutput ? nearVertex : farVertex;
-        this.sourceOrdinal = isOutput ? ordinal : oppositeEndOrdinal;
-        this.destVertex = isOutput ? farVertex : nearVertex;
-        this.destOrdinal = isOutput ? oppositeEndOrdinal : ordinal;
+        this.sourceVertex = isOutbound ? nearVertex : farVertex;
+        this.destVertex = isOutbound ? farVertex : nearVertex;
         this.id = sourceVertex.vertexId() + ":" + destVertex.vertexId();
     }
 
@@ -126,8 +123,8 @@ public class EdgeDef implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(oppositeVertexId);
-        out.writeInt(oppositeEndOrdinal);
-        out.writeInt(ordinal);
+        out.writeInt(destOrdinal);
+        out.writeInt(sourceOrdinal);
         out.writeInt(priority);
         out.writeBoolean(isDistributed);
         out.writeObject(forwardingPattern);
@@ -138,8 +135,8 @@ public class EdgeDef implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         oppositeVertexId = in.readInt();
-        oppositeEndOrdinal = in.readInt();
-        ordinal = in.readInt();
+        destOrdinal = in.readInt();
+        sourceOrdinal = in.readInt();
         priority = in.readInt();
         isDistributed = in.readBoolean();
         forwardingPattern = in.readObject();

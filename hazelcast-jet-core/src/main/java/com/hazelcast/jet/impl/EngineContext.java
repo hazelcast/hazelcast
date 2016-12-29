@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -129,25 +130,13 @@ public class EngineContext {
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
             supplier.init(new ProcMetaSupplierContext(nodeEngine, totalParallelism, perNodeParallelism));
 
-            final List<EdgeDef> outputs = outboundEdges.stream().map(edge -> {
-                int oppositeVertexId = vertexIdMap.get(edge.getDestination());
-                return new EdgeDef(oppositeVertexId, edge.getOutputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
-                        getConfig(edge));
-            }).collect(toList());
-
-            final List<EdgeDef> inputs = inboundEdges.stream().map(edge -> {
-                final int otherEndId = vertexIdMap.get(edge.getSource());
-                return new EdgeDef(otherEndId, edge.getInputOrdinal(), edge.getInputOrdinal(),
-                        edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
-                        getConfig(edge));
-            }).collect(toList());
-
+            final List<EdgeDef> inbound = toEdgeDefs(inboundEdges, e -> vertexIdMap.get(e.getSource()));
+            final List<EdgeDef> outbound = toEdgeDefs(outboundEdges, e -> vertexIdMap.get(e.getDestination()));
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
                 final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, perNodeParallelism);
-                vertexDef.addOutputs(outputs);
-                vertexDef.addInputs(inputs);
+                vertexDef.addInboundEdges(inbound);
+                vertexDef.addOutboundEdges(outbound);
                 e.getValue().addVertex(vertexDef);
             }
         }
@@ -186,13 +175,12 @@ public class EngineContext {
         return executionService;
     }
 
-    private static EdgeConfig getConfig(Edge edge) {
-        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
-        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
-    }
-
     private boolean isDistributed(Edge edge) {
         return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
+    }
+
+    private static int getParallelism(Vertex vertex, JetEngineConfig config) {
+        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
     }
 
     private static Map<String, Integer> assignVertexIds(DAG dag) {
@@ -202,8 +190,17 @@ public class EngineContext {
         return vertexIdMap;
     }
 
-    private static int getParallelism(Vertex vertex, JetEngineConfig config) {
-        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
+    private List<EdgeDef> toEdgeDefs(List<Edge> edges, Function<Edge, Integer> oppositeVertex) {
+        return edges.stream().map(edge -> {
+            int oppositeVertexId = oppositeVertex.apply(edge);
+            return new EdgeDef(oppositeVertexId, edge.getSourceOrdinal(), edge.getDestOrdinal(),
+                    edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
+                    getConfig(edge));
+        }).collect(toList());
     }
 
+    private static EdgeConfig getConfig(Edge edge) {
+        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
+        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
+    }
 }
