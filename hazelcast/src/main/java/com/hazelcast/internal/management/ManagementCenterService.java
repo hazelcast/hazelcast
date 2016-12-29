@@ -81,6 +81,7 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getObject;
+import static java.net.URLEncoder.encode;
 
 /**
  * ManagementCenterService is responsible for sending statistics data to the Management Center.
@@ -565,13 +566,13 @@ public class ManagementCenterService {
             return connection;
         }
 
-        private URL newGetTaskUrl() throws MalformedURLException {
+        private URL newGetTaskUrl() throws IOException {
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
 
             Address localAddress = instance.node.getClusterService().getLocalMember().getAddress();
 
             String urlString = cleanupUrl(managementCenterUrl) + "getTask.do?member=" + localAddress.getHost()
-                    + ":" + localAddress.getPort() + "&cluster=" + groupConfig.getName();
+                    + ":" + localAddress.getPort() + "&cluster=" + encode(groupConfig.getName(), "UTF-8");
             return new URL(urlString);
         }
 
