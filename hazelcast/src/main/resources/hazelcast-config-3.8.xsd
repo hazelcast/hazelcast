@@ -1266,7 +1266,6 @@
                         Possible values:
                         BINARY (default): keys and values are stored as binary data.
                         OBJECT: values are stored in their object forms.
-                        NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
