@@ -91,6 +91,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         return ownerConnectionAddress;
     }
 
+    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
+        this.ownerConnectionAddress = ownerConnectionAddress;
+    }
+
     public void shutdown() {
         clusterExecutor.shutdown();
         try {
@@ -188,11 +192,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             try {
                 triedAddresses.add(inetSocketAddress);
                 Address address = new Address(inetSocketAddress);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Trying to connect to " + address);
-                }
+                logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
-                ownerConnectionAddress = connection.getEndPoint();
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
                 client.getListenerService().onClusterConnect((ClientConnection) connection);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);

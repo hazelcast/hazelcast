@@ -73,6 +73,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
@@ -119,6 +120,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
     private final LoggingService loggingService;
     private final Credentials credentials;
+    private final AtomicLong correlationIddOfLastAuthentication = new AtomicLong(0);
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
@@ -491,7 +493,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                               final AuthenticationFuture callback) {
         SerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
-        ClientPrincipal principal = clusterService.getPrincipal();
+        final ClientPrincipal principal = clusterService.getPrincipal();
         byte serializationVersion = ((InternalSerializationService) client.getSerializationService()).getVersion();
 
         String uuid = null;
@@ -504,6 +506,9 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         ClientMessage clientMessage = encodeAuthenticationRequest(asOwner, ss, serializationVersion, uuid, ownerUuid);
         ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
         ClientInvocationFuture future = clientInvocation.invokeUrgent();
+        if (asOwner && clientInvocation.getSendConnection() != null) {
+            correlationIddOfLastAuthentication.set(clientInvocation.getClientMessage().getCorrelationId());
+        }
         future.andThen(new ExecutionCallback<ClientMessage>() {
             @Override
             public void onResponse(ClientMessage response) {
@@ -511,27 +516,31 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 AuthenticationStatus authenticationStatus = AuthenticationStatus.getById(result.status);
                 switch (authenticationStatus) {
                     case AUTHENTICATED:
-                        connection.setRemoteEndpoint(result.address);
-                        if (asOwner) {
-                            connection.setIsAuthenticatedAsOwner();
-                            clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
-                        }
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
                         connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
-                        authenticated(target, connection);
+                        connection.setRemoteEndpoint(result.address);
+                        if (asOwner) {
+                            if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {
+                                //if not same, client already gave up on this and send another authentication.
+                                onFailure(new AuthenticationException("Owner authentication response from address "
+                                        + target + " is late. Dropping the response. Principal : " + principal));
+                                return;
+                            }
+                            connection.setIsAuthenticatedAsOwner();
+                            ClientPrincipal principal = new ClientPrincipal(result.uuid, result.ownerUuid);
+                            clusterService.setPrincipal(principal);
+                            clusterService.setOwnerConnectionAddress(connection.getEndPoint());
+                            logger.info("Setting " + connection + " as owner  with principal " + principal);
+                        }
+                        onAuthenticated(target, connection);
                         callback.onSuccess(connection, asOwner);
                         break;
                     case CREDENTIALS_FAILED:
-                        AuthenticationException e = new AuthenticationException("Invalid credentials!");
-                        authenticationFailed(target, connection, e);
-                        callback.onFailure(e);
+                        onFailure(new AuthenticationException("Invalid credentials! Principal :" + principal));
                         break;
                     default:
-                        AuthenticationException exception =
-                                new AuthenticationException("Authentication status code not supported. status:"
-                                        + authenticationStatus);
-                        authenticationFailed(target, connection, exception);
-                        callback.onFailure(exception);
+                        onFailure(new AuthenticationException("Authentication status code not supported. status:"
+                                + authenticationStatus));
                 }
             }
 
@@ -595,7 +604,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private void authenticated(Address target, ClientConnection connection) {
+    private void onAuthenticated(Address target, ClientConnection connection) {
         ClientConnection oldConnection = connections.put(addressTranslator.translate(connection.getRemoteEndpoint()), connection);
         if (oldConnection == null) {
             if (logger.isFinestEnabled()) {
@@ -604,7 +613,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             fireConnectionAddedEvent(connection);
         } else {
-            //This part is hit when client sends authenticateion request again to an already
+            //This part is hit when client sends authentication request again to an already
             //connected server to upgrade itself to owner connection. In this case old new connection is same
             assert connection.equals(oldConnection);
             if (logger.isFinestEnabled()) {

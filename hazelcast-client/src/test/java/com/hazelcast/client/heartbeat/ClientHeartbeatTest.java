@@ -19,12 +19,15 @@ package com.hazelcast.client.heartbeat;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.impl.ClusterListenerSupport;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Connection;
@@ -211,4 +214,62 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "500");
         return clientConfig;
     }
+
+
+    @Test
+    public void testAuthentication_whenHeartbeatResumed() throws Exception {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST.getName(), "false");
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
+        HazelcastClientInstanceImpl hazelcastClientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final ClusterListenerSupport clientClusterService =
+                (ClusterListenerSupport) hazelcastClientInstanceImpl.getClientClusterService();
+
+        final CountDownLatch countDownLatch = new CountDownLatch(2);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                countDownLatch.countDown();
+            }
+        });
+
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
+        blockMessagesFromInstance(instance2, client);
+
+        final HazelcastInstance instance3 = hazelcastFactory.newHazelcastInstance();
+        hazelcastInstance.shutdown();
+
+        //wait for disconnect from instance1 since it is shutdown  // CLIENT_DISCONNECTED event
+        //and wait for connect to from instance3 // CLIENT_CONNECTED event
+        assertOpenEventually(countDownLatch);
+
+        //verify and wait for authentication to 3 is complete
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                String uuid = instance3.getLocalEndpoint().getUuid();
+                assertEquals(uuid, getClientEngineImpl(instance3).getOwnerUuid(client.getLocalEndpoint().getUuid()));
+                assertEquals(uuid, getClientEngineImpl(instance2).getOwnerUuid(client.getLocalEndpoint().getUuid()));
+                assertEquals(uuid, clientClusterService.getPrincipal().getOwnerUuid());
+                assertEquals(instance3.getCluster().getLocalMember().getAddress(), clientClusterService.getOwnerConnectionAddress());
+            }
+        });
+
+        //unblock instance 2 for authentication response.
+        unblockMessagesFromInstance(instance2, client);
+
+        //late authentication response from instance2 should not be able to change state in both client and cluster
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                String uuid = instance3.getLocalEndpoint().getUuid();
+                assertEquals(uuid, getClientEngineImpl(instance3).getOwnerUuid(client.getLocalEndpoint().getUuid()));
+                assertEquals(uuid, getClientEngineImpl(instance2).getOwnerUuid(client.getLocalEndpoint().getUuid()));
+                assertEquals(uuid, clientClusterService.getPrincipal().getOwnerUuid());
+                assertEquals(instance3.getCluster().getLocalMember().getAddress(), clientClusterService.getOwnerConnectionAddress());
+            }
+        });
+    }
+
 }
