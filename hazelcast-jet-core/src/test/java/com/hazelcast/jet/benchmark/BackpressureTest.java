@@ -26,7 +26,7 @@ import com.hazelcast.jet.JetEngine;
 import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.TestProcessors;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.jet.impl.connector.IMapWriter;
@@ -96,7 +96,7 @@ public class BackpressureTest extends HazelcastTestSupport {
                    .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + hz2));
         Vertex generator = new Vertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
                 ? ProcessorSupplier.of(GeneratingProducer::new)
-                : ProcessorSupplier.of(TestProcessors.NoopProducer::new)
+                : ProcessorSupplier.of(Processors.NoopProducer::new)
         );
         Vertex hiccuper = new Vertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));

@@ -141,8 +141,7 @@ public final class IListReader extends AbstractProducer {
                 // nothing to read on other nodes
                 return (c) -> {
                     assertCountIsOne(c);
-                    return singletonList(new AbstractProducer() {
-                    });
+                    return singletonList(new NoopProducer());
                 };
             }
         }
