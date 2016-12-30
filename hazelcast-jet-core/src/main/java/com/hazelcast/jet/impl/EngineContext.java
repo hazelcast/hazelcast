@@ -19,36 +19,20 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetEngineConfig;
-import com.hazelcast.jet.ProcessorMetaSupplier;
-import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
-import com.hazelcast.jet.impl.execution.init.EdgeDef;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.execution.init.ProcMetaSupplierContext;
-import com.hazelcast.jet.impl.execution.init.VertexDef;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 
 public class EngineContext {
 
@@ -115,32 +99,8 @@ public class EngineContext {
         executionService.shutdown();
     }
 
-    public Map<Member, ExecutionPlan> newExecutionPlan(DAG dag) {
-        final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
-        final int clusterSize = members.size();
-        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
-        final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
-        for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
-            final Vertex vertex = dag.getVertex(entry.getKey());
-            final int vertexId = entry.getValue();
-            final int perNodeParallelism = getParallelism(vertex, config);
-            final int totalParallelism = perNodeParallelism * clusterSize;
-            final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
-            final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
-            final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(new ProcMetaSupplierContext(nodeEngine, totalParallelism, perNodeParallelism));
-
-            final List<EdgeDef> inbound = toEdgeDefs(inboundEdges, e -> vertexIdMap.get(e.getSource()));
-            final List<EdgeDef> outbound = toEdgeDefs(outboundEdges, e -> vertexIdMap.get(e.getDestination()));
-            for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
-                final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
-                final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, perNodeParallelism);
-                vertexDef.addInboundEdges(inbound);
-                vertexDef.addOutboundEdges(outbound);
-                e.getValue().addVertex(vertexDef);
-            }
-        }
-        return plans;
+    public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
+        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getParallelism());
     }
 
     public void initExecution(long executionId, ExecutionPlan plan) {
@@ -175,32 +135,4 @@ public class EngineContext {
         return executionService;
     }
 
-    private boolean isDistributed(Edge edge) {
-        return edge.isDistributed() && nodeEngine.getClusterService().getSize() > 1;
-    }
-
-    private static int getParallelism(Vertex vertex, JetEngineConfig config) {
-        return vertex.getParallelism() != -1 ? vertex.getParallelism() : config.getParallelism();
-    }
-
-    private static Map<String, Integer> assignVertexIds(DAG dag) {
-        Map<String, Integer> vertexIdMap = new LinkedHashMap<>();
-        final int[] vertexId = {0};
-        dag.forEach(v -> vertexIdMap.put(v.getName(), vertexId[0]++));
-        return vertexIdMap;
-    }
-
-    private List<EdgeDef> toEdgeDefs(List<Edge> edges, Function<Edge, Integer> oppositeVertex) {
-        return edges.stream().map(edge -> {
-            int oppositeVertexId = oppositeVertex.apply(edge);
-            return new EdgeDef(oppositeVertexId, edge.getSourceOrdinal(), edge.getDestOrdinal(),
-                    edge.getPriority(), isDistributed(edge), edge.getForwardingPattern(), edge.getPartitioner(),
-                    getConfig(edge));
-        }).collect(toList());
-    }
-
-    private static EdgeConfig getConfig(Edge edge) {
-        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
-        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
-    }
 }

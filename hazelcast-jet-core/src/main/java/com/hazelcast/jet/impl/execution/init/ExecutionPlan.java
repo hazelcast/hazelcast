@@ -17,11 +17,17 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
@@ -47,9 +53,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
@@ -80,8 +89,37 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public ExecutionPlan() {
     }
 
-    public void addVertex(VertexDef vertex) {
-        vertices.add(vertex);
+    public static Map<Member, ExecutionPlan> createExecutionPlans(
+            NodeEngine nodeEngine, DAG dag, int defaultParallelism
+    ) {
+        final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
+        final int clusterSize = members.size();
+        final boolean isJobDistributed = clusterSize > 1;
+        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
+        final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
+        for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
+            final Vertex vertex = dag.getVertex(entry.getKey());
+            final int vertexId = entry.getValue();
+            final int localParallelism = vertex.getParallelism() != -1 ? vertex.getParallelism() : defaultParallelism;
+            final int totalParallelism = localParallelism * clusterSize;
+            final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
+            final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
+            final ProcessorMetaSupplier supplier = vertex.getSupplier();
+            supplier.init(new ProcMetaSupplierContext(nodeEngine, totalParallelism, localParallelism));
+
+            final List<EdgeDef> inbound = toEdgeDefs(inboundEdges,
+                    e -> vertexIdMap.get(e.getSource()), isJobDistributed);
+            final List<EdgeDef> outbound = toEdgeDefs(outboundEdges,
+                    e -> vertexIdMap.get(e.getDestination()), isJobDistributed);
+            for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
+                final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
+                final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, localParallelism);
+                vertexDef.addInboundEdges(inbound);
+                vertexDef.addOutboundEdges(outbound);
+                e.getValue().vertices.add(vertexDef);
+            }
+        }
+        return plans;
     }
 
     public void initialize(NodeEngine nodeEngine, String jetEngineName, long executionId) {
@@ -147,6 +185,30 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     // End implementation of IdentifiedDataSerializable
 
+
+    private static Map<String, Integer> assignVertexIds(DAG dag) {
+        Map<String, Integer> vertexIdMap = new LinkedHashMap<>();
+        final int[] vertexId = {0};
+        dag.forEach(v -> vertexIdMap.put(v.getName(), vertexId[0]++));
+        return vertexIdMap;
+    }
+
+    private static List<EdgeDef> toEdgeDefs(
+            List<Edge> edges, Function<Edge, Integer> oppositeVertex, boolean isJobDistributed
+    ) {
+        return edges.stream().map(edge -> {
+            int oppositeVertexId = oppositeVertex.apply(edge);
+            return new EdgeDef(oppositeVertexId, edge.getSourceOrdinal(), edge.getDestOrdinal(),
+                    edge.getPriority(), edge.isDistributed() && isJobDistributed,
+                    edge.getForwardingPattern(), edge.getPartitioner(),
+                    getConfig(edge));
+        }).collect(toList());
+    }
+
+    private static EdgeConfig getConfig(Edge edge) {
+        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
+        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
+    }
 
     private void initProcSuppliers() {
         vertices.stream().forEach(v -> v.processorSupplier().init(

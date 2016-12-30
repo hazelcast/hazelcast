@@ -61,7 +61,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     protected void doRun() throws Exception {
         JetService service = getService();
         EngineContext engineContext = service.getEngineContext(engineName);
-        Map<Member, ExecutionPlan> executionPlanMap = engineContext.newExecutionPlan(dag);
+        Map<Member, ExecutionPlan> executionPlanMap = engineContext.createExecutionPlans(dag);
 
 
         // Future that is signalled on a failure during Init
