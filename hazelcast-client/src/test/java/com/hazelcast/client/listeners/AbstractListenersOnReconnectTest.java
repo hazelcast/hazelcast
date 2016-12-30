@@ -39,7 +39,6 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.HEARTBEAT_TIMEOUT;
@@ -49,6 +48,10 @@ import static org.junit.Assert.assertTrue;
 public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport {
 
     protected HazelcastInstance client;
+    protected AtomicInteger eventCount;
+    private String registrationId;
+    private int clusterSize;
+
     private static final int EVENT_COUNT = 10;
 
     private static final int ENDPOINT_REMOVE_DELAY_MILLISECONDS = ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS * 1000;
@@ -60,52 +63,25 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         factory.terminateAll();
     }
 
-    private void testListenersInternal()
-            throws InterruptedException {
-        final int clusterSize = factory.getAllHazelcastInstances().size();
-        assertClusterSizeEventually(clusterSize, client);
-
-        final AtomicInteger eventCount = new AtomicInteger();
-        final String registrationId = addListener(eventCount);
-
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
-
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        HazelcastInstance server = getOwnerServer(factory,  clientInstanceImpl);
-        server.getLifecycleService().terminate();
-
-        factory.newHazelcastInstance();
-        assertClusterSizeEventually(clusterSize, client);
-
-        assertTrue(disconnectedLatch.await(30, TimeUnit.SECONDS));
-        assertTrue(connectedLatch.await(30, TimeUnit.SECONDS));
-
-        validateRegistrations(clusterSize, registrationId, clientInstanceImpl);
-
-        validateListenerFunctionality(eventCount);
-
-        assertTrue(removeListener(registrationId));
+    //-------------------------- testListenersTerminateRandomNode --------------------- //
+    @Test
+    public void testListenersNonSmartRoutingTerminateRandomNode() {
+        factory.newInstances(null, 3);
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateRandomNode();
     }
 
-    private void testListenersTerminateRandomNodeInternal()
-            throws InterruptedException {
-        final int clusterSize = factory.getAllHazelcastInstances().size();
-        assertClusterSizeEventually(clusterSize, client);
+    @Test
+    public void testListenersSmartRoutingTerminateRandomNode() {
+        factory.newInstances(null, 3);
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateRandomNode();
+    }
 
-        final AtomicInteger eventCount = new AtomicInteger();
-        final String registrationId = addListener(eventCount);
+    private void testListenersTerminateRandomNode() {
+        setupListener();
 
         terminateRandomNode();
 
@@ -128,16 +104,286 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
 
         factory.newHazelcastInstance();
 
-        assertTrue(memberAddedLatch.await(20, TimeUnit.SECONDS));
+        assertOpenEventually(memberAddedLatch);
+        validateRegistrationsAndListenerFunctionality();
+    }
 
+    //-------------------------- testListenersWaitMemberDestroy --------------------- //
+
+    @Test
+    public void testListenersWaitMemberDestroySmartRouting() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        clientConfig
+                .setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(2 * ENDPOINT_REMOVE_DELAY_MILLISECONDS));
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersWaitMemberDestroy();
+    }
+
+    private void testListenersWaitMemberDestroy() {
+        setupListener();
+
+        Collection<HazelcastInstance> allHazelcastInstances = factory.getAllHazelcastInstances();
+
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        HazelcastInstance ownerMember = getOwnerServer(factory, clientInstanceImpl);
+        for (HazelcastInstance member : allHazelcastInstances) {
+            blockMessagesFromInstance(member, client);
+        }
+
+        ownerMember.getLifecycleService().terminate();
+
+        for (HazelcastInstance member : allHazelcastInstances) {
+            unblockMessagesFromInstance(member, client);
+        }
+
+        assertOpenEventually(disconnectedLatch);
+        assertOpenEventually(connectedLatch);
+
+        sleepAtLeastMillis(ENDPOINT_REMOVE_DELAY_MILLISECONDS + 2000);
+        clusterSize = clusterSize - 1;
+        validateRegistrationsAndListenerFunctionality();
+    }
+
+    //-------------------------- testListenersTemporaryNetworkBlockage --------------------- //
+
+    @Test
+    public void testTemporaryBlockedNoDisconnectionSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTemporaryNetworkBlockage();
+    }
+
+    @Test
+    public void testTemporaryBlockedNoDisconnectionNonSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTemporaryNetworkBlockage();
+    }
+
+    @Test
+    public void testTemporaryBlockedNoDisconnectionMultipleServerSmartRouting() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTemporaryNetworkBlockage();
+    }
+
+    @Test
+    public void testTemporaryBlockedNoDisconnectionMultipleServerNonSmartRouting() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTemporaryNetworkBlockage();
+    }
+
+    private void testListenersTemporaryNetworkBlockage() {
+        setupListener();
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
+
+
+        long timeout = clientInstanceImpl.getProperties().getMillis(HEARTBEAT_TIMEOUT);
+        long heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
+        long waitTime = heartbeatTimeout / 2;
+
+        long endTime = System.currentTimeMillis() + waitTime;
+        blockMessagesFromInstance(server, client);
+        long sleepTime = endTime - System.currentTimeMillis();
+
+        if (sleepTime > 0) {
+            sleepMillis((int) sleepTime);
+        }
+
+        unblockMessagesFromInstance(server, client);
+
+        validateRegistrationsAndListenerFunctionality();
+    }
+
+    //-------------------------- testListenersHeartbeatTimeoutToOwner --------------------- //
+
+    @Test
+    public void testClusterReconnectDueToHeartbeatSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersHeartbeatTimeoutToOwner();
+    }
+
+    @Test
+    public void testClusterReconnectMultipleServersDueToHeartbeatSmartRouting() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersHeartbeatTimeoutToOwner();
+    }
+
+    @Test
+    public void testClusterReconnectDueToHeartbeatNonSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersHeartbeatTimeoutToOwner();
+    }
+
+    @Test
+    public void testClusterReconnectMultipleServerDueToHeartbeatNonSmartRouting() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersHeartbeatTimeoutToOwner();
+    }
+
+    private void testListenersHeartbeatTimeoutToOwner() {
+        setupListener();
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
+
+
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
+        blockMessagesFromInstance(server, client);
+        assertOpenEventually(disconnectedLatch);
+
+        unblockMessagesFromInstance(server, client);
+        assertOpenEventually(connectedLatch);
+
+        validateRegistrationsAndListenerFunctionality();
+    }
+
+
+    //-------------------------- testListenersTerminateOwnerNode --------------------- //
+
+    @Test
+    public void testListenersSmartRoutingMultipleServer() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateOwnerNode();
+    }
+
+    @Test
+    public void testListenersNonSmartRoutingMultipleServer() {
+        factory.newInstances(null, 3);
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateOwnerNode();
+    }
+
+    @Test
+    public void testListenersSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+        testListenersTerminateOwnerNode();
+    }
+
+    @Test
+    public void testListenersNonSmartRouting() {
+        factory.newHazelcastInstance();
+
+        ClientConfig clientConfig = getNonSmartClientConfig();
+        client = factory.newHazelcastClient(clientConfig);
+
+        testListenersTerminateOwnerNode();
+    }
+
+    private void testListenersTerminateOwnerNode() {
+        setupListener();
+
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        HazelcastInstance server = getOwnerServer(factory, clientInstanceImpl);
+        server.getLifecycleService().terminate();
+
+        factory.newHazelcastInstance();
         assertClusterSizeEventually(clusterSize, client);
 
+        assertOpenEventually(disconnectedLatch);
+        assertOpenEventually(connectedLatch);
+
+        validateRegistrationsAndListenerFunctionality();
+    }
+
+    //-------------------------- utility anc validation methods --------------------- //
+
+    private void setupListener() {
+        clusterSize = factory.getAllHazelcastInstances().size();
+        assertClusterSizeEventually(clusterSize, client);
+        eventCount = new AtomicInteger();
+        registrationId = addListener();
+    }
+
+    private void validateRegistrationsAndListenerFunctionality() {
+        assertClusterSizeEventually(clusterSize, client);
         validateRegistrations(clusterSize, registrationId, getHazelcastClientInstanceImpl(client));
-
-        validateListenerFunctionality(eventCount);
-
+        validateListenerFunctionality();
         assertTrue(removeListener(registrationId));
     }
+
 
     private void validateRegistrations(final int clusterSize, final String registrationId,
                                        final HazelcastClientInstanceImpl clientInstanceImpl) {
@@ -166,260 +412,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         });
     }
 
-    private void testListenersWaitMemberDestroy()
-            throws InterruptedException {
-        Collection<HazelcastInstance> allHazelcastInstances = factory.getAllHazelcastInstances();
-        final int clusterSize = allHazelcastInstances.size();
-        assertClusterSizeEventually(clusterSize, client);
-
-        final AtomicInteger eventCount = new AtomicInteger();
-        final String registrationId = addListener(eventCount);
-
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED== event.getState()) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
-
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-        HazelcastInstance ownerMember = getOwnerServer(factory,  clientInstanceImpl);
-        for (HazelcastInstance member : allHazelcastInstances) {
-            blockMessagesFromInstance(member, client);
-        }
-
-        ownerMember.getLifecycleService().terminate();
-
-        for (HazelcastInstance member : allHazelcastInstances) {
-            unblockMessagesFromInstance(member, client);
-        }
-
-        assertTrue(disconnectedLatch.await(30, TimeUnit.SECONDS));
-        assertTrue(connectedLatch.await(30, TimeUnit.SECONDS));
-
-        sleepAtLeastMillis(ENDPOINT_REMOVE_DELAY_MILLISECONDS + 2000);
-
-        validateRegistrations(clusterSize - 1, registrationId, clientInstanceImpl);
-
-        validateListenerFunctionality(eventCount);
-
-        assertTrue(removeListener(registrationId));
-    }
-
-    private void testListenersForHeartbeat()
-            throws InterruptedException {
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-
-        HazelcastInstance server = getOwnerServer(factory,  clientInstanceImpl);
-
-        final int clusterSize = factory.getAllHazelcastInstances().size();
-        assertClusterSizeEventually(clusterSize, client);
-
-        final AtomicInteger eventCount = new AtomicInteger();
-        final String registrationId = addListener(eventCount);
-
-        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
-                    disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED== event.getState()) {
-                    connectedLatch.countDown();
-                }
-            }
-        });
-
-        long timeout = clientInstanceImpl.getProperties().getMillis(HEARTBEAT_TIMEOUT);
-        long heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-        long waitTime = heartbeatTimeout + 1000;
-
-        blockMessagesFromInstance(server, client);
-
-        disconnectedLatch.await(waitTime, TimeUnit.MILLISECONDS);
-
-        unblockMessagesFromInstance(server, client);
-
-        assertTrue(connectedLatch.await(30, TimeUnit.SECONDS));
-
-        validateRegistrations(clusterSize, registrationId, clientInstanceImpl);
-
-        validateListenerFunctionality(eventCount);
-
-        assertTrue(removeListener(registrationId));
-    }
-
-    private void terminateRandomNode() {
-        int clusterSize = factory.getAllHazelcastInstances().size();
-        HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
-        factory.getAllHazelcastInstances().toArray(instances);
-        int randNode = new Random().nextInt(clusterSize);
-        instances[randNode].getLifecycleService().terminate();
-    }
-
-    @Test
-    public void testListenersNonSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersInternal();
-    }
-
-    @Test
-    public void testListenersSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = createClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-        testListenersInternal();
-    }
-
-    @Test
-    public void testListenersNonSmartRoutingTerminateRandomNode()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersTerminateRandomNodeInternal();
-    }
-
-    @Test
-    public void testListenersSmartRoutingTerminateRandomNode()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = createClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-        testListenersTerminateRandomNodeInternal();
-    }
-
-    @Test
-    public void testListenersMemberDestroyEndpointTaskSmartRouting()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig
-                .setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), String.valueOf(2 * ENDPOINT_REMOVE_DELAY_MILLISECONDS));
-        client = factory.newHazelcastClient(clientConfig);
-        testListenersWaitMemberDestroy();
-    }
-
-    @Test
-    public void testClusterReconnectDueToHeartbeatSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = getSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersForHeartbeat();
-    }
-
-    @Test
-    public void testTemporaryBlockedNoDisconnectionSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = getSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersTemporaryNetworkBlockage();
-    }
-
-    @Test
-    public void testTemporaryBlockedNoDisconnectionNonSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = getNonSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersTemporaryNetworkBlockage();
-    }
-
-    @Test
-    public void testTemporaryBlockedNoDisconnectionMultipleServerSmartRouting()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = getSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersTemporaryNetworkBlockage();
-    }
-
-    @Test
-    public void testTemporaryBlockedNoDisconnectionMultipleServerNonSmartRouting()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = getNonSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersTemporaryNetworkBlockage();
-    }
-
-    private void testListenersTemporaryNetworkBlockage() {
-        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
-
-        HazelcastInstance server = getOwnerServer(factory,  clientInstanceImpl);
-
-        final int clusterSize = factory.getAllHazelcastInstances().size();
-        assertClusterSizeEventually(clusterSize, client);
-
-        final AtomicInteger eventCount = new AtomicInteger();
-        final String registrationId = addListener(eventCount);
-
-        final boolean smartRouting = clientInstanceImpl.getClientConfig().getNetworkConfig().isSmartRouting();
-        final int expectedRegistrationsSize = smartRouting ? clusterSize : 1;
-
-        assertEquals(expectedRegistrationsSize, getClientEventRegistrations(client, registrationId).size());
-
-        long timeout = clientInstanceImpl.getProperties().getMillis(HEARTBEAT_TIMEOUT);
-        long heartbeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
-        long waitTime = heartbeatTimeout / 2;
-
-        validateListenerFunctionality(eventCount);
-
-        long endTime = System.currentTimeMillis() + waitTime;
-        blockMessagesFromInstance(server, client);
-        long sleepTime = endTime - System.currentTimeMillis();
-
-        if (sleepTime > 0) {
-            sleepMillis((int)sleepTime);
-        }
-
-        unblockMessagesFromInstance(server, client);
-
-        assertEquals(expectedRegistrationsSize, getClientEventRegistrations(client, registrationId).size());
-
-        validateListenerFunctionality(eventCount);
-
-        assertTrue(removeListener(registrationId));
-    }
-
-    private void validateListenerFunctionality(final AtomicInteger eventCount) {
-        eventCount.set(0);
+    private void validateListenerFunctionality() {
         for (int i = 0; i < EVENT_COUNT; i++) {
             produceEvent();
         }
@@ -431,7 +424,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 assertTrue("Received event count is " + count + " but it is expected to be at least " + EVENT_COUNT,
                         count >= EVENT_COUNT);
             }
-        }, 5);
+        });
 
         assertTrueAllTheTime(new AssertTask() {
             @Override
@@ -444,26 +437,18 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
         }, 3);
     }
 
-    @Test
-    public void testClusterReconnectMultipleServersDueToHeartbeatSmartRouting()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = getSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersForHeartbeat();
+    private void terminateRandomNode() {
+        int clusterSize = factory.getAllHazelcastInstances().size();
+        HazelcastInstance[] instances = new HazelcastInstance[clusterSize];
+        factory.getAllHazelcastInstances().toArray(instances);
+        int randNode = new Random().nextInt(clusterSize);
+        instances[randNode].getLifecycleService().terminate();
     }
 
-    @Test
-    public void testClusterReconnectDueToHeartbeatNonSmartRouting()
-            throws InterruptedException {
-        factory.newHazelcastInstance();
-
-        ClientConfig clientConfig = getNonSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersForHeartbeat();
+    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
+        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
+        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
+        return listenerService.getActiveRegistrations(id);
     }
 
     private ClientConfig getNonSmartClientConfig() {
@@ -473,59 +458,15 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
     }
 
     private ClientConfig getSmartClientConfig() {
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(20).setConnectionAttemptPeriod(2000);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
+        clientConfig.getNetworkConfig().setRedoOperation(true);
         clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "4000");
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
         return clientConfig;
     }
 
-    @Test
-    public void testClusterReconnectMultipleServerDueToHeartbeatNonSmartRouting()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = getNonSmartClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-
-        testListenersForHeartbeat();
-    }
-
-    @Test
-    public void testListenersSmartRoutingMultipleServer()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = createClientConfig();
-        client = factory.newHazelcastClient(clientConfig);
-        testListenersInternal();
-    }
-
-    @Test
-    public void testListenersNonSmartRoutingMultipleServer()
-            throws InterruptedException {
-        factory.newInstances(null, 3);
-
-        ClientConfig clientConfig = createClientConfig();
-        clientConfig.getNetworkConfig().setSmartRouting(false);
-        client = factory.newHazelcastClient(clientConfig);
-        testListenersInternal();
-    }
-
-    private ClientConfig createClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        return clientConfig;
-    }
-
-    private Collection<ClientEventRegistration> getClientEventRegistrations(HazelcastInstance client, String id) {
-        HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
-        ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) clientImpl.getListenerService();
-        return listenerService.getActiveRegistrations(id);
-    }
-
-    protected abstract String addListener(final AtomicInteger eventCount);
+    protected abstract String addListener();
 
     protected abstract void produceEvent();
 
