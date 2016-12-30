@@ -92,8 +92,6 @@ public class TextCommandServiceImpl implements TextCommandService {
     private final AtomicLong decrementMisses = new AtomicLong();
     private final long startTime = Clock.currentTimeMillis();
     private final ILogger logger;
-    private volatile ResponseThreadRunnable responseThreadRunnable;
-    private volatile boolean running = true;
 
     public TextCommandServiceImpl(Node node) {
         this.node = node;
@@ -207,18 +205,11 @@ public class TextCommandServiceImpl implements TextCommandService {
 
     @Override
     public void processRequest(TextCommand command) {
-        if (responseThreadRunnable == null) {
-            synchronized (this) {
-                if (responseThreadRunnable == null) {
-                    responseThreadRunnable = new ResponseThreadRunnable();
-                    HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
-                    String threadNamePrefix = hazelcastThreadGroup.getThreadNamePrefix("ascii.service.response");
-                    Thread thread = new Thread(
-                            hazelcastThreadGroup.getInternalThreadGroup(), responseThreadRunnable, threadNamePrefix);
-                    thread.start();
-                }
-            }
-        }
+        HazelcastThreadGroup hazelcastThreadGroup = node.getHazelcastThreadGroup();
+        String threadNamePrefix = hazelcastThreadGroup.getThreadNamePrefix("ascii.service.response");
+        Thread thread = new Thread(
+                hazelcastThreadGroup.getInternalThreadGroup(), ResponseThreadRunnable.INSTANCE, threadNamePrefix);
+        thread.start();
         node.nodeEngine.getExecutionService().execute("hz:text", new CommandExecutor(command));
     }
 
@@ -326,15 +317,12 @@ public class TextCommandServiceImpl implements TextCommandService {
         if (!textCommand.shouldReply() || textCommand.getRequestId() == -1) {
             throw new RuntimeException("Shouldn't reply " + textCommand);
         }
-        responseThreadRunnable.sendResponse(textCommand);
+        ResponseThreadRunnable.INSTANCE.sendResponse(textCommand);
     }
 
     public void stop() {
-        final ResponseThreadRunnable rtr = responseThreadRunnable;
-        if (rtr != null) {
-            logger.info("Stopping text command service...");
-            rtr.stop();
-        }
+        logger.info("Stopping text command service...");
+        ResponseThreadRunnable.INSTANCE.stop();
     }
 
     class CommandExecutor implements Runnable {
@@ -356,9 +344,12 @@ public class TextCommandServiceImpl implements TextCommandService {
         }
     }
 
-    private class ResponseThreadRunnable implements Runnable {
+    private enum ResponseThreadRunnable implements Runnable {
+        INSTANCE;
+
         private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
         private final Object stopObject = new Object();
+        private volatile boolean running = true;
 
         @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         public void sendResponse(TextCommand textCommand) {
