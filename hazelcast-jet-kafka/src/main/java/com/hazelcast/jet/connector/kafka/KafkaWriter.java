@@ -143,7 +143,8 @@ public class KafkaWriter extends AbstractProcessor {
 
         @Override
         public List<Processor> get(int count) {
-            HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) context.getHazelcastInstance();
+            HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
+                    context.getJetInstance().getHazelcastInstance();
             SerializationService serializationService = hazelcastInstance.node.nodeEngine.getSerializationService();
             return Stream.generate(() -> new KafkaWriter(serializationService, topicId, properties))
                          .limit(count)

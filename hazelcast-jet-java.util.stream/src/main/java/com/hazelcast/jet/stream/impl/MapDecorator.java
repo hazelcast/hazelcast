@@ -20,9 +20,9 @@ import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -38,6 +38,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.Predicate;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -47,9 +48,9 @@ import java.util.concurrent.TimeUnit;
 public class MapDecorator<K, V> implements IStreamMap<K, V> {
 
     private final IMap<K, V> map;
-    private final HazelcastInstance instance;
+    private final JetInstance instance;
 
-    public MapDecorator(IMap<K, V> map, HazelcastInstance instance) {
+    public MapDecorator(IMap<K, V> map, JetInstance instance) {
         this.map = map;
         this.instance = instance;
     }

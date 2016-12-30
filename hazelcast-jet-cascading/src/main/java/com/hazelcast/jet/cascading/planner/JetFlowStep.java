@@ -38,20 +38,19 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.util.TupleHasher;
 import cascading.util.Util;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.cascading.JetFlow;
-import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet.cascading.runtime.FlowNodeProcessor;
-import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.DefaultPartitionStrategy;
+import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.cascading.JetFlowProcess;
+import com.hazelcast.jet.cascading.runtime.FlowNodeProcessor;
+import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.slf4j.helpers.MessageFormatter;
@@ -64,12 +63,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
-public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
+public class JetFlowStep extends BaseFlowStep<JetConfig> {
 
     private static final ILogger LOGGER = Logger.getLogger(JetFlowStep.class);
 
@@ -86,10 +86,10 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
     }
 
     @Override
-    public JetEngineConfig createInitializedConfig(FlowProcess<JetEngineConfig> flowProcess,
-                                                   JetEngineConfig parentConfig) {
+    public JetConfig createInitializedConfig(FlowProcess<JetConfig> flowProcess,
+                                             JetConfig parentConfig) {
 
-        JetEngineConfig currentConfig = parentConfig == null ? new JetEngineConfig() : parentConfig;
+        JetConfig currentConfig = parentConfig == null ? new JetConfig() : parentConfig;
 
         initTaps(flowProcess, currentConfig, getSourceTaps(), false);
         initTaps(flowProcess, currentConfig, getSinkTaps(), true);
@@ -98,14 +98,14 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
         initFromStepConfigDef(currentConfig);
         initFromNodeConfigDef(currentConfig);
 
-        for (String path : ((JetFlow) getFlow()).getClassPath()) {
-            currentConfig.addJar(path);
-        }
+//        for (String path : ((JetFlow) getFlow()).getClassPath()) {
+//            currentConfig.addJar(path);
+//        }
         return currentConfig;
     }
 
     @Override
-    public void clean(JetEngineConfig jetEngineConfig) {
+    public void clean(JetConfig jetConfig) {
     }
 
     @Override
@@ -145,8 +145,8 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
     @Override
     protected FlowStepJob createFlowStepJob(ClientState clientState,
-                                            FlowProcess<JetEngineConfig> flowProcess,
-                                            JetEngineConfig initializedStepConfig) {
+                                            FlowProcess<JetConfig> flowProcess,
+                                            JetConfig initializedStepConfig) {
         return new JetFlowStepJob((JetFlowProcess) flowProcess, buildDag(),
                 clientState, initializedStepConfig, this);
     }
@@ -166,7 +166,8 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
             Map<String, Map<Integer, Integer>> inputMap = new HashMap<>();
             Map<String, Set<Integer>> outputMap = new HashMap<>();
 
-            Vertex vertex = new Vertex(node.getName(), new Supplier(getConfig(), node, inputMap, outputMap));
+            Vertex vertex = new Vertex(node.getName(), new Supplier(node, getConfig().getProperties(),
+                    inputMap, outputMap));
             dag.addVertex(vertex);
 
             AnnotatedVertex annotatedVertex = new AnnotatedVertex(vertex);
@@ -304,7 +305,7 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
         return MessageFormatter.arrayFormat(message, arguments).getMessage();
     }
 
-    private void initTaps(FlowProcess<JetEngineConfig> flowProcess, JetEngineConfig config, Set<Tap> taps, boolean isSink) {
+    private void initTaps(FlowProcess<JetConfig> flowProcess, JetConfig config, Set<Tap> taps, boolean isSink) {
         if (!taps.isEmpty()) {
             for (Tap tap : taps) {
                 if (isSink) {
@@ -316,21 +317,21 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
         }
     }
 
-    private void initFromNodeConfigDef(final JetEngineConfig jetEngineConfig) {
+    private void initFromNodeConfigDef(final JetConfig jetConfig) {
         initConfFromNodeConfigDef(Util.getFirst(getFlowNodeGraph().vertexSet()).getElementGraph(),
-                getSetterFor(jetEngineConfig));
+                getSetterFor(jetConfig));
     }
 
-    private void initFromStepConfigDef(final JetEngineConfig jetEngineConfig) {
-        initConfFromStepConfigDef(getSetterFor(jetEngineConfig));
+    private void initFromStepConfigDef(final JetConfig jetConfig) {
+        initConfFromStepConfigDef(getSetterFor(jetConfig));
     }
 
-    private ConfigDef.Setter getSetterFor(final JetEngineConfig jetEngineConfig) {
+    private ConfigDef.Setter getSetterFor(final JetConfig jetConfig) {
         return new ConfigDef.Setter() {
             @Override
             public String set(String key, String value) {
                 String oldValue = get(key);
-                jetEngineConfig.getProperties().setProperty(key, value);
+                jetConfig.getProperties().setProperty(key, value);
                 return oldValue;
             }
 
@@ -338,16 +339,16 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
             public String update(String key, String value) {
                 String oldValue = get(key);
                 if (oldValue == null) {
-                    jetEngineConfig.getProperties().setProperty(key, value);
+                    jetConfig.getProperties().setProperty(key, value);
                 } else if (!oldValue.contains(value)) {
-                    jetEngineConfig.getProperties().setProperty(key, oldValue + "," + value);
+                    jetConfig.getProperties().setProperty(key, oldValue + "," + value);
                 }
                 return oldValue;
             }
 
             @Override
             public String get(String key) {
-                String value = (String) jetEngineConfig.getProperties().get(key);
+                String value = (String) jetConfig.getProperties().get(key);
                 if (value == null || value.isEmpty()) {
                     return null;
                 }
@@ -418,28 +419,29 @@ public class JetFlowStep extends BaseFlowStep<JetEngineConfig> {
 
         private static final long serialVersionUID = 1L;
 
-        private final JetEngineConfig config;
         private final FlowNode node;
+        private final Properties properties;
         private final Map<String, Map<Integer, Integer>> inputMap;
         private final Map<String, Set<Integer>> outputMap;
-        private transient HazelcastInstance instance;
 
-        private Supplier(JetEngineConfig config, FlowNode node, Map<String, Map<Integer, Integer>> inputMap,
+        private transient JetInstance instance;
+
+        private Supplier(FlowNode node, Properties properties, Map<String, Map<Integer, Integer>> inputMap,
                          Map<String, Set<Integer>> outputMap) {
-            this.config = config;
             this.node = node;
+            this.properties = properties;
             this.inputMap = inputMap;
             this.outputMap = outputMap;
         }
 
         @Override
         public void init(Context context) {
-            this.instance = context.getHazelcastInstance();
+            instance = context.getJetInstance();
         }
 
         @Override
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new FlowNodeProcessor(instance, config, node, inputMap, outputMap))
+            return Stream.generate(() -> new FlowNodeProcessor(instance, properties, node, inputMap, outputMap))
                          .limit(count).collect(toList());
         }
     }

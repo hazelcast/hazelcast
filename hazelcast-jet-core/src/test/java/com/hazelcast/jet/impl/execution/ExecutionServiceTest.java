@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
@@ -70,7 +69,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         Mockito.when(hzMock.getName()).thenReturn("test-hz-instance");
         Mockito.when(hzMock.getLoggingService()).thenReturn(loggingService);
         Mockito.when(loggingService.getLogger(Mockito.<Class>any())).thenReturn(mockLogger);
-        es = new ExecutionService(hzMock, "test-execservice", new JetEngineConfig().setParallelism(4));
+        es = new ExecutionService(hzMock, 4);
     }
 
     @Test

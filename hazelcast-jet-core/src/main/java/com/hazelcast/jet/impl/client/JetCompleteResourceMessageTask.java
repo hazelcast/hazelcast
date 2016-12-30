@@ -32,12 +32,12 @@ public class JetCompleteResourceMessageTask extends AbstractJetMessageTask<Reque
 
     @Override
     protected Operation prepareOperation() {
-        return new ResourceCompleteOperation(parameters.engineName, toObject(parameters.resourceDescriptor));
+        return new ResourceCompleteOperation(toObject(parameters.resourceDescriptor));
     }
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.engineName;
+        return null;
     }
 
     @Override

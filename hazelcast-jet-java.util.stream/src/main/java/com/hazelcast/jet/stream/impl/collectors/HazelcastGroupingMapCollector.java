@@ -55,7 +55,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
     @Override
     public IMap<K, D> collect(StreamContext context, Pipeline<? extends T> upstream) {
-        IMap<K, D> target = context.getHazelcastInstance().getMap(mapName);
+        IMap<K, D> target = context.getJetInstance().getMap(mapName);
 
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);

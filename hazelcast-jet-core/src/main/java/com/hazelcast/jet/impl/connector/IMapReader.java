@@ -124,7 +124,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            List<Member> members = new ArrayList<>(context.getHazelcastInstance().getCluster().getMembers());
+            List<Member> members = new ArrayList<>(context.getJetInstance().getCluster().getMembers());
             int memberSize = members.size();
             HazelcastInstance client = HazelcastClient.newHazelcastClient(serializableClientConfig.asClientConfig());
             try {
@@ -198,7 +198,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            membersToPartitions = context
+            membersToPartitions = context.getJetInstance()
                     .getHazelcastInstance().getPartitionService()
                     .getPartitions().stream()
                     .collect(groupingBy(p -> p.getOwner().getAddress(), mapping(Partition::getPartitionId, toList())));
@@ -228,7 +228,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            map = (MapProxyImpl) context.getHazelcastInstance().getMap(mapName);
+            map = (MapProxyImpl) context.getJetInstance().getMap(mapName);
         }
 
         @Override

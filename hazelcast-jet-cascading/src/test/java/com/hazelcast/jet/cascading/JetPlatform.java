@@ -30,12 +30,12 @@ import cascading.tuple.Tuple;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.runtime.TupleSerializer;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet.JetEngineConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,11 +58,12 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public class JetPlatform extends TestPlatform {
 
     private static final int CLUSTER_SIZE = 4;
-    private static HazelcastInstance instance;
+    private static JetInstance instance;
 
     @Override
     public synchronized void setUp() throws IOException {
-        Config config = new Config();
+        JetConfig jetConfig = new JetConfig();
+        Config config = jetConfig.getHazelcastConfig();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         config.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
@@ -72,7 +73,7 @@ public class JetPlatform extends TestPlatform {
 
         config.getSerializationConfig().addSerializerConfig(tupleSerializer);
         if (instance == null) {
-            instance = buildCluster(CLUSTER_SIZE, config);
+            instance = buildCluster(CLUSTER_SIZE, jetConfig);
         }
         assert instance.getCluster().getMembers().size() == CLUSTER_SIZE;
     }
@@ -84,7 +85,7 @@ public class JetPlatform extends TestPlatform {
 
     @Override
     public void tearDown() {
-        instance.getDistributedObjects().forEach(DistributedObject::destroy);
+        instance.getHazelcastInstance().getDistributedObjects().forEach(DistributedObject::destroy);
     }
 
     @Override
@@ -128,12 +129,12 @@ public class JetPlatform extends TestPlatform {
 
     @Override
     public FlowProcess getFlowProcess() {
-        return new JetFlowProcess(new JetEngineConfig(), instance);
+        return new JetFlowProcess(new JetConfig(), instance);
     }
 
     @Override
     public FlowConnector getFlowConnector(Map<Object, Object> properties) {
-        JetEngineConfig config = new JetEngineConfig();
+        JetConfig config = new JetConfig();
         config.getProperties().putAll(properties);
         return new JetFlowConnector(instance, config);
     }
@@ -208,15 +209,15 @@ public class JetPlatform extends TestPlatform {
         return true;
     }
 
-    private static HazelcastInstance buildCluster(int size, Config config) {
+    private static JetInstance buildCluster(int size, JetConfig config) {
         ExecutorService executorService = Executors.newCachedThreadPool();
-        HazelcastInstance instance = null;
-        List<Future<HazelcastInstance>> futures = new ArrayList<>();
+        JetInstance instance = null;
+        List<Future<JetInstance>> futures = new ArrayList<>();
         for (int i = 0; i < size; i++) {
-            Future<HazelcastInstance> future = executorService.submit(() -> Hazelcast.newHazelcastInstance(config));
+            Future<JetInstance> future = executorService.submit(() -> Jet.newJetInstance(config));
             futures.add(future);
         }
-        for (Future<HazelcastInstance> future : futures) {
+        for (Future<JetInstance> future : futures) {
             instance = uncheckedGet(future);
         }
         executorService.shutdown();

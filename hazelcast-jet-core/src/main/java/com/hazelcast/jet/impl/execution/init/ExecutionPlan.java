@@ -82,7 +82,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private PartitionArrangement ptionArrgmt;
 
     private NodeEngine nodeEngine;
-    private String jetEngineName;
     private long executionId;
 
 
@@ -92,6 +91,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public static Map<Member, ExecutionPlan> createExecutionPlans(
             NodeEngine nodeEngine, DAG dag, int defaultParallelism
     ) {
+        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
@@ -105,7 +105,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             final List<Edge> outboundEdges = dag.getOutboundEdges(vertex.getName());
             final List<Edge> inboundEdges = dag.getInboundEdges(vertex.getName());
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(new ProcMetaSupplierContext(nodeEngine, totalParallelism, localParallelism));
+            supplier.init(new ProcMetaSupplierContext(service.getJetInstance(), totalParallelism, localParallelism));
 
             final List<EdgeDef> inbound = toEdgeDefs(inboundEdges,
                     e -> vertexIdMap.get(e.getSource()), isJobDistributed);
@@ -122,9 +122,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return plans;
     }
 
-    public void initialize(NodeEngine nodeEngine, String jetEngineName, long executionId) {
+    public void initialize(NodeEngine nodeEngine, long executionId) {
         this.nodeEngine = nodeEngine;
-        this.jetEngineName = jetEngineName;
         this.executionId = executionId;
         initProcSuppliers();
         initDag();
@@ -211,8 +210,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private void initProcSuppliers() {
+        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
         vertices.stream().forEach(v -> v.processorSupplier().init(
-                new ProcSupplierContext(nodeEngine.getHazelcastInstance(), v.parallelism())));
+                new ProcSupplierContext(service.getJetInstance(), v.parallelism())));
     }
 
     private void initDag() {
@@ -223,11 +223,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         });
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         vertices.stream()
-                     .map(VertexDef::outboundEdges)
-                     .flatMap(List::stream)
-                     .map(EdgeDef::partitioner)
-                     .filter(Objects::nonNull)
-                     .forEach(p -> p.init(partitionService::getPartitionId));
+                .map(VertexDef::outboundEdges)
+                .flatMap(List::stream)
+                .map(EdgeDef::partitioner)
+                .filter(Objects::nonNull)
+                .forEach(p -> p.init(partitionService::getPartitionId));
     }
 
     private static List<Processor> createProcessors(VertexDef vertexDef, int parallelism) {
@@ -277,7 +277,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 final ConcurrentInboundEdgeStream inboundEdgeStream = createInboundEdgeStream(
                         edge.destOrdinal(), edge.priority(), conveyor);
                 final int destVertexId = edge.destVertex().vertexId();
-                final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, jetEngineName,
+                final SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine,
                         destAddr, executionId, destVertexId, edge.getConfig().getPacketSizeLimit());
                 senderMap.computeIfAbsent(destVertexId, xx -> new HashMap<>())
                          .computeIfAbsent(edge.destOrdinal(), xx -> new HashMap<>())

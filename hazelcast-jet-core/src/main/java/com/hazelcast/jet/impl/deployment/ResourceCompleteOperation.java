@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.impl.operation.EngineOperation;
 import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class ResourceCompleteOperation extends EngineOperation {
+public class ResourceCompleteOperation extends Operation {
     private ResourceDescriptor descriptor;
 
     @SuppressWarnings("unused")
@@ -32,16 +32,14 @@ public class ResourceCompleteOperation extends EngineOperation {
 
     }
 
-    public ResourceCompleteOperation(String engineName, ResourceDescriptor descriptor) {
-        super(engineName);
-
+    public ResourceCompleteOperation(ResourceDescriptor descriptor) {
         this.descriptor = descriptor;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
+        EngineContext engineContext = service.getEngineContext();
         ResourceStore store = engineContext.getResourceStore();
         store.completeResource(descriptor);
     }

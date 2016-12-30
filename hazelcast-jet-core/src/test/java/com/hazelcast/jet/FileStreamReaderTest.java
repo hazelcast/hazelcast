@@ -16,35 +16,48 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.impl.connector.FileStreamReader;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class FileStreamReaderTest extends HazelcastTestSupport {
+public class FileStreamReaderTest extends JetTestSupport {
+
+    private JetTestInstanceFactory factory;
+    private JetInstance instance;
+
+    @Before
+    public void setup() {
+        factory = new JetTestInstanceFactory();
+        instance = factory.newMember();
+    }
+
+    @After
+    public void tearDown() {
+        factory.shutdownAll();
+    }
 
     @Test
     public void testFileStreamReader_new() throws IOException, InterruptedException {
-        HazelcastInstance instance = createHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
         File directory = createTempFileDirectory();
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
@@ -55,10 +68,10 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
+        instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);
 
         File file = new File(directory, randomName());
@@ -74,8 +87,6 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
 
     @Test
     public void testFileStreamReader_reprocess() throws IOException, InterruptedException {
-        HazelcastInstance instance = createHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
         File directory = createTempFileDirectory();
         File file = new File(directory, randomName());
         assertTrueEventually(new AssertTask() {
@@ -93,10 +104,10 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
+        instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);
 
         writeNewLine(file, "hello", "world");
@@ -119,8 +130,6 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
 
     @Test
     public void testFileStreamReader_appendOnly() throws IOException, InterruptedException {
-        HazelcastInstance instance = createHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
         File directory = createTempFileDirectory();
         File file = new File(directory, randomName());
         writeNewLine(file, "init");
@@ -133,10 +142,10 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
+        instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);
 
         writeNewLine(file, "hello", "world");
@@ -156,7 +165,7 @@ public class FileStreamReaderTest extends HazelcastTestSupport {
         });
     }
 
-    public static void writeNewLine(File file, String... payloads) throws IOException {
+    private static void writeNewLine(File file, String... payloads) throws IOException {
         FileOutputStream outputStream = new FileOutputStream(file, true);
         PrintWriter writer = new PrintWriter(outputStream);
         for (String payload : payloads) {

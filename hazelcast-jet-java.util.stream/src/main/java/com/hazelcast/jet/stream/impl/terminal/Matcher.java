@@ -66,7 +66,7 @@ public class Matcher {
         Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
         dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
-        return context.getHazelcastInstance().getList(listName);
+        return context.getJetInstance().getList(listName);
     }
 
 

@@ -21,8 +21,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,8 +48,8 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     private volatile CompletableFuture<Object> executionInvocationFuture;
     private Throwable cachedExceptionResult;
 
-    public ExecuteJobOperation(String engineName, long executionId, DAG dag) {
-        super(engineName, executionId);
+    public ExecuteJobOperation(long executionId, DAG dag) {
+        super(executionId);
         this.dag = dag;
     }
 
@@ -60,13 +60,12 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
+        EngineContext engineContext = service.getEngineContext();
         Map<Member, ExecutionPlan> executionPlanMap = engineContext.createExecutionPlans(dag);
-
 
         // Future that is signalled on a failure during Init
         CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,
-                plan -> new InitOperation(engineName, executionId, plan), DEFAULT_TRY_COUNT);
+                plan -> new InitOperation(executionId, plan), DEFAULT_TRY_COUNT);
         CompletableFuture<Throwable> initFailed = onException(init);
 
         // Future that is completed on the real completion of all Execute operations
@@ -74,7 +73,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
         CompletableFuture<Throwable> execution =
                 // ExecuteOperation should only be run if InitOperation succeeded
                 init.thenCompose(x -> executionInvocationFuture = invokeOnCluster(executionPlanMap,
-                        plan -> new ExecuteOperation(engineName, executionId), executionDone, true, DEFAULT_TRY_COUNT))
+                        plan -> new ExecuteOperation(executionId), executionDone, true, DEFAULT_TRY_COUNT))
                     .handle((v, e) -> Util.peel(e));
 
         // CompleteOperation is fired regardless of success of previous operations
@@ -84,7 +83,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                 CompletableFuture.anyOf(initFailed, executionDone)
                                  .thenCombine(execution, (r, e) -> e)
                                  .thenCompose(e -> invokeOnCluster(executionPlanMap, plan ->
-                                         new CompleteOperation(engineName, executionId, e), 3))
+                                         new CompleteOperation(executionId, e), 3))
                                  .handle((v, e) -> Util.peel(e));
 
         // Exception from ExecuteOperation should have precedence

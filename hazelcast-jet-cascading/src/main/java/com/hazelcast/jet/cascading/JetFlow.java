@@ -21,48 +21,49 @@ import cascading.flow.FlowDef;
 import cascading.flow.FlowException;
 import cascading.flow.FlowProcess;
 import cascading.flow.planner.PlatformInfo;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import java.io.IOException;
-import java.util.Map;
 import org.slf4j.helpers.MessageFormatter;
 
-public class JetFlow extends BaseFlow<JetEngineConfig> {
+import java.io.IOException;
+import java.util.Map;
+
+public class JetFlow extends BaseFlow<JetConfig> {
 
     private static final ILogger LOGGER = Logger.getLogger(JetFlow.class);
-    private final HazelcastInstance instance;
-    private JetEngineConfig config;
+    private final JetInstance instance;
+    private JetConfig config;
 
     public JetFlow(
-            HazelcastInstance instance,
+            JetInstance instance,
             PlatformInfo platformInfo,
             Map<Object, Object> properties,
-            JetEngineConfig config,
+            JetConfig config,
             FlowDef flowDef) {
         super(platformInfo, properties, config, flowDef);
         this.instance = instance;
     }
 
-    public HazelcastInstance getHazelcastInstance() {
+    public JetInstance getJetInstance() {
         return instance;
     }
 
     @Override
-    protected void initConfig(Map<Object, Object> properties, JetEngineConfig parentConfig) {
+    protected void initConfig(Map<Object, Object> properties, JetConfig parentConfig) {
         config = parentConfig;
         config.getProperties().putAll(properties);
     }
 
     @Override
-    protected void setConfigProperty(JetEngineConfig jobConfig, Object key, Object value) {
+    protected void setConfigProperty(JetConfig jobConfig, Object key, Object value) {
         jobConfig.getProperties().put(key, value);
     }
 
     @Override
-    protected JetEngineConfig newConfig(JetEngineConfig defaultConfig) {
-        return new JetEngineConfig();
+    protected JetConfig newConfig(JetConfig defaultConfig) {
+        return new JetConfig();
     }
 
     @Override
@@ -90,12 +91,12 @@ public class JetFlow extends BaseFlow<JetEngineConfig> {
     }
 
     @Override
-    public JetEngineConfig getConfig() {
+    public JetConfig getConfig() {
         return config;
     }
 
     @Override
-    public JetEngineConfig getConfigCopy() {
+    public JetConfig getConfigCopy() {
         throw new UnsupportedOperationException();
     }
 
@@ -110,7 +111,7 @@ public class JetFlow extends BaseFlow<JetEngineConfig> {
     }
 
     @Override
-    public FlowProcess<JetEngineConfig> getFlowProcess() {
+    public FlowProcess<JetConfig> getFlowProcess() {
         return new JetFlowProcess(config, instance);
     }
 

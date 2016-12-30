@@ -159,7 +159,7 @@ public class KafkaReader<K, V> extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            Member[] members = context.getHazelcastInstance().getCluster().getMembers().toArray(new Member[0]);
+            Member[] members = context.getJetInstance().getCluster().getMembers().toArray(new Member[0]);
             KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
             List<PartitionInfo> partitions = consumer.partitionsFor(topicId);
             int memberSize = members.length;
@@ -201,7 +201,8 @@ public class KafkaReader<K, V> extends AbstractProducer {
 
         @Override
         public List<Processor> get(int count) {
-            HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl) context.getHazelcastInstance();
+            HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
+                    context.getJetInstance().getHazelcastInstance();
             SerializationService serializationService = hazelcastInstance.node.nodeEngine.getSerializationService();
             Map<Integer, List<Integer>> processorToPartitions = IntStream.range(0, ownedPartitions.size()).boxed()
                     .map(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))

@@ -74,7 +74,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         Vertex writer = new Vertex("writer-" + randomName(), Processors.listWriter(name));
         dag.addVertex(writer).addEdge(new Edge(combiner, writer));
         executeJob(context, dag);
-        IList<R> list = context.getHazelcastInstance().getList(name);
+        IList<R> list = context.getJetInstance().getList(name);
         R result = list.get(0);
         list.destroy();
         return result;

@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.impl.ListDecorator;
 import com.hazelcast.jet.stream.impl.MapDecorator;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -58,13 +59,13 @@ public class DecoratorTest {
 
     @Test
     public void testListDecorator() throws Exception {
-        HazelcastInstance instance = Mockito.mock(HazelcastInstance.class);
+        JetInstance instance = Mockito.mock(JetInstance.class);
         assertDecorator(IList.class, IStreamList.class, l -> new ListDecorator<>(l, instance));
     }
 
     @Test
     public void testMapDecorator() throws Exception {
-        HazelcastInstance instance = Mockito.mock(HazelcastInstance.class);
+        JetInstance instance = Mockito.mock(JetInstance.class);
         assertDecorator(IMap.class, IStreamMap.class, m -> new MapDecorator<>(m, instance));
     }
 

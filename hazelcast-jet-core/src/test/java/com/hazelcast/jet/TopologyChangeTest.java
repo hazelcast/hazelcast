@@ -16,13 +16,18 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -30,12 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
@@ -54,8 +53,8 @@ public class TopologyChangeTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetEngine jetEngine;
-    private HazelcastInstance[] instances;
+    private JetInstance[] instances;
+    private JetTestInstanceFactory factory;
 
     @Before
     public void setup() {
@@ -66,12 +65,16 @@ public class TopologyChangeTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
 
-        factory = new TestHazelcastFactory();
-        Config config = new Config();
-        config.getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+        factory = new JetTestInstanceFactory();
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
-        instances = factory.newInstances(config, NODE_COUNT);
-        jetEngine = JetEngine.get(instances[0], "jetEngine");
+        instances = factory.newMembers(config, NODE_COUNT);
+    }
+
+    @After
+    public void shutdown() {
+        factory.shutdownAll();
     }
 
     @Test
@@ -84,9 +87,9 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // When
         try {
-            Future<Void> future = jetEngine.newJob(dag).execute();
+            Future<Void> future = instances[0].newJob(dag).execute();
             StuckProcessor.executionStarted.await();
-            factory.newHazelcastInstance();
+            factory.newMember();
             StuckProcessor.proceedLatch.countDown();
             future.get();
             fail("Job execution should fail");
@@ -116,9 +119,9 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // When
         try {
-            Future<Void> future = jetEngine.newJob(dag).execute();
+            Future<Void> future = instances[0].newJob(dag).execute();
             StuckProcessor.executionStarted.await();
-            instances[1].getLifecycleService().terminate();
+            instances[1].getHazelcastInstance().getLifecycleService().terminate();
             StuckProcessor.proceedLatch.countDown();
 
             future.get();
@@ -149,9 +152,9 @@ public class TopologyChangeTest extends JetTestSupport {
 
         // When
         try {
-            Future<Void> future = jetEngine.newJob(dag).execute();
+            Future<Void> future = instances[0].newJob(dag).execute();
             StuckProcessor.executionStarted.await();
-            instances[0].getLifecycleService().terminate();
+            instances[0].getHazelcastInstance().getLifecycleService().terminate();
             StuckProcessor.proceedLatch.countDown();
             future.get();
             fail("Job execution should fail");

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -33,9 +33,9 @@ import java.util.ListIterator;
 public class ListDecorator<E> implements IStreamList<E> {
 
     private final IList<E> list;
-    private final HazelcastInstance instance;
+    private final JetInstance instance;
 
-    public ListDecorator(IList<E> list, HazelcastInstance instance) {
+    public ListDecorator(IList<E> list, JetInstance instance) {
         this.list = list;
         this.instance = instance;
     }

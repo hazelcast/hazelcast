@@ -151,7 +151,7 @@ public final class HdfsReader extends AbstractProducer {
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
 
-                Set<Member> members = context.getHazelcastInstance().getCluster().getMembers();
+                Set<Member> members = context.getJetInstance().getCluster().getMembers();
                 assigned = assignSplits(indexedInputSplits, members.toArray(new Member[members.size()]));
                 printAssignments(assigned);
             } catch (IOException e) {

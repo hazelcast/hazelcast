@@ -16,14 +16,15 @@
 
 package com.hazelcast.jet.benchmark;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors;
@@ -31,8 +32,6 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
@@ -52,7 +51,7 @@ import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class BackpressureTest extends HazelcastTestSupport {
+public class BackpressureTest extends JetTestSupport {
 
     private static final int CLUSTER_SIZE = 2;
     private static final int TOTAL_PARALLELISM = Runtime.getRuntime().availableProcessors();
@@ -60,24 +59,22 @@ public class BackpressureTest extends HazelcastTestSupport {
     private static final int DISTINCT = 1000;
     private static final int COUNT_PER_DISTINCT_AND_SLICE = 10_000;
 
-    private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance hz1;
-    private HazelcastInstance hz2;
-    private JetEngine jetEngine;
+    private JetTestInstanceFactory factory;
+    private JetInstance jet1;
+    private JetInstance jet2;
 
     @Before
     public void setUp() {
-        factory = createHazelcastInstanceFactory();
-        hz1 = factory.newHazelcastInstance();
-        hz2 = factory.newHazelcastInstance();
-        warmUpPartitions(asList(hz1, hz2));
-        assertEquals(2, hz1.getCluster().getMembers().size());
-        JetEngineConfig config = new JetEngineConfig().setParallelism(PARALLELISM_PER_MEMBER);
-        jetEngine = JetEngine.get(hz1, "jetEngine", config);
+        JetConfig config = new JetConfig().setExecutionThreadCount(PARALLELISM_PER_MEMBER);
+        factory = new JetTestInstanceFactory();
+        jet1 = factory.newMember(config);
+        jet2 = factory.newMember(config);
+        warmUpPartitions(asList(jet1.getHazelcastInstance(), jet2.getHazelcastInstance()));
+        assertEquals(2, jet1.getCluster().getMembers().size());
     }
 
     @After
-    public  void afterClass() {
+    public void afterClass() {
         factory.shutdownAll();
     }
 
@@ -85,15 +82,15 @@ public class BackpressureTest extends HazelcastTestSupport {
     public void testBackpressure() throws Exception {
         DAG dag = new DAG();
 
-        final int member1Port = hz1.getCluster().getLocalMember().getAddress().getPort();
-        final Member member2 = hz2.getCluster().getLocalMember();
+        final int member1Port = jet1.getCluster().getLocalMember().getAddress().getPort();
+        final Member member2 = jet2.getCluster().getLocalMember();
         final int ptionOwnedByMember2 =
-                hz1.getPartitionService()
-                   .getPartitions().stream()
-                   .filter(p -> p.getOwner().equals(member2))
-                   .map(Partition::getPartitionId)
-                   .findAny()
-                   .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + hz2));
+                jet1.getHazelcastInstance().getPartitionService()
+                    .getPartitions().stream()
+                    .filter(p -> p.getOwner().equals(member2))
+                    .map(Partition::getPartitionId)
+                    .findAny()
+                    .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
         Vertex generator = new Vertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
                 ? ProcessorSupplier.of(GeneratingProducer::new)
                 : ProcessorSupplier.of(Processors.NoopProducer::new)
@@ -109,8 +106,8 @@ public class BackpressureTest extends HazelcastTestSupport {
                         .partitionedByCustom((x, y) -> ptionOwnedByMember2))
                 .addEdge(new Edge(hiccuper, consumer));
 
-        uncheckedGet(jetEngine.newJob(dag).execute());
-        assertCounts(hz1.getMap("counts"));
+        uncheckedGet(jet1.newJob(dag).execute());
+        assertCounts(jet1.getMap("counts"));
     }
 
     private static void assertCounts(Map<String, Long> wordCounts) {

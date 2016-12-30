@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 
 import java.io.Serializable;
@@ -26,18 +25,18 @@ import java.io.Serializable;
  * the chain leading to the eventual creation of {@code Processor} instances
  * on each cluster member:
  * <ol><li>
- *     client creates {@code ProcessorMetaSupplier} as a part of the DAG;
+ * client creates {@code ProcessorMetaSupplier} as a part of the DAG;
  * </li><li>
- *     serializes it and sends to a cluster member;
+ * serializes it and sends to a cluster member;
  * </li<li>
- *     the member deserializes and uses it to create one {@code ProcessorSupplier}
- *     for each cluster member;
+ * the member deserializes and uses it to create one {@code ProcessorSupplier}
+ * for each cluster member;
  * </li><li>
- *     serializes each {@code ProcessorSupplier} and sends it to its target member;
+ * serializes each {@code ProcessorSupplier} and sends it to its target member;
  * </li><li>
- *     the target member deserializes and uses it to instantiate as many instances
- *     of {@code Processor} as requested by the <em>parallelism</em> property on
- *     the corresponding {@code Vertex}.
+ * the target member deserializes and uses it to instantiate as many instances
+ * of {@code Processor} as requested by the <em>parallelism</em> property on
+ * the corresponding {@code Vertex}.
  * </li></ol>
  * Before being asked to create {@code ProcessorSupplier}s this meta-supplier will
  * be given access to the Hazelcast instance and, in particular, its cluster topology
@@ -92,7 +91,7 @@ public interface ProcessorMetaSupplier extends Serializable {
         /**
          * @return the Hazelcast instance
          */
-        HazelcastInstance getHazelcastInstance();
+        JetInstance getJetInstance();
 
         /**
          * @return the total number of {@code Processor}s that will be

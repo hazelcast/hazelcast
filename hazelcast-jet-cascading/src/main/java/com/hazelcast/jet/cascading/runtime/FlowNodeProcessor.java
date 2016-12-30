@@ -17,16 +17,17 @@
 package com.hazelcast.jet.cascading.runtime;
 
 import cascading.flow.FlowNode;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.cascading.JetFlowProcess;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
@@ -34,17 +35,17 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public class FlowNodeProcessor extends AbstractProcessor {
 
     private JetStreamGraph graph;
-    private final JetEngineConfig config;
+    private final JetInstance instance;
+    private final Properties properties;
     private final FlowNode node;
 
     private final Map<String, Map<Integer, Integer>> inputMap;
     private final Map<String, Set<Integer>> outputMap;
-    private final HazelcastInstance instance;
 
-    public FlowNodeProcessor(HazelcastInstance instance, JetEngineConfig config, FlowNode node,
+    public FlowNodeProcessor(JetInstance instance, Properties properties, FlowNode node,
                              Map<String, Map<Integer, Integer>> inputMap, Map<String, Set<Integer>> outputMap) {
         this.instance = instance;
-        this.config = config;
+        this.properties = properties;
         this.node = node;
         this.inputMap = inputMap;
         this.outputMap = outputMap;
@@ -52,11 +53,8 @@ public class FlowNodeProcessor extends AbstractProcessor {
 
     @Override
     public void init(@Nonnull Outbox outbox) {
-//        HazelcastInstance hazelcastInstance = context.getHazelcastInstance();
-//        JetEngineConfig config = context.getConfig();
-//        config.getProperties().put(StreamGraph.DOT_FILE_PATH, "/tmp");
-
-        JetFlowProcess flowProcess = new JetFlowProcess(config, instance);
+        JetConfig jetConfig = new JetConfig().setProperties(properties);
+        JetFlowProcess flowProcess = new JetFlowProcess(jetConfig, instance);
         flowProcess.setCurrentSliceNum(System.identityHashCode(this));
 
         graph = new JetStreamGraph(flowProcess, node, outbox, inputMap, outputMap);

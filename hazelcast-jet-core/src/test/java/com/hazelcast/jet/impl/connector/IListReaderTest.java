@@ -21,18 +21,20 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.Future;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.Future;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -40,26 +42,32 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class IListReaderTest extends HazelcastTestSupport {
+public class IListReaderTest extends JetTestSupport {
+
+    private JetTestInstanceFactory factory;
+
+    @Before
+    public void setup() {
+        factory = new JetTestInstanceFactory();
+    }
 
     @After
     public void tearDown() throws Exception {
         Hazelcast.shutdownAll();
+        factory.shutdownAll();
     }
 
     @Test
     public void when_readerConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance c1 = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+        JetInstance c1 = factory.newMember();
+        factory.newMember();
+
         HazelcastInstance c2 = Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
 
         int messageCount = 20;
         c2.getList("producer").addAll(range(0, messageCount).boxed().collect(toList()));
 
-
-        JetEngine jetEngine = JetEngine.get(c1, randomName());
         DAG dag = new DAG();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("dev");
@@ -71,10 +79,10 @@ public class IListReaderTest extends HazelcastTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer")).parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        Future<Void> execute = jetEngine.newJob(dag).execute();
+        Future<Void> execute = c1.newJob(dag).execute();
         assertCompletesEventually(execute);
         assertEquals(messageCount, c1.getList("consumer").size());
     }

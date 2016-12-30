@@ -28,8 +28,10 @@ import cascading.tuple.Fields;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -39,8 +41,8 @@ public class WordCountExample {
     @Test
     @Ignore
     public void wordCount() {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        JetInstance instance1 = Jet.newJetInstance();
+        JetInstance instance2 = Jet.newJetInstance();
 
         IMap<Integer, String> sourceMap = instance1.getMap("sourceMap");
         IMap<String, Integer> sinkMap = instance1.getMap("sinkMap");
@@ -98,7 +100,7 @@ public class WordCountExample {
         wcPipe = new Every(wcPipe, Fields.ALL, new Count(), Fields.ALL);
 
 
-        JetFlowConnector flowConnector = new JetFlowConnector(instance1, new JetEngineConfig());
+        JetFlowConnector flowConnector = new JetFlowConnector(instance1, new JetConfig());
         Flow flow = flowConnector.connect(sourceTap, sinkTap, wcPipe);
         flow.complete();
 

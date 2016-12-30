@@ -23,7 +23,7 @@ import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class TextLine extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
+public class TextLine extends Scheme<JetConfig, Iterator<Map.Entry>,
         Outbox, Void, Integer> {
 
     public static final Fields DEFAULT_SOURCE_FIELDS = new Fields("num", "line").applyTypes(Long.TYPE, String.class);
@@ -57,27 +57,27 @@ public class TextLine extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
-                               Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
-                               JetEngineConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                               Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                               JetConfig conf) {
 
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
-                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
-                             JetEngineConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                             JetConfig conf) {
 
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public void sourcePrepare(FlowProcess<? extends JetConfig> flowProcess,
                               SourceCall<Void, Iterator<Map.Entry>> sourceCall)
             throws IOException {
     }
 
     @Override
-    public boolean source(FlowProcess<? extends JetEngineConfig> flowProcess, SourceCall<Void,
+    public boolean source(FlowProcess<? extends JetConfig> flowProcess, SourceCall<Void,
             Iterator<Map.Entry>> sourceCall) throws IOException {
         Iterator<Map.Entry> iterator = sourceCall.getInput();
         if (!iterator.hasNext()) {
@@ -94,13 +94,13 @@ public class TextLine extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess,
                             SinkCall<Integer, Outbox> sinkCall) throws IOException {
     }
 
     @Override
     public void sink(FlowProcess<? extends
-            JetEngineConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall) throws IOException {
+            JetConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall) throws IOException {
         Outbox outbox = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         try {

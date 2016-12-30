@@ -30,8 +30,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.JetFlowProcess;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
@@ -56,12 +57,12 @@ public class InternalMapTap extends InternalJetTap {
 
     private final String mapName;
 
-    public InternalMapTap(String mapName, Scheme<JetEngineConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme) {
+    public InternalMapTap(String mapName, Scheme<JetConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme) {
         this(mapName, scheme, SinkMode.KEEP);
     }
 
     public InternalMapTap(String mapName,
-                          Scheme<JetEngineConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
+                          Scheme<JetConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
                           SinkMode sinkMode) {
         super(scheme, sinkMode);
         this.mapName = mapName;
@@ -69,12 +70,12 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     @SuppressWarnings("unchecked")
-    public TupleEntryIterator openForRead(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public TupleEntryIterator openForRead(FlowProcess<? extends JetConfig> flowProcess,
                                           Iterator<Map.Entry> input) throws IOException {
 
         if (input == null) {
-            HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
-            IMap map = findIMap(instance);
+            JetInstance instance = ((JetFlowProcess) flowProcess).getJetInstance();
+            IMap map = findIMap(instance.getHazelcastInstance());
             if (map == null) {
                 throw new IOException("Could not find map " + mapName);
             }
@@ -85,13 +86,13 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public TupleEntryCollector openForWrite(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public TupleEntryCollector openForWrite(FlowProcess<? extends JetConfig> flowProcess,
                                             Outbox outbox) throws IOException {
         if (outbox != null) {
             return new SettableTupleEntryCollector<>(flowProcess, getScheme(), outbox);
         }
 
-        HazelcastInstance instance = ((JetFlowProcess) flowProcess).getHazelcastInstance();
+        JetInstance instance = ((JetFlowProcess) flowProcess).getJetInstance();
         final IMap map = instance.getMap(mapName);
         return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new Outbox() {
             @Override
@@ -119,12 +120,12 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public boolean createResource(JetEngineConfig conf) throws IOException {
+    public boolean createResource(JetConfig conf) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean deleteResource(JetEngineConfig conf) throws IOException {
+    public boolean deleteResource(JetConfig conf) throws IOException {
         HazelcastInstance client = getHazelcastInstance();
         IMap map = findIMap(client);
         if (map == null) {
@@ -136,7 +137,7 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public boolean resourceExists(JetEngineConfig conf) throws IOException {
+    public boolean resourceExists(JetConfig conf) throws IOException {
         //TODO: config should be refactored
         HazelcastInstance client = getHazelcastInstance();
         return findIMap(client) != null;
@@ -153,7 +154,7 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public long getModifiedTime(JetEngineConfig conf) throws IOException {
+    public long getModifiedTime(JetConfig conf) throws IOException {
         HazelcastInstance client = getHazelcastInstance();
         if (findIMap(client) == null) {
             throw new IOException("Could not find " + mapName);

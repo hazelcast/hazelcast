@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
 
@@ -37,7 +37,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
     @Override
-    protected IList<T> getTarget(HazelcastInstance instance) {
+    protected IList<T> getTarget(JetInstance instance) {
         return instance.getList(listName);
     }
 

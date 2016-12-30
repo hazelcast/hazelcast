@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.impl;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
@@ -33,13 +34,14 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CanCancelOperations;
+import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -59,8 +61,8 @@ import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class JetService implements ManagedService, RemoteService, PacketHandler, LiveOperationsTracker,
-        CanCancelOperations {
+public class JetService implements ManagedService, ConfigurableService<JetConfig>,
+        PacketHandler, LiveOperationsTracker, CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
     public static final int FLOW_CONTROL_PERIOD_MS = 100;
@@ -72,8 +74,11 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
     // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
-    private final ConcurrentHashMap<String, EngineContext> engineContexts = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Address, Map<Long, AsyncExecutionOperation>> liveOperations = new ConcurrentHashMap<>();
+
+    private JetConfig config = new JetConfig();
+    private EngineContext engineContext;
+    private JetInstance jetInstance;
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
@@ -81,10 +86,17 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     @Override
+    public void configure(JetConfig config) {
+        this.config = config;
+    }
+
+    @Override
     public void init(NodeEngine engine, Properties properties) {
         flowControlSender = engine.getExecutionService().scheduleWithRepetition(
-                this::broadcastFlowControlPacket, 0, FLOW_CONTROL_PERIOD_MS, MILLISECONDS);
+                this::broadcastFlowControlPacket, 0, config.getFlowControlPeriodMs(), MILLISECONDS);
         engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
+        engineContext = new EngineContext(engine, config);
+        jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
     }
 
     @Override
@@ -94,21 +106,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     @Override
     public void shutdown(boolean terminate) {
         flowControlSender.cancel(false);
-        engineContexts.values().forEach(EngineContext::destroy);
-    }
-
-    @Override
-    public DistributedObject createDistributedObject(String objectName) {
-        return new JetEngineProxyImpl(objectName, nodeEngine, this);
-
-    }
-
-    @Override
-    public void destroyDistributedObject(String objectName) {
-        EngineContext ec = engineContexts.remove(objectName);
-        if (ec != null) {
-            ec.destroy();
-        }
+        engineContext.destroy();
     }
 
     @Override
@@ -134,17 +132,12 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
     }
 
-    public EngineContext getEngineContext(String name) {
-        return engineContexts.get(name);
+    public EngineContext getEngineContext() {
+        return engineContext;
     }
 
-    public boolean createContextIfAbsent(String name, JetEngineConfig config) {
-        boolean[] isNewContext = new boolean[1];
-        engineContexts.computeIfAbsent(name, (key) -> {
-            isNewContext[0] = true;
-            return new EngineContext(name, nodeEngine, config);
-        });
-        return isNewContext[0];
+    public JetInstance getJetInstance() {
+        return jetInstance;
     }
 
     public void registerOperation(AsyncExecutionOperation operation) {
@@ -163,20 +156,17 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
 
     private void handleStreamPacket(Packet packet) throws IOException {
         BufferObjectDataInput in = createObjectDataInput(nodeEngine, packet.toByteArray());
-        String engineName = in.readUTF();
         long executionId = in.readLong();
         int vertexId = in.readInt();
         int ordinal = in.readInt();
-        engineContexts.get(engineName)
-                      .getExecutionContext(executionId)
-                      .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
+        engineContext.getExecutionContext(executionId)
+                     .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
     }
 
     public static byte[] createStreamPacketHeader(
-            NodeEngine nodeEngine, String jetEngineName, long executionId, int destinationVertexId, int ordinal) {
+            NodeEngine nodeEngine, long executionId, int destinationVertexId, int ordinal) {
         ObjectDataOutput out = createObjectDataOutput(nodeEngine);
         try {
-            out.writeUTF(jetEngineName);
             out.writeLong(executionId);
             out.writeInt(destinationVertexId);
             out.writeInt(ordinal);
@@ -187,9 +177,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     }
 
     private void broadcastFlowControlPacket() {
-        if (engineContexts.isEmpty()) {
-            return;
-        }
         try {
             getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
                 final byte[] packetBuf = createFlowControlPacket(member);
@@ -209,76 +196,57 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
     private byte[] createFlowControlPacket(Address member) throws IOException {
         final ObjectDataOutput out = createObjectDataOutput(nodeEngine);
         final boolean[] hasData = {false};
-        out.writeInt(engineContexts.size());
-        engineContexts.forEach((name, engCtx) -> uncheckRun(() -> {
-            out.writeUTF(name);
-            out.writeInt(engCtx.executionContexts.size());
-            engCtx.executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-                final Integer memberId = exeCtx.getMemberId(member);
-                if (memberId == null) {
-                    // The target member is not involved in the job associated with this execution context
-                    return;
-                }
-                out.writeLong(execId);
-                out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
-                exeCtx.receiverMap().forEach((vertexId, m) ->
+        out.writeInt(engineContext.executionContexts.size());
+        engineContext.executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
+            final Integer memberId = exeCtx.getMemberId(member);
+            if (memberId == null) {
+                // The target member is not involved in the job associated with this execution context
+                return;
+            }
+            out.writeLong(execId);
+            out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
+            exeCtx.receiverMap().forEach((vertexId, m) ->
                     m.forEach((ordinal, tasklet) -> uncheckRun(() -> {
-                        out.writeInt(vertexId);
-                        out.writeInt(ordinal);
-                        out.writeInt(tasklet.updateAndGetSendSeqLimitCompressed(memberId));
-                        hasData[0] = true;
-                    }
-                )));
-            }));
+                                out.writeInt(vertexId);
+                                out.writeInt(ordinal);
+                                out.writeInt(tasklet.updateAndGetSendSeqLimitCompressed(memberId));
+                                hasData[0] = true;
+                            }
+                    )));
         }));
         return hasData[0] ? out.toByteArray() : EMPTY_BYTES;
     }
 
     private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
         final ObjectDataInput in = createObjectDataInput(nodeEngine, packet);
-        final int engineCtxCount = in.readInt();
-        for (int i = 0; i < engineCtxCount; i++) {
-            final String engCtxName = in.readUTF();
-            EngineContext engCtx = engineContexts.get(engCtxName);
-            if (engCtx == null) {
-                logMissingEngCtx(engCtxName);
+
+        final int executionCtxCount = in.readInt();
+        for (int j = 0; j < executionCtxCount; j++) {
+            final long exeCtxId = in.readLong();
+            final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
+                    Optional.ofNullable(engineContext.executionContexts)
+                            .map(exeCtxs -> exeCtxs.get(exeCtxId))
+                            .map(ExecutionContext::senderMap)
+                            .orElse(null);
+            if (senderMap == null) {
+                logMissingExeCtx(exeCtxId);
                 continue;
             }
-            final int executionCtxCount = in.readInt();
-            for (int j = 0; j < executionCtxCount; j++) {
-                final long exeCtxId = in.readLong();
-                final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
-                        Optional.ofNullable(engCtx.executionContexts)
-                                .map(exeCtxs -> exeCtxs.get(exeCtxId))
-                                .map(ExecutionContext::senderMap)
-                                .orElse(null);
-                if (senderMap == null) {
-                    logMissingExeCtx(exeCtxId);
-                    continue;
+            final int flowCtlMsgCount = in.readInt();
+            for (int k = 0; k < flowCtlMsgCount; k++) {
+                int destVertexId = in.readInt();
+                int destOrdinal = in.readInt();
+                int sendSeqLimitCompressed = in.readInt();
+                final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
+                                                .map(ordinalMap -> ordinalMap.get(destOrdinal))
+                                                .map(addrMap -> addrMap.get(fromAddr))
+                                                .orElse(null);
+                if (t == null) {
+                    logMissingSenderTasklet(destVertexId, destOrdinal);
+                    return;
                 }
-                final int flowCtlMsgCount = in.readInt();
-                for (int k = 0; k < flowCtlMsgCount; k++) {
-                    int destVertexId = in.readInt();
-                    int destOrdinal = in.readInt();
-                    int sendSeqLimitCompressed = in.readInt();
-                    final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
-                                                    .map(ordinalMap -> ordinalMap.get(destOrdinal))
-                                                    .map(addrMap -> addrMap.get(fromAddr))
-                                                    .orElse(null);
-                    if (t == null) {
-                        logMissingSenderTasklet(destVertexId, destOrdinal);
-                        return;
-                    }
-                    t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
-                }
+                t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
             }
-        }
-    }
-
-    private void logMissingEngCtx(String engCtxName) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Ignoring flow control message applying to non-existent engine context "
-                    + engCtxName);
         }
     }
 
@@ -297,7 +265,6 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
         }
     }
 
-
     private class CancelJobsMigrationListener implements MigrationListener {
 
         @Override
@@ -311,9 +278,7 @@ public class JetService implements ManagedService, RemoteService, PacketHandler,
                     .filter(e -> !addresses.contains(e.getKey()))
                     .flatMap(e -> e.getValue().values().stream())
                     .forEach(op -> {
-                        EngineContext engineContext = engineContexts.get(op.getEngineName());
-                        Optional.ofNullable(engineContext)
-                                .map(ctx -> ctx.getExecutionContext(op.getExecutionId()))
+                        Optional.ofNullable(engineContext.getExecutionContext(op.getExecutionId()))
                                 .map(ExecutionContext::getExecutionCompletionStage)
                                 .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
                                         engineContext.completeExecution(op.getExecutionId(),

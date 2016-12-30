@@ -16,56 +16,41 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.SocketTextStreamReader;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class SocketTextStreamReaderTest extends HazelcastTestSupport {
+public class SocketTextStreamReaderTest extends JetTestSupport {
 
-    private static TestHazelcastInstanceFactory factory;
-    private JetEngine jetEngine;
-    private HazelcastInstance instance;
-
-    @BeforeClass
-    public static void setupFactory() {
-        factory = new TestHazelcastInstanceFactory();
-    }
-
-    @AfterClass
-    public static void shutdownFactory() {
-        factory.shutdownAll();
-    }
+    private JetTestInstanceFactory factory;
+    private JetInstance instance;
 
     @Before
     public void setupEngine() {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        factory = new JetTestInstanceFactory();
+        instance = factory.newMember();
     }
 
     @After
     public void shutdown() {
-        instance.shutdown();
+        factory.shutdownAll();
     }
 
 
@@ -97,10 +82,10 @@ public class SocketTextStreamReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
+        instance.newJob(dag).execute();
 
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {

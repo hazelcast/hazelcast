@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Stream;
@@ -72,9 +70,9 @@ public interface ProcessorSupplier extends Serializable {
     interface Context {
 
         /**
-         * @return the Hazelcast instance
+         * @return the Jet instance
          */
-        HazelcastInstance getHazelcastInstance();
+        JetInstance getJetInstance();
 
         /**
          * Returns the number of processors that the associated {@code ProcessorSupplier}

@@ -16,9 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.impl.connector.AbstractProducer;
@@ -26,6 +23,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,7 +59,9 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private JetEngine jetEngine;
+    private JetInstance instance;
+    private JetTestInstanceFactory factory;
+
 
     @Before
     public void setup() {
@@ -72,14 +72,20 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         StuckProcessor.proceedLatch = new CountDownLatch(1);
         StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
 
-        factory = new TestHazelcastFactory();
-        Config config = new Config();
-        config.getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
-                Integer.toString(TIMEOUT_MILLIS));
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
+        factory = new JetTestInstanceFactory();
 
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        JetConfig config = new JetConfig();
+        config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+                Integer.toString(TIMEOUT_MILLIS));
+
+        instance = factory.newMember(config);
+        factory.newMember(config);
+
+    }
+
+    @After
+    public void shutdown() {
+        factory.shutdownAll();
     }
 
     @Test
@@ -90,7 +96,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         dag.addVertex(test);
 
         // When
-        jetEngine.newJob(dag).execute().get();
+        instance.newJob(dag).execute().get();
 
         // Then
         assertEquals(NODE_COUNT, MockSupplier.initCount.get());
@@ -112,7 +118,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         // When
         try {
-            jetEngine.newJob(dag).execute().get();
+            instance.newJob(dag).execute().get();
             fail("Job execution should fail");
         } catch (ExecutionException expected) {
             Throwable cause = peel(expected);
@@ -141,7 +147,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         // When
         try {
-            jetEngine.newJob(dag).execute().get();
+            instance.newJob(dag).execute().get();
             fail("Job execution should fail");
         } catch (ExecutionException expected) {
             Throwable cause = peel(expected);
@@ -168,7 +174,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
 
         // When
         try {
-            Future<Void> future = jetEngine.newJob(dag).execute();
+            Future<Void> future = instance.newJob(dag).execute();
             StuckProcessor.executionStarted.await();
             future.cancel(true);
             future.get();

@@ -95,7 +95,7 @@ public class ExecutionContext {
         // Must be populated early, so all processor suppliers are
         // available to be completed in the case of init failure
         procSuppliers = unmodifiableList(plan.getProcessorSuppliers());
-        plan.initialize(nodeEngine, engineCtx.getName(), executionId);
+        plan.initialize(nodeEngine, executionId);
         receiverMap = unmodifiableMap(plan.getReceiverMap());
         senderMap = unmodifiableMap(plan.getSenderMap());
         tasklets = plan.getTasklets();

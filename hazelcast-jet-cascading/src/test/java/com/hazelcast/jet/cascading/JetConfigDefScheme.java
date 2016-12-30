@@ -26,7 +26,7 @@ import cascading.scheme.SinkCall;
 import cascading.scheme.SourceCall;
 import cascading.tap.Tap;
 import cascading.tuple.Fields;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
@@ -43,8 +43,8 @@ public class JetConfigDefScheme extends TextLine {
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess, Tap<JetEngineConfig, Iterator<Map.Entry>,
-            Outbox> tap, JetEngineConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess, Tap<JetConfig, Iterator<Map.Entry>,
+            Outbox> tap, JetConfig conf) {
         // we should not see any config def values here
         if (flowProcess.getProperty("default") != null) {
             throw new RuntimeException("default should be null");
@@ -54,8 +54,8 @@ public class JetConfigDefScheme extends TextLine {
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
-                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap, JetEngineConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap, JetConfig conf) {
         // we should not see any config def values here
         if (flowProcess.getProperty("default") != null) {
             throw new RuntimeException("default should be null");
@@ -65,7 +65,7 @@ public class JetConfigDefScheme extends TextLine {
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public void sourcePrepare(FlowProcess<? extends JetConfig> flowProcess,
                               SourceCall<Void, Iterator<Map.Entry>> sourceCall) throws IOException {
         if (!(flowProcess instanceof FlowProcessWrapper)) {
             throw new RuntimeException("not a flow process wrapper");
@@ -93,7 +93,7 @@ public class JetConfigDefScheme extends TextLine {
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess,
                             SinkCall<Integer, Outbox> sinkCall) throws IOException {
         if (!(flowProcess instanceof FlowProcessWrapper)) {
             throw new RuntimeException("not a flow process wrapper");

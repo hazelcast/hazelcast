@@ -26,8 +26,8 @@ class ExecuteOperation extends AsyncExecutionOperation {
     private volatile CompletionStage<Void> executionFuture;
     private Throwable cachedExceptionResult;
 
-    ExecuteOperation(String engineName, long executionId) {
-        super(engineName, executionId);
+    ExecuteOperation(long executionId) {
+        super(executionId);
     }
 
     private ExecuteOperation() {
@@ -53,7 +53,7 @@ class ExecuteOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
+        EngineContext engineContext = service.getEngineContext();
         executionFuture = engineContext.getExecutionContext(executionId)
                                        .execute(f -> f.handle((r, error) -> error != null ? error : null)
                                                       .thenAccept(this::doSendResponse));

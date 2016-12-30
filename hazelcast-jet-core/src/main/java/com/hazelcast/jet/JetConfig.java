@@ -29,27 +29,17 @@ public class JetConfig {
      * Javadoc pending
      */
     public static final int DEFAULT_FLOW_CONTROL_PERIOD_MS = 100;
+    /**
+     * Javadoc pending
+     */
+    public static final int DEFAULT_JET_MULTICAST_PORT = 54328;
 
-    private final Config hazelcastConfig;
+    private final Config hazelcastConfig = defaultHazelcastConfig();
     private int threadCount = Runtime.getRuntime().availableProcessors();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private String resourceDirectory;
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private Properties properties = new Properties();
-
-    /**
-     * Javadoc pending
-     */
-    public JetConfig() {
-        this(null);
-    }
-
-    /**
-     * Javadoc pending
-     */
-    public JetConfig(Config hazelcastConfig) {
-        this.hazelcastConfig = hazelcastConfig;
-    }
 
     /**
      * @return Javadoc pending
@@ -139,4 +129,11 @@ public class JetConfig {
         this.defaultEdgeConfig = defaultEdgeConfig;
         return this;
     }
+
+    private static Config defaultHazelcastConfig() {
+        Config config = new Config();
+        config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(DEFAULT_JET_MULTICAST_PORT);
+        return config;
+    }
+
 }

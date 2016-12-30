@@ -119,7 +119,7 @@ public final class HdfsWriter extends AbstractProcessor {
 
         @Override
         public void init(Context context) {
-            address = context.getHazelcastInstance().getCluster().getLocalMember().getAddress();
+            address = context.getJetInstance().getCluster().getLocalMember().getAddress();
         }
 
         @Override
@@ -180,7 +180,7 @@ public final class HdfsWriter extends AbstractProcessor {
                                 return null;
                             });
                         }
-                        String uuid = context.getHazelcastInstance().getCluster().getLocalMember().getUuid();
+                        String uuid = context.getJetInstance().getCluster().getLocalMember().getUuid();
                         TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobId.getId(),
                                 JOB_SETUP, i, 0);
                         conf.set("mapred.task.id", taskAttemptID.toString());

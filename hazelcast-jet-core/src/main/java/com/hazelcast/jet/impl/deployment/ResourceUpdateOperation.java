@@ -16,29 +16,28 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.impl.operation.EngineOperation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class ResourceUpdateOperation extends EngineOperation {
+public class ResourceUpdateOperation extends Operation {
     private ResourcePart part;
 
     @SuppressWarnings("unused")
     private ResourceUpdateOperation() {
     }
 
-    public ResourceUpdateOperation(String engineName, ResourcePart part) {
-        super(engineName);
+    public ResourceUpdateOperation(ResourcePart part) {
         this.part = part;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.getEngineContext(engineName).getResourceStore().updateResource(part);
+        service.getEngineContext().getResourceStore().updateResource(part);
     }
 
     @Override

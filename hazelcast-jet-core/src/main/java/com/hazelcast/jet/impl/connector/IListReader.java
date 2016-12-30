@@ -129,7 +129,7 @@ public final class IListReader extends AbstractProducer {
         @Override
         public void init(Context context) {
             String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
-            ownerAddress = context.getHazelcastInstance().getPartitionService()
+            ownerAddress = context.getJetInstance().getHazelcastInstance().getPartitionService()
                                   .getPartition(partitionKey).getOwner().getAddress();
         }
 
@@ -169,7 +169,7 @@ public final class IListReader extends AbstractProducer {
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
-                instance = context.getHazelcastInstance();
+                instance = context.getJetInstance().getHazelcastInstance();
             }
             list = instance.getList(name);
         }

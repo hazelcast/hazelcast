@@ -83,7 +83,7 @@ public class Reducer {
         String listName = randomName(LIST_PREFIX);
         Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
         dag.addVertex(writer).addEdge(new Edge(combiner, writer));
-        IList<T> list = context.getHazelcastInstance().getList(listName);
+        IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);
         if (list.isEmpty()) {
             list.destroy();

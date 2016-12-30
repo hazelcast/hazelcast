@@ -21,32 +21,32 @@ import cascading.flow.planner.FlowStepJob;
 import cascading.management.state.ClientState;
 import cascading.stats.FlowNodeStats;
 import cascading.stats.FlowStepStats;
-import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.cascading.JetFlowProcess;
+import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
+public class JetFlowStepJob extends FlowStepJob<JetConfig> {
     public static final int POLLING_INTERVAL = 100;
     public static final int BLOCK_FOR_COMPLETED_CHILD_DETAIL_DURATION = 10000;
     public static final int STATS_STORE_INTERVAL = 10000;
-    public static final String CASCADING_ENGINE_NAME = "cascading";
     private final JetFlowProcess process;
     private final DAG dag;
+    private final String id;
     private Future<Void> future;
 
-    public JetFlowStepJob(JetFlowProcess process, DAG dag, ClientState clientState,
-                          JetEngineConfig config,
-                          BaseFlowStep<JetEngineConfig> flowStep) {
+    public JetFlowStepJob(JetFlowProcess process, DAG dag, ClientState clientState, JetConfig config,
+                          BaseFlowStep<JetConfig> flowStep) {
         super(clientState, config, flowStep, POLLING_INTERVAL, STATS_STORE_INTERVAL,
                 BLOCK_FOR_COMPLETED_CHILD_DETAIL_DURATION);
         this.process = process;
         this.dag = dag;
+        this.id = UuidUtil.newUnsecureUuidString();
     }
 
     @Override
@@ -65,7 +65,7 @@ public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
 
     @Override
     protected String internalJobId() {
-        throw new UnsupportedOperationException("not yet implemented");
+        return id;
     }
 
     @Override
@@ -85,8 +85,7 @@ public class JetFlowStepJob extends FlowStepJob<JetEngineConfig> {
 
     @Override
     protected void internalNonBlockingStart() throws IOException {
-        JetEngine jetEngine = JetEngine.get(process.getHazelcastInstance(), CASCADING_ENGINE_NAME, getConfig());
-        Job job = jetEngine.newJob(dag);
+        Job job = process.getJetInstance().newJob(dag);
         future = job.execute();
     }
 

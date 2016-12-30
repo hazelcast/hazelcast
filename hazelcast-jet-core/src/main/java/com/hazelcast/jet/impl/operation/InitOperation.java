@@ -22,19 +22,19 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 
-class InitOperation extends EngineOperation {
+class InitOperation extends Operation {
 
     private long executionId;
     private Supplier<ExecutionPlan> planSupplier;
 
-    InitOperation(String engineName, long executionId, ExecutionPlan plan) {
-        super(engineName);
+    InitOperation(long executionId, ExecutionPlan plan) {
         this.executionId = executionId;
         this.planSupplier = () -> plan;
     }
@@ -46,7 +46,7 @@ class InitOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
+        EngineContext engineContext = service.getEngineContext();
         engineContext.initExecution(executionId, planSupplier.get());
     }
 
@@ -67,7 +67,7 @@ class InitOperation extends EngineOperation {
         final Data planBlob = in.readData();
         planSupplier = () -> {
             JetService service = getService();
-            ClassLoader cl = service.getEngineContext(engineName).getClassLoader();
+            ClassLoader cl = service.getEngineContext().getClassLoader();
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         };
     }

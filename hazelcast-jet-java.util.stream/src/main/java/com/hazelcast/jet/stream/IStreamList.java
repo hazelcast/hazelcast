@@ -56,6 +56,6 @@ public interface IStreamList<E> extends IList<E> {
      * @return Returns a {@link IList} with a {@link DistributedStream} support.
      */
     static <E> IStreamList<E> streamList(IList<E> list) {
-        return new ListDecorator<>(list, StreamUtil.getHazelcastInstance(list));
+        return new ListDecorator<>(list, StreamUtil.getJetInstance(list));
     }
 }

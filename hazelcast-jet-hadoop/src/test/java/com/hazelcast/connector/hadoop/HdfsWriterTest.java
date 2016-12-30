@@ -16,23 +16,16 @@
 
 package com.hazelcast.connector.hadoop;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -41,20 +34,25 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class HdfsWriterTest extends HazelcastTestSupport {
+public class HdfsWriterTest extends JetTestSupport {
 
     @Test
     public void testWriteFile() throws Exception {
         int messageCount = 20;
         String mapName = randomMapName();
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
+        JetInstance instance = createJetInstance();
+        createJetInstance();
+
         Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
         instance.getMap(mapName).putAll(map);
 
@@ -67,10 +65,10 @@ public class HdfsWriterTest extends HazelcastTestSupport {
                 .parallelism(4);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        Future<Void> future = jetEngine.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 
@@ -82,9 +80,9 @@ public class HdfsWriterTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
-        future = jetEngine.newJob(dag).execute();
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
+        future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 

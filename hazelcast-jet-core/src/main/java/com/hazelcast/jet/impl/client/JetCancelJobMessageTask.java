@@ -32,7 +32,7 @@ public class JetCancelJobMessageTask extends AbstractJetMessageTask<RequestParam
 
     @Override
     protected void processMessage() {
-        EngineContext engineContext = getEngineContext(parameters.engineName);
+        EngineContext engineContext = getEngineContext();
         engineContext.cancelClientInvocation(parameters.executionId);
         sendResponse(null);
     }
@@ -42,10 +42,6 @@ public class JetCancelJobMessageTask extends AbstractJetMessageTask<RequestParam
         return null;
     }
 
-    @Override
-    public String getDistributedObjectName() {
-        return parameters.engineName;
-    }
 
     @Override
     public String getMethodName() {

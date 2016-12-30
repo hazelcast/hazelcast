@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetEngineConfig;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -53,14 +52,12 @@ public class ExecutionService {
     private final CooperativeWorker[] workers;
     private final Thread[] threads;
     private final String hzInstanceName;
-    private final String name;
     private final ILogger logger;
 
-    public ExecutionService(HazelcastInstance hz, String name, JetEngineConfig cfg) {
+    public ExecutionService(HazelcastInstance hz, int threadCount) {
         this.hzInstanceName = hz.getName();
-        this.name = name;
-        this.workers = new CooperativeWorker[cfg.getParallelism()];
-        this.threads = new Thread[cfg.getParallelism()];
+        this.workers = new CooperativeWorker[threadCount];
+        this.threads = new Thread[threadCount];
         this.logger = hz.getLoggingService().getLogger(ExecutionService.class);
     }
 
@@ -134,7 +131,7 @@ public class ExecutionService {
     }
 
     private String threadNamePrefix() {
-        return "hz." + hzInstanceName + ".jet-engine." + name + '.';
+        return "hz." + hzInstanceName + ".jet-engine.";
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture) {

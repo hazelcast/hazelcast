@@ -90,7 +90,7 @@ public final class IListWriter extends AbstractProcessor {
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
-                instance = context.getHazelcastInstance();
+                instance = context.getJetInstance().getHazelcastInstance();
             }
             list = instance.getList(name);
         }

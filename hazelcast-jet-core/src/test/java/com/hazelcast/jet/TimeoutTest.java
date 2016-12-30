@@ -16,14 +16,11 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -35,50 +32,53 @@ import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class TimeoutTest extends HazelcastTestSupport {
+public class TimeoutTest extends JetTestSupport {
 
     private static final int TIMEOUT_MILLIS = 8000;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private TestHazelcastInstanceFactory factory;
-    private Config config;
+    private JetTestInstanceFactory factory;
+    private JetConfig config;
 
     @Before
     public void setup() {
-        config = new Config();
-        config.getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
+        config = new JetConfig();
+        config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
-        factory = createHazelcastInstanceFactory();
+        factory = new JetTestInstanceFactory();
+    }
+
+    @After
+    public void shutdown() {
+        factory.shutdownAll();
     }
 
     @Test
     public void when_slowRunningOperationOnSingleNode_then_doesNotTimeout() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
+        JetInstance instance = factory.newMember(config);
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
         dag.addVertex(slow);
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     @Test
     public void when_slowRunningOperationOnMultipleNodes_doesNotTimeout() throws Throwable {
         // Given
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-        JetEngine jetEngine = JetEngine.get(instance, "jetEngine");
+        JetInstance instance = factory.newMember(config);
+        factory.newMember(config);
 
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
         dag.addVertex(slow);
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     private static class SlowProcessor extends AbstractProducer {

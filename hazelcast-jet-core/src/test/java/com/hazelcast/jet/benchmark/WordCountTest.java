@@ -25,8 +25,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.Jet;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
@@ -67,8 +68,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     private static final int COUNT = 1_000_000;
     private static final int DISTINCT = 100_000;
 
-    private JetEngine jetEngine;
-    private HazelcastInstance instance;
+    private JetInstance instance;
 
     @AfterClass
     public static void afterClass() {
@@ -77,16 +77,16 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        Config hazelcastConfig = new Config();
+        JetConfig config = new JetConfig().setExecutionThreadCount(PARALLELISM);
+        Config hazelcastConfig = config.getHazelcastConfig();
         final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+
         for (int i = 0; i < NODE_COUNT; i++) {
-            instance = Hazelcast.newHazelcastInstance(hazelcastConfig);
+            instance = Jet.newJetInstance(config);
         }
 
-        JetEngineConfig config = new JetEngineConfig().setParallelism(PARALLELISM);
-        jetEngine = JetEngine.get(instance, "jetEngine", config);
         IMap<Integer, String> map = instance.getMap("words");
         int row = 0;
         StringBuilder sb = new StringBuilder();
@@ -135,7 +135,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge(combiner, consumer));
 
         benchmark("jet", () -> {
-            uncheckedGet(jetEngine.newJob(dag).execute());
+            uncheckedGet(instance.newJob(dag).execute());
         });
 
         assertCounts(instance.getMap("counts"));
@@ -166,7 +166,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .addEdge(new Edge(combiner, consumer));
 
         benchmark("jet", () -> {
-                    uncheckedGet(jetEngine.newJob(dag).execute());
+                    uncheckedGet(instance.newJob(dag).execute());
                 }
         );
 
@@ -178,7 +178,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         long testStart = System.currentTimeMillis();
         int warmupCount = 0;
         boolean warmupEnded = false;
-        ILogger logger = instance.getLoggingService().getLogger(WordCountTest.class);
+        ILogger logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
         logger.info("Starting test..");
         logger.info("Warming up...");
         while (true) {

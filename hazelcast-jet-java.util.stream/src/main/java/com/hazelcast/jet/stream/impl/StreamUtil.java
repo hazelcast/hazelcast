@@ -16,16 +16,19 @@
 
 package com.hazelcast.jet.stream.impl;
 
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
+import com.hazelcast.jet.impl.JetInstanceImpl;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Field;
@@ -37,11 +40,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
 
-    public static final String DEFAULT_ENGINE_NAME = "java.util.stream";
     public static final String MAP_PREFIX = "__hz_map_";
     public static final String LIST_PREFIX = "__hz_list_";
-    public static final HazelcastProperty ENGINE_NAME_PROPERTY = new HazelcastProperty("hazelcast.jet.j.u.s.engine",
-            DEFAULT_ENGINE_NAME);
 
 
     private StreamUtil() {
@@ -56,9 +56,7 @@ public final class StreamUtil {
     }
 
     public static void executeJob(StreamContext context, DAG dag) {
-        String engineName = System.getProperty(ENGINE_NAME_PROPERTY.getName(), ENGINE_NAME_PROPERTY.getDefaultValue());
-        JetEngine jetEngine = JetEngine.get(context.getHazelcastInstance(), engineName);
-        Job job = jetEngine.newJob(dag);
+        Job job = context.getJetInstance().newJob(dag);
         try {
             job.execute().get();
         } catch (InterruptedException | ExecutionException e) {
@@ -74,15 +72,16 @@ public final class StreamUtil {
         field.set(instance, val);
     }
 
-    public static HazelcastInstance getHazelcastInstance(DistributedObject object) {
+    public static JetInstance getJetInstance(DistributedObject object) {
         if (object instanceof AbstractDistributedObject) {
-            return ((AbstractDistributedObject) object).getNodeEngine().getHazelcastInstance();
+            HazelcastInstance hz = ((AbstractDistributedObject) object).getNodeEngine().getHazelcastInstance();
+            return new JetInstanceImpl((HazelcastInstanceImpl) hz);
         } else if (object instanceof ClientProxy) {
             try {
                 Method method = ClientProxy.class.getDeclaredMethod("getContext");
                 method.setAccessible(true);
                 ClientContext context = (ClientContext) method.invoke(object);
-                return context.getHazelcastInstance();
+                return new JetClientInstanceImpl((HazelcastClientInstanceImpl) context.getHazelcastInstance());
             } catch (Exception e) {
                 throw rethrow(e);
             }

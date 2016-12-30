@@ -19,17 +19,18 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
-public abstract class AsyncExecutionOperation extends EngineOperation {
+public abstract class AsyncExecutionOperation extends Operation {
 
     protected long executionId;
 
     protected AsyncExecutionOperation() {
     }
 
-    protected AsyncExecutionOperation(String engineName, long executionId) {
-        super(engineName);
+    protected AsyncExecutionOperation(long executionId) {
         this.executionId = executionId;
     }
 

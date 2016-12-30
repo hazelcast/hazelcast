@@ -20,16 +20,16 @@ import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-class CompleteOperation extends EngineOperation {
+class CompleteOperation extends Operation {
 
     private long executionId;
     private Throwable error;
 
-    CompleteOperation(String engineName, long executionId, Throwable error) {
-        super(engineName);
+    CompleteOperation(long executionId, Throwable error) {
         this.executionId = executionId;
         this.error = error;
     }
@@ -41,7 +41,7 @@ class CompleteOperation extends EngineOperation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext(engineName);
+        EngineContext engineContext = service.getEngineContext();
         engineContext.completeExecution(executionId, error);
     }
 

@@ -16,10 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -40,19 +37,18 @@ import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ForwardingTest extends HazelcastTestSupport {
+public class ForwardingTest extends JetTestSupport {
 
     private static final List<Integer> NUMBERS = IntStream.range(0, 10).
             boxed().collect(toList());
 
-    private TestHazelcastInstanceFactory factory;
-    private JetEngine jetEngine;
+    private JetInstance instance;
+    private JetTestInstanceFactory factory;
 
     @Before
     public void setupEngine() {
-        factory = new TestHazelcastInstanceFactory();
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        factory = new JetTestInstanceFactory();
+        instance = factory.newMember();
     }
 
     @After
@@ -125,7 +121,7 @@ public class ForwardingTest extends HazelcastTestSupport {
     }
 
     private void execute(DAG dag) throws Throwable {
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     private static class ProcSupplier implements ProcessorSupplier {

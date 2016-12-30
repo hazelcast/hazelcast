@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.stream.impl.StreamUtil;
-import com.hazelcast.jet.JetEngine;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -41,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,12 +56,12 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     public static final int COUNT = 10000;
     public static final int NODE_COUNT = 2;
 
-    protected static HazelcastInstance client;
-    protected static HazelcastInstance instance;
+    protected static JetInstance client;
+    protected static JetInstance instance;
     private static final TestMode MEMBER_TEST_MODE = new TestMode("member", () -> instance);
     private static final TestMode CLIENT_TEST_MODE = new TestMode("client", () -> client);
 
-    private static TestHazelcastFactory factory = new TestHazelcastFactory();
+    private static JetTestInstanceFactory factory = new JetTestInstanceFactory();
     private static final ExecutorService executor = Executors.newCachedThreadPool();
 
     @Parameter
@@ -80,26 +77,22 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     @BeforeClass
     public static void setupCluster() throws InterruptedException, ExecutionException {
         setLogLevel(Level.INFO);
-        String engineName = "stream-test";
-        System.setProperty(StreamUtil.ENGINE_NAME_PROPERTY.getName(), engineName);
-        instance = createCluster(NODE_COUNT);
-
         // configure the engine to have a sane thread count
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
-        JetEngineConfig config = new JetEngineConfig()
-                .setParallelism(parallelism <= 2 ? 2 : parallelism);
-        JetEngine.get(instance, engineName, config);
-        client = factory.newHazelcastClient();
+        JetConfig config = new JetConfig()
+                .setExecutionThreadCount(parallelism <= 2 ? 2 : parallelism);
+        instance = createCluster(NODE_COUNT, config);
+        client = factory.newClient();
     }
 
-    private static HazelcastInstance createCluster(int nodeCount) throws ExecutionException, InterruptedException {
-        factory = new TestHazelcastFactory();
-        List<Future<HazelcastInstance>> futures = new ArrayList<>();
+    private static JetInstance createCluster(int nodeCount, JetConfig config) throws ExecutionException, InterruptedException {
+        factory = new JetTestInstanceFactory();
+        List<Future<JetInstance>> futures = new ArrayList<>();
         for (int i = 0; i < nodeCount; i++) {
-            futures.add(executor.submit((Callable<HazelcastInstance>) factory::newHazelcastInstance));
+            futures.add(executor.submit(() -> factory.newMember(config)));
         }
-        HazelcastInstance instance = null;
-        for (Future<HazelcastInstance> future : futures) {
+        JetInstance instance = null;
+        for (Future<JetInstance> future : futures) {
             instance = future.get();
         }
         return instance;
@@ -164,14 +157,14 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     protected static final class TestMode {
 
         private final String name;
-        private final Supplier<HazelcastInstance> supplier;
+        private final Supplier<JetInstance> supplier;
 
-        protected TestMode(String name, Supplier<HazelcastInstance> func) {
+        protected TestMode(String name, Supplier<JetInstance> func) {
             this.name = name;
             this.supplier = func;
         }
 
-        protected HazelcastInstance getInstance() {
+        protected JetInstance getInstance() {
             return supplier.get();
         }
 

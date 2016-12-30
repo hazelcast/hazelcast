@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetInstance;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,14 +24,14 @@ import java.util.List;
 
 public class StreamContext {
 
-    private final HazelcastInstance instance;
+    private final JetInstance instance;
     private final List<Runnable> streamListeners = new ArrayList<>();
 
-    public StreamContext(HazelcastInstance instance) {
+    public StreamContext(JetInstance instance) {
         this.instance = instance;
     }
 
-    public HazelcastInstance getHazelcastInstance() {
+    public JetInstance getJetInstance() {
         return instance;
     }
 

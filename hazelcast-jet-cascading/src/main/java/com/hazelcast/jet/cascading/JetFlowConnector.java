@@ -20,18 +20,18 @@ import cascading.flow.FlowConnector;
 import cascading.flow.planner.FlowPlanner;
 import cascading.flow.planner.rule.RuleRegistrySet;
 import cascading.scheme.Scheme;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.planner.JetFlowPlanner;
 import com.hazelcast.jet.cascading.planner.rule.tez.HashJoinHadoop2TezRuleRegistry;
 import com.hazelcast.jet.cascading.planner.rule.tez.NoHashJoinHadoop2TezRuleRegistry;
-import com.hazelcast.jet.JetEngineConfig;
 
 public class JetFlowConnector extends FlowConnector {
 
-    private final HazelcastInstance instance;
-    private final JetEngineConfig config;
+    private final JetInstance instance;
+    private final JetConfig config;
 
-    public JetFlowConnector(HazelcastInstance instance, JetEngineConfig config) {
+    public JetFlowConnector(JetInstance instance, JetConfig config) {
         super(config.getProperties());
         this.instance = instance;
         this.config = config;

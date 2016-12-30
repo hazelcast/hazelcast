@@ -47,6 +47,7 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
         return JetService.SERVICE_NAME;
     }
 
+
     @Override
     protected final P decodeClientMessage(ClientMessage clientMessage) {
         return decoder.apply(clientMessage);
@@ -62,6 +63,11 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
         return null;
     }
 
+    @Override
+    public String getDistributedObjectName() {
+        return null;
+    }
+
     protected <V> V toObject(Data data) {
         return nodeEngine.getSerializationService().toObject(data);
     }
@@ -72,9 +78,10 @@ abstract class AbstractJetMessageTask<P> extends AbstractInvocationMessageTask<P
                 operation, nodeEngine.getThisAddress());
     }
 
-    protected EngineContext getEngineContext(String engineName) {
+    protected EngineContext getEngineContext() {
         JetService service = getService(JetService.SERVICE_NAME);
-        return service.getEngineContext(engineName);
+        return service.getEngineContext();
     }
+
 
 }

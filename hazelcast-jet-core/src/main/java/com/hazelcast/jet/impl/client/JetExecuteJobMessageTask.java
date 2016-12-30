@@ -22,8 +22,8 @@ import com.hazelcast.client.impl.protocol.codec.JetExecuteJobCodec.RequestParame
 import com.hazelcast.instance.Node;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.EngineContext;
-import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
@@ -40,9 +40,9 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
     @Override
     protected Operation prepareOperation() {
         JetService service = getService(JetService.SERVICE_NAME);
-        ClassLoader cl = service.getEngineContext(parameters.engineName).getClassLoader();
+        ClassLoader cl = service.getEngineContext().getClassLoader();
         DAG dag = deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), cl, parameters.dag);
-        return new ExecuteJobOperation(parameters.engineName, parameters.executionId, dag);
+        return new ExecuteJobOperation(parameters.executionId, dag);
     }
 
     @Override
@@ -50,7 +50,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
         Operation op = prepareOperation();
         op.setCallerUuid(getEndpoint().getUuid());
         InvocationBuilder builder = getInvocationBuilder(op).setResultDeserialized(false);
-        EngineContext engineContext = getEngineContext(parameters.engineName);
+        EngineContext engineContext = getEngineContext();
 
         InternalCompletableFuture<Object> invocation = builder.invoke();
         engineContext.registerClientInvocation(parameters.executionId, invocation);
@@ -59,7 +59,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.engineName;
+        return null;
     }
 
     @Override

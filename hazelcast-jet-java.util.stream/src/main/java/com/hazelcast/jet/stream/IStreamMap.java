@@ -46,6 +46,6 @@ public interface IStreamMap<K, V> extends IMap<K, V> {
      * @return Returns an {@link IMap} with {@link DistributedStream} support.
      */
     static <K, V> IStreamMap<K, V> streamMap(IMap<K, V> map) {
-        return new MapDecorator<>(map, StreamUtil.getHazelcastInstance(map));
+        return new MapDecorator<>(map, StreamUtil.getJetInstance(map));
     }
 }

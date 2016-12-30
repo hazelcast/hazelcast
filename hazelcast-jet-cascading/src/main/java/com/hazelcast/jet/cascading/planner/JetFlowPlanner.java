@@ -31,25 +31,25 @@ import cascading.flow.planner.rule.RuleRegistry;
 import cascading.flow.planner.rule.transformer.BoundaryElementFactory;
 import cascading.pipe.Boundary;
 import cascading.tap.Tap;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.JetFlow;
-import com.hazelcast.jet.JetEngineConfig;
 
-public class JetFlowPlanner extends FlowPlanner<JetFlow, JetEngineConfig> {
+public class JetFlowPlanner extends FlowPlanner<JetFlow, JetConfig> {
 
     public static final String PLATFORM = "Hazelcast Jet";
     public static final String VENDOR = "Hazelcast";
-    private final HazelcastInstance instance;
-    private final JetEngineConfig config;
+    private final JetInstance instance;
+    private final JetConfig config;
 
-    public JetFlowPlanner(HazelcastInstance instance, JetEngineConfig config) {
+    public JetFlowPlanner(JetInstance instance, JetConfig config) {
         this.instance = instance;
         this.config = config;
     }
 
 
     @Override
-    public JetEngineConfig getDefaultConfig() {
+    public JetConfig getDefaultConfig() {
         return config;
     }
 
@@ -69,10 +69,10 @@ public class JetFlowPlanner extends FlowPlanner<JetFlow, JetEngineConfig> {
     }
 
     @Override
-    public FlowStepFactory<JetEngineConfig> getFlowStepFactory() {
-        return new BaseFlowStepFactory<JetEngineConfig>(getFlowNodeFactory()) {
+    public FlowStepFactory<JetConfig> getFlowStepFactory() {
+        return new BaseFlowStepFactory<JetConfig>(getFlowNodeFactory()) {
             @Override
-            public FlowStep<JetEngineConfig> createFlowStep(ElementGraph stepElementGraph,
+            public FlowStep<JetConfig> createFlowStep(ElementGraph stepElementGraph,
                                                       FlowNodeGraph flowNodeGraph) {
                 return new JetFlowStep(stepElementGraph, flowNodeGraph);
             }

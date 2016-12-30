@@ -26,7 +26,7 @@ import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.util.TupleViews;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
-public class TextDelimited extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
+public class TextDelimited extends Scheme<JetConfig, Iterator<Map.Entry>,
         Outbox, Void, StringBuilder> {
 
     private static final Random RANDOM = new Random();
@@ -83,20 +83,20 @@ public class TextDelimited extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
-                               Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
-                               JetEngineConfig conf) {
+    public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                               Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                               JetConfig conf) {
 
     }
 
     @Override
-    public void sinkConfInit(FlowProcess<? extends JetEngineConfig> flowProcess,
-                             Tap<JetEngineConfig, Iterator<Map.Entry>, Outbox> tap,
-                             JetEngineConfig conf) {
+    public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                             JetConfig conf) {
     }
 
     @Override
-    public void sourcePrepare(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public void sourcePrepare(FlowProcess<? extends JetConfig> flowProcess,
                               SourceCall<Void, Iterator<Map.Entry>> sourceCall)
             throws IOException {
         sourceCall.getIncomingEntry().setTuple(TupleViews.createObjectArray());
@@ -104,7 +104,7 @@ public class TextDelimited extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public boolean source(FlowProcess<? extends JetEngineConfig> flowProcess,
+    public boolean source(FlowProcess<? extends JetConfig> flowProcess,
                           SourceCall<Void, Iterator<Map.Entry>> sourceCall) throws IOException {
         Iterator<Map.Entry> iterator = sourceCall.getInput();
         if (!iterator.hasNext()) {
@@ -129,14 +129,14 @@ public class TextDelimited extends Scheme<JetEngineConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JetEngineConfig> flowProcess, SinkCall<StringBuilder,
+    public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess, SinkCall<StringBuilder,
             Outbox> sinkCall) throws IOException {
         sinkCall.setContext(new StringBuilder());
     }
 
     @Override
     public void sink(FlowProcess<? extends
-            JetEngineConfig> flowProcess, SinkCall<StringBuilder, Outbox> sinkCall) throws IOException {
+            JetConfig> flowProcess, SinkCall<StringBuilder, Outbox> sinkCall) throws IOException {
         Outbox outbox = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         Iterable<String> strings = outgoing.asIterableOf(String.class);

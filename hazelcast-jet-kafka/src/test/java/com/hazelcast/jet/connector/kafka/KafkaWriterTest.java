@@ -20,23 +20,16 @@ package com.hazelcast.jet.connector.kafka;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -48,9 +41,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class KafkaWriterTest extends HazelcastTestSupport {
+public class KafkaWriterTest extends JetTestSupport {
 
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create(-1, -1,
@@ -73,12 +73,11 @@ public class KafkaWriterTest extends HazelcastTestSupport {
     public void testWriteToTopic() throws Exception {
         final String topic = randomName();
         final String producerGroup = "test";
-        HazelcastInstance instance = createHazelcastInstance();
-        InternalSerializationService serializationService = getSerializationService(instance);
+        JetInstance instance = createJetInstance();
+        InternalSerializationService serializationService = getSerializationService(instance.getHazelcastInstance());
         int messageCount = 20;
         Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
         instance.getMap("producer").putAll(map);
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("producer"))
                 .parallelism(1);
@@ -87,10 +86,10 @@ public class KafkaWriterTest extends HazelcastTestSupport {
                 .parallelism(4);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        Future<Void> future = jetEngine.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
         KafkaConsumer<byte[], byte[]> byteConsumer = kafkaRule.helper().createByteConsumer(new Properties() {{

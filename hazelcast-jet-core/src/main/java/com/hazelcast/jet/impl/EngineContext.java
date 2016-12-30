@@ -19,7 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -41,25 +41,20 @@ public class EngineContext {
     final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
     // keeps track of active invocations from client for cancellation support
     private final ConcurrentHashMap<Long, ICompletableFuture<Object>> clientInvocations = new ConcurrentHashMap<>();
-    private final String name;
     private final ClassLoader classloader;
     private NodeEngine nodeEngine;
     private ExecutionService executionService;
     private ResourceStore resourceStore;
-    private JetEngineConfig config;
+    private JetConfig config;
 
-    public EngineContext(String name, NodeEngine nodeEngine, JetEngineConfig config) {
-        this.name = name;
+    public EngineContext(NodeEngine nodeEngine, JetConfig config) {
         this.nodeEngine = nodeEngine;
         this.config = config;
         this.resourceStore = new ResourceStore(config.getResourceDirectory());
         this.classloader = AccessController.doPrivileged(
                 (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
-        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(), name, config);
-    }
-
-    public String getName() {
-        return name;
+        this.executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
+                config.getExecutionThreadCount());
     }
 
     public NodeEngine getNodeEngine() {
@@ -74,7 +69,7 @@ public class EngineContext {
         return classloader;
     }
 
-    public JetEngineConfig getConfig() {
+    public JetConfig getConfig() {
         return config;
     }
 
@@ -100,7 +95,7 @@ public class EngineContext {
     }
 
     public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
-        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getParallelism());
+        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getExecutionThreadCount());
     }
 
     public void initExecution(long executionId, ExecutionPlan plan) {

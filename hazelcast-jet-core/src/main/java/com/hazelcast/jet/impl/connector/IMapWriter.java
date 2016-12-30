@@ -26,6 +26,8 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.Address;
+
+import javax.annotation.Nonnull;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -34,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
@@ -126,7 +127,7 @@ public final class IMapWriter extends AbstractProcessor {
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
-                instance = context.getHazelcastInstance();
+                instance = context.getJetInstance().getHazelcastInstance();
             }
             map = instance.getMap(name);
         }

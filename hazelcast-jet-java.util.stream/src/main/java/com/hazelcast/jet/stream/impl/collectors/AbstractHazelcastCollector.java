@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
@@ -30,7 +30,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     @Override
     public R collect(StreamContext context, Pipeline<? extends T> upstream) {
-        R target = getTarget(context.getHazelcastInstance());
+        R target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);
         Vertex writer = new Vertex(getName(), getConsumer());
@@ -42,7 +42,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         return target;
     }
 
-    protected abstract R getTarget(HazelcastInstance instance);
+    protected abstract R getTarget(JetInstance instance);
 
     protected abstract ProcessorMetaSupplier getConsumer();
 

@@ -51,7 +51,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
 
     @Override
     public IMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
-        IMap<K, V> target = getTarget(context.getHazelcastInstance());
+        IMap<K, V> target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 

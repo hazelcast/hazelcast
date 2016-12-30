@@ -39,7 +39,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     @Override
     public Vertex buildDAG(DAG dag) {
         String listName = randomName();
-        IList<T> list = context.getHazelcastInstance().getList(listName);
+        IList<T> list = context.getJetInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
         Vertex writer = new Vertex(listName, Processors.listWriter(listName));
         if (upstream.isOrdered()) {

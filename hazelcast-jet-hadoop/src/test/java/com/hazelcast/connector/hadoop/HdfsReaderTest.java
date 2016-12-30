@@ -16,21 +16,15 @@
 
 package com.hazelcast.connector.hadoop;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.util.concurrent.Future;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,20 +34,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.concurrent.Future;
+
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class HdfsReaderTest extends HazelcastTestSupport {
+public class HdfsReaderTest extends JetTestSupport {
 
     @Test
     public void testReadFile() throws Exception {
         Path path = writeToFile("hello 1\n", "world 2\n", "hello 3\n", "world 4\n");
 
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance instance = factory.newHazelcastInstance();
-        factory.newHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
+        JetInstance instance = createJetInstance();
+        createJetInstance();
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", HdfsReader.supplier(path.toString()))
                 .parallelism(4);
@@ -62,10 +59,10 @@ public class HdfsReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        Future<Void> future = jetEngine.newJob(dag).execute();
+        Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 

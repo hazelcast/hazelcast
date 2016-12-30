@@ -31,10 +31,10 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.JetService.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
+import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
@@ -57,14 +57,14 @@ public class SenderTasklet implements Tasklet {
     // Written by HZ networking thread, read by Jet thread
     private volatile int sendSeqLimitCompressed;
 
-    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, String jetEngineName,
-                         Address destinationAddress, long executionId, int destinationVertexId, int packetSizeLimit) {
+    public SenderTasklet(InboundEdgeStream inboundEdgeStream, NodeEngine nodeEngine, Address destinationAddress,
+                         long executionId, int destinationVertexId, int packetSizeLimit) {
         this.inboundEdgeStream = inboundEdgeStream;
         this.packetSizeLimit = packetSizeLimit;
         this.connection = getMemberConnection(nodeEngine, destinationAddress);
         this.outputBuffer = createObjectDataOutput(nodeEngine);
         uncheckRun(() -> outputBuffer.write(createStreamPacketHeader(
-                nodeEngine, jetEngineName, executionId, destinationVertexId, inboundEdgeStream.ordinal())));
+                nodeEngine, executionId, destinationVertexId, inboundEdgeStream.ordinal())));
         bufPosPastHeader = outputBuffer.position();
     }
 

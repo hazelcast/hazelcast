@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
@@ -35,18 +32,17 @@ import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class ExceptionHandlingTest extends HazelcastTestSupport {
+public class ExceptionHandlingTest extends JetTestSupport {
 
-    private TestHazelcastInstanceFactory factory;
-    private JetEngine jetEngine;
-    private HazelcastInstance instance;
+    private JetInstance instance;
+    private JetTestInstanceFactory factory;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     @Before
     public void setupFactory() {
-        factory = new TestHazelcastInstanceFactory();
+        factory = new JetTestInstanceFactory();
     }
 
     @After
@@ -57,8 +53,7 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
     @Test
     @Repeat(1000)
     public void when_exceptionInProcessorSupplier_then_failJob() throws Throwable {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        instance = factory.newMember();
 
         // Given
         DAG dag = new DAG();
@@ -74,13 +69,12 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     @Test
     public void when_exceptionInProcessorMetaSupplier_then_failJob() throws Throwable {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        instance = factory.newMember();
 
         // Given
         DAG dag = new DAG();
@@ -95,14 +89,13 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     @Test
     public void when_exceptionInProcessorSupplierOnOtherNode_then_failJob() throws Throwable {
-        factory.newHazelcastInstance();
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        factory.newMember();
+        instance = factory.newMember();
 
         // Given
         DAG dag = new DAG();
@@ -125,13 +118,12 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     @Test
     public void when_exceptionInNonBlockingTasklet_then_failJob() throws Throwable {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        instance = factory.newMember();
 
         // Given
         DAG dag = new DAG();
@@ -147,13 +139,12 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 
     @Test
     public void when_exceptionInBlockingTasklet_then_failJob() throws Throwable {
-        instance = factory.newHazelcastInstance();
-        jetEngine = JetEngine.get(instance, "jetEngine");
+        instance = factory.newMember();
 
         // Given
         DAG dag = new DAG();
@@ -169,6 +160,6 @@ public class ExceptionHandlingTest extends HazelcastTestSupport {
         expectedException.expectMessage(e.getMessage());
 
         // When
-        executeAndPeel(jetEngine.newJob(dag));
+        executeAndPeel(instance.newJob(dag));
     }
 }

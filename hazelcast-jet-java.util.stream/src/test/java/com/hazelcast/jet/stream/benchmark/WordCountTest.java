@@ -71,7 +71,7 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
     public void testMapReduce() throws Exception {
         long start = System.currentTimeMillis();
 
-        JobTracker tracker = instance.getJobTracker("default");
+        JobTracker tracker = instance.getHazelcastInstance().getJobTracker("default");
         KeyValueSource<Integer, String> source = KeyValueSource.fromMap(map);
         Job<Integer, String> job = tracker.newJob(source);
         ICompletableFuture<Map<String, Long>> future = job

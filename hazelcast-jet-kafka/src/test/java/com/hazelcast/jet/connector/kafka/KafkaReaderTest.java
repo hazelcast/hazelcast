@@ -19,22 +19,17 @@ package com.hazelcast.jet.connector.kafka;
 
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetEngine;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.AbstractMap;
-import java.util.List;
-import java.util.Properties;
-import java.util.stream.IntStream;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Assert;
@@ -44,12 +39,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.AbstractMap;
+import java.util.List;
+import java.util.Properties;
+import java.util.stream.IntStream;
+
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class KafkaReaderTest extends HazelcastTestSupport {
+public class KafkaReaderTest extends JetTestSupport {
 
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create(-1, -1,
@@ -72,8 +72,7 @@ public class KafkaReaderTest extends HazelcastTestSupport {
         final String topic = randomName();
         int messageCount = 20;
         final String consumerGroupId = "test";
-        HazelcastInstance instance = createHazelcastInstance();
-        JetEngine jetEngine = JetEngine.get(instance, randomName());
+        JetInstance instance = createJetInstance();
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
                 .parallelism(4);
@@ -82,13 +81,13 @@ public class KafkaReaderTest extends HazelcastTestSupport {
                 .parallelism(1);
 
         dag.addVertex(producer)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, consumer));
+           .addVertex(consumer)
+           .addEdge(new Edge(producer, consumer));
 
-        jetEngine.newJob(dag).execute();
+        instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);
         List<Integer> numbers = IntStream.range(0, messageCount).boxed().collect(toList());
-        send(getSerializationService(instance), topic, numbers);
+        send(getSerializationService(instance.getHazelcastInstance()), topic, numbers);
         IList<Object> list = instance.getList("consumer");
         assertTrueEventually(new AssertTask() {
             @Override

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
@@ -30,18 +28,30 @@ import java.util.stream.IntStream;
 
 public class JetTestSupport extends HazelcastTestSupport {
 
-    protected TestHazelcastFactory factory;
+    private JetTestInstanceFactory instanceFactory;
 
     @After
-    public void after() {
-        if (factory != null) {
-            factory.shutdownAll();
+    public void shutdownFactory() {
+        if (instanceFactory != null) {
+            instanceFactory.shutdownAll();
         }
     }
 
-    protected static <K, V> IMap<K, V> getMap(HazelcastInstance instance) {
+    protected JetInstance createJetInstance() {
+        return this.createJetInstance(new JetConfig());
+    }
+
+    protected JetInstance createJetInstance(JetConfig config) {
+        if (instanceFactory == null) {
+            instanceFactory = new JetTestInstanceFactory();
+        }
+        return instanceFactory.newMember(config);
+    }
+
+    protected static <K, V> IMap<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
     }
+
 
     protected static void fillMapWithInts(IMap<Integer, Integer> map, int count) {
         Map<Integer, Integer> vals = IntStream.range(0, count).boxed().collect(Collectors.toMap(m -> m, m -> m));
@@ -54,7 +64,7 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static <E> IList<E> getList(HazelcastInstance instance) {
+    protected static <E> IList<E> getList(JetInstance instance) {
         return instance.getList(randomName());
     }
 

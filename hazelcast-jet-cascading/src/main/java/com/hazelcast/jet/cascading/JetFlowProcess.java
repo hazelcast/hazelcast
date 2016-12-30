@@ -20,30 +20,31 @@ import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetEngineConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-public class JetFlowProcess extends FlowProcess<JetEngineConfig> {
+public class JetFlowProcess extends FlowProcess<JetConfig> {
 
-    private final JetEngineConfig config;
-    private final HazelcastInstance instance;
+    private final JetConfig config;
+    private final JetInstance instance;
     private int sliceNum;
 
     public JetFlowProcess() {
-        this(new JetEngineConfig(), null);
+        this(new JetConfig(), null);
     }
 
-    public JetFlowProcess(JetEngineConfig config, HazelcastInstance instance) {
-        this.config = config;
+    public JetFlowProcess(JetConfig config, JetInstance instance) {
         this.instance = instance;
+        this.config = config;
     }
 
     @Override
-    public FlowProcess<JetEngineConfig> copyWith(JetEngineConfig jetEngineConfig) {
-        return new JetFlowProcess(jetEngineConfig, instance);
+    public FlowProcess<JetConfig> copyWith(JetConfig jetConfig) {
+        return new JetFlowProcess(jetConfig, instance);
     }
 
     @Override
@@ -133,12 +134,12 @@ public class JetFlowProcess extends FlowProcess<JetEngineConfig> {
     }
 
     @Override
-    public JetEngineConfig getConfig() {
+    public JetConfig getConfig() {
         return config;
     }
 
     @Override
-    public JetEngineConfig getConfigCopy() {
+    public JetConfig getConfigCopy() {
         return config;
     }
 
@@ -153,14 +154,14 @@ public class JetFlowProcess extends FlowProcess<JetEngineConfig> {
     }
 
     @Override
-    public JetEngineConfig mergeMapIntoConfig(JetEngineConfig defaultConfig, Map<String, String> map) {
+    public JetConfig mergeMapIntoConfig(JetConfig defaultConfig, Map<String, String> map) {
         if (map != null) {
             defaultConfig.getProperties().putAll(map);
         }
         return defaultConfig;
     }
 
-    public HazelcastInstance getHazelcastInstance() {
+    public JetInstance getJetInstance() {
         return instance;
     }
 }
