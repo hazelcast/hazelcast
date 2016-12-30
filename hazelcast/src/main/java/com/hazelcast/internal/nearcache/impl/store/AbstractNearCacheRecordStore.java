@@ -102,10 +102,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
     }
 
+    @Override
     public void setStaleReadDetector(StaleReadDetector staleReadDetector) {
         this.staleReadDetector = staleReadDetector;
     }
 
+    @Override
     public StaleReadDetector getStaleReadDetector() {
         return staleReadDetector;
     }
@@ -298,7 +300,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             throw ExceptionUtil.rethrow(error);
         }
     }
-
 
     @Override
     public void put(K key, V value) {

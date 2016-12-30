@@ -265,7 +265,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
         @Override
         public void initialize() {
-
         }
 
         @Override
@@ -362,7 +361,6 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             }
         }
 
-
         @Override
         public void storeKeys() {
         }
@@ -371,10 +369,12 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         public void loadKeys(DataStructureAdapter adapter) {
         }
 
+        @Override
         public void setStaleReadDetector(StaleReadDetector detector) {
             staleReadDetector = detector;
         }
 
+        @Override
         public StaleReadDetector getStaleReadDetector() {
             return staleReadDetector;
         }
