@@ -228,7 +228,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            map = (MapProxyImpl) context.getJetInstance().getMap(mapName);
+            map = (MapProxyImpl) context.getJetInstance().getHazelcastInstance().getMap(mapName);
         }
 
         @Override

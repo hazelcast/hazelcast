@@ -18,10 +18,12 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.impl.ListDecorator;
+import com.hazelcast.jet.stream.impl.MapDecorator;
 
 abstract class AbstractJetInstance implements JetInstance {
     private static final String JET_ID_GENERATOR_NAME = "__jet_id_generator";
@@ -48,13 +50,13 @@ abstract class AbstractJetInstance implements JetInstance {
     }
 
     @Override
-    public <K, V> IMap<K, V> getMap(String name) {
-        return hazelcastInstance.getMap(name);
+    public <K, V> IStreamMap<K, V> getMap(String name) {
+        return new MapDecorator<>(hazelcastInstance.getMap(name), this);
     }
 
     @Override
-    public <E> IList<E> getList(String name) {
-        return hazelcastInstance.getList(name);
+    public <E> IStreamList<E> getList(String name) {
+        return new ListDecorator<>(hazelcastInstance.getList(name), this);
     }
 
     @Override

@@ -18,8 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
+import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.stream.IStreamMap;
 
 /**
  * Javadoc pending
@@ -59,7 +59,7 @@ public interface JetInstance {
      * @param name name of the distributed map
      * @return distributed map instance with the specified name
      */
-    <K, V> IMap<K, V> getMap(String name);
+    <K, V> IStreamMap<K, V> getMap(String name);
 
     /**
      * Returns the distributed list instance with the specified name.
@@ -68,7 +68,7 @@ public interface JetInstance {
      * @param name name of the distributed list
      * @return distributed list instance with the specified name
      */
-    <E> IList<E> getList(String name);
+    <E> IStreamList<E> getList(String name);
 
     /**
      * Javadoc pending

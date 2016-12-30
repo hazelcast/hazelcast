@@ -18,6 +18,8 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.stream.IStreamList;
+import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -48,7 +50,7 @@ public class JetTestSupport extends HazelcastTestSupport {
         return instanceFactory.newMember(config);
     }
 
-    protected static <K, V> IMap<K, V> getMap(JetInstance instance) {
+    protected static <K, V> IStreamMap<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
     }
 
@@ -64,7 +66,7 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected static <E> IList<E> getList(JetInstance instance) {
+    protected static <E> IStreamList<E> getList(JetInstance instance) {
         return instance.getList(randomName());
     }
 

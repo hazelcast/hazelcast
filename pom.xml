@@ -32,7 +32,6 @@
         <module>hazelcast-jet-cascading</module>
         <module>hazelcast-jet-client-protocol</module>
         <module>hazelcast-jet-core</module>
-        <module>hazelcast-jet-java.util.stream</module>
         <module>hazelcast-jet-kafka</module>
         <module>hazelcast-jet-hadoop</module>
     </modules>

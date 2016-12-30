@@ -49,15 +49,14 @@ public class JetConfig {
     }
 
     /**
-     * @return Javadoc pending
+     * @return Jet specific properties
      */
     public Properties getProperties() {
         return properties;
     }
 
     /**
-     * @param properties
-     * @return
+     * Sets Jet specific properties
      */
     public JetConfig setProperties(Properties properties) {
         this.properties = properties;
@@ -65,14 +64,14 @@ public class JetConfig {
     }
 
     /**
-     * Javadoc pending
+     * @return the number of execution threads per node
      */
     public int getExecutionThreadCount() {
         return threadCount;
     }
 
     /**
-     * Javadoc pending
+     * Sets the number of execution threads per node
      */
     public JetConfig setExecutionThreadCount(int size) {
         this.threadCount = size;
@@ -95,7 +94,7 @@ public class JetConfig {
     }
 
     /**
-     * @return
+     * @return Javadoc pending
      */
     public int getFlowControlPeriodMs() {
         return flowControlPeriodMs;
