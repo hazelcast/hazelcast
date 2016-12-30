@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import static com.hazelcast.jet.impl.JetService.createStreamPacketHeader;
+import static com.hazelcast.jet.impl.Networking.createStreamPacketHeader;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.compressSeq;
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.estimatedMemoryFootprint;
 import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;

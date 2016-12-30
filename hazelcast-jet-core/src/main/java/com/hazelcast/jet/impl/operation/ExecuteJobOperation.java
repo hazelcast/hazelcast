@@ -20,7 +20,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.util.Util;
@@ -60,8 +59,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext();
-        Map<Member, ExecutionPlan> executionPlanMap = engineContext.createExecutionPlans(dag);
+        Map<Member, ExecutionPlan> executionPlanMap = service.createExecutionPlans(dag);
 
         // Future that is signalled on a failure during Init
         CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,

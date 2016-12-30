@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,8 +40,7 @@ class CompleteOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext();
-        engineContext.completeExecution(executionId, error);
+        service.completeExecution(executionId, error);
     }
 
 

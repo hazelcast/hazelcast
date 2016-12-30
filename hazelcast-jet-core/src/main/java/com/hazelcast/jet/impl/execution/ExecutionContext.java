@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
@@ -50,16 +49,16 @@ public class ExecutionContext {
 
     private final long executionId;
     private final NodeEngine nodeEngine;
-    private final EngineContext engineCtx;
+    private final ExecutionService execService;
 
-    public ExecutionContext(long executionId, EngineContext engineCtx) {
+    public ExecutionContext(long executionId, NodeEngine nodeEngine, ExecutionService execService) {
         this.executionId = executionId;
-        this.engineCtx = engineCtx;
-        this.nodeEngine = engineCtx.getNodeEngine();
+        this.execService = execService;
+        this.nodeEngine = nodeEngine;
     }
 
     public CompletionStage<Void> execute(Consumer<CompletionStage<Void>> doneCallback) {
-        executionCompletionStage = engineCtx.getExecutionService().execute(tasklets, doneCallback);
+        executionCompletionStage = execService.execute(tasklets, doneCallback);
         executionCompletionStage.whenComplete((r, e) -> tasklets.clear());
         return executionCompletionStage;
     }

@@ -37,7 +37,7 @@ public class ResourceUpdateOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.getEngineContext().getResourceStore().updateResource(part);
+        service.getResourceStore().updateResource(part);
     }
 
     @Override

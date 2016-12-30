@@ -20,18 +20,17 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.jet.impl.deployment.JetClassLoader;
+import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
-import com.hazelcast.jet.impl.execution.SenderTasklet;
-import com.hazelcast.jet.impl.operation.AsyncExecutionOperation;
+import com.hazelcast.jet.impl.execution.ExecutionService;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CanCancelOperations;
 import com.hazelcast.spi.ConfigurableService;
@@ -43,46 +42,43 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
 
 import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.impl.util.Util.createObjectDataInput;
-import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
-import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
-import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
-import static com.hazelcast.jet.impl.util.Util.sneakyThrow;
-import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-
-public class JetService implements ManagedService, ConfigurableService<JetConfig>,
-        PacketHandler, LiveOperationsTracker, CanCancelOperations {
+public class JetService
+        implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
+                   CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
-    public static final int FLOW_CONTROL_PERIOD_MS = 100;
-    private static final byte[] EMPTY_BYTES = new byte[0];
+
     final ILogger logger;
-
-    private NodeEngineImpl nodeEngine;
-    private ScheduledFuture<?> flowControlSender;
-
-    // Type of variables is CHM and not ConcurrentMap because we rely on specific semantics of computeIfAbsent.
-    // ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
-    private final ConcurrentHashMap<Address, Map<Long, AsyncExecutionOperation>> liveOperations = new ConcurrentHashMap<>();
+    private final ClientInvocationRegistry clientInvocationRegistry;
+    private final LiveOperationRegistry liveOperationRegistry;
+    // The type of these variables is CHM and not ConcurrentMap because we rely on specific semantics of
+    // computeIfAbsent. ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
+    private final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
 
     private JetConfig config = new JetConfig();
-    private EngineContext engineContext;
+    private NodeEngineImpl nodeEngine;
     private JetInstance jetInstance;
+    private Networking networking;
+    private ResourceStore resourceStore;
+    private ClassLoader classloader;
+    private ExecutionService executionService;
+
 
     public JetService(NodeEngine nodeEngine) {
         this.nodeEngine = (NodeEngineImpl) nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
+        this.clientInvocationRegistry = new ClientInvocationRegistry();
+        this.liveOperationRegistry = new LiveOperationRegistry();
     }
 
     @Override
@@ -90,180 +86,107 @@ public class JetService implements ManagedService, ConfigurableService<JetConfig
         this.config = config;
     }
 
+
+    // ManagedService
+
     @Override
     public void init(NodeEngine engine, Properties properties) {
-        flowControlSender = engine.getExecutionService().scheduleWithRepetition(
-                this::broadcastFlowControlPacket, 0, config.getFlowControlPeriodMs(), MILLISECONDS);
         engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
-        engineContext = new EngineContext(engine, config);
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
+        networking = new Networking(engine, executionContexts, config.getFlowControlPeriodMs());
+        resourceStore = new ResourceStore(config.getResourceDirectory());
+        classloader = AccessController.doPrivileged(
+                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
+        executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
+                config.getExecutionThreadCount());
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        networking.destroy();
+        executionService.shutdown();
     }
 
     @Override
     public void reset() {
     }
 
-    @Override
-    public void shutdown(boolean terminate) {
-        flowControlSender.cancel(false);
-        engineContext.destroy();
-    }
+    // End ManagedService
 
-    @Override
-    public void populate(LiveOperations liveOperations) {
-        this.liveOperations.entrySet().forEach(entry ->
-                entry.getValue().keySet().forEach(callId -> liveOperations.add(entry.getKey(), callId))
-        );
-    }
 
-    @Override
-    public boolean cancelOperation(Address caller, long callId) {
-        Optional<AsyncExecutionOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
-        operation.ifPresent(AsyncExecutionOperation::cancel);
-        return operation.isPresent();
-    }
-
-    @Override
-    public void handle(Packet packet) throws Exception {
-        if (!packet.isFlagRaised(FLAG_JET_FLOW_CONTROL)) {
-            handleStreamPacket(packet);
-            return;
+    public void initExecution(long executionId, ExecutionPlan plan) {
+        final ExecutionContext[] created = {null};
+        try {
+            executionContexts.compute(executionId, (k, v) -> {
+                if (v != null) {
+                    throw new IllegalStateException("Execution context " + executionId + " already exists");
+                }
+                return (created[0] = new ExecutionContext(executionId, nodeEngine, executionService)).initialize(plan);
+            });
+        } catch (Throwable t) {
+            if (created[0] != null) {
+                executionContexts.put(executionId, created[0]);
+            }
+            throw t;
         }
-        handleFlowControlPacket(packet.getConn().getEndPoint(), packet.toByteArray());
     }
 
-    public EngineContext getEngineContext() {
-        return engineContext;
+    public void completeExecution(long executionId, Throwable error) {
+        ExecutionContext context = executionContexts.remove(executionId);
+        if (context != null) {
+            context.complete(error);
+        }
     }
 
     public JetInstance getJetInstance() {
         return jetInstance;
     }
 
-    public void registerOperation(AsyncExecutionOperation operation) {
-        Map<Long, AsyncExecutionOperation> callIds = liveOperations.computeIfAbsent(operation.getCallerAddress(),
-                (key) -> new ConcurrentHashMap<>());
-        if (callIds.putIfAbsent(operation.getCallId(), operation) != null) {
-            throw new IllegalStateException("Duplicate operation during registration of operation=" + operation);
-        }
+    public LiveOperationRegistry getLiveOperationRegistry() {
+        return liveOperationRegistry;
     }
 
-    public void deregisterOperation(AsyncExecutionOperation operation) {
-        if (liveOperations.get(operation.getCallerAddress()).remove(operation.getCallId()) == null) {
-            throw new IllegalStateException("Missing operation during de-registration of operation=" + operation);
-        }
+    public ClientInvocationRegistry getClientInvocationRegistry() {
+        return clientInvocationRegistry;
     }
 
-    private void handleStreamPacket(Packet packet) throws IOException {
-        BufferObjectDataInput in = createObjectDataInput(nodeEngine, packet.toByteArray());
-        long executionId = in.readLong();
-        int vertexId = in.readInt();
-        int ordinal = in.readInt();
-        engineContext.getExecutionContext(executionId)
-                     .handlePacket(vertexId, ordinal, packet.getConn().getEndPoint(), in);
+    public ResourceStore getResourceStore() {
+        return resourceStore;
     }
 
-    public static byte[] createStreamPacketHeader(
-            NodeEngine nodeEngine, long executionId, int destinationVertexId, int ordinal) {
-        ObjectDataOutput out = createObjectDataOutput(nodeEngine);
-        try {
-            out.writeLong(executionId);
-            out.writeInt(destinationVertexId);
-            out.writeInt(ordinal);
-            return out.toByteArray();
-        } catch (IOException e) {
-            throw sneakyThrow(e);
-        }
+    public ClassLoader getClassLoader() {
+        return classloader;
     }
 
-    private void broadcastFlowControlPacket() {
-        try {
-            getRemoteMembers(nodeEngine).forEach(member -> uncheckRun(() -> {
-                final byte[] packetBuf = createFlowControlPacket(member);
-                if (packetBuf.length == 0) {
-                    return;
-                }
-                Connection conn = getMemberConnection(nodeEngine, member);
-                conn.write(new Packet(packetBuf)
-                        .setPacketType(Packet.Type.JET)
-                        .raiseFlags(FLAG_URGENT | FLAG_JET_FLOW_CONTROL));
-            }));
-        } catch (Throwable t) {
-            logger.severe("Flow-control packet broadcast failed", t);
-        }
+    public ExecutionContext getExecutionContext(long executionId) {
+        return executionContexts.get(executionId);
     }
 
-    private byte[] createFlowControlPacket(Address member) throws IOException {
-        final ObjectDataOutput out = createObjectDataOutput(nodeEngine);
-        final boolean[] hasData = {false};
-        out.writeInt(engineContext.executionContexts.size());
-        engineContext.executionContexts.forEach((execId, exeCtx) -> uncheckRun(() -> {
-            final Integer memberId = exeCtx.getMemberId(member);
-            if (memberId == null) {
-                // The target member is not involved in the job associated with this execution context
-                return;
-            }
-            out.writeLong(execId);
-            out.writeInt(exeCtx.receiverMap().values().stream().mapToInt(Map::size).sum());
-            exeCtx.receiverMap().forEach((vertexId, m) ->
-                    m.forEach((ordinal, tasklet) -> uncheckRun(() -> {
-                                out.writeInt(vertexId);
-                                out.writeInt(ordinal);
-                                out.writeInt(tasklet.updateAndGetSendSeqLimitCompressed(memberId));
-                                hasData[0] = true;
-                            }
-                    )));
-        }));
-        return hasData[0] ? out.toByteArray() : EMPTY_BYTES;
+    public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
+        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getExecutionThreadCount());
     }
 
-    private void handleFlowControlPacket(Address fromAddr, byte[] packet) throws IOException {
-        final ObjectDataInput in = createObjectDataInput(nodeEngine, packet);
 
-        final int executionCtxCount = in.readInt();
-        for (int j = 0; j < executionCtxCount; j++) {
-            final long exeCtxId = in.readLong();
-            final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap =
-                    Optional.ofNullable(engineContext.executionContexts)
-                            .map(exeCtxs -> exeCtxs.get(exeCtxId))
-                            .map(ExecutionContext::senderMap)
-                            .orElse(null);
-            if (senderMap == null) {
-                logMissingExeCtx(exeCtxId);
-                continue;
-            }
-            final int flowCtlMsgCount = in.readInt();
-            for (int k = 0; k < flowCtlMsgCount; k++) {
-                int destVertexId = in.readInt();
-                int destOrdinal = in.readInt();
-                int sendSeqLimitCompressed = in.readInt();
-                final SenderTasklet t = Optional.ofNullable(senderMap.get(destVertexId))
-                                                .map(ordinalMap -> ordinalMap.get(destOrdinal))
-                                                .map(addrMap -> addrMap.get(fromAddr))
-                                                .orElse(null);
-                if (t == null) {
-                    logMissingSenderTasklet(destVertexId, destOrdinal);
-                    return;
-                }
-                t.setSendSeqLimitCompressed(sendSeqLimitCompressed);
-            }
-        }
+    // LiveOperationsTracker
+
+    @Override
+    public void populate(LiveOperations liveOperations) {
+        liveOperationRegistry.populate(liveOperations);
     }
 
-    private void logMissingExeCtx(long exeCtxId) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Ignoring flow control message applying to non-existent execution context "
-                    + exeCtxId);
-        }
+    @Override
+    public boolean cancelOperation(Address caller, long callId) {
+        return liveOperationRegistry.cancel(caller, callId);
     }
 
-    private void logMissingSenderTasklet(int destVertexId, int destOrdinal) {
-        if (logger.isFinestEnabled()) {
-            logger.finest(String.format(
-                    "Ignoring flow control message applying to non-existent sender tasklet (%d, %d)",
-                    destVertexId, destOrdinal));
-        }
+
+    // PacketHandler
+
+    @Override
+    public void handle(Packet packet) throws IOException {
+        networking.handle(packet);
     }
+
 
     private class CancelJobsMigrationListener implements MigrationListener {
 
@@ -273,31 +196,28 @@ public class JetService implements ManagedService, ConfigurableService<JetConfig
                                                .map(Member::getAddress)
                                                .collect(Collectors.toSet());
             // complete the processors, whose caller is dead, with TopologyChangedException
-            liveOperations
+            liveOperationRegistry.liveOperations
                     .entrySet().stream()
                     .filter(e -> !addresses.contains(e.getKey()))
                     .flatMap(e -> e.getValue().values().stream())
-                    .forEach(op -> {
-                        Optional.ofNullable(engineContext.getExecutionContext(op.getExecutionId()))
-                                .map(ExecutionContext::getExecutionCompletionStage)
-                                .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
-                                        engineContext.completeExecution(op.getExecutionId(),
-                                                new TopologyChangedException("Topology has been changed"))));
-                    });
+                    .forEach(op ->
+                            Optional.ofNullable(executionContexts.get(op.getExecutionId()))
+                                    .map(ExecutionContext::getExecutionCompletionStage)
+                                    .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
+                                            completeExecution(op.getExecutionId(),
+                                                    new TopologyChangedException("Topology has been changed")))));
             // send exception result to all operations
-            liveOperations.values().forEach(map -> map.values().forEach(
-                    op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed"))
-            ));
+            liveOperationRegistry.liveOperations
+                    .values().stream().map(Map::values).flatMap(Collection::stream)
+                    .forEach(op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed")));
         }
 
         @Override
         public void migrationCompleted(MigrationEvent migrationEvent) {
-
         }
 
         @Override
         public void migrationFailed(MigrationEvent migrationEvent) {
-
         }
     }
 

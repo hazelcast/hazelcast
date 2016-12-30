@@ -46,7 +46,8 @@ public abstract class AsyncExecutionOperation extends Operation {
 
     @Override
     public void beforeRun() throws Exception {
-        this.<JetService>getService().registerOperation(this);
+        JetService service = getService();
+        service.getLiveOperationRegistry().register(this);
     }
 
     @Override
@@ -73,7 +74,8 @@ public abstract class AsyncExecutionOperation extends Operation {
         try {
             sendResponse(value);
         } finally {
-            this.<JetService>getService().deregisterOperation(this);
+            final JetService service = getService();
+            service.getLiveOperationRegistry().deregister(this);
         }
     }
 

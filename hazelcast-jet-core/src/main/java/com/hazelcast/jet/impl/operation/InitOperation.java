@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -46,8 +45,7 @@ class InitOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext();
-        engineContext.initExecution(executionId, planSupplier.get());
+        service.initExecution(executionId, planSupplier.get());
     }
 
     @Override
@@ -67,7 +65,7 @@ class InitOperation extends Operation {
         final Data planBlob = in.readData();
         planSupplier = () -> {
             JetService service = getService();
-            ClassLoader cl = service.getEngineContext().getClassLoader();
+            ClassLoader cl = service.getClassLoader();
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         };
     }

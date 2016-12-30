@@ -29,6 +29,7 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.Networking;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -341,7 +342,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                        final int senderCount = nodeEngine.getClusterService().getSize() - 1;
                        //TODO: fix FLOW_CONTROL_PERIOD after JetConfig is integrated
                        return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
-                               JetService.FLOW_CONTROL_PERIOD_MS, senderCount);
+                               Networking.FLOW_CONTROL_PERIOD_MS, senderCount);
                    });
     }
 

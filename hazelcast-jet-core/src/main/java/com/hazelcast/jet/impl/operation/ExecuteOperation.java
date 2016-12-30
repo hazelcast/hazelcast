@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 
 import java.util.concurrent.CompletionStage;
@@ -53,8 +52,7 @@ class ExecuteOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext();
-        executionFuture = engineContext.getExecutionContext(executionId)
+        executionFuture = service.getExecutionContext(executionId)
                                        .execute(f -> f.handle((r, error) -> error != null ? error : null)
                                                       .thenAccept(this::doSendResponse));
         if (cachedExceptionResult != null) {

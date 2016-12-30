@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,8 +38,7 @@ public class ResourceCompleteOperation extends Operation {
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        EngineContext engineContext = service.getEngineContext();
-        ResourceStore store = engineContext.getResourceStore();
+        ResourceStore store = service.getResourceStore();
         store.completeResource(descriptor);
     }
 

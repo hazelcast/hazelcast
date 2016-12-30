@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetCancelJobCodec.RequestParameters;
 import com.hazelcast.instance.Node;
-import com.hazelcast.jet.impl.EngineContext;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
@@ -32,8 +31,7 @@ public class JetCancelJobMessageTask extends AbstractJetMessageTask<RequestParam
 
     @Override
     protected void processMessage() {
-        EngineContext engineContext = getEngineContext();
-        engineContext.cancelClientInvocation(parameters.executionId);
+        getJetService().getClientInvocationRegistry().cancel(parameters.executionId);
         sendResponse(null);
     }
 
