@@ -119,10 +119,9 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void storeKeys() {
         if (nearCachePreloader != null) {
-            nearCachePreloader.storeKeys(records);
+            nearCachePreloader.storeKeys(records.keySet().iterator());
         }
     }
 
