@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
-import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 
@@ -29,7 +28,7 @@ import static com.hazelcast.jet.impl.util.MemoizingSupplier.memoize;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * Collaborator of {@link ExecutionContext} that takes care of assigning
+ * Collaborator of {@link ExecutionPlan} that takes care of assigning
  * partition IDs to processors.
  */
 class PartitionArrangement {
@@ -54,7 +53,7 @@ class PartitionArrangement {
      * Local partitions will get the same assignments in both cases, and repeating the
      * invocation with the same arguments will always yield the same result.
      *
-     * @param processorCount     number of processor instances
+     * @param processorCount    number of processor instances
      * @param isEdgeDistributed whether the edge is distributed
      * @return a 2D-array where the major index is the index of a processor and
      * the {@code int[]} at that index is the array of partition IDs assigned to
