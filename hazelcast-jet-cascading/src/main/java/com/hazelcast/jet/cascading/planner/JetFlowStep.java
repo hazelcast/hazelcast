@@ -393,8 +393,8 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         }
 
         @Override
-        public int getPartition(Object item, int numPartitions) {
-            return Math.abs(hasher.hashCode((Tuple) getKey(item))) % numPartitions;
+        public int getPartition(Object item, int partitionCount) {
+            return Math.abs(hasher.hashCode((Tuple) getKey(item))) % partitionCount;
         }
     }
 
@@ -410,7 +410,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         }
 
         @Override
-        public int getPartition(Object item, int numPartitions) {
+        public int getPartition(Object item, int partitionCount) {
             return lookup.getPartition(getKey(item));
         }
     }

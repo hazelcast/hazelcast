@@ -45,9 +45,9 @@ public interface Partitioner extends Serializable {
 
     /**
      * @param item the item for which to determine the partition ID
-     * @param numPartitions the total number of partitions as configured for the underlying Hazelcast instance
+     * @param partitionCount the total number of partitions as configured for the underlying Hazelcast instance
      * @return the partition ID of the given item
      */
-    int getPartition(Object item, int numPartitions);
+    int getPartition(Object item, int partitionCount);
 
 }

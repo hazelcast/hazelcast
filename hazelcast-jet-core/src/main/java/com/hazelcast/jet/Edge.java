@@ -334,7 +334,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public int getPartition(Object item, int numPartitions) {
+        public int getPartition(Object item, int partitionCount) {
             return defaultPartitioning.getPartition(item);
         }
     }
@@ -347,7 +347,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public int getPartition(Object item, int numPartitions) {
+        public int getPartition(Object item, int partitionCount) {
             return defaultPartitioning.getPartition(extractor.extract(item));
         }
     }
@@ -369,7 +369,7 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public int getPartition(Object item, int numPartitions) {
+        public int getPartition(Object item, int partitionCount) {
             return partition;
         }
     }
