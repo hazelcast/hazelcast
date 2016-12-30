@@ -24,7 +24,6 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.execution.ReceiverTasklet.COMPRESSED_SEQ_UNIT_LOG2;
 import static com.hazelcast.jet.impl.execution.SenderTasklet.isWithinLimit;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -24,9 +24,10 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
+
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;

@@ -21,12 +21,13 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ExceptionUtil;
+
+import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.List;
-import javax.annotation.Nonnull;
 
 import static java.util.Collections.singletonList;
 
