@@ -141,7 +141,8 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
             try {
                 semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
-                logger.finest("Interrupted while waiting replicated map merge operation...");
+                Thread.currentThread().interrupt();
+                logger.warning("Interrupted while waiting replicated map merge operation...");
             }
 
         }
