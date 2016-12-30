@@ -29,6 +29,7 @@ import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
@@ -338,6 +339,7 @@ public class Node {
     void start() {
         nodeEngine.start();
         initializeListeners(config);
+        hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(
