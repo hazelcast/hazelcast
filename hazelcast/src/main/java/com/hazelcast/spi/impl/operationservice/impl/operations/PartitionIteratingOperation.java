@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 
+import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.util.CollectionUtil.toIntArray;
 
 public final class PartitionIteratingOperation extends Operation implements IdentifiedDataSerializable {
@@ -57,7 +58,7 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         try {
             Object[] responses;
 
-            PartitionAwareOperationFactory partitionAware = getPartitionAwareFactoryOrNull();
+            PartitionAwareOperationFactory partitionAware = extractPartitionAware(operationFactory);
             if (partitionAware != null) {
                 responses = executePartitionAwareOperations(partitionAware);
             } else {
@@ -68,22 +69,6 @@ public final class PartitionIteratingOperation extends Operation implements Iden
         } catch (Exception e) {
             getLogger(getNodeEngine()).severe(e);
         }
-    }
-
-    private PartitionAwareOperationFactory getPartitionAwareFactoryOrNull() {
-        if (operationFactory instanceof PartitionAwareOperationFactory) {
-            return ((PartitionAwareOperationFactory) operationFactory);
-        }
-
-
-        if (operationFactory instanceof OperationFactoryWrapper) {
-            OperationFactory factory = ((OperationFactoryWrapper) operationFactory).getOperationFactory();
-            if (factory instanceof PartitionAwareOperationFactory) {
-                return ((PartitionAwareOperationFactory) factory);
-            }
-        }
-
-        return null;
     }
 
     private Object[] executeOperations() {

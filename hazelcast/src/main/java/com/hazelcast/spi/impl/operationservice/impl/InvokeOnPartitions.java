@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
+
 /**
  * Executes an operation on a set of partitions.
  */
@@ -124,8 +126,9 @@ final class InvokeOnPartitions {
 
         for (Integer failedPartition : failedPartitions) {
             Operation operation;
-            if (operationFactory instanceof PartitionAwareOperationFactory) {
-                operation = ((PartitionAwareOperationFactory) operationFactory).createPartitionOperation(failedPartition);
+            PartitionAwareOperationFactory partitionAwareFactory = extractPartitionAware(operationFactory);
+            if (partitionAwareFactory != null) {
+                operation = partitionAwareFactory.createPartitionOperation(failedPartition);
             } else {
                 operation = operationFactory.createOperation();
             }
