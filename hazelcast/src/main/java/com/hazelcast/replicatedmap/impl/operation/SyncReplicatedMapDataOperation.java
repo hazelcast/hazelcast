@@ -51,8 +51,10 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
     @Override
     public void run() throws Exception {
         ILogger logger = getLogger();
-        logger.finest("Syncing " + recordSet.size() + " records and version: " + version + " for partition -> "
-                + getPartitionId() + " from -> " + getCallerAddress() + ", to -> " + getNodeEngine().getThisAddress());
+        if (logger.isFineEnabled()) {
+            logger.fine("Syncing " + recordSet.size() + " records and version: " + version + " for map: " + name + " partitionId="
+                    + getPartitionId() + " from: " + getCallerAddress() + " to: " + getNodeEngine().getThisAddress());
+        }
         ReplicatedMapService service = getService();
         AbstractReplicatedRecordStore store = (AbstractReplicatedRecordStore) service
                 .getReplicatedRecordStore(name, true, getPartitionId());

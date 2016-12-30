@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -43,8 +42,6 @@ import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME
  */
 public class RequestMapDataOperation extends AbstractSerializableOperation {
 
-    private static ILogger logger = Logger.getLogger(RequestMapDataOperation.class.getName());
-
     String name;
 
     public RequestMapDataOperation() {
@@ -56,23 +53,33 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
 
     @Override
     public void run() throws Exception {
-        logger.finest("Caller { " + getCallerAddress() + " } requested copy of map -> " + name
-                + ", on partition -> " + getPartitionId());
+        ILogger logger = getLogger();
+        int partitionId = getPartitionId();
+        if (logger.isFineEnabled()) {
+            logger.fine("Caller { " + getCallerAddress() + " } requested copy of map: " + name
+                    + " partitionId=" + partitionId);
+        }
         ReplicatedMapService service = getService();
-        PartitionContainer container = service.getPartitionContainer(getPartitionId());
+        PartitionContainer container = service.getPartitionContainer(partitionId);
         ReplicatedRecordStore store = container.getRecordStore(name);
         if (store == null) {
-            logger.finest("No data is found on this store to respond data request");
+            if (logger.isFineEnabled()) {
+                logger.fine("No store is found for map: " + name + " to respond data request. partitionId=" + partitionId);
+            }
+
             return;
         }
         long version = store.getVersion();
         Set<RecordMigrationInfo> recordSet = getRecordSet(store);
         if (recordSet.isEmpty()) {
-            logger.finest("No data is found on this store to respond data request");
+            if (logger.isFineEnabled()) {
+                logger.fine("No data is found on this store for map: " + name +  " to respond data request. partitionId="
+                        + partitionId);
+            }
             return;
         }
         SyncReplicatedMapDataOperation op = new SyncReplicatedMapDataOperation(name, recordSet, version);
-        op.setPartitionId(getPartitionId());
+        op.setPartitionId(partitionId);
         op.setValidateTarget(false);
         OperationService operationService = getNodeEngine().getOperationService();
         operationService
