@@ -23,7 +23,6 @@ import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -86,7 +85,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private long executionId;
 
 
-    public ExecutionPlan() {
+    ExecutionPlan() {
     }
 
     public static Map<Member, ExecutionPlan> createExecutionPlans(
@@ -191,20 +190,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private static List<EdgeDef> toEdgeDefs(
-            List<Edge> edges, Function<Edge, Integer> oppositeVertex, boolean isJobDistributed
+            List<Edge> edges, Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
     ) {
-        return edges.stream().map(edge -> {
-            int oppositeVertexId = oppositeVertex.apply(edge);
-            return new EdgeDef(oppositeVertexId, edge.getSourceOrdinal(), edge.getDestOrdinal(),
-                    edge.getPriority(), edge.isDistributed() && isJobDistributed,
-                    edge.getForwardingPattern(), edge.getPartitioner(),
-                    getConfig(edge));
-        }).collect(toList());
-    }
-
-    private static EdgeConfig getConfig(Edge edge) {
-        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
-        return edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
+        return edges.stream()
+                    .map(edge -> new EdgeDef(edge, oppositeVtxId.apply(edge), isJobDistributed))
+                    .collect(toList());
     }
 
     private void initProcSuppliers() {
@@ -238,7 +228,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     /**
-     * NOTE: populates {@code localConveyorMap}, {@code edgeSenderConveyorMap}.
+     * Populates {@code localConveyorMap}, {@code edgeSenderConveyorMap}.
      * Populates {@link #senderMap} and {@link #tasklets} fields.
      */
     private List<OutboundEdgeStream> createOutboundEdgeStreams(VertexDef srcVertex, int processorIdx) {
@@ -261,7 +251,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     /**
      * Creates (if absent) for the given edge one sender tasklet per remote member,
      * each with a single conveyor with a number of producer queues feeding it.
-     * Updates the {@link #senderMap} and {@link #tasklets} fields.
+     * Populates the {@link #senderMap} and {@link #tasklets} fields.
      */
     private Map<Address, ConcurrentConveyor<Object>> memberToSenderConveyorMap(
             Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap, EdgeDef edge

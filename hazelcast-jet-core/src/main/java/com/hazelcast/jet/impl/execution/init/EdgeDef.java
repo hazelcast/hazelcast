@@ -46,18 +46,16 @@ public class EdgeDef implements IdentifiedDataSerializable {
     EdgeDef() {
     }
 
-    public EdgeDef(int oppositeVertexId, int sourceOrdinal, int destOrdinal, int priority,
-                   boolean isDistributed, Edge.ForwardingPattern forwardingPattern, Partitioner partitioner,
-                   EdgeConfig config
-    ) {
+    EdgeDef(Edge edge, int oppositeVertexId, boolean isJobDistributed) {
         this.oppositeVertexId = oppositeVertexId;
-        this.sourceOrdinal = sourceOrdinal;
-        this.destOrdinal = destOrdinal;
-        this.priority = priority;
-        this.isDistributed = isDistributed;
-        this.forwardingPattern = forwardingPattern;
-        this.partitioner = partitioner;
-        this.config = config;
+        this.sourceOrdinal = edge.getSourceOrdinal();
+        this.destOrdinal = edge.getDestOrdinal();
+        this.priority = edge.getPriority();
+        this.isDistributed = isJobDistributed && edge.isDistributed();
+        this.forwardingPattern = edge.getForwardingPattern();
+        this.partitioner = edge.getPartitioner();
+        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
+        this.config = edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
     }
 
     void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutbound) {
@@ -67,25 +65,6 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.id = sourceVertex.vertexId() + ":" + destVertex.vertexId();
     }
 
-    public String edgeId() {
-        return id;
-    }
-
-    public VertexDef sourceVertex() {
-        return sourceVertex;
-    }
-
-    public int sourceOrdinal() {
-        return sourceOrdinal;
-    }
-
-    public VertexDef destVertex() {
-        return destVertex;
-    }
-
-    public int destOrdinal() {
-        return destOrdinal;
-    }
 
     public Edge.ForwardingPattern forwardingPattern() {
         return forwardingPattern;
@@ -95,15 +74,35 @@ public class EdgeDef implements IdentifiedDataSerializable {
         return partitioner;
     }
 
-    public int priority() {
+    String edgeId() {
+        return id;
+    }
+
+    VertexDef sourceVertex() {
+        return sourceVertex;
+    }
+
+    int sourceOrdinal() {
+        return sourceOrdinal;
+    }
+
+    VertexDef destVertex() {
+        return destVertex;
+    }
+
+    int destOrdinal() {
+        return destOrdinal;
+    }
+
+    int priority() {
         return priority;
     }
 
-    public boolean isDistributed() {
+    boolean isDistributed() {
         return isDistributed;
     }
 
-    public EdgeConfig getConfig() {
+    EdgeConfig getConfig() {
         return config;
     }
 
