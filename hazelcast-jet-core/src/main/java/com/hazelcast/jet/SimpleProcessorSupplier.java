@@ -20,10 +20,10 @@ import java.io.Serializable;
 import java.util.function.Supplier;
 
 /**
- * Serializable variant of the standard {@code Supplier<Processor>}. A convenience
- * over the full {@link ProcessorSupplier} which abstracts away the boilerplate
- * of producing the required number of processor instances, when each created
- * instance will be the same.
+ * Serializable variant of {@code java.util.function.Supplier<Processor>}.
+ * A convenience over the full {@link ProcessorSupplier} which abstracts away
+ * the boilerplate of producing the required number of processor instances,
+ * when each created instance will be the same.
  * <p>
  * <strong>NOTE:</strong> this type should not be abused with a stateful
  * implementation which produces a different processor each time. In such a

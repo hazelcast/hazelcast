@@ -32,17 +32,18 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * by a set of instances of {@link Processor}. The {@code parallelism} property
  * determines the number of processor instances running on each cluster member.
  * <p>
- * Each instance of processor is assigned a set of partition IDs it is responsible
- * for. When an inbound edge is <em>partitioned</em>, the processor will receive
- * only those data items whose partition ID it is responsible for. For data traveling
- * over a partitioned edge which is also <em>distributed</em>, the whole cluster
- * contains a single unique processor instance responsible for any given partition ID.
- * For non-distributed edges, the processor is unique only within a member and each
- * member has its own processor for any given partition ID.
+ * Each processor is assigned a set of partition IDs it is responsible for. When
+ * an inbound edge is <em>partitioned</em>, the processor will receive only those
+ * data items whose partition ID it is responsible for. For data traveling over a
+ * partitioned edge which is also <em>distributed</em>, the whole cluster contains
+ * a single unique processor instance responsible for any given partition ID. For
+ * non-distributed edges, the processor is unique only within a member and each
+ * member has its own processor for any given partition ID. Finally, there is a
+ * guarantee of collation across all the partitioned edges impinging on a vertex:
+ * within each member, all the data with a given partition ID is received by the
+ * same processor.
  * <p>
- * There is also a guarantee of collation across all the partitioned edges impinging
- * on a vertex: within each member, all the data with a given partition ID is
- * received by the same processor.
+ * A vertex is uniquely identified in a DAG by its name.
  */
 public class Vertex implements IdentifiedDataSerializable {
 
@@ -50,11 +51,18 @@ public class Vertex implements IdentifiedDataSerializable {
     private String name;
     private int parallelism = -1;
 
+    /**
+     * Constructor used internally for deserialization.
+     */
     Vertex() {
     }
 
     /**
-     * Javadoc pending
+     * Creates a vertex from a {@code SimpleProcessorSupplier}.
+     *
+     * @param name the unique name of the vertex
+     * @param processorSupplier the simple, parameterless
+     *                          supplier of {@code Processor} instances
      */
     public Vertex(String name, SimpleProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
@@ -65,7 +73,11 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * Javadoc pending
+     * Creates a vertex from a {@code ProcessorSupplier}.
+     *
+     * @param name the unique name of the vertex
+     * @param processorSupplier the supplier of {@code Processor} instances
+     *                          which will be used on all members
      */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
@@ -76,13 +88,18 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * Javadoc pending
+     * Creates a vertex from a {@code ProcessorMetaSupplier}.
+     *
+     * @param name the unique name of the vertex
+     * @param metaSupplier the supplier of {@code ProcessorSupplier}s
+     *                     for each member
+     *
      */
-    public Vertex(String name, ProcessorMetaSupplier supplier) {
+    public Vertex(String name, ProcessorMetaSupplier metaSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(supplier, "supplier");
+        checkNotNull(metaSupplier, "supplier");
 
-        this.supplier = supplier;
+        this.supplier = metaSupplier;
         this.name = name;
     }
 
@@ -146,5 +163,4 @@ public class Vertex implements IdentifiedDataSerializable {
     public int getId() {
         return JetDataSerializerHook.VERTEX;
     }
-
 }

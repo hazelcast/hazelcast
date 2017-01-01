@@ -19,9 +19,6 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorSupplier.Context;
 
-/**
- * Simple implementation of ProcessorSupplier's initialization context object.
- */
 class ProcSupplierContext implements Context {
     private final JetInstance instance;
     private final int perNodeParallelism;

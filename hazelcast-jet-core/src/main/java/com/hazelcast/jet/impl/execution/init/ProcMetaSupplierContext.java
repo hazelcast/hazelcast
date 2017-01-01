@@ -19,15 +19,12 @@ package com.hazelcast.jet.impl.execution.init;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier.Context;
 
-/**
- * Simple implementation of ProcessorMetaSupplier's initialization context object.
- */
-public class ProcMetaSupplierContext implements Context {
+class ProcMetaSupplierContext implements Context {
     private final JetInstance jetInstance;
     private final int totalParallelism;
     private final int perNodeParallelism;
 
-    public ProcMetaSupplierContext(JetInstance jetInstance, int totalParallelism, int perNodeParallelism) {
+    ProcMetaSupplierContext(JetInstance jetInstance, int totalParallelism, int clusterSize) {
         this.jetInstance = jetInstance;
         this.totalParallelism = totalParallelism;
         this.perNodeParallelism = perNodeParallelism;
