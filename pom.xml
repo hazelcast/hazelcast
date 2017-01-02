@@ -250,7 +250,7 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
-                    <forkCount>1C</forkCount>
+                    <forkCount>0.5C</forkCount>
                     <argLine>
                         -Xmx8G
                         -Dhazelcast.phone.home.enabled=false
