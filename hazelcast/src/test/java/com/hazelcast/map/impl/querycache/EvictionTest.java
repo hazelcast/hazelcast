@@ -58,8 +58,7 @@ public class EvictionTest extends HazelcastTestSupport {
 
         assertOpenEventually("Cache size is " + cache.size(), evictedCount);
         assertQueryCacheEvicted(maxSize, margin, cache);
-
-        cache.removeEntryListener(listener);
+        assertTrue(cache.removeEntryListener(listener));
     }
 
     private Config getConfig(int maxSize, String mapName, String cacheName) {

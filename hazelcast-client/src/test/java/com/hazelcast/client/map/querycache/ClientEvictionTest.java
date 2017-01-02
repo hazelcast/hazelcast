@@ -80,8 +80,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
 
         assertOpenEventually(evictedCount);
         assertQueryCacheEvicted(maxSize, margin, cache);
-
-        cache.removeEntryListener(listener);
+        assertTrue(cache.removeEntryListener(listener));
     }
 
     private void assertQueryCacheEvicted(int maxSize, int margin, QueryCache<Integer, Integer> cache) {
