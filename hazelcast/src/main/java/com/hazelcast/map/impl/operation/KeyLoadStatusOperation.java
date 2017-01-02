@@ -27,14 +27,14 @@ import java.io.IOException;
 /**
  * Notifies RecordStores about completion of loading
  **/
-public class LoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class KeyLoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
     private Throwable exception;
 
-    public LoadStatusOperation() {
+    public KeyLoadStatusOperation() {
     }
 
-    public LoadStatusOperation(String name, Throwable exception) {
+    public KeyLoadStatusOperation(String name, Throwable exception) {
         super(name);
         this.exception = exception;
     }
@@ -58,6 +58,6 @@ public class LoadStatusOperation extends MapOperation implements PartitionAwareO
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.LOAD_STATUS;
+        return MapDataSerializerHook.KEY_LOAD_STATUS;
     }
 }
