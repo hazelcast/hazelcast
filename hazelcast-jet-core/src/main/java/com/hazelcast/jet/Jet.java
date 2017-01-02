@@ -27,6 +27,9 @@ import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
+
+import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 
 /**
  * Javadoc pending
@@ -37,54 +40,57 @@ public final class Jet {
     }
 
     /**
-     * Javadoc pending
-     *
-     * @param config
-     * @return
+     * Creates a new Jet member with the given configuration
      */
     public static JetInstance newJetInstance(JetConfig config) {
-        config.getHazelcastConfig().getServicesConfig()
-              .addServiceConfig(new ServiceConfig().setEnabled(true)
-                                                   .setName(JetService.SERVICE_NAME)
-                                                   .setClassName(JetService.class.getName())
-                                                   .setConfigObject(config));
+        configureJetService(config);
         HazelcastInstanceImpl hazelcastInstance = ((HazelcastInstanceProxy)
                 Hazelcast.newHazelcastInstance(config.getHazelcastConfig())).getOriginal();
         return new JetInstanceImpl(hazelcastInstance, config);
     }
 
     /**
-     * Javadoc pending
-     *
-     * @return
+     * Creates a new Jet member with the default configuration
      */
     public static JetInstance newJetInstance() {
-        return newJetInstance(new JetConfig());
+        JetConfig config = XmlJetConfigBuilder.getConfig();
+        return newJetInstance(config);
     }
 
     /**
-     * @return
+     * Creates a new Jet client with default configuration
      */
     public static JetInstance newJetClient() {
-        return getJetClientInstance(HazelcastClient.newHazelcastClient());
+        ClientConfig clientConfig = getClientConfig();
+        return newJetClient(clientConfig);
     }
 
     /**
-     * @param config
-     * @return
+     * Creates a new Jet client with a given Hazelcast client configuration
      */
     public static JetInstance newJetClient(ClientConfig config) {
         return getJetClientInstance(HazelcastClient.newHazelcastClient(config));
     }
 
     /**
-     * Javadoc pending
+     * Shutdown all running Jet client and member instances
      */
     public static void shutdownAll() {
+        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
     static JetClientInstanceImpl getJetClientInstance(HazelcastInstance client) {
         return new JetClientInstanceImpl(((HazelcastClientProxy) client).client);
     }
+
+
+    private static void configureJetService(JetConfig jetConfig) {
+        jetConfig.getHazelcastConfig().getServicesConfig()
+                 .addServiceConfig(new ServiceConfig().setEnabled(true)
+                                                      .setName(JetService.SERVICE_NAME)
+                                                      .setClassName(JetService.class.getName())
+                                                      .setConfigObject(jetConfig));
+    }
+
 }

@@ -45,7 +45,6 @@ import static com.hazelcast.nio.Packet.FLAG_URGENT;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class Networking {
-    public static final int FLOW_CONTROL_PERIOD_MS = 100;
     private static final byte[] EMPTY_BYTES = new byte[0];
 
     private final NodeEngineImpl nodeEngine;

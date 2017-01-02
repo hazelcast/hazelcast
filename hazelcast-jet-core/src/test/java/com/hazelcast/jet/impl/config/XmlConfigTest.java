@@ -36,9 +36,10 @@ public class XmlConfigTest {
 
     @Test
     public void when_noConfigSpecified_usesDefaultConfig() {
-        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(new Properties());
-        JetConfig jetConfig = builder.getJetConfig();
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(new Properties());
 
+        // Then
         assertNull("resourceDirectory", jetConfig.getResourceDirectory());
         assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getExecutionThreadCount());
     }
@@ -46,6 +47,7 @@ public class XmlConfigTest {
 
     @Test
     public void when_filePathSpecified_usesSpecifiedFile() throws IOException {
+        // Given
         File tempFile = File.createTempFile("jet", ".xml");
         try (FileOutputStream os = new FileOutputStream(tempFile)) {
             InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_1);
@@ -54,24 +56,30 @@ public class XmlConfigTest {
 
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, tempFile.getAbsolutePath());
-        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(properties);
-        JetConfig jetConfig = builder.getJetConfig();
 
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
         assertConfig(jetConfig);
     }
 
     @Test
     public void when_classpathSpecified_usesSpecifiedResource() {
+        // Given
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
-        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(properties);
-        JetConfig jetConfig = builder.getJetConfig();
 
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
         assertConfig(jetConfig);
     }
 
     @Test
     public void when_configHasVariable_variablesAreReplaced() {
+        // Given
         String dir = "/var/tmp";
         int threadCount = 55;
         Properties properties = new Properties();
@@ -79,25 +87,28 @@ public class XmlConfigTest {
         properties.put("resource.directory", dir);
         properties.put("thread.count", String.valueOf(threadCount));
 
-        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(properties);
-        JetConfig jetConfig = builder.getJetConfig();
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
 
+        // Then
         assertConfig(jetConfig);
     }
 
     @Test
     public void when_edgeDefaultsSpecified_usesSpecified() {
+        // Given
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:" + TEST_XML_1);
-        XmlJetConfigBuilder builder = new XmlJetConfigBuilder(properties);
-        JetConfig jetConfig = builder.getJetConfig();
 
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
         EdgeConfig edgeConfig = jetConfig.getDefaultEdgeConfig();
-
-        assertEquals("queueSize", 999 , edgeConfig.getQueueSize());
-        assertEquals("highWaterMark",  998 , edgeConfig.getHighWaterMark());
-        assertEquals("packetSizeLimit", 997 , edgeConfig.getPacketSizeLimit());
-        assertEquals("receiveWindowMultiplier", 996 , edgeConfig.getReceiveWindowMultiplier());
+        assertEquals("queueSize", 999, edgeConfig.getQueueSize());
+        assertEquals("highWaterMark", 998, edgeConfig.getHighWaterMark());
+        assertEquals("packetSizeLimit", 997, edgeConfig.getPacketSizeLimit());
+        assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
     }
 
     private void assertConfig(JetConfig jetConfig) {

@@ -38,27 +38,51 @@ import java.util.stream.Stream;
  * xml configuration.
  */
 final class XmlJetConfigLocator {
+
+    public static final String HAZELCAST_MEMBER_CONFIG_PROPERTY = "hazelcast.config";
     public static final String HAZELCAST_JET_CONFIG_PROPERTY = "hazelcast.jet.config";
+    public static final String HAZELCAST_CLIENT_CONFIG_PROPERTY = "hazelcast.client.config";
 
     private static final ILogger LOGGER = Logger.getLogger(XmlJetConfigLocator.class);
+
+    private static final String HAZELCAST_MEMBER_XML = "hazelcast.xml";
     private static final String HAZELCAST_JET_XML = "hazelcast-jet.xml";
+    private static final String HAZELCAST_CLIENT_XML = "hazelcast-client.xml";
+
+    private static final String HAZELCAST_CLIENT_DEFAULT_XML = "hazelcast-jet-client-default.xml";
+    private static final String HAZELCAST_MEMBER_DEFAULT_XML = "hazelcast-jet-member-default.xml";
     private static final String HAZELCAST_JET_DEFAULT_XML = "hazelcast-jet-default.xml";
 
     private XmlJetConfigLocator() {
     }
 
+    public static InputStream getJetConfigStream(Properties properties) {
+        return getConfigStream(properties, HAZELCAST_JET_CONFIG_PROPERTY, HAZELCAST_JET_XML, HAZELCAST_JET_DEFAULT_XML);
+    }
+
+    public static InputStream getMemberConfigStream(Properties properties) {
+        return getConfigStream(properties, HAZELCAST_MEMBER_CONFIG_PROPERTY,
+                HAZELCAST_MEMBER_XML, HAZELCAST_MEMBER_DEFAULT_XML);
+    }
+
+    public static InputStream getClientConfigStream(Properties properties) {
+        return getConfigStream(properties, HAZELCAST_CLIENT_CONFIG_PROPERTY,
+                HAZELCAST_CLIENT_XML, HAZELCAST_CLIENT_DEFAULT_XML);
+    }
+
     /**
      * Constructs a XmlJetConfigLocator.
      *
-     * @throws com.hazelcast.core.HazelcastException if the client XML config is not located.
+     * @throws com.hazelcast.core.HazelcastException if the XML config is not located.
      */
-    public static InputStream getConfigStream(Properties properties) {
+    private static InputStream getConfigStream(Properties properties, String propertyName,
+                                               String xmlName, String defaultXmlName) {
         try {
             return Stream.<Callable<InputStream>>of(
-                    () -> fromProperties(properties),
-                    XmlJetConfigLocator::fromWorkingDirectory,
-                    XmlJetConfigLocator::fromClasspath,
-                    XmlJetConfigLocator::defaultFromClasspath)
+                    () -> fromProperties(propertyName, properties),
+                    () -> XmlJetConfigLocator.fromWorkingDirectory(xmlName),
+                    () -> XmlJetConfigLocator.fromClasspath(xmlName),
+                    () -> XmlJetConfigLocator.defaultFromClasspath(defaultXmlName))
                     .map(Util::uncheckCall)
                     .filter(Objects::nonNull)
                     .findFirst().get();
@@ -67,20 +91,21 @@ final class XmlJetConfigLocator {
         }
     }
 
-    private static InputStream defaultFromClasspath() throws IOException {
-        LOGGER.info("Loading " + HAZELCAST_JET_DEFAULT_XML + " from classpath.");
 
-        InputStream in = Config.class.getClassLoader().getResourceAsStream(HAZELCAST_JET_DEFAULT_XML);
+    private static InputStream defaultFromClasspath(String defaultXmlName) throws IOException {
+        LOGGER.info("Loading " + defaultXmlName + " from classpath.");
+
+        InputStream in = Config.class.getClassLoader().getResourceAsStream(defaultXmlName);
         if (in == null) {
-            throw new IOException("Could not load " + HAZELCAST_JET_DEFAULT_XML + " + from classpath");
+            throw new IOException("Could not load " + defaultXmlName + " + from classpath");
         }
         return in;
     }
 
-    private static InputStream fromClasspath() throws IOException {
-        URL url = Config.class.getClassLoader().getResource(HAZELCAST_JET_XML);
+    private static InputStream fromClasspath(String xmlName) throws IOException {
+        URL url = Config.class.getClassLoader().getResource(xmlName);
         if (url == null) {
-            LOGGER.finest("Could not find " + HAZELCAST_JET_XML + " in classpath.");
+            LOGGER.finest("Could not find " + xmlName + " in classpath.");
             return null;
         }
 
@@ -93,14 +118,14 @@ final class XmlJetConfigLocator {
         return in;
     }
 
-    private static InputStream fromWorkingDirectory() throws IOException {
-        File file = new File(HAZELCAST_JET_XML);
+    private static InputStream fromWorkingDirectory(String xmlName) throws IOException {
+        File file = new File(xmlName);
         if (!file.exists()) {
-            LOGGER.finest("Could not find " + HAZELCAST_JET_XML + " in working directory.");
+            LOGGER.finest("Could not find " + xmlName + " in working directory.");
             return null;
         }
 
-        LOGGER.info("Loading " + HAZELCAST_JET_XML + " from working directory.");
+        LOGGER.info("Loading " + xmlName + " from working directory.");
         try {
             return new FileInputStream(file);
         } catch (FileNotFoundException e) {
@@ -108,15 +133,15 @@ final class XmlJetConfigLocator {
         }
     }
 
-    private static InputStream fromProperties(Properties properties) throws IOException {
-        String path = properties.getProperty(HAZELCAST_JET_CONFIG_PROPERTY);
+    private static InputStream fromProperties(String propertyName, Properties properties) throws IOException {
+        String path = properties.getProperty(propertyName);
 
         if (path == null) {
-            LOGGER.finest("Could not find property " + HAZELCAST_JET_CONFIG_PROPERTY);
+            LOGGER.finest("Could not find property " + propertyName);
             return null;
         }
 
-        LOGGER.info("Loading configuration " + path + " from property " + HAZELCAST_JET_CONFIG_PROPERTY);
+        LOGGER.info("Loading configuration " + path + " from property " + propertyName);
 
         if (path.startsWith("classpath:")) {
             return loadPropertyClassPathResource(path);

@@ -24,18 +24,18 @@ import cascading.tuple.TupleEntryIterator;
 import cascading.tuple.TupleEntrySchemeCollector;
 import cascading.tuple.TupleEntrySchemeIterator;
 import cascading.util.SingleCloseableInputIterator;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.cascading.JetFlowProcess;
+import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.map.impl.MapService;
 
 import java.io.IOException;
@@ -147,7 +147,7 @@ public class InternalMapTap extends InternalJetTap {
         //TODO: used for speeding up tests, should be fixed after config refactor
         synchronized (CLIENT_LOCK) {
             if (client == null) {
-                client = HazelcastClient.newHazelcastClient();
+                client = Jet.newJetClient().getHazelcastInstance();
             }
             return client;
         }

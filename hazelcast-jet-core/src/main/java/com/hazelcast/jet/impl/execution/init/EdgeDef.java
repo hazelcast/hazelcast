@@ -46,7 +46,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
     EdgeDef() {
     }
 
-    EdgeDef(Edge edge, int oppositeVertexId, boolean isJobDistributed) {
+    EdgeDef(Edge edge, EdgeConfig config, int oppositeVertexId, boolean isJobDistributed) {
         this.oppositeVertexId = oppositeVertexId;
         this.sourceOrdinal = edge.getSourceOrdinal();
         this.destOrdinal = edge.getDestOrdinal();
@@ -54,8 +54,7 @@ public class EdgeDef implements IdentifiedDataSerializable {
         this.isDistributed = isJobDistributed && edge.isDistributed();
         this.forwardingPattern = edge.getForwardingPattern();
         this.partitioner = edge.getPartitioner();
-        //TODO: use default EdgeConfig from JetConfig, once config work is integrated
-        this.config = edge.getConfig() == null ? new EdgeConfig() : edge.getConfig();
+        this.config = config;
     }
 
     void initTransientFields(Map<Integer, VertexDef> vMap, VertexDef nearVertex, boolean isOutbound) {

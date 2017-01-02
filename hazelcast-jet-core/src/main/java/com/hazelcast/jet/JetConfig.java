@@ -32,9 +32,9 @@ public class JetConfig {
     /**
      * Javadoc pending
      */
-    public static final int DEFAULT_JET_MULTICAST_PORT = 54328;
+    public static final int DEFAULT_JET_MULTICAST_PORT = 54326;
 
-    private final Config hazelcastConfig = defaultHazelcastConfig();
+    private Config hazelcastConfig = defaultHazelcastConfig();
     private int threadCount = Runtime.getRuntime().availableProcessors();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
     private String resourceDirectory;
@@ -46,6 +46,14 @@ public class JetConfig {
      */
     public Config getHazelcastConfig() {
         return hazelcastConfig;
+    }
+
+    /**
+     * @return Javadoc pending
+     */
+    public JetConfig setHazelcastConfig(Config config) {
+        hazelcastConfig = config;
+        return this;
     }
 
     /**
@@ -132,6 +140,8 @@ public class JetConfig {
     private static Config defaultHazelcastConfig() {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastPort(DEFAULT_JET_MULTICAST_PORT);
+        config.getGroupConfig().setName("jet");
+        config.getGroupConfig().setPassword("jet-pass");
         return config;
     }
 

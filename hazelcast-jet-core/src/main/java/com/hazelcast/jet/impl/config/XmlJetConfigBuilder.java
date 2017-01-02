@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.impl.config;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.AbstractConfigBuilder;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.jet.EdgeConfig;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -33,7 +37,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.InputStream;
 import java.util.Properties;
 
-import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getConfigStream;
+import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getClientConfigStream;
+import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getJetConfigStream;
+import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getMemberConfigStream;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -47,10 +53,6 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private final JetConfig jetConfig = new JetConfig();
 
-    public XmlJetConfigBuilder() {
-        this(System.getProperties());
-    }
-
     /**
      * Loads the jet config using the following resolution mechanism:
      * <ol>
@@ -61,9 +63,8 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
      * <li>it loads the hazelcast-jet-default.xml</li>
      * </ol>
      */
-    public XmlJetConfigBuilder(Properties properties) {
+    XmlJetConfigBuilder(Properties properties, InputStream in) {
         this.properties = properties;
-        InputStream in = getConfigStream(properties);
         try {
             parseAndBuildConfig(in);
         } catch (Exception e) {
@@ -182,4 +183,31 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
         return getTextContent(node);
     }
 
+    static JetConfig getConfig(InputStream in, Properties properties) {
+        JetConfig jetConfig = new XmlJetConfigBuilder(properties, in).getJetConfig();
+        jetConfig.setHazelcastConfig(getMemberConfig(properties));
+        return jetConfig;
+    }
+
+    public static JetConfig getConfig(Properties properties) {
+        InputStream in = getJetConfigStream(properties);
+        return getConfig(in, properties);
+    }
+
+    public static JetConfig getConfig() {
+        Properties properties = System.getProperties();
+        return getConfig(properties);
+    }
+
+    public static ClientConfig getClientConfig() {
+        return getClientConfig(System.getProperties());
+    }
+
+    public static ClientConfig getClientConfig(Properties properties) {
+        return new XmlClientConfigBuilder(getClientConfigStream(properties)).build();
+    }
+
+    public static Config getMemberConfig(Properties properties) {
+        return new XmlConfigBuilder(getMemberConfigStream(properties)).build();
+    }
 }

@@ -25,17 +25,20 @@ import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.impl.JetService;
+import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 
 import java.util.Arrays;
 
 import static com.hazelcast.jet.Jet.getJetClientInstance;
+import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
+import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getConfig;
 
 public class JetTestInstanceFactory {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     public JetInstance newMember() {
-        return newMember(new JetConfig());
+        return newMember(getConfig());
     }
 
     public JetInstance newMember(JetConfig config) {
@@ -57,8 +60,7 @@ public class JetTestInstanceFactory {
 
 
     public JetClientInstanceImpl newClient() {
-        HazelcastInstance client = factory.newHazelcastClient();
-        return getJetClientInstance(client);
+        return newClient(getClientConfig());
     }
 
     public JetClientInstanceImpl newClient(ClientConfig config) {

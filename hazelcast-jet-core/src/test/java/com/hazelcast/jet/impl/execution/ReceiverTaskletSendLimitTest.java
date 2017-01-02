@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution;
 
+import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.impl.Networking;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 public class ReceiverTaskletSendLimitTest {
 
     private static final long START = SECONDS.toNanos(10);
-    private static final long ACK_PERIOD = MILLISECONDS.toNanos(Networking.FLOW_CONTROL_PERIOD_MS);
+    private static final long ACK_PERIOD = MILLISECONDS.toNanos(JetConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS);
     private static final int RWIN_MULTIPLIER = 3;
     private static final int FLOW_CONTROL_PERIOD_MS = 100;
 

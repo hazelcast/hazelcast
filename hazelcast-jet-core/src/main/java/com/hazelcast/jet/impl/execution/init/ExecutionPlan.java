@@ -23,12 +23,14 @@ import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
+import com.hazelcast.jet.EdgeConfig;
+import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.Networking;
 import com.hazelcast.jet.impl.execution.ConcurrentInboundEdgeStream;
 import com.hazelcast.jet.impl.execution.ConveyorCollector;
 import com.hazelcast.jet.impl.execution.ConveyorCollectorWithPartition;
@@ -91,10 +93,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     public static Map<Member, ExecutionPlan> createExecutionPlans(
             NodeEngine nodeEngine, DAG dag, int defaultParallelism
     ) {
-        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        JetInstance instance = nodeEngine.<JetService>getService(JetService.SERVICE_NAME).getJetInstance();
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
+        final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
         final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
@@ -103,12 +106,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             final int localParallelism =
                     vertex.getLocalParallelism() != -1 ? vertex.getLocalParallelism() : defaultParallelism;
             final int totalParallelism = localParallelism * clusterSize;
-            final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()),
+            final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getSource()), isJobDistributed);
-            final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()),
+            final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getDestination()), isJobDistributed);
             final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(new ProcMetaSupplierContext(service.getJetInstance(), totalParallelism, localParallelism));
+            supplier.init(new ProcMetaSupplierContext(instance, totalParallelism, localParallelism));
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
                 final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, localParallelism);
@@ -190,11 +193,12 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return vertexIdMap;
     }
 
-    private static List<EdgeDef> toEdgeDefs(
-            List<Edge> edges, Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
+    private static List<EdgeDef> toEdgeDefs(List<Edge> edges, EdgeConfig defaultEdgeConfig,
+                                            Function<Edge, Integer> oppositeVtxId, boolean isJobDistributed
     ) {
         return edges.stream()
-                    .map(edge -> new EdgeDef(edge, oppositeVtxId.apply(edge), isJobDistributed))
+                    .map(edge -> new EdgeDef(edge, edge.getConfig() == null ? defaultEdgeConfig : edge.getConfig(),
+                            oppositeVtxId.apply(edge), isJobDistributed))
                     .collect(toList());
     }
 
@@ -328,10 +332,14 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                localConveyors[n], localConveyors[n].queueCount() - 1, ptionsPerProcessor[n]));
                        final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount);
                        final int senderCount = nodeEngine.getClusterService().getSize() - 1;
-                       //TODO: fix FLOW_CONTROL_PERIOD after JetConfig is integrated
                        return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
-                               Networking.FLOW_CONTROL_PERIOD_MS, senderCount);
+                               getConfig().getFlowControlPeriodMs(), senderCount);
                    });
+    }
+
+    private JetConfig getConfig() {
+        JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
+        return service.getJetInstance().getConfig();
     }
 
     private List<InboundEdgeStream> createInboundEdgeStreams(VertexDef srcVertex, int processorIdx) {

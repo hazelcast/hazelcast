@@ -257,6 +257,7 @@
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=log4j
                         -Dhazelcast.test.use.network=false
+                        -Djava.net.preferIPv4Stack=true
                     </argLine>
                     <excludedGroups>
                         com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
