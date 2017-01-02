@@ -35,7 +35,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     public Vertex buildDAG(DAG dag) {
         if (upstream.isOrdered()) {
             Vertex previous = upstream.buildDAG(dag);
-            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).parallelism(1);
+            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).localParallelism(1);
             dag.addVertex(distinct)
                     .addEdge(new Edge(previous, distinct));
 

@@ -77,8 +77,8 @@ public class IMapWriterTest extends HazelcastTestSupport {
         Address address = c2.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
 
-        Vertex producer = new Vertex("producer", IMapReader.supplier("producer")).parallelism(4);
-        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("consumer", clientConfig)).parallelism(4);
+        Vertex producer = new Vertex("producer", IMapReader.supplier("producer")).localParallelism(4);
+        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("consumer", clientConfig)).localParallelism(4);
 
         dag.addVertex(producer)
            .addVertex(consumer)

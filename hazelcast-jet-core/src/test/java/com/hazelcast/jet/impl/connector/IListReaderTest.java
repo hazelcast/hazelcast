@@ -75,8 +75,8 @@ public class IListReaderTest extends JetTestSupport {
         Address address = c2.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
 
-        Vertex producer = new Vertex("producer", IListReader.supplier("producer", clientConfig)).parallelism(1);
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer")).parallelism(1);
+        Vertex producer = new Vertex("producer", IListReader.supplier("producer", clientConfig)).localParallelism(1);
+        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

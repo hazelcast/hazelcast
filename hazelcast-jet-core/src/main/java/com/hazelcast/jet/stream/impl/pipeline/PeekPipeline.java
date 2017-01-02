@@ -43,7 +43,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         Vertex writer = new Vertex(listName, Processors.listWriter(listName));
         if (upstream.isOrdered()) {
-            writer.parallelism(1);
+            writer.localParallelism(1);
         }
         dag.addVertex(writer);
         dag.addEdge(new Edge(previous, 1, writer, 0));

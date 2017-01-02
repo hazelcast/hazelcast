@@ -59,11 +59,11 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_single() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
 
         int parallelism = 4;
         ProcSupplier supplier = new ProcSupplier();
-        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
+        Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
         dag.addVertex(producer)
            .addVertex(consumer)
@@ -81,11 +81,11 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_broadcast() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
 
         int parallelism = 4;
         ProcSupplier supplier = new ProcSupplier();
-        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
+        Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
         dag.addVertex(producer)
            .addVertex(consumer)
@@ -101,11 +101,11 @@ public class ForwardingTest extends JetTestSupport {
     @Test
     public void when_partitioned() throws Throwable {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).parallelism(1);
+        Vertex producer = new Vertex("producer", () -> new ListProducer(NUMBERS, 4)).localParallelism(1);
 
         int parallelism = 2;
         ProcSupplier supplier = new ProcSupplier();
-        Vertex consumer = new Vertex("consumer", supplier).parallelism(parallelism);
+        Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
         dag.addVertex(producer)
            .addVertex(consumer)

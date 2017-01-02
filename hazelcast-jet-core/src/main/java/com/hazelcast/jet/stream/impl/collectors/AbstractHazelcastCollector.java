@@ -34,8 +34,8 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);
         Vertex writer = new Vertex(getName(), getConsumer());
-        if (parallelism() > 0) {
-            writer.parallelism(parallelism());
+        if (localParallelism() > 0) {
+            writer.localParallelism(localParallelism());
         }
         dag.addVertex(writer).addEdge(new Edge(vertex, writer));
         executeJob(context, dag);
@@ -46,7 +46,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     protected abstract ProcessorMetaSupplier getConsumer();
 
-    protected abstract int parallelism();
+    protected abstract int localParallelism();
 
     protected abstract String getName();
 }

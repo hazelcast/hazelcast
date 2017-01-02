@@ -52,7 +52,7 @@ import static org.junit.Assert.fail;
 public class ExecutionLifecycleTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 2;
-    private static final int PARALLELISM = 4;
+    private static final int LOCAL_PARALLELISM = 4;
 
     private static final int TIMEOUT_MILLIS = 8000;
 
@@ -70,7 +70,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         MockSupplier.completeErrors.clear();
 
         StuckProcessor.proceedLatch = new CountDownLatch(1);
-        StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * PARALLELISM);
+        StuckProcessor.executionStarted = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
 
         factory = new JetTestInstanceFactory();
 
@@ -169,7 +169,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .parallelism(PARALLELISM);
+                .localParallelism(LOCAL_PARALLELISM);
         dag.addVertex(test);
 
         // When

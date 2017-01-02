@@ -146,11 +146,11 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Mapper::new);
         Vertex accumulator = new Vertex("accumulator", Reducer::new)
-                .parallelism(1);
+                .localParallelism(1);
         Vertex combiner = new Vertex("combiner", Reducer::new)
-                .parallelism(1);
+                .localParallelism(1);
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"))
-                .parallelism(1);
+                .localParallelism(1);
         dag
                 .addVertex(producer)
                 .addVertex(generator)

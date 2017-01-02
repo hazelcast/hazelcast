@@ -48,7 +48,7 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         final List<TransformOperation> ops = operations;
         Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(ops));
         if (upstream.isOrdered()) {
-            transform.parallelism(1);
+            transform.localParallelism(1);
         }
         dag.addVertex(transform)
                 .addEdge(new Edge(previous, transform));

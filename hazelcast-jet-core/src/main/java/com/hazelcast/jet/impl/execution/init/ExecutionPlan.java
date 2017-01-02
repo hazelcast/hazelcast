@@ -100,7 +100,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
             final int vertexId = entry.getValue();
-            final int localParallelism = vertex.getParallelism() != -1 ? vertex.getParallelism() : defaultParallelism;
+            final int localParallelism =
+                    vertex.getLocalParallelism() != -1 ? vertex.getLocalParallelism() : defaultParallelism;
             final int totalParallelism = localParallelism * clusterSize;
             final List<EdgeDef> inbound = toEdgeDefs(dag.getInboundEdges(vertex.getName()),
                     e -> vertexIdMap.get(e.getSource()), isJobDistributed);

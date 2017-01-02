@@ -74,24 +74,24 @@ public class JetEngineTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex evensVertex = new Vertex("evens", () -> new ListProducer(evens, 4))
-                .parallelism(1);
+                .localParallelism(1);
 
         Vertex oddsVertex = new Vertex("odds", () -> new ListProducer(odds, 4))
-                .parallelism(1);
+                .localParallelism(1);
 
 
         Vertex processor = new Vertex("processor",
                 () -> new SplittingMapper(o -> (int) o * (int) o, o -> (int) o * (int) o * (int) o))
-                .parallelism(4);
+                .localParallelism(4);
 
         ListConsumer lhsConsumer = new ListConsumer();
         ListConsumer rhsConsumer = new ListConsumer();
 
         Vertex lhs = new Vertex("lhs", () -> lhsConsumer)
-                .parallelism(1);
+                .localParallelism(1);
 
         Vertex rhs = new Vertex("rhs", () -> rhsConsumer)
-                .parallelism(1);
+                .localParallelism(1);
 
         dag
                 .addVertex(evensVertex)
@@ -119,10 +119,10 @@ public class JetEngineTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("numbers"))
-                .parallelism(1);
+                .localParallelism(1);
 
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

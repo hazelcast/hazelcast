@@ -33,7 +33,6 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Processors.listWriter;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
-import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -69,10 +68,10 @@ public class PartitionAlignmentTest {
         final SimpleProcessorSupplier supplierOfListProducer = () -> new ListProducer(items, items.size());
         final Partitioner partitioner = (item, partitionCount) -> (int) item % partitionCount;
 
-        final Vertex distributedProducer = new Vertex("distributedProducer", supplierOfListProducer).parallelism(1);
-        final Vertex localProducer = new Vertex("localProducer", supplierOfListProducer).parallelism(1);
-        final Vertex processor = new Vertex("processor", Counter::new).parallelism(localProcessorCount);
-        final Vertex consumer = new Vertex("consumer", listWriter("numbers")).parallelism(1);
+        final Vertex distributedProducer = new Vertex("distributedProducer", supplierOfListProducer).localParallelism(1);
+        final Vertex localProducer = new Vertex("localProducer", supplierOfListProducer).localParallelism(1);
+        final Vertex processor = new Vertex("processor", Counter::new).localParallelism(localProcessorCount);
+        final Vertex consumer = new Vertex("consumer", listWriter("numbers")).localParallelism(1);
 
         executeAndPeel(instance.newJob(new DAG()
                 .addVertex(distributedProducer)

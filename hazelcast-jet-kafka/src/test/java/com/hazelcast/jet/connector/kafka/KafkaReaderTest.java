@@ -75,10 +75,10 @@ public class KafkaReaderTest extends JetTestSupport {
         JetInstance instance = createJetInstance();
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
-                .parallelism(4);
+                .localParallelism(4);
 
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

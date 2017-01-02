@@ -58,11 +58,11 @@ public class HdfsWriterTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier(mapName))
-                .parallelism(1);
+                .localParallelism(1);
 
         Path path = getPath();
         Vertex consumer = new Vertex("consumer", HdfsWriter.supplier(path.toString()))
-                .parallelism(4);
+                .localParallelism(4);
 
         dag.addVertex(producer)
            .addVertex(consumer)
@@ -74,10 +74,10 @@ public class HdfsWriterTest extends JetTestSupport {
 
         dag = new DAG();
         producer = new Vertex("producer", HdfsReader.supplier(path.toString()))
-                .parallelism(8);
+                .localParallelism(8);
 
         consumer = new Vertex("consumer", IListWriter.supplier("results"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

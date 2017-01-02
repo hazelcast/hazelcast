@@ -56,7 +56,7 @@ public class Reducer {
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
         SimpleProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
-        Vertex combinerVertex = new Vertex(randomName(), supplier).parallelism(1);
+        Vertex combinerVertex = new Vertex(randomName(), supplier).localParallelism(1);
         dag.addVertex(combinerVertex);
         dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
                 .distributed()

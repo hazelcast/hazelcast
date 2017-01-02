@@ -75,8 +75,8 @@ public class IListWriterTest extends HazelcastTestSupport {
         Address address = c2.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
 
-        Vertex producer = new Vertex("producer", IListReader.supplier("producer")).parallelism(1);
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer", clientConfig)).parallelism(4);
+        Vertex producer = new Vertex("producer", IListReader.supplier("producer")).localParallelism(1);
+        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer", clientConfig)).localParallelism(4);
 
         dag.addVertex(producer)
            .addVertex(consumer)

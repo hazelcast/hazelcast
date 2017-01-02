@@ -85,7 +85,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
         Vertex accumulatorVertex = new Vertex("accumulator-" + randomName(),
                 () -> new CollectorAccumulatorProcessor<>(accumulator, supplier));
         if (upstream.isOrdered()) {
-            accumulatorVertex.parallelism(1);
+            accumulatorVertex.localParallelism(1);
         }
         dag.addVertex(accumulatorVertex);
         Vertex previous = upstream.buildDAG(dag);
@@ -100,7 +100,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
         SimpleProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
-        Vertex combinerVertex = new Vertex("combiner-" + randomName(), processorSupplier).parallelism(1);
+        Vertex combinerVertex = new Vertex("combiner-" + randomName(), processorSupplier).localParallelism(1);
         dag.addVertex(combinerVertex);
         dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
                 .distributed()

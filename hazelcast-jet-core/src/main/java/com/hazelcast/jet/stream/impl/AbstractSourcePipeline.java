@@ -31,7 +31,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
     public Vertex buildDAG(DAG dag) {
         Vertex vertex = new Vertex(getName(), getProducer());
         if (isOrdered()) {
-            vertex.parallelism(1);
+            vertex.localParallelism(1);
         }
         dag.addVertex(vertex);
         return vertex;

@@ -149,7 +149,7 @@ public class CancellationTest extends JetTestSupport {
 
         SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance.getHazelcastInstance()),
                 fault);
-        Vertex faulty = new Vertex("faulty", supplier).parallelism(4);
+        Vertex faulty = new Vertex("faulty", supplier).localParallelism(4);
         dag.addVertex(faulty);
 
         Future<Void> future = instance.newJob(dag).execute();
@@ -178,7 +178,7 @@ public class CancellationTest extends JetTestSupport {
         DAG dag = new DAG();
 
         Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(getAddress(other.getHazelcastInstance()), fault))
-                .parallelism(4);
+                .localParallelism(4);
         dag.addVertex(faulty);
 
         Future<Void> future = instance.newJob(dag).execute();

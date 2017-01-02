@@ -47,7 +47,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
     @Override
-    protected int parallelism() {
+    protected int localParallelism() {
         return 1;
     }
 

@@ -80,10 +80,10 @@ public class KafkaWriterTest extends JetTestSupport {
         instance.getMap("producer").putAll(map);
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("producer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         Vertex consumer = new Vertex("consumer", KafkaWriter.supplier(zkConnStr, producerGroup, topic, brokerConnectionString))
-                .parallelism(4);
+                .localParallelism(4);
 
         dag.addVertex(producer)
            .addVertex(consumer)

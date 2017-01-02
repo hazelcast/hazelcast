@@ -56,7 +56,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected int parallelism() {
+    protected int localParallelism() {
         return -1;
     }
 

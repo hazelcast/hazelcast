@@ -82,7 +82,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .parallelism(PARALLELISM);
+                .localParallelism(PARALLELISM);
         dag.addVertex(test);
 
         // When
@@ -114,7 +114,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .parallelism(PARALLELISM);
+                .localParallelism(PARALLELISM);
         dag.addVertex(test);
 
         // When
@@ -147,7 +147,7 @@ public class TopologyChangeTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .parallelism(PARALLELISM);
+                .localParallelism(PARALLELISM);
         dag.addVertex(test);
 
         // When

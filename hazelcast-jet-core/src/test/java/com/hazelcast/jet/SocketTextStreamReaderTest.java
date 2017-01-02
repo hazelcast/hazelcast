@@ -76,10 +76,10 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         };
         new Thread(server).start();
         Vertex producer = new Vertex("producer", SocketTextStreamReader.supplier(host, port))
-                .parallelism(1);
+                .localParallelism(1);
 
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

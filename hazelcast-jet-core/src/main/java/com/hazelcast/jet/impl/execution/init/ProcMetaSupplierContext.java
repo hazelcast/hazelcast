@@ -22,12 +22,12 @@ import com.hazelcast.jet.ProcessorMetaSupplier.Context;
 class ProcMetaSupplierContext implements Context {
     private final JetInstance jetInstance;
     private final int totalParallelism;
-    private final int perNodeParallelism;
+    private final int localParallelism;
 
-    ProcMetaSupplierContext(JetInstance jetInstance, int totalParallelism, int clusterSize) {
+    ProcMetaSupplierContext(JetInstance jetInstance, int totalParallelism, int localParallelism) {
         this.jetInstance = jetInstance;
         this.totalParallelism = totalParallelism;
-        this.perNodeParallelism = perNodeParallelism;
+        this.localParallelism = localParallelism;
     }
 
     @Override
@@ -42,6 +42,6 @@ class ProcMetaSupplierContext implements Context {
 
     @Override
     public int localParallelism() {
-        return perNodeParallelism;
+        return localParallelism;
     }
 }

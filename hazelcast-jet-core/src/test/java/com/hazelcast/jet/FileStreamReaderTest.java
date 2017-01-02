@@ -62,10 +62,10 @@ public class FileStreamReaderTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
                 FileStreamReader.WatchType.NEW))
-                .parallelism(4);
+                .localParallelism(4);
 
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)
@@ -98,10 +98,10 @@ public class FileStreamReaderTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
                 FileStreamReader.WatchType.REPROCESS))
-                .parallelism(4);
+                .localParallelism(4);
 
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)
@@ -136,10 +136,10 @@ public class FileStreamReaderTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
                 FileStreamReader.WatchType.APPENDED_ONLY))
-                .parallelism(4);
+                .localParallelism(4);
 
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .parallelism(1);
+                .localParallelism(1);
 
         dag.addVertex(producer)
            .addVertex(consumer)

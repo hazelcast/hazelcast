@@ -49,7 +49,7 @@ public class Vertex implements IdentifiedDataSerializable {
 
     private ProcessorMetaSupplier supplier;
     private String name;
-    private int parallelism = -1;
+    private int localParallelism = -1;
 
     /**
      * Constructor used internally for deserialization.
@@ -91,7 +91,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * Creates a vertex from a {@code ProcessorMetaSupplier}.
      *
      * @param name the unique name of the vertex
-     * @param metaSupplier the supplier of {@code ProcessorSupplier}s
+     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s
      *                     for each member
      *
      */
@@ -104,6 +104,28 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
+     * Sets the number of processors corresponding to this vertex that will be
+     * created on each member.
+     */
+    public Vertex localParallelism(int localParallelism) {
+        if (localParallelism <= 0) {
+            throw new IllegalArgumentException("Parallelism must be greater than 0");
+        }
+        this.localParallelism = localParallelism;
+        return this;
+    }
+
+    /**
+     * Returns the number of processors corresponding to this vertex that will
+     * be created on each member. A value of {@code -1} means that this
+     * property is not set; in that case the default configured on the Jet
+     * engine will be used.
+     */
+    public int getLocalParallelism() {
+        return localParallelism;
+    }
+
+    /**
      * @return name of the vertex
      */
     public String getName() {
@@ -111,25 +133,7 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return number of parallel instances of this vertex
-     */
-    public int getParallelism() {
-        return parallelism;
-    }
-
-    /**
-     * Sets the number of parallel instances of this vertex
-     */
-    public Vertex parallelism(int parallelism) {
-        if (parallelism <= 0) {
-            throw new IllegalArgumentException("Parallelism must be greater than 0");
-        }
-        this.parallelism = parallelism;
-        return this;
-    }
-
-    /**
-     * @return the processor supplier
+     * @return the processor meta-supplier
      */
     public ProcessorMetaSupplier getSupplier() {
         return supplier;
@@ -144,14 +148,14 @@ public class Vertex implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         CustomClassLoadedObject.write(out, supplier);
-        out.writeInt(parallelism);
+        out.writeInt(localParallelism);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         supplier = CustomClassLoadedObject.read(in);
-        parallelism = in.readInt();
+        localParallelism = in.readInt();
     }
 
     @Override
