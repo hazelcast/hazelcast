@@ -4,8 +4,11 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerRepetitionTask;
+import com.hazelcast.map.impl.querycache.NodeQueryCacheContextTest.QuerySchedulerTask;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -37,7 +40,7 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
         factory.newHazelcastInstance();
 
         HazelcastInstance hz = factory.newHazelcastClient();
-        ClientMapProxy proxy = (ClientMapProxy)hz.getMap("test");
+        ClientMapProxy proxy = (ClientMapProxy) hz.getMap("test");
         context = proxy.getQueryContext();
     }
 
@@ -69,8 +72,23 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
     @Test
     public void testGetQueryCacheScheduler() {
         QueryCacheScheduler scheduler = context.getQueryCacheScheduler();
-
         assertNotNull(scheduler);
+
+        final QuerySchedulerTask task = new QuerySchedulerTask();
+        scheduler.execute(task);
+
+        final QuerySchedulerRepetitionTask repetitionTask = new QuerySchedulerRepetitionTask();
+        scheduler.scheduleWithRepetition(repetitionTask, 1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(task.executed);
+                assertTrue(repetitionTask.counter.get() > 1);
+            }
+        });
+
+        scheduler.shutdown();
     }
 
     @Test(expected = UnsupportedOperationException.class)
