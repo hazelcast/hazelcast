@@ -31,7 +31,7 @@ import static com.hazelcast.util.CollectionUtil.isEmpty;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 /**
- * This class includes mappings of `cacheName --to-> listener collections`.
+ * This class includes mappings of {@code cacheName --to--> listener collections}.
  */
 public class QueryCacheToListenerMapper {
 
@@ -45,7 +45,7 @@ public class QueryCacheToListenerMapper {
 
     private final ConcurrentMap<String, Collection<ListenerInfo>> registrations;
 
-    public QueryCacheToListenerMapper() {
+    QueryCacheToListenerMapper() {
         this.registrations = new ConcurrentHashMap<String, Collection<ListenerInfo>>();
     }
 
@@ -71,7 +71,8 @@ public class QueryCacheToListenerMapper {
         return false;
     }
 
-    public Collection<ListenerInfo> getListenerInfos(String cacheName) {
+    @SuppressWarnings("unchecked")
+    Collection<ListenerInfo> getListenerInfos(String cacheName) {
         Collection<ListenerInfo> infos = registrations.get(cacheName);
         return isEmpty(infos) ? Collections.EMPTY_SET : infos;
     }

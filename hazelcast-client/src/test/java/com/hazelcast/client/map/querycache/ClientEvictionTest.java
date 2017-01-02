@@ -67,13 +67,12 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         int margin = 10;
         final CountDownLatch evictedCount = new CountDownLatch(populationCount - maxSize - margin);
         final QueryCache<Integer, Integer> cache = map.getQueryCache(cacheName, TruePredicate.INSTANCE, true);
-        cache.addEntryListener(new EntryEvictedListener() {
+        String listener = cache.addEntryListener(new EntryEvictedListener() {
             @Override
             public void entryEvicted(EntryEvent event) {
                 evictedCount.countDown();
             }
         }, false);
-
 
         for (int i = 0; i < populationCount; i++) {
             map.put(i, i);
@@ -82,6 +81,7 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         assertOpenEventually(evictedCount);
         assertQueryCacheEvicted(maxSize, margin, cache);
 
+        cache.removeEntryListener(listener);
     }
 
     private void assertQueryCacheEvicted(int maxSize, int margin, QueryCache<Integer, Integer> cache) {
