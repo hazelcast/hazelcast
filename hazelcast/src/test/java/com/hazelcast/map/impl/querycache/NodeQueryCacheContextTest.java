@@ -36,6 +36,16 @@ public class NodeQueryCacheContextTest extends HazelcastTestSupport {
         context.destroy();
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvokerWrapper_invokeOnAllPartitions_whenRequestOfWrongType_thenThrowException() throws Exception {
+        context.getInvokerWrapper().invokeOnAllPartitions(new Object());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testInvokerWrapper_invoke() {
+        context.getInvokerWrapper().invoke(null);
+    }
+
     @Test
     public void testGetQueryCacheScheduler() {
         QueryCacheScheduler scheduler = context.getQueryCacheScheduler();
