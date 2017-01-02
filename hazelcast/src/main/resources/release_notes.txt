@@ -77,6 +77,19 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.5 Fixes*
+
+The following are the fixed issues for 3.7.5 release.
+
+- Clients are not updated when `DistributedObject` is removed from the member. [9457], [9423]
+- Hazelcast Management Center is not working with Tomcat 8 and higher. [9452]
+- The configuration schema `hazelcast-spring.xsd` should use `<xs:all>` instead of `<xs:sequence>` for "hazelcast-bean" base type. [9289]
+- Stuck threads are seen in Hazelcast 3.6.2 client when session replication is used. [9060]
+- Client disconnection leads to a stuck `clusterExecutor` shutdown in Hazelcast 3.6.2. [8721]
+- Near cache updates may cause `OutofMemoryException` under high load and high number of `ICache.getAsync` calls. [8593]
+- `HazelcastInstanceAware` should be supported for `QuorumFunction`. [7499]
+
+
 *3.7.4 Fixes*
 
 - When nodes terminates concurrently, clusterService.removeAddress can fail because
