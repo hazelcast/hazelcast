@@ -23,6 +23,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -299,11 +300,23 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public void destroyDistributedObject(String objectId) {
-        Data key = nodeEngine.getSerializationService().toData(objectId);
-        for (LockStoreContainer container : containers) {
-            InternalLockNamespace namespace = new InternalLockNamespace(objectId);
-            LockStoreImpl lockStore = container.getOrCreateLockStore(namespace);
-            lockStore.forceUnlock(key);
+        final Data key = nodeEngine.getSerializationService().toData(objectId, StringPartitioningStrategy.INSTANCE);
+        final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        final LockStoreImpl lockStore = containers[partitionId].getLockStore(new InternalLockNamespace(objectId));
+
+        if (lockStore != null) {
+            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            operationService.execute(new PartitionSpecificRunnable() {
+                @Override
+                public void run() {
+                    lockStore.forceUnlock(key);
+                }
+
+                @Override
+                public int getPartitionId() {
+                    return partitionId;
+                }
+            });
         }
     }
 
