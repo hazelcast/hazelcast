@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionTimedOutException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -39,6 +40,7 @@ import java.util.logging.Level;
  * futures at the same time, e.g.
  * {@link #waitWithDeadline(java.util.Collection, long, java.util.concurrent.TimeUnit, long, java.util.concurrent.TimeUnit)}
  */
+@SuppressWarnings("checkstyle:methodcount")
 public final class FutureUtil {
 
     /**
@@ -273,6 +275,33 @@ public final class FutureUtil {
             }
         }
         return results;
+    }
+
+    @PrivateApi
+    public static void waitForever(Collection<Future> futuresToWaitFor, ExceptionHandler exceptionHandler) {
+        Collection<Future> futures = new ArrayList<Future>(futuresToWaitFor);
+        while (true) {
+            Iterator<Future> it = futures.iterator();
+            while (it.hasNext()) {
+                Future future = it.next();
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    exceptionHandler.handleException(e);
+                }
+                if (future.isDone() || future.isCancelled()) {
+                    it.remove();
+                }
+            }
+            if (futures.isEmpty()) {
+                return;
+            }
+        }
+    }
+
+    @PrivateApi
+    public static void waitForever(Collection<Future> futures) {
+        waitForever(futures, IGNORE_ALL_EXCEPT_LOG_MEMBER_LEFT);
     }
 
     @PrivateApi

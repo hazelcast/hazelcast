@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
+import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
@@ -72,8 +72,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class MapKeyLoader {
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
-    private static final long KEY_DISTRIBUTION_TIMEOUT_MINUTES = 15;
-    private static final long KEY_STATUS_TIMEOUT_MINUTES = 5;
 
     private ILogger logger;
 
@@ -210,13 +208,13 @@ public class MapKeyLoader {
 
             keyLoadFinished = new LoadFinishedFuture();
 
+            // side effect -> just trigger load on SENDER_BACKUP id SENDER died
             execService.execute(MAP_LOAD_ALL_KEYS_EXECUTOR, new Runnable() {
                 @Override
                 public void run() {
                     // checks if loading has finished and triggers loading in case SENDER died and SENDER_BACKUP took over.
-                    Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
-                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
-                            .andThen(loadingFinishedCallback());
+                    Operation op = new TriggerLoadIfNeededOperation(mapName);
+                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
                 }
             });
         }
@@ -257,7 +255,7 @@ public class MapKeyLoader {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
+                    Operation op = new TriggerLoadIfNeededOperation(mapName);
                     opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
                 }
             };
@@ -267,6 +265,7 @@ public class MapKeyLoader {
         delayedTrigger.executeWithDelay();
     }
 
+    // If this gets invoked on SENDER BACKUP it means the SENDER died and SENDER BACKUP takes over.
     public boolean shouldDoInitialLoad() {
 
         if (role.is(Role.SENDER_BACKUP)) {
@@ -317,7 +316,7 @@ public class MapKeyLoader {
             // Re-ordering of in-flight operations can happen during a partition migration. We are waiting here
             // for all LoadAllOperation(s) to be ACKed by receivers and only then we send them the LoadStatusOperation
             // See https://github.com/hazelcast/hazelcast/issues/4024 for additional details
-            FutureUtil.waitWithDeadline(futures, KEY_DISTRIBUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES);
+            FutureUtil.waitForever(futures);
 
         } catch (Exception caught) {
             loadError = caught;
@@ -355,17 +354,25 @@ public class MapKeyLoader {
         // Fixes https://github.com/hazelcast/hazelcast/issues/5453
         List<Future> futures = new ArrayList<Future>();
         Operation senderStatus = new LoadStatusOperation(mapName, exception);
-        futures.add(opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
-                .setReplicaIndex(0).invoke());
+        Future senderFuture = opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
+                .setReplicaIndex(0).invoke();
+        futures.add(senderFuture);
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
             Operation senderBackupStatus = new LoadStatusOperation(mapName, exception);
-            futures.add(opService.createInvocationBuilder(SERVICE_NAME, senderBackupStatus, mapNamePartition)
-                    .setReplicaIndex(1).invoke());
+            Future senderBackupFuture = opService.createInvocationBuilder(SERVICE_NAME, senderBackupStatus, mapNamePartition)
+                    .setReplicaIndex(1).invoke();
+            futures.add(senderBackupFuture);
         }
-        FutureUtil.waitWithDeadline(futures, KEY_STATUS_TIMEOUT_MINUTES, TimeUnit.MINUTES);
 
+        // Blocks until finished on SENDER & SENDER_BACKUP PARTITIONS
+        // We need to wait for these operation to finished before the map-key-loader returns from the call
+        // otherwise the loading won't be finished on SENDER and SENDER_BACKUP but the user may be able to call loadAll which
+        // will be ignored since the SENDER and SENDER_BACKUP are still loading.
+        FutureUtil.waitForever(futures);
+
+        // INVOKES AND BLOCKS UNTIL FINISHED on ALL PARTITIONS (SENDER AND SENDER BACKUP WILL BE REPEATED)
         // notify all partitions about loading status: finished or exception encountered
         opService.invokeOnAllPartitions(SERVICE_NAME, new LoadStatusOperationFactory(mapName, exception));
     }
@@ -386,34 +393,20 @@ public class MapKeyLoader {
         this.operationProvider = operationProvider;
     }
 
-    private ExecutionCallback<Boolean> loadingFinishedCallback() {
-        return new ExecutionCallback<Boolean>() {
-            @Override
-            public void onResponse(Boolean loadingFinished) {
-                if (loadingFinished) {
-                    updateLocalKeyLoadStatus(null);
-                }
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                updateLocalKeyLoadStatus(t);
-            }
-        };
+    public boolean isKeyLoadFinished() {
+        return keyLoadFinished.isDone();
     }
 
-    private void updateLocalKeyLoadStatus(Throwable t) {
-        Operation op = new LoadStatusOperation(mapName, t);
-        // This updates the local record store on the partition thread.
-        // If invoked by the SENDER_BACKUP however it's the replica index has to be set to 1, otherwise
-        // it will be a remote call to the SENDER who is the owner of the given partitionId.
-        if (hasBackup && role.is(Role.SENDER_BACKUP)) {
-            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).setReplicaIndex(1).invoke();
-        } else {
-            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
-        }
+    public void promoteToLoadedOnMigration() {
+        // The state machine cannot skip states so we need to promote to loaded step by step
+        state.next(State.LOADING);
+        state.next(State.LOADED);
     }
 
+    private String getStateMessage() {
+        return "on partitionId=" + partitionId + " on " + clusterService.getThisAddress() + " role=" + role
+                + " state=" + state;
+    }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
             implements ExecutionCallback<Boolean> {
@@ -438,7 +431,7 @@ public class MapKeyLoader {
         @Override
         public void onResponse(Boolean loaded) {
             if (loaded) {
-                setResult(loaded);
+                setResult(true);
             }
             // if not loaded yet we wait for the last batch to arrive
         }
@@ -464,18 +457,4 @@ public class MapKeyLoader {
         }
     }
 
-    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
-        keyLoadFinished.andThen(callback, execService.getExecutor(MAP_LOAD_ALL_KEYS_EXECUTOR));
-    }
-
-    public void promoteToLoadedOnMigration() {
-        // The state machine cannot skip states so we need to promote to loaded step by step
-        state.next(State.LOADING);
-        state.next(State.LOADED);
-    }
-
-    private String getStateMessage() {
-        return "on partitionId=" + partitionId + " on " + clusterService.getThisAddress() + " role=" + role
-                + " state=" + state;
-    }
 }
