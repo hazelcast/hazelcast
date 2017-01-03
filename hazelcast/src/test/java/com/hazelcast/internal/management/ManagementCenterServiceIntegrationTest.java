@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNotEquals;
 @Category(SlowTest.class)
 public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport {
 
+    private static final String clusterName = "Session Integration (AWS discovery)";
     private int portNum;
     private JettyServer jettyServer;
 
@@ -76,7 +77,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
                 JsonObject object = JsonObject.readFrom(responseString);
                 TimedMemberState memberState = new TimedMemberState();
                 memberState.fromJson(object);
-                assertEquals("dev", memberState.getClusterName());
+                assertEquals(clusterName, memberState.getClusterName());
             }
         });
     }
@@ -91,7 +92,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
                 HttpResponse response = client.execute(request);
                 HttpEntity entity = response.getEntity();
                 String responseString = EntityUtils.toString(entity);
-                assertEquals("Session Integration (AWS discovery)", responseString);
+                assertEquals(clusterName, responseString);
             }
         });
     }
@@ -111,7 +112,7 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     private Config getManagementCenterConfig() {
         Config config = new Config();
-        config.getGroupConfig().setName("Session Integration (AWS discovery)").setPassword("1234");
+        config.getGroupConfig().setName(clusterName).setPassword("1234");
         config.getManagementCenterConfig().setEnabled(true);
         config.getManagementCenterConfig().setUrl(format("http://localhost:%d%s/", portNum, "/mancen"));
         return config;
