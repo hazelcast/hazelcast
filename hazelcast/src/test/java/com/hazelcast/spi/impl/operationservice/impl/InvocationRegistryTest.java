@@ -43,7 +43,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
 
     private Invocation newInvocation(Operation op) {
         Invocation.Context context = new Context(null, null, null, null, null,
-                1000, invocationRegistry, null, "", logger, null, null, null, null, null, null, null, null);
+                1000, invocationRegistry, null, logger, null, null, null, null, null, null, null, null);
         return new PartitionInvocation(context, op, 0, 0, 0, false);
     }
 

@@ -520,7 +520,7 @@ public abstract class Invocation implements OperationResponseHandler {
 
     private void doInvokeLocal(boolean isAsync) {
         if (op.getCallerUuid() == null) {
-            op.setCallerUuid(context.localMemberUuid);
+            op.setCallerUuid(context.node.getThisUuid());
         }
 
         responseReceived = FALSE;
@@ -733,7 +733,6 @@ public abstract class Invocation implements OperationResponseHandler {
         final long defaultCallTimeoutMillis;
         final InvocationRegistry invocationRegistry;
         final InvocationMonitor invocationMonitor;
-        final String localMemberUuid;
         final ILogger logger;
         final Node node;
         final NodeEngine nodeEngine;
@@ -753,7 +752,6 @@ public abstract class Invocation implements OperationResponseHandler {
                        long defaultCallTimeoutMillis,
                        InvocationRegistry invocationRegistry,
                        InvocationMonitor invocationMonitor,
-                       String localMemberUuid,
                        ILogger logger,
                        Node node,
                        NodeEngine nodeEngine,
@@ -771,7 +769,6 @@ public abstract class Invocation implements OperationResponseHandler {
             this.defaultCallTimeoutMillis = defaultCallTimeoutMillis;
             this.invocationRegistry = invocationRegistry;
             this.invocationMonitor = invocationMonitor;
-            this.localMemberUuid = localMemberUuid;
             this.logger = logger;
             this.node = node;
             this.nodeEngine = nodeEngine;
