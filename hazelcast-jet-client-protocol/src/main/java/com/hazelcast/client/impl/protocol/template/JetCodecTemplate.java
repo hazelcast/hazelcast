@@ -31,8 +31,8 @@ public interface JetCodecTemplate {
     void cancelJob(long executionId);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
-    void updateResource(Data resourcePart);
+    void updateResource(long executionId, Data resourcePart);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
-    void completeResource(Data resourceDescriptor);
+    void completeResource(long executionId, Data resourceDescriptor);
 }

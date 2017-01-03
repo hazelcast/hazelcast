@@ -24,6 +24,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 public class ResourceCompleteOperation extends Operation {
+    private long executionId;
     private ResourceDescriptor descriptor;
 
     @SuppressWarnings("unused")
@@ -31,26 +32,29 @@ public class ResourceCompleteOperation extends Operation {
 
     }
 
-    public ResourceCompleteOperation(ResourceDescriptor descriptor) {
+    public ResourceCompleteOperation(long executionId, ResourceDescriptor descriptor) {
+        this.executionId = executionId;
         this.descriptor = descriptor;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        ResourceStore store = service.getResourceStore();
+        ResourceStore store = service.getResourceStore(executionId);
         store.completeResource(descriptor);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(executionId);
         out.writeObject(descriptor);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        executionId = in.readLong();
         descriptor = in.readObject();
     }
 }

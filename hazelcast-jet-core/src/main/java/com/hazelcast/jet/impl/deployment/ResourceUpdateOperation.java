@@ -20,30 +20,32 @@ import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 
 public class ResourceUpdateOperation extends Operation {
+    private long executionId;
     private ResourcePart part;
 
     @SuppressWarnings("unused")
     private ResourceUpdateOperation() {
     }
 
-    public ResourceUpdateOperation(ResourcePart part) {
+    public ResourceUpdateOperation(long executionId, ResourcePart part) {
+        this.executionId = executionId;
         this.part = part;
     }
 
     @Override
     public void run() throws Exception {
         JetService service = getService();
-        service.getResourceStore().updateResource(part);
+        service.getResourceStore(executionId).updateResource(part);
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
 
+        out.writeLong(executionId);
         out.writeObject(part);
     }
 
@@ -51,6 +53,7 @@ public class ResourceUpdateOperation extends Operation {
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
 
+        executionId = in.readLong();
         part = in.readObject();
     }
 }

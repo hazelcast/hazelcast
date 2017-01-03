@@ -65,7 +65,7 @@ class InitOperation extends Operation {
         final Data planBlob = in.readData();
         planSupplier = () -> {
             JetService service = getService();
-            ClassLoader cl = service.getClassLoader();
+            ClassLoader cl = service.getClassLoader(executionId);
             return deserializeWithCustomClassLoader(getNodeEngine().getSerializationService(), cl, planBlob);
         };
     }

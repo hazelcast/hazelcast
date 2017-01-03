@@ -54,6 +54,11 @@ public interface JetInstance {
     Job newJob(DAG dag);
 
     /**
+     * @return javadoc pending
+     */
+    Job newJob(DAG dag, JobConfig config);
+
+    /**
      * Returns the distributed map instance with the specified name.
      *
      * @param name name of the distributed map

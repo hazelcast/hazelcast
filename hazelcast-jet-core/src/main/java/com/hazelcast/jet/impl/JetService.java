@@ -54,23 +54,24 @@ import java.util.stream.Collectors;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
-                   CanCancelOperations {
+        CanCancelOperations {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
     final ILogger logger;
     private final ClientInvocationRegistry clientInvocationRegistry;
     private final LiveOperationRegistry liveOperationRegistry;
+
     // The type of these variables is CHM and not ConcurrentMap because we rely on specific semantics of
     // computeIfAbsent. ConcurrentMap.computeIfAbsent does not guarantee at most one computation per key.
     private final ConcurrentHashMap<Long, ExecutionContext> executionContexts = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ResourceStore> resourceStores = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ClassLoader> classLoaders = new ConcurrentHashMap<>();
 
     private JetConfig config = new JetConfig();
     private NodeEngineImpl nodeEngine;
     private JetInstance jetInstance;
     private Networking networking;
-    private ResourceStore resourceStore;
-    private ClassLoader classloader;
     private ExecutionService executionService;
 
 
@@ -94,9 +95,6 @@ public class JetService
         engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         networking = new Networking(engine, executionContexts, config.getFlowControlPeriodMs());
-        resourceStore = new ResourceStore(config.getResourceDirectory());
-        classloader = AccessController.doPrivileged(
-                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(resourceStore));
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getExecutionThreadCount());
     }
@@ -150,12 +148,14 @@ public class JetService
         return clientInvocationRegistry;
     }
 
-    public ResourceStore getResourceStore() {
-        return resourceStore;
+    public ResourceStore getResourceStore(long executionId) {
+        return resourceStores.computeIfAbsent(executionId, (k) -> new ResourceStore(config.getResourceDirectory()));
     }
 
-    public ClassLoader getClassLoader() {
-        return classloader;
+    public ClassLoader getClassLoader(long executionId) {
+        return classLoaders.computeIfAbsent(executionId, (k) -> AccessController.doPrivileged(
+                (PrivilegedAction<ClassLoader>) () -> new JetClassLoader(getResourceStore(k))
+        ));
     }
 
     public ExecutionContext getExecutionContext(long executionId) {

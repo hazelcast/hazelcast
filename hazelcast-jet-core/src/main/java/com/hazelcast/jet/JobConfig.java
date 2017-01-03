@@ -32,48 +32,17 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Javadoc pending.
  */
-public class JetEngineConfig implements Serializable {
+public class JobConfig implements Serializable {
 
     private static final int DEFAULT_RESOURCE_PART_SIZE = 1 << 14;
-    private int parallelism = Runtime.getRuntime().availableProcessors();
-    private String resourceDirectory;
     private final Set<ResourceConfig> resourceConfigs = new HashSet<>();
     private final Properties properties = new Properties();
-
-    /**
-     * Sets the number of execution threads per node
-     */
-    public JetEngineConfig setParallelism(int parallelism) {
-        this.parallelism = parallelism;
-        return this;
-    }
-
-    /**
-     * @return the number of execution threads per node
-     */
-    public int getParallelism() {
-        return parallelism;
-    }
 
     /**
      * @return engine specific properties
      */
     public Properties getProperties() {
         return properties;
-    }
-
-    /**
-     * @return the deployment directory used for storing deployed resources
-     */
-    public String getResourceDirectory() {
-        return resourceDirectory;
-    }
-
-    /**
-     * Sets the deployment directory used for storing deployed resources
-     */
-    public void setResourceDirectory(String resourceDirectory) {
-        this.resourceDirectory = resourceDirectory;
     }
 
     /**

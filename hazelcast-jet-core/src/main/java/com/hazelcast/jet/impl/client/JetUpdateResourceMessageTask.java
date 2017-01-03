@@ -32,7 +32,7 @@ public class JetUpdateResourceMessageTask extends AbstractJetMessageTask<Request
 
     @Override
     protected Operation prepareOperation() {
-        return new ResourceUpdateOperation(toObject(parameters.resourcePart));
+        return new ResourceUpdateOperation(parameters.executionId, toObject(parameters.resourcePart));
     }
 
     @Override

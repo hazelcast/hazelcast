@@ -39,7 +39,7 @@ public class JetExecuteJobMessageTask extends AbstractJetMessageTask<RequestPara
     @Override
     protected Operation prepareOperation() {
         JetService service = getService(JetService.SERVICE_NAME);
-        ClassLoader cl = service.getClassLoader();
+        ClassLoader cl = service.getClassLoader(parameters.executionId);
         DAG dag = deserializeWithCustomClassLoader(nodeEngine.getSerializationService(), cl, parameters.dag);
         return new ExecuteJobOperation(parameters.executionId, dag);
     }
