@@ -492,6 +492,39 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void test_whenLockDestroyed_thenUnlocked() {
+        lock.lock();
+        lock.destroy();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse("Lock should have been unlocked by destroy.", lock.isLocked());
+            }
+        });
+    }
+
+    @Test
+    public void test_whenLockDestroyedFromAnotherThread_thenUnlocked() {
+        lock.lock();
+
+        Thread thread = new Thread() {
+            public void run() {
+                lock.destroy();
+            }
+        };
+        thread.start();
+        assertJoinable(thread);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse("Lock should have been unlocked by destroy.", lock.isLocked());
+            }
+        });
+    }
+
+    @Test
     public void testLockCount() throws Exception {
         lock.lock();
         assertEquals(1, lock.getLockCount());
