@@ -181,6 +181,14 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         scheduler.schedule(new OnMemberLeftTask(member), ON_MEMBER_LEFT_DELAY_MILLIS, MILLISECONDS);
     }
 
+    void execute(Runnable runnable) {
+        scheduler.execute(runnable);
+    }
+
+    void schedule(Runnable command, long delayMillis) {
+        scheduler.schedule(command, delayMillis, MILLISECONDS);
+    }
+
     @Override
     public void handle(Packet packet) {
         scheduler.execute(new ProcessOperationControlTask(packet));

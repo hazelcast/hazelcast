@@ -61,7 +61,6 @@ import java.util.logging.Level;
 import static com.hazelcast.cluster.ClusterState.FROZEN;
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.hasActiveInvocation;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -84,7 +83,6 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
@@ -214,6 +212,10 @@ public abstract class Invocation implements OperationResponseHandler {
 
     boolean isActive() {
         return hasActiveInvocation(op);
+    }
+
+    boolean isRetryCandidate() {
+        return op.getCallId() != 0;
     }
 
     /**
@@ -608,13 +610,14 @@ public abstract class Invocation implements OperationResponseHandler {
 
         if (future.interrupted) {
             complete(INTERRUPTED);
-        } else if (context.invocationRegistry.deregister(this)) {
+        } else {
             try {
+                InvocationRetryTask retryTask = new InvocationRetryTask();
                 if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                     // fast retry for the first few invocations
-                    context.asyncExecutor.execute(new InvocationRetryTask());
+                    context.invocationMonitor.execute(retryTask);
                 } else {
-                    context.executionService.schedule(ASYNC_EXECUTOR, new InvocationRetryTask(), tryPauseMillis, MILLISECONDS);
+                    context.invocationMonitor.schedule(retryTask, tryPauseMillis);
                 }
             } catch (RejectedExecutionException e) {
                 completeWhenRetryRejected(e);
@@ -672,6 +675,7 @@ public abstract class Invocation implements OperationResponseHandler {
     }
 
     private class InvocationRetryTask implements Runnable {
+
         @Override
         public void run() {
             // When a cluster is being merged into another one then local node is marked as not-joined and invocations are
@@ -679,6 +683,7 @@ public abstract class Invocation implements OperationResponseHandler {
             // We do not want to retry them before the node is joined again because partition table is stale at this point.
             if (!context.node.joined() && !isJoinOperation(op) && !(op instanceof AllowedDuringPassiveState)) {
                 if (!engineActive()) {
+                    context.invocationRegistry.deregister(Invocation.this);
                     return;
                 }
 
@@ -687,17 +692,23 @@ public abstract class Invocation implements OperationResponseHandler {
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
                 try {
-                    context.executionService.schedule(ASYNC_EXECUTOR, this, tryPauseMillis, MILLISECONDS);
+                    context.invocationMonitor.schedule(new InvocationRetryTask(), tryPauseMillis);
                 } catch (RejectedExecutionException e) {
                     completeWhenRetryRejected(e);
                 }
                 return;
             }
+
+            if (!context.invocationRegistry.deregister(Invocation.this)) {
+                return;
+            }
+
             // When retrying, we must reset lastHeartbeat, otherwise InvocationMonitor will see the old value
             // and falsely conclude that nothing has been done about this operation for a long time.
             lastHeartbeatMillis = 0;
-            doInvoke(false);
+            doInvoke(true);
         }
+
     }
 
     enum HeartbeatTimeout {
