@@ -50,8 +50,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
 
@@ -199,7 +197,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
             Data key = lock.getKey();
             if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                 UnlockOperation op = createLockCleanupOperation(partitionId, lockStore.getNamespace(), key, uuid);
-                operationService.runOperationOnCallingThread(op);
+                // op will be executed on partition thread locally. Invocation is to handle retries.
+                operationService.invokeOnTarget(SERVICE_NAME, op, nodeEngine.getThisAddress());
             }
             lockStore.cleanWaitersAndSignalsFor(key, uuid);
         }
@@ -211,7 +210,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
-        op.setOperationResponseHandler(createEmptyResponseHandler());
         op.setPartitionId(partitionId);
         op.setValidateTarget(false);
         return op;

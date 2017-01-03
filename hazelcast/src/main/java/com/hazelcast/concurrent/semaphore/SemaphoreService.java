@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDetachMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.spi.partition.IPartitionService;
@@ -43,7 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService, RemoteService,
@@ -97,28 +96,30 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        String caller = event.getMember().getUuid();
-        onOwnerDisconnected(caller);
+        onOwnerDisconnected(event.getMember().getUuid());
     }
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void onOwnerDisconnected(final String caller) {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
+    private void onOwnerDisconnected(final String owner) {
         OperationService operationService = nodeEngine.getOperationService();
 
-        for (String name : containers.keySet()) {
-            int partitionId = partitionService.getPartitionId(getPartitionKey(name));
-            Operation op = new SemaphoreDeadMemberOperation(name, caller)
-                    .setPartitionId(partitionId)
+        for (Map.Entry<String, SemaphoreContainer> entry : containers.entrySet()) {
+            String name = entry.getKey();
+            SemaphoreContainer container = entry.getValue();
+
+            Operation op = new SemaphoreDetachMemberOperation(name, owner)
+                    .setPartitionId(container.getPartitionId())
                     .setValidateTarget(false)
-                    .setOperationResponseHandler(createEmptyResponseHandler())
                     .setService(this)
                     .setNodeEngine(nodeEngine)
                     .setServiceName(SERVICE_NAME);
-            operationService.executeOperation(op);
+
+            // op will be executed on partition thread locally.
+            // Invocation is to handle retries (if partition is being migrated).
+            operationService.invokeOnTarget(SERVICE_NAME, op, nodeEngine.getThisAddress());
         }
     }
 
