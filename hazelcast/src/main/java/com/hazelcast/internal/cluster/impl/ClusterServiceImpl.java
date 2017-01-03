@@ -202,6 +202,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         clusterHeartbeatManager.init();
     }
 
+    public void sendLocalMembershipEvent() {
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(node.getLocalMember()));
+    }
+
     public void sendMemberListToMember(Address target) {
         if (!isMaster()) {
             return;
