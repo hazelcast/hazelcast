@@ -106,7 +106,8 @@ public class InvocationRegistry implements Iterable<Invocation>, MetricsProvider
     public boolean register(Invocation invocation) {
         final long callId;
         try {
-            callId = callIdSequence.next(invocation.op.isUrgent());
+            boolean force = invocation.op.isUrgent() || invocation.isRetryCandidate();
+            callId = callIdSequence.next(force);
         } catch (TimeoutException e) {
             throw new HazelcastOverloadException("Failed to start invocation due to overload: " + invocation, e);
         }
