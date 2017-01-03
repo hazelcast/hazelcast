@@ -21,7 +21,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.map.impl.querycache.event.sequence.PartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.map.impl.querycache.publisher.EventPublisherAccumulatorProcessor;
 import com.hazelcast.map.impl.querycache.publisher.PublisherAccumulatorHandler;
@@ -42,7 +41,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E> {
 
     protected final ILogger logger = Logger.getLogger(getClass());
-    protected final AccumulatorHandler handler;
+    protected final AccumulatorHandler<E> handler;
 
     public BasicAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
@@ -106,34 +105,9 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     }
 
     @Override
-    public int peek(AccumulatorHandler<E> handler, long sequence) {
-        CyclicBuffer<E> buffer = getBuffer();
-        if (size() < 1) {
-            return 0;
-        }
-
-        int count = 0;
-        E next;
-        do {
-            E current = buffer.get(sequence);
-            sequence++;
-            next = buffer.get(sequence);
-            handler.handle(current, next == null);
-            count++;
-        } while (next != null);
-
-        return count;
-    }
-
-    @Override
-    public PartitionSequencer getPartitionSequencer() {
-        return partitionSequencer;
-    }
-
-    @Override
     public Iterator<E> iterator() {
         CyclicBuffer<E> buffer = getBuffer();
-        return new ReadOnlyIterator(buffer);
+        return new ReadOnlyIterator<E>(buffer);
     }
 
     @Override
@@ -159,7 +133,7 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
     @Override
     public void reset() {
         buffer.reset();
-        getPartitionSequencer().reset();
+        partitionSequencer.reset();
     }
 
     private E readNextExpiredOrNull(long now, long delay, TimeUnit unit) {
@@ -181,13 +155,15 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
         return isExpired((QueryCacheEventData) sequenced, unit.toMillis(delay), now) ? sequenced : null;
     }
 
-    private AccumulatorHandler createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
+    @SuppressWarnings("unchecked")
+    private AccumulatorHandler<E> createAccumulatorHandler(QueryCacheContext context, AccumulatorInfo info) {
         QueryCacheEventService queryCacheEventService = context.getQueryCacheEventService();
-        AccumulatorProcessor processor = createAccumulatorProcessor(info, queryCacheEventService);
-        return new PublisherAccumulatorHandler(context, processor);
+        AccumulatorProcessor<Sequenced> processor = createAccumulatorProcessor(info, queryCacheEventService);
+        return (AccumulatorHandler<E>) new PublisherAccumulatorHandler(context, processor);
     }
 
-    protected AccumulatorProcessor createAccumulatorProcessor(AccumulatorInfo info, QueryCacheEventService eventService) {
+    protected AccumulatorProcessor<Sequenced> createAccumulatorProcessor(AccumulatorInfo info,
+                                                                         QueryCacheEventService eventService) {
         return new EventPublisherAccumulatorProcessor(info, eventService);
     }
 
@@ -196,11 +172,11 @@ public class BasicAccumulator<E extends Sequenced> extends AbstractAccumulator<E
      *
      * @param <T> the type which can be stored in the {@link Accumulator}.
      */
-    private static class ReadOnlyIterator<T extends Sequenced> implements Iterator<T> {
+    static class ReadOnlyIterator<T extends Sequenced> implements Iterator<T> {
 
         private final CyclicBuffer<T> buffer;
 
-        public ReadOnlyIterator(CyclicBuffer<T> buffer) {
+        ReadOnlyIterator(CyclicBuffer<T> buffer) {
             this.buffer = checkNotNull(buffer, "buffer cannot be null");
         }
 

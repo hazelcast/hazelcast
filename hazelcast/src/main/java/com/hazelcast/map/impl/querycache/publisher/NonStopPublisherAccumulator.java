@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * This accumulator immediately publishes incoming events by only giving a sequence number to them.
- * <p/>
+ *
  * An instance of this class is called by at most one thread at a time.
  */
 class NonStopPublisherAccumulator extends BasicAccumulator<Sequenced> {

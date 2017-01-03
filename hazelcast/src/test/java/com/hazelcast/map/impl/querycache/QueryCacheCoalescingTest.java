@@ -1,7 +1,6 @@
 package com.hazelcast.map.impl.querycache;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
@@ -15,6 +14,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,6 +32,17 @@ public class QueryCacheCoalescingTest extends HazelcastTestSupport {
 
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
+
+    @Before
+    public void setUp() {
+        setLoggingLog4j();
+        setLogLevel(org.apache.log4j.Level.DEBUG);
+    }
+
+    @After
+    public void tearDown() {
+        resetLogLevel();
+    }
 
     @Test
     public void testCoalescingModeWorks() {
@@ -69,15 +81,18 @@ public class QueryCacheCoalescingTest extends HazelcastTestSupport {
     }
 
     private Config getConfig(String mapName, String cacheName) {
-        Config config = new Config();
-        config.setProperty(PARTITION_COUNT.getName(), "1");
-        MapConfig mapConfig = config.getMapConfig(mapName);
-        QueryCacheConfig cacheConfig = new QueryCacheConfig(cacheName);
-        cacheConfig.setCoalesce(true);
-        cacheConfig.setBatchSize(64);
-        cacheConfig.setBufferSize(64);
-        cacheConfig.setDelaySeconds(3);
-        mapConfig.addQueryCacheConfig(cacheConfig);
+        QueryCacheConfig cacheConfig = new QueryCacheConfig(cacheName)
+                .setCoalesce(true)
+                .setBatchSize(64)
+                .setBufferSize(64)
+                .setDelaySeconds(3);
+
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "1");
+
+        config.getMapConfig(mapName)
+                .addQueryCacheConfig(cacheConfig);
+
         return config;
     }
 }
