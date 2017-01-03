@@ -373,6 +373,7 @@ public class Node {
         nodeEngine.start();
         initializeListeners(config);
         hazelcastInstance.lifecycleService.fireLifecycleEvent(LifecycleState.STARTING);
+        clusterService.sendLocalMembershipEvent();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(

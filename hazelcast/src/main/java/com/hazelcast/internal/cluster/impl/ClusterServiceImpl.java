@@ -149,7 +149,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private void registerThisMember() {
         MemberImpl thisMember = node.getLocalMember();
         setMembers(thisMember);
-        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
     }
 
     private void registerMetrics() {
@@ -194,6 +193,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
 
         clusterHeartbeatManager.init();
+    }
+
+    public void sendLocalMembershipEvent() {
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(node.getLocalMember()));
     }
 
     public void sendMemberListToMember(Address target) {
