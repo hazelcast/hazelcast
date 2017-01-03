@@ -18,15 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetInstanceImpl;
-import com.hazelcast.jet.impl.JetService;
-import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
-
+import com.hazelcast.nio.Address;
 import java.util.Arrays;
 
 import static com.hazelcast.jet.Jet.getJetClientInstance;
@@ -42,13 +39,17 @@ public class JetTestInstanceFactory {
     }
 
     public JetInstance newMember(JetConfig config) {
-        config.getHazelcastConfig().getServicesConfig().addServiceConfig(
-                new ServiceConfig().setName(JetService.SERVICE_NAME)
-                                   .setEnabled(true)
-                                   .setClassName(JetService.class.getName())
-                                   .setConfigObject(config));
+        Jet.configureJetService(config);
         HazelcastInstanceImpl hazelcastInstance =
                 ((HazelcastInstanceProxy) (factory.newHazelcastInstance(config.getHazelcastConfig()))).getOriginal();
+        return new JetInstanceImpl(hazelcastInstance, config);
+    }
+
+    public JetInstance newMember(JetConfig config, Address[] blockedAddresses) {
+        Jet.configureJetService(config);
+        HazelcastInstanceImpl hazelcastInstance =
+                ((HazelcastInstanceProxy) (factory.newHazelcastInstance(config.getHazelcastConfig(), blockedAddresses)))
+                        .getOriginal();
         return new JetInstanceImpl(hazelcastInstance, config);
     }
 
@@ -72,4 +73,7 @@ public class JetTestInstanceFactory {
         factory.shutdownAll();
     }
 
+    public Address nextAddress() {
+        return factory.nextAddress();
+    }
 }

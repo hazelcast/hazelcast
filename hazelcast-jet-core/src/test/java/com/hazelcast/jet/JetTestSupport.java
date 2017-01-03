@@ -20,6 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -50,6 +51,13 @@ public class JetTestSupport extends HazelcastTestSupport {
         return instanceFactory.newMember(config);
     }
 
+    protected JetInstance createJetInstance(JetConfig config, Address[] blockedAddress) {
+        if (instanceFactory == null) {
+            instanceFactory = new JetTestInstanceFactory();
+        }
+        return instanceFactory.newMember(config, blockedAddress);
+    }
+
     protected static <K, V> IStreamMap<K, V> getMap(JetInstance instance) {
         return instance.getMap(randomName());
     }
@@ -77,6 +85,10 @@ public class JetTestSupport extends HazelcastTestSupport {
                 runnable.run();
             }
         });
+    }
+
+    public Address nextAddress() {
+        return instanceFactory.nextAddress();
     }
 
     @FunctionalInterface

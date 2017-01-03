@@ -85,7 +85,7 @@ public final class Jet {
     }
 
 
-    private static void configureJetService(JetConfig jetConfig) {
+    static void configureJetService(JetConfig jetConfig) {
         jetConfig.getHazelcastConfig().getServicesConfig()
                  .addServiceConfig(new ServiceConfig().setEnabled(true)
                                                       .setName(JetService.SERVICE_NAME)
