@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -69,9 +70,11 @@ public class ReplicateUpdateOperation extends AbstractOperation implements Parti
         long currentVersion = store.getVersion();
         long updateVersion = response.getVersion();
         if (currentVersion >= updateVersion) {
-            getLogger().finest("Stale update received for replicated map -> " + name + ",  partitionId -> "
-                    + getPartitionId() + " , current version -> " + currentVersion + ", update version -> "
-                    + updateVersion + ", rejecting update!");
+            ILogger logger = getLogger();
+            if (logger.isFineEnabled()) {
+                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
+                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+            }
             return;
         }
         Object key = store.marshall(dataKey);

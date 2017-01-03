@@ -58,7 +58,8 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
 
     @Override
     public void run() throws Exception {
-        final ILogger logger = getLogger();
+        ILogger logger = getLogger();
+        int partitionId = getPartitionId();
         ReplicatedMapService service = getService();
         PartitionContainer container = service.getPartitionContainer(getPartitionId());
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
@@ -67,11 +68,18 @@ public class CheckReplicaVersion extends AbstractOperation implements PartitionA
             Long version = entry.getValue();
             ReplicatedRecordStore store = stores.get(name);
             if (store == null) {
-                logger.finest("Missing store on the replica ! Owner version -> " + version);
+                if (logger.isFineEnabled()) {
+                    logger.fine("Missing store on the replica ! map: " + name
+                            + " owner version:" + version + " partitionId=" + partitionId);
+                }
+
                 requestDataFromOwner(name);
             } else if (store.isStale(version)) {
-                logger.finest("Stale replica! Owner version ->  " + version
-                        + ", Replica version -> " + store.getVersion());
+                if (logger.isFineEnabled()) {
+                    logger.fine("Stale replica! map: "  + name + " owner version: " + version
+                            + " replica version: " + store.getVersion() + " partitionId=" + partitionId);
+                }
+
                 requestDataFromOwner(name);
             }
         }
