@@ -5,6 +5,7 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -13,8 +14,10 @@ import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 
 import java.io.File;
 
@@ -27,6 +30,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
+
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
     protected static final int KEY_COUNT = 10023;
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
@@ -71,7 +77,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
      * @param <V> value type of the created {@link com.hazelcast.internal.adapter.DataStructureAdapter}
      * @return a {@link NearCacheTestContext} used by the Near Cache tests
      */
-    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext();
+    protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createContext(boolean createClient);
 
     /**
      * Creates the {@link NearCacheTestContext} with only a client used by the Near Cache tests.
@@ -99,7 +105,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreInitialDelaySeconds(3)
                 .setStoreIntervalSeconds(1);
 
-        NearCacheTestContext<Object, String, NK, NV> context = createContext();
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 1);
@@ -119,17 +125,16 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withInvalidFileName() {
+        String filename = "/dev/null/invalid.store";
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(1)
                 .setStoreIntervalSeconds(1)
-                .setFileName("/dev/null/invalid.store");
+                .setFilename(filename);
 
-        NearCacheTestContext<Object, String, NK, NV> context = createContext();
-        populateNearCache(context, KEY_COUNT, false);
+        expectedException.expectMessage("Cannot create lock file " + filename);
+        expectedException.expect(HazelcastException.class);
 
-        // there are no Near Cache statistics for failing persistences, so we just wait a bit
-        sleepSeconds(3);
-        assertLastNearCachePersistence(context, 0);
+        createContext(true);
     }
 
     @Test(timeout = TEST_TIMEOUT)
@@ -152,14 +157,35 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     private void createStoreFile(int keyCount, boolean useStringKey) {
         nearCacheConfig.getPreloaderConfig()
-                .setStoreInitialDelaySeconds(3)
+                .setStoreInitialDelaySeconds(2)
                 .setStoreIntervalSeconds(1);
 
-        NearCacheTestContext<Object, String, NK, NV> context = createContext();
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 3);
         assertLastNearCachePersistence(context, keyCount);
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
+    public void testCreateStoreFile_whenTwoClientsWithSameStoreFile_thenThrowException() {
+        nearCacheConfig.getPreloaderConfig()
+                .setStoreInitialDelaySeconds(2)
+                .setStoreIntervalSeconds(1);
+
+        // the first client creates the lock file and holds the lock on it
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
+
+        // assure that the pre-loader is working on the first client
+        populateNearCache(context, KEY_COUNT, false);
+        waitForNearCachePersistence(context, 3);
+        assertLastNearCachePersistence(context, KEY_COUNT);
+
+        // the second client cannot acquire the lock, so it fails with an exception
+        expectedException.expectMessage("Cannot acquire lock on " + DEFAULT_STORE_FILE);
+        expectedException.expect(HazelcastException.class);
+        createClientContext();
     }
 
     @Test
@@ -193,8 +219,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private void preloadNearCache(File preloaderFile, int keyCount, boolean useStringKey) {
-        nearCacheConfig.getPreloaderConfig().setFileName(preloaderFile.getAbsolutePath());
-        NearCacheTestContext<Object, String, NK, NV> context = createContext();
+        nearCacheConfig.getPreloaderConfig().setFilename(preloaderFile.getAbsolutePath());
+        NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
         for (int i = 0; i < keyCount; i++) {
@@ -210,11 +236,11 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCacheSizeEventually(clientContext, keyCount);
     }
 
-    protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean invalidationOnChange, int size,
+    protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean invalidationOnChange, int maxSize,
                                                  String preloaderFileName) {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
-                .setSize(size)
+                .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LRU);
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
@@ -223,7 +249,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         nearCacheConfig.getPreloaderConfig()
                 .setEnabled(true)
-                .setFileName(preloaderFileName);
+                .setFilename(preloaderFileName);
 
         return nearCacheConfig;
     }
@@ -263,6 +289,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
             assertEquals(0, nearCacheStats.getLastPersistenceWrittenBytes());
             assertFalse(DEFAULT_STORE_FILE.exists());
         }
+        assertTrue(nearCacheStats.getLastPersistenceFailure().isEmpty());
     }
 
     private static void assertNearCachePreloadDoneEventually(final NearCacheTestContext clientContext) {

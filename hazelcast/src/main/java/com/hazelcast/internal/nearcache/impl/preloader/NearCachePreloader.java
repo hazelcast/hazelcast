@@ -93,6 +93,7 @@ public class NearCachePreloader<KS> {
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
 
+    private final NearCachePreloaderLock lock;
     private final File storeFile;
     private final File tmpStoreFile;
 
@@ -105,9 +106,14 @@ public class NearCachePreloader<KS> {
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
 
-        String fileName = getFileName(preloaderConfig.getFileName(), nearCacheName);
-        this.storeFile = new File(fileName);
-        this.tmpStoreFile = new File(fileName + "~");
+        String filename = getFileName(preloaderConfig.getFilename(), nearCacheName);
+        this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
+        this.storeFile = new File(filename);
+        this.tmpStoreFile = new File(filename + "~");
+    }
+
+    public void destroy() {
+        lock.release();
     }
 
     /**
@@ -197,6 +203,8 @@ public class NearCachePreloader<KS> {
             updatePersistenceStats(startedNanos);
         } catch (Exception e) {
             logger.warning(format("Could not store keys of Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
+
+            nearCacheStats.addPersistenceFailure(e);
         } finally {
             deleteQuietly(tmpStoreFile);
             closeResource(fos);

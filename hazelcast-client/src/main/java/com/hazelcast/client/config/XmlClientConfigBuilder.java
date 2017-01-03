@@ -298,14 +298,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
     private NearCachePreloaderConfig getNearCachePreloaderConfig(Node node) {
         NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
         String enabled = getAttribute(node, "enabled");
-        String fileName = getAttribute(node, "file-name");
+        String filename = getAttribute(node, "filename");
         String storeInitialDelaySeconds = getAttribute(node, "store-initial-delay-seconds");
         String storeIntervalSeconds = getAttribute(node, "store-interval-seconds");
         if (enabled != null) {
             preloaderConfig.setEnabled(getBooleanValue(enabled));
         }
-        if (fileName != null) {
-            preloaderConfig.setFileName(fileName);
+        if (filename != null) {
+            preloaderConfig.setFilename(filename);
         }
         if (storeInitialDelaySeconds != null) {
             preloaderConfig.setStoreInitialDelaySeconds(getIntegerValue("storage-initial-delay-seconds",
