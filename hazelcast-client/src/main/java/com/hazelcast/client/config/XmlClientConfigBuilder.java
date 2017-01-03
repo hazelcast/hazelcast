@@ -76,6 +76,7 @@ import static com.hazelcast.util.StringUtil.upperCaseInternal;
 /**
  * Loads the {@link com.hazelcast.client.config.ClientConfig} using XML.
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlClientConfigBuilder.class);
@@ -183,6 +184,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         this.clientConfig = clientConfig;
         Document doc = parse(in);
         Element root = doc.getDocumentElement();
+        checkRootElement(root);
         try {
             root.getTextContent();
         } catch (Throwable e) {
@@ -191,6 +193,14 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         process(root);
         schemaValidation(root.getOwnerDocument());
         handleConfig(root);
+    }
+
+    private void checkRootElement(Element root) {
+        String rootNodeName = root.getNodeName();
+        if (!ClientXmlElements.HAZELCAST_CLIENT.isEqual(rootNodeName)) {
+            throw new InvalidConfigurationException("Invalid root element in xml configuration! "
+                    + "Expected: <" + ClientXmlElements.HAZELCAST_CLIENT.name + ">, Actual: <" + rootNodeName + ">.");
+        }
     }
 
     private void handleConfig(Element docElement) throws Exception {

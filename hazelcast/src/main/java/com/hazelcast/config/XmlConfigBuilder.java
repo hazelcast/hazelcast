@@ -220,6 +220,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         this.config = config;
         Document doc = parse(in);
         Element root = doc.getDocumentElement();
+        checkRootElement(root);
         try {
             root.getTextContent();
         } catch (Throwable e) {
@@ -230,6 +231,14 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             schemaValidation(root.getOwnerDocument());
         }
         handleConfig(root);
+    }
+
+    private void checkRootElement(Element root) {
+        String rootNodeName = root.getNodeName();
+        if (!XmlElements.HAZELCAST.isEqual(rootNodeName)) {
+            throw new InvalidConfigurationException("Invalid root element in xml configuration! "
+                    + "Expected: <" + XmlElements.HAZELCAST.name + ">, Actual: <" + rootNodeName + ">.");
+        }
     }
 
     private boolean shouldValidateTheSchema() {

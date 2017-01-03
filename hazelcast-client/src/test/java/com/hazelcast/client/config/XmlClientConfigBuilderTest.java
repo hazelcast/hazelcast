@@ -91,6 +91,17 @@ public class XmlClientConfigBuilderTest {
         System.clearProperty("hazelcast.client.config");
     }
 
+    @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidRootElement() {
+        String xml = "<hazelcast>"
+                + "<group>"
+                + "<name>dev</name>"
+                + "<password>clusterpass</password>"
+                + "</group>"
+                + "</hazelcast>";
+        buildConfig(xml);
+    }
+
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
         File file = File.createTempFile("foo", "bar");
