@@ -49,14 +49,13 @@ public class ClientEvictionTest extends HazelcastTestSupport {
         String mapName = randomString();
         String cacheName = randomString();
 
-        ClientConfig clientConfig = new ClientConfig();
-
         QueryCacheConfig cacheConfig = new QueryCacheConfig(cacheName);
-        EvictionConfig evictionConfig = cacheConfig.getEvictionConfig();
-        evictionConfig.setSize(maxSize);
-        evictionConfig.setEvictionPolicy(EvictionPolicy.LFU);
-        evictionConfig.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        cacheConfig.getEvictionConfig()
+                .setSize(maxSize)
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
 
+        ClientConfig clientConfig = new ClientConfig();
         clientConfig.addQueryCacheConfig(mapName, cacheConfig);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
