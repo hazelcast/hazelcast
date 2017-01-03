@@ -38,7 +38,7 @@ public class AcquireOperation extends SemaphoreBackupAwareOperation implements B
     @Override
     public void run() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        response = semaphoreContainer.acquire(permitCount, getCallerUuid());
+        response = semaphoreContainer.acquire(getCallerUuid(), permitCount);
     }
 
     @Override
