@@ -68,13 +68,7 @@ public class MapPortableHook implements PortableHook {
             if (classId == CREATE_ACCUMULATOR_INFO) {
                 return new AccumulatorInfo();
             }
-            throw new IndexOutOfBoundsException(getExceptionMessage(classId));
-        }
-
-        private static String getExceptionMessage(int classId) {
-            return "No registered constructor exists with class id: " + classId;
+            throw new IndexOutOfBoundsException("No registered constructor exists with class id: " + classId);
         }
     }
-
 }
-
