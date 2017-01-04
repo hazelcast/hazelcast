@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.core.IMap;
-import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.IStreamMap;
+import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
 
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -50,8 +50,8 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     }
 
     @Override
-    public IMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
-        IMap<K, V> target = getTarget(context.getJetInstance());
+    public IStreamMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
+        IStreamMap<K, V> target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 

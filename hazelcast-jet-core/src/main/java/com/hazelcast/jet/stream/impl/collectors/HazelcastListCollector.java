@@ -16,15 +16,15 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.core.IList;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.stream.IStreamList;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
-public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, IList<T>> {
+public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, IStreamList<T>> {
 
     private final String listName;
 
@@ -37,7 +37,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ILi
     }
 
     @Override
-    protected IList<T> getTarget(JetInstance instance) {
+    protected IStreamList<T> getTarget(JetInstance instance) {
         return instance.getList(listName);
     }
 

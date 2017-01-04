@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.stream.IStreamMap;
 
 import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
-public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T, IMap<K, V>> {
+public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T, IStreamMap<K, V>> {
 
     protected final String mapName;
     protected final Function<? super T, ? extends K> keyMapper;
@@ -46,7 +46,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected IMap<K, V> getTarget(JetInstance instance) {
+    protected IStreamMap<K, V> getTarget(JetInstance instance) {
         return instance.getMap(mapName);
     }
 
