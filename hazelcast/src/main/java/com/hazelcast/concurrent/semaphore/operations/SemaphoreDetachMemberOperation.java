@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.SemaphoreWaitNotifyKey;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
@@ -31,16 +32,16 @@ import com.hazelcast.spi.partition.IPartitionService;
 
 import java.io.IOException;
 
-public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
+public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 
-    private String firstCaller;
+    private String detachedMemberUuid;
 
-    public SemaphoreDeadMemberOperation() {
+    public SemaphoreDetachMemberOperation() {
     }
 
-    public SemaphoreDeadMemberOperation(String name, String firstCaller) {
+    public SemaphoreDetachMemberOperation(String name, String detachedMemberUuid) {
         super(name, -1);
-        this.firstCaller = firstCaller;
+        this.detachedMemberUuid = detachedMemberUuid;
     }
 
     @Override
@@ -48,7 +49,12 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
         SemaphoreService service = getService();
         if (service.containsSemaphore(name)) {
             SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
-            response = semaphoreContainer.memberRemoved(firstCaller);
+            response = semaphoreContainer.detachAll(detachedMemberUuid);
+        }
+
+        ILogger logger = getLogger();
+        if (logger.isFineEnabled()) {
+            logger.fine("Removing permits attached to " + detachedMemberUuid + ". Result: " + response);
         }
     }
 
@@ -66,8 +72,20 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
     }
 
     @Override
+    public int getAsyncBackupCount() {
+        int syncBackupCount = super.getSyncBackupCount();
+        int asyncBackupCount = super.getAsyncBackupCount();
+        return syncBackupCount + asyncBackupCount;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return 0;
+    }
+
+    @Override
     public Operation getBackupOperation() {
-        return new SemaphoreDeadMemberBackupOperation(name, firstCaller);
+        return new SemaphoreDetachMemberBackupOperation(name, detachedMemberUuid);
     }
 
     @Override
@@ -82,18 +100,16 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
 
     @Override
     public int getId() {
-        return SemaphoreDataSerializerHook.DEAD_MEMBER_OPERATION;
+        return SemaphoreDataSerializerHook.DETACH_MEMBER_OPERATION;
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(firstCaller);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        firstCaller = in.readUTF();
+        throw new UnsupportedOperationException();
     }
 }

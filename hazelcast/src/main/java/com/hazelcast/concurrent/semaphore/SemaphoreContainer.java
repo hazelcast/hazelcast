@@ -50,30 +50,30 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         this.attachMap = new HashMap<String, Integer>(INITIAL_CAPACITY);
     }
 
-    private void attach(String caller, int permitCount) {
-        Integer attached = attachMap.get(caller);
+    private void attach(String owner, int permitCount) {
+        Integer attached = attachMap.get(owner);
         if (attached == null) {
             attached = 0;
         }
-        attachMap.put(caller, attached + permitCount);
+        attachMap.put(owner, attached + permitCount);
     }
 
-    private void detach(String caller, int permitCount) {
-        Integer attached = attachMap.get(caller);
+    private void detach(String owner, int permitCount) {
+        Integer attached = attachMap.get(owner);
         if (attached == null) {
             return;
         }
 
         attached -= permitCount;
         if (attached <= 0) {
-            attachMap.remove(caller);
+            attachMap.remove(owner);
         } else {
-            attachMap.put(caller, attached);
+            attachMap.put(owner, attached);
         }
     }
 
-    public boolean memberRemoved(String caller) {
-        Integer attached = attachMap.remove(caller);
+    public boolean detachAll(String owner) {
+        Integer attached = attachMap.remove(owner);
         if (attached != null) {
             available += attached;
             return true;
@@ -98,22 +98,22 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         return available - permitCount >= 0;
     }
 
-    public boolean acquire(int permitCount, String caller) {
+    public boolean acquire(String owner, int permitCount) {
         if (isAvailable(permitCount)) {
             available -= permitCount;
-            attach(caller, permitCount);
+            attach(owner, permitCount);
             initialized = true;
             return true;
         }
         return false;
     }
 
-    public int drain(String caller) {
+    public int drain(String owner) {
         int drain = available;
         available = 0;
         if (drain > 0) {
             initialized = true;
-            attach(caller, drain);
+            attach(owner, drain);
         }
         return drain;
     }
@@ -129,10 +129,10 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         return true;
     }
 
-    public void release(int permitCount, String caller) {
+    public void release(String owner, int permitCount) {
         available += permitCount;
         initialized = true;
-        detach(caller, permitCount);
+        detach(owner, permitCount);
     }
 
     public int getPartitionId() {
@@ -187,9 +187,9 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         int size = in.readInt();
         attachMap = new HashMap<String, Integer>(size);
         for (int i = 0; i < size; i++) {
-            String caller = in.readUTF();
+            String owner = in.readUTF();
             Integer val = in.readInt();
-            attachMap.put(caller, val);
+            attachMap.put(owner, val);
         }
     }
 
@@ -204,7 +204,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         sb.append('}');
         sb.append("\n");
         for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
-            sb.append("{caller=").append(entry.getKey());
+            sb.append("{owner=").append(entry.getKey());
             sb.append(", attached=").append(entry.getValue());
             sb.append("} ");
         }

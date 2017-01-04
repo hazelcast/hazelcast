@@ -31,7 +31,7 @@ public class ReleaseBackupOperation extends SemaphoreBackupOperation {
     @Override
     public void run() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        semaphoreContainer.release(permitCount, firstCaller);
+        semaphoreContainer.release(firstCaller, permitCount);
         response = true;
     }
 

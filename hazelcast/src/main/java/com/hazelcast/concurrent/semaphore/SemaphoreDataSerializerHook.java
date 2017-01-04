@@ -27,8 +27,8 @@ import com.hazelcast.concurrent.semaphore.operations.ReduceBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReduceOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseBackupOperation;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
-import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberBackupOperation;
-import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDetachMemberBackupOperation;
+import com.hazelcast.concurrent.semaphore.operations.SemaphoreDetachMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -46,7 +46,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     public static final int ACQUIRE_BACKUP_OPERATION = 1;
     public static final int ACQUIRE_OPERATION = 2;
     public static final int AVAILABLE_OPERATION = 3;
-    public static final int DEAD_MEMBER_BACKUP_OPERATION = 4;
+    public static final int DETACH_MEMBER_BACKUP_OPERATION = 4;
     public static final int DRAIN_BACKUP_OPERATION = 5;
     public static final int DRAIN_OPERATION = 6;
     public static final int INIT_BACKUP_OPERATION = 7;
@@ -55,7 +55,7 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
     public static final int REDUCE_OPERATION = 10;
     public static final int RELEASE_BACKUP_OPERATION = 11;
     public static final int RELEASE_OPERATION = 12;
-    public static final int DEAD_MEMBER_OPERATION = 13;
+    public static final int DETACH_MEMBER_OPERATION = 13;
     public static final int SEMAPHORE_REPLICATION_OPERATION = 14;
 
     @Override
@@ -77,8 +77,8 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
                         return new AcquireOperation();
                     case AVAILABLE_OPERATION:
                         return new AvailableOperation();
-                    case DEAD_MEMBER_BACKUP_OPERATION:
-                        return new SemaphoreDeadMemberBackupOperation();
+                    case DETACH_MEMBER_BACKUP_OPERATION:
+                        return new SemaphoreDetachMemberBackupOperation();
                     case DRAIN_BACKUP_OPERATION:
                         return new DrainBackupOperation();
                     case DRAIN_OPERATION:
@@ -95,8 +95,8 @@ public class SemaphoreDataSerializerHook implements DataSerializerHook {
                         return new ReleaseBackupOperation();
                     case RELEASE_OPERATION:
                         return new ReleaseOperation();
-                    case DEAD_MEMBER_OPERATION:
-                        return new SemaphoreDeadMemberOperation();
+                    case DETACH_MEMBER_OPERATION:
+                        return new SemaphoreDetachMemberOperation();
                     case SEMAPHORE_REPLICATION_OPERATION:
                         return new SemaphoreReplicationOperation();
                     default:
