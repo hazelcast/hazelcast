@@ -176,7 +176,9 @@ public final class ProxyRegistry {
                 try {
                     ((InitializingObject) proxy).initialize();
                 } catch (Exception e) {
+                    // log and throw exception to be handled in outer catch block
                     proxyService.logger.warning("Error while initializing proxy: " + proxy, e);
+                    throw e;
                 }
             }
             proxyFuture.set(proxy);
