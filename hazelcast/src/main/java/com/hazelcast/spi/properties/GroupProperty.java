@@ -100,6 +100,9 @@ public final class GroupProperty {
     public static final HazelcastProperty CLIENT_ENGINE_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.thread.count", -1);
 
+    public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
+            = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
+
     public static final HazelcastProperty EVENT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.event.thread.count", 5);
     public static final HazelcastProperty EVENT_QUEUE_CAPACITY
