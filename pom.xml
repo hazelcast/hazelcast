@@ -29,6 +29,7 @@
 
     <modules>
         <module>hazelcast-jet-all</module>
+        <module>hazelcast-jet-distribution</module>
         <module>hazelcast-jet-cascading</module>
         <module>hazelcast-jet-client-protocol</module>
         <module>hazelcast-jet-core</module>
@@ -62,7 +63,7 @@
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>2.9</maven.javadoc.plugin.version>
         <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
+        <maven.assembly.plugin.version>3.0.0</maven.assembly.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>2.2</maven.shade.plugin.version>
         <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
