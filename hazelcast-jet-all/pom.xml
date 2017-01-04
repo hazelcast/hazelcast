@@ -46,6 +46,7 @@
                     <artifactSet>
                         <excludes>
                             <exclude>com.hazelcast:hazelcast:*</exclude>
+                            <exclude>com.hazelcast:hazelcast-client:*</exclude>
                         </excludes>
                     </artifactSet>
                 </configuration>
@@ -66,12 +67,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-client</artifactId>
+            <groupId>com.hazelcast.jet</groupId>
+            <artifactId>hazelcast-jet-core</artifactId>
+            <version>${project.parent.version}</version>
         </dependency>
     </dependencies>
 </project>
