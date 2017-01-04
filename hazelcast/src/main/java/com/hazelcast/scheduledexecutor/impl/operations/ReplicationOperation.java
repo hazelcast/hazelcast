@@ -19,6 +19,7 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorPartition;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
@@ -26,7 +27,6 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ReplicationOperation
         extends AbstractSchedulerOperation {
@@ -45,8 +45,15 @@ public class ReplicationOperation
         DistributedScheduledExecutorService service = getService();
         ScheduledExecutorPartition partition = service.getPartition(getPartitionId());
         for (Map.Entry<String, Map<String, ScheduledTaskDescriptor>> entry : map.entrySet()) {
-            partition.createContainer(entry.getKey(),
-                    new ConcurrentHashMap<String, ScheduledTaskDescriptor>(entry.getValue()));
+            ScheduledExecutorContainer container = partition.getOrCreateContainer(entry.getKey());
+            for (Map.Entry<String, ScheduledTaskDescriptor> descriptorEntry : entry.getValue().entrySet()) {
+                String taskName = descriptorEntry.getKey();
+                ScheduledTaskDescriptor descriptor = descriptorEntry.getValue();
+
+                if (!container.has(taskName)) {
+                    container.stash(descriptor);
+                }
+            }
         }
     }
 

@@ -79,6 +79,8 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
 
     public static final int SHUTDOWN = 23;
 
+    public static final int TASK_RESOLUTION = 24;
+
     @Override
     public int getFactoryId() {
         return F_ID;
@@ -136,6 +138,8 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new ResultReadyNotifyOperation();
                     case SHUTDOWN:
                         return new ShutdownOperation();
+                    case TASK_RESOLUTION:
+                        return new ScheduledTaskResult();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }

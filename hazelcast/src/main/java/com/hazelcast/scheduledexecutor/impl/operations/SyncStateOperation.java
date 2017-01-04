@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
 import com.hazelcast.spi.Operation;
 
@@ -38,16 +39,20 @@ public class SyncStateOperation
 
     private ScheduledTaskStatisticsImpl stats;
 
+    private ScheduledTaskResult result;
+
     private boolean shouldRun;
 
     public SyncStateOperation() {
     }
 
-    public SyncStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats) {
+    public SyncStateOperation(String schedulerName, String taskName, Map state,
+                              ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
         this.stats = stats;
+        this.result = result;
     }
 
     @Override
@@ -63,7 +68,7 @@ public class SyncStateOperation
         }
 
         if (shouldRun) {
-            getContainer().syncState(taskName, state, stats);
+            getContainer().syncState(taskName, state, stats, result);
         }
     }
 
@@ -74,7 +79,7 @@ public class SyncStateOperation
 
     @Override
     public Operation getBackupOperation() {
-        return new SyncBackupStateOperation(schedulerName, taskName, state, stats);
+        return new SyncBackupStateOperation(schedulerName, taskName, state, stats, result);
     }
 
     @Override
@@ -93,6 +98,7 @@ public class SyncStateOperation
             out.writeObject(entry.getValue());
         }
         out.writeObject(stats);
+        out.writeObject(result);
     }
 
     @Override
@@ -106,5 +112,6 @@ public class SyncStateOperation
             this.state.put(in.readObject(), in.readObject());
         }
         this.stats = in.readObject();
+        this.result = in.readObject();
     }
 }

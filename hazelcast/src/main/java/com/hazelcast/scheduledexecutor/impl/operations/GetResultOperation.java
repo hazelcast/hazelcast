@@ -37,7 +37,7 @@ public class GetResultOperation<V>
 
     private ScheduledTaskHandler handler;
 
-    private V result;
+    private Object result;
 
     public GetResultOperation() {
     }
@@ -51,11 +51,11 @@ public class GetResultOperation<V>
     @Override
     public void run()
             throws Exception {
-        result = (V) getContainer().get(taskName);
+        result = getContainer().get(taskName);
     }
 
     @Override
-    public V getResponse() {
+    public Object getResponse() {
         return result;
     }
 

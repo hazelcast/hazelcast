@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -34,20 +35,24 @@ public class SyncBackupStateOperation
 
     private ScheduledTaskStatisticsImpl stats;
 
+    private ScheduledTaskResult result;
+
     public SyncBackupStateOperation() {
     }
 
-    public SyncBackupStateOperation(String schedulerName, String taskName, Map state, ScheduledTaskStatisticsImpl stats) {
+    public SyncBackupStateOperation(String schedulerName, String taskName, Map state,
+                                    ScheduledTaskStatisticsImpl stats, ScheduledTaskResult result) {
         super(schedulerName);
         this.taskName = taskName;
         this.state = state;
         this.stats = stats;
+        this.result = result;
     }
 
     @Override
     public void run()
             throws Exception {
-        getContainer().syncState(taskName, state, stats);
+        getContainer().syncState(taskName, state, stats, result);
     }
 
     @Override
@@ -66,6 +71,7 @@ public class SyncBackupStateOperation
             out.writeObject(entry.getValue());
         }
         out.writeObject(stats);
+        out.writeObject(result);
     }
 
     @Override
@@ -79,5 +85,6 @@ public class SyncBackupStateOperation
             this.state.put(in.readObject(), in.readObject());
         }
         this.stats = in.readObject();
+        this.result = in.readObject();
     }
 }

@@ -53,10 +53,12 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
+import static com.hazelcast.util.ExceptionUtil.peel;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -203,6 +205,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
 
         latch.await(120, TimeUnit.SECONDS);
+        sleepSeconds(4); // Wait for run-cycle to finish before cancelling, in order for stats to get updated.
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
@@ -228,6 +231,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         instances[1].getLifecycleService().shutdown();
 
         latch.await(70, TimeUnit.SECONDS);
+        sleepSeconds(4); // Wait for run-cycle to finish before cancelling, in order for stats to get updated.
         future.cancel(false);
 
         ScheduledTaskStatistics stats = future.getStats();
@@ -418,6 +422,37 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         assertFalse(future.isDone());
 
         future.cancel(false);
+
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test()
+    public void cancelledAndDone_durable()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(3);
+        Object key = generateKeyOwnedBy(instances[1]);
+
+        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        latch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
+                new ICountdownLatchRunnableTask("latch", instances[0]), key,0, 1, TimeUnit.SECONDS);
+
+
+        latch.await(10, TimeUnit.SECONDS);
+
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        future.cancel(false);
+
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+
+        instances[1].getLifecycleService().shutdown();
 
         assertTrue(future.isCancelled());
         assertTrue(future.isDone());
@@ -758,6 +793,67 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void getErroneous()
+            throws InterruptedException {
+        int delay = 2;
+        String taskName = "Test";
+        String completionLatchName = "completionLatch";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+
+        String key = generateKeyOwnedBy(instances[1]);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        ICountDownLatch latch = instances[1].getCountDownLatch(completionLatchName);
+        latch.trySetCount(1);
+
+        IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
+                named(taskName, new ErroneousCallableTask(completionLatchName, instances[1])), key, delay, TimeUnit.SECONDS);
+
+        latch.await(10, TimeUnit.SECONDS);
+        try {
+            Object result = future.get();
+            fail("Unexpected result " + result);
+        } catch (ExecutionException ex) {
+            assertEquals("Erroneous task", peel(ex).getMessage());
+        } catch (Exception ex) {
+            fail("Wrong exception type " + ex);
+        }
+    }
+
+    @Test
+    public void getErroneous_durable()
+            throws InterruptedException {
+        int delay = 2;
+        String taskName = "Test";
+        String completionLatchName = "completionLatch";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+
+        String key = generateKeyOwnedBy(instances[1]);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        ICountDownLatch latch = instances[1].getCountDownLatch(completionLatchName);
+        latch.trySetCount(1);
+
+        IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
+                named(taskName, new ErroneousCallableTask(completionLatchName, instances[1])), key, delay, TimeUnit.SECONDS);
+
+        latch.await(10, TimeUnit.SECONDS);
+        instances[1].getLifecycleService().shutdown();
+        Thread.sleep(2000);
+
+        try {
+            Object result = future.get();
+            fail("Unexpected result " + result);
+        } catch (ExecutionException ex) {
+            assertEquals("Erroneous task", peel(ex).getMessage());
+            assertTrue(future.isDone());
+        } catch (Exception ex) {
+            fail("Wrong exception type " + ex);
+        }
+
+    }
+
     public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
         return instances[0].getScheduledExecutorService(name);
     }
@@ -768,7 +864,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
     public HazelcastInstance[] createClusterWithCount(int count, Config config) {
         factory = createHazelcastInstanceFactory();
-        return factory.newInstances(config, count);
+        HazelcastInstance[] instances = factory.newInstances(config, count);
+        waitAllForSafeState();
+        return instances;
     }
 
     static class StatefullRunnableTask
@@ -919,6 +1017,33 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
             return 5 * 5.0;
         }
 
+    }
+
+    static class ErroneousCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
+
+        private String completionLatchName;
+
+        private transient HazelcastInstance instance;
+
+        ErroneousCallableTask(String completionLatchName, HazelcastInstance instance) {
+            this.completionLatchName = completionLatchName;
+            this.instance = instance;
+        }
+
+        @Override
+        public Double call()
+                throws Exception {
+            try {
+                throw new IllegalStateException("Erroneous task");
+            } finally {
+                instance.getCountDownLatch(completionLatchName).countDown();
+            }
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
     }
 
     static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {

@@ -61,20 +61,6 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
         this.nodeEngine = nodeEngine;
     }
 
-    public void createContainer(String name, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
-        checkNotNull(name, "Name can't be null");
-        checkNotNull(tasks, "Tasks info can't be null");
-
-        if (logger.isFineEnabled()) {
-            logger.fine("Creating Scheduled Executor partition with name: " + name);
-        }
-
-        ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-        ScheduledExecutorContainer container =
-                new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability(), tasks);
-        containers.put(name, container);
-    }
-
     public Collection<ScheduledExecutorContainer> getContainers() {
         return Collections.unmodifiableCollection(containers.values());
     }
