@@ -16,9 +16,11 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.Operation;
@@ -72,6 +74,20 @@ public abstract class AbstractRingBufferOperation extends Operation
         ringbuffer.cleanup();
         this.ringbuffer = ringbuffer;
         return ringbuffer;
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        if (e instanceof StaleSequenceException) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest(e.getMessage(), e);
+            } else if (logger.isFineEnabled()) {
+                logger.fine(e.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+        } else {
+            super.logError(e);
+        }
     }
 
     @Override
