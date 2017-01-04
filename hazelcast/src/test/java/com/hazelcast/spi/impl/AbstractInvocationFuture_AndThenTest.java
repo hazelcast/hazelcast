@@ -1,6 +1,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -134,5 +135,21 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
         }
 
         assertSame(value, future.getState());
+    }
+
+    @Test
+    public void whenExceptionalResponseAvailableAfterSomeWaiting_MemberLeftException() {
+        final ExecutionCallback callback = mock(ExecutionCallback.class);
+        future.andThen(callback);
+
+        final MemberLeftException ex = new MemberLeftException();
+        future.complete(ex);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                verify(callback).onFailure(ex);
+            }
+        });
     }
 }
