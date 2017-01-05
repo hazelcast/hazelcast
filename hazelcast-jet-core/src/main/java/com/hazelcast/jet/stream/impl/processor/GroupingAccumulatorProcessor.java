@@ -59,6 +59,11 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
     @Override
     public boolean complete() {
         final boolean done = emitCooperatively(cacheEntrySupplier);
+        if (done) {
+            cache = null;
+            classifier = null;
+            collector = null;
+            cacheEntrySupplier = null;
         }
         return done;
     }

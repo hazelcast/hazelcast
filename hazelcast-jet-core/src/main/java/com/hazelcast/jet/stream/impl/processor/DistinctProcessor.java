@@ -41,6 +41,9 @@ public class DistinctProcessor<T> extends AbstractProcessor {
     @Override
     public boolean complete() {
         final boolean done = emitCooperatively(iteratingSupplier);
+        if (done) {
+            set = null;
+            iteratingSupplier = null;
         }
         return done;
     }

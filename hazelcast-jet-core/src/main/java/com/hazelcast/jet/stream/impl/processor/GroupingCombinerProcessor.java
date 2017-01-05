@@ -58,6 +58,10 @@ public class GroupingCombinerProcessor<K, V, A, R> extends AbstractProcessor {
     @Override
     public boolean complete() {
         final boolean done = emitCooperatively(cacheEntrySupplier);
+        if (done) {
+            cache = null;
+            collector = null;
+            cacheEntrySupplier = null;
         }
         return done;
     }

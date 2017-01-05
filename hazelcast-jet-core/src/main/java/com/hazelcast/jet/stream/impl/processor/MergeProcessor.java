@@ -69,6 +69,12 @@ public class MergeProcessor<T, K, V> extends AbstractProcessor {
     @Override
     public boolean complete() {
         final boolean done = emitCooperatively(cacheEntrySupplier);
+        if (done) {
+            keyMapper = null;
+            valueMapper = null;
+            merger = null;
+            cache = null;
+            cacheEntrySupplier = null;
         }
         return done;
     }

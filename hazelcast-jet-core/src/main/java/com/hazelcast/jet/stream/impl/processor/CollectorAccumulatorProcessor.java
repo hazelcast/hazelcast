@@ -24,8 +24,8 @@ import javax.annotation.Nonnull;
 
 public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractProcessor {
 
-    private final BiConsumer<OUT, IN> accumulator;
-    private final Supplier<OUT> supplier;
+    private BiConsumer<OUT, IN> accumulator;
+    private Supplier<OUT> supplier;
     private OUT result;
 
 
@@ -50,6 +50,9 @@ public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractProcessor {
     @Override
     public boolean complete() {
         emit(result);
+        accumulator = null;
+        supplier = null;
+        result = null;
         return true;
     }
 }

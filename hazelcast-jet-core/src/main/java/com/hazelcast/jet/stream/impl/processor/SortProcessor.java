@@ -50,6 +50,9 @@ public class SortProcessor<T> extends AbstractProcessor {
     @Override
     public boolean complete() {
         final boolean done = emitCooperatively(itemSupplier);
+        if (done) {
+            list = null;
+            itemSupplier = null;
         }
         return done;
     }
