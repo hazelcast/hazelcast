@@ -90,7 +90,7 @@ public final class RepairingHandler {
             if (key == null) {
                 nearCache.clear();
             } else {
-                nearCache.remove(key);
+                nearCache.requestRemoveForReserved(key);
             }
         }
 

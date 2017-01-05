@@ -26,8 +26,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
-import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
@@ -47,8 +45,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
-import static com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper.asInvalidationAware;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.MapUtil.createHashMap;
 
@@ -62,7 +60,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     private boolean cacheLocalEntries;
     private boolean invalidateOnChange;
-    private KeyStateMarker keyStateMarker = KeyStateMarker.TRUE_MARKER;
     private NearCache<Object, Object> nearCache;
     private MapNearCacheManager mapNearCacheManager;
     private RepairingHandler repairingHandler;
@@ -80,13 +77,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
-        int partitionCount = partitionService.getPartitionCount();
         nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
         invalidateOnChange = nearCache.isInvalidatedOnChange();
-        if (invalidateOnChange) {
-            nearCache = asInvalidationAware(nearCache, partitionCount);
-            keyStateMarker = getKeyStateMarker();
 
+        if (invalidateOnChange) {
             addNearCacheInvalidateListener();
         }
     }
@@ -96,25 +90,51 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     @Override
     protected Object getInternal(Data key) {
         Object value = getCachedValue(key);
-        if (value != null) {
-            if (isCachedNull(value)) {
-                return null;
-            }
+        if (value != NOT_CACHED) {
             return value;
         }
 
-        boolean marked = keyStateMarker.markIfUnmarked(key);
-        try {
-            value = super.getInternal(key);
-            if (marked) {
-                tryToPutNearCache(key, value);
+        if (nearCache.tryReserveForUpdate(key)) {
+            try {
+                value = super.getInternal(key);
+            } finally {
+                value = updateAndGetCachedValue(key, value);
             }
-        } catch (Throwable t) {
-            resetToUnmarkedState(key);
-            throw rethrow(t);
+        } else {
+            value = super.getInternal(key);
         }
 
         return value;
+    }
+
+
+    private Object updateAndGetCachedValue(Data key, Object value) {
+        Object cachedValue;
+        try {
+            if (!isOwn(key) || cacheLocalEntries) {
+                nearCache.updateReserved(key, value);
+            }
+        } finally {
+            cachedValue = nearCache.publishReserved(key);
+        }
+
+        return cachedValue != null ? cachedValue : value;
+    }
+
+    private Object getCachedValue(Data key) {
+        Object value = nearCache.get(key);
+
+        if (value == null) {
+            return NOT_CACHED;
+        }
+
+        if (value == CACHED_AS_NULL) {
+            return null;
+        }
+
+        mapServiceContext.interceptAfterGet(name, value);
+
+        return toObject(value);
     }
 
     @Override
@@ -130,26 +150,37 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                     getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
 
-        final boolean marked = keyStateMarker.markIfUnmarked(key);
+        final boolean reserved = nearCache.tryReserveForUpdate(key);
         InternalCompletableFuture<Data> future;
         try {
             future = super.getAsyncInternal(key);
         } catch (Throwable t) {
-            resetToUnmarkedState(key);
+            if (reserved) {
+                nearCache.publishReserved(key);
+            }
+
             throw rethrow(t);
         }
 
         future.andThen(new ExecutionCallback<Data>() {
             @Override
             public void onResponse(Data value) {
-                if (marked) {
-                    tryToPutNearCache(key, value);
+                if (reserved) {
+                    try {
+                        if (!isOwn(key) || cacheLocalEntries) {
+                            nearCache.updateReserved(key, value);
+                        }
+                    } finally {
+                        nearCache.publishReserved(key);
+                    }
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                resetToUnmarkedState(key);
+                if (reserved) {
+                    nearCache.publishReserved(key);
+                }
             }
         });
 
@@ -157,7 +188,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     protected boolean isCachedNull(Object value) {
-        return NULL_OBJECT.equals(value);
+        return CACHED_AS_NULL.equals(value);
     }
 
     @Override
@@ -295,47 +326,45 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected boolean containsKeyInternal(Data keyData) {
-        Object cached = nearCache.get(keyData);
-        if (cached != null) {
-            return !isCachedNull(cached);
-        } else {
-            return super.containsKeyInternal(keyData);
+        Object cachedValue = getCachedValue(keyData);
+        if (cachedValue != NOT_CACHED) {
+            return true;
         }
+
+        return super.containsKeyInternal(keyData);
     }
 
     @Override
     protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
-        getCachedValue(keys, resultingKeyValuePairs);
+        getCachedValues(keys, resultingKeyValuePairs);
 
-        Map<Data, Boolean> keyStates = createHashMap(keys.size());
+        Map<Data, Boolean> reservedKeys = createHashMap(keys.size());
         try {
-
             for (Data key : keys) {
-                keyStates.put(key, keyStateMarker.markIfUnmarked(key));
+                reservedKeys.put(key, nearCache.tryReserveForUpdate(key));
             }
-
             int currentSize = resultingKeyValuePairs.size();
-
             super.getAllObjectInternal(keys, resultingKeyValuePairs);
             // only add elements which are not in near-putCache
             for (int i = currentSize; i < resultingKeyValuePairs.size(); ) {
                 Data key = toData(resultingKeyValuePairs.get(i++));
                 Data value = toData(resultingKeyValuePairs.get(i++));
-                boolean marked = keyStates.remove(key);
-                if (marked) {
-                    tryToPutNearCache(key, value);
+
+                if (reservedKeys.get(key)) {
+                    Object cachedValue = updateAndGetCachedValue(key, value);
+                    resultingKeyValuePairs.set(i - 1, cachedValue);
+                    reservedKeys.remove(key);
                 }
             }
         } finally {
-            unmarkRemainingMarkedKeys(keyStates);
+            releaseReservedKeys(reservedKeys);
         }
     }
 
-    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> keyStates) {
-        for (Entry<Data, Boolean> entry : keyStates.entrySet()) {
-            Boolean marked = entry.getValue();
-            if (marked) {
-                keyStateMarker.unmarkForcibly(entry.getKey());
+    private void releaseReservedKeys(Map<Data, Boolean> reservedKeys) {
+        for (Entry<Data, Boolean> entry : reservedKeys.entrySet()) {
+            if (entry.getValue()) {
+                nearCache.publishReserved(entry.getKey());
             }
         }
     }
@@ -394,46 +423,36 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return super.preDestroy();
     }
 
-    protected Object getCachedValue(Data key) {
-        Object cached = nearCache.get(key);
-        if (cached == null) {
-            return null;
-        }
-        mapServiceContext.interceptAfterGet(name, cached);
-        return cached;
-    }
-
-    protected void getCachedValue(List<Data> keys, List<Object> resultingKeyValuePairs) {
+    protected void getCachedValues(List<Data> keys, List<Object> resultingKeyValuePairs) {
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
             Object value = getCachedValue(key);
-            if (value == null) {
+            if (value == null || value == NOT_CACHED) {
                 continue;
             }
-            if (!isCachedNull(value)) {
-                resultingKeyValuePairs.add(toObject(key));
-                resultingKeyValuePairs.add(toObject(value));
-            }
+            resultingKeyValuePairs.add(toObject(key));
+            resultingKeyValuePairs.add(toObject(value));
+
             iterator.remove();
         }
     }
 
     protected void invalidateCache(Data key) {
         if (key != null) {
-            nearCache.remove(key);
+            nearCache.requestRemoveForReserved(key);
         }
     }
 
     protected void invalidateCache(Collection<Data> keys) {
         for (Data key : keys) {
-            nearCache.remove(key);
+            nearCache.requestRemoveForReserved(key);
         }
     }
 
     protected void invalidateCache(Iterable<Data> keys) {
         for (Data key : keys) {
-            nearCache.remove(key);
+            nearCache.requestRemoveForReserved(key);
         }
     }
 
@@ -445,30 +464,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     public NearCache<Object, Object> getNearCache() {
         return nearCache;
-    }
-
-    private void tryToPutNearCache(Data key, Object response) {
-        try {
-            if (!isOwn(key) || cacheLocalEntries) {
-                nearCache.put(key, response);
-            }
-        } finally {
-            resetToUnmarkedState(key);
-        }
-    }
-
-    private void resetToUnmarkedState(Data key) {
-        if (keyStateMarker.unmarkIfMarked(key)) {
-            return;
-        }
-
-        invalidateCache(key);
-        keyStateMarker.unmarkForcibly(key);
-    }
-
-    // public for testing purposes
-    public KeyStateMarker getKeyStateMarker() {
-        return ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
     }
 
     private void addNearCacheInvalidateListener() {

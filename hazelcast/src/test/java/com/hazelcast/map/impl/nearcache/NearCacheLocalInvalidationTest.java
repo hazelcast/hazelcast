@@ -181,10 +181,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "put_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             String value1 = map.put(key, value);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -200,10 +200,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "tryput_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             map.tryPut(key, value, TIMEOUT, TIME_UNIT);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -218,10 +218,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "putifabsent_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             String value1 = map.putIfAbsent(key, value);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -237,10 +237,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "puttransient_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             map.putTransient(key, value, 0, TIME_UNIT);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -255,7 +255,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "putasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             Future<String> future = map.putAsync(key, value);
             String value1 = null;
@@ -264,7 +264,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             } catch (Exception e) {
                 fail("Exception in future.get(): " + e.getMessage());
             }
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -280,7 +280,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "setasync_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             Future<Void> future = map.setAsync(key, value);
             try {
@@ -288,7 +288,7 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             } catch (Exception e) {
                 fail("Exception in future.get(): " + e.getMessage());
             }
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -323,10 +323,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String key = "set_" + String.valueOf(k);
             String value = "merhaba-" + key;
 
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             map.set(key, value);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNull(value0);
@@ -343,10 +343,10 @@ public class NearCacheLocalInvalidationTest extends HazelcastTestSupport {
             String valueNew = "merhaba-new" + key;
 
             map.put(key, value);
-            // this brings the NULL_OBJECT into the Near Cache
+            // this brings the CACHED_AS_NULL into the Near Cache
             String value0 = map.get(key);
             map.replace(key, valueNew);
-            // here we _might_ still see the NULL_OBJECT
+            // here we _might_ still see the CACHED_AS_NULL
             String value2 = map.get(key);
 
             assertNotNull(value0);

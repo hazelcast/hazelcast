@@ -378,5 +378,24 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         public StaleReadDetector getStaleReadDetector() {
             return staleReadDetector;
         }
+
+        @Override
+        public boolean tryReserveForUpdate(Integer key) {
+            return false;
+        }
+
+        @Override
+        public void requestRemoveForReserved(Integer key) {
+        }
+
+        @Override
+        public String publishReserved(Integer key) {
+            return null;
+        }
+
+        @Override
+        public void updateReserved(Integer key, String value) {
+
+        }
     }
 }

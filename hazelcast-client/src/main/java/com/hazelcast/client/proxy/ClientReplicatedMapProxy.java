@@ -66,7 +66,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.sort;
 
@@ -173,7 +173,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         if (nearCache != null) {
             Object cached = nearCache.get(key);
             if (cached != null) {
-                if (cached.equals(NULL_OBJECT)) {
+                if (cached.equals(CACHED_AS_NULL)) {
                     return null;
                 }
                 return (V) cached;
@@ -181,16 +181,42 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
         }
 
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request, keyData);
+        V value;
+        boolean reserved = false;
+        try {
+            reserved = tryReserveForUpdate(key);
+            ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
+            ClientMessage response = invoke(request, keyData);
 
-        ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
-
-        V value = (V) toObject(result.response);
-        if (nearCache != null) {
-            nearCache.put(key, value);
+            ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
+            value = toObject(result.response);
+            updateReserved(key, value, reserved);
+        } finally {
+            releaseReserved(key, reserved);
         }
         return value;
+    }
+
+    protected void releaseReserved(Object key, boolean reserved) {
+        if (nearCache == null || !reserved) {
+            return;
+        }
+        nearCache.publishReserved(key);
+    }
+
+    protected void updateReserved(Object key, V value, boolean reserved) {
+        if (nearCache == null || !reserved) {
+            return;
+        }
+
+        nearCache.updateReserved(key, value);
+    }
+
+    protected boolean tryReserveForUpdate(Object key) {
+        if (nearCache == null) {
+            return false;
+        }
+        return nearCache.tryReserveForUpdate(key);
     }
 
     @Override
@@ -527,7 +553,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
-                    nearCache.remove(toObject(key));
+                    nearCache.requestRemoveForReserved(toObject(key));
                     break;
                 case CLEAR_ALL:
                     nearCache.clear();

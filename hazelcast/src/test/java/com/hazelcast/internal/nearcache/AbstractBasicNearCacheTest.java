@@ -80,7 +80,7 @@ public abstract class AbstractBasicNearCacheTest<NK, NV> extends HazelcastTestSu
     }
 
     /**
-     * Checks that the Near Cache never returns its internal {@link NearCache#NULL_OBJECT} to the public API.
+     * Checks that the Near Cache never returns its internal {@link NearCache#CACHED_AS_NULL} to the public API.
      */
     @Test
     public void whenEmptyMap_thenPopulatedNearCacheShouldReturnNull_neverNULLOBJECT() {
@@ -96,9 +96,9 @@ public abstract class AbstractBasicNearCacheTest<NK, NV> extends HazelcastTestSu
             NK key = getNearCacheKey(context, i);
             NV value = context.nearCache.get(key);
             if (value != null) {
-                // the internal value should either be `null` or `NULL_OBJECT`
-                assertEquals("Expected NULL_OBJECT in Near Cache for key " + i,
-                        NearCache.NULL_OBJECT, context.nearCache.get(key));
+                // the internal value should either be `null` or `CACHED_AS_NULL`
+                assertEquals("Expected CACHED_AS_NULL in Near Cache for key " + i,
+                        NearCache.CACHED_AS_NULL, context.nearCache.get(key));
             }
         }
     }

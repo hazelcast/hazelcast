@@ -45,7 +45,12 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * NULL Object
      */
-    Object NULL_OBJECT = new Object();
+    Object CACHED_AS_NULL = new Object();
+
+    /**
+     * NOT_CACHED Object
+     */
+    Object NOT_CACHED = new Object();
 
     /**
      * Gets the name of this {@link NearCache} instance.
@@ -158,4 +163,12 @@ public interface NearCache<K, V> extends InitializingObject {
      * @throws IllegalArgumentException if no implementation found for the supplied clazz type.
      */
     <T> T unwrap(Class<T> clazz);
+
+    boolean tryReserveForUpdate(K key);
+
+    void updateReserved(K key, V value);
+
+    V publishReserved(K key);
+
+    void requestRemoveForReserved(K key);
 }

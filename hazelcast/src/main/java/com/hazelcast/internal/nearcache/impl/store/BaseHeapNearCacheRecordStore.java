@@ -20,6 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -39,7 +40,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     public BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
-            super(nearCacheConfig, serializationService, classLoader);
+        super(nearCacheConfig, serializationService, classLoader);
 
         NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
         this.nearCachePreloader = preloaderConfig.isEnabled()
@@ -80,6 +81,21 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
+    protected R applyIfPresent(K key, IBiFunction<K, R, R> mappingFunction) {
+        return records.applyIfPresent(key, mappingFunction);
+    }
+
+    @Override
+    protected R putRecordIfAbsent(K key, R record) {
+        return records.putIfAbsent(key, record);
+    }
+
+    @Override
+    protected boolean replaceRecord(K key, R expect, R update) {
+        return records.replace(key, expect, update);
+    }
+
+    @Override
     protected R removeRecord(K key) {
         R removedRecord = records.remove(key);
         if (removedRecord != null) {
@@ -105,7 +121,7 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             K key = entry.getKey();
             R value = entry.getValue();
             if (isRecordExpired(value)) {
-                remove(key);
+                requestRemoveForReserved(key);
                 onExpire(key, value);
             }
         }

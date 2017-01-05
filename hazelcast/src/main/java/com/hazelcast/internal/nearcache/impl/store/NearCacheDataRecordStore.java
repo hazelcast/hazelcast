@@ -21,9 +21,10 @@ import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
@@ -50,18 +51,18 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
 
     // TODO: we don't handle object header (mark, class definition) for heap memory cost
     @Override
-    protected long getRecordStorageMemoryCost(NearCacheDataRecord record) {
+    protected long getRecordStorageMemoryCost(NearCacheRecord record) {
         if (record == null) {
             return 0L;
         }
-        Data value = record.getValue();
+        Object value = record.getValue();
         return
                 // reference to this record inside map ("store" field)
                 REFERENCE_SIZE
                         // reference to "value" field
                         + REFERENCE_SIZE
                         // heap cost of this value data
-                        + (value != null ? value.getHeapCost() : 0)
+                        + (value != null ? ((Data) value).getHeapCost() : 0)
                         // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
                         + (3 * (Long.SIZE / Byte.SIZE))
                         // reference to "accessHit" field
@@ -73,11 +74,11 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     @Override
     protected NearCacheDataRecord valueToRecord(V value) {
         Data data = toData(value);
-        long creationTime = Clock.currentTimeMillis();
+        long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
             return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheDataRecord(data, creationTime, NearCacheRecord.TIME_NOT_SET);
+            return new NearCacheDataRecord(data, creationTime, TIME_NOT_SET);
         }
     }
 
@@ -85,7 +86,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     protected V recordToValue(NearCacheDataRecord record) {
         if (record.getValue() == null) {
             nearCacheStats.incrementMisses();
-            return (V) NULL_OBJECT;
+            return (V) CACHED_AS_NULL;
         }
         Data data = record.getValue();
         return dataToValue(data);

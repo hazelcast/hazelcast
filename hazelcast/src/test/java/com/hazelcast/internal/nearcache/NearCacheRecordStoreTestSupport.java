@@ -40,7 +40,7 @@ public abstract class NearCacheRecordStoreTestSupport extends CommonNearCacheTes
         assertEquals(DEFAULT_RECORD_COUNT, nearCacheRecordStore.size());
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
-            nearCacheRecordStore.remove(i);
+            nearCacheRecordStore.requestRemoveForReserved(i);
             assertNull(nearCacheRecordStore.get(i));
         }
 
