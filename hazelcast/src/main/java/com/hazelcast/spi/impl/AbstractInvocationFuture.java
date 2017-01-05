@@ -39,7 +39,7 @@ import static java.util.concurrent.locks.LockSupport.unpark;
 /**
  * todo:
  * - thread value protection
- *
+ * <p>
  * The long term goal is that this whole class can be ripped out and replaced by the
  * {@link java.util.concurrent.java.util.concurrent.CompletableFuture}. So we need to be very careful with adding more
  * functionality to this class because the more we add, the more difficult the replacement will be.
@@ -73,12 +73,12 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
      * <li>{@link WaitNode} instance: in case of multiple andThen registrations or future.gets or andThen with custom Executor
      * </li>
      * </ol>
-     *
+     * <p>
      * If the state is anything else, it is completed.
-     *
+     * <p>
      * The reason why a single future.get or registered ExecutionCallback doesn't create a WaitNode is that we don't want to cause
      * additional litter since most of our API calls are a get or a single ExecutionCallback.
-     *
+     * <p>
      * The state field is replaced using a cas, so registration or setting a response is an atomic operation and therefor not
      * prone to data-races. There is no need to use synchronized blocks.
      */
@@ -264,7 +264,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
     // this method should not be needed; but there is a difference between client and server how it handles async throwables.
     protected Throwable unwrap(Throwable throwable) {
-        if (throwable instanceof ExecutionException) {
+        if (throwable instanceof ExecutionException && throwable.getCause() != null) {
             return throwable.getCause();
         }
         return throwable;
@@ -385,14 +385,14 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
 
     /**
      * Linked nodes to record waiting {@link Thread} or {@link ExecutionCallback} instances using a Treiber stack.
-     *
+     * <p>
      * A waiter is something that gets triggered when a response comes in. There are 2 types of waiters:
      * <ol>
      * <li>Thread: when a future.get is done.</li>
      * <li>ExecutionCallback: when a future.andThen is done</li>
      * </ol>
      * The waiter is either a Thread or an ExecutionCallback.
-     *
+     * <p>
      * The {@link WaitNode} is effectively immutable. Once the WaitNode is set in the 'state' field, it will not be modified.
      * Also updating the state, introduces a happens before relation so the 'next' field can be read safely.
      */
