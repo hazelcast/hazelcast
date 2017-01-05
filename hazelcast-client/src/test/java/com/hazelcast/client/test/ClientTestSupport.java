@@ -23,23 +23,46 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastTestSupport;
 
-/**
- * Created by ihsan on 05/09/16.
- */
 public class ClientTestSupport extends HazelcastTestSupport {
 
+    /**
+     * Blocks incoming messages to client from given instance
+     */
     protected void blockMessagesFromInstance(HazelcastInstance instance, HazelcastInstance client) {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).block(address);
+        ((TestClientRegistry.MockClientConnectionManager) connectionManager).blockFrom(address);
     }
 
+    /**
+     * Unblocks incoming messages to client from given instance
+     */
     protected void unblockMessagesFromInstance(HazelcastInstance instance, HazelcastInstance client) {
         HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
         Address address = instance.getCluster().getLocalMember().getAddress();
-        ((TestClientRegistry.MockClientConnectionManager) connectionManager).unblock(address);
+        ((TestClientRegistry.MockClientConnectionManager) connectionManager).unblockFrom(address);
+    }
+
+    /**
+     * Blocks outgoing messages from client to given instance
+     */
+    protected void blockMessagesToInstance(HazelcastInstance instance, HazelcastInstance client) {
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        ((TestClientRegistry.MockClientConnectionManager) connectionManager).blockTo(address);
+    }
+
+    /**
+     * Unblocks outgoing messages from client to given instance
+     */
+    protected void unblockMessagesToInstance(HazelcastInstance instance, HazelcastInstance client) {
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
+        Address address = instance.getCluster().getLocalMember().getAddress();
+        ((TestClientRegistry.MockClientConnectionManager) connectionManager).unblockTo(address);
     }
 
     protected HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
