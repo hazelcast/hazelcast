@@ -27,7 +27,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
 
     @Test
-    public void test_keySet_onIndexedField() {
+    public void testKeySet_onIndexedField() {
         int count = 111;
         populateMap(map, count);
 
@@ -44,7 +44,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_keySet_onIndexedField_whenIncludeValueFalse() {
+    public void testKeySet_onIndexedField_whenIncludeValueFalse() {
         int count = 111;
         String cacheName = randomString();
 
@@ -62,7 +62,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_keySet_onIndexedField_afterRemovalOfSomeIndexes() {
+    public void testKeySet_onIndexedField_afterRemovalOfSomeIndexes() {
         int count = 111;
         String cacheName = randomString();
 
@@ -80,7 +80,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_entrySet() {
+    public void testEntrySet() {
         int count = 1;
         String cacheName = randomString();
 
@@ -98,7 +98,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_entrySet_whenIncludeValueFalse() throws Exception {
+    public void testEntrySet_whenIncludeValueFalse() throws Exception {
         int count = 111;
         String cacheName = randomString();
 
@@ -116,7 +116,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_entrySet_withIndexedKeys_whenIncludeValueFalse() {
+    public void testEntrySet_withIndexedKeys_whenIncludeValueFalse() {
         int count = 111;
         String cacheName = randomString();
 
@@ -135,7 +135,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_values() {
+    public void testValues() {
         int count = 111;
         String cacheName = randomString();
 
@@ -153,7 +153,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_values_withoutIndex() {
+    public void testValues_withoutIndex() {
         int count = 111;
         String cacheName = randomString();
 
@@ -170,7 +170,7 @@ public class QueryCacheMethodsWithPredicateTest extends AbstractQueryCacheTestSu
     }
 
     @Test
-    public void test_values_withoutIndex_whenIncludeValueFalse() {
+    public void testValues_withoutIndex_whenIncludeValueFalse() {
         int count = 111;
         String cacheName = randomString();
 

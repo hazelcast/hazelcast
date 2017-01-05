@@ -35,6 +35,10 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    @SuppressWarnings("unchecked")
+    private static final Predicate<Integer, Employee> SQL_PREDICATE_GT = new SqlPredicate("id > 100");
+    @SuppressWarnings("unchecked")
+    private static final Predicate<Integer, Employee> SQL_PREDICATE_LT = new SqlPredicate("id < 100");
 
     @Parameterized.Parameters(name = "query cache natural filtering: {0}")
     public static Collection<Object> parameters() {
@@ -55,7 +59,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(10);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), new SqlPredicate("id > 100"), true);
+        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, true);
 
         int count = 111;
         populateMap(map, count);
@@ -70,8 +74,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), new SqlPredicate("id > 100"), keyToListen,
-                true);
+        cache.addEntryListener(new QueryCacheAdditionListener(numberOfCaughtEvents), SQL_PREDICATE_GT, keyToListen, true);
 
         int count = 111;
         populateMap(map, count);
@@ -87,8 +90,8 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         CountDownLatch additionCount = new CountDownLatch(2);
         CountDownLatch removalCount = new CountDownLatch(2);
         final QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-        cache.addEntryListener(new QueryCacheAdditionListener(additionCount), new SqlPredicate("id > 100"), keyToListen, true);
-        cache.addEntryListener(new QueryCacheRemovalListener(removalCount), new SqlPredicate("id > 100"), keyToListen, true);
+        cache.addEntryListener(new QueryCacheAdditionListener(additionCount), SQL_PREDICATE_GT, keyToListen, true);
+        cache.addEntryListener(new QueryCacheRemovalListener(removalCount), SQL_PREDICATE_GT, keyToListen, true);
 
         int count = 111;
         populateMap(map, count);
@@ -156,7 +159,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         String cacheName = randomString();
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, new SqlPredicate("id < 100"), true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, SQL_PREDICATE_LT, true);
 
         Employee employee = new Employee(0);
         map.put(0, employee);
@@ -175,7 +178,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
         String cacheName = randomString();
 
         CountDownLatch numberOfCaughtEvents = new CountDownLatch(1);
-        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, new SqlPredicate("id < 100"), true);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, SQL_PREDICATE_LT, true);
 
         Employee employee = new Employee(200);
         map.put(0, employee);
