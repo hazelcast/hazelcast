@@ -66,8 +66,14 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int UNMODIFIABLE_LAZY_LIST = 18;
     public static final int OPERATION_CONTROL = 19;
 
+    private static final DataSerializableFactory FACTORY = createFactoryInternal();
+
     @Override
     public DataSerializableFactory createFactory() {
+        return FACTORY;
+    }
+
+    private static DataSerializableFactory createFactoryInternal() {
         return new DataSerializableFactory() {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
