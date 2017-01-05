@@ -78,7 +78,7 @@ public class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry entry = (Map.Entry) item;
         Data key = serializationService.toData(entry.getKey());
         Data value = serializationService.toData(entry.getValue());

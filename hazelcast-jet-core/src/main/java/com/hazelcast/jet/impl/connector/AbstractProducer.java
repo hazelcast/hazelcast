@@ -21,7 +21,7 @@ import com.hazelcast.jet.AbstractProcessor;
 public abstract class AbstractProducer extends AbstractProcessor {
 
     @Override
-    public boolean process(int ordinal, Object item) {
+    public boolean tryProcess(int ordinal, Object item) {
         throw new UnsupportedOperationException("process");
     }
 

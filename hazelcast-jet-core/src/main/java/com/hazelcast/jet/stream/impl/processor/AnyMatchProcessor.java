@@ -30,7 +30,7 @@ public class AnyMatchProcessor<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         if (match) {
             return true;
         }

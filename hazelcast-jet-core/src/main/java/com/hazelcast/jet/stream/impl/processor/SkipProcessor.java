@@ -29,7 +29,7 @@ public class SkipProcessor extends AbstractProcessor {
 
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         if (index >= skip) {
             emit(item);
         } else {

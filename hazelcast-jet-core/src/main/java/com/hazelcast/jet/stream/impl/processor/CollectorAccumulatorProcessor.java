@@ -42,7 +42,7 @@ public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         accumulator.accept(result, (IN) item);
         return true;
     }

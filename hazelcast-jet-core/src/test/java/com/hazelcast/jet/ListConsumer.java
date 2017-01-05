@@ -30,7 +30,7 @@ class ListConsumer extends AbstractProcessor {
     }
 
     @Override
-    public boolean process(int ordinal, Object item) {
+    public boolean tryProcess(int ordinal, Object item) {
         if (list.size() == yieldIndex) {
             yieldIndex = -1;
             return false;

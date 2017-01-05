@@ -150,11 +150,11 @@ public class BackpressureTest extends JetTestSupport {
         }
 
         @Override
-        public boolean process(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, Object item) {
             if (isHiccuping()) {
                 return false;
             }
-            return super.process(ordinal, item);
+            return super.tryProcess(ordinal, item);
         }
 
         private boolean isHiccuping() {

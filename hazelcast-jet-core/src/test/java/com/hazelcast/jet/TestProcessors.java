@@ -22,7 +22,7 @@ public class TestProcessors {
 
     public static class Identity extends AbstractProcessor {
         @Override
-        protected boolean process(int ordinal, Object item) {
+        protected boolean tryProcess(int ordinal, Object item) {
             emit(item);
             return true;
         }

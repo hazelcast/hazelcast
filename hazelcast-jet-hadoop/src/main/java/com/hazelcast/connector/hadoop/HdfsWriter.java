@@ -72,7 +72,7 @@ public final class HdfsWriter extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry entry = (Map.Entry) item;
         return uncheckCall(() -> {
             recordWriter.write(entry.getKey(), entry.getValue());

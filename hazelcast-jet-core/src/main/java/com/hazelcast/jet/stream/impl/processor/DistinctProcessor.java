@@ -24,14 +24,14 @@ import java.util.Map;
 public class DistinctProcessor<T> extends AbstractProcessor {
 
     private Iterator<T> iterator;
-    private final Map<T, Boolean> map = new HashMap<>();
+    private Set<T> set = new HashSet<>();
 
     public DistinctProcessor() {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
-        map.put((T) item, true);
+    protected boolean tryProcess(int ordinal, Object item) {
+        set.add((T) item);
         return true;
     }
 

@@ -41,7 +41,7 @@ public class MergeProcessor<T, K, V> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, V> entry;
         if (keyMapper == null || valueMapper == null) {
             entry = (Map.Entry<K, V>) item;

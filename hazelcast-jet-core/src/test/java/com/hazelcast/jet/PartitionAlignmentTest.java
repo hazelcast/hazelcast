@@ -100,7 +100,7 @@ public class PartitionAlignmentTest {
         private final Map<Integer, int[]> counts = new HashMap<>();
 
         @Override
-        protected boolean process(int ordinal, Object item) {
+        protected boolean tryProcess(int ordinal, Object item) {
             counts.computeIfAbsent((Integer) item, x -> new int[2])[ordinal]++;
             return true;
         }

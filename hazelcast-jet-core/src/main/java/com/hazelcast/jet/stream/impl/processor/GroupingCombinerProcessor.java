@@ -35,7 +35,7 @@ public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor 
 
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, A> entry = (Map.Entry) item;
         A value = cache.get(entry.getKey());
         if (value == null) {

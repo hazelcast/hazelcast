@@ -21,10 +21,11 @@ import javax.annotation.Nonnull;
 /**
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} by abstracting away {@code Inbox} and {@code Outbox},
- * instead requiring a simple {@link #process(int, Object)} callback to
- * be implemented. The implementation should use the {@code emit()} methods
- * to emit its output. There are two overloads of {@code emit()} and each
- * delegates to the overload of {@code Outbox.add()} with the same signature.
+ * instead requiring a simple {@link #tryProcess(int, Object)} callback
+ * to be implemented. The implementation should use the {@code emit()}
+ * methods to emit its output. There are two overloads of {@code emit()} and
+ * each delegates to the overload of {@code Outbox.add()} with the same
+ * signature.
  * <p>
  * Processors which cannot be implemented in terms of the simplified API can
  * directly override Processor's {@code process()} method while still being
@@ -46,7 +47,7 @@ public abstract class AbstractProcessor implements Processor {
     @Override
     public void process(int ordinal, Inbox inbox) {
         for (Object item; (item = inbox.peek()) != null; ) {
-            if (!process(ordinal, item)) {
+            if (!tryProcess(ordinal, item)) {
                 return;
             }
             inbox.remove();
@@ -54,13 +55,16 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Processes the supplied input item.
+     * Tries to process the supplied input item. May choose to process
+     * only partially and return {@code false}, in which case it will be
+     * called again later with the same {@code (ordinal, item)} combination.
      *
-     * @param ordinal ordinal of the input where the item originates from
+     * @param ordinal ordinal of the input which the item originates from
      * @param item    item to be processed
-     * @return {@code true} if this item has now been processed, {@code false} otherwise.
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
      */
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         throw new UnsupportedOperationException("Missing implementation");
     }
 

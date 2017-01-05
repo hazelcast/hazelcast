@@ -33,7 +33,7 @@ public class CombinerProcessor<T, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         if (result != null) {
             result = combiner.apply(result, (T) item);
         } else {

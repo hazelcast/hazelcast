@@ -38,7 +38,7 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
         A value = this.cache.get(entry.getKey());
         if (value == null) {

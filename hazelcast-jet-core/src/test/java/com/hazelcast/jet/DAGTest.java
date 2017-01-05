@@ -204,7 +204,7 @@ public class DAGTest {
     private static class TestProcessor extends AbstractProcessor {
 
         @Override
-        public boolean process(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, Object item) {
             return true;
         }
 

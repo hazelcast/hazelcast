@@ -28,7 +28,7 @@ public class LimitProcessor extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         if (index >= limit) {
             return true;
         }

@@ -34,7 +34,7 @@ public class TransformProcessor extends AbstractProcessor {
     }
 
     @Override
-    protected boolean process(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, Object item) {
         processItem(item, 0);
         return true;
     }
