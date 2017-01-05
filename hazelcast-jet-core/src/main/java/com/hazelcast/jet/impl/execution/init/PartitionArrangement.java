@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.MemoizingSupplier.memoize;
+import static com.hazelcast.jet.Suppliers.memoize;
 import static java.util.stream.Collectors.toMap;
 
 /**
