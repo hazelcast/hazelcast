@@ -69,63 +69,8 @@ public class BatchEventData implements Sequenced, EventData {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        Collection<QueryCacheEventData> events = this.events;
-        out.writeUTF(source);
-        out.writeInt(events.size());
-        for (QueryCacheEventData eventData : events) {
-            eventData.writeData(out);
-        }
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        source = in.readUTF();
-        int size = in.readInt();
-        if (size > 0) {
-            this.events = new ArrayList<QueryCacheEventData>(size);
-        }
-        Collection<QueryCacheEventData> events = this.events;
-        for (int i = 0; i < size; i++) {
-            QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
-            eventData.readData(in);
-
-            events.add(eventData);
-        }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("BatchEventData{");
-        for (QueryCacheEventData event : events) {
-            stringBuilder.append(event);
-        }
-        stringBuilder.append("}");
-        return stringBuilder.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof BatchEventData)) {
-            return false;
-        }
-
-        BatchEventData that = (BatchEventData) o;
-
-        if (events != null ? !events.equals(that.events) : that.events != null) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return events != null ? events.hashCode() : 0;
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
@@ -154,13 +99,66 @@ public class BatchEventData implements Sequenced, EventData {
     }
 
     @Override
-    public int getPartitionId() {
-        return partitionId;
-    }
-
-    @Override
     public void setSequence(long sequence) {
         throw new UnsupportedOperationException();
     }
-}
 
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        Collection<QueryCacheEventData> events = this.events;
+        out.writeUTF(source);
+        out.writeInt(events.size());
+        for (QueryCacheEventData eventData : events) {
+            eventData.writeData(out);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        source = in.readUTF();
+        int size = in.readInt();
+        if (size > 0) {
+            this.events = new ArrayList<QueryCacheEventData>(size);
+        }
+        Collection<QueryCacheEventData> events = this.events;
+        for (int i = 0; i < size; i++) {
+            QueryCacheEventData eventData = newQueryCacheEventDataBuilder(true).build();
+            eventData.readData(in);
+
+            events.add(eventData);
+        }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BatchEventData)) {
+            return false;
+        }
+
+        BatchEventData that = (BatchEventData) o;
+        if (events != null ? !events.equals(that.events) : that.events != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return events != null ? events.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("BatchEventData{");
+        for (QueryCacheEventData event : events) {
+            stringBuilder.append(event);
+        }
+        stringBuilder.append("}");
+        return stringBuilder.toString();
+    }
+}
