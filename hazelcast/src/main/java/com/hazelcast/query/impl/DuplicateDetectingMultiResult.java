@@ -16,14 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
+
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.MapUtil;
 
 public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> implements MultiResultSet {
     private Map<Data, QueryableEntry> records;

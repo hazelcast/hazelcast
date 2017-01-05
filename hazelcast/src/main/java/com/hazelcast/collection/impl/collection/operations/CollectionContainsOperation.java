@@ -16,15 +16,15 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
 
 public class CollectionContainsOperation extends CollectionOperation {
 

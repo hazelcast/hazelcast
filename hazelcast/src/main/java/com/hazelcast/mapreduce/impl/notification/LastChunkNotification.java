@@ -16,14 +16,14 @@
 
 package com.hazelcast.mapreduce.impl.notification;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * This notification is used to notify the reducer that this chunk is the last chunk of the

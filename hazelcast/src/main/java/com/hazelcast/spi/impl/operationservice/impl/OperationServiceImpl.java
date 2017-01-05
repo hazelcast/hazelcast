@@ -16,30 +16,6 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
-import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.nio.Packet.FLAG_URGENT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
-import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
-import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
-import static com.hazelcast.util.CollectionUtil.toIntegerList;
-import static com.hazelcast.util.Preconditions.checkNotNegative;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.util.Collections.newSetFromMap;
-import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -76,6 +52,30 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.nio.Packet.FLAG_URGENT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
+import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
+import static com.hazelcast.util.CollectionUtil.toIntegerList;
+import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.

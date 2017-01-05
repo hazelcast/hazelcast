@@ -16,8 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import static java.util.Collections.singletonMap;
-import static java.util.Collections.unmodifiableCollection;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -27,9 +28,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.util.MapUtil;
+import static java.util.Collections.singletonMap;
+import static java.util.Collections.unmodifiableCollection;
 
 /**
  * A special, immutable {@link MemberImpl} map type,

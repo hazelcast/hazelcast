@@ -16,10 +16,6 @@
 
 package com.hazelcast.security.permission;
 
-import java.security.Permission;
-import java.util.Collections;
-import java.util.Map;
-
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.collection.impl.list.ListService;
@@ -40,6 +36,10 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.MapUtil;
+
+import java.security.Permission;
+import java.util.Collections;
+import java.util.Map;
 
 public final class ActionConstants {
 

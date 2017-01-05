@@ -16,16 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import java.lang.management.ClassLoadingMXBean;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.lang.management.OperatingSystemMXBean;
-import java.lang.management.RuntimeMXBean;
-import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
-import java.util.Map;
-
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.dto.ConnectionManagerDTO;
 import com.hazelcast.internal.management.dto.EventServiceDTO;
@@ -43,6 +33,16 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
+
+import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Helper class to be gather JMX related stats for {@link TimedMemberStateFactory}

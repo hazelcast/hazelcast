@@ -16,20 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.subscriber;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.Boolean.TRUE;
-import static java.util.concurrent.TimeUnit.MINUTES;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Future;
-
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
@@ -57,6 +43,20 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Boolean.TRUE;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * Default implementation of {@link com.hazelcast.map.QueryCache QueryCache} interface which holds actual data.

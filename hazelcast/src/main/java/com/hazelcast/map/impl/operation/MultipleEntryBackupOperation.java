@@ -16,10 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,6 +23,10 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 public class MultipleEntryBackupOperation extends AbstractMultipleEntryBackupOperation implements BackupOperation {
 

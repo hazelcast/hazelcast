@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import java.security.Permission;
-import java.util.Map;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.instance.Node;
@@ -31,6 +28,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.security.Permission;
+import java.util.Map;
 
 public class MapPutAllMessageTask
         extends AbstractMapPartitionMessageTask<MapPutAllCodec.RequestParameters> {

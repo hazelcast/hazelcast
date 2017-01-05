@@ -16,14 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import static java.util.Collections.unmodifiableSet;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,6 +24,14 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
 import com.hazelcast.version.MemberVersion;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 

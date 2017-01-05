@@ -16,24 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.COMP_FLAG;
-import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
-import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
-import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
-import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
-
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.InputOutputFactory;
@@ -76,6 +58,24 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.util.MapUtil;
+
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.COMP_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
+import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
+import static com.hazelcast.internal.serialization.impl.SerializationUtil.createSerializerAdapter;
 
 public class SerializationServiceV1 extends AbstractSerializationService {
 

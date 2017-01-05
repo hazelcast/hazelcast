@@ -16,10 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.MapUtil;
+
 import java.util.Collection;
 import java.util.Map;
-
-import com.hazelcast.util.MapUtil;
 
 /**
  * Adapter for MapStore.

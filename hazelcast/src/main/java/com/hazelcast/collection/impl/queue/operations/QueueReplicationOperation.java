@@ -16,9 +16,6 @@
 
 package com.hazelcast.collection.impl.queue.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -30,6 +27,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Replication operation for the Queue.

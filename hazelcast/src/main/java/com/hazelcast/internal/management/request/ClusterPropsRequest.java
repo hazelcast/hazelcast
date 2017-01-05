@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.management.request;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.util.Iterator;
-import java.util.Map;
-
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MapUtil;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  *  Request for cluster properties.

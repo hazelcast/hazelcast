@@ -16,11 +16,6 @@
 
 package com.hazelcast.scheduledexecutor.impl.operations;
 
-import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
-
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,6 +23,11 @@ import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.MEMBER_BIN;
 
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {

@@ -16,15 +16,15 @@
 
 package com.hazelcast.internal.adapter;
 
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Map;
+import java.util.Set;
 
 public class TransactionalMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 

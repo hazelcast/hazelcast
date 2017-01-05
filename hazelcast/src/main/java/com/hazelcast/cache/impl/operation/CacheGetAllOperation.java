@@ -16,12 +16,6 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.cache.expiry.ExpiryPolicy;
-
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
@@ -30,6 +24,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.util.SetUtil;
+
+import javax.cache.expiry.ExpiryPolicy;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Gets all keys from the cache.

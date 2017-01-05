@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.management.request;
 
-import static com.hazelcast.util.JsonUtil.getString;
-
-import java.util.Iterator;
-import java.util.Map;
-
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Iterator;
+import java.util.Map;
+
+import static com.hazelcast.util.JsonUtil.getString;
 
 /**
  * Request for fetching map entries.

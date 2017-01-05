@@ -16,9 +16,6 @@
 
 package com.hazelcast.cardinality.impl.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.cardinality.impl.CardinalityEstimatorContainer;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorDataSerializerHook;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
@@ -27,6 +24,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class ReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

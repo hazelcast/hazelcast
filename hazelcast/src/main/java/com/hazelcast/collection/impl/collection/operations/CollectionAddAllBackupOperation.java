@@ -16,9 +16,6 @@
 
 package com.hazelcast.collection.impl.collection.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,6 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class CollectionAddAllBackupOperation extends CollectionOperation implements BackupOperation {
 

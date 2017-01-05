@@ -16,13 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.mapreduce.Combiner;
@@ -34,6 +27,13 @@ import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
 import com.hazelcast.util.MapUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+
+import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted

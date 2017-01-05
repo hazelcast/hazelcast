@@ -16,9 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState;
 import com.hazelcast.nio.Address;
@@ -26,6 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * This class is used to store assignment results in {@link com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation}

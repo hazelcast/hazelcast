@@ -16,11 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,6 +25,11 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 

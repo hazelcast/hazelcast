@@ -16,8 +16,11 @@
 
 package com.hazelcast.executor.impl;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,11 +29,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MultiExecutionCallback;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.MapUtil;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
 class ExecutionCallbackAdapterFactory {
 

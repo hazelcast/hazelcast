@@ -16,11 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
@@ -38,6 +33,11 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handles split-brain functionality for cache.

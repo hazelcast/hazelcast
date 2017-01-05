@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.atomicreference.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceContainer;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceDataSerializerHook;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -28,6 +25,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class AtomicReferenceReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

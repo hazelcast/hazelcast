@@ -16,35 +16,6 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
-import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
-import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.IterableUtil.nullToEmpty;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.Math.ceil;
-import static java.lang.Math.log10;
-import static java.lang.Math.min;
-import static java.util.Collections.singleton;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.logging.Level.WARNING;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EventListener;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -113,6 +84,35 @@ import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
+import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Math.ceil;
+import static java.lang.Math.log10;
+import static java.lang.Math.min;
+import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.logging.Level.WARNING;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 

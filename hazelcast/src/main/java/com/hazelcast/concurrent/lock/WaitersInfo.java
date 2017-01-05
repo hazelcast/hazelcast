@@ -16,16 +16,16 @@
 
 package com.hazelcast.concurrent.lock;
 
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
-
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
+
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
 
 final class WaitersInfo implements IdentifiedDataSerializable {
 

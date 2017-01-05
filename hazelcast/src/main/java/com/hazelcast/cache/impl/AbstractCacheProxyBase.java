@@ -16,21 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.cache.CacheException;
-import javax.cache.integration.CompletionListener;
-
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -49,6 +34,21 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.executor.CompletableFutureTask;
+
+import javax.cache.CacheException;
+import javax.cache.integration.CompletionListener;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Abstract class providing cache open/close operations and {@link NodeEngine}, {@link CacheService} and

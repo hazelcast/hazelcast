@@ -16,8 +16,9 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import static com.hazelcast.util.CollectionUtil.isEmpty;
-import static com.hazelcast.util.Preconditions.checkNotNull;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,9 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.MapUtil;
+import static com.hazelcast.util.CollectionUtil.isEmpty;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * A write-behind queue which supports write coalescing.

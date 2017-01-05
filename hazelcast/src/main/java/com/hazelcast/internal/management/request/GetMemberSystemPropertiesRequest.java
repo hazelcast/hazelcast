@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.management.request;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Request for fetching member system properties.

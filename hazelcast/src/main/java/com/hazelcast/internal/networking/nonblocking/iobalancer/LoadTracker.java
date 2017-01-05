@@ -16,7 +16,11 @@
 
 package com.hazelcast.internal.networking.nonblocking.iobalancer;
 
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
+import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ItemCounter;
+import com.hazelcast.util.MapUtil;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,11 +29,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ItemCounter;
-import com.hazelcast.util.MapUtil;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
  * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.

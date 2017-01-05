@@ -16,12 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
-
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;
@@ -31,6 +25,12 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
+
+import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.NULL_ARRAY_LENGTH;
 
 public class DefaultPortableWriter implements PortableWriter {
 

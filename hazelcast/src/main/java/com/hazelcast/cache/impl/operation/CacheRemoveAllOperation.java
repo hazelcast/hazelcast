@@ -16,14 +16,6 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.cache.CacheException;
-
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
@@ -36,6 +28,14 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.SetUtil;
+
+import javax.cache.CacheException;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
 
 /**
  * TODO add a proper JavaDoc

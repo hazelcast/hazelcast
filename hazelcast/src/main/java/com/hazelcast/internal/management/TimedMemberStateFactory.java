@@ -16,13 +16,6 @@
 
 package com.hazelcast.internal.management;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
@@ -70,6 +63,13 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.util.SetUtil;
 import com.hazelcast.wan.WanReplicationService;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Factory for creating {@link com.hazelcast.monitor.TimedMemberState} instances.

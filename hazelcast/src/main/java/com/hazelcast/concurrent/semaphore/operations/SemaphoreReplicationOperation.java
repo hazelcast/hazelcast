@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.semaphore.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -27,6 +24,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class SemaphoreReplicationOperation extends Operation implements IdentifiedDataSerializable {
 

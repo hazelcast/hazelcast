@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**

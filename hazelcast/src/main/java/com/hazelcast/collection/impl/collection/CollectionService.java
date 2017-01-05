@@ -16,12 +16,6 @@
 
 package com.hazelcast.collection.impl.collection;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.logging.Level;
-
 import com.hazelcast.collection.impl.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.core.ItemEvent;
@@ -43,6 +37,12 @@ import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.logging.Level;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
         EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {

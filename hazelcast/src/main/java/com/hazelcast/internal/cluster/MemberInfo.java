@@ -16,11 +16,6 @@
 
 package com.hazelcast.internal.cluster;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.Address;
@@ -29,6 +24,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.version.MemberVersion;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MemberInfo implements IdentifiedDataSerializable {
 

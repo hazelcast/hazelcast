@@ -16,12 +16,6 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
-import javax.cache.CacheException;
-
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheRecordStore;
@@ -39,6 +33,12 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import javax.cache.CacheException;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Loads all entries of the keys to partition record store {@link com.hazelcast.cache.impl.ICacheRecordStore}.

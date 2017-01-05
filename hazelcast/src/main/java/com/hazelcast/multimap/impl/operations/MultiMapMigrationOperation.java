@@ -16,12 +16,6 @@
 
 package com.hazelcast.multimap.impl.operations;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -34,6 +28,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class MultiMapMigrationOperation extends Operation implements IdentifiedDataSerializable {
 

@@ -16,7 +16,18 @@
 
 package com.hazelcast.instance;
 
-import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
+import com.hazelcast.cluster.impl.TcpIpJoiner;
+import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -36,18 +47,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.config.AwsConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.AddressUtil;
-import com.hazelcast.util.MapUtil;
+import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
 
 class DefaultAddressPicker implements AddressPicker {
 

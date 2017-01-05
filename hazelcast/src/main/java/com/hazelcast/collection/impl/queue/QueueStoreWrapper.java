@@ -16,14 +16,6 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
@@ -37,6 +29,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Wrapper for the Queue Store.

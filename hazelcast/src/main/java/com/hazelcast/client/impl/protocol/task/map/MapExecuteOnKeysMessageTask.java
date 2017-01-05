@@ -16,15 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
@@ -40,6 +31,15 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.SetUtil;
+
+import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class MapExecuteOnKeysMessageTask
         extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {

@@ -16,15 +16,6 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
-import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
-
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
@@ -36,6 +27,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.mapreduce.TopologyChangedStrategy.CANCEL_RUNNING_OPERATION;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.CHECK_STATE_FAILED;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.NO_SUPERVISOR;
+import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 /**
  * This operation is used to request assignment for keys on the job owners node. The job owner

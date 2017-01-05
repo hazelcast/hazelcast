@@ -16,8 +16,14 @@
 
 package com.hazelcast.concurrent.lock;
 
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
-import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,14 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.SetUtil;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.F_ID;
+import static com.hazelcast.concurrent.lock.LockDataSerializerHook.LOCK_RESOURCE;
 
 final class LockResourceImpl implements IdentifiedDataSerializable, LockResource {
 

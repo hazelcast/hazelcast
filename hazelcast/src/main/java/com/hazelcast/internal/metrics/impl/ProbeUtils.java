@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.util.MapUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,9 +26,6 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
-import com.hazelcast.internal.util.counters.Counter;
-import com.hazelcast.util.MapUtil;
 
 /**
  * Utility functions for probes.

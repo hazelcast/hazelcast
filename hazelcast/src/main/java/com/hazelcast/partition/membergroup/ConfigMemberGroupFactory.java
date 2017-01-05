@@ -16,17 +16,17 @@
 
 package com.hazelcast.partition.membergroup;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory implements MemberGroupFactory {
 

@@ -16,14 +16,14 @@
 
 package com.hazelcast.query.impl.getters;
 
-import java.util.List;
-import java.util.Map;
-
 import com.hazelcast.config.MapAttributeConfig;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.extractor.ValueExtractor;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.StringUtil;
+
+import java.util.List;
+import java.util.Map;
 
 public final class ExtractorHelper {
 

@@ -16,13 +16,6 @@
 
 package com.hazelcast.ringbuffer.impl.operations;
 
-import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
-import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
-import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
-
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,6 +23,13 @@ import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
+
+import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.F_ID;
+import static com.hazelcast.ringbuffer.impl.RingbufferDataSerializerHook.REPLICATION_OPERATION;
+import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 
 public class ReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

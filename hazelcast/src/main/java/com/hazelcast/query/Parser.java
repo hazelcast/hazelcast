@@ -16,7 +16,7 @@
 
 package com.hazelcast.query;
 
-import static com.hazelcast.util.StringUtil.lowerCaseInternal;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import com.hazelcast.util.MapUtil;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 
 class Parser {
     private static final String SPLIT_EXPRESSION = " ";

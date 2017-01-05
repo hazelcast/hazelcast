@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.atomiclong.operations;
 
-import java.io.IOException;
-import java.util.Map;
-
 import com.hazelcast.concurrent.atomiclong.AtomicLongContainer;
 import com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -27,6 +24,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.Map;
 
 public class AtomicLongReplicationOperation extends Operation
         implements IdentifiedDataSerializable {

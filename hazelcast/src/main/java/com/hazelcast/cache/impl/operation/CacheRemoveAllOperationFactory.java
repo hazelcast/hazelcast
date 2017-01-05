@@ -16,9 +16,6 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,6 +24,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * {@link com.hazelcast.spi.OperationFactory} implementation for RemoveAll Operations.

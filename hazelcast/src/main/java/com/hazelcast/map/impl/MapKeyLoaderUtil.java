@@ -16,14 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
-
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
-
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
@@ -31,6 +23,14 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.UnmodifiableIterator;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+
+import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 
 
 public final class MapKeyLoaderUtil {

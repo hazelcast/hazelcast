@@ -16,7 +16,11 @@
 
 package com.hazelcast.multimap.impl;
 
-import static com.hazelcast.util.Clock.currentTimeMillis;
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,11 +29,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.util.MapUtil;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
  * MultiMap container which holds a map of {@link MultiMapValue}.

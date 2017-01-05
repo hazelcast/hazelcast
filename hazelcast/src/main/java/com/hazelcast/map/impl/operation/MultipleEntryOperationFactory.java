@@ -16,9 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,6 +23,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
 
 public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
 

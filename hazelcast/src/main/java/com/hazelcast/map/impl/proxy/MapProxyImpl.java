@@ -16,25 +16,6 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import static com.hazelcast.config.InMemoryFormat.NATIVE;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.util.Preconditions.isNotNull;
-import static java.util.Collections.emptyMap;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
@@ -92,6 +73,25 @@ import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkPositive;
+import static com.hazelcast.util.Preconditions.checkTrue;
+import static com.hazelcast.util.Preconditions.isNotNull;
+import static java.util.Collections.emptyMap;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.IMap} interface.

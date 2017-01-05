@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.adapter;
 
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.util.MapUtil;
+
+import java.util.Map;
+import java.util.Set;
 
 public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAdapter<K, V> {
 

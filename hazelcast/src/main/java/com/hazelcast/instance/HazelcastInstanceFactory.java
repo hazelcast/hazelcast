@@ -16,11 +16,18 @@
 
 package com.hazelcast.instance;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.String.format;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.DuplicateInstanceNameException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -35,18 +42,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.DuplicateInstanceNameException;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.jmx.ManagementService;
-import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.MapUtil;
-import com.hazelcast.util.SetUtil;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
+import static com.hazelcast.util.Preconditions.checkHasText;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.String.format;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Central manager for all Hazelcast members of the JVM.

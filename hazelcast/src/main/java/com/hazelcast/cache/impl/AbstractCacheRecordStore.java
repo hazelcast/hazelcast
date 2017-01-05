@@ -16,33 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createBaseEventContext;
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCreatedEvent;
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheExpiredEvent;
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheRemovedEvent;
-import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedEvent;
-import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
-import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
-import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
-
-import java.io.Closeable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.cache.configuration.Factory;
-import javax.cache.expiry.Duration;
-import javax.cache.expiry.ExpiryPolicy;
-import javax.cache.integration.CacheLoader;
-import javax.cache.integration.CacheLoaderException;
-import javax.cache.integration.CacheWriter;
-import javax.cache.integration.CacheWriterException;
-import javax.cache.processor.EntryProcessor;
-
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
@@ -74,6 +47,33 @@ import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import javax.cache.configuration.Factory;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.ExpiryPolicy;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
+import javax.cache.integration.CacheWriter;
+import javax.cache.integration.CacheWriterException;
+import javax.cache.processor.EntryProcessor;
+
+import java.io.Closeable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createBaseEventContext;
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCompleteEvent;
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheCreatedEvent;
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheExpiredEvent;
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheRemovedEvent;
+import static com.hazelcast.cache.impl.CacheEventContextUtil.createCacheUpdatedEvent;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.cache.impl.record.CacheRecordFactory.isExpiredAt;
+import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extends SampleableCacheRecordMap<Data, R>>

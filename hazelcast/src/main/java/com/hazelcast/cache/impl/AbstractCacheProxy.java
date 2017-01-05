@@ -16,22 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
-
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
-import javax.cache.CacheException;
-import javax.cache.expiry.ExpiryPolicy;
-
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntries;
@@ -45,6 +29,22 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import javax.cache.CacheException;
+import javax.cache.expiry.ExpiryPolicy;
+
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.

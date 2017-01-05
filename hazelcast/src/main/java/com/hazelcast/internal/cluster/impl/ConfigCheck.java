@@ -16,13 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
-import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
@@ -31,6 +24,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.MapUtil;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.spi.properties.GroupProperty.APPLICATION_VALIDATION_TOKEN;
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations

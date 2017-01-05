@@ -16,14 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
@@ -39,6 +31,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
 /**
  * Holder for raw IMap key-value pairs and their metadata.

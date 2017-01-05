@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
-import java.security.Permission;
-import java.util.Map;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
@@ -32,6 +29,9 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.MapUtil;
+
+import java.security.Permission;
+import java.util.Map;
 
 public class ReplicatedMapPutAllMessageTask
         extends AbstractAllPartitionsMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
