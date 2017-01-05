@@ -17,6 +17,8 @@
 package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Base class to implement custom processors. Simplifies the contract of
@@ -76,16 +78,81 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Delegates directly to {@link Outbox#add(int, Object)}.
+     * Emits the item to the outbox bucket at the supplied ordinal.
      */
     protected void emit(int ordinal, Object item) {
         outbox.add(ordinal, item);
     }
 
     /**
-     * Delegates directly to {@link Outbox#add(Object)}.
+     * Emits the item to all the outbox buckets.
      */
     protected void emit(Object item) {
         outbox.add(item);
+    }
+
+    /**
+     * Emits the items obtained from the supplier to the outbox bucket with the supplied ordinal,
+     * in a cooperative fashion: if the outbox reports a high-water condition, backs off and
+     * returns {@code false}.
+     * <p>
+     * The item supplier is expected to behave as follows:
+     * <ol><li>
+     *     Each invocation of its {@code get(()} method must return the next item to emit.
+     * </li><li>
+     *     If this method returns {@code false}, then the same supplier must be retained by
+     *     the caller and used again in the subsequent invocation of this method, so as to
+     *     resume emitting where it left off.
+     * </li><li>
+     *     When all the items have been supplied, {@code get()} must return {@code null}
+     *     in all subsequent invocations.
+     * </li></ol>
+     *
+     * @param ordinal ordinal of the target bucket
+     * @param itemSupplier supplier of all items. It will be called repeatedly until
+     *                     it returns {@code null} or the outbox bucket reaches high water.
+     * @return {@code true} if all the items were emitted ({@code itemSupplier}
+     *         returned {@code null})
+     */
+    protected boolean emitCooperatively(int ordinal, Supplier<?> itemSupplier) {
+        while (true) {
+            if (getOutbox().isHighWater(ordinal)) {
+                return false;
+            }
+            final Object item = itemSupplier.get();
+            if (item == null) {
+                return true;
+            }
+            emit(ordinal, item);
+        }
+    }
+
+    protected boolean emitCooperatively(Supplier<?> itemSupplier) {
+        return emitCooperatively(-1, itemSupplier);
+    }
+
+    protected <T, R> TryProcessor<T, R> tryProcessor(Function<T, Supplier<R>> lazyTransformer) {
+        return new TryProcessor<>(lazyTransformer);
+    }
+
+    protected class TryProcessor<T, R> {
+
+        private final Function<T, Supplier<R>> lazyTransformer;
+        private Supplier<R> outputSupplier;
+
+        private TryProcessor(Function<T, Supplier<R>> lazyTransformer) {
+            this.lazyTransformer = lazyTransformer;
+        }
+
+        public boolean tryProcess(int ordinal, T item) {
+            if (outputSupplier == null) {
+                outputSupplier = lazyTransformer.apply(item);
+            }
+            if (emitCooperatively(ordinal, outputSupplier)) {
+                outputSupplier = null;
+                return true;
+            }
+            return false;
+        }
     }
 }

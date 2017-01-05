@@ -33,22 +33,33 @@ public interface Outbox {
     /**
      * Adds the supplied item to all the output buckets.
      */
-    void add(Object item);
+    default void add(Object item) {
+        add(-1, item);
+    }
 
     /**
      * Adds the supplied item to the output bucket with the supplied ordinal.
+     * If {@code ordinal == -1}, adds the supplied item to all buckets
+     * (behaves the same as {@link #add(Object)}).
      */
     void add(int ordinal, Object item);
 
     /**
-     * Returns {@code true} if {@link #isHighWater(int)} would return true for any legal
-     * value of {@code ordinal}.
+     * Returns {@code true} if any of this outbox's buckets is above its
+     * high water mark (i.e., {@link #isHighWater(int)} would return true
+     * for it).
      */
-    boolean isHighWater();
+    default boolean isHighWater() {
+        return isHighWater(-1);
+    }
 
     /**
-     * Returns {@code true} if no more data should be added to this outbox during this invocation
-     * of {@link Processor#process(int, Inbox)}.
+     * Returns {@code true} if the bucket with the given ordinal is above
+     * its high water mark. When {@code true}, no more data should be added
+     * to the bucket during the current invocation of the {@code Processor}
+     * method that made the inquiry.
+     * <p>
+     * If {@code ordinal == -1}, behaves identically to {@link #isHighWater()}.
      */
     boolean isHighWater(int ordinal);
 }

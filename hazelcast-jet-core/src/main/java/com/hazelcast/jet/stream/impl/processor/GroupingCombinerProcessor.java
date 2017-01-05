@@ -17,20 +17,29 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.AbstractMap;
+import com.hazelcast.jet.Suppliers;
+
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor {
+import static com.hazelcast.jet.Suppliers.lazyIterate;
+import static com.hazelcast.jet.Suppliers.map;
 
-    private final Map<K, A> cache = new HashMap<>();
-    private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> iterator;
+public class GroupingCombinerProcessor<K, V, A, R> extends AbstractProcessor {
+
+    private Map<K, A> cache = new HashMap<>();
+    private Collector<V, A, R> collector;
+    private Supplier<Entry<K, R>> cacheEntrySupplier;
 
     public GroupingCombinerProcessor(Collector<V, A, R> collector) {
         this.collector = collector;
+        this.cacheEntrySupplier = map(
+                lazyIterate(() -> cache.entrySet().iterator()),
+                item -> new SimpleImmutableEntry<>(item.getKey(), collector.finisher().apply(item.getValue())));
     }
 
 
@@ -48,16 +57,9 @@ public class GroupingCombinerProcessor<T, K, V, A, R> extends AbstractProcessor 
 
     @Override
     public boolean complete() {
-        if (iterator == null) {
-            iterator = cache.entrySet().iterator();
+        final boolean done = emitCooperatively(cacheEntrySupplier);
         }
-        while (iterator.hasNext() && !getOutbox().isHighWater()) {
-            Map.Entry<K, A> next = iterator.next();
-            K key = next.getKey();
-            R value = collector.finisher().apply(next.getValue());
-            emit(new AbstractMap.SimpleImmutableEntry<>(key, value));
-        }
-        return !iterator.hasNext();
+        return done;
     }
 
 }

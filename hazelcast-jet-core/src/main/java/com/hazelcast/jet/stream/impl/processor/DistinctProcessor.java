@@ -17,14 +17,17 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import static com.hazelcast.jet.Suppliers.lazyIterate;
 
 public class DistinctProcessor<T> extends AbstractProcessor {
 
-    private Iterator<T> iterator;
     private Set<T> set = new HashSet<>();
+    private Supplier<T> iteratingSupplier = lazyIterate(set::iterator);
 
     public DistinctProcessor() {
     }
@@ -37,13 +40,8 @@ public class DistinctProcessor<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (iterator == null) {
-            iterator = map.keySet().iterator();
+        final boolean done = emitCooperatively(iteratingSupplier);
         }
-        while (iterator.hasNext()) {
-            T key = iterator.next();
-            emit(key);
-        }
-        return true;
+        return done;
     }
 }

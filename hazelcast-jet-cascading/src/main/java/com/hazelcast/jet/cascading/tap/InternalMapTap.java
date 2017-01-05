@@ -96,20 +96,9 @@ public class InternalMapTap extends InternalJetTap {
         final IMap map = instance.getMap(mapName);
         return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new Outbox() {
             @Override
-            public void add(Object item) {
-                Entry entry = (Entry) item;
-                map.put(entry.getKey(), entry.getValue());
-            }
-
-            @Override
             public void add(int ordinal, Object item) {
                 Entry entry = (Entry) item;
                 map.put(entry.getKey(), entry.getValue());
-            }
-
-            @Override
-            public boolean isHighWater() {
-                return false;
             }
 
             @Override

@@ -63,11 +63,11 @@ public final class IListReader extends AbstractProducer {
     @Override
     public boolean complete() {
         while (hasNext()) {
-            currentIndex++;
-            emit(iterator.next());
             if (getOutbox().isHighWater()) {
                 return false;
             }
+            currentIndex++;
+            emit(iterator.next());
         }
         return true;
     }
@@ -76,14 +76,14 @@ public final class IListReader extends AbstractProducer {
         return iterator.hasNext() || currentIndex < size && advance();
     }
 
-    private int getNextIndex() {
-        int jump = currentIndex + fetchSize;
-        return jump >= size ? size : jump;
-    }
-
     private boolean advance() {
         iterator = list.subList(currentIndex, getNextIndex()).iterator();
         return iterator.hasNext();
+    }
+
+    private int getNextIndex() {
+        int jump = currentIndex + fetchSize;
+        return jump >= size ? size : jump;
     }
 
     @Override
@@ -194,7 +194,8 @@ public final class IListReader extends AbstractProducer {
 
     private static void assertCountIsOne(int count) {
         if (count != 1) {
-            throw new IllegalArgumentException("count != 1");
+            throw new IllegalArgumentException(
+                    "Supplier of IListReader asked to create more than one processor instance: " + count);
         }
     }
 }

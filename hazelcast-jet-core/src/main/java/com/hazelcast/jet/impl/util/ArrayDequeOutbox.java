@@ -27,50 +27,47 @@ import java.util.Queue;
  */
 public final class ArrayDequeOutbox implements Outbox {
 
-    private final ArrayDeque<Object>[] queues;
+    private final ArrayDeque<Object>[] buckets;
     private final int[] highWaterMarks;
 
     public ArrayDequeOutbox(int size, int[] highWaterMarks) {
         this.highWaterMarks = highWaterMarks.clone();
-        this.queues = new ArrayDeque[size];
-        Arrays.setAll(queues, i -> new ArrayDeque());
-    }
-
-    @Override
-    public void add(Object item) {
-        for (ArrayDeque<Object> queue : queues) {
-            queue.add(item);
-        }
+        this.buckets = new ArrayDeque[size];
+        Arrays.setAll(buckets, i -> new ArrayDeque());
     }
 
     @Override
     public void add(int ordinal, Object item) {
-        queues[ordinal].add(item);
+        if (ordinal != -1) {
+            buckets[ordinal].add(item);
+        } else {
+            for (ArrayDeque<Object> queue : buckets) {
+                queue.add(item);
+            }
+        }
     }
 
     @Override
-    public boolean isHighWater() {
-        for (int i = 0; i < queues.length; i++) {
-            if (queues[i].size() >= highWaterMarks[i]) {
+    public boolean isHighWater(int ordinal) {
+        if (ordinal != -1) {
+            return buckets[ordinal].size() >= highWaterMarks[ordinal];
+        }
+        for (int i = 0; i < buckets.length; i++) {
+            if (buckets[i].size() >= highWaterMarks[i]) {
                 return true;
             }
         }
         return false;
     }
 
-    @Override
-    public boolean isHighWater(int ordinal) {
-        return queues[ordinal].size() >= highWaterMarks[ordinal];
-    }
-
 
     // Private API that exposes the ArrayDeques to the ProcessorTasklet
 
     public int queueCount() {
-        return queues.length;
+        return buckets.length;
     }
 
     public Queue<Object> queueWithOrdinal(int ordinal) {
-        return queues[ordinal];
+        return buckets[ordinal];
     }
 }

@@ -250,14 +250,15 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         private static final Pattern PATTERN = Pattern.compile("\\w+");
 
-        @Override
-        public boolean process(int ordinal, Object item) {
-            String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
+        private final TryProcessor<Entry<Integer, String>, String> p = tryProcessor(entry -> {
+            String text = entry.getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
-            while (m.find()) {
-                emit(new SimpleImmutableEntry<>(m.group(), 1L));
-            }
-            return true;
+            return () -> m.find() ? m.group() : null;
+        });
+
+        @Override
+        public boolean tryProcess(int ordinal, Object item) {
+            return p.tryProcess(ordinal, (Entry<Integer, String>) item);
         }
     }
 
@@ -266,7 +267,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Iterator<Map.Entry<String, Long>> iterator;
 
         @Override
-        public boolean process(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, Object item) {
             Map.Entry<String, Long> entry = (Map.Entry<String, Long>) item;
             counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
             return true;
@@ -292,7 +293,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean process(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, Object item) {
             String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
@@ -317,7 +318,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean process(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, Object item) {
             Map<String, Long> counts = ((Entry<String, Map<String, Long>>) item).getValue();
             for (Entry<String, Long> entry : counts.entrySet()) {
                 accumulate(entry.getKey(), entry.getValue());
@@ -335,6 +336,4 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             counts.compute(key, (k, v) -> v == null ? addition : v + addition);
         }
     }
-
-
 }

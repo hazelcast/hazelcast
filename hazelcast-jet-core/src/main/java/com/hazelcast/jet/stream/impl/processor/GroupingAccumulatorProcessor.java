@@ -20,30 +20,37 @@ import com.hazelcast.jet.AbstractProcessor;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
+
+import static com.hazelcast.jet.Suppliers.lazyIterate;
+import static com.hazelcast.jet.Suppliers.map;
 
 public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcessor {
 
-    private final Map<K, A> cache = new HashMap<>();
-    private final Function<? super T, ? extends K> classifier;
-    private final Collector<V, A, R> collector;
-    private Iterator<Map.Entry<K, A>> iterator;
+    private Map<K, A> cache = new HashMap<>();
+    private Function<? super T, ? extends K> classifier;
+    private Collector<V, A, R> collector;
+    private Supplier<Entry<K, A>> cacheEntrySupplier;
 
     public GroupingAccumulatorProcessor(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
         this.classifier = classifier;
         this.collector = collector;
+        this.cacheEntrySupplier = map(
+                lazyIterate(() -> cache.entrySet().iterator()),
+                entry -> new SimpleImmutableEntry<>(entry.getKey(), entry.getValue()));
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
-        A value = this.cache.get(entry.getKey());
+        A value = cache.get(entry.getKey());
         if (value == null) {
             value = collector.supplier().get();
-            this.cache.put(entry.getKey(), value);
+            cache.put(entry.getKey(), value);
         }
         collector.accumulator().accept(value, entry.getValue());
         return true;
@@ -51,14 +58,8 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
 
     @Override
     public boolean complete() {
-        if (iterator == null) {
-            iterator = cache.entrySet().iterator();
+        final boolean done = emitCooperatively(cacheEntrySupplier);
         }
-        while (iterator.hasNext() && !getOutbox().isHighWater()) {
-            Map.Entry<K, A> next = iterator.next();
-            emit(new SimpleImmutableEntry<>(next.getKey(), next.getValue()));
-        }
-        return !iterator.hasNext();
+        return done;
     }
-
 }

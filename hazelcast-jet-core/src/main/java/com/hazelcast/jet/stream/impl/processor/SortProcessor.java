@@ -17,21 +17,28 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Suppliers;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
+
+import static com.hazelcast.jet.Suppliers.lazyIterate;
 
 public class SortProcessor<T> extends AbstractProcessor {
 
-    private final List<T> list;
-    private final Comparator<T> comparator;
-    private Iterator<T> iterator;
+    private List<T> list;
+    private Supplier<T> itemSupplier;
 
     public SortProcessor(Comparator<T> comparator) {
         this.list = new ArrayList<>();
-        this.comparator = comparator;
+        this.itemSupplier = lazyIterate(() -> {
+            list.sort(comparator);
+            return list.iterator();
+        });
     }
 
     @Override
@@ -42,14 +49,8 @@ public class SortProcessor<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (iterator == null) {
-            Collections.sort(list, comparator);
-            iterator = list.iterator();
+        final boolean done = emitCooperatively(itemSupplier);
         }
-        while (iterator.hasNext() && !getOutbox().isHighWater()) {
-            T key = iterator.next();
-            emit(key);
-        }
-        return !iterator.hasNext();
+        return done;
     }
 }
