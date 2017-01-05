@@ -1,8 +1,9 @@
 package com.hazelcast.test.jitter;
 
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static java.util.Collections.emptyList;
 
 public class JitterMonitor {
     private static AtomicBoolean started = new AtomicBoolean();
@@ -18,7 +19,7 @@ public class JitterMonitor {
 
     public static Iterable<Slot> getSlotsBetween(long startTime, long stopTime) {
         if (jitterRecorder == null) {
-            return Collections.EMPTY_LIST;
+            return emptyList();
         }
         return jitterRecorder.getSlotsBetween(startTime, stopTime);
     }

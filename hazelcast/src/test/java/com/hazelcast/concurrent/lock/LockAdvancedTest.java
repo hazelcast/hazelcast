@@ -33,7 +33,6 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})

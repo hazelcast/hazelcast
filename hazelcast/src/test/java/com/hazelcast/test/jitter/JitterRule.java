@@ -85,19 +85,23 @@ public class JitterRule implements TestRule {
                 try {
                     base.evaluate();
                 } catch (Throwable t) {
-                    long endTime = System.currentTimeMillis();
-                    Iterable<Slot> slotsBetween = JitterMonitor.getSlotsBetween(startTime, endTime);
-                    StringBuilder sb = new StringBuilder("Hiccups measured while running test '")
-                            .append(description.getDisplayName())
-                            .append(":'")
-                            .append(LINE_SEPARATOR);
-                    DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
-                    for (Slot slot : slotsBetween) {
-                        sb.append(slot.toHumanFriendly(dateFormat)).append(LINE_SEPARATOR);
-                    }
-                    System.out.println(sb);
+                    printJitters(startTime);
                     throw t;
                 }
+            }
+
+            private void printJitters(long startTime) {
+                long endTime = System.currentTimeMillis();
+                Iterable<Slot> slotsBetween = JitterMonitor.getSlotsBetween(startTime, endTime);
+                StringBuilder sb = new StringBuilder("Hiccups measured while running test '")
+                        .append(description.getDisplayName())
+                        .append(":'")
+                        .append(LINE_SEPARATOR);
+                DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss");
+                for (Slot slot : slotsBetween) {
+                    sb.append(slot.toHumanFriendly(dateFormat)).append(LINE_SEPARATOR);
+                }
+                System.out.println(sb);
             }
         };
     }
