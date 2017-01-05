@@ -63,12 +63,12 @@ abstract class CallIdSequence {
      * supports backpressure, it will not return unless the number of outstanding invocations is within the
      * configured limit. Instead it will block until the condition is met and eventually throw a timeout exception.
      *
-     * @param isUrgent {@code true} means we're need a call ID for an urgent operation
+     * @param force {@code true} means we need a call ID immediately, because of an urgent operation or a retry
      * @return the generated call ID
      * @throws TimeoutException if the outstanding invocation count hasn't dropped below the configured limit
      * within the configured timeout
      */
-    abstract long next(boolean isUrgent) throws TimeoutException;
+    abstract long next(boolean force) throws TimeoutException;
 
     /** Not idempotent: must be called exactly once per invocation. */
     abstract void complete();
@@ -96,7 +96,7 @@ abstract class CallIdSequence {
         }
 
         @Override
-        public long next(boolean isUrgent) {
+        public long next(boolean force) {
             return HEAD.incrementAndGet(this);
         }
 
@@ -148,8 +148,8 @@ abstract class CallIdSequence {
         }
 
         @Override
-        public long next(boolean isUrgent) throws TimeoutException {
-            if (!isUrgent && !hasSpace()) {
+        public long next(boolean force) throws TimeoutException {
+            if (!force && !hasSpace()) {
                 waitForSpace();
             }
             return next();

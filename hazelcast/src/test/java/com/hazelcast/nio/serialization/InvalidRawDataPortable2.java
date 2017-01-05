@@ -4,9 +4,6 @@ import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 22/05/14
- */
 class InvalidRawDataPortable2 extends RawDataPortable {
 
     InvalidRawDataPortable2() {
@@ -16,10 +13,12 @@ class InvalidRawDataPortable2 extends RawDataPortable {
         super(l, c, p, k, s, sds);
     }
 
+    @Override
     public int getClassId() {
         return TestSerializationConstants.INVALID_RAW_DATA_PORTABLE_2;
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         c = reader.readCharArray("c");
         final ObjectDataInput input = reader.getRawDataInput();

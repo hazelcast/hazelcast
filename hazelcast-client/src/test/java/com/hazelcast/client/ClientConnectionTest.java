@@ -43,10 +43,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Collection;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -244,10 +242,4 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         }
     }
 
-    static class DummySerializableCallable implements Callable, Serializable {
-        @Override
-        public Object call() throws Exception {
-            return null;
-        }
-    }
 }

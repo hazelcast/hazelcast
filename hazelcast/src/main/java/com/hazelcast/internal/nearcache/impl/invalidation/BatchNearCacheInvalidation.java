@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache.invalidation;
+package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.emptyList;
 
 public class BatchNearCacheInvalidation extends Invalidation {
@@ -34,9 +33,9 @@ public class BatchNearCacheInvalidation extends Invalidation {
     public BatchNearCacheInvalidation() {
     }
 
-    public BatchNearCacheInvalidation(String mapName, List<Invalidation> invalidations) {
-        super(mapName);
-        this.invalidations = checkNotNull(invalidations, "invalidations cannot be null");
+    public BatchNearCacheInvalidation(String dataStructureName, List<Invalidation> invalidations) {
+        super(dataStructureName);
+        this.invalidations = invalidations;
     }
 
     public List<Invalidation> getInvalidations() {
@@ -71,7 +70,8 @@ public class BatchNearCacheInvalidation extends Invalidation {
     @Override
     public String toString() {
         return "BatchNearCacheInvalidation{"
-                + "invalidations=" + invalidations
+                + "dataStructureName=" + getName()
+                + ", invalidation-count-in-this-batch=" + invalidations.size()
                 + '}';
     }
 

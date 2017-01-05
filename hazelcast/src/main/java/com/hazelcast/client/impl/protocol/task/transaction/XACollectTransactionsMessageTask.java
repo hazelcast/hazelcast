@@ -16,26 +16,25 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
-import java.security.Permission;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
+import com.hazelcast.client.impl.CollectRemoteTransactionsOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.impl.xa.XAService;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.util.function.Supplier;
+
+import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class XACollectTransactionsMessageTask
         extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {
@@ -55,12 +54,12 @@ public class XACollectTransactionsMessageTask
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new CollectRemoteTransactionsOperationFactory();
+    protected Supplier<Operation> createOperationSupplier() {
+        return new CollectRemoteTransactionsOperationSupplier();
     }
 
     @Override
-    protected Object reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Member, Object> map) throws Throwable {
         List<Data> list = new ArrayList<Data>();
         for (Object o : map.values()) {
             SerializableList xidSet = (SerializableList) o;
@@ -70,13 +69,8 @@ public class XACollectTransactionsMessageTask
     }
 
     @Override
-    public Collection<Address> getTargets() {
-        Collection<Member> memberList = clientEngine.getClusterService().getMembers();
-        Collection<Address> addresses = SetUtil.createHashSet(memberList.size());
-        for (Member member : memberList) {
-            addresses.add(member.getAddress());
-        }
-        return addresses;
+    public Collection<Member> getTargets() {
+        return clientEngine.getClusterService().getMembers();
     }
 
     @Override

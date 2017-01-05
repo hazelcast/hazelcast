@@ -11,6 +11,7 @@ class SlowOperation extends Operation {
     Object response;
     long durationMs;
 
+    @SuppressWarnings("unused")
     public SlowOperation() {
     }
 
@@ -46,5 +47,4 @@ class SlowOperation extends Operation {
         durationMs = in.readLong();
         response = in.readObject();
     }
-
 }

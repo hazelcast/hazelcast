@@ -17,7 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
@@ -42,7 +45,7 @@ import java.util.Map;
  * @see com.hazelcast.map.impl.operation.EntryOperation#createMapEntry(Data, Object)
  */
 
-public class LazyMapEntry extends CachedQueryEntry implements Serializable {
+public class LazyMapEntry extends CachedQueryEntry implements Serializable, IdentifiedDataSerializable {
     private static final long serialVersionUID = 0L;
 
     private transient boolean modified;
@@ -66,7 +69,6 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable {
         this.valueData = null;
         return oldValue;
     }
-
 
     /**
      * Similar to calling {@link #setValue} with null but doesn't return old-value hence no extra deserialization.
@@ -106,16 +108,38 @@ public class LazyMapEntry extends CachedQueryEntry implements Serializable {
         return getKey() + "=" + getValue();
     }
 
-    private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        keyObject = s.readObject();
-        valueObject = s.readObject();
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        keyObject = in.readObject();
+        valueObject = in.readObject();
     }
 
-    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
-        s.defaultWriteObject();
-        s.writeObject(getKey());
-        s.writeObject(getValue());
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.defaultWriteObject();
+        out.writeObject(getKey());
+        out.writeObject(getValue());
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        keyObject = in.readObject();
+        valueObject = in.readObject();
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(getKey());
+        out.writeObject(getValue());
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.LAZY_MAP_ENTRY;
     }
 }
 

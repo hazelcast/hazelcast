@@ -118,5 +118,4 @@ public class PartitionScanRunner {
     protected long getNow() {
         return Clock.currentTimeMillis();
     }
-
 }

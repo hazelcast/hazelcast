@@ -50,13 +50,13 @@ public class AccumulatorInfo implements Portable {
 
     /**
      * Used to enable/disable {@link Accumulator} event sending functionality.
+     *
      * Used in the phase of initial population for preventing any event to be sent before taking the snapshot of {@code IMap}.
      */
     private volatile boolean publishable;
 
-    public static AccumulatorInfo createAccumulatorInfo(
-            QueryCacheConfig config, String mapName, String cacheName, Predicate predicate
-    ) {
+    public static AccumulatorInfo createAccumulatorInfo(QueryCacheConfig config, String mapName, String cacheName,
+                                                        Predicate predicate) {
         checkNotNull(config, "config cannot be null");
 
         AccumulatorInfo info = new AccumulatorInfo();
@@ -74,10 +74,9 @@ public class AccumulatorInfo implements Portable {
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public static AccumulatorInfo createAccumulatorInfo(
-            String mapName, String cacheName, Predicate predicate, int batchSize, int bufferSize, long delaySeconds,
-            boolean includeValue, boolean populate, boolean coalesce
-    ) {
+    public static AccumulatorInfo createAccumulatorInfo(String mapName, String cacheName, Predicate predicate, int batchSize,
+                                                        int bufferSize, long delaySeconds, boolean includeValue, boolean populate,
+                                                        boolean coalesce) {
         AccumulatorInfo info = new AccumulatorInfo();
         info.mapName = mapName;
         info.cacheName = cacheName;

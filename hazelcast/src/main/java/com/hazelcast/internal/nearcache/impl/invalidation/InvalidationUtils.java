@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.core.IFunction;
+import com.hazelcast.spi.EventRegistration;
+
+import static java.lang.Boolean.TRUE;
 
 /**
  * Utils for invalidations.
@@ -25,8 +27,12 @@ import com.hazelcast.nio.serialization.Data;
 public final class InvalidationUtils {
 
     public static final long NO_SEQUENCE = -1L;
-    public static final byte[] EMPTY_BYTE_ARRAY = {};
-    public static final Data NULL_KEY = new HeapData(EMPTY_BYTE_ARRAY);
+    public static final IFunction<EventRegistration, Boolean> TRUE_FILTER = new IFunction<EventRegistration, Boolean>() {
+        @Override
+        public Boolean apply(EventRegistration eventRegistration) {
+            return TRUE;
+        }
+    };
 
     private InvalidationUtils() {
     }

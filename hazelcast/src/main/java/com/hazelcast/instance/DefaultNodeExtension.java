@@ -24,11 +24,13 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.hotrestart.InternalHotRestartService;
+import com.hazelcast.hotrestart.NoOpHotRestartService;
+import com.hazelcast.hotrestart.NoopInternalHotRestartService;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
 import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
-import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.internal.networking.WriteHandler;
@@ -66,7 +68,6 @@ import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
@@ -288,21 +289,13 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public boolean triggerForceStart() {
-        logger.warning("Force start is available when hot restart is active!");
-        return false;
+    public HotRestartService getHotRestartService() {
+        return new NoOpHotRestartService();
     }
 
     @Override
-    public boolean triggerPartialStart() {
-        logger.warning("Partial start is available when hot restart is active!");
-        return false;
-    }
-
-    @Override
-    public HotRestartService getHotRestartBackupService() {
-        logger.warning("Hot restart data backup features are only available on Hazelcast Enterprise!");
-        return null;
+    public InternalHotRestartService getInternalHotRestartService() {
+        return new NoopInternalHotRestartService();
     }
 
     @Override
@@ -321,28 +314,5 @@ public class DefaultNodeExtension implements NodeExtension {
             return (overriddenClusterVersion != null) ? MemberVersion.of(overriddenClusterVersion).asClusterVersion()
                                                         : node.getVersion().asClusterVersion();
         }
-    }
-
-    @Override
-    public boolean isMemberExcluded(Address memberAddress, String memberUuid) {
-        return false;
-    }
-
-    @Override
-    public Set<String> getExcludedMemberUuids() {
-        return Collections.emptySet();
-    }
-
-    @Override
-    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
-    }
-
-    @Override
-    public ClusterHotRestartStatusDTO getCurrentClusterHotRestartStatus() {
-        return new ClusterHotRestartStatusDTO();
-    }
-
-    @Override
-    public void resetHotRestartData() {
     }
 }

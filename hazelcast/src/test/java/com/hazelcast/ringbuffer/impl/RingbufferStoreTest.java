@@ -123,6 +123,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        warmUpPartitions(instance, instance2);
 
         // add items to both ring buffers (master and backup) and shut down the master
         final Ringbuffer<Object> ringbuffer = instance.getRingbuffer("testRingbufferStore");
@@ -213,6 +214,7 @@ public class RingbufferStoreTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        warmUpPartitions(instance1, instance2);
 
         final String name = generateKeyOwnedBy(instance1);
         final Ringbuffer<Object> masterRB = instance1.getRingbuffer(name);

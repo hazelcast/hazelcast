@@ -17,6 +17,9 @@
 package com.hazelcast.map.impl.nearcache.invalidation;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -31,7 +34,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -51,10 +53,8 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
 
         List<Invalidation> invalidations = new ArrayList<Invalidation>();
         invalidations.add(new SingleNearCacheInvalidation(key, mapName, sourceUuid, partitionUuid, 1));
-        invalidations.add(new SingleNearCacheInvalidation(mapName, sourceUuid, partitionUuid, 1));
 
         BatchNearCacheInvalidation batch = new BatchNearCacheInvalidation(mapName, invalidations);
-
 
         Data data = ss.toData(batch);
         Object object = ss.toObject(data);
@@ -69,7 +69,7 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
         for (Invalidation invalidation : invalidations) {
             Data invalidationKey = invalidation.getKey();
 
-            assertTrue(invalidationKey.equals(NULL_KEY) || invalidationKey.equals(key));
+            assertTrue(invalidationKey.equals(key));
             assertEquals(mapName, invalidation.getName());
             assertEquals(partitionUuid, invalidation.getPartitionUuid());
         }

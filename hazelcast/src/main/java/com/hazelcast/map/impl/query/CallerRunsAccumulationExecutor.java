@@ -33,6 +33,7 @@ public class CallerRunsAccumulationExecutor implements AccumulationExecutor {
         this.serializationService = serializationService;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public AggregationResult execute(
             Aggregator aggregator, Collection<QueryableEntry> entries, Collection<Integer> partitionIds) {
@@ -49,5 +50,4 @@ public class CallerRunsAccumulationExecutor implements AccumulationExecutor {
         result.setPartitionIds(partitionIds);
         return result;
     }
-
 }

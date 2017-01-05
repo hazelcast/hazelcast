@@ -25,7 +25,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.TimeUnit;
 
@@ -35,31 +34,31 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class EnumTest {
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    private final SerializationService ss = new DefaultSerializationServiceBuilder().build();
 
     @Test
-    public void test1() throws IOException {
+    public void test1() {
         test(EntryEventType.ADDED);
     }
 
     @Test
-    public void test2() throws IOException {
+    public void test2() {
         test(Thread.State.RUNNABLE);
     }
 
     @Test
-    public void test3() throws IOException {
+    public void test3() {
         test(RetentionPolicy.SOURCE);
     }
 
-    //the TimeUnit.SECONDS is a difficult once because a subclass is generated. So when this test runs, it indicates
-    //the we can safely deal with subclasses of an enumeration.
+    // TimeUnit.SECONDS is a difficult one, because a subclass is generated
+    // so when this test runs without error, it indicates that we can safely deal with subclasses of an enumeration
     @Test
-    public void test4() throws IOException {
+    public void test4() {
         test(TimeUnit.SECONDS);
     }
 
-    private void test(Enum value) throws IOException {
+    private void test(Enum value) {
         Data data = ss.toData(value);
         Enum found = ss.toObject(data);
         assertSame(value, found);

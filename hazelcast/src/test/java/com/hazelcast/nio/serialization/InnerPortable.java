@@ -3,9 +3,6 @@ package com.hazelcast.nio.serialization;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 22/05/14
- */
 class InnerPortable implements Portable {
 
     byte[] bb;
@@ -31,10 +28,12 @@ class InnerPortable implements Portable {
         this.nn = nn;
     }
 
+    @Override
     public int getClassId() {
         return TestSerializationConstants.INNER_PORTABLE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeByteArray("b", bb);
         writer.writeCharArray("c", cc);
@@ -46,6 +45,7 @@ class InnerPortable implements Portable {
         writer.writePortableArray("nn", nn);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         bb = reader.readByteArray("b");
         cc = reader.readCharArray("c");
@@ -65,7 +65,6 @@ class InnerPortable implements Portable {
         if (o == null || getClass() != o.getClass()) return false;
 
         InnerPortable that = (InnerPortable) o;
-
         if (!Arrays.equals(bb, that.bb)) return false;
         if (!Arrays.equals(cc, that.cc)) return false;
         if (!Arrays.equals(dd, that.dd)) return false;
@@ -91,6 +90,7 @@ class InnerPortable implements Portable {
         return result;
     }
 
+    @Override
     public int getFactoryId() {
         return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }

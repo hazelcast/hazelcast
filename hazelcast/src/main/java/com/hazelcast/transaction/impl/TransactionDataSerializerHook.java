@@ -38,7 +38,6 @@ import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOpe
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionBackupOperation;
 import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
@@ -97,8 +96,6 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
                         return new ReplicateAllowedDuringPassiveStateTxBackupLogOperation();
                     case ROLLBACK_ALLOWED_DURING_PASSIVE_STATE_TX_BACKUP_LOG:
                         return new RollbackAllowedDuringPassiveStateTxBackupLogOperation();
-                    case COLLECT_REMOTE_TX_FACTORY:
-                        return new CollectRemoteTransactionsOperationFactory();
                     case CLEAR_REMOTE_TX_BACKUP:
                         return new ClearRemoteTransactionBackupOperation();
                     case CLEAR_REMOTE_TX:

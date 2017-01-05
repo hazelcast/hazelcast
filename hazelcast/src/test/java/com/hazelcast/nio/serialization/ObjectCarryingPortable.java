@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 public class ObjectCarryingPortable implements Portable {
+
     private Object object;
 
     public ObjectCarryingPortable() {
@@ -55,12 +56,18 @@ public class ObjectCarryingPortable implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectCarryingPortable that = (ObjectCarryingPortable) o;
 
-        if (object != null ? !object.equals(that.object) : that.object != null) return false;
+        if (object != null ? !object.equals(that.object) : that.object != null) {
+            return false;
+        }
 
         return true;
     }

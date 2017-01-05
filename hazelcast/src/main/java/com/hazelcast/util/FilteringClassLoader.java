@@ -16,9 +16,11 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.distributedclassloading.impl.ClassloadingMutexProvider;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
@@ -26,8 +28,6 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -41,11 +41,11 @@ public class FilteringClassLoader
 
     private static final int BUFFER_SIZE = 1024;
 
-    private final Map<String, Class<?>> cache = new ConcurrentHashMap<String, Class<?>>();
-
     private final List<String> excludePackages;
     private final ClassLoader delegatingClassLoader;
     private final String enforcedSelfLoadingPackage;
+
+    private final ClassloadingMutexProvider mutexProvider = new ClassloadingMutexProvider();
 
     public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
         this.excludePackages = Collections.unmodifiableList(excludePackages);
@@ -93,33 +93,40 @@ public class FilteringClassLoader
         }
 
         if (enforcedSelfLoadingPackage != null && name.startsWith(enforcedSelfLoadingPackage)) {
-            Class<?> clazz = cache.get(name);
-            if (clazz != null) {
-                return clazz;
-            }
-
-            InputStream is = getResourceAsStream(name.replaceAll("\\.", "/").concat(".class"));
+            Closeable classLoadingMutex = mutexProvider.getMutexForClass(name);
             try {
-                byte[] temp = new byte[BUFFER_SIZE];
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-                int length;
-                while ((length = is.read(temp)) != -1) {
-                    baos.write(temp, 0, length);
+                synchronized (classLoadingMutex) {
+                    Class<?> clazz = findLoadedClass(name);
+                    if (clazz == null) {
+                        clazz = loadAndDefineClass(name);
+                    }
+                    return clazz;
                 }
-
-                byte[] data = baos.toByteArray();
-                clazz = defineClass(name, data, 0, data.length);
-                cache.put(name, clazz);
-                return clazz;
-
-            } catch (Exception e) {
-                throw new ClassNotFoundException(name, e);
             } finally {
-                IOUtil.closeResource(is);
+                IOUtil.closeResource(classLoadingMutex);
             }
         }
-
         return delegatingClassLoader.loadClass(name);
+    }
+
+    private Class<?> loadAndDefineClass(String name) throws ClassNotFoundException {
+        InputStream is = getResourceAsStream(name.replaceAll("\\.", "/").concat(".class"));
+        try {
+            byte[] temp = new byte[BUFFER_SIZE];
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            int length;
+            while ((length = is.read(temp)) != -1) {
+                baos.write(temp, 0, length);
+            }
+
+            byte[] data = baos.toByteArray();
+            Class<?> clazz = defineClass(name, data, 0, data.length);
+            return clazz;
+        } catch (Exception e) {
+            throw new ClassNotFoundException(name, e);
+        } finally {
+            IOUtil.closeResource(is);
+        }
     }
 }

@@ -106,14 +106,6 @@ public class NearCacheConfigTest {
         assertEquals(66, config.getEvictionConfig().getSize());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.NearCacheConfigReadOnly#setCacheLocalEntries(boolean)}.
-     */
-    @Test(expected = UnsupportedOperationException.class)
-    public void testReadOnlyNearCacheConfigSetCacheLocalEntries() {
-        new NearCacheConfigReadOnly(new NearCacheConfig()).setCacheLocalEntries(true);
-    }
-
     @Test
     public void testSetInMemoryFormat_withString() {
         config.setInMemoryFormat("NATIVE");

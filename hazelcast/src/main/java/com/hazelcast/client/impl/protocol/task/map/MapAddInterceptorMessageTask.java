@@ -16,10 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import java.security.Permission;
-import java.util.Collection;
-import java.util.Map;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
@@ -28,13 +24,16 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
-import com.hazelcast.nio.Address;
+import com.hazelcast.client.impl.AddInterceptorOperationSupplier;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Supplier;
+
+import java.security.Permission;
+import java.util.Collection;
+import java.util.Map;
 
 public class MapAddInterceptorMessageTask
         extends AbstractMultiTargetMessageTask<MapAddInterceptorCodec.RequestParameters> {
@@ -46,16 +45,16 @@ public class MapAddInterceptorMessageTask
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
+    protected Supplier<Operation> createOperationSupplier() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final MapInterceptor mapInterceptor = serializationService.toObject(parameters.interceptor);
         id = mapServiceContext.generateInterceptorId(parameters.name, mapInterceptor);
-        return new AddInterceptorOperationFactory(id, parameters.name, mapInterceptor);
+        return new AddInterceptorOperationSupplier(id, parameters.name, mapInterceptor);
     }
 
     @Override
-    protected Object reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Member, Object> map) throws Throwable {
         for (Object result : map.values()) {
             if (result instanceof Throwable) {
                 throw (Throwable) result;
@@ -66,13 +65,8 @@ public class MapAddInterceptorMessageTask
 
 
     @Override
-    public Collection<Address> getTargets() {
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
-        Collection<Address> addresses = SetUtil.createHashSet(memberList.size());
-        for (Member member : memberList) {
-            addresses.add(member.getAddress());
-        }
-        return addresses;
+    public Collection<Member> getTargets() {
+        return nodeEngine.getClusterService().getMembers();
     }
 
     @Override

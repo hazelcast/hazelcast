@@ -51,7 +51,7 @@ import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
-    private static final long TERMINATE_TIMEOUT_SECONDS = 30;
+    public static final long TERMINATE_TIMEOUT_SECONDS = 30;
 
     protected final HazelcastClientInstanceImpl client;
 
@@ -92,6 +92,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     @Override
     public Address getOwnerConnectionAddress() {
         return ownerConnectionAddress;
+    }
+
+    public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
+        this.ownerConnectionAddress = ownerConnectionAddress;
     }
 
     public void shutdown() {
@@ -191,11 +195,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             try {
                 triedAddresses.add(inetSocketAddress);
                 Address address = new Address(inetSocketAddress);
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Trying to connect to " + address);
-                }
+                logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
-                ownerConnectionAddress = connection.getEndPoint();
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
                 client.getListenerService().onClusterConnect((ClientConnection) connection);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
@@ -233,7 +234,16 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                             connectToCluster();
                         } catch (Exception e) {
                             logger.warning("Could not re-connect to cluster shutting down the client", e);
-                            client.getLifecycleService().shutdown();
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        client.getLifecycleService().shutdown();
+                                    } catch (Exception exception) {
+                                        logger.severe("Exception during client shutdown ", exception);
+                                    }
+                                }
+                            }, client.getName() + ".clientShutdown-").start();
                         }
                     }
                 });

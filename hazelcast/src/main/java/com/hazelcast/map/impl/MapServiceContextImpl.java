@@ -222,7 +222,7 @@ class MapServiceContextImpl implements MapServiceContext {
             accumulationExecutor = new CallerRunsAccumulationExecutor(ss);
         }
 
-        return new AggregationResultProcessor(accumulationExecutor);
+        return new AggregationResultProcessor(accumulationExecutor, nodeEngine.getSerializationService());
     }
 
     private PartitionContainer[] createPartitionContainers() {
@@ -665,6 +665,7 @@ class MapServiceContextImpl implements MapServiceContext {
         }
     }
 
+    @Override
     public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
         ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
         return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);

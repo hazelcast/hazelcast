@@ -52,7 +52,8 @@ public class PacketTest {
             new PortableAddress("street", 567));
 
     private SerializationServiceBuilder createSerializationServiceBuilder() {
-        final PortableFactory portableFactory = new PortableFactory() {
+        PortableFactory portableFactory = new PortableFactory() {
+            @Override
             public Portable create(int classId) {
                 switch (classId) {
                     case 1:

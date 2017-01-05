@@ -25,11 +25,11 @@ import com.hazelcast.map.QueryCache;
 import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
+import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -38,18 +38,22 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.querycache.AbstractQueryCacheTestSupport.getMap;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -58,29 +62,35 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
 
+    private HazelcastInstance member;
+
+    private String mapName;
+    private IMap<Integer, Integer> map;
+    private QueryCache<Integer, Integer> queryCache;
+
+    @Before
+    public void setUp() {
+        member = createHazelcastInstance();
+
+        mapName = randomMapName();
+        map = getMap(member, mapName);
+        queryCache = map.getQueryCache("cqc", TRUE_PREDICATE, true);
+    }
+
     @Test
     public void testEvent_MERGED() throws Exception {
-        HazelcastInstance member = createHazelcastInstance();
-        String mapName = randomMapName();
-        IMap<Integer, Integer> map = getMap(member, mapName);
-        QueryCache<Integer, Integer> cqc = map.getQueryCache("cqc", TRUE_PREDICATE, true);
-
-        int key = 1;
-        int existingValue = 1;
-        int mergingValue = 2;
+        final int key = 1;
+        final int existingValue = 1;
+        final int mergingValue = 2;
 
         map.put(key, existingValue);
 
         executeMergeOperation(member, mapName, key, mergingValue);
 
-        assertMergingValueInQueryCache(cqc, key, mergingValue);
-    }
-
-    private void assertMergingValueInQueryCache(final QueryCache<Integer, Integer> cqc, final int key, final int mergingValue) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Integer currentValue = cqc.get(key);
+                Integer currentValue = queryCache.get(key);
                 assertEquals(mergingValue, (Object) currentValue);
             }
         });
@@ -98,22 +108,17 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
 
         MergeOperation mergeOperation = new MergeOperation(mapName, keyData, entryView, new PassThroughMergePolicy());
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        InternalCompletableFuture<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
+        Future<Object> future = operationService.invokeOnPartition(SERVICE_NAME, mergeOperation, partitionId);
         future.get();
     }
 
     @Test
     public void testEvent_EXPIRED() throws Exception {
-        HazelcastInstance member = createHazelcastInstance();
-        String mapName = randomMapName();
-        IMap<Integer, Integer> map = getMap(member, mapName);
-        final QueryCache<Integer, Integer> cqc = map.getQueryCache("cqc", TRUE_PREDICATE, true);
-
         int key = 1;
         int value = 1;
 
         final CountDownLatch latch = new CountDownLatch(1);
-        cqc.addEntryListener(new EntryAddedListener() {
+        queryCache.addEntryListener(new EntryAddedListener() {
             @Override
             public void entryAdded(EntryEvent event) {
                 latch.countDown();
@@ -131,8 +136,31 @@ public class QueryCacheIMapEventHandlingTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(0, cqc.size());
+                assertEquals(0, queryCache.size());
             }
         });
+    }
+
+    @Test
+    public void testListenerRegistration() {
+        String addEntryListener = queryCache.addEntryListener(new EntryAddedListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+            }
+        }, true);
+
+        String removeEntryListener = queryCache.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
+            @Override
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
+            }
+        }, true);
+
+        assertFalse(queryCache.removeEntryListener("notFound"));
+
+        assertTrue(queryCache.removeEntryListener(removeEntryListener));
+        assertFalse(queryCache.removeEntryListener(removeEntryListener));
+
+        assertTrue(queryCache.removeEntryListener(addEntryListener));
+        assertFalse(queryCache.removeEntryListener(addEntryListener));
     }
 }

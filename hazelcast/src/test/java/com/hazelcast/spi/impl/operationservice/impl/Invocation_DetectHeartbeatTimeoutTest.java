@@ -111,7 +111,7 @@ public class Invocation_DetectHeartbeatTimeoutTest extends HazelcastTestSupport 
     @Test
     public void whenExpiresEventually() {
         Config config = new Config();
-        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "1000");
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), "5000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);

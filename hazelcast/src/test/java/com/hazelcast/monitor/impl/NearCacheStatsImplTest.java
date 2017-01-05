@@ -9,7 +9,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -53,40 +56,28 @@ public class NearCacheStatsImplTest {
 
     @Test
     public void testDefaultConstructor() {
-        assertTrue(nearCacheStats.getCreationTime() > 0);
-        assertEquals(500, nearCacheStats.getOwnedEntryCount());
-        assertEquals(1280, nearCacheStats.getOwnedEntryMemoryCost());
-        assertEquals(602, nearCacheStats.getHits());
-        assertEquals(305, nearCacheStats.getMisses());
-        assertEquals(4, nearCacheStats.getEvictions());
-        assertEquals(3, nearCacheStats.getExpirations());
-        assertEquals(1, nearCacheStats.getPersistenceCount());
-        assertTrue(nearCacheStats.getLastPersistenceTime() > 0);
-        assertEquals(200, nearCacheStats.getLastPersistenceDuration());
-        assertEquals(300, nearCacheStats.getLastPersistenceWrittenBytes());
-        assertEquals(400, nearCacheStats.getLastPersistenceKeyCount());
-        assertNotNull(nearCacheStats.toString());
+        assertNearCacheStats(nearCacheStats, 1, 200, 300, 400, false);
     }
 
     @Test
     public void testSerialization() {
-        JsonObject serialized = nearCacheStats.toJson();
-        NearCacheStatsImpl deserialized = new NearCacheStatsImpl();
-        deserialized.fromJson(serialized);
+        NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
 
-        assertTrue(deserialized.getCreationTime() > 0);
-        assertEquals(500, deserialized.getOwnedEntryCount());
-        assertEquals(1280, deserialized.getOwnedEntryMemoryCost());
-        assertEquals(602, deserialized.getHits());
-        assertEquals(305, deserialized.getMisses());
-        assertEquals(4, deserialized.getEvictions());
-        assertEquals(3, deserialized.getExpirations());
-        assertEquals(1, deserialized.getPersistenceCount());
-        assertTrue(deserialized.getLastPersistenceTime() > 0);
-        assertEquals(200, deserialized.getLastPersistenceDuration());
-        assertEquals(300, deserialized.getLastPersistenceWrittenBytes());
-        assertEquals(400, deserialized.getLastPersistenceKeyCount());
-        assertNotNull(deserialized.toString());
+        assertNearCacheStats(deserialized, 1, 200, 300, 400, false);
+    }
+
+    @Test
+    public void testSerialization_withPersistenceFailure() {
+        Throwable throwable = new FileNotFoundException("expected exception");
+        nearCacheStats.addPersistenceFailure(throwable);
+
+        NearCacheStatsImpl deserialized = serializeAndDeserializeNearCacheStats(nearCacheStats);
+
+        assertNearCacheStats(deserialized, 2, 0, 0, 0, true);
+
+        String lastPersistenceFailure = deserialized.getLastPersistenceFailure();
+        assertTrue(lastPersistenceFailure.contains(throwable.getClass().getSimpleName()));
+        assertTrue(lastPersistenceFailure.contains("expected exception"));
     }
 
     @Test
@@ -108,5 +99,35 @@ public class NearCacheStatsImplTest {
         nearCacheStats.setHits(1);
         nearCacheStats.setMisses(1);
         assertEquals(100d, nearCacheStats.getRatio(), 0.0001);
+    }
+
+    private static NearCacheStatsImpl serializeAndDeserializeNearCacheStats(NearCacheStatsImpl original) {
+        JsonObject serialized = original.toJson();
+
+        NearCacheStatsImpl deserialized = new NearCacheStatsImpl();
+        deserialized.fromJson(serialized);
+        return deserialized;
+    }
+
+    private static void assertNearCacheStats(NearCacheStatsImpl stats, long expectedPersistenceCount, long expectedDuration,
+                                             long expectedWrittenBytes, long expectedKeyCount, boolean expectedFailure) {
+        assertTrue(stats.getCreationTime() > 0);
+        assertEquals(500, stats.getOwnedEntryCount());
+        assertEquals(1280, stats.getOwnedEntryMemoryCost());
+        assertEquals(602, stats.getHits());
+        assertEquals(305, stats.getMisses());
+        assertEquals(4, stats.getEvictions());
+        assertEquals(3, stats.getExpirations());
+        assertEquals(expectedPersistenceCount, stats.getPersistenceCount());
+        assertTrue(stats.getLastPersistenceTime() > 0);
+        assertEquals(expectedDuration, stats.getLastPersistenceDuration());
+        assertEquals(expectedWrittenBytes, stats.getLastPersistenceWrittenBytes());
+        assertEquals(expectedKeyCount, stats.getLastPersistenceKeyCount());
+        if (expectedFailure) {
+            assertFalse(stats.getLastPersistenceFailure().isEmpty());
+        } else {
+            assertTrue(stats.getLastPersistenceFailure().isEmpty());
+        }
+        assertNotNull(stats.toString());
     }
 }

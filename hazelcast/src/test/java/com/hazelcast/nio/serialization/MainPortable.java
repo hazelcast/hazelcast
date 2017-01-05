@@ -34,10 +34,12 @@ class MainPortable implements Portable {
         this.p = p;
     }
 
+    @Override
     public int getClassId() {
         return TestSerializationConstants.MAIN_PORTABLE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeByte("b", b);
         writer.writeBoolean("bool", bool);
@@ -56,6 +58,7 @@ class MainPortable implements Portable {
         }
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         b = reader.readByte("b");
         bool = reader.readBoolean("bool");
@@ -108,6 +111,7 @@ class MainPortable implements Portable {
         return result;
     }
 
+    @Override
     public int getFactoryId() {
         return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }

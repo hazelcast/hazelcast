@@ -16,23 +16,22 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
-import java.security.Permission;
-import java.util.Collection;
-import java.util.Map;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.RemoveInterceptorOperationFactory;
-import com.hazelcast.nio.Address;
+import com.hazelcast.client.impl.RemoveInterceptorOperationSupplier;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.util.SetUtil;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.util.function.Supplier;
+
+import java.security.Permission;
+import java.util.Collection;
+import java.util.Map;
 
 public class MapRemoveInterceptorMessageTask
         extends AbstractMultiTargetMessageTask<MapRemoveInterceptorCodec.RequestParameters> {
@@ -42,12 +41,12 @@ public class MapRemoveInterceptorMessageTask
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new RemoveInterceptorOperationFactory(parameters.id, parameters.name);
+    protected Supplier<Operation> createOperationSupplier() {
+        return new RemoveInterceptorOperationSupplier(parameters.id, parameters.name);
     }
 
     @Override
-    protected Object reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Member, Object> map) throws Throwable {
         for (Object result : map.values()) {
             if (result instanceof Throwable) {
                 throw (Throwable) result;
@@ -57,13 +56,8 @@ public class MapRemoveInterceptorMessageTask
     }
 
     @Override
-    public Collection<Address> getTargets() {
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
-        Collection<Address> addresses = SetUtil.createHashSet(memberList.size());
-        for (Member member : memberList) {
-            addresses.add(member.getAddress());
-        }
-        return addresses;
+    public Collection<Member> getTargets() {
+        return nodeEngine.getClusterService().getMembers();
     }
 
     @Override

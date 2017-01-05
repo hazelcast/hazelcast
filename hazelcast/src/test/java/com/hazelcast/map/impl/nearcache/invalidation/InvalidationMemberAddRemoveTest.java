@@ -132,9 +132,19 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
             }
         });
 
+        Thread clearFromMember = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    memberMap.clear();
+                    sleepSeconds(5);
+                }
+            }
+        });
+
         // start threads
         putFromMember.start();
         populateClientNearCache.start();
+        clearFromMember.start();
         shadowMember.start();
 
         // stress system some seconds
@@ -143,6 +153,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         //stop threads
         stopTest.set(true);
         shadowMember.join();
+        clearFromMember.join();
         populateClientNearCache.join();
         putFromMember.join();
 

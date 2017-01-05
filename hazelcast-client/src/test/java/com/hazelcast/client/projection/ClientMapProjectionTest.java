@@ -30,19 +30,20 @@ import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapProjectionTest
-        extends MapProjectionTest {
+public class ClientMapProjectionTest extends MapProjectionTest {
 
     private TestHazelcastFactory factory;
-    private HazelcastInstance client;
 
     @After
     public void tearDown() {
         factory.shutdownAll();
     }
 
+    @Override
     public <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
@@ -50,17 +51,17 @@ public class ClientMapProjectionTest
 
         factory = new TestHazelcastFactory();
 
-        Config config = new Config();
-        config.setProperty("hazelcast.partition.count", "3");
-        MapConfig mapConfig = new MapConfig();
-        mapConfig.setName("aggr");
-        mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
-        config.addMapConfig(mapConfig);
+        MapConfig mapConfig = new MapConfig()
+                .setName("aggr")
+                .setInMemoryFormat(InMemoryFormat.OBJECT);
+
+        Config config = new Config()
+                .setProperty(PARTITION_COUNT.getName(), "3")
+                .addMapConfig(mapConfig);
 
         factory.newInstances(config, nodeCount);
-        client = factory.newHazelcastClient();
+        HazelcastInstance client = factory.newHazelcastClient();
 
         return client.getMap("aggr");
     }
-
 }

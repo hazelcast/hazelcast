@@ -59,6 +59,7 @@ public class PartitionReplicaManager {
     private final PartitionStateManager partitionStateManager;
 
     private final PartitionReplicaVersions[] replicaVersions;
+    /** Replica sync requests that have been sent to the target and awaiting response */
     private final AtomicReferenceArray<ReplicaSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
     @Probe
@@ -105,9 +106,22 @@ public class PartitionReplicaManager {
         replicaSyncRequests = new AtomicReferenceArray<ReplicaSyncInfo>(partitionCount);
     }
 
-    // This method is called in backup node. Given all other conditions are satisfied,
-    // this method initiates a replica sync operation and registers it to replicaSyncRequest.
-    // If another sync request is already registered, it schedules the new replica sync request to a further time.
+    /**
+     * This method is called on a backup node (replica). Given all conditions are satisfied, this method initiates a replica sync
+     * operation and registers it to replicaSyncRequest. The operation is scheduled for a future execution if :
+     * <ul>
+     * <li>the {@code delayMillis} is greater than 0</li>
+     * <li>if a migration is not allowed (during repartitioning or a node joining the cluster)</li>
+     * <li>the partition is currently migrating</li>
+     * <li>another sync request has already been sent</li>
+     * <li>the maximum number of parallel synchronizations has already been reached</li>
+     * </ul>
+     *
+     * @param partitionId  the partition which is being synchronized
+     * @param replicaIndex the index of the replica which is being synchronized
+     * @param delayMillis  the delay before the sync operation is sent
+     * @throws IllegalArgumentException if the replica index is not between 0 and {@link InternalPartition#MAX_REPLICA_COUNT}
+     */
     public void triggerPartitionReplicaSync(int partitionId, int replicaIndex, long delayMillis) {
         if (replicaIndex < 0 || replicaIndex > InternalPartition.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Invalid replica index! replicaIndex=" + replicaIndex
@@ -151,6 +165,7 @@ public class PartitionReplicaManager {
         schedulePartitionReplicaSync(syncInfo, target, scheduleDelay, "ANOTHER SYNC IN PROGRESS");
     }
 
+    /** Checks preconditions for replica sync - if we don't know the owner yet, if this node is the owner or not a replica */
     boolean checkSyncPartitionTarget(int partitionId, int replicaIndex) {
         final InternalPartitionImpl partition = partitionStateManager.getPartitionImpl(partitionId);
         final Address target = partition.getOwnerOrNull();
@@ -180,6 +195,7 @@ public class PartitionReplicaManager {
         return true;
     }
 
+    /** Returns the delay in ms for the sync operation. Clears the sync request if a different replica is being synchronized */
     private long getReplicaSyncScheduleDelay(int partitionId) {
         long scheduleDelay = DEFAULT_REPLICA_SYNC_DELAY;
         Address thisAddress = node.getThisAddress();
@@ -193,6 +209,11 @@ public class PartitionReplicaManager {
         return scheduleDelay;
     }
 
+    /**
+     * Send the sync request to {@code target} if the max number of parallel sync requests has not been made and the target
+     * was not removed while the cluster was not active. Also cancel any currently scheduled sync requests for the given
+     * partition and schedule a new sync request that is to be run in the case of timeout
+     */
     private boolean fireSyncReplicaRequest(ReplicaSyncInfo syncInfo, Address target) {
         if (node.clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
             return false;
@@ -216,6 +237,7 @@ public class PartitionReplicaManager {
         return false;
     }
 
+    /** Schedule replica sync request {@code syncInfo} for {@code target} in {@code delayMillis} because of {@code reason} */
     private void schedulePartitionReplicaSync(ReplicaSyncInfo syncInfo, Address target, long delayMillis, String reason) {
         int partitionId = syncInfo.partitionId;
         int replicaIndex = syncInfo.replicaIndex;
@@ -272,6 +294,14 @@ public class PartitionReplicaManager {
         replicaVersions[partitionId].clear();
     }
 
+    /**
+     * Set the new replica versions for the partition with the {@code partitionId} and reset any ongoing replica
+     * synchronization request for this partition and replica index.
+     *
+     * @param partitionId the partition ID
+     * @param replicaIndex the index of the replica
+     * @param versions the new replica versions for the partition
+     */
     // called in operation threads
     public void finalizeReplicaSync(int partitionId, int replicaIndex, long[] versions) {
         PartitionReplicaVersions replicaVersion = replicaVersions[partitionId];
@@ -280,6 +310,13 @@ public class PartitionReplicaManager {
         clearReplicaSyncRequest(partitionId, replicaIndex);
     }
 
+    /**
+     * Resets the state of the replica synchronization request for the given partition and replica. This will cancel the
+     * scheduled synchronization, clear the ongoing sync flag and release a synchronization permit.
+     *
+     * @param partitionId  the partition being synchronized
+     * @param replicaIndex the index of the replica being synchronized
+     */
     // called in operation threads
     public void clearReplicaSyncRequest(int partitionId, int replicaIndex) {
         ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId, replicaIndex, null);

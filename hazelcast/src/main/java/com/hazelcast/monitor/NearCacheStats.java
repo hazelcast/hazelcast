@@ -23,6 +23,7 @@ public interface NearCacheStats extends LocalInstanceStats {
      *
      * @return creation time of this Near Cache on this member.
      */
+    @Override
     long getCreationTime();
 
     /**
@@ -108,4 +109,11 @@ public interface NearCacheStats extends LocalInstanceStats {
      * @return the number of persisted keys of the last Near Cache key persistence
      */
     long getLastPersistenceKeyCount();
+
+    /**
+     * Returns the failure reason of the last Near Cache persistence (when the pre-load feature is enabled).
+     *
+     * @return the failure reason of the last Near Cache persistence
+     */
+    String getLastPersistenceFailure();
 }

@@ -196,7 +196,7 @@ public final class ServiceManagerImpl implements ServiceManager {
     private void registerCacheServiceIfAvailable() {
         //CacheService Optional initialization
         //search for jcache api jar on classpath
-        if (JCacheDetector.isJcacheAvailable(nodeEngine.getConfigClassLoader(), logger)) {
+        if (JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader(), logger)) {
             ICacheService service = createService(ICacheService.class);
             registerService(ICacheService.SERVICE_NAME, service);
         } else {

@@ -13,6 +13,7 @@ import java.io.IOException;
 public class MancenterServlet extends HttpServlet {
 
     private volatile TimedMemberState memberState = null;
+    private volatile String clusterName = "";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -22,6 +23,11 @@ public class MancenterServlet extends HttpServlet {
             } else {
                 resp.getWriter().write("");
             }
+        } else if (req.getPathInfo().contains("getTask.do")) {
+            clusterName = req.getParameter("cluster");
+            resp.getWriter().write("{}");
+        } else if (req.getPathInfo().contains("getClusterName")) {
+            resp.getWriter().write(clusterName);
         }
     }
 

@@ -25,10 +25,10 @@ import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -65,7 +65,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
             Object result = future.get();
             return context.toObject(result);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -89,7 +89,7 @@ public class ClientInvokerWrapper implements InvokerWrapper {
             Object result = future.get();
             return context.toObject(result);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

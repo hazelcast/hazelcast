@@ -120,6 +120,7 @@ final class PortableContextImpl implements PortableContext {
             String name = new String(chars);
             int fieldFactoryId = 0;
             int fieldClassId = 0;
+            int fieldVersion = 0;
             if (type == FieldType.PORTABLE) {
                 // is null
                 if (in.readBoolean()) {
@@ -130,7 +131,7 @@ final class PortableContextImpl implements PortableContext {
 
                 // TODO: what there's a null inner Portable field
                 if (register) {
-                    int fieldVersion = in.readInt();
+                    fieldVersion = in.readInt();
                     readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                 }
             } else if (type == FieldType.PORTABLE_ARRAY) {
@@ -143,14 +144,14 @@ final class PortableContextImpl implements PortableContext {
                     int p = in.readInt();
                     in.position(p);
 
-                    int fieldVersion = in.readInt();
+                    fieldVersion = in.readInt();
                     readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                 } else {
                     register = false;
                 }
 
             }
-            builder.addField(new FieldDefinitionImpl(i, name, type, fieldFactoryId, fieldClassId));
+            builder.addField(new FieldDefinitionImpl(i, name, type, fieldFactoryId, fieldClassId, fieldVersion));
         }
         ClassDefinition classDefinition = builder.build();
         if (register) {
@@ -201,7 +202,7 @@ final class PortableContextImpl implements PortableContext {
                         throw new IllegalArgumentException("Unknown field: " + name);
                     }
                     currentClassDef = lookupClassDefinition(fd.getFactoryId(), fd.getClassId(),
-                            currentClassDef.getVersion());
+                            fd.getVersion());
                     if (currentClassDef == null) {
                         throw new IllegalArgumentException("Not a registered Portable field: " + fd);
                     }

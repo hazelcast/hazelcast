@@ -17,8 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.HazelcastExpiryPolicy;
-import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
@@ -338,16 +336,6 @@ public final class CacheDataSerializerHook
         constructors[MERGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheMergeOperation();
-            }
-        };
-        constructors[INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheSingleInvalidationMessage();
-            }
-        };
-        constructors[BATCH_INVALIDATION_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CacheBatchInvalidationMessage();
             }
         };
         constructors[ENTRY_ITERATOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

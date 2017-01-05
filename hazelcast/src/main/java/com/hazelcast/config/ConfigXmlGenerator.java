@@ -134,6 +134,8 @@ public class ConfigXmlGenerator {
 
         liteMemberXmlGenerator(xml, config);
 
+        nativeMemoryXmlGenerator(xml, config);
+
         hotRestartXmlGenerator(xml, config);
 
         xml.append("</hazelcast>");
@@ -507,7 +509,9 @@ public class ConfigXmlGenerator {
             xml.append("<read-through>").append(c.isReadThrough()).append("</read-through>");
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             checkAndFillCacheLoaderFactoryConfigXml(xml, c.getCacheLoaderFactory());
+            checkAndFillCacheLoaderConfigXml(xml, c.getCacheLoader());
             checkAndFillCacheWriterFactoryConfigXml(xml, c.getCacheWriterFactory());
+            checkAndFillCacheWriterConfigXml(xml, c.getCacheWriter());
             cacheExpiryPolicyFactoryConfigXmlGenerator(xml, c.getExpiryPolicyFactoryConfig());
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
@@ -543,11 +547,22 @@ public class ConfigXmlGenerator {
         }
     }
 
+    private void checkAndFillCacheWriterConfigXml(StringBuilder xml, String cacheWriter) {
+        if (!StringUtil.isNullOrEmpty(cacheWriter)) {
+            xml.append("<cache-writer class-name=\"").append(cacheWriter).append("\"/>");
+        }
+    }
+
     private void checkAndFillCacheLoaderFactoryConfigXml(StringBuilder xml, String cacheLoader) {
         if (!StringUtil.isNullOrEmpty(cacheLoader)) {
             xml.append("<cache-loader-factory class-name=\"").append(cacheLoader).append("\"/>");
         }
+    }
 
+    private void checkAndFillCacheLoaderConfigXml(StringBuilder xml, String cacheLoader) {
+        if (!StringUtil.isNullOrEmpty(cacheLoader)) {
+            xml.append("<cache-loader class-name=\"").append(cacheLoader).append("\"/>");
+        }
     }
 
     private void cacheExpiryPolicyFactoryConfigXmlGenerator(StringBuilder xml,
@@ -825,6 +840,29 @@ public class ConfigXmlGenerator {
         xml.append("</hot-restart-persistence>");
     }
 
+    private void nativeMemoryXmlGenerator(StringBuilder xml, Config config) {
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        if (nativeMemoryConfig == null) {
+            xml.append("<native-memory enabled=\"false\" />");
+            return;
+        }
+        xml.append("<native-memory enabled=\"").append(nativeMemoryConfig.isEnabled())
+                .append("\"")
+                .append(" allocator-type=\"").append(nativeMemoryConfig.getAllocatorType())
+                .append("\"")
+                .append(">");
+        xml.append("<size")
+                .append(" unit=\"").append(nativeMemoryConfig.getSize().getUnit()).append("\"")
+                .append(" value=\"").append(nativeMemoryConfig.getSize().getValue()).append("\"")
+                .append("/>");
+
+        appendNode(xml, "min-block-size", nativeMemoryConfig.getMinBlockSize());
+        appendNode(xml, "page-size", nativeMemoryConfig.getPageSize());
+        appendNode(xml, "metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
+        xml.append("</native-memory>");
+    }
+
+
     private void liteMemberXmlGenerator(StringBuilder xml, Config config) {
         xml.append("<lite-member enabled=\"").append(config.isLiteMember()).append("\"/>");
     }
@@ -878,8 +916,8 @@ public class ConfigXmlGenerator {
     private static void appendNode(StringBuilder xml, String name, Object value) {
         if (value != null) {
             xml.append('<').append(name).append('>')
-               .append(value)
-               .append("</").append(name).append('>');
+                    .append(value)
+                    .append("</").append(name).append('>');
         }
     }
 

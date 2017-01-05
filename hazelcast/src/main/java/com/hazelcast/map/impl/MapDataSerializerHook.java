@@ -18,19 +18,18 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperation;
 import com.hazelcast.client.impl.protocol.task.map.MapAssignAndGetUuidsOperationFactory;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
-import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.map.impl.operation.AccumulatorConsumerOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
-import com.hazelcast.map.impl.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
 import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
@@ -96,7 +95,6 @@ import com.hazelcast.map.impl.operation.PutTransientOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
-import com.hazelcast.map.impl.operation.RemoveInterceptorOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
@@ -138,6 +136,7 @@ import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -277,8 +276,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int READ_AND_RESET_ACCUMULATOR = 127;
     public static final int SET_READ_CURSOR = 128;
     public static final int ACCUMULATOR_CONSUMER = 129;
+    public static final int CACHED_QUERY_ENTRY = 130;
+    public static final int LAZY_MAP_ENTRY = 131;
 
-    private static final int LEN = ACCUMULATOR_CONSUMER + 1;
+    private static final int LEN = LAZY_MAP_ENTRY + 1;
 
     @Override
     public int getFactoryId() {
@@ -659,11 +660,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new AddIndexOperationFactory();
             }
         };
-        constructors[ADD_INTERCEPTOR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddInterceptorOperationFactory();
-            }
-        };
         constructors[CLEAR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearOperationFactory();
@@ -717,11 +713,6 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[PUT_ALL_PARTITION_AWARE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new PutAllPartitionAwareOperationFactory();
-            }
-        };
-        constructors[REMOVE_INTERCEPTOR_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveInterceptorOperationFactory();
             }
         };
         constructors[SIZE_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -932,6 +923,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[ACCUMULATOR_CONSUMER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AccumulatorConsumerOperation();
+            }
+        };
+        constructors[CACHED_QUERY_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachedQueryEntry();
+            }
+        };
+        constructors[LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new LazyMapEntry();
             }
         };
 

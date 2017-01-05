@@ -880,10 +880,24 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="cache-loader" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache loader class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="cache-writer-factory" type="xs:string" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Defines the cache writer factory class name.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="cache-writer" type="xs:string" use="optional">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Defines the cache writer class name.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1417,7 +1431,7 @@
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
-                    <xs:sequence>
+                    <xs:all>
                         <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -1427,9 +1441,9 @@
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
-                        <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
+                        <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
+                    </xs:all>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                 </xs:extension>

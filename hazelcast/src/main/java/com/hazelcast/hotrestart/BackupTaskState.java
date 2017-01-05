@@ -20,12 +20,24 @@ package com.hazelcast.hotrestart;
  * The state of the hot restart backup task
  */
 public enum BackupTaskState {
-    /** The backup task has not yet started. */
+    /** No backup task has yet been run */
+    NO_TASK,
+    /** The backup task has been submitted but not yet started. */
     NOT_STARTED,
     /** The backup task is currently in progress */
     IN_PROGRESS,
     /** The backup task has failed */
     FAILURE,
     /** The backup task completed successfully */
-    SUCCESS
+    SUCCESS;
+
+    /** Returns true if the backup task completed (successfully or with failure) */
+    public boolean isDone() {
+        return this == SUCCESS || this == FAILURE;
+    }
+
+    /** Returns if the backup task is in progress. The task could also not be started yet but will be. */
+    public boolean inProgress() {
+        return this == NOT_STARTED || this == IN_PROGRESS;
+    }
 }

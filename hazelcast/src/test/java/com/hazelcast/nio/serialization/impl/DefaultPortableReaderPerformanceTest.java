@@ -19,7 +19,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 import org.openjdk.jmh.runner.options.VerboseMode;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.nio.serialization.impl.DefaultPortableReaderQuickTest.NON_EMPTY_PORSCHE;
@@ -38,10 +37,11 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
     private InternalSerializationService ss;
 
     @Setup
-    public void setup() throws IOException {
+    public void setup() throws Exception {
         ss = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(DefaultPortableReaderQuickTest.TestPortableFactory.ID,
-                        new DefaultPortableReaderQuickTest.TestPortableFactory()).build();
+                        new DefaultPortableReaderQuickTest.TestPortableFactory())
+                .build();
 
         Portable primitive = new DefaultPortableReaderTestStructure.PrimitivePortable();
         primitiveReader = reader(primitive);
@@ -49,124 +49,124 @@ public class DefaultPortableReaderPerformanceTest extends HazelcastTestSupport {
         reader = reader(PORSCHE);
     }
 
-    public PortableReader reader(Portable portable) throws IOException {
+    private PortableReader reader(Portable portable) throws Exception {
         ss.createPortableReader(ss.toData(NON_EMPTY_PORSCHE));
         return ss.createPortableReader(ss.toData(portable));
     }
 
     @Benchmark
-    public Object readByte() throws IOException {
+    public Object readByte() throws Exception {
         return primitiveReader.readByte("byte_");
     }
 
     @Benchmark
-    public Object readShort() throws IOException {
+    public Object readShort() throws Exception {
         return primitiveReader.readShort("short_");
     }
 
     @Benchmark
-    public Object readInt() throws IOException {
+    public Object readInt() throws Exception {
         return primitiveReader.readInt("int_");
     }
 
     @Benchmark
-    public Object readLong() throws IOException {
+    public Object readLong() throws Exception {
         return primitiveReader.readLong("long_");
     }
 
     @Benchmark
-    public Object readFloat() throws IOException {
+    public Object readFloat() throws Exception {
         return primitiveReader.readFloat("float_");
     }
 
     @Benchmark
-    public Object readDouble() throws IOException {
+    public Object readDouble() throws Exception {
         return primitiveReader.readDouble("double_");
     }
 
     @Benchmark
-    public Object readBoolean() throws IOException {
+    public Object readBoolean() throws Exception {
         return primitiveReader.readBoolean("boolean_");
     }
 
     @Benchmark
-    public Object readChar() throws IOException {
+    public Object readChar() throws Exception {
         return primitiveReader.readChar("char_");
     }
 
     @Benchmark
-    public Object readUTF() throws IOException {
+    public Object readUTF() throws Exception {
         return primitiveReader.readUTF("string_");
     }
 
 
     @Benchmark
-    public Object readByteArray() throws IOException {
+    public Object readByteArray() throws Exception {
         return primitiveReader.readByteArray("bytes");
     }
 
     @Benchmark
-    public Object readShortArray() throws IOException {
+    public Object readShortArray() throws Exception {
         return primitiveReader.readShortArray("shorts");
     }
 
     @Benchmark
-    public Object readIntArray() throws IOException {
+    public Object readIntArray() throws Exception {
         return primitiveReader.readIntArray("ints");
     }
 
     @Benchmark
-    public Object readLongArray() throws IOException {
+    public Object readLongArray() throws Exception {
         return primitiveReader.readLongArray("longs");
     }
 
     @Benchmark
-    public Object readFloatArray() throws IOException {
+    public Object readFloatArray() throws Exception {
         return primitiveReader.readFloatArray("floats");
     }
 
     @Benchmark
-    public Object readDoubleArray() throws IOException {
+    public Object readDoubleArray() throws Exception {
         return primitiveReader.readDoubleArray("doubles");
     }
 
     @Benchmark
-    public Object readBooleanArray() throws IOException {
+    public Object readBooleanArray() throws Exception {
         return primitiveReader.readBooleanArray("booleans");
     }
 
     @Benchmark
-    public Object readCharArray() throws IOException {
+    public Object readCharArray() throws Exception {
         return primitiveReader.readCharArray("chars");
     }
 
     @Benchmark
-    public Object readUTFArray() throws IOException {
+    public Object readUTFArray() throws Exception {
         return primitiveReader.readUTFArray("strings");
     }
 
     @Benchmark
-    public Object readPortable() throws IOException {
+    public Object readPortable() throws Exception {
         return reader.readPortable("engine");
     }
 
     @Benchmark
-    public Object readPortableArray() throws IOException {
+    public Object readPortableArray() throws Exception {
         return reader.readPortableArray("wheels");
     }
 
     @Benchmark
-    public Object readPortableInt_nested() throws IOException {
+    public Object readPortableInt_nested() throws Exception {
         return reader.readInt("engine.power");
     }
 
     @Benchmark
-    public Object readPortablePortableInt_nestedTwice() throws IOException {
+    public Object readPortablePortableInt_nestedTwice() throws Exception {
         return reader.readInt("engine.chip.power");
     }
 
     @Benchmark
-    public Object readPortableFromArray() throws IOException {
+    public Object readPortableFromArray() throws Exception {
         return reader.readPortable("wheels[0]");
     }
 

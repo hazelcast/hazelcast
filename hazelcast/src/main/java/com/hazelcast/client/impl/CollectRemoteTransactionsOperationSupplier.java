@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-/**
- * <p>
- *     Hazelcast JSR-107 aka JCache implementation
- *
- *     Client Requests
- * </p>
- */
-package com.hazelcast.cache.impl.client;
+package com.hazelcast.client.impl;
+
+import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
+import com.hazelcast.util.function.Supplier;
+
+public class CollectRemoteTransactionsOperationSupplier implements Supplier<Operation> {
+
+    @Override
+    public Operation get() {
+        return new CollectRemoteTransactionsOperation();
+    }
+}

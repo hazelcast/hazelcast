@@ -19,14 +19,19 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.ServiceNotFoundException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
+import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
 
 public class PostJoinCacheOperation extends Operation implements IdentifiedDataSerializable {
 
@@ -38,14 +43,31 @@ public class PostJoinCacheOperation extends Operation implements IdentifiedDataS
 
     @Override
     public String getServiceName() {
-        return ICacheService.SERVICE_NAME;
+        return SERVICE_NAME;
     }
 
     @Override
     public void run() throws Exception {
-        ICacheService cacheService = getService();
-        for (CacheConfig cacheConfig : configs) {
-            cacheService.putCacheConfigIfAbsent(cacheConfig);
+        if (isJCacheAvailable(getNodeEngine().getConfigClassLoader())) {
+            ICacheService cacheService = getService();
+            for (CacheConfig cacheConfig : configs) {
+                cacheService.putCacheConfigIfAbsent(cacheConfig);
+            }
+        } else {
+            // if JCache is not in classpath and no Cache configurations need to be processed, do not fail the operation
+            // instead log a warning that if JCache API will be used then it will fail.
+            if (configs.isEmpty()) {
+                getLogger().warning("This member is joining a cluster whose members support JCache, however the cache-api "
+                        + "artifact is missing from this member's classpath. In case JCache API will be used, add cache-api "
+                        + "artifact in this member's classpath and restart the member.");
+            } else {
+                // JCache is already in use by other cluster members, so log an informative message to resolve the issue and
+                // throw the CacheService not found exception.
+                getLogger().severe("This member cannot support JCache because the cache-api artifact is missing from "
+                        + "its classpath. Add the JCache API JAR in the classpath and restart the member.");
+                throw new HazelcastException("Service with name '" + SERVICE_NAME + "' not found!",
+                        new ServiceNotFoundException("Service with name '" + SERVICE_NAME + "' not found!"));
+            }
         }
     }
 

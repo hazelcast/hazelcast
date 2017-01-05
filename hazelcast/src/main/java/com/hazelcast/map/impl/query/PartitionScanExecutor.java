@@ -28,5 +28,4 @@ import java.util.Collection;
 public interface PartitionScanExecutor {
 
     Collection<QueryableEntry> execute(String mapName, Predicate predicate, Collection<Integer> partitions);
-
 }

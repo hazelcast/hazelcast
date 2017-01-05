@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.nearcache.invalidation;
+package com.hazelcast.internal.nearcache.impl.invalidation;
 
-import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
+import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static java.lang.String.format;
 
 
@@ -39,18 +37,20 @@ import static java.lang.String.format;
  */
 public abstract class Invalidator {
 
-    protected final ILogger logger;
     protected final int partitionCount;
-    protected final MapServiceContext mapServiceContext;
+    protected final String serviceName;
+    protected final ILogger logger;
     protected final NodeEngine nodeEngine;
     protected final EventService eventService;
     protected final SerializationService serializationService;
     protected final MetaDataGenerator metaDataGenerator;
     protected final IPartitionService partitionService;
+    protected final IFunction<EventRegistration, Boolean> eventFilter;
 
-    public Invalidator(MapServiceContext mapServiceContext) {
-        this.mapServiceContext = mapServiceContext;
-        this.nodeEngine = mapServiceContext.getNodeEngine();
+    public Invalidator(String serviceName, IFunction<EventRegistration, Boolean> eventFilter, NodeEngine nodeEngine) {
+        this.serviceName = serviceName;
+        this.eventFilter = eventFilter;
+        this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionService = nodeEngine.getPartitionService();
         this.eventService = nodeEngine.getEventService();
@@ -59,75 +59,74 @@ public abstract class Invalidator {
         this.metaDataGenerator = new MetaDataGenerator(partitionCount);
     }
 
+    protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
+
     /**
-     * Invalidates supplied key from near-caches of supplied map name.
+     * Invalidates supplied key from near-caches of supplied data structure name.
      *
      * @param key     key of the entry to be removed from near-cache
-     * @param mapName name of the map to be invalidated
+     * @param dataStructureName name of the data structure to be invalidated
      */
-    public final void invalidateKey(Data key, String mapName, String sourceUuid) {
+    public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
         assert key != null;
-        assert mapName != null;
+        assert dataStructureName != null;
 
-        Invalidation invalidation = newKeyInvalidation(key, mapName, sourceUuid);
+        Invalidation invalidation = newKeyInvalidation(key, dataStructureName, sourceUuid);
         invalidateInternal(invalidation, getPartitionId(key));
     }
 
     /**
-     * Invalidates all keys from near-caches of supplied map name.
+     * Invalidates all keys from near-caches of supplied data structure name.
      *
-     * @param mapName name of the map to be cleared
+     * @param dataStructureName name of the data structure to be cleared
      */
-    public final void invalidateAllKeys(String mapName, String sourceUuid) {
-        assert mapName != null;
+    public final void invalidateAllKeys(String dataStructureName, String sourceUuid) {
+        assert dataStructureName != null;
 
-        int orderKey = getPartitionId(mapName);
-        Invalidation invalidation = newClearInvalidation(mapName, sourceUuid);
-        invalidateInternal(invalidation, orderKey);
+        int orderKey = getPartitionId(dataStructureName);
+        Invalidation invalidation = newClearInvalidation(dataStructureName, sourceUuid);
+        sendImmediately(invalidation, orderKey);
     }
 
-    protected abstract void invalidateInternal(Invalidation invalidation, int orderKey);
-
-    public MetaDataGenerator getMetaDataGenerator() {
+    public final MetaDataGenerator getMetaDataGenerator() {
         return metaDataGenerator;
     }
 
-    protected final Invalidation newKeyInvalidation(Data key, String mapName, String sourceUuid) {
+    private Invalidation newKeyInvalidation(Data key, String dataStructureName, String sourceUuid) {
         int partitionId = getPartitionId(key);
-        long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
+        long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
         if (logger.isFinestEnabled()) {
-            logger.finest(format("mapName=%s, partition=%d, sequence=%d, uuid=%s",
-                    mapName, partitionId, sequence, partitionUuid));
+            logger.finest(format("dataStructureName=%s, partition=%d, sequence=%d, uuid=%s",
+                    dataStructureName, partitionId, sequence, partitionUuid));
         }
-        return new SingleNearCacheInvalidation(toHeapData(key), mapName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(toHeapData(key), dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
-    protected final Invalidation newClearInvalidation(String mapName, String sourceUuid) {
-        int partitionId = getPartitionId(mapName);
-        long sequence = metaDataGenerator.nextSequence(mapName, partitionId);
+    protected final Invalidation newClearInvalidation(String dataStructureName, String sourceUuid) {
+        int partitionId = getPartitionId(dataStructureName);
+        long sequence = metaDataGenerator.nextSequence(dataStructureName, partitionId);
         UUID partitionUuid = metaDataGenerator.getOrCreateUuid(partitionId);
-        return new SingleNearCacheInvalidation(mapName, sourceUuid, partitionUuid, sequence);
+        return new SingleNearCacheInvalidation(null, dataStructureName, sourceUuid, partitionUuid, sequence);
     }
 
-    protected final int getPartitionId(Data o) {
+    private int getPartitionId(Data o) {
         return partitionService.getPartitionId(o);
     }
 
-    protected final int getPartitionId(Object o) {
+    private int getPartitionId(Object o) {
         return partitionService.getPartitionId(o);
     }
 
-    protected final boolean canSendInvalidation(final EventFilter filter) {
-        if (!(filter instanceof EventListenerFilter)) {
-            return false;
-        }
+    protected final void sendImmediately(Invalidation invalidation, int orderKey) {
+        String dataStructureName = invalidation.getName();
 
-        if (!filter.eval(INVALIDATION.getType())) {
-            return false;
+        Collection<EventRegistration> registrations = eventService.getRegistrations(serviceName, dataStructureName);
+        for (EventRegistration registration : registrations) {
+            if (eventFilter.apply(registration)) {
+                eventService.publishEvent(serviceName, registration, invalidation, orderKey);
+            }
         }
-
-        return true;
     }
 
     private Data toHeapData(Data key) {
@@ -135,14 +134,14 @@ public abstract class Invalidator {
     }
 
     /**
-     * Removes supplied maps invalidation queue and flushes its content.
-     * This method is called when removing a Near Cache with
+     * Removes supplied data structures invalidation queues and flushes their content.
+     * This method is called when removing a Near Cache for example with
      * {@link com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)}
      *
-     * @param mapName name of the map.
+     * @param dataStructureName name of the data structure.
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
-    public void destroy(String mapName, String sourceUuid) {
+    public void destroy(String dataStructureName, String sourceUuid) {
         // nop.
     }
 

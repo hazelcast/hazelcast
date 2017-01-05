@@ -52,21 +52,14 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
  */
 public class NodeQueryCacheContext implements QueryCacheContext {
 
-    private final IFunction<String, String> listenerRegistrator =
-            new IFunction<String, String>() {
-                @Override
-                public String apply(String mapName) {
-                    return registerLocalIMapListener(mapName);
-                }
-            };
-
     private final NodeEngine nodeEngine;
     private final MapServiceContext mapServiceContext;
     private final QueryCacheEventService queryCacheEventService;
     private final QueryCacheConfigurator queryCacheConfigurator;
     private final QueryCacheScheduler queryCacheScheduler;
     private final InvokerWrapper invokerWrapper;
-    // these fields are not final for testing purposes.
+
+    // these fields are not final for testing purposes
     private PublisherContext publisherContext;
     private SubscriberContext subscriberContext;
 
@@ -78,9 +71,14 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         this.queryCacheConfigurator = new NodeQueryCacheConfigurator(nodeEngine.getConfig(),
                 nodeEngine.getConfigClassLoader(), queryCacheEventService);
         this.invokerWrapper = new NodeInvokerWrapper(nodeEngine.getOperationService());
-        // init these in the end.
+        // init these in the end
         this.subscriberContext = new NodeSubscriberContext(this);
-        this.publisherContext = new DefaultPublisherContext(this, nodeEngine, listenerRegistrator);
+        this.publisherContext = new DefaultPublisherContext(this, nodeEngine, new IFunction<String, String>() {
+            @Override
+            public String apply(String mapName) {
+                return registerLocalIMapListener(mapName);
+            }
+        });
         flushPublishersOnNodeShutdown();
     }
 
@@ -88,7 +86,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
      * This is a best effort approach; there is no guarantee that events in publishers internal buffers will be fired,
      * {@link com.hazelcast.spi.EventService} can drop them.
      */
-    protected void flushPublishersOnNodeShutdown() {
+    private void flushPublishersOnNodeShutdown() {
         Node node = ((NodeEngineImpl) this.nodeEngine).getNode();
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.addLifecycleListener(new LifecycleListener() {

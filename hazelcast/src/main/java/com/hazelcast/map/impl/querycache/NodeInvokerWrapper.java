@@ -38,7 +38,7 @@ public class NodeInvokerWrapper implements InvokerWrapper {
 
     private final OperationService operationService;
 
-    public NodeInvokerWrapper(OperationService operationService) {
+    NodeInvokerWrapper(OperationService operationService) {
         this.operationService = operationService;
     }
 

@@ -5,65 +5,98 @@ to the full descriptions of the issues at https://github.com/hazelcast/hazelcast
 
 1. New Features
 
-- Continuous Query Cache: With this release, the previously Enterprise feature Continuous Query Cache becomes open source. Please refer to the Continuous Query Cache section.
+The following are the new features introduced with 3.8 release.
+
+Hazelcast Enterprise Features
+
 - Rolling Member Upgrades for Minor Releases: You can upgrade your Hazelcast members to the next minor release without service interruption. Please refer to the Rolling Member Upgrades chapter.
 - Restore Hot Restart Data in a Different Cluster: You will be able to restore Hot Restart data on a completely new cluster with different IP addresses or on a cluster of machines formed by existing and new IP addresses. Since this is a removal of a restriction or limitation, nothing will change for current Hot Restart Store users. Please refer to the Moving/Copying Hot Restart Data section.
-- HyperLogLog: HyperLogLog data structure is implemented on top of Hazelcast to estimate cardinality.
-- Scheduled Executor Service: Distributed implementation of Java's ScheduledExecutorService API.
-- Zero Deployment: Hazelcast, now, accesses and uses the user classes without having them on the classpath.
+
+Hazelcast Open Source Features
+
+- Continuous Query Cache: With this release, the previously Enterprise feature Continuous Query Cache becomes open source. Please refer to the Continuous Query Cache section.
+- Cardinality Estimator: Cardinality Estimator data structure is implemented on top of Hazelcast to estimate cardinality. Please refer to the Cardinality Estimator Service section.
+- Scheduled Executor Service: Distributed implementation of Java's ScheduledExecutorService API. Please refer to the Scheduled Executor Service section.
+- User Code Deployment: Load your new classes to Hazelcast IMDG members dynamically without restarting all of them.
 
 2. Enhancements
 
 This section lists the enhancements performed for Hazelcast 3.8 release.
 
-- Hazelcast Striim Hot Cache Adapter: Hot Cache functionality based on Striim's Change Data Capture (CDC) for the underlying database updates. Please refer to the Hazelcast Striim Hot Cache section.
-- Entry Cost Statistics for High-Density Memory Store: If you are using High-Density Memory, you can see the entry cost statistics in the Management Center.
-- Hot Restart Usability Improvements: When a cluster with Hot Restart enabled is restarted, it starts in the ACTIVE state. Please refer to the Hot Restart Types section.
-- Hot Restart with Incomplete Members: The restart procedure for a cluster having Hot Restart enabled is now more flexible by allowing you to do a partial start, which basically means that once the cluster is shutdown, it can be restarted with some missing members. Please refer to the Partial Start section.
-- Copy Hot Restart Store data from Source to Target: You can copy Hot Restart Store data from a running cluster to a target without shutting down the source cluster. Please refer to the Hot Backup section.
-- Cluster Quorum for Queue and Lock: Cluster quorum is now available for the queue and lock data structures. Please refer to the Split-Brain Protection section.
-- Eventually Consistent Near Cache: With this improvement, possible losses of invalidation events are detected and stale reads are prevented.
-- High Performance Near Cache: A near cache pre-loader is introduced to preserve the information about which keys are used in a populated near cache.
 - Fast Aggregations for Queries: Please refer to Fast Aggregations section.
 - Projections for Queries: Please refer to Projections section.
-- `removeAll(predicate)` for Map: A void method to selectively delete a bulk of objects from the member side.
-- Ringbuffer with Persistent Datastore: Implemented for the Ringbuffer which is similar to the existing queue store mechanism.
+- Eventually Consistent Near Cache: With this improvement, possible losses of invalidation events are detected and stale reads are prevented. Please refer to the Near Cache Eventual Consistency section.
+- Cluster Split-Brain Protection for Queue and Lock: Split-brain protection is now available for the queue and lock data structures. Please refer to the sections Lock Split-Brain Protection and Queue Split-Brain Protection.
 - Unified Near Cache Implementation: Different near cache implementations for JCache, map, client side and member side are unified. You can refer to the Near Cache section.
-- Dynamic WAN Synchronization: Improvement to allow copying the maps' all content to a target cluster dynamically in runtime.
-- Improvement in WAN Queue Full Behavior: Now, Hazelcast throws an exception when the queue is full and replication is active, unless it is stopped on the Management Center.
+- High Performance Near Cache: A near cache preloader is introduced to preserve the information about which keys are used in a populated near cache. You can refer to the Near Cache Preloader section.
+- Ringbuffer with Persistent Datastore: Implemented for the Ringbuffer which is similar to the existing queue store mechanism. Please refer to Ringbuffer with Persistent Datastore section.
+- Hazelcast Striim Hot Cache Adapter: Hot Cache functionality based on Striim's Change Data Capture (CDC) for the underlying database updates. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Hazelcast Striim Hot Cache section.
+- One-off WAN Synchronization with Dynamically Added Endpoint: Improvement to allow copying the maps' all content to a target cluster dynamically in runtime. Please note that this enhancement is available for Hazelcast Enterprise.
+- Hot Restart Usability Improvements: When a cluster with Hot Restart enabled is restarted, it starts in the ACTIVE state. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Hot Restart Types section.
+- Hot Restart with Incomplete Members: The restart procedure for a cluster having Hot Restart enabled is now more flexible by allowing you to do a partial start, which basically means that once the cluster is shutdown, it can be restarted with some missing members. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Partial Start section.
+- Copy Hot Restart Store data from Source to Target: You can copy Hot Restart Store data from a running cluster to a target without shutting down the source cluster. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Hot Backup section.
+- Improvement in WAN Queue Full Behavior: Now, Hazelcast throws an exception when the queue is full and replication is active, unless it is stopped on the Management Center. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Queue Full Behavior section.
 
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
+- Client support for distributed scheduled executor service. [9385]
+- When a member without JCache service joins a cluster where JCache service is enabled but not used, the member should not fail. [9301]
 - It would be nice to have names assigned to all threads created by Hazelcast (and not the default ones, e.g., pool-2-thread-1, pool-2-thread-2). [9210]
 - There should be a more detailed and clarifying information in the diagnostics of PartitionIteratingOperation. [8855]
-When there is no access to NodeEngine, the logger should be able to be used from a static context without any side effects to the logging configuration. [8760]
+- When there is no access to NodeEngine, the logger should be able to be used from a static context without any side effects to the logging configuration. [8760]
 - Client tasks should be bounced back when a member has not completely start yet. [8715]
+- A method size(Predicate) should be added to determine the size of predicate results. [8555]
 - Currently the property com.hazelcast.map.impl.eviction.ExpirationManager.PERIOD is hard-coded to 5 seconds. Making it a configurable property will help in tuning the eviction. [8277]
 - The method com.hazelcast.topic.impl.TopicProxy#publish serializes the message even if the message is never sent due to having no subscribers. In the case of non-global-ordering and non-client use, the implementation should defer serialization until it has established that there are subscribers. [8262]
+- Hazelcast should provide an abstract Mapper implementation which invokes the Supplier given to Aggregation#getMapper(). [7477]
 - Configuration setting for WAN replication queue should be only for primary entries. [7124]
 - Currently if you want to use Container-Managed Transactions with Hazelcast within a JEE Application Server, you need to use the provided JCA Adapter. This JCA Adapter creates a Hazelcast instance. This should be allowed: configuration of the JCA Adapter to be either Server or Client-based. [5667]
 - Currently PartitionIteratingOperation consumes a generic operation thread, while the operations for the partitions are running. This means that the generic thread pool can dry out and this can cause a lot of problems for important tasks that cannot be executed since the thread pool is empty. A PartitionIteratingService should be introduced where the system can lookup TraceableOperations. [4889]
+- Hazelcast Shutdown Hook calls the method terminate() instead of shutdown(). [4648]
+- Hazelcast should support ScheduledExecutorService. [115]
 
 3. Fixes
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
-*3.8-EA Fixes*
+*3.8 Fixes*
 
-The following are the issues solved for 3.8-EA (Early Access) release.
+The following are the issues solved for 3.8 release.
 
+- JCache client needs access to CacheLoader implementation to work. [9453]
+- The matching wildcard is strict, but no declaration can be found for element hz:hazelcast. [9406]
+- "Connection Reset" warning shows up in the class `CloudyUtility`. [9404]
+- The method getAll is not updating the localMapStats. [9373]
 - Hazelcast 3.7.3 and Spring Boot 1.4.2 get the error PortableFactory[-22] is already registered. [9353]
+- There is an issue when integrating with WebLogic 12c. Classloading logging should be added when DefaultNodeExtension is loaded by multiple classloaders. [9291]
+- The method MapLoader.loadAll(true) does not reload after reloading with new keys. [9255]
 - Problems with timeout in blocking calls. [9250]
+- Stale reads from Map inside a transaction should be guaranteed, when Near Cache and delayed MapStore are enabled. [9248]
 - Client protocol cannot handle "null"s in the collection. [9240]
+- `LifecycleState` events are not received when Hazelcast docker image is used. [9189]
+- If there is no network, multicast socket exception is thrown. [9081]
+- Hazelcast is not handling XML configuration attribute for DurableExecutorService. [9078]
 - Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
 - "Warning 2" in IMap::tryRemove method's code comments is not correct. This method returns only a boolean. [8884]
 - When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
-- Fixed `max-size` value behavior for Near Cache configuration. If you set 0 for the `max-size`, now, it is valued as `Integer.MAX_VALUE` as expected and documented. [8826]
+- Nested queries on VersionedPortables with different versions cannot be performed. Hazelcast throws IllegalArgumentException. [8846]
+- Fixed max-size value behavior for Near Cache configuration. If you set 0 for the max-size, now, it is valued as Integer.MAX_VALUE as expected and documented. [8826]
+- While generating the XML string from a configuration object in ConfigXmlGenerator.generate() method, native-memory configuration is not appended to the result string. This causes the native-memory configuration for members not to be shown on the Management Center. [8825]
+- "Client heartbeat is timed out , closing connection" warning shows up indefinitely on AWS. [8777]
 - Spring XML configuration: The smart routing attribute defaults to false while the documentation says it defaults to true. [8746]
+- Distributed objects present in the cluster do not show the same values. [8743]
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
 - Bulk get operation with 100 keys fails. [8535]
+- Group and password attributes in Hibernate integration module should be validated. [7978]
+- There appears to be an inconsistency where JCache uses the EvictionConfig object, but IMap directly uses properties of the NearCacheConfig. [7788]
 - Member attributes go missing after merging from a split-brain scenario. [7697]
+- There should be a distributed class loading feature to perform distributed loading of classes so that jobs like MapReduce and Aggregate can be done more effectively. [7394]
+- MapLoader misses state updates on second load on the receiver members. [7364]
+- If the system retries an operation because a member is leaving the cluster, the invocation can be retried due to the response but also due to the "member-left" event. In most cases this should not lead to a problem, but the invocation may be executed twice. This can be a problem and can lead to a permanent inconsistent system. [7270]
+- Hazelcast 3.5 throws InvalidConfigurationException. [6523]
+- More granular mutexes should be used when creating and removing a set of closeable cache resources. [6273]
+- Running `PredicateBuilder` queries when nodes join causes timeouts and cluster crash. [6242]
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
 
 4. Removed/Deprecated Features

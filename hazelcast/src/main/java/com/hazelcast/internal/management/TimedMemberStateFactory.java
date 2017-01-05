@@ -33,14 +33,12 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
-import com.hazelcast.hotrestart.BackupTaskState;
-import com.hazelcast.hotrestart.BackupTaskStatus;
-import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -175,15 +173,20 @@ public class TimedMemberStateFactory {
 
         createNodeState(memberState);
         createHotRestartState(memberState);
+        createClusterHotRestarStatus(memberState);
         createWanSyncState(memberState);
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {
-        final HotRestartService backupService = instance.node.getNodeExtension().getHotRestartBackupService();
-        final HotRestartStateImpl state = new HotRestartStateImpl(backupService != null
-                ? backupService.getBackupTaskStatus()
-                : new BackupTaskStatus(BackupTaskState.NOT_STARTED, 0, 0));
+        final HotRestartStateImpl state = new HotRestartStateImpl(
+                instance.node.getNodeExtension().getHotRestartService().getBackupTaskStatus());
         memberState.setHotRestartState(state);
+    }
+
+    private void createClusterHotRestarStatus(MemberStateImpl memberState) {
+        final ClusterHotRestartStatusDTO state =
+                instance.node.getNodeExtension().getInternalHotRestartService().getCurrentClusterHotRestartStatus();
+        memberState.setClusterHotRestartStatus(state);
     }
 
     private void createNodeState(MemberStateImpl memberState) {

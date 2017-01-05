@@ -18,13 +18,13 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
-import com.hazelcast.internal.cluster.impl.operations.SendExcludedMemberUuidsOperation;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOperation;
@@ -32,6 +32,7 @@ import com.hazelcast.internal.cluster.impl.operations.JoinRequestOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
+import com.hazelcast.internal.cluster.impl.operations.SendExcludedMemberUuidsOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
@@ -46,6 +47,8 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.UuidUtil;
+import com.hazelcast.version.MemberVersion;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -54,6 +57,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -76,6 +80,7 @@ import static java.lang.String.format;
  * If this is master node, it will handle join request and notify all other members
  * about newly joined member.
  */
+@SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class ClusterJoinManager {
 
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
@@ -253,17 +258,20 @@ public class ClusterJoinManager {
         }
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     private boolean checkJoinRequest(JoinRequest joinRequest, Connection connection) {
         if (checkIfJoinRequestFromAnExistingMember(joinRequest, connection)) {
             return true;
         }
 
         Address target = joinRequest.getAddress();
+        final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+        final Set<String> excludedMemberUuids = hotRestartService.getExcludedMemberUuids();
 
-        if (node.getNodeExtension().getExcludedMemberUuids().contains(joinRequest.getUuid())) {
+        if (excludedMemberUuids.contains(joinRequest.getUuid())) {
             logger.fine("cannot join " + target + " because it is excluded in cluster start.");
             OperationService operationService = nodeEngine.getOperationService();
-            Operation op = new SendExcludedMemberUuidsOperation(node.getNodeExtension().getExcludedMemberUuids());
+            Operation op = new SendExcludedMemberUuidsOperation(excludedMemberUuids);
             operationService.send(op, target);
             return true;
         }
@@ -274,7 +282,7 @@ public class ClusterJoinManager {
 
         if (joinRequest.getExcludedMemberUuids().contains(node.getThisUuid())) {
             logger.warning("cannot join " + target + " since this node is excluded in its list...");
-            node.getNodeExtension().handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
+            hotRestartService.handleExcludedMemberUuids(target, joinRequest.getExcludedMemberUuids());
             return true;
         }
 
@@ -455,12 +463,57 @@ public class ClusterJoinManager {
                 logger.fine(format("Ignoring master response %s from %s, this node is already master",
                         masterAddress, callerAddress));
             } else {
-                node.setAsMaster();
+                setAsMaster();
             }
             return;
         }
 
         handleMasterResponse(masterAddress, callerAddress);
+    }
+
+    public boolean setMasterAddress(final Address master) {
+        clusterServiceLock.lock();
+        try {
+            if (node.joined()) {
+                logger.warning("Cannot set master address to " + master
+                        + " because node is already joined! Current master address: " + node.getMasterAddress());
+                return false;
+            }
+
+            node.setMasterAddress(master);
+            return true;
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
+    public boolean setAsMaster() {
+        clusterServiceLock.lock();
+        try {
+            if (node.joined()) {
+                logger.warning("Cannot set as master because node is already joined!");
+                return false;
+            }
+
+            logger.finest("This node is being set as the master");
+            Address thisAddress = node.getThisAddress();
+            MemberVersion version = node.getVersion();
+
+            node.setMasterAddress(thisAddress);
+
+            if (clusterService.getClusterVersion() == null) {
+                clusterService.getClusterStateManager().setClusterVersion(version.asClusterVersion());
+            }
+
+            clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
+            clusterService.setClusterId(UuidUtil.createClusterUuid());
+            node.setJoined();
+
+            return true;
+        } finally {
+            clusterServiceLock.unlock();
+        }
+
     }
 
     private void handleMasterResponse(Address masterAddress, Address callerAddress) {
@@ -490,7 +543,7 @@ public class ClusterJoinManager {
                 logger.warning(format("Ambiguous master response: This node has a master %s, but does not have a connection"
                                 + " to %s. Sent master response as %s. Master field will be unset now...",
                         currentMaster, callerAddress, masterAddress));
-                node.setMasterAddress(null);
+                setMasterAddress(null);
             }
         } finally {
             clusterServiceLock.unlock();
@@ -498,7 +551,7 @@ public class ClusterJoinManager {
     }
 
     private void setMasterAndJoin(Address masterAddress) {
-        node.setMasterAddress(masterAddress);
+        setMasterAddress(masterAddress);
         node.connectionManager.getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress, true)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
@@ -557,8 +610,8 @@ public class ClusterJoinManager {
         }
 
         if (masterAddress.equals(node.getThisAddress())
-                && node.getNodeExtension().isMemberExcluded(masterAddress, node.getThisUuid())) {
-            // I already now that I will do a force-start so I will not allow target to join me
+                && node.getNodeExtension().getInternalHotRestartService().isMemberExcluded(masterAddress, node.getThisUuid())) {
+            // I already know that I will do a force-start so I will not allow target to join me
             logger.info("Cannot send master answer because " + target + " should not join to this master node.");
             return;
         }
@@ -660,7 +713,7 @@ public class ClusterJoinManager {
                 boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
                 PostJoinOperation postJoinOp = (createPostJoinOperation ? new PostJoinOperation(postJoinOps) : null);
 
-                clusterService.updateMembers(memberInfos);
+                clusterService.updateMembers(memberInfos, node.getThisAddress());
 
                 int count = members.size() - 1 + joiningMembers.size();
                 List<Future> calls = new ArrayList<Future>(count);

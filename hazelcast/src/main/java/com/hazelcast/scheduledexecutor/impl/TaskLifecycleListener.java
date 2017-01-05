@@ -18,6 +18,8 @@ package com.hazelcast.scheduledexecutor.impl;
 
 public interface TaskLifecycleListener {
 
+    void onInit();
+
     void onBeforeRun();
 
     void onAfterRun();

@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -43,6 +44,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
+
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -74,8 +76,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientCacheProxy<K, V>
-        extends AbstractClientCacheProxy<K, V> {
+public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
 
     public ClientCacheProxy(CacheConfig<K, V> cacheConfig) {
         super(cacheConfig);
@@ -488,5 +489,10 @@ public class ClientCacheProxy<K, V>
             listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
                     partitionId));
         }
+    }
+
+    // used in tests
+    public ClientContext getClientContext() {
+        return getContext();
     }
 }

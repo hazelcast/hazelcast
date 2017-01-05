@@ -20,6 +20,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.nearcache.NearCache;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntries;
@@ -27,8 +29,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.nio.Address;
@@ -62,7 +62,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     private boolean cacheLocalEntries;
     private boolean invalidateOnChange;
-    private KeyStateMarker keyStateMarker;
+    private KeyStateMarker keyStateMarker = KeyStateMarker.TRUE_MARKER;
     private NearCache<Object, Object> nearCache;
     private MapNearCacheManager mapNearCacheManager;
     private RepairingHandler repairingHandler;
@@ -81,11 +81,12 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         cacheLocalEntries = getMapConfig().getNearCacheConfig().isCacheLocalEntries();
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         int partitionCount = partitionService.getPartitionCount();
-        nearCache = asInvalidationAware(mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig), partitionCount);
-        keyStateMarker = getKeyStateMarker();
-
+        nearCache = mapNearCacheManager.getOrCreateNearCache(name, nearCacheConfig);
         invalidateOnChange = nearCache.isInvalidatedOnChange();
         if (invalidateOnChange) {
+            nearCache = asInvalidationAware(nearCache, partitionCount);
+            keyStateMarker = getKeyStateMarker();
+
             addNearCacheInvalidateListener();
         }
     }

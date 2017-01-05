@@ -65,9 +65,11 @@ public class ReplicateUpdateToCallerOperation extends AbstractSerializableOperat
         long currentVersion = store.getVersion();
         long updateVersion = response.getVersion();
         if (currentVersion >= updateVersion) {
-            logger.finest("Stale update received for replicated map -> " + name + ",  partitionId -> "
-                    + getPartitionId() + " , current version -> " + currentVersion + ", update version -> "
-                    + updateVersion + ", rejecting update!");
+            if (logger.isFineEnabled()) {
+                logger.fine("Rejecting stale update received for replicated map: " + name + "  partitionId="
+                        + getPartitionId() + " current version: " + currentVersion + " update version: " + updateVersion);
+            }
+
             return;
         }
         Object key = store.marshall(dataKey);

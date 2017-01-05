@@ -93,6 +93,7 @@ public class NearCachePreloader<KS> {
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
 
+    private final NearCachePreloaderLock lock;
     private final File storeFile;
     private final File tmpStoreFile;
 
@@ -105,9 +106,14 @@ public class NearCachePreloader<KS> {
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
 
-        String fileName = getFileName(preloaderConfig.getFileName(), nearCacheName);
-        this.storeFile = new File(fileName);
-        this.tmpStoreFile = new File(fileName + "~");
+        String filename = getFileName(preloaderConfig.getFilename(), nearCacheName);
+        this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
+        this.storeFile = new File(filename);
+        this.tmpStoreFile = new File(filename + "~");
+    }
+
+    public void destroy() {
+        lock.release();
     }
 
     /**
@@ -116,6 +122,12 @@ public class NearCachePreloader<KS> {
      * @param adapter the {@link DataStructureAdapter} to load the values from
      */
     public void loadKeys(DataStructureAdapter<Data, ?> adapter) {
+        if (!storeFile.exists()) {
+            logger.info(format("Skipped loading keys of Near Cache %s since storage file doesn't exist (%s)", nearCacheName,
+                    storeFile.getAbsolutePath()));
+            return;
+        }
+
         long startedNanos = System.nanoTime();
         BufferingInputStream bis = null;
         try {
@@ -129,8 +141,7 @@ public class NearCachePreloader<KS> {
             long elapsedMillis = getElapsedMillis(startedNanos);
             logger.info(format("Loaded %d keys of Near Cache %s in %d ms", loadedKeys, nearCacheName, elapsedMillis));
         } catch (Exception e) {
-            logger.warning(format("Could not pre-load Near Cache %s (%s): [%s] %s", nearCacheName, storeFile.getAbsolutePath(),
-                    e.getClass().getSimpleName(), e.getMessage()));
+            logger.warning(format("Could not pre-load Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
         } finally {
             closeResource(bis);
         }
@@ -191,8 +202,9 @@ public class NearCachePreloader<KS> {
 
             updatePersistenceStats(startedNanos);
         } catch (Exception e) {
-            logger.warning(format("Could not store keys of Near Cache %s (%s): [%s] %s", nearCacheName,
-                    storeFile.getAbsolutePath(), e.getClass().getSimpleName(), e.getMessage()));
+            logger.warning(format("Could not store keys of Near Cache %s (%s)", nearCacheName, storeFile.getAbsolutePath()), e);
+
+            nearCacheStats.addPersistenceFailure(e);
         } finally {
             deleteQuietly(tmpStoreFile);
             closeResource(fos);

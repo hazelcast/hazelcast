@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.operations;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
@@ -33,19 +34,27 @@ public class ClientReAuthOperation
         implements UrgentSystemOperation, AllowedDuringPassiveState {
 
     private String clientUuid;
+    private long authCorrelationId;
     private boolean clientDisconnectOperationRun;
 
     public ClientReAuthOperation() {
     }
 
-    public ClientReAuthOperation(String clientUuid) {
+    public ClientReAuthOperation(String clientUuid, long authCorrelationId) {
         this.clientUuid = clientUuid;
+        this.authCorrelationId = authCorrelationId;
     }
 
     @Override
     public void run() throws Exception {
-        String memberUuid = getCallerUuid();
         ClientEngineImpl engine = getService();
+        String memberUuid = getCallerUuid();
+        if (!engine.trySetLastAuthenticationCorrelationId(clientUuid, authCorrelationId)) {
+            String message = "Server already processed a newer authentication from client with uuid " + clientUuid
+                    + ". Not applying requested ownership change to " + memberUuid;
+            getLogger().info(message);
+            throw new AuthenticationException(message);
+        }
         Set<ClientEndpoint> endpoints = engine.getEndpointManager().getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
             ClientPrincipal principal = new ClientPrincipal(clientUuid, memberUuid);
@@ -74,12 +83,14 @@ public class ClientReAuthOperation
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);
+        out.writeLong(authCorrelationId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
+        authCorrelationId = in.readLong();
     }
 
     @Override

@@ -1,7 +1,8 @@
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.CacheEventHandler.InvalidationEventQueue;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchInvalidator.InvalidationQueue;
+import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -11,6 +12,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +30,7 @@ public class InvalidationEventQueueTest {
 
     @Test
     public void itemsShouldBeOfferedCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
-        final InvalidationEventQueue queue = new InvalidationEventQueue();
+        final InvalidationQueue queue = new InvalidationQueue();
         List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT; i++) {
@@ -36,7 +38,7 @@ public class InvalidationEventQueueTest {
                 @Override
                 public void run() {
                     for (int i = 0; i < ITEM_COUNT_PER_WORKER; i++) {
-                        queue.offer(new CacheSingleInvalidationMessage(null, null, null, null, 0));
+                        queue.offer(newInvalidation());
                     }
                 }
             });
@@ -52,11 +54,11 @@ public class InvalidationEventQueueTest {
 
     @Test
     public void itemsShouldBePolledCorrectly() throws InterruptedException, ExecutionException, TimeoutException {
-        final InvalidationEventQueue queue = new InvalidationEventQueue();
+        final InvalidationQueue queue = new InvalidationQueue();
         List<Future> futureList = new ArrayList<Future>(WORKER_COUNT);
 
         for (int i = 0; i < WORKER_COUNT * ITEM_COUNT_PER_WORKER; i++) {
-            queue.offer(new CacheSingleInvalidationMessage(null, null, null, null, 0));
+            queue.offer(newInvalidation());
         }
 
         for (int i = 0; i < WORKER_COUNT; i++) {
@@ -80,36 +82,41 @@ public class InvalidationEventQueueTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void addOperationIsNotSupported() {
-        new InvalidationEventQueue().add(new CacheSingleInvalidationMessage(null, null, null, null, 0));
+        new InvalidationQueue().add(newInvalidation());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void removeOperationIsNotSupported() {
-        new InvalidationEventQueue().remove();
+        new InvalidationQueue().remove();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void removeWithSpecifiedElementOperationIsNotSupported() {
-        new InvalidationEventQueue().remove(new CacheSingleInvalidationMessage(null, null, null, null, 0));
+        new InvalidationQueue().remove(newInvalidation());
+    }
+
+    protected SingleNearCacheInvalidation newInvalidation() {
+        return new SingleNearCacheInvalidation(new HeapData(), "name",
+                "source", new UUID(0, 0), 1);
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void addAllOperationIsNotSupported() {
-        new InvalidationEventQueue().addAll(new ArrayList<CacheSingleInvalidationMessage>());
+        new InvalidationQueue().addAll(new ArrayList<SingleNearCacheInvalidation>());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void removeAllOperationIsNotSupported() {
-        new InvalidationEventQueue().removeAll(new ArrayList<CacheSingleInvalidationMessage>());
+        new InvalidationQueue().removeAll(new ArrayList<SingleNearCacheInvalidation>());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void retainAllOperationIsNotSupported() {
-        new InvalidationEventQueue().retainAll(new ArrayList<CacheSingleInvalidationMessage>());
+        new InvalidationQueue().retainAll(new ArrayList<SingleNearCacheInvalidation>());
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void clearOperationIsNotSupported() {
-        new InvalidationEventQueue().clear();
+        new InvalidationQueue().clear();
     }
 }

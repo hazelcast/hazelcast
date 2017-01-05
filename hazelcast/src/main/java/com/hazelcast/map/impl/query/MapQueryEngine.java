@@ -30,5 +30,4 @@ public interface MapQueryEngine {
      * @return Result of the specific type
      */
     <T extends Result> T execute(Query query, Target target);
-
 }

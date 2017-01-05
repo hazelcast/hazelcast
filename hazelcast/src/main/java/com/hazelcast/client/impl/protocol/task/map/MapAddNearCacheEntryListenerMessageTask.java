@@ -19,32 +19,23 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
+import com.hazelcast.internal.nearcache.impl.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.EventListenerFilter;
-import com.hazelcast.map.impl.nearcache.invalidation.BatchNearCacheInvalidation;
-import com.hazelcast.map.impl.nearcache.invalidation.Invalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.InvalidationListener;
-import com.hazelcast.map.impl.nearcache.invalidation.SingleNearCacheInvalidation;
 import com.hazelcast.map.impl.nearcache.invalidation.UuidFilter;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapBatchInvalidationEvent;
 import static com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.encodeIMapInvalidationEvent;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NO_SEQUENCE;
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 
-/**
- * Deprecated class is here to provide backward compatibility.
- *
- * @see MapAddNearCacheInvalidationListenerMessageTask
- */
-@Deprecated
 public class MapAddNearCacheEntryListenerMessageTask
         extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
 
@@ -95,49 +86,16 @@ public class MapAddNearCacheEntryListenerMessageTask
 
     private final class ClientNearCacheInvalidationListenerImpl implements InvalidationListener {
 
+        /**
+         * This listener is called by member and in the listener we are sending invalidations to client.
+         * `batchOrderKey` is used by clients'-striped-executor to find a worker for processing invalidation.
+         * By using `batchOrderKey` we are putting all invalidations coming from the same member into the same workers' queue.
+         * So if there is more than one member all members will have their own worker to process invalidations. This provides
+         * more granular processing.
+         */
+        private final int batchOrderKey = nodeEngine.getLocalMember().hashCode();
+
         private ClientNearCacheInvalidationListenerImpl() {
-        }
-
-        private void sendEvent(Invalidation invalidation) {
-            if (invalidation instanceof BatchNearCacheInvalidation) {
-                List<Data> keys = getKeys((BatchNearCacheInvalidation) invalidation);
-                if (keys == null) {
-                    sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
-                            invalidation.getPartitionUuid(), NO_SEQUENCE));
-                } else {
-                    sendClientMessage(parameters.name, encodeIMapBatchInvalidationEvent(keys, Collections.<String>emptyList(),
-                            Collections.<UUID>emptyList(), Collections.<Long>emptyList()));
-                }
-                return;
-            }
-
-            if (!getEndpoint().getUuid().equals(invalidation.getSourceUuid())) {
-                if (invalidation instanceof SingleNearCacheInvalidation) {
-                    Data key = invalidation.getKey();
-                    if (NULL_KEY.equals(key)) {
-                        sendClientMessage(parameters.name, encodeIMapInvalidationEvent(null, invalidation.getSourceUuid(),
-                                invalidation.getPartitionUuid(), NO_SEQUENCE));
-                    } else {
-                        sendClientMessage(key, encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
-                                invalidation.getPartitionUuid(), NO_SEQUENCE));
-                    }
-                }
-                return;
-            }
-        }
-
-        private List<Data> getKeys(BatchNearCacheInvalidation invalidation) {
-            List<Invalidation> invalidations = invalidation.getInvalidations();
-            List<Data> keys = new ArrayList<Data>(invalidations.size());
-            for (Invalidation single : invalidations) {
-                Data key = single.getKey();
-                if (NULL_KEY.equals(key)) {
-                    return null;
-                } else {
-                    keys.add(key);
-                }
-            }
-            return keys;
         }
 
         @Override
@@ -145,7 +103,60 @@ public class MapAddNearCacheEntryListenerMessageTask
             if (!endpoint.isAlive()) {
                 return;
             }
-            sendEvent(invalidation);
+
+            if (invalidation instanceof BatchNearCacheInvalidation) {
+                ExtractedParams params = extractParams(((BatchNearCacheInvalidation) invalidation));
+                ClientMessage message = encodeIMapBatchInvalidationEvent(params.keys, params.sourceUuids,
+                        params.partitionUuids, params.sequences);
+
+                sendClientMessage(batchOrderKey, message);
+                return;
+            }
+
+            if (invalidation instanceof SingleNearCacheInvalidation) {
+                Data key = invalidation.getKey();
+                ClientMessage message = encodeIMapInvalidationEvent(key, invalidation.getSourceUuid(),
+                        invalidation.getPartitionUuid(), invalidation.getSequence());
+
+                sendClientMessage(key, message);
+                return;
+            }
+
+            throw new IllegalArgumentException("Unknown invalidation message type " + invalidation);
+        }
+
+        private ExtractedParams extractParams(BatchNearCacheInvalidation batch) {
+            List<Invalidation> invalidations = batch.getInvalidations();
+
+            int size = invalidations.size();
+            List<Data> keys = new ArrayList<Data>(size);
+            List<String> sourceUuids = new ArrayList<String>(size);
+            List<UUID> partitionUuids = new ArrayList<UUID>(size);
+            List<Long> sequences = new ArrayList<Long>(size);
+
+            for (Invalidation invalidation : invalidations) {
+                keys.add(invalidation.getKey());
+                sourceUuids.add(invalidation.getSourceUuid());
+                partitionUuids.add(invalidation.getPartitionUuid());
+                sequences.add(invalidation.getSequence());
+            }
+
+            return new ExtractedParams(keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private final class ExtractedParams {
+            private final List<Data> keys;
+            private final List<String> sourceUuids;
+            private final List<UUID> partitionUuids;
+            private final List<Long> sequences;
+
+            public ExtractedParams(List<Data> keys, List<String> sourceUuids,
+                                   List<UUID> partitionUuids, List<Long> sequences) {
+                this.keys = keys;
+                this.sourceUuids = sourceUuids;
+                this.partitionUuids = partitionUuids;
+                this.sequences = sequences;
+            }
         }
 
     }

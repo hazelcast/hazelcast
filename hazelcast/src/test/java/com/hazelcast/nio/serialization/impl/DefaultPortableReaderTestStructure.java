@@ -95,11 +95,11 @@ public class DefaultPortableReaderTestStructure {
             FULL, NONE, NULL
         }
 
-        public int getSeed() {
+        int getSeed() {
             return byte_ - 10;
         }
 
-        public PrimitivePortable(int seed, Init init) {
+        PrimitivePortable(int seed, Init init) {
             byte_ = (byte) (seed + 10);
             short_ = (short) (seed + 20);
             int_ = seed + 30;
@@ -158,7 +158,7 @@ public class DefaultPortableReaderTestStructure {
         char[] chars;
         String[] strings;
 
-        public PrimitivePortable() {
+        PrimitivePortable() {
         }
 
         @Override
@@ -321,7 +321,7 @@ public class DefaultPortableReaderTestStructure {
         Portable portable;
         Portable[] portables;
 
-        public GroupPortable() {
+        GroupPortable() {
         }
 
         GroupPortable(Portable portable) {
@@ -402,7 +402,7 @@ public class DefaultPortableReaderTestStructure {
         Portable portable;
         Portable[] portables;
 
-        public NestedGroupPortable() {
+        NestedGroupPortable() {
         }
 
         NestedGroupPortable(Portable portable) {

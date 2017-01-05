@@ -38,9 +38,9 @@ public class SerializationV1Portable implements Portable {
     }
 
     public SerializationV1Portable(byte aByte, boolean aBoolean, char character, short aShort, int integer, long aLong,
-                                   float aFloat, double aDouble, byte[] bytes, boolean[] booleans, char[] chars, short[] shorts, int[] ints,
-                                   long[] longs, float[] floats, double[] doubles, String string, String[] strings, NamedPortable innerPortable,
-                                   DataSerializable dataSerializable) {
+                                   float aFloat, double aDouble, byte[] bytes, boolean[] booleans, char[] chars, short[] shorts,
+                                   int[] ints, long[] longs, float[] floats, double[] doubles, String string, String[] strings,
+                                   NamedPortable innerPortable, DataSerializable dataSerializable) {
         this.aByte = aByte;
         this.aBoolean = aBoolean;
         this.character = character;
@@ -226,5 +226,4 @@ public class SerializationV1Portable implements Portable {
                 new double[]{11.1, 22.2, 33.3}, "the string text", new String[]{"item1", "item2", "item3"}, INNER_PORTABLE,
                 dataserializable);
     }
-
 }

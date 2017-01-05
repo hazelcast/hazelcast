@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -44,8 +45,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -205,27 +206,29 @@ public class ClientTxnMapTest {
     @Test
     public void testPutWithTTL() {
         final String mapName = randomString();
-        final int ttlSeconds = 1;
         final String key = "key";
         final String value = "Value";
         final IMap map = client.getMap(mapName);
 
-        final TransactionContext context = client.newTransactionContext();
+        TransactionContext context = client.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
 
-        txnMap.put(key, value, ttlSeconds, TimeUnit.SECONDS);
-        Object resultFromClientWhileTxnInProgress = map.get(key);
+        TransactionalMap<Object, Object> txnMap = context.getMap(mapName);
+        txnMap.put(key, value, 10, TimeUnit.SECONDS);
+        assertNull(map.get(key));
 
         context.commitTransaction();
 
-        assertNull(resultFromClientWhileTxnInProgress);
+        // caution!: it can still happen that entry is evicted before map.get(key) returns.
+        // hence following assertion can fail
         assertEquals(value, map.get(key));
 
-        //waite for ttl to expire
-        sleepSeconds(ttlSeconds + 1);
-
-        assertNull(map.get(key));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get(key));
+            }
+        });
     }
 
     @Test

@@ -11,7 +11,6 @@ import java.util.Arrays;
  */
 public class SerializationV1Dataserializable implements DataSerializable {
 
-
     byte aByte;
     boolean aBoolean;
     char character;
@@ -59,7 +58,6 @@ public class SerializationV1Dataserializable implements DataSerializable {
         this.strings = strings;
     }
 
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByte(aByte);
@@ -81,7 +79,6 @@ public class SerializationV1Dataserializable implements DataSerializable {
         out.writeDoubleArray(doubles);
         out.writeUTF(string);
         out.writeUTFArray(strings);
-
     }
 
     @Override
@@ -175,10 +172,9 @@ public class SerializationV1Dataserializable implements DataSerializable {
     }
 
     public static SerializationV1Dataserializable createInstanceWithNonNullFields() {
-        return new SerializationV1Dataserializable((byte) 99, true, 'c', (short) 11, 1234134, 1341431221l, 1.12312f, 432.424,
+        return new SerializationV1Dataserializable((byte) 99, true, 'c', (short) 11, 1234134, 1341431221L, 1.12312f, 432.424,
                 new byte[]{(byte) 1, (byte) 2, (byte) 3}, new boolean[]{true, false, true}, new char[]{'a', 'b', 'c'},
                 new short[]{1, 2, 3}, new int[]{4, 2, 3}, new long[]{11, 2, 3}, new float[]{1.0f, 2.1f, 3.4f},
                 new double[]{11.1, 22.2, 33.3}, "the string text", new String[]{"item1", "item2", "item3"});
     }
-
 }

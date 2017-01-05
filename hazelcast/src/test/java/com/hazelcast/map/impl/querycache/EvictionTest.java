@@ -58,20 +58,21 @@ public class EvictionTest extends HazelcastTestSupport {
 
         assertOpenEventually("Cache size is " + cache.size(), evictedCount);
         assertQueryCacheEvicted(maxSize, margin, cache);
-        cache.removeEntryListener(listener);
+        assertTrue(cache.removeEntryListener(listener));
     }
 
-
     private Config getConfig(int maxSize, String mapName, String cacheName) {
-        Config config = new Config();
-        MapConfig mapConfig = config.getMapConfig(mapName);
         QueryCacheConfig cacheConfig = new QueryCacheConfig(cacheName);
-        EvictionConfig evictionConfig = cacheConfig.getEvictionConfig();
-        evictionConfig.setSize(maxSize);
-        evictionConfig.setEvictionPolicy(EvictionPolicy.LFU);
-        evictionConfig.setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        cacheConfig.getEvictionConfig()
+                .setSize(maxSize)
+                .setEvictionPolicy(EvictionPolicy.LFU)
+                .setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
 
+        Config config = new Config();
+
+        MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.addQueryCacheConfig(cacheConfig);
+
         return config;
     }
 

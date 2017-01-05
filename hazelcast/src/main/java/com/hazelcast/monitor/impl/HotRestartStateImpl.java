@@ -43,19 +43,21 @@ public class HotRestartStateImpl implements HotRestartState {
     @Override
     public JsonObject toJson() {
         final JsonObject root = new JsonObject();
-        root.add("backupTaskState", backupTaskStatus.getState().name());
-        root.add("backupTaskCompleted", backupTaskStatus.getCompleted());
-        root.add("backupTaskTotal", backupTaskStatus.getTotal());
+        if (backupTaskStatus != null) {
+            root.add("backupTaskState", backupTaskStatus.getState().name());
+            root.add("backupTaskCompleted", backupTaskStatus.getCompleted());
+            root.add("backupTaskTotal", backupTaskStatus.getTotal());
+        }
         return root;
     }
 
     @Override
     public void fromJson(JsonObject json) {
-        final String jsonBackupTaskState = getString(json, "backupTaskState", BackupTaskState.NOT_STARTED.name());
+        final String jsonBackupTaskState = getString(json, "backupTaskState", null);
         final int jsonBackupTaskCompleted = JsonUtil.getInt(json, "backupTaskCompleted", 0);
         final int jsonBackupTaskTotal = JsonUtil.getInt(json, "backupTaskTotal", 0);
-        backupTaskStatus = new BackupTaskStatus(BackupTaskState.valueOf(jsonBackupTaskState),
-                jsonBackupTaskCompleted, jsonBackupTaskTotal);
+        backupTaskStatus = jsonBackupTaskState != null ? new BackupTaskStatus(BackupTaskState.valueOf(jsonBackupTaskState),
+                jsonBackupTaskCompleted, jsonBackupTaskTotal) : null;
     }
 
     @Override

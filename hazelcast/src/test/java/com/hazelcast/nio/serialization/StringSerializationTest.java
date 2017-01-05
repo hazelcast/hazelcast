@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -78,34 +77,30 @@ public class StringSerializationTest {
     }
 
     @Test
-    public void testStringEncode()
-            throws IOException {
+    public void testStringEncode() {
         byte[] expected = toDataByte(TEST_DATA_BYTES_ALL, TEST_DATA_ALL.length());
         byte[] actual = serializationService.toBytes(TEST_DATA_ALL);
         assertArrayEquals(expected, actual);
     }
 
     @Test
-    public void testStringDecode()
-            throws IOException {
+    public void testStringDecode() {
         Data data = new HeapData(toDataByte(TEST_DATA_BYTES_ALL, TEST_DATA_ALL.length()));
         String actualStr = serializationService.toObject(data);
         assertEquals(TEST_DATA_ALL, actualStr);
     }
 
     @Test
-    public void testStringAllCharLetterEncode()
-            throws IOException {
-        String allstr = new String(allChars);
-        byte[] expected = allstr.getBytes(Charset.forName("utf8"));
-        byte[] bytes = serializationService.toBytes(allstr);
+    public void testStringAllCharLetterEncode() {
+        String allStr = new String(allChars);
+        byte[] expected = allStr.getBytes(Charset.forName("utf8"));
+        byte[] bytes = serializationService.toBytes(allStr);
         byte[] actual = Arrays.copyOfRange(bytes, HeapData.DATA_OFFSET + Bits.INT_SIZE_IN_BYTES, bytes.length);
         assertArrayEquals(expected, actual);
     }
 
     @Test
-    public void testLargeStringEncodeDecode()
-            throws IOException {
+    public void testLargeStringEncodeDecode() {
         StringBuilder sb = new StringBuilder();
         int i = 0, j = 0;
         while (j < TEST_STR_SIZE) {
@@ -125,8 +120,7 @@ public class StringSerializationTest {
     }
 
     @Test
-    public void testNullStringEncodeDecode()
-            throws IOException {
+    public void testNullStringEncodeDecode() {
         Data nullData = serializationService.toData(null);
         String decodedStr = serializationService.toObject(nullData);
 
@@ -134,8 +128,7 @@ public class StringSerializationTest {
     }
 
     @Test
-    public void testNullStringEncodeDecode2()
-            throws IOException {
+    public void testNullStringEncodeDecode2() throws Exception {
         BufferObjectDataOutput objectDataOutput = serializationService.createObjectDataOutput();
         objectDataOutput.writeUTF(null);
 
@@ -149,18 +142,16 @@ public class StringSerializationTest {
     }
 
     @Test
-    public void testStringAllCharLetterDecode()
-            throws IOException {
-        String allstr = new String(allChars);
-        byte[] expected = allstr.getBytes(Charset.forName("utf8"));
-        Data data = new HeapData(toDataByte(expected, allstr.length()));
+    public void testStringAllCharLetterDecode() {
+        String allStr = new String(allChars);
+        byte[] expected = allStr.getBytes(Charset.forName("utf8"));
+        Data data = new HeapData(toDataByte(expected, allStr.length()));
         String actualStr = serializationService.toObject(data);
-        assertEquals(allstr, actualStr);
+        assertEquals(allStr, actualStr);
     }
 
     @Test
-    public void testStringArrayEncodeDecode()
-            throws IOException {
+    public void testStringArrayEncodeDecode() {
         String[] stringArray = new String[100];
         for (int i = 0; i < stringArray.length; i++) {
             stringArray[i] = TEST_DATA_ALL + i;
@@ -173,7 +164,7 @@ public class StringSerializationTest {
     }
 
     private byte[] toDataByte(byte[] input, int length) {
-        //the first 4 byte of type id, 4 byte string length and last 4 byte of partition hashCode
+        // the first 4 byte of type id, 4 byte string length and last 4 byte of partition hashCode
         ByteBuffer bf = ByteBuffer.allocate(input.length + 12);
         bf.putInt(0);
         bf.putInt(SerializationConstants.CONSTANT_TYPE_STRING);

@@ -132,34 +132,20 @@ public class MigrationCommitTest
         config1.setLiteMember(true);
 
         final HazelcastInstance hz1 = factory.newHazelcastInstance(config1);
-
-        final TerminateOtherMemberOnMigrationComplete listener2 = new TerminateOtherMemberOnMigrationComplete(migrationStartLatch);
-
-        final Config config2 = createConfig();
-        config2.addListenerConfig(new ListenerConfig(listener2));
-        final HazelcastInstance hz2 = factory.newHazelcastInstance(config2);
-
-        listener2.other = hz1;
-        migrationStartLatch.countDown();
-
+        final HazelcastInstance hz2 = factory.newHazelcastInstance(createConfig());
         warmUpPartitions(hz1, hz2);
         waitAllForSafeState(hz1, hz2);
 
-        final CollectMigrationTaskOnRollback listener3 = new CollectMigrationTaskOnRollback();
+        final TerminateOtherMemberOnMigrationComplete listener3 = new TerminateOtherMemberOnMigrationComplete(migrationStartLatch);
+        listener3.other = hz1;
+        migrationStartLatch.countDown();
+
         final Config config3 = createConfig();
         config3.addListenerConfig(new ListenerConfig(listener3));
         final HazelcastInstance hz3 = factory.newHazelcastInstance(config3);
 
         assertClusterSizeEventually(2, hz2);
         assertClusterSizeEventually(2, hz3);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertTrue(listener2.rollback);
-            }
-        });
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -670,6 +656,11 @@ public class MigrationCommitTest
         }
 
         @Override
+        public void onMigrationCommit(MigrationParticipant participant, MigrationInfo migrationInfo) {
+            System.out.println(getAddress(instance) + " > commit " + migrationInfo + " as " + participant);
+        }
+
+        @Override
         public void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo) {
             rollback = true;
 
@@ -791,55 +782,6 @@ public class MigrationCommitTest
             } else {
                 System.err.println(
                         "collect commit failed! collected migration: " + collected + " rollback migration: " + migrationInfo
-                                + " participant: " + participant);
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance instance) {
-            this.instance = instance;
-        }
-
-    }
-
-    private static class CollectMigrationTaskOnRollback
-            extends InternalMigrationListener
-            implements HazelcastInstanceAware {
-
-        private final AtomicReference<MigrationInfo> migrationInfoRef = new AtomicReference<MigrationInfo>();
-
-        private volatile boolean rollback;
-
-        private volatile HazelcastInstance instance;
-
-        @Override
-        public void onMigrationStart(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            if (rollback) {
-                System.err.println("Ignoring new migration start: " + migrationInfo + " as participant: " + participant
-                        + " since expected migration is already rolled back");
-                return;
-            }
-
-            if (!migrationInfoRef.compareAndSet(null, migrationInfo)) {
-                System.err.println("COLLECT ROLLBACK START FAILED! curr: " + migrationInfoRef.get() + " new: " + migrationInfo);
-            }
-        }
-
-        @Override
-        public void onMigrationRollback(MigrationParticipant participant, MigrationInfo migrationInfo) {
-            if (rollback) {
-                System.err.println("Ignoring new migration roll back: " + migrationInfo + " as participant: " + participant
-                        + " since expected migration is already rolled back");
-                return;
-            }
-
-            MigrationInfo collected = migrationInfoRef.get();
-            rollback = migrationInfo.equals(collected);
-            if (rollback) {
-                resetInternalMigrationListener(instance);
-            } else {
-                System.err.println(
-                        "collect rollback failed! collected migration: " + collected + " rollback migration: " + migrationInfo
                                 + " participant: " + participant);
             }
         }

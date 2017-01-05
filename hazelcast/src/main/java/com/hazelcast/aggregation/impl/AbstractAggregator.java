@@ -24,7 +24,6 @@ import java.util.Map;
 /**
  * Abstract class providing convenience for concrete implementations of an {@link Aggregator}
  * It also provides the extract() method that enables extracting values of the given attributePath from the input.
- * <p>
  *
  * @param <I> input type
  * @param <R> result type
@@ -41,7 +40,6 @@ public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
         this.attributePath = attributePath;
     }
 
-
     /**
      * Extract the value of the given attributePath from the given entry.
      */
@@ -56,5 +54,4 @@ public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
         }
         throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
     }
-
 }

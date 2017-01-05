@@ -19,11 +19,11 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -193,8 +193,8 @@ public class CacheClearTest extends CacheTestSupport {
         registerInvalidationListener(new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (eventObject instanceof CacheSingleInvalidationMessage) {
-                    CacheSingleInvalidationMessage event = (CacheSingleInvalidationMessage) eventObject;
+                if (eventObject instanceof Invalidation) {
+                    Invalidation event = (Invalidation) eventObject;
                     if (null == event.getKey() && config.getNameWithPrefix().equals(event.getName())) {
                         counter.incrementAndGet();
                     }
@@ -211,7 +211,7 @@ public class CacheClearTest extends CacheTestSupport {
                     throws Exception {
                 assertEquals(1, counter.get());
             }
-        }, 2);
+        }, 5);
 
         // Make sure that the callback is not called for a while
         assertTrueAllTheTime(new AssertTask() {
@@ -227,6 +227,6 @@ public class CacheClearTest extends CacheTestSupport {
     private void registerInvalidationListener(CacheEventListener cacheEventListener, String name) {
         HazelcastInstanceProxy hzInstance = (HazelcastInstanceProxy) this.hazelcastInstance;
         hzInstance.getOriginal().node.getNodeEngine().getEventService()
-                                     .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
+                .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 }

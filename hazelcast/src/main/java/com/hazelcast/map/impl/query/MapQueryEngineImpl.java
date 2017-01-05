@@ -94,7 +94,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         throw new IllegalArgumentException("Illegal target " + query);
     }
 
-
     // query thread first, fallback to partition thread
     private Result runQueryOnLocalPartitions(Query query) {
         Collection<Integer> mutablePartitionIds = getLocalPartitionIds();

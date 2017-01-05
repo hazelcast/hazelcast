@@ -49,12 +49,19 @@ import javax.cache.configuration.Configuration;
 import javax.cache.configuration.Factory;
 import javax.cache.event.CacheEntryCreatedListener;
 import javax.cache.event.CacheEntryListenerException;
+import javax.cache.integration.CacheLoader;
+import javax.cache.integration.CacheLoaderException;
+import javax.cache.integration.CacheWriter;
+import javax.cache.integration.CacheWriterException;
 import javax.cache.spi.CachingProvider;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -78,6 +85,37 @@ public class CacheConfigTest extends HazelcastTestSupport {
     public void cleanup() {
         HazelcastInstanceFactory.terminateAll();
         Caching.getCachingProvider().close();
+    }
+
+    @Test
+    public void testCacheConfigLoaderWriterXml() throws Exception {
+        Config config = new XmlConfigBuilder(configUrl2).build();
+
+        CacheSimpleConfig simpleConfig = config.getCacheConfig("cache3");
+        CacheConfig<Object, String> cacheConfig = new CacheConfig<Object, String>(simpleConfig);
+
+        Factory<CacheWriter<? super Object, ? super String>> writerFactory = cacheConfig.getCacheWriterFactory();
+        CacheWriter<? super Object, ? super String> cacheWriter = writerFactory.create();
+        assertTrue(cacheWriter instanceof EmptyCacheWriter);
+
+        Factory<CacheLoader<Object, String>> loaderFactory = cacheConfig.getCacheLoaderFactory();
+        CacheLoader<Object, String> cacheLoader = loaderFactory.create();
+        assertTrue(cacheLoader instanceof MyCacheLoader);
+    }
+
+    @Test
+    public void testCacheConfigLoaderWriter() throws Exception {
+        CacheSimpleConfig simpleConfig = new CacheSimpleConfig();
+        simpleConfig.setCacheLoader(MyCacheLoader.class.getName());
+        simpleConfig.setCacheWriter(EmptyCacheWriter.class.getName());
+
+        CacheConfig cacheConfig = new CacheConfig(simpleConfig);
+
+        CacheLoader loader = (CacheLoader) cacheConfig.getCacheLoaderFactory().create();
+        CacheWriter writer = (CacheWriter) cacheConfig.getCacheWriterFactory().create();
+
+        assertTrue(loader instanceof MyCacheLoader);
+        assertTrue(writer instanceof EmptyCacheWriter);
     }
 
     @Test
@@ -612,6 +650,45 @@ public class CacheConfigTest extends HazelcastTestSupport {
         @Override
         public Object create() {
             return null;
+        }
+    }
+
+    public static class MyCacheLoader<K> implements CacheLoader<K, String> {
+        @Override
+        public String load(K key) throws CacheLoaderException {
+            return String.valueOf(key);
+        }
+
+        @Override
+        public Map<K, String> loadAll(Iterable<? extends K> keys) throws CacheLoaderException {
+            Map<K, String> result = new HashMap<K, String>();
+            for (K key : keys) {
+                result.put(key, String.valueOf(key));
+            }
+            return result;
+        }
+    }
+
+    public static class EmptyCacheWriter<K> implements CacheWriter<K, String> {
+
+        @Override
+        public void write(Cache.Entry<? extends K, ? extends String> entry) throws CacheWriterException {
+
+        }
+
+        @Override
+        public void writeAll(Collection<Cache.Entry<? extends K, ? extends String>> entries) throws CacheWriterException {
+
+        }
+
+        @Override
+        public void delete(Object key) throws CacheWriterException {
+
+        }
+
+        @Override
+        public void deleteAll(Collection<?> keys) throws CacheWriterException {
+
         }
     }
 }

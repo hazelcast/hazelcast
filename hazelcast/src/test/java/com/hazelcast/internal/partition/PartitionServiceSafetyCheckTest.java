@@ -83,7 +83,7 @@ public class PartitionServiceSafetyCheckTest extends PartitionCorrectnessTestSup
 
         Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
 
-        assertSafe(instances);
+        assertSafeEventually(instances);
     }
 
     @Test

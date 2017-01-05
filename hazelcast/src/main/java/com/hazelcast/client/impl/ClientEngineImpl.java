@@ -16,23 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
-
-import javax.security.auth.login.LoginException;
-
 import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
@@ -86,7 +69,25 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
+
+import javax.security.auth.login.LoginException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -103,7 +104,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
-
+    private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
+            new ConstructorFunction<String, AtomicLong>() {
+                @Override
+                public AtomicLong createNew(String arg) {
+                    return new AtomicLong();
+                }
+            };
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -111,6 +118,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final SerializationService serializationService;
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
+    //// client uuid -> last authentication correlation id
+    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
+            = new ConcurrentHashMap<String, AtomicLong>();
 
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
@@ -135,7 +145,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     private ClientExceptionFactory initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJcacheAvailable(nodeEngine.getConfigClassLoader());
+        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(nodeEngine.getConfigClassLoader());
         return new ClientExceptionFactory(jcacheAvailable);
     }
 
@@ -310,7 +320,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public Collection<Client> getClients() {
-        return new HashSet<Client>(endpointManager.getEndpoints());
+        final HashSet<Client> clients = new HashSet<Client>();
+        for (ClientEndpoint endpoint : endpointManager.getEndpoints()) {
+            clients.add(endpoint);
+        }
+        return clients;
     }
 
     @Override
@@ -344,12 +358,25 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         ownershipMappings.clear();
     }
 
+    public boolean trySetLastAuthenticationCorrelationId(String clientUuid, long newCorrelationId) {
+        AtomicLong lastCorrelationId = ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
+                clientUuid,
+                LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
+        return ConcurrencyUtil.setIfGreaterThan(lastCorrelationId, newCorrelationId);
+    }
+
     public String addOwnershipMapping(String clientUuid, String ownerUuid) {
         return ownershipMappings.put(clientUuid, ownerUuid);
     }
 
     public boolean removeOwnershipMapping(String clientUuid, String memberUuid) {
+        lastAuthenticationCorrelationIds.remove(clientUuid);
         return ownershipMappings.remove(clientUuid, memberUuid);
+    }
+
+    //implemented for test purpose
+    public String getOwnerUuid(String clientUuid) {
+        return ownershipMappings.get(clientUuid);
     }
 
     public TransactionManagerService getTransactionManagerService() {
@@ -434,24 +461,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private class DestroyEndpointTask implements Runnable {
         private final String deadMemberUuid;
 
-        public DestroyEndpointTask(String deadMemberUuid) {
+        DestroyEndpointTask(String deadMemberUuid) {
             this.deadMemberUuid = deadMemberUuid;
         }
 
         @Override
         public void run() {
-            endpointManager.removeEndpoints(deadMemberUuid);
-            removeMappings();
-        }
-
-        void removeMappings() {
-            Iterator<Map.Entry<String, String>> iterator = ownershipMappings.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.next();
+            for (Map.Entry<String, String> entry : ownershipMappings.entrySet()) {
                 String clientUuid = entry.getKey();
                 String memberUuid = entry.getValue();
                 if (deadMemberUuid.equals(memberUuid)) {
-                    iterator.remove();
                     ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, deadMemberUuid);
                     nodeEngine.getOperationService().run(op);
                 }

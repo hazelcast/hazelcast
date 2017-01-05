@@ -54,18 +54,18 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class RepairingTask implements Runnable {
 
-    public static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
+    static final HazelcastProperty MAX_TOLERATED_MISS_COUNT
             = new HazelcastProperty("hazelcast.invalidation.max.tolerated.miss.count", 10);
-    public static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
+    static final HazelcastProperty RECONCILIATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.invalidation.reconciliation.interval.seconds", 60, SECONDS);
 
-    private static final long GET_UUID_TASK_SCHEDULE_MILLIS = 500;
-    private static final long HALF_MINUTE_MILLIS = SECONDS.toMillis(30);
-    private static final long MIN_RECONCILIATION_INTERVAL_SECONDS = 30;
+    static final long GET_UUID_TASK_SCHEDULE_MILLIS = 500;
+    static final long HALF_MINUTE_MILLIS = SECONDS.toMillis(30);
+    static final long MIN_RECONCILIATION_INTERVAL_SECONDS = 30;
 
+    final int maxToleratedMissCount;
+    final long reconciliationIntervalNanos;
     private final int partitionCount;
-    private final int maxToleratedMissCount;
-    private final long reconciliationIntervalNanos;
     private final String localUuid;
     private final ILogger logger;
     private final ExecutionService executionService;
@@ -286,6 +286,21 @@ public final class RepairingTask implements Runnable {
                 handler.updateLastKnownStaleSequence(metaData, partition);
             }
         }
+    }
+
+    // used in tests.
+    public MetaDataFetcher getMetaDataFetcher() {
+        return metaDataFetcher;
+    }
+
+    // used in tests.
+    public ConcurrentMap<String, RepairingHandler> getHandlers() {
+        return handlers;
+    }
+
+    // used in tests.
+    public AtomicReferenceArray<UUID> getPartitionUuids() {
+        return partitionUuids;
     }
 
     @Override

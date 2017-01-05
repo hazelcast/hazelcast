@@ -429,12 +429,34 @@
                     </xs:attribute>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="cache-loader" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache loader class name.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="cache-writer-factory" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:attribute name="class-name" use="required">
                         <xs:annotation>
                             <xs:documentation>
                                 The cache writer factory class name.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="cache-writer" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:attribute name="class-name" use="required" type="xs:string">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache writer class name.
                             </xs:documentation>
                         </xs:annotation>
                     </xs:attribute>
@@ -1244,7 +1266,6 @@
                         Possible values:
                         BINARY (default): keys and values are stored as binary data.
                         OBJECT: values are stored in their object forms.
-                        NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2876,9 +2897,9 @@
             <xs:element name="class-cache-mode" default="ETERNAL">
                 <xs:annotation>
                     <xs:documentation>
-                        Controls caching of caches loaded from remote members
+                        Controls caching of classes loaded from remote members.
 
-                        OFF: Never caches loaded classes. This is suitable for loading runnables, callebles,
+                        OFF: Never caches loaded classes. This is suitable for loading runnables, callables,
                         entry processors, etc.
                         ETERNAL: Cache indefinitely. This is suitable when you load long-living objects,
                         such as domain objects stored in a map.

@@ -7,6 +7,7 @@ import com.hazelcast.hotrestart.BackupTaskState;
 import com.hazelcast.hotrestart.BackupTaskStatus;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
+import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
 import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.TimedMemberState;
@@ -28,9 +29,11 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.config.HotRestartClusterDataRecoveryPolicy.FULL_RECOVERY_ONLY;
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -129,5 +132,12 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertEquals(86, deserializedWanSyncState.getSyncedPartitionCount());
         assertEquals("atob", deserializedWanSyncState.getActiveWanConfigName());
         assertEquals("B", deserializedWanSyncState.getActivePublisherName());
+
+        ClusterHotRestartStatusDTO clusterHotRestartStatus = deserialized.getClusterHotRestartStatus();
+        assertEquals(FULL_RECOVERY_ONLY, clusterHotRestartStatus.getDataRecoveryPolicy());
+        assertEquals(ClusterHotRestartStatusDTO.ClusterHotRestartStatus.UNKNOWN, clusterHotRestartStatus.getHotRestartStatus());
+        assertEquals(-1, clusterHotRestartStatus.getRemainingValidationTimeMillis());
+        assertEquals(-1, clusterHotRestartStatus.getRemainingDataLoadTimeMillis());
+        assertTrue(clusterHotRestartStatus.getMemberHotRestartStatusMap().isEmpty());
     }
 }

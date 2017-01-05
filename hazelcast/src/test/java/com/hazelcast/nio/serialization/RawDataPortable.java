@@ -6,9 +6,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 22/05/14
- */
 class RawDataPortable implements Portable {
 
     long l;
@@ -30,10 +27,12 @@ class RawDataPortable implements Portable {
         this.sds = sds;
     }
 
+    @Override
     public int getClassId() {
         return TestSerializationConstants.RAW_DATA_PORTABLE;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeLong("l", l);
         writer.writeCharArray("c", c);
@@ -44,6 +43,7 @@ class RawDataPortable implements Portable {
         output.writeObject(sds);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         l = reader.readLong("l");
         c = reader.readCharArray("c");
@@ -56,17 +56,33 @@ class RawDataPortable implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         RawDataPortable that = (RawDataPortable) o;
 
-        if (k != that.k) return false;
-        if (l != that.l) return false;
-        if (!Arrays.equals(c, that.c)) return false;
-        if (p != null ? !p.equals(that.p) : that.p != null) return false;
-        if (s != null ? !s.equals(that.s) : that.s != null) return false;
-        if (sds != null ? !sds.equals(that.sds) : that.sds != null) return false;
+        if (k != that.k) {
+            return false;
+        }
+        if (l != that.l) {
+            return false;
+        }
+        if (!Arrays.equals(c, that.c)) {
+            return false;
+        }
+        if (p != null ? !p.equals(that.p) : that.p != null) {
+            return false;
+        }
+        if (s != null ? !s.equals(that.s) : that.s != null) {
+            return false;
+        }
+        if (sds != null ? !sds.equals(that.sds) : that.sds != null) {
+            return false;
+        }
 
         return true;
     }
@@ -82,6 +98,7 @@ class RawDataPortable implements Portable {
         return result;
     }
 
+    @Override
     public int getFactoryId() {
         return TestSerializationConstants.PORTABLE_FACTORY_ID;
     }

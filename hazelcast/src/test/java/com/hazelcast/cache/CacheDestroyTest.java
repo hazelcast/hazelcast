@@ -3,11 +3,11 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.cache.impl.ICacheService;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceProxy;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
@@ -93,8 +93,8 @@ public class CacheDestroyTest extends CacheTestSupport {
 
         // Invoke on single node and the operation is also forward to others nodes by the operation itself
         operationService1.invokeOnTarget(ICacheService.SERVICE_NAME,
-                                         new CacheDestroyOperation(FULL_CACHE_NAME),
-                                         nodeEngine1.getThisAddress());
+                new CacheDestroyOperation(FULL_CACHE_NAME),
+                nodeEngine1.getThisAddress());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -116,8 +116,8 @@ public class CacheDestroyTest extends CacheTestSupport {
         registerInvalidationListener(new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (eventObject instanceof CacheSingleInvalidationMessage) {
-                    CacheSingleInvalidationMessage event = (CacheSingleInvalidationMessage) eventObject;
+                if (eventObject instanceof Invalidation) {
+                    Invalidation event = (Invalidation) eventObject;
                     if (null == event.getKey() && config.getNameWithPrefix().equals(event.getName())) {
                         counter.incrementAndGet();
                     }
@@ -149,7 +149,7 @@ public class CacheDestroyTest extends CacheTestSupport {
     private void registerInvalidationListener(CacheEventListener cacheEventListener, String name) {
         HazelcastInstanceProxy hzInstance = (HazelcastInstanceProxy) this.hazelcastInstance;
         hzInstance.getOriginal().node.getNodeEngine().getEventService()
-                                     .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
+                .registerListener(ICacheService.SERVICE_NAME, name, cacheEventListener);
     }
 
 }

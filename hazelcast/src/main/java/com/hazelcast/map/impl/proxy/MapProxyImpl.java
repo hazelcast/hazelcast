@@ -904,12 +904,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return "IMap{name='" + name + '\'' + '}';
     }
 
+    @Override
     public QueryCache<K, V> getQueryCache(String name) {
         checkNotNull(name, "name cannot be null");
 
         return getQueryCacheInternal(name, null, null, null, this);
     }
 
+    @Override
     public QueryCache<K, V> getQueryCache(String name, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
@@ -918,6 +920,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return getQueryCacheInternal(name, null, predicate, includeValue, this);
     }
 
+    @Override
     public QueryCache<K, V> getQueryCache(String name, MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(name, "name cannot be null");
         checkNotNull(predicate, "predicate cannot be null");

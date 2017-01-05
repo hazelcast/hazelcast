@@ -25,6 +25,7 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 
 public final class QueryEntryFactory {
+
     private final CacheDeserializedValues cacheDeserializedValues;
 
     public QueryEntryFactory(CacheDeserializedValues cacheDeserializedValues) {

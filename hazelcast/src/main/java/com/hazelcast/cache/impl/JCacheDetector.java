@@ -44,8 +44,8 @@ public final class JCacheDetector {
     private JCacheDetector() {
     }
 
-    public static boolean isJcacheAvailable(ClassLoader classLoader) {
-        return isJcacheAvailable(classLoader, null);
+    public static boolean isJCacheAvailable(ClassLoader classLoader) {
+        return isJCacheAvailable(classLoader, null);
     }
 
     /**
@@ -54,7 +54,7 @@ public final class JCacheDetector {
      *                    logs a warning against using this version.
      * @return {@code true} if JCache 1.0.0 is located in the classpath, otherwise {@code false}.
      */
-    public static boolean isJcacheAvailable(ClassLoader classLoader, ILogger logger) {
+    public static boolean isJCacheAvailable(ClassLoader classLoader, ILogger logger) {
         if (!ClassLoaderUtil.isClassAvailable(classLoader, JCACHE_CACHING_CLASSNAME)) {
             // no cache-api jar in the classpath
             return false;

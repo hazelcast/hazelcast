@@ -117,7 +117,6 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
     /**
      * @see StaleReadDetector
      */
-
     void setStaleReadDetector(StaleReadDetector detector);
 
     /**

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
@@ -124,28 +123,25 @@ public class ClientInvocationTest extends HazelcastTestSupport {
             }
         });
         server.shutdown();
-
         assertOpenEventually(disconnectedLatch);
-        final CountDownLatch shutdownLatch = new CountDownLatch(1);
         int n = 100;
         final CountDownLatch errorLatch = new CountDownLatch(n);
         for (int i = 0; i < n; i++) {
-            map.submitToKey(randomString(), new DummyEntryProcessor(), new ExecutionCallback() {
-                @Override
-                public void onResponse(Object response) {
-
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    if (t.getCause() instanceof HazelcastClientNotActiveException) {
-                        shutdownLatch.countDown();
+            try {
+                map.submitToKey(randomString(), new DummyEntryProcessor(), new ExecutionCallback() {
+                    @Override
+                    public void onResponse(Object response) {
                     }
-                    errorLatch.countDown();
-                }
-            });
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        errorLatch.countDown();
+                    }
+                });
+            } catch (Exception e) {
+                errorLatch.countDown();
+            }
         }
-        assertOpenEventually("No requests failed with reason client shutdown", shutdownLatch);
         assertOpenEventually("Not all of the requests failed", errorLatch);
     }
 

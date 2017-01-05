@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.7.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.8.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -43,6 +43,13 @@
         </cache-entry-listeners>
         <backup-count>1</backup-count>
         <async-backup-count>1</async-backup-count>
+    </cache>
+
+    <cache name="cache3">
+        <read-through>true</read-through>
+        <write-through>true</write-through>
+        <cache-loader class-name="com.hazelcast.config.CacheConfigTest$MyCacheLoader"/>
+        <cache-writer class-name="com.hazelcast.config.CacheConfigTest$EmptyCacheWriter"/>
     </cache>
 
     <cache name="testCache">

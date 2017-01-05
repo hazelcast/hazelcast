@@ -16,28 +16,24 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import static java.util.Collections.EMPTY_MAP;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InvocationBuilder;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.util.MapUtil;
+import static java.util.Collections.EMPTY_MAP;
 
 public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageTask<P> {
-
-    private static final int TRY_COUNT = 100;
 
     protected AbstractMultiTargetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,73 +41,68 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
     @Override
     protected void processMessage() throws Throwable {
-        ClientEndpoint endpoint = getEndpoint();
-        OperationFactory operationFactory = createOperationFactory();
-        Collection<Address> targets = getTargets();
+        Supplier<Operation> operationSupplier = createOperationSupplier();
+        Collection<Member> targets = getTargets();
 
         returnResponseIfNoTargetLeft(targets, EMPTY_MAP);
 
         final InternalOperationService operationService = nodeEngine.getOperationService();
 
         MultiTargetCallback callback = new MultiTargetCallback(targets);
-        for (Address target : targets) {
-            Operation op = operationFactory.createOperation();
-            op.setCallerUuid(endpoint.getUuid());
-            InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
-                    .setTryCount(TRY_COUNT)
+        for (Member target : targets) {
+            Operation op = operationSupplier.get();
+            InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target.getAddress())
                     .setResultDeserialized(false)
                     .setExecutionCallback(new SingleTargetCallback(target, callback));
             builder.invoke();
         }
     }
 
-    private void returnResponseIfNoTargetLeft(Collection<Address> targets, Map<Address, Object> results) throws Throwable {
+    private void returnResponseIfNoTargetLeft(Collection<Member> targets, Map<Member, Object> results) throws Throwable {
         if (targets.isEmpty()) {
             sendResponse(reduce(results));
         }
     }
 
-    protected abstract OperationFactory createOperationFactory();
+    protected abstract Supplier<Operation> createOperationSupplier();
 
-    protected abstract Object reduce(Map<Address, Object> map) throws Throwable;
+    protected abstract Object reduce(Map<Member, Object> map) throws Throwable;
 
-    public abstract Collection<Address> getTargets();
+    public abstract Collection<Member> getTargets();
 
     private final class MultiTargetCallback {
 
-        final Set<Address> targets;
-        final Map<Address, Object> results;
+        final Collection<Member> targets;
+        final Map<Member, Object> results;
 
-        private MultiTargetCallback(Collection<Address> targets) {
-            this.targets = new HashSet<Address>(targets);
+        private MultiTargetCallback(Collection<Member> targets) {
+            this.targets = new HashSet<Member>(targets);
             this.results = MapUtil.createHashMap(targets.size());
         }
 
-        public void notify(Address target, Object result) {
-            synchronized(targets) {
-                if (targets.remove(target)) {
-                    results.put(target, result);
-                } else {
-                    if (results.containsKey(target)) {
-                        throw new IllegalArgumentException("Duplicate response from -> " + target);
-                    }
-                    throw new IllegalArgumentException("Unknown target! -> " + target);
+        public synchronized void notify(Member target, Object result) {
+            if (targets.remove(target)) {
+                results.put(target, result);
+            } else {
+                if (results.containsKey(target)) {
+                    throw new IllegalArgumentException("Duplicate response from -> " + target);
                 }
-                try {
-                    returnResponseIfNoTargetLeft(targets, results);
-                } catch (Throwable throwable) {
-                    handleProcessingFailure(throwable);
-                }
+                throw new IllegalArgumentException("Unknown target! -> " + target);
+            }
+            try {
+                returnResponseIfNoTargetLeft(targets, results);
+            } catch (Throwable throwable) {
+                handleProcessingFailure(throwable);
             }
         }
     }
 
     private final class SingleTargetCallback extends SimpleExecutionCallback<Object> {
 
-        final Address target;
+        final Member target;
         final MultiTargetCallback parent;
 
-        private SingleTargetCallback(Address target, MultiTargetCallback parent) {
+        private SingleTargetCallback(Member target, MultiTargetCallback parent) {
             this.target = target;
             this.parent = parent;
         }

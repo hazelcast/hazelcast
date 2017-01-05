@@ -38,7 +38,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -148,11 +147,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void stats()
             throws ExecutionException, InterruptedException {
         double delay = 2.0;
-        double delayGracePeriod = 2.0; //Could fail sporadically, if so will remove
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         Object key = generateKeyOwnedBy(instances[1]);
@@ -162,16 +159,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
-        double durationFromCreationToScheduleIn = TimeUnit.SECONDS.convert(
-                stats.getLastRunStartNanos() - stats.getCreatedAtNanos(), TimeUnit.NANOSECONDS);
 
         assertEquals(1, stats.getTotalRuns());
-        assertEquals(delay, durationFromCreationToScheduleIn, delayGracePeriod);
-        assertNotNull(stats.getCreatedAtNanos());
-        assertNotNull(stats.getFirstRunStartNanos());
         assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunStartNanos());
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));
@@ -179,11 +169,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void stats_whenMemberOwned()
             throws ExecutionException, InterruptedException {
         double delay = 2.0;
-        double delayGracePeriod = 2.0; //Could fail sporadically, if so will remove
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
@@ -192,16 +180,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
-        double durationFromCreationToScheduleIn = TimeUnit.SECONDS.convert(
-                stats.getLastRunStartNanos() - stats.getCreatedAtNanos(), TimeUnit.NANOSECONDS);
 
         assertEquals(1, stats.getTotalRuns());
-        assertEquals(delay, durationFromCreationToScheduleIn, delayGracePeriod);
-        assertNotNull(stats.getCreatedAtNanos());
-        assertNotNull(stats.getFirstRunStartNanos());
         assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunStartNanos());
         assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
         assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));

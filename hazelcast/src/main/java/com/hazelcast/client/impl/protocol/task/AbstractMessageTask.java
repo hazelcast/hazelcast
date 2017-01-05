@@ -52,8 +52,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
-
-    protected String clientUuid;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -66,9 +64,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
-        if (null != endpoint) {
-            this.clientUuid = endpoint.getUuid();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -218,6 +213,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             return connection;
         }
 
+        String clientUuid = endpoint.getUuid();
         // The connection may have changed for listener tasks, hence try find a connection to the client
         if (null != clientUuid) {
             Connection conn = endpointManager.findLiveConnectionFor(clientUuid);

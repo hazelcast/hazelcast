@@ -77,7 +77,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_MODIFY);
+        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
     }
 
     @Override

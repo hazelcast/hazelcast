@@ -357,8 +357,9 @@ public class QueryCacheConfig {
      *
      * @param coalesce set {@code true} to enable, otherwise set {@code false}
      */
-    public void setCoalesce(boolean coalesce) {
+    public QueryCacheConfig setCoalesce(boolean coalesce) {
         this.coalesce = coalesce;
+        return this;
     }
 
     /**

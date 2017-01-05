@@ -40,7 +40,6 @@ public class ScheduledExecutorConfig {
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
-
     private ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly readOnly;
 
     public ScheduledExecutorConfig() {
@@ -86,7 +85,6 @@ public class ScheduledExecutorConfig {
         this.name = name;
         return this;
     }
-
 
     /**
      * Gets the number of executor threads per member for the executor.
@@ -144,7 +142,7 @@ public class ScheduledExecutorConfig {
 
     private static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {
 
-        public ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
+        ScheduledExecutorConfigReadOnly(ScheduledExecutorConfig config) {
             super(config);
         }
 
@@ -163,5 +161,4 @@ public class ScheduledExecutorConfig {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }
-
 }

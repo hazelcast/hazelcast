@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 
@@ -29,10 +28,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+@SuppressWarnings("SameParameterValue")
 public class HTTPCommunicator {
 
-    final HazelcastInstance instance;
-    final String address;
+    private final HazelcastInstance instance;
+    private final String address;
 
     public HTTPCommunicator(HazelcastInstance instance) {
         this.instance = instance;
@@ -41,71 +41,49 @@ public class HTTPCommunicator {
 
     public String poll(String queueName, long timeout) throws IOException {
         String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
-        String result = doGet(url);
-        return result;
+        return doGet(url);
     }
 
     public int size(String queueName) throws IOException {
         String url = address + "queues/" + queueName + "/size";
-        Integer result = Integer.parseInt(doGet(url));
-        return result;
+        return Integer.parseInt(doGet(url));
     }
 
     public int offer(String queueName, String data) throws IOException {
-        String url = address + "queues/" + queueName;
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("POST");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
+        final String url = address + "queues/" + queueName;
+        final HttpURLConnection urlConnection = setupConnection(url, "POST");
 
-        /** post the data */
-        OutputStream out = null;
-        out = urlConnection.getOutputStream();
+        // post the data
+        OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         writer.write(data);
         writer.close();
         out.close();
-
 
         return urlConnection.getResponseCode();
     }
 
     public String get(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
-        String result = doGet(url);
-        return result;
+        return doGet(url);
     }
 
     public String getClusterInfo() throws IOException {
         String url = address + "cluster";
         return doGet(url);
-
     }
 
     public String getClusterHealth() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;
         return doGet(url);
-
     }
 
     public int put(String mapName, String key, String value) throws IOException {
+        final String url = address + "maps/" + mapName + "/" + key;
+        final HttpURLConnection urlConnection = setupConnection(url, "POST");
 
-        String url = address + "maps/" + mapName + "/" + key;
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("POST");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-        /** post the data */
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         writer.write(value);
@@ -116,122 +94,118 @@ public class HTTPCommunicator {
     }
 
     public int deleteAll(String mapName) throws IOException {
-
         String url = address + "maps/" + mapName;
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("DELETE");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-        return urlConnection.getResponseCode();
+        return setupConnection(url, "DELETE").getResponseCode();
     }
 
     public int delete(String mapName, String key) throws IOException {
-
         String url = address + "maps/" + mapName + "/" + key;
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("DELETE");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-        return urlConnection.getResponseCode();
+        return setupConnection(url, "DELETE").getResponseCode();
     }
 
     public int shutdownCluster(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/clusterShutdown";
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("POST");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-        /** post the data */
-        OutputStream out = urlConnection.getOutputStream();
-        Writer writer = new OutputStreamWriter(out, "UTF-8");
-        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8");
-        writer.write(data);
-        writer.close();
-        out.close();
-
-        return urlConnection.getResponseCode();
+        return doPost(url, groupName, groupPassword).responseCode;
     }
 
     public String shutdownMember(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/memberShutdown";
-        return doPost(url, groupName, groupPassword);
+        return doPost(url, groupName, groupPassword).response;
     }
 
     public String getClusterState(String groupName, String groupPassword) throws IOException {
-
         String url = address + "management/cluster/state";
-        return doPost(url, groupName, groupPassword);
-
+        return doPost(url, groupName, groupPassword).response;
     }
 
-    public int changeClusterState(String groupName, String groupPassword, String newState) throws IOException {
-
+    public ConnectionResponse changeClusterState(String groupName, String groupPassword, String newState) throws IOException {
         String url = address + "management/cluster/changeState";
-        /** set up the http connection parameters */
+        return doPost(url, groupName, groupPassword, newState);
+    }
+
+    public String getClusterVersion() throws IOException {
+        String url = address + "management/cluster/version";
+        return doGet(url);
+    }
+
+    public ConnectionResponse changeClusterVersion(String groupName, String groupPassword, String version) throws IOException {
+        String url = address + "management/cluster/version";
+        return doPost(url, groupName, groupPassword, version);
+    }
+
+    public ConnectionResponse hotBackup(String groupName, String groupPassword) throws IOException {
+        String url = address + "management/cluster/hotBackup";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse hotBackupInterrupt(String groupName, String groupPassword) throws IOException {
+        String url = address + "management/cluster/hotBackupInterrupt";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse forceStart(String groupName, String groupPassword) throws IOException {
+        String url = address + "management/cluster/forceStart";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public ConnectionResponse changeManagementCenterUrl(String groupName,
+                                                        String groupPassword, String newUrl) throws IOException {
+        String url = address + "mancenter/changeurl";
+        return doPost(url, groupName, groupPassword, newUrl);
+    }
+
+    public ConnectionResponse partialStart(String groupName, String groupPassword) throws IOException {
+        String url = address + "management/cluster/partialStart";
+        return doPost(url, groupName, groupPassword);
+    }
+
+    public String listClusterNodes(String groupName, String groupPassword) throws IOException {
+        String url = address + "management/cluster/nodes";
+        return doPost(url, groupName, groupPassword).response;
+    }
+
+    public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
+        String url = address + "mancenter/wan/sync/map";
+        return doPost(url, wanRepName, targetGroupName, mapName).response;
+    }
+
+    public String syncMapsOverWAN(String wanRepName, String targetGroupName) throws IOException {
+        String url = address + "mancenter/wan/sync/allmaps";
+        return doPost(url, wanRepName, targetGroupName).response;
+    }
+
+    public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
+        String url = address + "mancenter/wan/clearWanQueues";
+        return doPost(url, wanRepName, targetGroupName).response;
+    }
+
+    public String addWanConfig(String wanRepConfigJson) throws IOException {
+        String url = address + "mancenter/wan/addWanConfig";
+        return doPost(url, wanRepConfigJson).response;
+    }
+
+    private static HttpURLConnection setupConnection(String url, String method) throws IOException {
         HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("POST");
+        urlConnection.setRequestMethod(method);
         urlConnection.setDoOutput(true);
         urlConnection.setDoInput(true);
         urlConnection.setUseCaches(false);
         urlConnection.setAllowUserInteraction(false);
         urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-
-        /** post the data */
-        OutputStream out = urlConnection.getOutputStream();
-        Writer writer = new OutputStreamWriter(out, "UTF-8");
-        String data = URLEncoder.encode(groupName, "UTF-8") + "&" + URLEncoder.encode(groupPassword, "UTF-8") +
-                "&" + URLEncoder.encode(newState, "UTF-8");
-        writer.write(data);
-        writer.close();
-        out.close();
-
-        return urlConnection.getResponseCode();
+        return urlConnection;
     }
 
-    public String listClusterNodes(String groupName, String groupPassword) throws IOException {
+    static class ConnectionResponse {
+        public final String response;
+        public final int responseCode;
 
-        String url = address + "management/cluster/nodes";
-        return doPost(url, groupName, groupPassword);
+        private ConnectionResponse(String response, int responseCode) {
+            this.response = response;
+            this.responseCode = responseCode;
+        }
     }
 
-    public String syncMapOverWAN(String wanRepName, String targetGroupName, String mapName) throws IOException {
-        String url = address + "wan/sync/map";
-        return doPost(url, wanRepName, targetGroupName, mapName);
-    }
-
-    public String syncMapsOverWAN(String wanRepName, String targetGroupName) throws IOException {
-        String url = address + "wan/sync/allmaps";
-        return doPost(url, wanRepName, targetGroupName);
-    }
-
-    public String wanClearQueues(String wanRepName, String targetGroupName) throws IOException {
-        String url = address + "mancenter/clearWanQueues";
-        return doPost(url, wanRepName, targetGroupName);
-    }
-
-    public String addWanConfig(String wanRepConfigJson) throws IOException {
-        String url = address + "wan/addWanConfig";
-        return doPost(url, wanRepConfigJson);
-    }
-
-    private String doGet(final String url) throws IOException {
+    private String doGet(String url) throws IOException {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {
             InputStream inputStream = httpUrlConnection.getInputStream();
@@ -243,16 +217,9 @@ public class HTTPCommunicator {
         }
     }
 
-    private String doPost(final String url, String... params) throws IOException {
-        /** set up the http connection parameters */
-        HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-        urlConnection.setRequestMethod("POST");
-        urlConnection.setDoOutput(true);
-        urlConnection.setDoInput(true);
-        urlConnection.setUseCaches(false);
-        urlConnection.setAllowUserInteraction(false);
-        urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
-        /** post the data */
+    private static ConnectionResponse doPost(String url, String... params) throws IOException {
+        HttpURLConnection urlConnection = setupConnection(url, "POST");
+        // post the data
         OutputStream out = urlConnection.getOutputStream();
         Writer writer = new OutputStreamWriter(out, "UTF-8");
         String data = "";
@@ -266,7 +233,8 @@ public class HTTPCommunicator {
             InputStream inputStream = urlConnection.getInputStream();
             byte[] buffer = new byte[4096];
             int readBytes = inputStream.read(buffer);
-            return readBytes == -1 ? "" : new String(buffer, 0, readBytes);
+            return new ConnectionResponse(readBytes == -1 ? "" : new String(buffer, 0, readBytes),
+                    urlConnection.getResponseCode());
         } finally {
             urlConnection.disconnect();
         }

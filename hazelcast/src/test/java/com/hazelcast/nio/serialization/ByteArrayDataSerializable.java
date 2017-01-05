@@ -22,10 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-/**
- * @author mdogan 22/05/14
- */
+@SuppressWarnings("unused")
 class ByteArrayDataSerializable implements DataSerializable {
+
     private byte[] data;
 
     ByteArrayDataSerializable() {
@@ -35,11 +34,13 @@ class ByteArrayDataSerializable implements DataSerializable {
         this.data = data;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(data.length);
         out.write(data);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int len = in.readInt();
         data = new byte[len];
@@ -48,12 +49,17 @@ class ByteArrayDataSerializable implements DataSerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ByteArrayDataSerializable that = (ByteArrayDataSerializable) o;
-
-        if (!Arrays.equals(data, that.data)) return false;
+        if (!Arrays.equals(data, that.data)) {
+            return false;
+        }
 
         return true;
     }
@@ -65,9 +71,6 @@ class ByteArrayDataSerializable implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SimpleDataSerializable{");
-        sb.append("data=").append(Arrays.toString(data));
-        sb.append('}');
-        return sb.toString();
+        return "SimpleDataSerializable{" + "data=" + Arrays.toString(data) + '}';
     }
 }

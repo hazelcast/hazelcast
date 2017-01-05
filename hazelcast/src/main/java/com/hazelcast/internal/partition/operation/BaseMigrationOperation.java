@@ -63,9 +63,9 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
     public final void beforeRun() throws Exception {
         try {
             onMigrationStart();
-            verifyPartitionStateVersion();
             verifyMemberUuid();
             verifyClusterState();
+            verifyPartitionStateVersion();
         } catch (Exception e) {
             onMigrationComplete(false);
             throw e;

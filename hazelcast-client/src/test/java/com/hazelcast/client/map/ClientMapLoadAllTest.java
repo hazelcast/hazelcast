@@ -2,10 +2,13 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.impl.mapstore.AbstractMapStoreTest;
+import com.hazelcast.map.impl.mapstore.MapLoaderTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.test.TestCollectionUtils.setOfValuesBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -80,6 +84,34 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
 
         assertEquals(900, map.size());
         assertRangeLoaded(map, 10, 910);
+    }
+
+    @Test
+    public void givenSpecificKeysWereReloaded_whenLoadAllIsCalled_thenAllEntriesAreLoadedFromTheStore()  {
+        String name = randomString();
+        int keysInMapStore = 10000;
+
+        Config config = new Config();
+        MapConfig mapConfig = config.getMapConfig(name);
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoaderTest.DummyMapLoader(keysInMapStore));
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapConfig.setMapStoreConfig(mapStoreConfig);
+        hazelcastFactory.newHazelcastInstance(config);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        IMap<Integer, Integer> map = client.getMap(name);
+
+        //load specific keys
+        map.loadAll(setOfValuesBetween(0, keysInMapStore), true);
+
+        //remove everything
+        map.clear();
+
+        //assert loadAll with load all entries provided by the mapLoader
+        map.loadAll(true);
+        assertEquals(keysInMapStore, map.size());
     }
 
     @Test

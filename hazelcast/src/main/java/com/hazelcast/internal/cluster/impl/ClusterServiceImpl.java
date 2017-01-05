@@ -46,6 +46,7 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
+import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -346,47 +347,103 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return memberInfos;
     }
 
-    public void updateMembers(Collection<MemberInfo> members) {
+    public boolean finalizeJoin(Collection<MemberInfo> members, Address callerAddress, String clusterId,
+                                ClusterState clusterState, ClusterVersion clusterVersion,
+                                long clusterStartTime, long masterTime) {
         lock.lock();
         try {
-            MemberMap currentMemberMap = memberMapRef.get();
-
-            if (!shouldProcessMemberUpdate(currentMemberMap, members)) {
-                return;
-            }
-
-            String scopeId = thisAddress.getScopeId();
-            Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
-            MemberImpl[] updatedMembers = new MemberImpl[members.size()];
-            int memberIndex = 0;
-            for (MemberInfo memberInfo : members) {
-                Address address = memberInfo.getAddress();
-                MemberImpl member = currentMemberMap.getMember(address);
-                if (member == null) {
-                    member = createMember(memberInfo, scopeId);
-                    newMembers.add(member);
-                    long now = clusterClock.getClusterTime();
-                    clusterHeartbeatManager.onHeartbeat(member, now);
-                    clusterHeartbeatManager.acceptMasterConfirmation(member, now);
-
-                    repairPartitionTableIfReturningMember(member);
-
+            if (!checkValidMaster(callerAddress)) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Not finalizing join because caller: " + callerAddress + " is not known master: "
+                            + getMasterAddress());
                 }
-                updatedMembers[memberIndex++] = member;
+                return false;
             }
 
-            setMembers(updatedMembers);
-            sendMembershipEvents(currentMemberMap.getMembers(), newMembers);
+            if (node.joined()) {
+                if (logger.isFineEnabled()) {
+                    logger.fine("Node is already joined... No need to finalize join...");
+                }
 
-            MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
-            membersRemovedInNotActiveStateRef.set(MemberMap.cloneExcluding(membersRemovedInNotActiveState, updatedMembers));
+                return false;
+            }
+
+            initialClusterState(clusterState, clusterVersion);
+            setClusterId(clusterId);
+            ClusterClockImpl clusterClock = getClusterClock();
+            clusterClock.setClusterStartTime(clusterStartTime);
+            clusterClock.setMasterTime(masterTime);
+            doUpdateMembers(members);
+            clusterHeartbeatManager.heartbeat();
 
             node.setJoined();
-            clusterHeartbeatManager.heartbeat();
-            logger.info(membersString());
+
+            return true;
         } finally {
             lock.unlock();
         }
+    }
+
+    public boolean updateMembers(Collection<MemberInfo> members, Address callerAddress) {
+        lock.lock();
+        try {
+            if (!checkValidMaster(callerAddress)) {
+                logger.warning("Not updating members because caller: " + callerAddress  + " is not known master: "
+                        + getMasterAddress());
+                return false;
+            }
+
+            if (!node.joined()) {
+                logger.warning("Not updating members received from caller: " + callerAddress +  " because node is not joined! ");
+                return false;
+            }
+
+            if (!shouldProcessMemberUpdate(memberMapRef.get(), members)) {
+                return false;
+            }
+
+            doUpdateMembers(members);
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private boolean checkValidMaster(Address callerAddress) {
+        return  (callerAddress != null && callerAddress.equals(getMasterAddress()));
+    }
+
+    private void doUpdateMembers(Collection<MemberInfo> members) {
+        MemberMap currentMemberMap = memberMapRef.get();
+
+        String scopeId = thisAddress.getScopeId();
+        Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
+        MemberImpl[] updatedMembers = new MemberImpl[members.size()];
+        int memberIndex = 0;
+        for (MemberInfo memberInfo : members) {
+            Address address = memberInfo.getAddress();
+            MemberImpl member = currentMemberMap.getMember(address);
+            if (member == null) {
+                member = createMember(memberInfo, scopeId);
+                newMembers.add(member);
+                long now = clusterClock.getClusterTime();
+                clusterHeartbeatManager.onHeartbeat(member, now);
+                clusterHeartbeatManager.acceptMasterConfirmation(member, now);
+
+                repairPartitionTableIfReturningMember(member);
+
+            }
+            updatedMembers[memberIndex++] = member;
+        }
+
+        setMembers(updatedMembers);
+        sendMembershipEvents(currentMemberMap.getMembers(), newMembers);
+
+        MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
+        membersRemovedInNotActiveStateRef.set(MemberMap.cloneExcluding(membersRemovedInNotActiveState, updatedMembers));
+
+        clusterHeartbeatManager.heartbeat();
+        logger.info(membersString());
     }
 
     private void repairPartitionTableIfReturningMember(MemberImpl member) {
@@ -509,7 +566,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         if (!node.joined()) {
             Address masterAddress = node.getMasterAddress();
             if (masterAddress != null && masterAddress.equals(connection.getEndPoint())) {
-                node.setMasterAddress(null);
+                clusterJoinManager.setMasterAddress(null);
             }
         }
     }
@@ -558,7 +615,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                         logger.fine(deadMember + " is dead, added to members left while cluster is " + clusterState + " state");
                     }
 
-                    if (!node.getNodeExtension().isMemberExcluded(deadAddress, deadMember.getUuid())) {
+                    final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
+                    if (!hotRestartService.isMemberExcluded(deadAddress, deadMember.getUuid())) {
                         MemberMap membersRemovedInNotActiveState = membersRemovedInNotActiveStateRef.get();
                         membersRemovedInNotActiveStateRef
                                 .set(MemberMap.cloneAdding(membersRemovedInNotActiveState, deadMember));
@@ -923,7 +981,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public HotRestartService getHotRestartService() {
-        return node.getNodeExtension().getHotRestartBackupService();
+        return node.getNodeExtension().getHotRestartService();
     }
 
     @Override
@@ -994,7 +1052,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         hazelcastInstance.getLifecycleService().shutdown();
     }
 
-    public void initialClusterState(ClusterState clusterState, ClusterVersion version) {
+    void initialClusterState(ClusterState clusterState, ClusterVersion version) {
         if (node.joined()) {
             throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
         }

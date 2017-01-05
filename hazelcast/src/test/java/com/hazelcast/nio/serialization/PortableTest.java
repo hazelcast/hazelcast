@@ -36,9 +36,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author mdogan 1/4/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class PortableTest {
@@ -108,8 +105,8 @@ public class PortableTest {
                 .addDataSerializableFactory(IDENTIFIED_FACTORY_ID, new TestDataSerializableFactory()).build();
     }
 
-    static ClassDefinition createNamedPortableClassDefinition() {
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE);
+    static ClassDefinition createNamedPortableClassDefinition(int portableVersion) {
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion);
         builder.addUTFField("name");
         builder.addIntField("myint");
         return builder.build();
@@ -117,12 +114,13 @@ public class PortableTest {
 
     @Test
     public void testRawData() {
+        int portableVersion = 1;
         final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId());
-        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition());
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId(), portableVersion);
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion));
         serializationService.getPortableContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
@@ -142,12 +140,13 @@ public class PortableTest {
 
     @Test(expected = HazelcastSerializationException.class)
     public void testRawDataInvalidWrite() {
+        int portableVersion = 1;
         final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new InvalidRawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId());
-        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition());
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId(), portableVersion);
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion));
         serializationService.getPortableContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
@@ -156,12 +155,13 @@ public class PortableTest {
 
     @Test(expected = HazelcastSerializationException.class)
     public void testRawDataInvalidRead() {
+        int portableVersion = 1;
         final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new InvalidRawDataPortable2(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
-        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId());
-        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition());
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(p.getFactoryId(), p.getClassId(), portableVersion);
+        builder.addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion));
         serializationService.getPortableContext().registerClassDefinition(builder.build());
 
         final Data data = serializationService.toData(p);
@@ -174,13 +174,13 @@ public class PortableTest {
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
         serializationConfig.setPortableVersion(1);
         serializationConfig.addClassDefinition(
-                new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE)
-                        .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build());
+                new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, 1)
+                        .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(1)).build());
 
         try {
             new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
             fail("Should throw HazelcastSerializationException!");
-        } catch (HazelcastSerializationException e) {
+        } catch (HazelcastSerializationException ignored) {
         }
 
         new DefaultSerializationServiceBuilder().setConfig(serializationConfig).setCheckClassDefErrors(false).build();
@@ -193,15 +193,16 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionConfig() throws Exception {
+        int portableVersion = 1;
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory());
-        serializationConfig.setPortableVersion(1);
+        serializationConfig.setPortableVersion(portableVersion);
         serializationConfig
                 .addClassDefinition(
-                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE)
-                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build())
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.RAW_DATA_PORTABLE, portableVersion)
+                                .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition(portableVersion)).build())
                 .addClassDefinition(
-                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
+                        new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE, portableVersion)
                                 .addUTFField("name").addIntField("myint").build());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
@@ -293,7 +294,7 @@ public class PortableTest {
     }
 
     static void testClassDefinitionLookup(InternalSerializationService ss) throws IOException {
-        NamedPortableV2 p = new NamedPortableV2("test-portable", 123456789);
+        NamedPortableV2 p = new NamedPortableV2("test-portable", 123456789, 500);
         Data data = ss.toData(p);
 
         PortableContext portableContext = ss.getPortableContext();
@@ -352,11 +353,13 @@ public class PortableTest {
 
     @Test
     public void testWriteRead_withNullPortableArray() {
-        ClassDefinitionBuilder builder0 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 1);
-        ClassDefinitionBuilder builder1 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 2);
+        int portableVersion = 1;
+        ClassDefinitionBuilder builder0 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 1, portableVersion);
+        ClassDefinitionBuilder builder1 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 2, portableVersion);
         builder0.addPortableArrayField("list", builder1.build());
 
         SerializationService ss = new DefaultSerializationServiceBuilder()
+                .setPortableVersion(portableVersion)
                 .addClassDefinition(builder0.build())
                 .addClassDefinition(builder1.build())
                 .build();
@@ -547,11 +550,11 @@ public class PortableTest {
         public void readPortable(PortableReader reader) throws IOException {
             throw new UnsupportedOperationException();
         }
-
     }
 
     public static class TestPortableFactory implements PortableFactory {
 
+        @Override
         public Portable create(int classId) {
             switch (classId) {
                 case TestSerializationConstants.MAIN_PORTABLE:
@@ -607,7 +610,7 @@ public class PortableTest {
                 .setPortableVersion(5)
                 .build();
 
-        Object o1 = new ComplexDataSerializable(new NamedPortableV2("test", 123),
+        Object o1 = new ComplexDataSerializable(new NamedPortableV2("test", 123, 500),
                 new ByteArrayDataSerializable(new byte[3]), null);
         Data data = ss.toData(o1);
 
@@ -636,7 +639,7 @@ public class PortableTest {
                 .setPortableVersion(5)
                 .build();
 
-        Portable p1 = new NamedPortableV2("test", 456);
+        Portable p1 = new NamedPortableV2("test", 456, 500);
         Object o1 = new DataDataSerializable(ss.toData(p1));
 
         Data data = ss.toData(o1);

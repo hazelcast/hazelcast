@@ -18,7 +18,7 @@ package com.hazelcast.client.map.impl.nearcache;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -58,7 +58,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.internal.nearcache.impl.invalidation.InvalidationUtils.NULL_KEY;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
@@ -1283,7 +1282,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     }
 
     private static class ClearEventCounterEventHandler
-            extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
+            extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
 
         private final AtomicInteger clearEventCount = new AtomicInteger();
 
@@ -1292,7 +1291,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
         @Override
         public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
-            if (key.equals(NULL_KEY)) {
+            if (key == null) {
                 clearEventCount.incrementAndGet();
             }
         }
@@ -1300,11 +1299,6 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         @Override
         public void handle(Collection<Data> keys, Collection<String> sourceUuids,
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
-            for (Data key : keys) {
-                if (NULL_KEY.equals(key)) {
-                    clearEventCount.incrementAndGet();
-                }
-            }
         }
 
 

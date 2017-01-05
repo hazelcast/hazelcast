@@ -23,6 +23,7 @@ import com.hazelcast.config.LockConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
@@ -52,7 +53,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 @SuppressWarnings("checkstyle:methodcount")
@@ -204,7 +204,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
             Data key = lock.getKey();
             if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                 UnlockOperation op = createLockCleanupOperation(partitionId, lockStore.getNamespace(), key, uuid);
-                operationService.run(op);
+                // op will be executed on partition thread locally. Invocation is to handle retries.
+                operationService.invokeOnTarget(SERVICE_NAME, op, nodeEngine.getThisAddress());
             }
             lockStore.cleanWaitersAndSignalsFor(key, uuid);
         }
@@ -216,7 +217,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
-        op.setOperationResponseHandler(createEmptyResponseHandler());
         op.setPartitionId(partitionId);
         op.setValidateTarget(false);
         return op;
@@ -299,11 +299,23 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public void destroyDistributedObject(String objectId) {
-        Data key = nodeEngine.getSerializationService().toData(objectId);
-        for (LockStoreContainer container : containers) {
-            InternalLockNamespace namespace = new InternalLockNamespace(objectId);
-            LockStoreImpl lockStore = container.getOrCreateLockStore(namespace);
-            lockStore.forceUnlock(key);
+        final Data key = nodeEngine.getSerializationService().toData(objectId, StringPartitioningStrategy.INSTANCE);
+        final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        final LockStoreImpl lockStore = containers[partitionId].getLockStore(new InternalLockNamespace(objectId));
+
+        if (lockStore != null) {
+            InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+            operationService.execute(new PartitionSpecificRunnable() {
+                @Override
+                public void run() {
+                    lockStore.forceUnlock(key);
+                }
+
+                @Override
+                public int getPartitionId() {
+                    return partitionId;
+                }
+            });
         }
     }
 

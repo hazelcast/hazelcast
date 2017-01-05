@@ -43,8 +43,8 @@ import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ContextMutexFactory;
 import com.hazelcast.util.ExceptionUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -93,6 +93,15 @@ public abstract class AbstractCacheService
                     return new CacheStatisticsImpl(
                             Clock.currentTimeMillis(),
                             CacheEntryCountResolver.createEntryCountResolver(getOrCreateCacheContext(name)));
+                }
+            };
+    // mutex factory ensures each Set<Closeable> of cache resources is only constructed and inserted in resources map once
+    protected final ContextMutexFactory cacheResourcesMutexFactory = new ContextMutexFactory();
+    protected final ConstructorFunction<String, Set<Closeable>> cacheResourcesConstructorFunction =
+            new ConstructorFunction<String, Set<Closeable>>() {
+                @Override
+                public Set<Closeable> createNew(String name) {
+                    return Collections.newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
                 }
             };
 
@@ -552,28 +561,23 @@ public abstract class AbstractCacheService
 
     protected abstract CacheOperationProvider createOperationProvider(String nameWithPrefix, InMemoryFormat inMemoryFormat);
 
-    @SuppressFBWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER", justification =
-            "several ops performed on concurrent map, need synchronization for atomicity")
     public void addCacheResource(String name, Closeable resource) {
-        Set<Closeable> cacheResources = resources.get(name);
-        if (cacheResources == null) {
-            synchronized (resources) {
-                // In case of creation of resource set for specified cache name, we checks double from resources map.
-                // But this happens only once for each cache and this prevents other calls
-                // from unnecessary "synchronized" lock on "resources" instance
-                // since "cacheResources" will not be for specified cache name.
-                cacheResources = resources.get(name);
-                if (cacheResources == null) {
-                    cacheResources = Collections.newSetFromMap(new ConcurrentHashMap<Closeable, Boolean>());
-                    resources.put(name, cacheResources);
-                }
-            }
-        }
+        Set<Closeable> cacheResources = ConcurrencyUtil.getOrPutSynchronized(resources, name, cacheResourcesMutexFactory,
+                cacheResourcesConstructorFunction);
         cacheResources.add(resource);
     }
 
     private void deleteCacheResources(String name) {
-        Set<Closeable> cacheResources = resources.remove(name);
+        Set<Closeable> cacheResources;
+        ContextMutexFactory.Mutex mutex = cacheResourcesMutexFactory.mutexFor(name);
+        try {
+            synchronized (mutex) {
+                cacheResources = resources.remove(name);
+            }
+        } finally {
+            mutex.close();
+        }
+
         if (cacheResources != null) {
             for (Closeable resource : cacheResources) {
                 IOUtil.closeResource(resource);

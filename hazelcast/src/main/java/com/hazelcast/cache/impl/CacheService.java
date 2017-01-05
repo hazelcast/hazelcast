@@ -41,7 +41,7 @@ import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
  * </ul>
  * </p>
  * <p><b>WARNING:</b>This service is an optionally registered service which is enabled when JCache
- * is located on the classpath, as determined by {@link JCacheDetector#isJcacheAvailable(ClassLoader)}.</p>
+ * is located on the classpath, as determined by {@link JCacheDetector#isJCacheAvailable(ClassLoader)}.</p>
  * <p>
  * If registered, it will provide all the above cache operations for all partitions of the node which it
  * is registered on.

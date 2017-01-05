@@ -129,7 +129,6 @@ public class Query implements IdentifiedDataSerializable {
         this.projection = in.readObject();
     }
 
-
     public static final class QueryBuilder {
         private String mapName;
         private Predicate predicate;

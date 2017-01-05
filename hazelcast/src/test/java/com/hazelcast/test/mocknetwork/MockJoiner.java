@@ -19,30 +19,32 @@ package com.hazelcast.test.mocknetwork;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
-import com.hazelcast.internal.cluster.impl.ClusterJoinManager;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 class MockJoiner extends AbstractJoiner {
 
     private static final long JOIN_ADDRESS_TIMEOUT_IN_MILLIS = 5000;
 
-
+    // blacklisted addresses
+    private final Set<Address> blacklist;
     private final TestNodeRegistry registry;
 
-    MockJoiner(Node node, TestNodeRegistry registry) {
+    MockJoiner(Node node, TestNodeRegistry registry, Set<Address> initiallyBlockedAddresses) {
         super(node);
         this.registry = registry;
+        this.blacklist = new CopyOnWriteArraySet<Address>(initiallyBlockedAddresses);
     }
 
     public void doJoin() {
         registry.registerNode(node);
 
-        ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
         final long joinStartTime = Clock.currentTimeMillis();
         final long maxJoinMillis = getMaxJoinMillis();
 
@@ -60,21 +62,21 @@ class MockJoiner extends AbstractJoiner {
 
                 if (node.getThisAddress().equals(joinAddress)) {
                     logger.fine("This node is found as master, no need to join.");
-                    node.setAsMaster();
+                    clusterJoinManager.setAsMaster();
                     break;
                 }
 
                 logger.fine("Sending join request to " + joinAddress);
                 if (!clusterJoinManager.sendJoinRequest(joinAddress, true)) {
                     logger.fine("Could not send join request to " + joinAddress);
-                    node.setMasterAddress(null);
+                    clusterJoinManager.setMasterAddress(null);
                 }
 
                 if (Clock.currentTimeMillis() > joinAddressTimeout) {
                     logger.warning("Resetting master address because join address timeout");
                     previousJoinAddress = null;
                     joinAddressTimeout = 0;
-                    node.setMasterAddress(null);
+                    clusterJoinManager.setMasterAddress(null);
                 }
             }
             try {
@@ -135,6 +137,11 @@ class MockJoiner extends AbstractJoiner {
                 continue;
             }
 
+            if (isBlacklisted(address)) {
+                logger.fine("Node for " + address + " is blacklisted and should not be joined.");
+                continue;
+            }
+
             logger.fine("Found an alive node. Will ask master of " + address);
             return foundNode;
         }
@@ -165,16 +172,18 @@ class MockJoiner extends AbstractJoiner {
 
     @Override
     public void blacklist(Address address, boolean permanent) {
+        // blacklist is always temporary in MockJoiner
+        blacklist.add(address);
     }
 
     @Override
     public boolean unblacklist(Address address) {
-        return false;
+        return blacklist.remove(address);
     }
 
     @Override
     public boolean isBlacklisted(Address address) {
-        return false;
+        return blacklist.contains(address);
     }
 
     private static void verifyInvariant(boolean check, String msg) {

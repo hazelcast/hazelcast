@@ -117,6 +117,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         }
     }
 
+    @Override
     public Collection<Integer> getPartitionIds() {
         return partitionIds;
     }
@@ -134,6 +135,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
     public void onCombineFinished() {
     }
 
+    @Override
     public void setPartitionIds(Collection<Integer> partitionIds) {
         this.partitionIds = new ArrayList<Integer>(partitionIds);
     }
