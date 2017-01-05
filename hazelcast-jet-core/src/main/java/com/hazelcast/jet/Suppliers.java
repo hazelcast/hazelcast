@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
- * Javadoc pending.
+ * Utility class with several {@code java.util.function.Supplier}s useful in {@code Processor}
+ * implementations.
  */
-public class Suppliers {
+public final class Suppliers {
+
+    private Suppliers() {
+
+    }
 
     /**
      * Returns a supplier of all the items retrieved from an iterator. Both the iterator
@@ -66,7 +71,7 @@ public class Suppliers {
         });
     }
 
-    static class LazyIteratingSupplier<T> implements Supplier<T> {
+    static final class LazyIteratingSupplier<T> implements Supplier<T> {
         private final Supplier<Iterator<T>> iterSupplier;
         private Iterator<T> iterator;
 
@@ -81,7 +86,7 @@ public class Suppliers {
         }
     }
 
-    static class MappingSupplier<T, R> implements Supplier<R> {
+    static final class MappingSupplier<T, R> implements Supplier<R> {
 
         private final Supplier<T> wrapped;
         private final Function<T, R> transformation;

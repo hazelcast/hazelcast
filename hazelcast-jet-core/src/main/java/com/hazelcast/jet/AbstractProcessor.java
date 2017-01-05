@@ -135,7 +135,7 @@ public abstract class AbstractProcessor implements Processor {
         return new TryProcessor<>(lazyTransformer);
     }
 
-    protected class TryProcessor<T, R> {
+    protected final class TryProcessor<T, R> {
 
         private final Function<T, Supplier<R>> lazyTransformer;
         private Supplier<R> outputSupplier;
