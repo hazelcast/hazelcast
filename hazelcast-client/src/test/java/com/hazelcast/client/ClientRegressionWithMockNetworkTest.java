@@ -252,9 +252,10 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
         list.offer(LifecycleState.SHUTTING_DOWN);
         list.offer(LifecycleState.SHUTDOWN);
 
-        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         final CountDownLatch latch = new CountDownLatch(list.size());
         final CountDownLatch connectedLatch = new CountDownLatch(2);
+        final CountDownLatch disconnectedLatch = new CountDownLatch(2);
         LifecycleListener listener = new LifecycleListener() {
             public void stateChanged(LifecycleEvent event) {
                 Logger.getLogger(getClass()).info("stateChanged: " + event);
@@ -265,6 +266,9 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
                 }
                 if (LifecycleState.CLIENT_CONNECTED.equals(eventState)) {
                     connectedLatch.countDown();
+                }
+                if (LifecycleState.CLIENT_DISCONNECTED.equals(eventState)) {
+                    disconnectedLatch.countDown();
                 }
             }
         };
@@ -278,13 +282,16 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
         hazelcastFactory.newHazelcastInstance();
 
-        assertTrue("LifecycleState failed. Expected two CLIENT_CONNECTED events!" , connectedLatch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually("LifecycleState failed. Expected two CLIENT_CONNECTED events!", connectedLatch);
 
         hazelcastFactory.shutdownAllMembers();
 
+        //wait for disconnect then call client.shutdown(). Otherwise shutdown could prevent firing DISCONNECTED event
+        assertOpenEventually("LifecycleState failed. Expected two CLIENT_DISCONNECTED events!", disconnectedLatch);
+
         hazelcastClient.shutdown();
 
-        assertTrue("LifecycleState failed" , latch.await(60, TimeUnit.SECONDS));
+        assertOpenEventually("LifecycleState failed", latch);
     }
 
 
