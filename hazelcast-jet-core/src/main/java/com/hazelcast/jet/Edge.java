@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
+import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -142,11 +143,11 @@ public class Edge implements IdentifiedDataSerializable {
      * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
      * pattern and applies the default Hazelcast partitioning strategy. The strategy
      * is not applied directly to the item, but to the result of the supplied
-     * {@code KeyExtractor} function.
+     * {@code keyExtractor} function.
      */
-    public Edge partitionedByKey(KeyExtractor extractor) {
+    public <T, R> Edge partitionedByKey(Distributed.Function<T, R> keyExtractor) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Keyed(extractor);
+        this.partitioner = new Keyed<>(keyExtractor);
         return this;
     }
 
@@ -339,16 +340,16 @@ public class Edge implements IdentifiedDataSerializable {
         }
     }
 
-    private static class Keyed extends Default {
-        private KeyExtractor extractor;
+    private static class Keyed<T, R> extends Default {
+        private Distributed.Function<T, R> keyExtractor;
 
-        Keyed(KeyExtractor extractor) {
-            this.extractor = extractor;
+        Keyed(Distributed.Function<T, R> keyExtractor) {
+            this.keyExtractor = keyExtractor;
         }
 
         @Override
         public int getPartition(Object item, int partitionCount) {
-            return defaultPartitioning.getPartition(extractor.extract(item));
+            return defaultPartitioning.getPartition(keyExtractor.apply((T) item));
         }
     }
 
