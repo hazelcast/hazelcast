@@ -14,6 +14,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -28,55 +29,119 @@ public class LocalEntryEventDataTest extends HazelcastTestSupport {
     private LocalEntryEventData dataEvent;
 
     @Before
-    public void before() {
+    public void setUp() {
         serializationService = new DefaultSerializationServiceBuilder().build();
-        objectEvent = new LocalEntryEventData(serializationService, "source", 1, "key", "oldValue", "value", 1);
-        dataEvent = new LocalEntryEventData(serializationService, "source", 1, toData("key"), toData("oldValue"), toData("value"), 1);
+        objectEvent = new LocalEntryEventData(serializationService, "source", 23, "key", "oldValue", "value", 42);
+        dataEvent = new LocalEntryEventData(serializationService, "source", 23, toData("key"), toData("oldValue"),
+                toData("value"), 42);
     }
 
     @After
-    public void after() {
+    public void tearDown() {
         serializationService.dispose();
     }
 
     @Test
-    public void test_getValue_withDataValue() throws Exception {
+    public void testGetValue_withDataValue() {
         assertEquals("value", dataEvent.getValue());
     }
 
     @Test
-    public void test_getValue_withObjectValue() throws Exception {
+    public void testGetValue_withObjectValue() {
         assertEquals("value", objectEvent.getValue());
     }
 
     @Test
-    public void test_getOldValue_withDataValue() throws Exception {
+    public void testGetOldValue_withDataValue() {
         assertEquals("oldValue", dataEvent.getOldValue());
     }
 
     @Test
-    public void test_getOldValue_withObjectValue() throws Exception {
+    public void testGetOldValue_withObjectValue() {
         assertEquals("oldValue", objectEvent.getOldValue());
     }
 
     @Test
-    public void test_getValueData_withDataValue() throws Exception {
+    public void testGetKey_withDataKey() {
+        assertEquals("key", dataEvent.getKey());
+    }
+
+    @Test
+    public void testGetKey_withObjectKey() {
+        assertEquals("key", objectEvent.getKey());
+    }
+
+    @Test
+    public void testGetKeyData_withDataKey() {
+        assertEquals(toData("key"), dataEvent.getKeyData());
+    }
+
+    @Test
+    public void testGetKeyData_withObjectKey() {
+        assertEquals(toData("key"), objectEvent.getKeyData());
+    }
+
+    @Test
+    public void testGetValueData_withDataValue() {
         assertEquals(toData("value"), dataEvent.getValueData());
     }
 
     @Test
-    public void test_getValueData_withObjectValue() throws Exception {
+    public void testGetValueData_withObjectValue() {
         assertEquals(toData("value"), objectEvent.getValueData());
     }
 
     @Test
-    public void test_getOldValueData_withDataValue() throws Exception {
+    public void testGetOldValueData_withDataValue() {
         assertEquals(toData("oldValue"), dataEvent.getOldValueData());
     }
 
     @Test
-    public void test_getOldValueData_withObjectValue() throws Exception {
+    public void testGetOldValueData_withObjectValue() {
         assertEquals(toData("oldValue"), objectEvent.getOldValueData());
+    }
+
+    @Test
+    public void testGetSource() {
+        assertEquals("source", dataEvent.getSource());
+        assertEquals("source", objectEvent.getSource());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetMapName() {
+        dataEvent.getMapName();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetCaller() {
+        dataEvent.getCaller();
+    }
+
+    @Test
+    public void testGetEventType() {
+        assertEquals(23, dataEvent.getEventType());
+        assertEquals(23, objectEvent.getEventType());
+    }
+
+    @Test
+    public void testGetPartitionId() {
+        assertEquals(42, dataEvent.getPartitionId());
+        assertEquals(42, objectEvent.getPartitionId());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testWriteData() throws Exception {
+        dataEvent.writeData(null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadData() throws Exception {
+        dataEvent.readData(null);
+    }
+
+    @Test
+    public void testToString() {
+        assertTrue(dataEvent.toString().contains("LocalEntryEventData"));
     }
 
     private Data toData(Object obj) {

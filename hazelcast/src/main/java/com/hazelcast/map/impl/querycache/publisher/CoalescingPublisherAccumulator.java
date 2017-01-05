@@ -34,17 +34,16 @@ import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
- * {@link com.hazelcast.map.impl.querycache.accumulator.Accumulator Accumulator} which coalesces
- * keys during accumulation.
+ * An {@link com.hazelcast.map.impl.querycache.accumulator.Accumulator} which coalesces keys during accumulation.
  */
-public class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventData> {
+class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheEventData> {
 
     /**
      * Index map to hold last unpublished event sequence per key.
      */
     private final Map<Data, Long> index = new HashMap<Data, Long>();
 
-    public CoalescingPublisherAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    CoalescingPublisherAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
     }
 
@@ -74,15 +73,14 @@ public class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheE
         }
 
         if (logger.isFinestEnabled()) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(format("Added to index key=%s, sequence=%d, indexSize=%d",
-                        eventData.getKey(), eventData.getSequence(), index.size()));
-            }
+            logger.finest(format("Added to index key=%s, sequence=%d, indexSize=%d",
+                    eventData.getKey(), eventData.getSequence(), index.size()));
         }
     }
 
     @Override
-    protected AccumulatorProcessor createAccumulatorProcessor(AccumulatorInfo info, QueryCacheEventService eventService) {
+    protected AccumulatorProcessor<Sequenced> createAccumulatorProcessor(AccumulatorInfo info,
+                                                                         QueryCacheEventService eventService) {
         return new CoalescedEventAccumulatorProcessor(info, eventService);
     }
 
@@ -91,7 +89,7 @@ public class CoalescingPublisherAccumulator extends BasicAccumulator<QueryCacheE
      */
     private class CoalescedEventAccumulatorProcessor extends EventPublisherAccumulatorProcessor {
 
-        public CoalescedEventAccumulatorProcessor(AccumulatorInfo info, QueryCacheEventService eventService) {
+        CoalescedEventAccumulatorProcessor(AccumulatorInfo info, QueryCacheEventService eventService) {
             super(info, eventService);
         }
 

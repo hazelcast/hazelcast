@@ -31,7 +31,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
 
     private class TestMapSubscriberRegistry extends MapSubscriberRegistry {
 
-        public TestMapSubscriberRegistry(QueryCacheContext context) {
+        TestMapSubscriberRegistry(QueryCacheContext context) {
             super(context);
         }
 
@@ -43,7 +43,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
 
     private class TestSubscriberRegistry extends SubscriberRegistry {
 
-        public TestSubscriberRegistry(QueryCacheContext context, String mapName) {
+        TestSubscriberRegistry(QueryCacheContext context, String mapName) {
             super(context, mapName);
         }
 
@@ -55,7 +55,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
 
     private class TestSubscriberAccumulatorFactory extends SubscriberAccumulatorFactory {
 
-        public TestSubscriberAccumulatorFactory(QueryCacheContext context) {
+        TestSubscriberAccumulatorFactory(QueryCacheContext context) {
             super(context);
         }
 
@@ -69,7 +69,7 @@ public class TestSubscriberContext extends NodeSubscriberContext {
 
         private final Set<Long> lostSequenceNumber = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
 
-        public TestSubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+        TestSubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
             super(context, info);
 
             if (enableEventLoss) {
@@ -82,7 +82,6 @@ public class TestSubscriberContext extends NodeSubscriberContext {
         protected boolean isNextEvent(Sequenced event) {
             DefaultQueryCacheEventData eventData = (DefaultQueryCacheEventData) event;
             if (lostSequenceNumber.remove(event.getSequence())) {
-
                 // create an out of order event by changing actual sequence
                 DefaultQueryCacheEventData copy = new DefaultQueryCacheEventData(eventData);
                 copy.setSequence(eventData.getSequence() * 2);

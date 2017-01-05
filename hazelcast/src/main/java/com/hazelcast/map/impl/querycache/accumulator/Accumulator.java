@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.querycache.accumulator;
 
-import com.hazelcast.map.impl.querycache.event.sequence.PartitionSequencer;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 
 import java.util.Iterator;
@@ -39,19 +38,9 @@ public interface Accumulator<E extends Sequenced> extends Iterable<E> {
     void accumulate(E event);
 
     /**
-     * Reads all items starting from the supplied {@code sequence}. This method does not advance
-     * head of this accumulator.
-     *
-     * @param handler  handler to process this accumulator.
-     * @param sequence read this accumulator by starting inclusively from this sequence.
-     * @return the number of elements read.
-     */
-    int peek(AccumulatorHandler<E> handler, long sequence);
-
-    /**
      * Reads this accumulator if it contains at least {@code maxItems}, otherwise
      * do not read anything. If this method adds items to the supplied handler, head of this accumulator advances.
-     * <p/>
+     *
      * Used for batching purposes.
      *
      * @param handler  handler to process this accumulator.
@@ -70,13 +59,6 @@ public interface Accumulator<E extends Sequenced> extends Iterable<E> {
      * @return the number of elements polled.
      */
     int poll(AccumulatorHandler<E> handler, long delay, TimeUnit unit);
-
-    /**
-     * Returns the {@link PartitionSequencer} of this accumulator.
-     *
-     * @return {@link PartitionSequencer} of this accumulator.
-     */
-    PartitionSequencer getPartitionSequencer();
 
     /**
      * Returns an iterator over the items in this accumulator in proper sequence.
@@ -119,6 +101,7 @@ public interface Accumulator<E extends Sequenced> extends Iterable<E> {
 
     /**
      * Resets this accumulator.
+     *
      * After return of this call, accumulator will be in its initial state.
      */
     void reset();

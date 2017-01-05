@@ -37,24 +37,24 @@ import static java.util.logging.Level.WARNING;
  * If all incoming events are in the correct sequence order, this accumulator applies those events to
  * {@link com.hazelcast.map.QueryCache QueryCache}.
  * Otherwise, it informs registered callback if there is any.
- * <p/>
+ *
  * This class can be accessed by multiple-threads at a time.
  */
 public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData> {
 
-    private final AccumulatorHandler handler;
-    private final SubscriberSequencerProvider sequenceProvider;
     /**
      * When a partition's sequence order is broken, it will be registered here.
      */
-    private final ConcurrentMap<Integer, Long> brokenSequences;
+    private final ConcurrentMap<Integer, Long> brokenSequences = new ConcurrentHashMap<Integer, Long>();
 
-    public SubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
+    private final AccumulatorHandler handler;
+    private final SubscriberSequencerProvider sequenceProvider;
+
+    protected SubscriberAccumulator(QueryCacheContext context, AccumulatorInfo info) {
         super(context, info);
 
         this.handler = createAccumulatorHandler();
         this.sequenceProvider = createSequencerProvider();
-        this.brokenSequences = new ConcurrentHashMap<Integer, Long>();
     }
 
     @Override
