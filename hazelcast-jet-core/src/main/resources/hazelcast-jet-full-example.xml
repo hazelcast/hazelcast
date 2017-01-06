@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-0.3.xsd"
+               xmlns="http://www.hazelcast.com/schema/jet-config"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <!-- number of threads to use for DAG execution -->
+    <execution-thread-count>8</execution-thread-count>
+    <!-- working directory to use for placing temporary files -->
+    <working-directory>/var/tmp/jet</working-directory>
+    <!-- frequency of flow control packets, in milliseconds -->
+    <flow-control-period>100</flow-control-period>
+    <edge-defaults>
+        <!-- number of available slots for each concurrent queue between two vertices -->
+        <queue-size>1024</queue-size>
+
+        <!-- number of slots before high water is triggered for the outbox -->
+        <high-water-mark>2048</high-water-mark>
+
+        <!-- maximum packet size in bytes, only applies to distributed edges -->
+        <packet-size-limit>16384</packet-size-limit>
+
+        <!-- target receive window size multiplier, only applies to distributed edges -->
+        <receive-window-multiplier>3</receive-window-multiplier>
+    </edge-defaults>
+    <!-- custom properties which can be read within a ProcessorSupplier -->
+    <properties>
+        <property name="custom.property">custom property</property>
+    </properties>
+</hazelcast-jet>
