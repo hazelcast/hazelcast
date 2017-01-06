@@ -122,8 +122,8 @@ public class ManagementCenterService {
         this.timedMemberStateFactory = new TimedMemberStateFactory(instance);
         this.identifier = newManagementCenterIdentifier();
 
-        if (this.managementCenterConfig.isEnabled()) {
-            this.instance.getCluster().addMembershipListener(new ManagementCenterService.MemberListenerImpl());
+        if (managementCenterConfig.isEnabled()) {
+            this.instance.getCluster().addMembershipListener(new MemberListenerImpl());
             start();
         }
     }
