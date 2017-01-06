@@ -21,7 +21,6 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntries;
@@ -128,11 +127,6 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     private void fireMapDataLoadingTasks() {
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            Address thisAddress = nodeEngine.getThisAddress();
-            Address ownerAddress = partitionService.getPartitionOwner(i);
-            if (thisAddress.equals(ownerAddress)) {
-                continue;
-            }
             requestDataForPartition(i);
         }
     }

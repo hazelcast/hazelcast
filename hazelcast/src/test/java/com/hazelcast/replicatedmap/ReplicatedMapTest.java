@@ -88,8 +88,36 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
     }
 
     @Test
+    public void testAddObjectSyncFillup() throws Exception {
+        Config config = buildConfig(InMemoryFormat.OBJECT);
+        config.getReplicatedMapConfig("default").setAsyncFillup(false);
+        testFillUp(config);
+    }
+
+    @Test
+    public void testAddObjectAsyncFillup() throws Exception {
+        Config config = buildConfig(InMemoryFormat.OBJECT);
+        config.getReplicatedMapConfig("default").setAsyncFillup(true);
+        testFillUp(config);
+    }
+
+    @Test
     public void testAddBinary() throws Exception {
         testAdd(buildConfig(InMemoryFormat.BINARY));
+    }
+
+    @Test
+    public void testAddBinarySyncFillup() throws Exception {
+        Config config = buildConfig(InMemoryFormat.BINARY);
+        config.getReplicatedMapConfig("default").setAsyncFillup(false);
+        testFillUp(config);
+    }
+
+    @Test
+    public void testAddBinaryAsyncFillup() throws Exception {
+        Config config = buildConfig(InMemoryFormat.BINARY);
+        config.getReplicatedMapConfig("default").setAsyncFillup(true);
+        testFillUp(config);
     }
 
     private void testAdd(Config config) throws Exception {
@@ -114,6 +142,32 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
                     throws Exception {
                 for (String key : keys) {
                     assertEquals("bar", map1.get(key));
+                    assertEquals("bar", map2.get(key));
+                }
+            }
+        });
+    }
+
+    private void testFillUp(Config config) {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final int partitionCount = getPartitionService(instance1).getPartitionCount();
+        final Set<String> keys = generateRandomKeys(instance1, partitionCount);
+        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap("default");
+        for (String key : keys) {
+            map1.put(key, "bar");
+        }
+
+        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap("default");
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                for (String key : keys) {
                     assertEquals("bar", map2.get(key));
                 }
             }
