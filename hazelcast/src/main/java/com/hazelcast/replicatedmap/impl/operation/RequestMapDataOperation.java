@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -56,39 +57,30 @@ public class RequestMapDataOperation extends AbstractOperation {
     public void run() throws Exception {
         ILogger logger = getLogger();
         int partitionId = getPartitionId();
+        Address callerAddress = getCallerAddress();
         if (logger.isFineEnabled()) {
-            logger.fine("Caller { " + getCallerAddress() + " } requested copy of map: " + name
+            logger.fine("Caller { " + callerAddress + " } requested copy of map: " + name
                     + " partitionId=" + partitionId);
         }
         ReplicatedMapService service = getService();
         PartitionContainer container = service.getPartitionContainer(partitionId);
-        ReplicatedRecordStore store = container.getRecordStore(name);
-        if (store == null) {
-            if (logger.isFineEnabled()) {
-                logger.fine("No store is found for map: " + name + " to respond data request. partitionId=" + partitionId);
-            }
+        ReplicatedRecordStore store = container.getOrCreateRecordStore(name);
+        store.setLoaded(true);
 
+        if (getNodeEngine().getThisAddress().equals(callerAddress)) {
             return;
         }
+
         long version = store.getVersion();
         Set<RecordMigrationInfo> recordSet = getRecordSet(store);
-        if (recordSet.isEmpty()) {
-            if (logger.isFineEnabled()) {
-                logger.fine("No data is found on this store for map: " + name +  " to respond data request. partitionId="
-                        + partitionId);
-            }
-            return;
-        }
         SyncReplicatedMapDataOperation op = new SyncReplicatedMapDataOperation(name, recordSet, version);
         op.setPartitionId(partitionId);
         op.setValidateTarget(false);
         OperationService operationService = getNodeEngine().getOperationService();
-        operationService
-                .createInvocationBuilder(SERVICE_NAME, op, getCallerAddress())
-                .setTryCount(INVOCATION_TRY_COUNT)
-                .invoke();
+        operationService.createInvocationBuilder(SERVICE_NAME, op, callerAddress)
+                        .setTryCount(INVOCATION_TRY_COUNT)
+                        .invoke();
     }
-
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
         Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());
