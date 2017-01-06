@@ -40,8 +40,8 @@ public class XmlConfigTest {
         JetConfig jetConfig = XmlJetConfigBuilder.getConfig(new Properties());
 
         // Then
-        assertNull("workingDirectory", jetConfig.getWorkingDirectory());
         assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getExecutionThreadCount());
+        assertEquals(JetConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getFlowControlPeriodMs());
     }
 
 

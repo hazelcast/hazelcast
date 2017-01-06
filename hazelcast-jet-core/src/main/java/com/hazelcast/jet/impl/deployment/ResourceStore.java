@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -101,11 +100,8 @@ public class ResourceStore {
 
     private Path createStorageDirectory(String storagePath) {
         try {
-            if (storagePath == null) {
-                return Files.createTempDirectory("hazelcast-jet-");
-            }
-            Path path = Paths.get(storagePath);
-            if (!path.toFile().mkdirs()) {
+            Path path = Paths.get(storagePath, "resources");
+            if (!path.toFile().exists() && !path.toFile().mkdirs()) {
                 throw new IOException("Could not create requested storage path " + storagePath);
             }
             return path;

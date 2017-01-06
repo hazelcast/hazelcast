@@ -18,7 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.config.Config;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Javadoc pending
@@ -90,6 +95,15 @@ public class JetConfig {
      * @return the working directory used for storing deployed resources
      */
     public String getWorkingDirectory() {
+        if (workingDirectory == null) {
+            try {
+                Path tempDirectory = Files.createTempDirectory("hazelcast-jet");
+                tempDirectory.toFile().deleteOnExit();
+                workingDirectory = tempDirectory.toString();
+            } catch (IOException e) {
+                throw rethrow(e);
+            }
+        }
         return workingDirectory;
     }
 
