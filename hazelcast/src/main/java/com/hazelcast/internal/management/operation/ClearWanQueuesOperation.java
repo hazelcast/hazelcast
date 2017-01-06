@@ -28,9 +28,6 @@ public class ClearWanQueuesOperation extends AbstractLocalOperation {
     private String schemeName;
     private String publisherName;
 
-    public ClearWanQueuesOperation() {
-    }
-
     public ClearWanQueuesOperation(String schemeName, String publisherName) {
         this.schemeName = schemeName;
         this.publisherName = publisherName;
