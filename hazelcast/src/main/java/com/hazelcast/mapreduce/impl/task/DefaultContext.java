@@ -22,11 +22,11 @@ import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.impl.CombinerResultList;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +91,7 @@ public class DefaultContext<KeyIn, ValueIn>
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
         int mapSize = MapReduceUtil.mapSize(combiners.size());
-        Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>((int) (mapSize * 1.35 + 1));
+        Map<KeyIn, Chunk> chunkMap = MapUtil.createHashMapAdapter(mapSize);
         for (Map.Entry<KeyIn, Combiner<ValueIn, ?>> entry : combiners.entrySet()) {
             Combiner<ValueIn, ?> combiner = entry.getValue();
             Chunk chunk = (Chunk) combiner.finalizeChunk();

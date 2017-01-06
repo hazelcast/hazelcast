@@ -24,6 +24,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.Map;
@@ -46,7 +47,7 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
 
     public CheckReplicaVersionOperation(PartitionContainer container) {
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
-        versions = new ConcurrentHashMap<String, Long>((int) (stores.size() * 1.35 + 1));
+        versions = MapUtil.createConcurrentHashMap(stores.size());
         for (Map.Entry<String, ReplicatedRecordStore> storeEntry : stores.entrySet()) {
             String name = storeEntry.getKey();
             ReplicatedRecordStore store = storeEntry.getValue();
