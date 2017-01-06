@@ -32,6 +32,7 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -866,8 +867,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
      * Shutting down the cluster should act as the ExecutorService shutdown
      */
     @Test(expected = RejectedExecutionException.class)
-    public void testClusterShutdown() {
-        ExecutorService executor = createSingleNodeExecutorService("testClusterShutdown");
+    public void test_whenClusterShutdown_thenNewTasksShouldBeRejected() {
+        ExecutorService executor = createSingleNodeExecutorService("testClusterShutdownTaskRejection");
         shutdownNodeFactory();
         sleepSeconds(2);
 
@@ -878,6 +879,30 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         // new tasks must be rejected
         Callable<String> task = new BasicTestCallable();
         executor.submit(task);
+    }
+
+    @Test
+    public void testClusterShutdown_whenMultipleNodes_thenAllExecutorsAreShutdown() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+
+        final ExecutorService es1 = instance1.getExecutorService("testClusterShutdown");
+        final ExecutorService es2 = instance1.getExecutorService("testClusterShutdown");
+
+        assertFalse(es1.isTerminated());
+        assertFalse(es2.isTerminated());
+
+        // we shutdown the ExecutorService on the first instance
+        es1.shutdown();
+
+        // the ExecutorService on the second instance should be shutdown via a ShutdownOperation
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(es2.isTerminated());
+            }
+        });
     }
 
     @Test
