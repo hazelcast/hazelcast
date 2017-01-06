@@ -33,16 +33,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-/**
- *
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DistributedExecutorServiceTest extends HazelcastTestSupport {
@@ -69,24 +65,22 @@ public class DistributedExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorConfigCache_whenTaskSubmitted_thenConfigCached()
-            throws ExecutionException, InterruptedException {
+    public void testExecutorConfigCache_whenTaskSubmitted_thenConfigCached() throws Exception {
         IExecutorService executorService = hz.getExecutorService(EXECUTOR_NAME);
-        Future f = executorService.submit(new EmptyRunnable());
-        f.get();
+        Future future = executorService.submit(new EmptyRunnable());
+        future.get();
         assertEquals("Executor config cache should have cached one element", 1,
                 distributedExecutorService.executorConfigCache.size());
     }
 
     @Test
-    public void testExecutorConfigCache_whenSecondTaskSubmitted_thenCachedConfigIsSame()
-            throws ExecutionException, InterruptedException {
+    public void testExecutorConfigCache_whenSecondTaskSubmitted_thenCachedConfigIsSame() throws Exception {
         IExecutorService executorService = hz.getExecutorService(EXECUTOR_NAME);
-        Future f = executorService.submit(new EmptyRunnable());
-        f.get();
+        Future future = executorService.submit(new EmptyRunnable());
+        future.get();
         ExecutorConfig cachedConfig = distributedExecutorService.executorConfigCache.get(EXECUTOR_NAME);
-        f = executorService.submit(new EmptyRunnable());
-        f.get();
+        future = executorService.submit(new EmptyRunnable());
+        future.get();
         assertEquals("Executor config cache should have cached one element", 1,
                 distributedExecutorService.executorConfigCache.size());
         assertSame("Executor config cache should have reused the same ExecutorConfig", cachedConfig,
@@ -94,11 +88,10 @@ public class DistributedExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorConfigCache_whenUsedExecutorShutdown_thenConfigRemoved()
-            throws ExecutionException, InterruptedException {
+    public void testExecutorConfigCache_whenUsedExecutorShutdown_thenConfigRemoved() throws Exception {
         final IExecutorService executorService = hz.getExecutorService(EXECUTOR_NAME);
-        Future f = executorService.submit(new EmptyRunnable());
-        f.get();
+        Future future = executorService.submit(new EmptyRunnable());
+        future.get();
         executorService.shutdown();
         assertTrueEventually(new AssertTask() {
             @Override
@@ -112,6 +105,7 @@ public class DistributedExecutorServiceTest extends HazelcastTestSupport {
     }
 
     static class EmptyRunnable implements Runnable, Serializable, PartitionAware {
+
         @Override
         public void run() {
         }
