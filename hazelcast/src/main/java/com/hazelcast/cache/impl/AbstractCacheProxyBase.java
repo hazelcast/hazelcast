@@ -223,7 +223,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
                 IPartitionService partitionService = getNodeEngine().getPartitionService();
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
-                Map<Integer, Object> results = MapUtil.createHashMap(Math.max(16, memberPartitionsMap.size() * 3));
+                Map<Integer, Object> results = MapUtil.createHashMap(keysData.size());
 
                 for (Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
                     Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
@@ -254,7 +254,9 @@ abstract class AbstractCacheProxyBase<K, V>
         }
 
         private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
-            final Set<Data> ownerKeys = SetUtil.createHashSet(Math.max(16, keysData.size() / 2));
+            //assume that the key data is evenly distributed over the partition count, so multiply by number of partitions 
+            final int roughSize = (int) (keysData.size() * partitions.size() / (double)partitionService.getPartitionCount() * 1.3) + 1;
+            Set<Data> ownerKeys = SetUtil.createHashSet(roughSize);
             for (Data key: keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);
                 if (partitions.contains(keyPartitionId)) {

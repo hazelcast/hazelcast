@@ -16,13 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.core.TypeConverter;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,6 +26,13 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
 public class IndexImpl implements Index {
 

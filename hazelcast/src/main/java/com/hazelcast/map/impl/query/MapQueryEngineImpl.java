@@ -16,14 +16,6 @@
 
 package com.hazelcast.map.impl.query;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -37,6 +29,14 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SetUtil;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Invokes and orchestrates the query logic returning the final result.

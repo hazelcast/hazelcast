@@ -16,23 +16,23 @@
 
 package com.hazelcast.monitor;
 
-import static com.hazelcast.util.JsonUtil.getArray;
-import static com.hazelcast.util.JsonUtil.getBoolean;
-import static com.hazelcast.util.JsonUtil.getLong;
-import static com.hazelcast.util.JsonUtil.getObject;
-import static com.hazelcast.util.JsonUtil.getString;
-import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.util.SetUtil;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static com.hazelcast.util.JsonUtil.getArray;
+import static com.hazelcast.util.JsonUtil.getBoolean;
+import static com.hazelcast.util.JsonUtil.getLong;
+import static com.hazelcast.util.JsonUtil.getObject;
+import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 

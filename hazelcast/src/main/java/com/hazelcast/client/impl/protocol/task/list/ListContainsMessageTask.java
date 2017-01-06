@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.list;
 
-import java.security.Permission;
-import java.util.Collections;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListContainsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -29,6 +26,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
+import java.util.Collections;
 
 /**
  * Client Protocol Task for handling messages with type id:

@@ -16,13 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
-import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
-
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Set;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,6 +28,13 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Set;
+
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.INVOCATION_TRY_COUNT;
+import static com.hazelcast.replicatedmap.impl.ReplicatedMapService.SERVICE_NAME;
 
 /**
  * Collects and sends the replicated map data from the executing node to the caller via

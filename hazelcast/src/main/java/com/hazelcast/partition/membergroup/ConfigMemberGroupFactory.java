@@ -42,7 +42,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> members) {
-        Map<Integer, MemberGroup> memberGroups = MapUtil.createHashMap(members.size());
+        Map<Integer, MemberGroup> memberGroups = MapUtil.createHashMap(members.size() * 2);
         for (Member member : members) {
             String host = ((MemberImpl) member).getAddress().getHost();
             for (Entry<Integer, MemberGroupConfig> entry : memberGroupConfigMap.entrySet()) {

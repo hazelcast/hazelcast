@@ -159,5 +159,4 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             delayedEntry.setStoreTime(currentStoreTime);
         }
     }
-
 }

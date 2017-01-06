@@ -101,11 +101,14 @@ public class CardinalityEstimatorService
             return null;
         }
 
-        Map<String, CardinalityEstimatorContainer> data = MapUtil.createHashMap(Math.max(16, containers.size() / 3));
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        
+        final int roughSize = (int) ((containers.size() * 1.3) / partitionService.getPartitionCount());
+        Map<String, CardinalityEstimatorContainer> data = MapUtil.createHashMap(roughSize);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();
-            if (partitionId == getPartitionId(name)) {
+            if (partitionId == getPartitionId(partitionService, name)) {
                 data.put(name, containerEntry.getValue());
             }
         }
@@ -134,17 +137,17 @@ public class CardinalityEstimatorService
     }
 
     private void clearPartitionReplica(int partitionId) {
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
-            if (getPartitionId(name) == partitionId) {
+            if (getPartitionId(partitionService, name) == partitionId) {
                 iterator.remove();
             }
         }
     }
 
-    private int getPartitionId(String name) {
-        IPartitionService partitionService = nodeEngine.getPartitionService();
+    private int getPartitionId(IPartitionService partitionService, String name) {
         String partitionKey = getPartitionKey(name);
         return partitionService.getPartitionId(partitionKey);
     }

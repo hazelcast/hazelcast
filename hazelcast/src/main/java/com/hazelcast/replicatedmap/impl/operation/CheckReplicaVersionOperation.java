@@ -45,8 +45,8 @@ public class CheckReplicaVersionOperation extends AbstractSerializableOperation 
     }
 
     public CheckReplicaVersionOperation(PartitionContainer container) {
-        versions = new ConcurrentHashMap<String, Long>();
         ConcurrentMap<String, ReplicatedRecordStore> stores = container.getStores();
+        versions = new ConcurrentHashMap<String, Long>((int) (stores.size() * 1.35 + 1));
         for (Map.Entry<String, ReplicatedRecordStore> storeEntry : stores.entrySet()) {
             String name = storeEntry.getKey();
             ReplicatedRecordStore store = storeEntry.getValue();

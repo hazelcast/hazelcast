@@ -107,7 +107,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, RingbufferContainer> migrationData = MapUtil.createHashMap(Math.max(16, containers.size() / 3));
+        Map<String, RingbufferContainer> migrationData = MapUtil.createHashMap(Math.max(16, containers.size() / 2));
         IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, RingbufferContainer> entry : containers.entrySet()) {
             String name = entry.getKey();

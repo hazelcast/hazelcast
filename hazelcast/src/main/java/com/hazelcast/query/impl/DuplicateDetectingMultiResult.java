@@ -54,8 +54,7 @@ public class DuplicateDetectingMultiResult extends AbstractSet<QueryableEntry> i
     public Iterator<QueryableEntry> iterator() {
         if (records == null) {
             return Collections.<QueryableEntry>emptyList().iterator();
-        }
-        
+        }        
         return records.values().iterator();
     }
 

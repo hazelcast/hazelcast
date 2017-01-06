@@ -48,7 +48,6 @@ public class SingleResultSet extends AbstractSet<QueryableEntry> {
         if (records == null) {
             return Collections.<QueryableEntry>emptySet().iterator();
         }
-        
         return records.values().iterator();
     }
 

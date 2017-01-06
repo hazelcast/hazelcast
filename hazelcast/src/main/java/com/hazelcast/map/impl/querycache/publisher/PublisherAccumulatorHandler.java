@@ -24,11 +24,11 @@ import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.sequence.Sequenced;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -86,8 +86,11 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
         if (events.isEmpty()) {
             return Collections.emptyMap();
         }
+        
+        //using 271 as default partition count, no partition service here
+        final int roughSize = Math.min(events.size(), 271);
 
-        Map<Integer, List<QueryCacheEventData>> map = new HashMap<Integer, List<QueryCacheEventData>>();
+        Map<Integer, List<QueryCacheEventData>> map = MapUtil.createHashMap(roughSize);
 
         do {
             QueryCacheEventData eventData = events.poll();

@@ -16,9 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.set;
 
-import java.security.Permission;
-import java.util.Collections;
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.SetContainsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
@@ -29,6 +26,9 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
+import java.util.Collections;
 
 /**
  * SetContainsMessageTask

@@ -32,7 +32,6 @@ import com.hazelcast.util.SetUtil;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -183,7 +182,7 @@ public final class HazelcastInstanceFactory {
     }
 
     public static Set<HazelcastInstanceImpl> getInstanceImpls(Collection<Member> members) {
-        Set<HazelcastInstanceImpl> set = new HashSet<HazelcastInstanceImpl>();
+        final Set<HazelcastInstanceImpl> set = SetUtil.createHashSet(INSTANCE_MAP.size());
         for (InstanceFuture future : INSTANCE_MAP.values()) {
             try {
                 if (future.isSet()) {

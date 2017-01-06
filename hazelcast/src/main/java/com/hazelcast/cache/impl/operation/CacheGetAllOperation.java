@@ -41,7 +41,7 @@ public class CacheGetAllOperation
         extends PartitionWideCacheOperation
         implements ReadonlyOperation {
 
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperation(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
@@ -51,6 +51,7 @@ public class CacheGetAllOperation
     }
 
     public CacheGetAllOperation() {
+        keys = new HashSet<Data>();
     }
 
     public void run() {
@@ -58,8 +59,7 @@ public class CacheGetAllOperation
         ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
 
         int partitionId = getPartitionId();
-        final int setSize = Math.min(getNodeEngine().getPartitionService().getPartitionCount(), keys.size());
-        final Set<Data> partitionKeySet = SetUtil.createHashSet(setSize);
+        final Set<Data> partitionKeySet = SetUtil.createHashSet(keys.size());
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
                 partitionKeySet.add(key);
@@ -105,6 +105,7 @@ public class CacheGetAllOperation
         expiryPolicy = in.readObject();
         int size = in.readInt();
         if (size > -1) {
+            keys = SetUtil.createHashSet(size);
             for (int i = 0; i < size; i++) {
                 Data key = in.readData();
                 keys.add(key);

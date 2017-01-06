@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl;
 
-import java.io.IOException;
-import java.util.Set;
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
 
 public class MapKeySet implements IdentifiedDataSerializable {
 

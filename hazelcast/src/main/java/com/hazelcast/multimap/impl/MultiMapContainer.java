@@ -111,9 +111,8 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public Set<Data> keySet() {
-        Set<Data> keySet = multiMapValues.keySet();
-        Set<Data> keys = new HashSet<Data>(keySet);
-        return keys;
+        final Set<Data> keySet = multiMapValues.keySet();
+        return new HashSet<Data>(keySet);
     }
 
     public Collection<MultiMapRecord> values() {

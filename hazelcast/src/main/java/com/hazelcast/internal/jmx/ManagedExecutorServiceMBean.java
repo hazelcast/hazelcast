@@ -28,7 +28,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
  */
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService,
                                        ManagementService service) {

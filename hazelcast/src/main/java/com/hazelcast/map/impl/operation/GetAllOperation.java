@@ -48,8 +48,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        int keyCount = Math.min(keys.size(), partitionService.getPartitionCount());
-        Set<Data> partitionKeySet = SetUtil.createHashSet(keyCount);
+        final int roughSize = (int) (keys.size() * 1.3 / partitionService.getPartitionCount());
+        Set<Data> partitionKeySet = SetUtil.createHashSet(roughSize);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);

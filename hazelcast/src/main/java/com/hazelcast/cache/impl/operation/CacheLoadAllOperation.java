@@ -76,8 +76,7 @@ public class CacheLoadAllOperation
 
         Set<Data> filteredKeys = null;
         if (keys != null) {
-            final int setSize = Math.min(getNodeEngine().getPartitionService().getPartitionCount(), keys.size());
-            filteredKeys = SetUtil.createHashSet(setSize);
+            filteredKeys = SetUtil.createHashSet(keys.size());
             for (Data k : keys) {
                 if (partitionService.getPartitionId(k) == partitionId) {
                     filteredKeys.add(k);

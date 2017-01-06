@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentMap;
 final class MBeans {
 
     private static final ConcurrentMap<String, MBeanFactory> MBEAN_FACTORY_TYPES_REGISTRY
-            = new ConcurrentHashMap<String, MBeanFactory>(MBeanFactory.values().length);
+            = new ConcurrentHashMap<String, MBeanFactory>((int) (MBeanFactory.values().length * 1.35 + 1));
 
     static {
         MBeanFactory[] mBeanFactories = MBeanFactory.values();

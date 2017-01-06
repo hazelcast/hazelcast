@@ -168,14 +168,15 @@ abstract class AbstractCacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         if (keys.isEmpty()) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
-        final Set<Data> ks = SetUtil.createHashSet(keys.size());
+        final int keyCount = keys.size();
+        final Set<Data> ks = SetUtil.createHashSet(keyCount);
         for (K key : keys) {
             final Data k = serializationService.toData(key);
             ks.add(k);
         }
-        final Map<K, V> result = MapUtil.createHashMap(ks.size());
+        final Map<K, V> result = MapUtil.createHashMap(keyCount);
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
             OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);

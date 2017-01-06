@@ -62,7 +62,8 @@ public final class ClassNameFilterParser {
 
         prefixes = prefixes.trim();
         final String[] prefixArray = prefixes.split(",");
-        final Set<String> blacklistSet = SetUtil.createHashSet(prefixArray.length);
+        
+        final Set<String> blacklistSet = SetUtil.createHashSet(prefixArray.length + BUILTIN_BLACKLIST_PREFIXES.length);
         for (String prefix : prefixArray) {
             blacklistSet.add(prefix.trim());
         }

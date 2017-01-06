@@ -156,7 +156,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         final IPartitionService partitionService = nodeEngine.getPartitionService();
-        final Map<String, QueueContainer> migrationData = MapUtil.createHashMap(Math.max(16, containerMap.size() / 3));
+        final Map<String, QueueContainer> migrationData = MapUtil.createHashMap(Math.max(16, containerMap.size() / 2));
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));

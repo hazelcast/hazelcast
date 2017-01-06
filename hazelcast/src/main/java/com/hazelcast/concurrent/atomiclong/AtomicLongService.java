@@ -16,16 +16,6 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -37,6 +27,16 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
+
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
+import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
@@ -98,7 +98,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
             return null;
         }
 
-        final Map<String, Long> data = new HashMap<String, Long>(Math.max(16, containers.size() / 3));
+        final Map<String, Long> data = MapUtil.createHashMap(containers.size() / 2);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, AtomicLongContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();

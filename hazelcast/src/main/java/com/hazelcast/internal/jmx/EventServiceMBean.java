@@ -29,7 +29,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.EventService")
 public class EventServiceMBean extends HazelcastMBean<EventService> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     public EventServiceMBean(HazelcastInstance hazelcastInstance, EventService eventService, ManagementService service) {
         super(eventService, service);

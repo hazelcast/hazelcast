@@ -25,6 +25,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
+import java.util.Collections;
 import java.util.Set;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
@@ -36,18 +37,22 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 public final class GarbageCollectionMetricSet {
 
-    private static final Set<String> YOUNG_GC = SetUtil.createHashSet(3);
-    private static final Set<String> OLD_GC = SetUtil.createHashSet(3);
+    private static final Set<String> YOUNG_GC;
+    private static final Set<String> OLD_GC;
     private static final int PUBLISH_FREQUENCY_SECONDS = 1;
 
     static {
-        YOUNG_GC.add("PS Scavenge");
-        YOUNG_GC.add("ParNew");
-        YOUNG_GC.add("G1 Young Generation");
+        final Set<String> youngGC = SetUtil.createHashSet(3);	
+        youngGC.add("PS Scavenge");
+        youngGC.add("ParNew");
+        youngGC.add("G1 Young Generation");	
+        YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
-        OLD_GC.add("PS MarkSweep");
-        OLD_GC.add("ConcurrentMarkSweep");
-        OLD_GC.add("G1 Old Generation");
+        final Set<String> oldGC = SetUtil.createHashSet(3);
+        oldGC.add("PS MarkSweep");
+        oldGC.add("ConcurrentMarkSweep");
+        oldGC.add("G1 Old Generation");
+        OLD_GC = Collections.unmodifiableSet(oldGC);
     }
 
     private GarbageCollectionMetricSet() {

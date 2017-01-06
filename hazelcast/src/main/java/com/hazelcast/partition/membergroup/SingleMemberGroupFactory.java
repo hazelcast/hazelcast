@@ -16,11 +16,11 @@
 
 package com.hazelcast.partition.membergroup;
 
-import java.util.Collection;
-import java.util.Set;
-
 import com.hazelcast.core.Member;
 import com.hazelcast.util.SetUtil;
+
+import java.util.Collection;
+import java.util.Set;
 
 public class SingleMemberGroupFactory implements MemberGroupFactory {
 

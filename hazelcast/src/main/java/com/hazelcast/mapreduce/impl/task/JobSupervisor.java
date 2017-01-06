@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.notification.IntermediateChunkNotification;
@@ -236,7 +237,7 @@ public class JobSupervisor {
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
             int mapSize = MapReduceUtil.mapSize(reducers.size());
-            result = MapUtil.createHashMap(mapSize);
+            result = new HashMapAdapter<Object, Object>((int) (mapSize * 1.35 + 1));
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
                 Object reducedResults = entry.getValue().finalizeReduce();
                 if (reducedResults != null) {

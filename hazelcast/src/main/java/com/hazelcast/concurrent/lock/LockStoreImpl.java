@@ -221,7 +221,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public Set<Data> getLockedKeys() {
-        Set<Data> keySet = SetUtil.createHashSet(locks.size());
+        final Set<Data> keySet = SetUtil.createHashSet(locks.size());
         for (Map.Entry<Data, LockResourceImpl> entry : locks.entrySet()) {
             Data key = entry.getKey();
             LockResource lock = entry.getValue();

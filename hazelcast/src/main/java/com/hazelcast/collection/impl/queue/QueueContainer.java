@@ -591,7 +591,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> clear() {
         long current = Clock.currentTimeMillis();
-        Map<Long, Data> map = MapUtil.createLinkedHashMap(getItemQueue().size());
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
             // For stats

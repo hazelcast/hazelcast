@@ -16,10 +16,6 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
@@ -27,6 +23,10 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * In Predicate

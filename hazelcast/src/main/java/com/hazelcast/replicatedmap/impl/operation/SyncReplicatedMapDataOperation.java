@@ -16,10 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,6 +25,10 @@ import com.hazelcast.replicatedmap.impl.record.InternalReplicatedMapStorage;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.util.SetUtil;
+
+import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Carries set of replicated map records for a partition from one node to another
