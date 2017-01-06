@@ -57,7 +57,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     private HazelcastInstance[] instances;
 
     @Before
-    public void setup() {
+    public void setUp() {
         instances = createHazelcastInstanceFactory(NODE_COUNT).newInstances(new Config());
     }
 
@@ -87,7 +87,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToKeyOwner_runnable() throws Exception {
+    public void submitToKeyOwner_runnable() {
         NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -105,7 +105,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToMember_runnable() throws Exception {
+    public void submitToMember_runnable() {
         NullResponseCountingCallback callback = new NullResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -122,7 +122,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToMembers_runnable() throws Exception {
+    public void submitToMembers_runnable() {
         int sum = 0;
         Set<Member> membersSet = instances[0].getCluster().getMembers();
         Member[] members = membersSet.toArray(new Member[membersSet.size()]);
@@ -145,7 +145,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToAllMembers_runnable() throws Exception {
+    public void submitToAllMembers_runnable() {
         ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -162,8 +162,8 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     @Test
     public void submitToSeveralNodes_callable() throws Exception {
         for (int i = 0; i < instances.length; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
-            final Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
+            IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
+            Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
             assertEquals((long) (i + 1), future.get());
         }
     }
@@ -187,7 +187,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test(timeout = TEST_TIMEOUT)
-    public void submitToKeyOwner_callable_withCallback() throws Exception {
+    public void submitToKeyOwner_callable_withCallback() {
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -219,7 +219,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test(timeout = TEST_TIMEOUT)
-    public void submitToMember_callable_withCallback() throws Exception {
+    public void submitToMember_callable_withCallback() {
         BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -233,7 +233,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToMembers_callable() throws Exception {
+    public void submitToMembers_callable() {
         int sum = 0;
         ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
@@ -257,7 +257,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToAllMembers_callable() throws Exception {
+    public void submitToAllMembers_callable() {
         ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(instances.length);
 
         for (HazelcastInstance instance : instances) {
@@ -272,7 +272,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void submitToAllMembers_statefulCallable() throws Exception {
+    public void submitToAllMembers_statefulCallable() {
         IExecutorService executorService = instances[0].getExecutorService(randomString());
         InternallyCountingCallable internallyCountingCallable = new InternallyCountingCallable();
 
