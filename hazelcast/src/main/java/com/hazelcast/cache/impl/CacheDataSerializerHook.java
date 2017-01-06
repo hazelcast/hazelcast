@@ -136,8 +136,9 @@ public final class CacheDataSerializerHook
     public static final short CACHE_ASSIGN_AND_GET_UUIDS = 52;
     public static final short CACHE_ASSIGN_AND_GET_UUIDS_FACTORY = 53;
     public static final short CACHE_NEAR_CACHE_STATE_HOLDER = 54;
+    public static final short CACHE_EVENT_LISTENER_ADAPTOR = 55;
 
-    private static final int LEN = CACHE_NEAR_CACHE_STATE_HOLDER + 1;
+    private static final int LEN = CACHE_EVENT_LISTENER_ADAPTOR + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -406,6 +407,11 @@ public final class CacheDataSerializerHook
         constructors[CACHE_NEAR_CACHE_STATE_HOLDER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CacheNearCacheStateHolder();
+            }
+        };
+        constructors[CACHE_EVENT_LISTENER_ADAPTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CacheEventListenerAdaptor();
             }
         };
 
