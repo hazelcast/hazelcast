@@ -23,13 +23,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,7 +41,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     }
 
     public EntrySetResponse(Map<Data, Collection<MultiMapRecord>> map, NodeEngine nodeEngine) {
-        this.map = new HashMap<Data, Collection<Data>>(map.size());
+        this.map = MapUtil.createHashMap(map.size());
         for (Map.Entry<Data, Collection<MultiMapRecord>> entry : map.entrySet()) {
             Collection<MultiMapRecord> records = entry.getValue();
             Collection<Data> coll = new ArrayList<Data>(records.size());
@@ -53,7 +53,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     }
 
     public Set<Map.Entry<Data, Data>> getDataEntrySet() {
-        Set<Map.Entry<Data, Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
+        final Set<Map.Entry<Data, Data>> entrySet = SetUtil.createHashSet(Math.max(16, map.size() * 4));
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             Data key = entry.getKey();
             Collection<Data> coll = entry.getValue();
@@ -65,7 +65,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     }
 
     public <K, V> Set<Map.Entry<K, V>> getObjectEntrySet(NodeEngine nodeEngine) {
-        Set<Map.Entry<K, V>> entrySet = new HashSet<Map.Entry<K, V>>();
+        final Set<Map.Entry<K, V>> entrySet = SetUtil.createHashSet(Math.max(16, map.size() * 4));
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             K key = nodeEngine.toObject(entry.getKey());
             Collection<Data> coll = entry.getValue();
@@ -93,7 +93,7 @@ public class EntrySetResponse implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        map = new HashMap<Data, Collection<Data>>(size);
+        map = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             int collSize = in.readInt();

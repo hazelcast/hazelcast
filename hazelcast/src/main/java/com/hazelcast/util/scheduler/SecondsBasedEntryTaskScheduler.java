@@ -18,6 +18,7 @@ package com.hazelcast.util.scheduler;
 
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,7 +133,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         Map<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
         boolean shouldSchedule = false;
         if (entries == null) {
-            entries = new HashMap<Object, ScheduledEntry<K, V>>(INITIAL_CAPACITY);
+            entries = MapUtil.createHashMap(INITIAL_CAPACITY);
             scheduledEntries.put(second, entries);
 
             // we created the second

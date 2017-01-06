@@ -19,9 +19,9 @@ package com.hazelcast.partition.membergroup;
 import com.hazelcast.core.Member;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.partitiongroup.PartitionGroupMetaData;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -37,7 +37,7 @@ public class ZoneAwareMemberGroupFactory extends BackupSafeMemberGroupFactory im
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Map<String, MemberGroup> groups = new HashMap<String, MemberGroup>();
+        final Map<String, MemberGroup> groups = MapUtil.createHashMap(allMembers.size());
         for (Member member : allMembers) {
 
             final String zoneInfo = member.getStringAttribute(PartitionGroupMetaData.PARTITION_GROUP_ZONE);

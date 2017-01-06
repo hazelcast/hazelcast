@@ -21,9 +21,9 @@ import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 public class CollectionClearBackupOperation extends CollectionOperation implements BackupOperation {
@@ -62,7 +62,7 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();
-        itemIdSet = new HashSet<Long>(size);
+        itemIdSet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             itemIdSet.add(in.readLong());
         }

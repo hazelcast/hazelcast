@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -41,7 +42,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -206,9 +206,9 @@ class DefaultAddressPicker implements AddressPicker {
         Map<String, String> addressDomainMap;
         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
-            // LinkedHashMap is to guarantee order
-            addressDomainMap = new LinkedHashMap<String, String>();
             Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            // LinkedHashMap is to guarantee order
+            addressDomainMap = MapUtil.createLinkedHashMap(possibleAddresses.size());
             for (String possibleAddress : possibleAddresses) {
                 String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(addressHolder)) {

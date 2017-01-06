@@ -28,9 +28,9 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.SetUtil;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -214,7 +214,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     private static Set<Integer> createSetWithPopulatedPartitionIds(int partitionCount) {
-        Set<Integer> partitionIds = new HashSet<Integer>(partitionCount);
+        final Set<Integer> partitionIds = SetUtil.createHashSet(partitionCount);
         for (int i = 0; i < partitionCount; i++) {
             partitionIds.add(i);
         }

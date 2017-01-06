@@ -49,12 +49,12 @@ import com.hazelcast.spi.impl.operationexecutor.impl.OperationExecutorImpl;
 import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -375,7 +375,7 @@ public final class OperationServiceImpl implements InternalOperationService, Met
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
 
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
+        Map<Address, List<Integer>> memberPartitions = MapUtil.createHashMap(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
             Address owner = partitionService.getPartitionOwnerOrWait(partition);

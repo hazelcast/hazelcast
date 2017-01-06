@@ -16,6 +16,19 @@
 
 package com.hazelcast.map.impl.tx;
 
+import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.impl.MapService;
@@ -36,19 +49,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Proxy implementation of {@link com.hazelcast.core.TransactionalMap} interface.
@@ -318,7 +319,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         QueryResult queryResult = queryEngine.execute(query, Target.ALL_NODES);
         Set result = QueryResultUtils.transformToSet(serializationService, queryResult, predicate, IterationType.KEY, true);
 
-        // TODO: Can't we just use the original set?
+        // TODO: Can't we just use the original set? can the original set be safely mutated?
         Set<Object> keySet = new HashSet<Object>(result);
         Extractors extractors = mapServiceContext.getExtractors(name);
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
@@ -365,18 +366,18 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
-        Set<Object> keyWontBeIncluded = new HashSet<Object>();
+        Set<Object> keyWontBeIncluded = SetUtil.createHashSet(txMap.size());
         Extractors extractors = mapServiceContext.getExtractors(name);
 
         // iterate over the txMap and see if the values are updated or removed
         for (Map.Entry<Data, TxnValueWrapper> entry : txMap.entrySet()) {
-            boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
-            boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
+            final boolean isRemoved = Type.REMOVED.equals(entry.getValue().type);
 
             Object keyObject = serializationService.toObject(entry.getKey());
             if (isRemoved) {
                 keyWontBeIncluded.add(keyObject);
             } else {
+                final boolean isUpdated = Type.UPDATED.equals(entry.getValue().type);
                 if (isUpdated) {
                     keyWontBeIncluded.add(keyObject);
                 }

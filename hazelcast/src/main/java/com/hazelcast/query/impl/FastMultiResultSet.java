@@ -16,15 +16,15 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
-
 import java.util.AbstractSet;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.SetUtil;
 
 /**
  * Multiple result set for Predicates.
@@ -49,8 +49,9 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
             return checkFromIndex(entry);
         } else {
             //todo: what is the point of this condition? Is it some kind of optimization?
-            if (resultSets.size() > 3) {
-                index = new HashSet<Object>();
+            final int size = resultSets.size();
+            if (size > 3) {
+                index = SetUtil.createHashSet(Math.max(16, size * 8));
                 for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
                     for (QueryableEntry queryableEntry : result.values()) {
                         index.add(queryableEntry.getKeyData());

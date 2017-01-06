@@ -36,8 +36,8 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -120,9 +120,10 @@ public abstract class CollectionService implements ManagedService, RemoteService
     }
 
     protected Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
-        Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final Map<String, ? extends CollectionContainer> containerMap = getContainerMap();
+        final Map<String, CollectionContainer> migrationData = MapUtil.createHashMap(containerMap.size() / 2);
+        for (Map.Entry<String, ? extends CollectionContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
             int partitionId = partitionService.getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             CollectionContainer container = entry.getValue();

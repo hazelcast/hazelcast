@@ -29,6 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.AddressUtil.AddressHolder;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.Clock;
@@ -44,8 +45,6 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-
-import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 /**
  * @deprecated this class is deprecated since 3.7 and will be (re)moved in 3.8.

@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public Map<Long, Data> clear() {
         final Collection<CollectionItem> coll = getCollection();
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>(coll.size());
+        Map<Long, Data> itemIdMap = MapUtil.createHashMap(coll.size());
         for (CollectionItem item : coll) {
             itemIdMap.put(item.getItemId(), (Data) item.getValue());
         }
@@ -127,7 +128,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
 
     public Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = MapUtil.createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -140,7 +141,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public void addAllBackup(Map<Long, Data> valueMap) {
-        Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
+        Map<Long, CollectionItem> map = MapUtil.createHashMap(valueMap.size());
         for (Map.Entry<Long, Data> entry : valueMap.entrySet()) {
             final long itemId = entry.getKey();
             map.put(itemId, new CollectionItem(itemId, entry.getValue()));
@@ -149,7 +150,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
+        Map<Long, Data> itemIdMap = MapUtil.createHashMap(valueSet.size());
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();

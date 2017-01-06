@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.LinkedList;
 
 /**
@@ -271,25 +270,27 @@ public final class AddressUtil {
             throw new IllegalArgumentException("Cannot wildcard matching for IPv6: "
                     + addressMatcher);
         }
-        final Collection<String> addresses = new HashSet<String>();
         final String first3 = addressMatcher.address[0] + '.'
                 + addressMatcher.address[1]
                 + '.'
                 + addressMatcher.address[2];
         final String lastPart = addressMatcher.address[3];
+        final Collection<String> addresses;
         final int dashPos;
         if ("*".equals(lastPart)) {
+            addresses = SetUtil.createHashSet(NUMBER_OF_ADDRESSES);
             for (int j = 0; j <= NUMBER_OF_ADDRESSES; j++) {
                 addresses.add(first3 + '.' + j);
             }
-        } else if (lastPart.indexOf('-') > 0) {
-            dashPos = lastPart.indexOf('-');
+        } else if ((dashPos = lastPart.indexOf('-')) > 0) {
             final int start = Integer.parseInt(lastPart.substring(0, dashPos));
             final int end = Integer.parseInt(lastPart.substring(dashPos + 1));
+            addresses = SetUtil.createHashSet(end - start + 1);
             for (int j = start; j <= end; j++) {
                 addresses.add(first3 + '.' + j);
             }
         } else {
+            addresses = SetUtil.createHashSet(2);
             addresses.add(addressMatcher.getAddress());
         }
         return addresses;

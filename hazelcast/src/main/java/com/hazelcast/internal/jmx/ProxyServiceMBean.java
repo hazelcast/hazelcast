@@ -29,7 +29,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.ProxyService")
 public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     public ProxyServiceMBean(HazelcastInstance hazelcastInstance, ProxyService proxyService, ManagementService service) {
         super(proxyService, service);

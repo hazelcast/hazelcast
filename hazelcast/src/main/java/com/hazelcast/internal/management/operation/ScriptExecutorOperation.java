@@ -20,12 +20,13 @@ import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.internal.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.MapUtil;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -97,7 +98,7 @@ public class ScriptExecutorOperation extends AbstractManagementOperation {
         script = in.readUTF();
         int size = in.readInt();
         if (size > 0) {
-            bindings = new HashMap<String, Object>(size);
+            bindings = MapUtil.createHashMap(size);
             for (int i = 0; i < size; i++) {
                 String key = in.readUTF();
                 Object value = in.readObject();

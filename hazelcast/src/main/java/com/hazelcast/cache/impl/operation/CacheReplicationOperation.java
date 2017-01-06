@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -161,7 +162,7 @@ public class CacheReplicationOperation extends Operation implements IdentifiedDa
         for (int i = 0; i < count; i++) {
             int subCount = in.readInt();
             String name = in.readUTF();
-            Map<Data, CacheRecord> m = new HashMap<Data, CacheRecord>(subCount);
+            Map<Data, CacheRecord> m = MapUtil.createHashMap(subCount);
             data.put(name, m);
             // subCount + 1 because of the DefaultData written as the last entry
             // which adds another Data entry at the end of the stream!

@@ -24,6 +24,7 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public ExecuteScriptRequest(String script, String engine, boolean targetAllMembers, Map<String, Object> bindings) {
         this.script = script;
         this.engine = engine;
-        this.targets = new HashSet<String>(0);
+        this.targets = new HashSet<String>();
         this.targetAllMembers = targetAllMembers;
         this.bindings = bindings;
     }
@@ -140,8 +141,9 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     public void fromJson(JsonObject json) {
         script = getString(json, "script", "");
         engine = getString(json, "engine", "");
-        targets = new HashSet<String>();
-        for (JsonValue target : getArray(json, "targets", new JsonArray())) {
+        final JsonArray array = getArray(json, "targets", new JsonArray());
+        targets = SetUtil.createHashSet(array.size());
+        for (JsonValue target : array) {
             targets.add(target.asString());
         }
         targetAllMembers = getBoolean(json, "targetAllMembers", false);

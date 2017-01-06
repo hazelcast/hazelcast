@@ -20,9 +20,9 @@ import com.hazelcast.client.impl.ClientDataSerializerHook;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class PostJoinClientOperation extends AbstractClientOperation {
@@ -77,7 +77,7 @@ public class PostJoinClientOperation extends AbstractClientOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int len = in.readInt();
-        mappings = new HashMap<String, String>(len);
+        mappings = MapUtil.createHashMap(len);
         for (int i = 0; i < len; i++) {
             String clientUuid = in.readUTF();
             String ownerUuid = in.readUTF();

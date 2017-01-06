@@ -36,12 +36,12 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.util.SetUtil;
 
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.nio.ByteOrder;
 import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -505,7 +505,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         // look for super classes
         Class typeSuperclass = type.getSuperclass();
-        final Set<Class> interfaces = new LinkedHashSet<Class>(5);
+        final Set<Class> interfaces = SetUtil.createLinkedHashSet(5);
         getInterfaces(type, interfaces);
         while (typeSuperclass != null) {
             serializer = registerFromSuperType(type, typeSuperclass);

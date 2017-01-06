@@ -22,6 +22,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.version.MemberVersion;
 
 import java.io.IOException;
@@ -87,7 +88,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
         liteMember = in.readBoolean();
         int size = in.readInt();
         if (size > 0) {
-            attributes = new HashMap<String, Object>();
+            attributes = MapUtil.createHashMap(size);
         }
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();

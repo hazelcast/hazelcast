@@ -20,6 +20,7 @@ import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.durableexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.MapUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -54,7 +55,7 @@ public class DurableExecutorPartitionContainer {
     }
 
     public Operation prepareReplicationOperation(int replicaIndex) {
-        HashMap<String, DurableExecutorContainer> map = new HashMap<String, DurableExecutorContainer>();
+        final Map<String, DurableExecutorContainer> map = MapUtil.createHashMap(executorContainerMap.size());
         for (DurableExecutorContainer executorContainer : executorContainerMap.values()) {
             if (replicaIndex > executorContainer.getDurability()) {
                 continue;

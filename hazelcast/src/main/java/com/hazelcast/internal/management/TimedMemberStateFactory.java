@@ -61,11 +61,11 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,14 +142,15 @@ public class TimedMemberStateFactory {
                                    Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
-        HashSet<ClientEndPointDTO> serializableClientEndPoints = new HashSet<ClientEndPointDTO>();
-        for (Client client : instance.node.clientEngine.getClients()) {
+        final Collection<Client> clients = instance.node.clientEngine.getClients();
+        final Set<ClientEndPointDTO> serializableClientEndPoints = SetUtil.createHashSet(clients.size());
+        for (Client client : clients) {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);
 
         Address thisAddress = node.getThisAddress();
-        memberState.setAddress(thisAddress.getHost() + ":" + thisAddress.getPort());
+        memberState.setAddress(thisAddress.getHost() + ':' + thisAddress.getPort());
         TimedMemberStateFactoryHelper.registerJMXBeans(instance, memberState);
 
         MemberPartitionStateImpl memberPartitionState = (MemberPartitionStateImpl) memberState.getMemberPartitionState();
@@ -208,7 +209,7 @@ public class TimedMemberStateFactory {
                                 Collection<StatisticsAwareService> services) {
         int count = 0;
         Config config = instance.getConfig();
-        Set<String> longInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
+        Set<String> longInstanceNames = SetUtil.createHashSet(maxVisibleInstanceCount);
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {

@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
@@ -47,7 +47,7 @@ public class DefaultPortableWriter implements PortableWriter {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
-        this.writtenFields = new HashSet<String>(cd.getFieldCount());
+        this.writtenFields = SetUtil.createHashSet(cd.getFieldCount());
         this.begin = out.position();
 
         // room for final offset

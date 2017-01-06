@@ -29,6 +29,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -278,7 +279,7 @@ public class ScheduledExecutorContainer {
     }
 
     Map<String, ScheduledTaskDescriptor> prepareForReplication(boolean migrationMode) {
-        Map<String, ScheduledTaskDescriptor> replicas = new HashMap<String, ScheduledTaskDescriptor>();
+        final Map<String, ScheduledTaskDescriptor> replicas = MapUtil.createHashMap(tasks.size());
 
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {

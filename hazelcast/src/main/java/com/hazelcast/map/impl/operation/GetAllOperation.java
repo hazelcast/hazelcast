@@ -24,10 +24,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -48,7 +48,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        Set<Data> partitionKeySet = new HashSet<Data>();
+        final int roughSize = (int) (keys.size() * 1.3 / partitionService.getPartitionCount());
+        Set<Data> partitionKeySet = SetUtil.createHashSet(roughSize);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);

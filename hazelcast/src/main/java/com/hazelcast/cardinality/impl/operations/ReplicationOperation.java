@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ReplicationOperation extends Operation
@@ -76,7 +76,7 @@ public class ReplicationOperation extends Operation
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        migrationData = new HashMap<String, CardinalityEstimatorContainer>(mapSize);
+        migrationData = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             CardinalityEstimatorContainer newCont = in.readObject();

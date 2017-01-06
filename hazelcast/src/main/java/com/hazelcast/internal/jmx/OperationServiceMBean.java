@@ -29,7 +29,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.OperationService")
 public class OperationServiceMBean extends HazelcastMBean<InternalOperationService> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     public OperationServiceMBean(HazelcastInstance hazelcastInstance, InternalOperationService operationService,
                                  ManagementService service) {

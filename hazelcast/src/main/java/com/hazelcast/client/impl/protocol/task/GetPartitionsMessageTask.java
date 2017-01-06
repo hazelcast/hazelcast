@@ -23,9 +23,9 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.util.MapUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +41,9 @@ public class GetPartitionsMessageTask
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
 
-        Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
-
-        for (IPartition partition : service.getPartitions()) {
+        final IPartition[] partitions = service.getPartitions();
+        final Map<Address, List<Integer>> partitionsMap = MapUtil.createHashMap(partitions.length);
+        for (IPartition partition : partitions) {
             Address owner = partition.getOwnerOrNull();
             if (owner == null) {
                 partitionsMap.clear();

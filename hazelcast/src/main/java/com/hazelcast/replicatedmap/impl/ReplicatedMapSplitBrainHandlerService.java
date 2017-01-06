@@ -31,10 +31,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -63,9 +63,9 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
 
     @Override
     public Runnable prepareMergeRunnable() {
-        HashMap<String, Collection<ReplicatedRecord>> recordMap = new HashMap<String, Collection<ReplicatedRecord>>();
         Address thisAddress = service.getNodeEngine().getThisAddress();
-        List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
+        final List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
+        final Map<String, Collection<ReplicatedRecord>> recordMap = MapUtil.createHashMap(partitions.size());
         for (Integer partition : partitions) {
             PartitionContainer partitionContainer = service.getPartitionContainer(partition);
             ConcurrentMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();

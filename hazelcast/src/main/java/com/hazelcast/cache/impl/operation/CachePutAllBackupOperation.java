@@ -28,9 +28,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -100,7 +100,7 @@ public class CachePutAllBackupOperation
         final boolean recordNotNull = in.readBoolean();
         if (recordNotNull) {
             int size = in.readInt();
-            cacheRecords = new HashMap<Data, CacheRecord>(size);
+            cacheRecords = MapUtil.createHashMap(size);
             for (int i = 0; i < size; i++) {
                 final Data key = in.readData();
                 final CacheRecord record = in.readObject();

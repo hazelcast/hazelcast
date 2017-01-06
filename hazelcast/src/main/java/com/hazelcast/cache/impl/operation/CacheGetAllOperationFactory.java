@@ -23,8 +23,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.SetUtil;
 
 import javax.cache.expiry.ExpiryPolicy;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,10 +39,11 @@ public class CacheGetAllOperationFactory
         implements OperationFactory, IdentifiedDataSerializable {
 
     private String name;
-    private Set<Data> keys = new HashSet<Data>();
+    private Set<Data> keys;
     private ExpiryPolicy expiryPolicy;
 
     public CacheGetAllOperationFactory() {
+        keys = new HashSet<Data>();
     }
 
     public CacheGetAllOperationFactory(String name, Set<Data> keys, ExpiryPolicy expiryPolicy) {
@@ -81,6 +84,7 @@ public class CacheGetAllOperationFactory
         name = in.readUTF();
         expiryPolicy = in.readObject();
         int size = in.readInt();
+        keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data data = in.readData();
             keys.add(data);

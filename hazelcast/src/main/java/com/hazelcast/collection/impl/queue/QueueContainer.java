@@ -30,6 +30,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,9 +39,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -434,7 +434,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of item ID and items added
      */
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        final Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
+        final Map<Long, Data> map = MapUtil.createHashMap(dataList.size());
         final List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
             final QueueItem item = new QueueItem(this, nextId(), null);
@@ -534,7 +534,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (maxSizeParam < 0 || maxSizeParam > getItemQueue().size()) {
             maxSizeParam = getItemQueue().size();
         }
-        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(maxSizeParam);
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(maxSizeParam);
         mapDrainIterator(maxSizeParam, map);
         if (store.isEnabled() && maxSizeParam != 0) {
             try {
@@ -591,7 +591,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> clear() {
         long current = Clock.currentTimeMillis();
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(getItemQueue().size());
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
             // For stats
@@ -700,8 +700,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of removed items by id
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
-        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
-        for (QueueItem item : getItemQueue()) {
+        final Deque<QueueItem> itemQueue = getItemQueue();
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(itemQueue.size());
+        for (QueueItem item : itemQueue) {
             if (item.getData() == null && store.isEnabled()) {
                 try {
                     load(item);
@@ -773,7 +774,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             item.setData(store.load(item.getItemId()));
         } else if (bulkLoad > 1) {
             final Iterator<QueueItem> iter = getItemQueue().iterator();
-            final HashSet<Long> keySet = new HashSet<Long>(bulkLoad);
+            final Set<Long> keySet = SetUtil.createHashSet(bulkLoad);
 
             keySet.add(item.getItemId());
             while (keySet.size() < bulkLoad) {
@@ -825,13 +826,15 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     Map<Long, QueueItem> getBackupMap() {
         if (backupMap == null) {
-            backupMap = new HashMap<Long, QueueItem>();
             if (itemQueue != null) {
+                backupMap = MapUtil.createHashMap(itemQueue.size());
                 for (QueueItem item : itemQueue) {
                     backupMap.put(item.getItemId(), item);
                 }
                 itemQueue.clear();
                 itemQueue = null;
+            } else {
+                backupMap = new HashMap<Long, QueueItem>();
             }
         }
         return backupMap;

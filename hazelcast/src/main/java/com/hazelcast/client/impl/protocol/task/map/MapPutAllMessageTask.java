@@ -27,9 +27,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.MapUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
 
 public class MapPutAllMessageTask
@@ -78,7 +78,7 @@ public class MapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        HashMap<Data, Data> map = new HashMap<Data, Data>();
+        final Map<Data, Data> map = MapUtil.createHashMap(parameters.entries.size());
         for (Map.Entry<Data, Data> entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }

@@ -28,11 +28,11 @@ import com.hazelcast.query.impl.predicates.CompoundPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
 import com.hazelcast.query.impl.predicates.Visitor;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.collection.ArrayUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,7 +119,7 @@ public class SqlPredicate
 
     private Predicate createPredicate(String sql) {
         String paramSql = sql;
-        Map<String, String> mapPhrases = new HashMap<String, String>(1);
+        final Map<String, String> mapPhrases = MapUtil.createHashMap(2);
         int apoIndex = getApostropheIndex(paramSql, 0);
         if (apoIndex != -1) {
             int phraseId = 0;

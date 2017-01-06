@@ -21,9 +21,9 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.UnmodifiableIterator;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -80,7 +80,7 @@ public final class MapKeyLoaderUtil {
 
     static Map<Integer, List<Data>> nextBatch(Iterator<Entry<Integer, Data>> entries, int maxBatch) {
 
-        Map<Integer, List<Data>> batch = new HashMap<Integer, List<Data>>();
+        Map<Integer, List<Data>> batch = MapUtil.createHashMap(maxBatch);
 
         while (entries.hasNext()) {
             Entry<Integer, Data> e = entries.next();

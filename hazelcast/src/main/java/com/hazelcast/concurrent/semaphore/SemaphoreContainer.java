@@ -20,6 +20,7 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -185,7 +186,7 @@ public class SemaphoreContainer implements IdentifiedDataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         int size = in.readInt();
-        attachMap = new HashMap<String, Integer>(size);
+        attachMap = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String owner = in.readUTF();
             Integer val = in.readInt();

@@ -36,9 +36,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.util.MapUtil;
 
 import javax.transaction.xa.XAResource;
-import java.util.HashMap;
+
 import java.util.Map;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -47,8 +48,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
-    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
-            = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
+    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = MapUtil.createHashMap(2);
 
     TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
                            TransactionOptions options, String ownerUuid, boolean originatedFromClient) {

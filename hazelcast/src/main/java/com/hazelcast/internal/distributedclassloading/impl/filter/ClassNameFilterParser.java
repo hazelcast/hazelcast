@@ -19,6 +19,7 @@ package com.hazelcast.internal.distributedclassloading.impl.filter;
 import com.hazelcast.config.DistributedClassloadingConfig;
 import com.hazelcast.internal.util.filter.AndFilter;
 import com.hazelcast.internal.util.filter.Filter;
+import com.hazelcast.util.SetUtil;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -55,13 +56,14 @@ public final class ClassNameFilterParser {
     }
 
     private static Set<String> parsePrefixes(String prefixes) {
-        Set<String> blacklistSet = new HashSet<String>();
         if (prefixes == null) {
-            return blacklistSet;
+            return new HashSet<String>();
         }
 
         prefixes = prefixes.trim();
-        String[] prefixArray = prefixes.split(",");
+        final String[] prefixArray = prefixes.split(",");
+        
+        final Set<String> blacklistSet = SetUtil.createHashSet(prefixArray.length + BUILTIN_BLACKLIST_PREFIXES.length);
         for (String prefix : prefixArray) {
             blacklistSet.add(prefix.trim());
         }

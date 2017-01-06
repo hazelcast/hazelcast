@@ -21,8 +21,8 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -91,7 +91,7 @@ public class TransactionalMapDataStructureAdapter<K, V> implements DataStructure
     @Override
     public Map<K, V> getAll(Set<K> keys) {
         begin();
-        Map<K, V> result = new HashMap<K, V>(keys.size());
+        Map<K, V> result = MapUtil.createHashMap(keys.size());
         for (K key : keys) {
             result.put(key, transactionalMap.get(key));
         }

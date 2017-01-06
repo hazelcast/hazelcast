@@ -27,8 +27,10 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.SetUtil;
 
 import javax.cache.CacheException;
+
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
@@ -139,7 +141,7 @@ public class CacheRemoveAllOperation
         boolean isKeysNotNull = in.readBoolean();
         if (isKeysNotNull) {
             int size = in.readInt();
-            keys = new HashSet<Data>(size);
+            keys = SetUtil.createHashSet(size);
             for (int i = 0; i < size; i++) {
                 Data key = in.readData();
                 keys.add(key);

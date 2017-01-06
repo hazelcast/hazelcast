@@ -21,10 +21,10 @@ import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Collections.unmodifiableSet;
@@ -67,7 +67,7 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        Set<String> excludedMemberUuids = new HashSet<String>();
+        Set<String> excludedMemberUuids = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             excludedMemberUuids.add(in.readUTF());
         }

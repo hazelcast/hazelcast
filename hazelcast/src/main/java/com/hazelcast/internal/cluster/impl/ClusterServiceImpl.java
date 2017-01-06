@@ -60,15 +60,16 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.version.ClusterVersion;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -339,7 +340,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     static Set<MemberInfo> createMemberInfoSet(Collection<MemberImpl> members) {
-        Set<MemberInfo> memberInfos = new HashSet<MemberInfo>();
+        final Set<MemberInfo> memberInfos = SetUtil.createHashSet(members.size());
         for (MemberImpl member : members) {
             memberInfos.add(new MemberInfo(member));
         }

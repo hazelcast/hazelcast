@@ -27,15 +27,16 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -167,14 +168,15 @@ abstract class AbstractCacheProxy<K, V>
         ensureOpen();
         validateNotNull(keys);
         if (keys.isEmpty()) {
-            return Collections.EMPTY_MAP;
+            return Collections.emptyMap();
         }
-        final Set<Data> ks = new HashSet(keys.size());
+        final int keyCount = keys.size();
+        final Set<Data> ks = SetUtil.createHashSet(keyCount);
         for (K key : keys) {
             final Data k = serializationService.toData(key);
             ks.add(k);
         }
-        final Map<K, V> result = new HashMap<K, V>();
+        final Map<K, V> result = MapUtil.createHashMap(keyCount);
         final Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
             OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
@@ -358,7 +360,7 @@ abstract class AbstractCacheProxy<K, V>
         final IPartitionService partitionService = getNodeEngine().getPartitionService();
         final int partitions = partitionService.getPartitionCount();
         final int capacity = Math.min(partitions, keys.size());
-        final Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        final Set<Integer> partitionIds = SetUtil.createHashSet(capacity);
 
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {

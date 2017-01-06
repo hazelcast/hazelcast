@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,7 +47,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             return;
         }
         int expectedCapacity = map.size() + collection.size();
-        Map<Data, DelayedEntry> newMap = createMapWithExpectedCapacity(expectedCapacity);
+        Map<Data, DelayedEntry> newMap = MapUtil.createLinkedHashMap(expectedCapacity);
         for (DelayedEntry next : collection) {
             newMap.put((Data) next.getKey(), next);
         }
@@ -158,11 +159,4 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             delayedEntry.setStoreTime(currentStoreTime);
         }
     }
-
-    private static <K, V> Map<K, V> createMapWithExpectedCapacity(int expectedCapacity) {
-        final double defaultLoadFactor = 0.75;
-        int initialCapacity = (int) (expectedCapacity / defaultLoadFactor) + 1;
-        return new LinkedHashMap<K, V>(initialCapacity);
-    }
-
 }

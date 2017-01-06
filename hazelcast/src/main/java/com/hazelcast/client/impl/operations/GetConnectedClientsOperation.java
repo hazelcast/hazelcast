@@ -22,8 +22,9 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Map;
 
 
@@ -36,9 +37,10 @@ public class GetConnectedClientsOperation extends AbstractClientOperation implem
 
     @Override
     public void run() throws Exception {
-        ClientEngineImpl service = getService();
-        this.clients = new HashMap<String, ClientType>();
-        for (Client clientEndpoint : service.getClients()) {
+        final ClientEngineImpl service = getService();
+        final Collection<Client> serviceClients = service.getClients();
+        this.clients = MapUtil.createHashMap(serviceClients.size());
+        for (Client clientEndpoint : serviceClients) {
             ClientEndpointImpl clientEndpointImpl = (ClientEndpointImpl) clientEndpoint;
             this.clients.put(clientEndpointImpl.getUuid(), clientEndpointImpl.getClientType());
         }
