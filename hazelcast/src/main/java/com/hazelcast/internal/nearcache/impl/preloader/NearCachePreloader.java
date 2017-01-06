@@ -53,9 +53,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * Loads and stores the keys from a Near Cache into a file.
  *
- * @param <KS> type of the {@link com.hazelcast.internal.nearcache.NearCacheRecord} keys
+ * @param <K> type of the {@link com.hazelcast.internal.nearcache.NearCacheRecord} keys
  */
-public class NearCachePreloader<KS> {
+public class NearCachePreloader<K> {
 
     /**
      * File format for the file header.
@@ -163,9 +163,9 @@ public class NearCachePreloader<KS> {
     /**
      * Stores the Near Cache keys from the supplied iterator.
      *
-     * @param keySetIterator the key set to store
+     * @param iterator {@link Iterator} over the key set of a {@link com.hazelcast.internal.nearcache.NearCacheRecordStore}
      */
-    public void storeKeys(Iterator<KS> keySetIterator) {
+    public void storeKeys(Iterator<K> iterator) {
         long startedNanos = System.nanoTime();
         FileOutputStream fos = null;
         try {
@@ -177,7 +177,7 @@ public class NearCachePreloader<KS> {
             // write header and keys
             writeInt(fos, MAGIC_BYTES);
             writeInt(fos, FileFormat.INTERLEAVED_LENGTH_FIELD.ordinal());
-            writeKeySet(fos, fos.getChannel(), keySetIterator);
+            writeKeySet(fos, fos.getChannel(), iterator);
 
             // cleanup if no keys have been written
             if (lastKeyCount == 0) {
@@ -231,9 +231,10 @@ public class NearCachePreloader<KS> {
         return loadedKeys;
     }
 
-    private void writeKeySet(FileOutputStream fos, FileChannel outChannel, Iterator<KS> keySetIterator) throws IOException {
-        while (keySetIterator.hasNext()) {
-            Data dataKey = serializationService.toData(keySetIterator.next());
+    private void writeKeySet(FileOutputStream fos, FileChannel outChannel, Iterator<K> iterator) throws IOException {
+        while (iterator.hasNext()) {
+            K key = iterator.next();
+            Data dataKey = serializationService.toData(key);
             if (dataKey != null) {
                 int dataSize = dataKey.totalSize();
                 writeInt(fos, dataSize);

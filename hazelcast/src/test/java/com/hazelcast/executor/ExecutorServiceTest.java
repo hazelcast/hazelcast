@@ -32,6 +32,7 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -52,7 +53,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -73,22 +73,21 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
-    public static final int NODE_COUNT = 3;
+    private static final int NODE_COUNT = 3;
+    private static final int TASK_COUNT = 1000;
 
-    public static final int TASK_COUNT = 1000;
-
-    /* ############ andThen ############ */
+    /* ############ andThen(Callback) ############ */
 
     @Test
-    public void testPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        final ExecutionService es = getExecutionService(createHazelcastInstance());
-        final CountDownLatch callableLatch = new CountDownLatch(1);
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    public void testPreregisteredExecutionCallbackCompletableFuture() {
+        ExecutionService es = getExecutionService(createHazelcastInstance());
+        CountDownLatch callableLatch = new CountDownLatch(1);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
 
         try {
-            final Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
-            final ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
+            CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(callback);
 
             callableLatch.countDown();
@@ -100,18 +99,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testMultiPreregisteredExecutionCallbackCompletableFuture() throws Exception {
-        final ExecutionService es = getExecutionService(createHazelcastInstance());
+    public void testMultiPreregisteredExecutionCallbackCompletableFuture() {
+        ExecutionService es = getExecutionService(createHazelcastInstance());
 
-        final CountDownLatch callableLatch = new CountDownLatch(1);
-        final CountDownLatch callbackLatch = new CountDownLatch(2);
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        CountDownLatch callableLatch = new CountDownLatch(1);
+        CountDownLatch callbackLatch = new CountDownLatch(2);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            final Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            final CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
-            final CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
+            Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
+            CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
+            CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
 
-            final ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             completableFuture.andThen(callback1);
             completableFuture.andThen(callback2);
 
@@ -125,18 +124,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        final ExecutionService es = getExecutionService(createHazelcastInstance());
+    public void testPostRegisteredExecutionCallbackCompletableFuture() throws Exception {
+        ExecutionService es = getExecutionService(createHazelcastInstance());
 
-        final CountDownLatch callableLatch = new CountDownLatch(1);
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        CountDownLatch callableLatch = new CountDownLatch(1);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            final Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            final ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
+            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
-            final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+            CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
             completableFuture.andThen(callback);
 
             try {
@@ -153,21 +152,21 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testMultiPostregisteredExecutionCallbackCompletableFuture() throws Exception {
-        final ExecutionService es = getExecutionService(createHazelcastInstance());
+    public void testMultiPostRegisteredExecutionCallbackCompletableFuture() throws Exception {
+        ExecutionService es = getExecutionService(createHazelcastInstance());
 
-        final CountDownLatch callableLatch = new CountDownLatch(1);
-        final CountDownLatch callbackLatch = new CountDownLatch(2);
-        final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        CountDownLatch callableLatch = new CountDownLatch(1);
+        CountDownLatch callbackLatch = new CountDownLatch(2);
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         try {
-            final Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
-            final ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
+            Future<String> future = executorService.submit(new CountDownLatchAwaitingCallable(callableLatch));
+            ICompletableFuture<String> completableFuture = es.asCompletableFuture(future);
             callableLatch.countDown();
             future.get();
 
-            final CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
+            CountingDownExecutionCallback<String> callback1 = new CountingDownExecutionCallback<String>(callbackLatch);
             completableFuture.andThen(callback1);
-            final CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
+            CountingDownExecutionCallback<String> callback2 = new CountingDownExecutionCallback<String>(callbackLatch);
             completableFuture.andThen(callback2);
 
             assertOpenEventually(callbackLatch);
@@ -179,7 +178,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void test_registerCallback_beforeFutureIsCompletedOnOtherNode() throws ExecutionException, InterruptedException {
+    public void test_registerCallback_beforeFutureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
@@ -191,7 +190,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
         ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
-        final CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
+        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(1);
         future.andThen(callback);
         instance1.getCountDownLatch("latch").countDown();
         assertTrue(future.get());
@@ -199,7 +198,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void test_registerCallback_afterFutureIsCompletedOnOtherNode() throws ExecutionException, InterruptedException {
+    public void test_registerCallback_afterFutureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
@@ -209,16 +208,15 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         String key = generateKeyOwnedBy(instance1);
         ICompletableFuture<String> future = (ICompletableFuture<String>) executorService.submitToKeyOwner(task, key);
         assertEquals(BasicTestCallable.RESULT, future.get());
-        ;
 
-        final CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
         future.andThen(callback);
 
         assertOpenEventually(callback.getLatch(), 10);
     }
 
     @Test
-    public void test_registerCallback_multipleTimes_futureIsCompletedOnOtherNode() throws ExecutionException, InterruptedException {
+    public void test_registerCallback_multipleTimes_futureIsCompletedOnOtherNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
@@ -230,8 +228,8 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         ICountDownLatchAwaitCallable task = new ICountDownLatchAwaitCallable("latch");
         String key = generateKeyOwnedBy(instance1);
         ICompletableFuture<Boolean> future = (ICompletableFuture<Boolean>) executorService.submitToKeyOwner(task, key);
-        final CountDownLatch latch = new CountDownLatch(2);
-        final CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
+        CountDownLatch latch = new CountDownLatch(2);
+        CountingDownExecutionCallback<Boolean> callback = new CountingDownExecutionCallback<Boolean>(latch);
         future.andThen(callback);
         future.andThen(callback);
         instance1.getCountDownLatch("latch").countDown();
@@ -240,27 +238,29 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testSubmitFailingCallableException_withExecutionCallback() throws ExecutionException, InterruptedException {
+    public void testSubmitFailingCallableException_withExecutionCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance();
         IExecutorService service = instance.getExecutorService(randomString());
-        final CountingDownExecutionCallback callback = new CountingDownExecutionCallback(1);
+        CountingDownExecutionCallback<String> callback = new CountingDownExecutionCallback<String>(1);
+
         service.submit(new FailingTestTask(), callback);
+
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Throwable);
     }
 
-    /* ############ submit runnable ############ */
+    /* ############ submit(Runnable) ############ */
 
     @Test(expected = RejectedExecutionException.class)
     public void testEmptyMemberSelector() {
-        final HazelcastInstance instance = createHazelcastInstance();
-        final String name = randomString();
-        final IExecutorService executorService = instance.getExecutorService(name);
+        HazelcastInstance instance = createHazelcastInstance();
+        String name = randomString();
+        IExecutorService executorService = instance.getExecutorService(name);
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
         executorService.execute(task, new MemberSelector() {
             @Override
-            public boolean select(final Member member) {
+            public boolean select(Member member) {
                 return false;
             }
         });
@@ -268,7 +268,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void testManagedContextAndLocal() throws Exception {
-        final Config config = new Config();
+        Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
         final AtomicBoolean initialized = new AtomicBoolean();
         config.setManagedContext(new ManagedContext() {
@@ -281,7 +281,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             }
         });
 
-        final HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         IExecutorService executor = instance.getExecutorService("test");
 
         RunnableWithManagedContext task = new RunnableWithManagedContext();
@@ -298,9 +298,9 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     @Test
     public void hazelcastInstanceAwareAndLocal() throws Exception {
-        final Config config = new Config();
+        Config config = new Config();
         config.addExecutorConfig(new ExecutorConfig("test", 1));
-        final HazelcastInstance instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
         IExecutorService executor = instance.getExecutorService("test");
 
         HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
@@ -325,29 +325,27 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testExecuteMultipleNode()
-            throws InterruptedException, ExecutionException, TimeoutException {
+    public void testExecuteMultipleNode() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         for (int i = 0; i < NODE_COUNT; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testExecuteMultipleNode");
-            final int rand = new Random().nextInt(100);
-            final Future<Integer> future = service.submit(new IncrementAtomicLongRunnable("count"), rand);
+            IExecutorService service = instances[i].getExecutorService("testExecuteMultipleNode");
+            int rand = new Random().nextInt(100);
+            Future<Integer> future = service.submit(new IncrementAtomicLongRunnable("count"), rand);
             assertEquals(Integer.valueOf(rand), future.get(10, TimeUnit.SECONDS));
         }
 
-        final IAtomicLong count = instances[0].getAtomicLong("count");
+        IAtomicLong count = instances[0].getAtomicLong("count");
         assertEquals(NODE_COUNT, count.get());
     }
 
     @Test
-    public void testSubmitToKeyOwnerRunnable() throws InterruptedException {
-        final int k = NODE_COUNT;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+    public void testSubmitToKeyOwnerRunnable() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
-        final CountDownLatch responseLatch = new CountDownLatch(k);
-        final ExecutionCallback callback = new ExecutionCallback() {
+        final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
+        ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
                 if (response == null) {
                     nullResponseCount.incrementAndGet();
@@ -358,28 +356,27 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             public void onFailure(Throwable t) {
             }
         };
-        for (int i = 0; i < k; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
+        for (int i = 0; i < NODE_COUNT; i++) {
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerRunnable");
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
             service.submitToKeyOwner(
                     new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(localMember.getUuid(), "testSubmitToKeyOwnerRunnable"),
                     key, callback);
         }
         assertOpenEventually(responseLatch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToKeyOwnerRunnable").get());
-        assertEquals(k, nullResponseCount.get());
+        assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
     @Test
-    public void testSubmitToMemberRunnable() throws InterruptedException {
-        final int k = NODE_COUNT;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+    public void testSubmitToMemberRunnable() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
-        final CountDownLatch responseLatch = new CountDownLatch(k);
-        final ExecutionCallback callback = new ExecutionCallback() {
+        final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT);
+        ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
                 if (response == null) {
                     nullResponseCount.incrementAndGet();
@@ -391,31 +388,31 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             }
         };
 
-        for (int i = 0; i < k; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
-            final Member localMember = instance.getCluster().getLocalMember();
+        for (int i = 0; i < NODE_COUNT; i++) {
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberRunnable");
+            Member localMember = instance.getCluster().getLocalMember();
             service.submitToMember(
                     new IncrementAtomicLongIfMemberUUIDNotMatchRunnable(localMember.getUuid(), "testSubmitToMemberRunnable"),
                     localMember, callback);
         }
         assertOpenEventually(responseLatch);
         assertEquals(0, instances[0].getAtomicLong("testSubmitToMemberRunnable").get());
-        assertEquals(k, nullResponseCount.get());
+        assertEquals(NODE_COUNT, nullResponseCount.get());
     }
 
     @Test
-    public void testSubmitToMembersRunnable() throws InterruptedException {
+    public void testSubmitToMembersRunnable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-        final ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
+        ResponseCountingMultiExecutionCallback callback = new ResponseCountingMultiExecutionCallback(NODE_COUNT);
         int sum = 0;
-        final Set<Member> membersSet = instances[0].getCluster().getMembers();
-        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
-        final Random random = new Random();
+        Set<Member> membersSet = instances[0].getCluster().getMembers();
+        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Random random = new Random();
         for (int i = 0; i < NODE_COUNT; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitToMembersRunnable");
-            final int n = random.nextInt(NODE_COUNT) + 1;
+            IExecutorService service = instances[i].getExecutorService("testSubmitToMembersRunnable");
+            int n = random.nextInt(NODE_COUNT) + 1;
             sum += n;
             Member[] m = new Member[n];
             System.arraycopy(members, 0, m, 0, n);
@@ -423,18 +420,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(callback.getLatch());
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
         assertEquals(sum, result.get());
         assertEquals(sum, callback.getCount());
     }
 
     @Test
-    public void testSubmitToAllMembersRunnable() throws InterruptedException {
+    public void testSubmitToAllMembersRunnable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger nullResponseCount = new AtomicInteger(0);
         final CountDownLatch responseLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
-        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+        MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
                 if (value == null) {
                     nullResponseCount.incrementAndGet();
@@ -447,26 +444,26 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         };
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersRunnable");
+            IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersRunnable");
             service.submitToAllMembers(new IncrementAtomicLongRunnable("testSubmitToAllMembersRunnable"), callback);
         }
 
         assertTrue(responseLatch.await(30, TimeUnit.SECONDS));
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, nullResponseCount.get());
     }
 
-    /* ############ submit callable ############ */
+    /* ############ submit(Callable) ############ */
 
     /**
      * Submit a null task must raise a NullPointerException
      */
+    @SuppressWarnings("ConstantConditions")
     @Test(expected = NullPointerException.class)
-    public void submitNullTask() throws Exception {
+    public void submitNullTask() {
         ExecutorService executor = createSingleNodeExecutorService("submitNullTask");
-        Callable c = null;
-        executor.submit(c);
+        executor.submit((Callable) null);
     }
 
     /**
@@ -481,50 +478,48 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testSubmitMultipleNode() throws ExecutionException, InterruptedException {
-        final int k = NODE_COUNT;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-        for (int i = 0; i < k; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
-            final Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
+    public void testSubmitMultipleNode() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
+        for (int i = 0; i < NODE_COUNT; i++) {
+            IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
+            Future future = service.submit(new IncrementAtomicLongCallable("testSubmitMultipleNode"));
             assertEquals((long) (i + 1), future.get());
         }
     }
 
     @Test
     public void testSubmitToKeyOwnerCallable() throws Exception {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
 
-        final List<Future> futures = new ArrayList<Future>();
-
+        List<Future> futures = new ArrayList<Future>();
         for (int i = 0; i < NODE_COUNT; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
 
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
-            final Future f = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
-            futures.add(f);
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
+            Future future = service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key);
+            futures.add(future);
         }
 
-        for (Future f : futures) {
-            assertTrue((Boolean) f.get(10, TimeUnit.SECONDS));
+        for (Future future : futures) {
+            assertTrue((Boolean) future.get(10, TimeUnit.SECONDS));
         }
     }
 
     @Test
-    public void testSubmitToKeyOwnerCallable_withCallback() throws Exception {
+    public void testSubmitToKeyOwnerCallable_withCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-        final BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
+        BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
-            final Member localMember = instance.getCluster().getLocalMember();
-            final int key = findNextKeyForMember(instance, localMember);
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToKeyOwnerCallable");
+            Member localMember = instance.getCluster().getLocalMember();
+            int key = findNextKeyForMember(instance, localMember);
             service.submitToKeyOwner(new MemberUUIDCheckCallable(localMember.getUuid()), key, callback);
         }
 
@@ -533,37 +528,37 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+    public void testSubmitToMemberCallable() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
 
-        final List<Future> futures = new ArrayList<Future>();
+        List<Future> futures = new ArrayList<Future>();
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
             String memberUuid = instance.getCluster().getLocalMember().getUuid();
-            final Future f = service.submitToMember(new MemberUUIDCheckCallable(memberUuid),
-                    instance.getCluster().getLocalMember());
-            futures.add(f);
+            Future future = service.submitToMember(
+                    new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember());
+            futures.add(future);
         }
 
-        for (Future f : futures) {
-            assertTrue((Boolean) f.get(10, TimeUnit.SECONDS));
+        for (Future future : futures) {
+            assertTrue((Boolean) future.get(10, TimeUnit.SECONDS));
         }
     }
 
     @Test
-    public void testSubmitToMemberCallable_withCallback() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testSubmitToMemberCallable_withCallback() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
-        final BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
+        HazelcastInstance[] instances = factory.newInstances(new Config());
+        BooleanSuccessResponseCountingCallback callback = new BooleanSuccessResponseCountingCallback(NODE_COUNT);
         for (int i = 0; i < NODE_COUNT; i++) {
-            final HazelcastInstance instance = instances[i];
-            final IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
+            HazelcastInstance instance = instances[i];
+            IExecutorService service = instance.getExecutorService("testSubmitToMemberCallable");
 
-            final String memberUuid = instance.getCluster().getLocalMember().getUuid();
+            String memberUuid = instance.getCluster().getLocalMember().getUuid();
             service.submitToMember(new MemberUUIDCheckCallable(memberUuid), instance.getCluster().getLocalMember(), callback);
         }
 
@@ -572,12 +567,12 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testSubmitToMembersCallable() throws InterruptedException {
+    public void testSubmitToMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(NODE_COUNT);
-        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+        MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
                 count.incrementAndGet();
             }
@@ -587,14 +582,14 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             }
         };
         int sum = 0;
-        final Set<Member> membersSet = instances[0].getCluster().getMembers();
-        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
-        final Random random = new Random();
-        final String name = "testSubmitToMembersCallable";
+        Set<Member> membersSet = instances[0].getCluster().getMembers();
+        Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        Random random = new Random();
+        String name = "testSubmitToMembersCallable";
 
         for (int i = 0; i < NODE_COUNT; i++) {
-            final IExecutorService service = instances[i].getExecutorService(name);
-            final int n = random.nextInt(NODE_COUNT) + 1;
+            IExecutorService service = instances[i].getExecutorService(name);
+            int n = random.nextInt(NODE_COUNT) + 1;
             sum += n;
             Member[] m = new Member[n];
             System.arraycopy(members, 0, m, 0, n);
@@ -602,18 +597,18 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
 
         assertOpenEventually(latch);
-        final IAtomicLong result = instances[0].getAtomicLong(name);
+        IAtomicLong result = instances[0].getAtomicLong(name);
         assertEquals(sum, result.get());
         assertEquals(sum, count.get());
     }
 
     @Test
-    public void testSubmitToAllMembersCallable() throws InterruptedException {
+    public void testSubmitToAllMembersCallable() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(NODE_COUNT);
-        final HazelcastInstance[] instances = factory.newInstances(new Config());
+        HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch countDownLatch = new CountDownLatch(NODE_COUNT * NODE_COUNT);
-        final MultiExecutionCallback callback = new MultiExecutionCallback() {
+        MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
                 count.incrementAndGet();
                 countDownLatch.countDown();
@@ -623,11 +618,11 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             }
         };
         for (int i = 0; i < NODE_COUNT; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersCallable");
+            IExecutorService service = instances[i].getExecutorService("testSubmitToAllMembersCallable");
             service.submitToAllMembers(new IncrementAtomicLongCallable("testSubmitToAllMembersCallable"), callback);
         }
         assertOpenEventually(countDownLatch);
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
+        IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
         assertEquals(NODE_COUNT * NODE_COUNT, result.get());
         assertEquals(NODE_COUNT * NODE_COUNT, count.get());
     }
@@ -635,7 +630,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     /* ############ cancellation ############ */
 
     @Test
-    public void testCancellationAwareTask() throws ExecutionException, InterruptedException {
+    public void testCancellationAwareTask() throws Exception {
         SleepingTask task = new SleepingTask(5);
         ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask");
         Future future = executor.submit(task);
@@ -707,8 +702,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     /**
      * Test for the issue 129.
-     * Repeatedly runs tasks and check for isDone() status after
-     * get().
+     * Repeatedly runs tasks and check for isDone() status after get().
      */
     @Test
     public void testIsDoneMethod2() throws Exception {
@@ -743,19 +737,19 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     }
 
     @Test
-    public void testIssue292() throws Exception {
-        final CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
+    public void testIssue292() {
+        CountingDownExecutionCallback<Member> callback = new CountingDownExecutionCallback<Member>(1);
         createSingleNodeExecutorService("testIssue292").submit(new MemberCheck(), callback);
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Member);
     }
 
     /**
-     * Execute a task that is executing
-     * something else inside. Nested Execution.
+     * Execute a task that is executing something else inside.
+     * Nested Execution.
      */
     @Test
-    public void testNestedExecution() throws Exception {
+    public void testNestedExecution() {
         Callable<String> task = new NestedExecutorTask();
         ExecutorService executor = createSingleNodeExecutorService("testNestedExecution");
         Future future = executor.submit(task);
@@ -769,13 +763,13 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testInvokeAll() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
         assertFalse(executor.isShutdown());
-        // Only one task
+        // only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
-        // More tasks
+        // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new BasicTestCallable());
@@ -791,13 +785,13 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testInvokeAllTimeoutCancelled() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
         assertFalse(executor.isShutdown());
-        // Only one task
+        // only one task
         ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
         tasks.add(new SleepingTask(0));
         List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), Boolean.TRUE);
-        // More tasks
+        // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new SleepingTask(i < 2 ? 0 : 20));
@@ -823,13 +817,13 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public void testInvokeAllTimeoutSuccess() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
         assertFalse(executor.isShutdown());
-        // Only one task
+        // only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
         tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
-        // More tasks
+        // more tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new BasicTestCallable());
@@ -845,9 +839,9 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
      * Shutdown-related method behaviour when the cluster is running
      */
     @Test
-    public void testShutdownBehaviour() throws Exception {
+    public void testShutdownBehaviour() {
         ExecutorService executor = createSingleNodeExecutorService("testShutdownBehaviour");
-        // Fresh instance, is not shutting down
+        // fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());
         executor.shutdown();
@@ -873,28 +867,51 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
      * Shutting down the cluster should act as the ExecutorService shutdown
      */
     @Test(expected = RejectedExecutionException.class)
-    public void testClusterShutdown() throws Exception {
-        ExecutorService executor = createSingleNodeExecutorService("testClusterShutdown");
+    public void test_whenClusterShutdown_thenNewTasksShouldBeRejected() {
+        ExecutorService executor = createSingleNodeExecutorService("testClusterShutdownTaskRejection");
         shutdownNodeFactory();
-        Thread.sleep(2000);
+        sleepSeconds(2);
 
         assertNotNull(executor);
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
 
-        // New tasks must be rejected
+        // new tasks must be rejected
         Callable<String> task = new BasicTestCallable();
         executor.submit(task);
     }
 
     @Test
-    public void testStatsIssue2039() throws InterruptedException, ExecutionException, TimeoutException {
-        final Config config = new Config();
-        final String name = "testStatsIssue2039";
-        config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final IExecutorService executorService = instance.getExecutorService(name);
+    public void testClusterShutdown_whenMultipleNodes_thenAllExecutorsAreShutdown() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
 
+        final ExecutorService es1 = instance1.getExecutorService("testClusterShutdown");
+        final ExecutorService es2 = instance1.getExecutorService("testClusterShutdown");
+
+        assertFalse(es1.isTerminated());
+        assertFalse(es2.isTerminated());
+
+        // we shutdown the ExecutorService on the first instance
+        es1.shutdown();
+
+        // the ExecutorService on the second instance should be shutdown via a ShutdownOperation
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(es2.isTerminated());
+            }
+        });
+    }
+
+    @Test
+    public void testStatsIssue2039() throws Exception {
+        Config config = new Config();
+        String name = "testStatsIssue2039";
+        config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IExecutorService executorService = instance.getExecutorService(name);
 
         executorService.execute(new SleepLatchRunnable());
 
@@ -916,24 +933,24 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
         waitingInQueue.get(1, TimeUnit.MINUTES);
 
-        final LocalExecutorStats stats = executorService.getLocalExecutorStats();
+        LocalExecutorStats stats = executorService.getLocalExecutorStats();
         assertEquals(2, stats.getStartedTaskCount());
         assertEquals(0, stats.getPendingTaskCount());
     }
 
     @Test
-    public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
-        final int k = 10;
-        LocalExecutorStats stats = executeTasksForStats("testExecutorServiceStats", k, true);
+    public void testExecutorServiceStats() throws Exception {
+        int i = 10;
+        LocalExecutorStats stats = executeTasksForStats("testExecutorServiceStats", i, true);
 
-        assertEquals(k + 1, stats.getStartedTaskCount());
-        assertEquals(k, stats.getCompletedTaskCount());
+        assertEquals(i + 1, stats.getStartedTaskCount());
+        assertEquals(i, stats.getCompletedTaskCount());
         assertEquals(0, stats.getPendingTaskCount());
         assertEquals(1, stats.getCancelledTaskCount());
     }
 
     @Test
-    public void testExecutorServiceStats_whenStatsAreDisabled() throws InterruptedException, ExecutionException {
+    public void testExecutorServiceStats_whenStatsAreDisabled() throws Exception {
         LocalExecutorStats stats = executeTasksForStats("testExecutorServiceStats_whenStatsDisabled", 10, false);
 
         assertEquals(0, stats.getStartedTaskCount());
@@ -944,44 +961,38 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
     /**
      * Executes {@code tasksToExecute}+1 tasks, allowing {@code tasksToExecute} to complete and cancelling 1.
-     * @param executorName
-     * @param tasksToExecute
-     * @param statsEnabled
-     * @return
-     * @throws InterruptedException
-     * @throws ExecutionException
      */
     private LocalExecutorStats executeTasksForStats(String executorName, int tasksToExecute, boolean statsEnabled)
-            throws InterruptedException, ExecutionException {
-        final IExecutorService executorService = createSingleNodeExecutorService(executorName, DEFAULT_POOL_SIZE, statsEnabled);
-        final BlockingQueue<Future> taskQueue = new ArrayBlockingQueue(tasksToExecute);
-        final CountDownLatch latch = new CountDownLatch(tasksToExecute);
+            throws Exception {
+        IExecutorService executorService = createSingleNodeExecutorService(executorName, DEFAULT_POOL_SIZE, statsEnabled);
+        BlockingQueue<Future> taskQueue = new ArrayBlockingQueue<Future>(tasksToExecute);
+        CountDownLatch latch = new CountDownLatch(tasksToExecute);
 
         for (int i = 0; i < tasksToExecute; i++) {
-            Future f = executorService.submit(new EmptyRunnable());
-            taskQueue.offer(f);
+            Future future = executorService.submit(new EmptyRunnable());
+            taskQueue.offer(future);
         }
         // await completion and countdown for each completed task
         for (int i = 0; i < tasksToExecute; i++) {
-            Future f = taskQueue.take();
-            f.get();
+            Future future = taskQueue.take();
+            future.get();
             latch.countDown();
         }
         assertOpenEventually(latch);
 
-        final Future<Boolean> f = executorService.submit(new SleepingTask(10));
+        Future<Boolean> f = executorService.submit(new SleepingTask(10));
         Thread.sleep(1000);
         f.cancel(true);
         try {
             f.get();
-        } catch (CancellationException e) {
+        } catch (CancellationException ignored) {
         }
 
         return executorService.getLocalExecutorStats();
     }
 
     @Test
-    public void testLongRunningCallable() throws ExecutionException, InterruptedException, TimeoutException {
+    public void testLongRunningCallable() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config();
@@ -992,27 +1003,25 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         IExecutorService executor = hz1.getExecutorService("test");
-        Future<Boolean> f = executor
-                .submitToMember(new SleepingTask(TimeUnit.MILLISECONDS.toSeconds(callTimeoutMillis) * 3),
-                        hz2.getCluster().getLocalMember());
+        Future<Boolean> future = executor.submitToMember(
+                new SleepingTask(TimeUnit.MILLISECONDS.toSeconds(callTimeoutMillis) * 3), hz2.getCluster().getLocalMember());
 
-        Boolean result = f.get(1, TimeUnit.MINUTES);
+        Boolean result = future.get(1, TimeUnit.MINUTES);
         assertTrue(result);
     }
 
     static class ICountDownLatchAwaitCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
-        private final String name;
+        private String name;
 
         private HazelcastInstance instance;
 
-        public ICountDownLatchAwaitCallable(String name) {
+        ICountDownLatchAwaitCallable(String name) {
             this.name = name;
         }
 
         @Override
-        public Boolean call()
-                throws Exception {
+        public Boolean call() throws Exception {
             return instance.getCountDownLatch(name).await(100, TimeUnit.SECONDS);
         }
 
@@ -1027,7 +1036,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
 
-        public SleepLatchRunnable() {
+        SleepLatchRunnable() {
             startLatch = new CountDownLatch(1);
             sleepLatch = new CountDownLatch(1);
         }

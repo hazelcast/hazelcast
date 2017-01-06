@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import javax.cache.management.CacheStatisticsMXBean;
-import java.io.Serializable;
 
 /**
  * Implementation of {@link javax.cache.management.CacheStatisticsMXBean}
@@ -26,12 +25,9 @@ import java.io.Serializable;
  *     into one by accessing each node's statistics through JMX.
  * </p>
  */
-public class CacheStatisticsMXBeanImpl
-        implements CacheStatisticsMXBean, Serializable {
+public class CacheStatisticsMXBeanImpl implements CacheStatisticsMXBean {
 
-    private static final long serialVersionUID = -1;
-
-    private transient CacheStatisticsImpl statistics;
+    private CacheStatisticsImpl statistics;
 
     public CacheStatisticsMXBeanImpl(CacheStatisticsImpl statistics) {
         this.statistics = statistics;
