@@ -23,7 +23,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.MergeProcessor;
+import com.hazelcast.jet.stream.impl.processor.MergeP;
 
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -56,10 +56,10 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         Vertex previous = upstream.buildDAG(dag);
 
         Vertex merger = new Vertex("merging-accumulator-" + randomName(),
-                () -> new MergeProcessor<T, K, V>(keyMapper,
+                () -> new MergeP<T, K, V>(keyMapper,
                         valueMapper, mergeFunction));
         Vertex combiner = new Vertex("merging-combiner-" + randomName(),
-                () -> new MergeProcessor<T, K, V>(null, null,
+                () -> new MergeP<T, K, V>(null, null,
                         mergeFunction));
         Vertex writer = new Vertex("map-writer-" + randomName(), Processors.mapWriter(mapName));
 

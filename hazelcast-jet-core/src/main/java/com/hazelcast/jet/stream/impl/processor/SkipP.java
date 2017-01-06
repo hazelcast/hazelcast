@@ -17,38 +17,24 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 
-public class CombinerProcessor<T, R> extends AbstractProcessor {
+public class SkipP extends AbstractProcessor {
 
-    private BinaryOperator<T> combiner;
-    private Function<T, R> finisher;
-    private T result;
+    private final long skip;
+    private long index;
 
-    public CombinerProcessor(BinaryOperator<T> combiner, Function<T, R> finisher) {
-        this.combiner = combiner;
-        this.finisher = finisher;
+    public SkipP(Long skip) {
+        this.skip = skip;
     }
+
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        if (result != null) {
-            result = combiner.apply(result, (T) item);
+        if (index >= skip) {
+            emit(item);
         } else {
-            result = (T) item;
+            index++;
         }
-        return true;
-    }
-
-    @Override
-    public boolean complete() {
-        if (result != null) {
-            emit(finisher.apply(result));
-        }
-        combiner = null;
-        finisher = null;
-        result = null;
         return true;
     }
 }

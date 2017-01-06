@@ -17,32 +17,35 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.function.Predicate;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
+public class CollectorCombinerP<T> extends AbstractProcessor {
 
-public class AnyMatchProcessor<T> extends AbstractProcessor {
+    private BiConsumer<T, T> combiner;
+    private T result;
 
-    private boolean match;
-    private final Predicate<T> predicate;
-
-    public AnyMatchProcessor(Predicate<T> predicate) {
-        this.predicate = predicate;
+    public CollectorCombinerP(BiConsumer<T, T> combiner, Function ignored) {
+        this.combiner = combiner;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        if (match) {
-            return true;
-        }
-        if (predicate.test((T) item)) {
-            match = true;
+        if (result != null) {
+            combiner.accept(result, (T) item);
+        } else {
+            result = (T) item;
         }
         return true;
     }
 
     @Override
     public boolean complete() {
-        emit(match);
+        if (result != null) {
+            emit(result);
+        }
+        combiner = null;
+        result = null;
         return true;
     }
 }

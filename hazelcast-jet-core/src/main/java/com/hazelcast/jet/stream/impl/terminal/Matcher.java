@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.AnyMatchProcessor;
+import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
@@ -40,7 +40,7 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Vertex anymatch = new Vertex(randomName(), () -> new AnyMatchProcessor<>(predicate));
+        Vertex anymatch = new Vertex(randomName(), () -> new AnyMatchP<>(predicate));
         dag.addVertex(anymatch);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != anymatch) {

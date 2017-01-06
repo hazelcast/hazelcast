@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.processor.SortProcessor;
+import com.hazelcast.jet.stream.impl.processor.SortP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
@@ -40,7 +40,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final Comparator<? super T> comparator = this.comparator;
-        Vertex sorter = new Vertex("sorter-" + randomName(), () -> new SortProcessor<>(comparator)).localParallelism(1);
+        Vertex sorter = new Vertex("sorter-" + randomName(), () -> new SortP<>(comparator)).localParallelism(1);
         dag.addVertex(sorter)
                 .addEdge(new Edge(previous, sorter)
                         .distributed()

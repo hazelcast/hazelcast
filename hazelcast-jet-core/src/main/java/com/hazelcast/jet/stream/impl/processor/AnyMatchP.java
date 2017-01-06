@@ -16,43 +16,33 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-
-public class CollectorAccumulatorProcessor<IN, OUT> extends AbstractProcessor {
-
-    private BiConsumer<OUT, IN> accumulator;
-    private Supplier<OUT> supplier;
-    private OUT result;
+import java.util.function.Predicate;
 
 
-    public CollectorAccumulatorProcessor(BiConsumer<OUT, IN> accumulator,
-                                         Supplier<OUT> supplier) {
-        this.accumulator = accumulator;
-        this.supplier = supplier;
-    }
+public class AnyMatchP<T> extends AbstractProcessor {
 
-    @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
-        result = supplier.get();
+    private boolean match;
+    private final Predicate<T> predicate;
+
+    public AnyMatchP(Predicate<T> predicate) {
+        this.predicate = predicate;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        accumulator.accept(result, (IN) item);
+        if (match) {
+            return true;
+        }
+        if (predicate.test((T) item)) {
+            match = true;
+        }
         return true;
     }
 
     @Override
     public boolean complete() {
-        emit(result);
-        accumulator = null;
-        supplier = null;
-        result = null;
+        emit(match);
         return true;
     }
 }

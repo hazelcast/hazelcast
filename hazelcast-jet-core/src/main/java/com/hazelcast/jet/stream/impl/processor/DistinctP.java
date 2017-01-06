@@ -18,38 +18,32 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Suppliers.lazyIterate;
 
-public class SortProcessor<T> extends AbstractProcessor {
+public class DistinctP<T> extends AbstractProcessor {
 
-    private List<T> list;
-    private Supplier<T> itemSupplier;
+    private Set<T> set = new HashSet<>();
+    private Supplier<T> iteratingSupplier = lazyIterate(set::iterator);
 
-    public SortProcessor(Comparator<T> comparator) {
-        this.list = new ArrayList<>();
-        this.itemSupplier = lazyIterate(() -> {
-            list.sort(comparator);
-            return list.iterator();
-        });
+    public DistinctP() {
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        list.add((T) item);
+        set.add((T) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(itemSupplier);
+        final boolean done = emitCooperatively(iteratingSupplier);
         if (done) {
-            list = null;
-            itemSupplier = null;
+            set = null;
+            iteratingSupplier = null;
         }
         return done;
     }

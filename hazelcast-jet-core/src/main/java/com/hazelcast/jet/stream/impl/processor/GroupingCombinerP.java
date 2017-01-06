@@ -22,37 +22,35 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.Suppliers.lazyIterate;
 import static com.hazelcast.jet.Suppliers.map;
 
-public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcessor {
+public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
 
     private Map<K, A> cache = new HashMap<>();
-    private Function<? super T, ? extends K> classifier;
     private Collector<V, A, R> collector;
-    private Supplier<Entry<K, A>> cacheEntrySupplier;
+    private Supplier<Entry<K, R>> cacheEntrySupplier;
 
-    public GroupingAccumulatorProcessor(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
-        this.classifier = classifier;
+    public GroupingCombinerP(Collector<V, A, R> collector) {
         this.collector = collector;
         this.cacheEntrySupplier = map(
                 lazyIterate(() -> cache.entrySet().iterator()),
-                entry -> new SimpleImmutableEntry<>(entry.getKey(), entry.getValue()));
+                item -> new SimpleImmutableEntry<>(item.getKey(), collector.finisher().apply(item.getValue())));
     }
+
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
+        Map.Entry<K, A> entry = (Map.Entry) item;
         A value = cache.get(entry.getKey());
         if (value == null) {
             value = collector.supplier().get();
             cache.put(entry.getKey(), value);
         }
-        collector.accumulator().accept(value, entry.getValue());
+        collector.combiner().apply(value, entry.getValue());
         return true;
     }
 
@@ -61,10 +59,10 @@ public class GroupingAccumulatorProcessor<T, K, V, A, R> extends AbstractProcess
         final boolean done = emitCooperatively(cacheEntrySupplier);
         if (done) {
             cache = null;
-            classifier = null;
             collector = null;
             cacheEntrySupplier = null;
         }
         return done;
     }
+
 }

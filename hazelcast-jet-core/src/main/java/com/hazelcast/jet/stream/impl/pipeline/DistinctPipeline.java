@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.processor.DistinctProcessor;
+import com.hazelcast.jet.stream.impl.processor.DistinctP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
@@ -35,7 +35,7 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     public Vertex buildDAG(DAG dag) {
         if (upstream.isOrdered()) {
             Vertex previous = upstream.buildDAG(dag);
-            Vertex distinct = new Vertex(randomName(), DistinctProcessor::new).localParallelism(1);
+            Vertex distinct = new Vertex(randomName(), DistinctP::new).localParallelism(1);
             dag.addVertex(distinct)
                     .addEdge(new Edge(previous, distinct));
 
@@ -43,8 +43,8 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         }
 
         Vertex previous = upstream.buildDAG(dag);
-        Vertex distinct = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
-        Vertex combiner = new Vertex("distinct-" + randomName(), DistinctProcessor::new);
+        Vertex distinct = new Vertex("distinct-" + randomName(), DistinctP::new);
+        Vertex combiner = new Vertex("distinct-" + randomName(), DistinctP::new);
 
         dag
                 .addVertex(distinct)

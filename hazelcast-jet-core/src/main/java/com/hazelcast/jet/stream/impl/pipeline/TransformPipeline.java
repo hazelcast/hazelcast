@@ -20,7 +20,7 @@ import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.processor.TransformProcessor;
+import com.hazelcast.jet.stream.impl.processor.TransformP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
@@ -46,7 +46,7 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final List<TransformOperation> ops = operations;
-        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformProcessor(ops));
+        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformP(ops));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
         }

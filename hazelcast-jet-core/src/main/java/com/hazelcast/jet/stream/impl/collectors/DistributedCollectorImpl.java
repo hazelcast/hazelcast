@@ -20,9 +20,9 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.CollectorAccumulatorProcessor;
-import com.hazelcast.jet.stream.impl.processor.CollectorCombinerProcessor;
-import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
+import com.hazelcast.jet.stream.impl.processor.CollectorAccumulatorP;
+import com.hazelcast.jet.stream.impl.processor.CollectorCombinerP;
+import com.hazelcast.jet.stream.impl.processor.CombinerP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
@@ -83,7 +83,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
         Vertex accumulatorVertex = new Vertex("accumulator-" + randomName(),
-                () -> new CollectorAccumulatorProcessor<>(accumulator, supplier));
+                () -> new CollectorAccumulatorP<>(accumulator, supplier));
         if (upstream.isOrdered()) {
             accumulatorVertex.localParallelism(1);
         }
@@ -112,9 +112,9 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     private static <A, R> SimpleProcessorSupplier getCombinerSupplier(Object combiner, Function<A, R> finisher) {
         if (combiner instanceof BiConsumer) {
-            return () -> new CollectorCombinerProcessor((BiConsumer) combiner, finisher);
+            return () -> new CollectorCombinerP((BiConsumer) combiner, finisher);
         } else if (combiner instanceof BinaryOperator) {
-            return () -> new CombinerProcessor<>((BinaryOperator) combiner, finisher);
+            return () -> new CombinerP<>((BinaryOperator) combiner, finisher);
         } else {
             throw new IllegalArgumentException("combiner is of type " + combiner.getClass());
         }

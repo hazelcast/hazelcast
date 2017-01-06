@@ -16,35 +16,43 @@
 
 package com.hazelcast.jet.stream.impl.processor;
 
+import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.AbstractProcessor;
-
-import java.util.HashSet;
-import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import javax.annotation.Nonnull;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
+public class CollectorAccumulatorP<IN, OUT> extends AbstractProcessor {
 
-public class DistinctProcessor<T> extends AbstractProcessor {
+    private BiConsumer<OUT, IN> accumulator;
+    private Supplier<OUT> supplier;
+    private OUT result;
 
-    private Set<T> set = new HashSet<>();
-    private Supplier<T> iteratingSupplier = lazyIterate(set::iterator);
 
-    public DistinctProcessor() {
+    public CollectorAccumulatorP(BiConsumer<OUT, IN> accumulator,
+                                 Supplier<OUT> supplier) {
+        this.accumulator = accumulator;
+        this.supplier = supplier;
+    }
+
+    @Override
+    public void init(@Nonnull Outbox outbox) {
+        super.init(outbox);
+        result = supplier.get();
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        set.add((T) item);
+        accumulator.accept(result, (IN) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(iteratingSupplier);
-        if (done) {
-            set = null;
-            iteratingSupplier = null;
-        }
-        return done;
+        emit(result);
+        accumulator = null;
+        supplier = null;
+        result = null;
+        return true;
     }
 }

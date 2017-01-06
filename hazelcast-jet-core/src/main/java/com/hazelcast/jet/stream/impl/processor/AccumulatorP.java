@@ -17,24 +17,41 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Outbox;
 
-public class LimitProcessor extends AbstractProcessor {
+import javax.annotation.Nonnull;
+import java.util.function.BiFunction;
 
-    private final long limit;
-    private long index;
+public class AccumulatorP<IN, OUT> extends AbstractProcessor {
 
-    public LimitProcessor(Long limit) {
-        this.limit = limit;
+    private BiFunction<OUT, IN, OUT> accumulator;
+    private OUT identity;
+    private OUT result;
+
+
+    public AccumulatorP(BiFunction<OUT, IN, OUT> accumulator, OUT identity) {
+        this.accumulator = accumulator;
+        this.identity = identity;
+    }
+
+    @Override
+    public void init(@Nonnull Outbox outbox) {
+        super.init(outbox);
+        result = identity;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        if (index >= limit) {
-            return true;
-        }
-        index++;
-        emit(item);
+        result = accumulator.apply(result, (IN) item);
+        return true;
+    }
+
+    @Override
+    public boolean complete() {
+        emit(result);
+        accumulator = null;
+        identity = null;
+        result = null;
         return true;
     }
 }
-

@@ -17,35 +17,40 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
 
-public class CollectorCombinerProcessor<T> extends AbstractProcessor {
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Supplier;
 
-    private BiConsumer<T, T> combiner;
-    private T result;
+import static com.hazelcast.jet.Suppliers.lazyIterate;
 
-    public CollectorCombinerProcessor(BiConsumer<T, T> combiner, Function ignored) {
-        this.combiner = combiner;
+public class SortP<T> extends AbstractProcessor {
+
+    private List<T> list;
+    private Supplier<T> itemSupplier;
+
+    public SortP(Comparator<T> comparator) {
+        this.list = new ArrayList<>();
+        this.itemSupplier = lazyIterate(() -> {
+            list.sort(comparator);
+            return list.iterator();
+        });
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        if (result != null) {
-            combiner.accept(result, (T) item);
-        } else {
-            result = (T) item;
-        }
+        list.add((T) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        if (result != null) {
-            emit(result);
+        final boolean done = emitCooperatively(itemSupplier);
+        if (done) {
+            list = null;
+            itemSupplier = null;
         }
-        combiner = null;
-        result = null;
-        return true;
+        return done;
     }
 }

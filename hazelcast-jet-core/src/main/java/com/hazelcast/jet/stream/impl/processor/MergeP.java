@@ -29,7 +29,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.Suppliers.lazyIterate;
 import static com.hazelcast.jet.Suppliers.map;
 
-public class MergeProcessor<T, K, V> extends AbstractProcessor {
+public class MergeP<T, K, V> extends AbstractProcessor {
 
     private Function<? super T, ? extends K> keyMapper;
     private Function<? super T, ? extends V> valueMapper;
@@ -37,9 +37,9 @@ public class MergeProcessor<T, K, V> extends AbstractProcessor {
     private Map<K, V> cache = new HashMap<>();
     private Supplier<Entry<K, V>> cacheEntrySupplier;
 
-    public MergeProcessor(Function<? super T, ? extends K> keyMapper,
-                          Function<? super T, ? extends V> valueMapper,
-                          BinaryOperator<V> merger
+    public MergeP(Function<? super T, ? extends K> keyMapper,
+                  Function<? super T, ? extends V> valueMapper,
+                  BinaryOperator<V> merger
     ) {
         this.keyMapper = keyMapper;
         this.valueMapper = valueMapper;

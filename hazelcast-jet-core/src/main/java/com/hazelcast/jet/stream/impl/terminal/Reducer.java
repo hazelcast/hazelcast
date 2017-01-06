@@ -20,8 +20,8 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.AccumulatorProcessor;
-import com.hazelcast.jet.stream.impl.processor.CombinerProcessor;
+import com.hazelcast.jet.stream.impl.processor.AccumulatorP;
+import com.hazelcast.jet.stream.impl.processor.CombinerP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
@@ -55,7 +55,7 @@ public class Reducer {
     }
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
-        SimpleProcessorSupplier supplier = () -> new CombinerProcessor<>(combiner, Distributed.Function.<T>identity());
+        SimpleProcessorSupplier supplier = () -> new CombinerP<>(combiner, Distributed.Function.<T>identity());
         Vertex combinerVertex = new Vertex(randomName(), supplier).localParallelism(1);
         dag.addVertex(combinerVertex);
         dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
@@ -100,7 +100,7 @@ public class Reducer {
                                                   BiFunction<U, ? super T, U> accumulator) {
 
 
-        Vertex accumulatorVertex = new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity));
+        Vertex accumulatorVertex = new Vertex(randomName(), () -> new AccumulatorP<>(accumulator, identity));
         dag.addVertex(accumulatorVertex);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
@@ -127,9 +127,9 @@ public class Reducer {
     ) {
         return identity != null
                 ?
-                new Vertex(randomName(), () -> new AccumulatorProcessor<>(accumulator, identity))
+                new Vertex(randomName(), () -> new AccumulatorP<>(accumulator, identity))
                 :
-                new Vertex(randomName(), () -> new CombinerProcessor<>(accumulator, Distributed.Function.identity()));
+                new Vertex(randomName(), () -> new CombinerP<>(accumulator, Distributed.Function.identity()));
     }
 
 }

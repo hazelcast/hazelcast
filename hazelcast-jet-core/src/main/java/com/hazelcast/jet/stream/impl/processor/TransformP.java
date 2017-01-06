@@ -25,11 +25,11 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public class TransformProcessor extends AbstractProcessor {
+public class TransformP extends AbstractProcessor {
 
     private TransformOperation[] operations;
 
-    public TransformProcessor(List<TransformOperation> operations) {
+    public TransformP(List<TransformOperation> operations) {
         this.operations = operations.toArray(new TransformOperation[operations.size()]);
     }
 

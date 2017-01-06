@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
 import com.hazelcast.jet.stream.impl.Pipeline;
-import com.hazelcast.jet.stream.impl.processor.SkipProcessor;
+import com.hazelcast.jet.stream.impl.processor.SkipP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
@@ -38,7 +38,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final long skip = this.skip;
-        Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipProcessor(skip)).localParallelism(1);
+        Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipP(skip)).localParallelism(1);
         dag.addVertex(skipVertex);
 
         Edge edge = new Edge(previous, skipVertex);
