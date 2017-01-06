@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
@@ -24,15 +24,6 @@ import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.collectors.CustomStreamCollector;
-import com.hazelcast.jet.stream.impl.pipeline.DistinctPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.LimitPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.PeekPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.SkipPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.SortPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
-import com.hazelcast.jet.stream.impl.pipeline.TransformPipeline;
-import com.hazelcast.jet.stream.impl.pipeline.UnorderedPipeline;
 import com.hazelcast.jet.stream.impl.terminal.Matcher;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 import java.util.Iterator;

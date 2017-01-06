@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
-
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+package com.hazelcast.jet.stream.impl.pipeline;
 
 public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends AbstractPipeline<E_OUT> {
 

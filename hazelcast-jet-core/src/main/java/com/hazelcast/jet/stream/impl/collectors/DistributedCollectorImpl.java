@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
-import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.CollectorAccumulatorP;
 import com.hazelcast.jet.stream.impl.processor.CollectorCombinerP;

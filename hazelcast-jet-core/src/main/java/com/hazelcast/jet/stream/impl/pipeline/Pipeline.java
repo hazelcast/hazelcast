@@ -14,30 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Vertex;
 
-public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
+public interface Pipeline<E_OUT> extends DistributedStream<E_OUT> {
+    Vertex buildDAG(DAG dag);
 
-    public AbstractSourcePipeline(StreamContext context) {
-        super(context);
-    }
-
-    @Override
-    public Vertex buildDAG(DAG dag) {
-        Vertex vertex = new Vertex(getName(), getProducer());
-        if (isOrdered()) {
-            vertex.localParallelism(1);
-        }
-        dag.addVertex(vertex);
-        return vertex;
-    }
-
-    protected abstract ProcessorMetaSupplier getProducer();
-
-    protected abstract String getName();
+    boolean isOrdered();
 }
+

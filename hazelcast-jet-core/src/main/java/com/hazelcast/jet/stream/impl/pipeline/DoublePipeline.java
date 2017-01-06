@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
@@ -24,7 +24,6 @@ import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;

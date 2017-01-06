@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.stream.impl.Pipeline;
+import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.distributed.DistributedComparators;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;

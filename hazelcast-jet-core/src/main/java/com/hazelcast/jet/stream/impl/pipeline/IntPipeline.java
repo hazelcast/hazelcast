@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl;
+package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.stream.Distributed;
@@ -23,105 +23,104 @@ import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
-import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
+import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.OptionalLong;
+import java.util.OptionalInt;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
-import java.util.stream.LongStream;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class LongPipeline implements DistributedLongStream {
+public class IntPipeline implements DistributedIntStream {
 
     private final StreamContext context;
-    private final Pipeline<Long> inner;
+    private final Pipeline<Integer> inner;
 
-    public LongPipeline(StreamContext context, Pipeline<Long> inner) {
+    public IntPipeline(StreamContext context, Pipeline<Integer> inner) {
         this.context = context;
         this.inner = inner;
     }
 
     @Override
-    public DistributedLongStream filter(Distributed.LongPredicate predicate) {
-        DistributedStream<Long> filter = inner.filter(predicate::test);
+    public DistributedIntStream filter(Distributed.IntPredicate predicate) {
+        DistributedStream<Integer> filter = inner.filter(predicate::test);
         return wrap(filter);
     }
 
     @Override
-    public DistributedLongStream map(Distributed.LongUnaryOperator mapper) {
-        DistributedStream<Long> map = inner.map(mapper::applyAsLong);
+    public DistributedIntStream map(Distributed.IntUnaryOperator mapper) {
+        DistributedStream<Integer> map = inner.map(integer -> mapper.applyAsInt(integer));
         return wrap(map);
     }
 
     @Override
-    public <U> DistributedStream<U> mapToObj(Distributed.LongFunction<? extends U> mapper) {
+    public <U> DistributedStream<U> mapToObj(Distributed.IntFunction<? extends U> mapper) {
         return inner.map(m -> mapper.apply(m));
     }
 
     @Override
-    public DistributedIntStream mapToInt(Distributed.LongToIntFunction mapper) {
-        DistributedStream<Integer> stream = inner.map(mapper::applyAsInt);
-        return new IntPipeline(context, (Pipeline<Integer>) stream);
+    public DistributedLongStream mapToLong(Distributed.IntToLongFunction mapper) {
+        DistributedStream<Long> stream = inner.map(mapper::applyAsLong);
+        return new LongPipeline(context, (Pipeline<Long>) stream);
     }
 
     @Override
-    public DistributedDoubleStream mapToDouble(Distributed.LongToDoubleFunction mapper) {
+    public DistributedDoubleStream mapToDouble(Distributed.IntToDoubleFunction mapper) {
         DistributedStream<Double> stream = inner.map(mapper::applyAsDouble);
         return new DoublePipeline(context, (Pipeline<Double>) stream);
     }
 
     @Override
-    public DistributedLongStream flatMap(Distributed.LongFunction<? extends LongStream> mapper) {
-        return wrap(inner.<Long>flatMap(n -> mapper.apply(n).boxed()));
+    public DistributedIntStream flatMap(Distributed.IntFunction<? extends IntStream> mapper) {
+        return wrap(inner.<Integer>flatMap(n -> mapper.apply(n).boxed()));
     }
 
     @Override
-    public DistributedLongStream distinct() {
+    public DistributedIntStream distinct() {
         return wrap(inner.distinct());
     }
 
     @Override
-    public DistributedLongStream sorted() {
+    public DistributedIntStream sorted() {
         return wrap(inner.sorted());
     }
 
     @Override
-    public DistributedLongStream peek(Distributed.LongConsumer action) {
+    public DistributedIntStream peek(Distributed.IntConsumer action) {
         return wrap(inner.peek(action::accept));
     }
 
     @Override
-    public DistributedLongStream limit(long maxSize) {
+    public DistributedIntStream limit(long maxSize) {
         return wrap(inner.limit(maxSize));
     }
 
     @Override
-    public DistributedLongStream skip(long n) {
+    public DistributedIntStream skip(long n) {
         return wrap(inner.skip(n));
     }
 
     @Override
-    public void forEach(Distributed.LongConsumer action) {
+    public void forEach(Distributed.IntConsumer action) {
         inner.forEach(action::accept);
     }
 
     @Override
-    public void forEachOrdered(Distributed.LongConsumer action) {
+    public void forEachOrdered(Distributed.IntConsumer action) {
         inner.forEachOrdered(action::accept);
     }
 
     @Override
-    public long[] toArray() {
-        IList<Long> list = inner.collect(DistributedCollectors.toIList());
-        long[] array = new long[list.size()];
+    public int[] toArray() {
+        IList<Integer> list = inner.collect(DistributedCollectors.toIList());
+        int[] array = new int[list.size()];
 
-        Iterator<Long> iterator = list.iterator();
+        Iterator<Integer> iterator = list.iterator();
         int index = 0;
         while (iterator.hasNext()) {
             array[index++] = iterator.next();
@@ -130,40 +129,40 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public long reduce(long identity, Distributed.LongBinaryOperator op) {
-        return new Reducer(context).<Long>reduce(inner,
+    public int reduce(int identity, Distributed.IntBinaryOperator op) {
+        return new Reducer(context).<Integer>reduce(inner,
                 identity,
-                (Distributed.BinaryOperator<Long>) op::applyAsLong);
+                (Distributed.BinaryOperator<Integer>) op::applyAsInt);
     }
 
     @Override
-    public OptionalLong reduce(Distributed.LongBinaryOperator op) {
-        Optional<Long> result = new Reducer(context).reduce(inner,
-                (Distributed.BinaryOperator<Long>) op::applyAsLong);
-        return result.isPresent() ? OptionalLong.of(result.get()) : OptionalLong.empty();
+    public OptionalInt reduce(Distributed.IntBinaryOperator op) {
+        Optional<Integer> result = new Reducer(context).reduce(inner,
+                (Distributed.BinaryOperator<Integer>) op::applyAsInt);
+        return result.isPresent() ? OptionalInt.of(result.get()) : OptionalInt.empty();
     }
 
     @Override
     public <R> R collect(Distributed.Supplier<R> supplier,
-                         Distributed.ObjLongConsumer<R> accumulator,
+                         Distributed.ObjIntConsumer<R> accumulator,
                          Distributed.BiConsumer<R, R> combiner) {
-        Distributed.BiConsumer<R, Long> boxedAccumulator = accumulator::accept;
+        Distributed.BiConsumer<R, Integer> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
 
     @Override
-    public long sum() {
-        return inner.reduce(0L, (a, b) -> a + b);
+    public int sum() {
+        return inner.reduce(0, (a, b) -> a + b);
     }
 
     @Override
-    public OptionalLong min() {
-        return toOptionalLong(inner.min(Distributed.Comparator.naturalOrder()));
+    public OptionalInt min() {
+        return toOptionalInt(inner.min(Distributed.Comparator.naturalOrder()));
     }
 
     @Override
-    public OptionalLong max() {
-        return toOptionalLong(inner.max(Distributed.Comparator.naturalOrder()));
+    public OptionalInt max() {
+        return toOptionalInt(inner.max(Distributed.Comparator.naturalOrder()));
     }
 
     @Override
@@ -188,36 +187,40 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public java.util.LongSummaryStatistics summaryStatistics() {
-        return collect(DistributedLongSummaryStatistics::new, DistributedLongSummaryStatistics::accept,
-                DistributedLongSummaryStatistics::combine);
+    public java.util.IntSummaryStatistics summaryStatistics() {
+        return collect(DistributedIntSummaryStatistics::new, DistributedIntSummaryStatistics::accept,
+                DistributedIntSummaryStatistics::combine);
     }
 
     @Override
-    public boolean anyMatch(Distributed.LongPredicate predicate) {
+    public boolean anyMatch(Distributed.IntPredicate predicate) {
         return inner.anyMatch(predicate::test);
     }
 
     @Override
-    public boolean allMatch(Distributed.LongPredicate predicate) {
+    public boolean allMatch(Distributed.IntPredicate predicate) {
         return inner.allMatch(predicate::test);
     }
 
     @Override
-    public boolean noneMatch(Distributed.LongPredicate predicate) {
+    public boolean noneMatch(Distributed.IntPredicate predicate) {
         return inner.noneMatch(predicate::test);
     }
 
     @Override
-    public OptionalLong findFirst() {
-        return toOptionalLong(inner.findFirst());
+    public OptionalInt findFirst() {
+        return toOptionalInt(inner.findFirst());
     }
 
     @Override
-    public OptionalLong findAny() {
-        return toOptionalLong(inner.findAny());
+    public OptionalInt findAny() {
+        return toOptionalInt(inner.findAny());
     }
 
+    @Override
+    public DistributedLongStream asLongStream() {
+        return mapToLong(m -> (long) m);
+    }
 
     @Override
     public DistributedDoubleStream asDoubleStream() {
@@ -225,27 +228,27 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public DistributedStream<Long> boxed() {
+    public DistributedStream<Integer> boxed() {
         return inner;
     }
 
     @Override
-    public DistributedLongStream sequential() {
+    public DistributedIntStream sequential() {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public DistributedLongStream parallel() {
+    public DistributedIntStream parallel() {
         return this;
     }
 
     @Override
-    public DistributedLongStream unordered() {
+    public DistributedIntStream unordered() {
         return wrap(inner.unordered());
     }
 
     @Override
-    public DistributedLongStream onClose(Runnable closeHandler) {
+    public DistributedIntStream onClose(Runnable closeHandler) {
         return wrap(inner.onClose(closeHandler));
     }
 
@@ -255,23 +258,23 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public PrimitiveIterator.OfLong iterator() {
-        final Iterator<Long> iterator = inner.iterator();
-        return new PrimitiveIterator.OfLong() {
+    public PrimitiveIterator.OfInt iterator() {
+        final Iterator<Integer> iterator = inner.iterator();
+        return new PrimitiveIterator.OfInt() {
             @Override
             public boolean hasNext() {
                 return iterator.hasNext();
             }
 
             @Override
-            public long nextLong() {
+            public int nextInt() {
                 return iterator.next();
             }
         };
     }
 
     @Override
-    public Spliterator.OfLong spliterator() {
+    public Spliterator.OfInt spliterator() {
         throw new UnsupportedOperationException();
     }
 
@@ -280,11 +283,11 @@ public class LongPipeline implements DistributedLongStream {
         return inner.isParallel();
     }
 
-    private DistributedLongStream wrap(Stream<Long> pipeline) {
-        return new LongPipeline(context, (Pipeline<Long>) pipeline);
+    private DistributedIntStream wrap(Stream<Integer> pipeline) {
+        return new IntPipeline(context, (Pipeline<Integer>) pipeline);
     }
 
-    private static OptionalLong toOptionalLong(Optional<Long> optional) {
-        return optional.isPresent() ? OptionalLong.of(optional.get()) : OptionalLong.empty();
+    private static OptionalInt toOptionalInt(Optional<Integer> optional) {
+        return optional.isPresent() ? OptionalInt.of(optional.get()) : OptionalInt.empty();
     }
 }

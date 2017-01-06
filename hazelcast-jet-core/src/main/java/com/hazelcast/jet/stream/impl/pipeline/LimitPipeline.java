@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.stream.impl.AbstractIntermediatePipeline;
-import com.hazelcast.jet.stream.impl.Pipeline;
 import com.hazelcast.jet.stream.impl.processor.LimitP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
