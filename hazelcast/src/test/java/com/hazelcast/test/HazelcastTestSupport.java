@@ -43,7 +43,6 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.ExceptionUtil;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -75,6 +74,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.TestPartitionUtils.getPartitionServiceState;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -84,7 +84,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "SameParameterValue"})
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -203,10 +203,9 @@ public abstract class HazelcastTestSupport {
         InternalSerializationService serializationService = getSerializationService(local);
         ConnectionManager connectionManager = getConnectionManager(local);
 
-        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
+        return new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION)
                 .setConn(connectionManager.getConnection(getAddress(remote)));
-        return packet;
     }
 
     public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
@@ -829,10 +828,10 @@ public abstract class HazelcastTestSupport {
         try {
             boolean completed = latch.await(timeoutSeconds, TimeUnit.SECONDS);
             if (message == null) {
-                assertTrue(format("CountDownLatch failed to complete within %d seconds , count left: %d", timeoutSeconds,
+                assertTrue(format("CountDownLatch failed to complete within %d seconds, count left: %d", timeoutSeconds,
                         latch.getCount()), completed);
             } else {
-                assertTrue(format("%s, failed to complete within %d seconds , count left: %d", message, timeoutSeconds,
+                assertTrue(format("%s, failed to complete within %d seconds, count left: %d", message, timeoutSeconds,
                         latch.getCount()), completed);
             }
         } catch (InterruptedException e) {
@@ -904,11 +903,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {
-        for (int k = 0; k < durationSeconds; k++) {
+        for (int i = 0; i < durationSeconds; i++) {
             try {
                 task.run();
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
             sleepSeconds(1);
         }
@@ -916,15 +915,15 @@ public abstract class HazelcastTestSupport {
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
-        // we are going to check 5 times a second
-        long iterations = timeoutSeconds * 5;
+        // we are going to check five times a second
         int sleepMillis = 200;
-        for (int k = 0; k < iterations; k++) {
+        long iterations = timeoutSeconds * 5;
+        for (int i = 0; i < iterations; i++) {
             try {
                 try {
                     task.run();
                 } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
+                    throw rethrow(e);
                 }
                 return;
             } catch (AssertionError e) {
@@ -932,7 +931,10 @@ public abstract class HazelcastTestSupport {
             }
             sleepMillis(sleepMillis);
         }
-        throw error;
+        if (error != null) {
+            throw error;
+        }
+        fail("assertTrueEventually() failed without AssertionError!");
     }
 
     public static void assertTrueEventually(AssertTask task) {
@@ -948,7 +950,7 @@ public abstract class HazelcastTestSupport {
         try {
             task.run();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

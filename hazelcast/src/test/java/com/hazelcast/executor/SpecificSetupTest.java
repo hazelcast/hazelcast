@@ -23,7 +23,6 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -38,6 +37,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.spi.properties.GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -48,33 +48,10 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class, ParallelTest.class})
 public class SpecificSetupTest extends ExecutorServiceTestSupport {
 
-    /*
-    @Test
-    public void testIssue4667() throws ExecutionException, InterruptedException {
-        try {
-//            TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-            HazelcastInstance
-                    instance1 =
-                            Hazelcast.newHazelcastInstance(),
-//                            factory.newHazelcastInstance(),
-                    instance2 =
-                            Hazelcast.newHazelcastInstance();
-//                            factory.newHazelcastInstance();
-            IExecutorService executorService = instance1.getExecutorService(randomString());
-            Future<Boolean> future = executorService.submitToMember(new SleepingTask(1000),
-                    instance2.getCluster().getLocalMember());
-            assertTrue(future.cancel(true));
-            try { future.get(); } catch (Exception ignored) {}
-        } finally {
-            Hazelcast.shutdownAll();
-        }
-    }
-    */
-
     @Test
     public void managedContext_mustInitializeRunnable() throws Exception {
         final AtomicBoolean initialized = new AtomicBoolean();
-        final Config config = new Config()
+        Config config = new Config()
                 .addExecutorConfig(new ExecutorConfig("test", 1))
                 .setManagedContext(new ManagedContext() {
                     @Override
@@ -92,13 +69,13 @@ public class SpecificSetupTest extends ExecutorServiceTestSupport {
 
     @Test
     public void statsIssue2039() throws Exception {
-        final Config config = new Config();
-        final String name = "testStatsIssue2039";
+        Config config = new Config();
+        String name = "testStatsIssue2039";
         config.addExecutorConfig(new ExecutorConfig(name).setQueueCapacity(1).setPoolSize(1));
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final IExecutorService executorService = instance.getExecutorService(name);
-        final SleepLatchRunnable r = new SleepLatchRunnable();
-        executorService.execute(r);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IExecutorService executorService = instance.getExecutorService(name);
+        SleepLatchRunnable runnable = new SleepLatchRunnable();
+        executorService.execute(runnable);
         assertTrue(SleepLatchRunnable.startLatch.await(30, SECONDS));
         Future waitingInQueue = executorService.submit(new EmptyRunnable());
         Future rejected = executorService.submit(new EmptyRunnable());
@@ -114,7 +91,7 @@ public class SpecificSetupTest extends ExecutorServiceTestSupport {
 
         waitingInQueue.get(1, MINUTES);
 
-        final LocalExecutorStats stats = executorService.getLocalExecutorStats();
+        LocalExecutorStats stats = executorService.getLocalExecutorStats();
         assertEquals(2, stats.getStartedTaskCount());
         assertEquals(0, stats.getPendingTaskCount());
     }
@@ -124,17 +101,18 @@ public class SpecificSetupTest extends ExecutorServiceTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
         int timeoutSeconds = 3;
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(SECONDS.toMillis(timeoutSeconds)));
+        config.setProperty(OPERATION_CALL_TIMEOUT_MILLIS.getName(), String.valueOf(SECONDS.toMillis(timeoutSeconds)));
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         IExecutorService executor = hz1.getExecutorService(randomString());
-        Future<Boolean> f = executor.submitToMember(new SleepingTask(3 * timeoutSeconds),
+        Future<Boolean> future = executor.submitToMember(new SleepingTask(3 * timeoutSeconds),
                 hz2.getCluster().getLocalMember());
-        Boolean result = f.get(1, MINUTES);
+        Boolean result = future.get(1, MINUTES);
         assertTrue(result);
     }
 
     private static class SleepLatchRunnable implements Runnable, Serializable {
+
         static CountDownLatch startLatch;
         static CountDownLatch sleepLatch;
 

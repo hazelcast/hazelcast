@@ -59,11 +59,6 @@ public class SemaphoreDetachMemberOperation extends SemaphoreBackupAwareOperatio
     }
 
     @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    @Override
     public boolean shouldBackup() {
         final NodeEngine nodeEngine = getNodeEngine();
         IPartitionService partitionService = nodeEngine.getPartitionService();

@@ -18,8 +18,6 @@ package com.hazelcast.internal.nearcache.impl.preloader;
 
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.internal.nearcache.NearCacheRecord;
-import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.util.BufferingInputStream;
 import com.hazelcast.logging.ILogger;
@@ -37,7 +35,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Set;
+import java.util.Iterator;
 
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.readIntB;
@@ -55,9 +53,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 /**
  * Loads and stores the keys from a Near Cache into a file.
  *
- * @param <KS> type of the {@link NearCacheRecord} keys
+ * @param <K> type of the {@link com.hazelcast.internal.nearcache.NearCacheRecord} keys
  */
-public class NearCachePreloader<KS> {
+public class NearCachePreloader<K> {
 
     /**
      * File format for the file header.
@@ -163,16 +161,11 @@ public class NearCachePreloader<KS> {
     }
 
     /**
-     * Stores the keys from the supplied {@link NearCacheRecordMap} instances.
+     * Stores the Near Cache keys from the supplied iterator.
      *
-     * We need to support multiple records maps here, since Hazelcast Enterprise has a segmented
-     * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} which contains multiple records maps.
-     *
-     * @param records the {@link NearCacheRecordMap} instances to retrieve the keys from
-     * @param <R>     the {@link NearCacheRecord} type
-     * @param <NCRM>  the {@link NearCacheRecordMap} type
+     * @param iterator {@link Iterator} over the key set of a {@link com.hazelcast.internal.nearcache.NearCacheRecordStore}
      */
-    public <R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>> void storeKeys(NCRM... records) {
+    public void storeKeys(Iterator<K> iterator) {
         long startedNanos = System.nanoTime();
         FileOutputStream fos = null;
         try {
@@ -181,14 +174,10 @@ public class NearCachePreloader<KS> {
 
             fos = new FileOutputStream(tmpStoreFile, false);
 
-            // writer header
+            // write header and keys
             writeInt(fos, MAGIC_BYTES);
             writeInt(fos, FileFormat.INTERLEAVED_LENGTH_FIELD.ordinal());
-
-            // writer keys
-            for (NCRM record : records) {
-                writeKeySet(fos, fos.getChannel(), record.keySet());
-            }
+            writeKeySet(fos, fos.getChannel(), iterator);
 
             // cleanup if no keys have been written
             if (lastKeyCount == 0) {
@@ -242,8 +231,9 @@ public class NearCachePreloader<KS> {
         return loadedKeys;
     }
 
-    private void writeKeySet(FileOutputStream fos, FileChannel outChannel, Set<KS> keySet) throws IOException {
-        for (KS key : keySet) {
+    private void writeKeySet(FileOutputStream fos, FileChannel outChannel, Iterator<K> iterator) throws IOException {
+        while (iterator.hasNext()) {
+            K key = iterator.next();
             Data dataKey = serializationService.toData(key);
             if (dataKey != null) {
                 int dataSize = dataKey.totalSize();

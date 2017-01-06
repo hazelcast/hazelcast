@@ -10,37 +10,37 @@ import org.junit.Before;
 
 public abstract class AbstractQueryCacheTestSupport extends HazelcastTestSupport {
 
-    protected HazelcastInstance[] instances;
-    protected IMap<Integer, Employee> map;
     protected Config config = new Config();
     protected String mapName = randomString();
 
+    protected HazelcastInstance[] instances;
+    protected IMap<Integer, Employee> map;
+
+    @Before
+    public void setUp() {
+        prepare();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        instances = factory.newInstances(config);
+        map = getMap(instances[0], mapName);
+    }
+
+    /**
+     * Override this method to adjust the test configuration.
+     */
     void prepare() {
     }
 
-    @Before
-    public void setUp() throws Exception {
-        prepare();
-        map = getMap();
-    }
-
-    private <K, V> IMap<K, V> getMap() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        instances = factory.newInstances(config);
-        return getMap(instances[0], mapName);
-    }
-
-    protected void populateMap(IMap<Integer, Employee> map, int count) {
+    void populateMap(IMap<Integer, Employee> map, int count) {
         populateMap(map, 0, count);
     }
 
-    protected void populateMap(IMap<Integer, Employee> map, int startIndex, int endIndex) {
+    void populateMap(IMap<Integer, Employee> map, int startIndex, int endIndex) {
         for (int i = startIndex; i < endIndex; i++) {
             map.put(i, new Employee(i));
         }
     }
 
-    protected void removeEntriesFromMap(IMap<Integer, Employee> map, int startIndex, int endIndex) {
+    void removeEntriesFromMap(IMap<Integer, Employee> map, int startIndex, int endIndex) {
         for (int i = startIndex; i < endIndex; i++) {
             map.remove(i);
         }

@@ -33,24 +33,26 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Employee> TRUE_PREDICATE = TruePredicate.INSTANCE;
+    @SuppressWarnings("unchecked")
+    private static final Predicate<Integer, Integer> SQL_PREDICATE = new SqlPredicate("this > 20");
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    public void testQueryCache_whenIncludeValue_enabled() throws Exception {
+    public void testQueryCache_whenIncludeValue_enabled() {
         boolean includeValue = true;
         testQueryCache(includeValue);
     }
 
     @Test
     @SuppressWarnings("ConstantConditions")
-    public void testQueryCache_whenIncludeValue_disabled() throws Exception {
+    public void testQueryCache_whenIncludeValue_disabled() {
         boolean includeValue = false;
         testQueryCache(includeValue);
     }
 
     @Test
-    @SuppressWarnings("ConstantConditions")
-    public void testQueryCache_whenInitialPopulation_enabled() throws Exception {
+    @SuppressWarnings({"ConstantConditions", "UnnecessaryLocalVariable"})
+    public void testQueryCache_whenInitialPopulation_enabled() {
         boolean enableInitialPopulation = true;
         int numberOfElementsToBePutToIMap = 1000;
         int expectedSizeOfQueryCache = numberOfElementsToBePutToIMap;
@@ -91,7 +93,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
             public void entryRemoved(EntryEvent event) {
                 countRemoveEvent.incrementAndGet();
             }
-        }, new SqlPredicate("this > 20"), true);
+        }, SQL_PREDICATE, true);
 
         for (int i = 0; i < 30; i++) {
             map.remove(i);
@@ -155,7 +157,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     }
 
     @Test
-    public void test_getName() {
+    public void testGetName() {
         String cacheName = "cache-name";
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
 
@@ -184,16 +186,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertEquals(0, queryCache.size());
     }
 
-    private void testWithInitialPopulation(boolean enableInitialPopulation, int expectedSize, int numberOfElementsToPut) {
-        String cacheName = randomString();
-        getConfig(mapName, cacheName, enableInitialPopulation);
-
-        populateMap(map, numberOfElementsToPut);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
-
-        assertEquals(expectedSize, queryCache.size());
-    }
-
+    @SuppressWarnings("unchecked")
     private void testQueryCache(boolean includeValue) {
         IMap<Integer, Integer> map = getMap(instances[0], mapName);
 
@@ -213,23 +206,31 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(expected, cache);
     }
 
-    private Config getConfig(String mapName, String cacheName, boolean enableInitialPopulation) {
+    private void testWithInitialPopulation(boolean enableInitialPopulation, int expectedSize, int numberOfElementsToPut) {
+        String cacheName = randomString();
+        initConfig(mapName, cacheName, enableInitialPopulation);
+
+        populateMap(map, numberOfElementsToPut);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName, TRUE_PREDICATE, true);
+
+        assertEquals(expectedSize, queryCache.size());
+    }
+
+    private void initConfig(String mapName, String cacheName, boolean enableInitialPopulation) {
         QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName);
         queryCacheConfig
                 .setPopulate(enableInitialPopulation)
-                .getPredicateConfig().setImplementation(TruePredicate.INSTANCE);
+                .getPredicateConfig().setImplementation(TRUE_PREDICATE);
 
-        return addConfig(mapName, queryCacheConfig);
+        MapConfig mapConfig = new MapConfig(mapName)
+                .addQueryCacheConfig(queryCacheConfig);
+
+        config.addMapConfig(mapConfig);
     }
 
-    private Config addConfig(String mapName, QueryCacheConfig queryCacheConfig) {
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.addQueryCacheConfig(queryCacheConfig);
-
-        return config.addMapConfig(mapConfig);
-    }
-
-    private void assertQueryCacheSizeEventually(final int expected, final IFunction<?, ?> function, final QueryCache queryCache) {
+    @SuppressWarnings("SameParameterValue")
+    private static void assertQueryCacheSizeEventually(final int expected, final IFunction<?, ?> function,
+                                                       final QueryCache queryCache) {
         AssertTask task = new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -241,7 +242,7 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertTrueEventually(task);
     }
 
-    private void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
+    private static void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

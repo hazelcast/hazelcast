@@ -24,7 +24,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class LongRunningTaskTest extends HazelcastTestSupport {
 
-    public static final int CALL_TIMEOUT = 1000;
+    private static final int CALL_TIMEOUT = 1000;
+
     private HazelcastInstance hz;
 
     @Before
@@ -38,22 +39,23 @@ public class LongRunningTaskTest extends HazelcastTestSupport {
     public void test() {
         final String response = "foobar";
         SleepingCallable task = new SleepingCallable(response, 10 * CALL_TIMEOUT);
-        final Future<String> f = hz.getExecutorService("e").submit(task);
+        final Future<String> future = hz.getExecutorService("e").submit(task);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(f.isDone());
-                assertEquals(response, f.get());
+                assertTrue(future.isDone());
+                assertEquals(response, future.get());
             }
         });
     }
 
     public static class SleepingCallable implements Callable<String>, Serializable {
+
         private final String response;
         private final int delayMs;
 
-        public SleepingCallable(String response, int delayMs) {
+        SleepingCallable(String response, int delayMs) {
             this.response = response;
             this.delayMs = delayMs;
         }

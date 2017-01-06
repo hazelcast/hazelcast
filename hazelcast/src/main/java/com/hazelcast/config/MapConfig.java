@@ -943,7 +943,7 @@ public class MapConfig {
     public String toString() {
         return "MapConfig{"
                 + "name='" + name + '\''
-                + "', inMemoryFormat=" + inMemoryFormat + '\''
+                + ", inMemoryFormat=" + inMemoryFormat + '\''
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
