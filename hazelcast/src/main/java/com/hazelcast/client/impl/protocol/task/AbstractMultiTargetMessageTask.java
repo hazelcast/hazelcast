@@ -24,10 +24,10 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -77,7 +77,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
         private MultiTargetCallback(Collection<Member> targets) {
             this.targets = new HashSet<Member>(targets);
-            this.results = new HashMap<Member, Object>(targets.size());
+            this.results = MapUtil.createHashMap(targets.size());
         }
 
         public synchronized void notify(Member target, Object result) {

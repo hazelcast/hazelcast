@@ -34,14 +34,15 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.SetUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
+
 import java.util.Collection;
 import java.util.EventListener;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -247,7 +248,7 @@ abstract class AbstractInternalCacheProxy<K, V>
     protected void removeAllInternal(Set<? extends K> keys) {
         final Set<Data> keysData;
         if (keys != null) {
-            keysData = new HashSet<Data>();
+            keysData = SetUtil.createHashSet(keys.size());
             for (K key : keys) {
                 keysData.add(serializationService.toData(key));
             }

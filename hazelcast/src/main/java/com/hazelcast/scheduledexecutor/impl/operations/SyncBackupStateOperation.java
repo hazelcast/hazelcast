@@ -20,9 +20,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class SyncBackupStateOperation
@@ -74,7 +74,7 @@ public class SyncBackupStateOperation
         super.readInternal(in);
         this.taskName = in.readUTF();
         int stateSize = in.readInt();
-        this.state = new HashMap(stateSize);
+        this.state = MapUtil.createHashMap(stateSize);
         for (int i = 0; i < stateSize; i++) {
             this.state.put(in.readObject(), in.readObject());
         }

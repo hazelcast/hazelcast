@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -175,8 +176,8 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private Map prepareBatchMap(DelayedEntry[] delayedEntries) {
-        final Map<Object, DelayedEntry> batchMap = new HashMap<Object, DelayedEntry>();
         final int length = delayedEntries.length;
+        final Map<Object, DelayedEntry> batchMap = MapUtil.createHashMap(length);
         // process in reverse order since we do want to process
         // last store operation on a specific key
         for (int i = length - 1; i >= 0; i--) {

@@ -25,10 +25,10 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.PredicateDataSerializerHook;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -93,7 +93,7 @@ public class IndexImpl implements Index {
             return getRecords(values[0]);
         } else {
             if (converter != null) {
-                Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
+                Set<Comparable> convertedValues = SetUtil.createHashSet(values.length);
                 for (Comparable value : values) {
                     convertedValues.add(convert(value));
                 }

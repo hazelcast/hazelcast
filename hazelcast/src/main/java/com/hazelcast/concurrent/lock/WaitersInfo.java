@@ -30,7 +30,7 @@ import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
 final class WaitersInfo implements IdentifiedDataSerializable {
 
     private String conditionId;
-    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
+    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(4);
 
     public WaitersInfo() {
     }

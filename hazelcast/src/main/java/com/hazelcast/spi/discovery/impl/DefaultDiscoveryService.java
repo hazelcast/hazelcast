@@ -31,6 +31,7 @@ import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.ArrayList;
@@ -178,7 +179,7 @@ public class DefaultDiscoveryService
         }
 
         Map<String, Comparable> properties = config.getProperties();
-        Map<String, Comparable> mappedProperties = new HashMap<String, Comparable>();
+        Map<String, Comparable> mappedProperties = MapUtil.createHashMap(propertyDefinitions.size());
 
         for (PropertyDefinition propertyDefinition : propertyDefinitions) {
             String propertyKey = propertyDefinition.key();

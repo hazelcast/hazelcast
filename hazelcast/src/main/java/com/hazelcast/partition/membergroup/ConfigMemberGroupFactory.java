@@ -20,11 +20,11 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.AddressUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -34,7 +34,7 @@ public class ConfigMemberGroupFactory extends BackupSafeMemberGroupFactory imple
     private final Map<Integer, MemberGroupConfig> memberGroupConfigMap;
 
     public ConfigMemberGroupFactory(Collection<MemberGroupConfig> memberGroupConfigs) {
-        this.memberGroupConfigMap = new LinkedHashMap<Integer, MemberGroupConfig>();
+        this.memberGroupConfigMap = MapUtil.createLinkedHashMap(memberGroupConfigs.size());
         int key = 0;
         for (MemberGroupConfig groupConfig : memberGroupConfigs) {
             memberGroupConfigMap.put(key++, groupConfig);

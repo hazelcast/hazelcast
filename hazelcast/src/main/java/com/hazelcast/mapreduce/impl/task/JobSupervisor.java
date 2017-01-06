@@ -237,7 +237,7 @@ public class JobSupervisor {
         Map<Object, Object> result;
         if (configuration.getReducerFactory() != null) {
             int mapSize = MapReduceUtil.mapSize(reducers.size());
-            result = new HashMapAdapter<Object, Object>(mapSize);
+            result = new HashMapAdapter<Object, Object>((int) (mapSize * 1.35 + 1));
             for (Map.Entry<Object, Reducer> entry : reducers.entrySet()) {
                 Object reducedResults = entry.getValue().finalizeReduce();
                 if (reducedResults != null) {

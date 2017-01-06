@@ -32,7 +32,7 @@ public class ClientEngineMBean extends HazelcastMBean<ClientEngine> {
     public ClientEngineMBean(HazelcastInstance hazelcastInstance, ClientEngine clientEngine, ManagementService service) {
         super(clientEngine, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        Hashtable<String, String> properties = new Hashtable<String, String>(5);
         properties.put("type", quote("HazelcastInstance.ClientEngine"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

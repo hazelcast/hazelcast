@@ -20,6 +20,7 @@ import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -71,7 +72,7 @@ public class IntermediateChunkNotification<KeyOut, Value>
             throws IOException {
         super.readData(in);
         int size = in.readInt();
-        chunk = new HashMap<KeyOut, Value>();
+        chunk = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             KeyOut key = in.readObject();
             Value value = in.readObject();

@@ -26,11 +26,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -81,19 +81,19 @@ public class MultiMapMigrationOperation extends Operation implements IdentifiedD
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int mapSize = in.readInt();
-        map = new HashMap<String, Map>(mapSize);
+        final int mapSize = in.readInt();
+        map = MapUtil.createHashMap(mapSize);
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             int collectionSize = in.readInt();
-            Map<Data, MultiMapValue> collections = new HashMap<Data, MultiMapValue>();
+            Map<Data, MultiMapValue> collections = MapUtil.createHashMap(collectionSize);
             for (int j = 0; j < collectionSize; j++) {
                 Data key = in.readData();
                 int collSize = in.readInt();
                 String collectionType = in.readUTF();
                 Collection<MultiMapRecord> coll;
                 if (collectionType.equals(MultiMapConfig.ValueCollectionType.SET.name())) {
-                    coll = new HashSet<MultiMapRecord>();
+                    coll = SetUtil.createHashSet(collSize);
                 } else {
                     coll = new LinkedList<MultiMapRecord>();
                 }

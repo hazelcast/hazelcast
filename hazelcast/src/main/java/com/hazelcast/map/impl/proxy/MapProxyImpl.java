@@ -70,12 +70,12 @@ import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -717,7 +717,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (keys.isEmpty()) {
             return emptyMap();
         }
-        Set<Data> dataKeys = new HashSet<Data>(keys.size());
+        Set<Data> dataKeys = SetUtil.createHashSet(keys.size());
         for (K key : keys) {
             dataKeys.add(toData(key, partitionStrategy));
         }

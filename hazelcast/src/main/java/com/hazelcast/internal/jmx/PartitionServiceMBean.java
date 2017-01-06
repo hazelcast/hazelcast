@@ -31,7 +31,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
 public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionService> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
     private final HazelcastInstanceImpl hazelcastInstance;
 
     public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, InternalPartitionService partitionService,

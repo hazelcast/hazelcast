@@ -29,12 +29,13 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.MapUtil;
 
 import javax.cache.expiry.ExpiryPolicy;
+
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -78,7 +79,7 @@ public class CachePutAllOperation
         String callerUuid = getCallerUuid();
         ICacheService service = getService();
         cache = service.getOrCreateRecordStore(name, partitionId);
-        backupRecords = new HashMap<Data, CacheRecord>(entries.size());
+        backupRecords = MapUtil.createHashMap(entries.size());
         for (Map.Entry<Data, Data> entry : entries) {
             Data key = entry.getKey();
             Data value = entry.getValue();

@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.util.SetUtil;
+
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -53,7 +55,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
-                    entries = new HashSet<QueryableEntry>();
+                    entries = SetUtil.createHashSet(Math.max(4, indexedResults.size() * 4));
                     for (Set<QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }

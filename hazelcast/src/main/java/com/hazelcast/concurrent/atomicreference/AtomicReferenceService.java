@@ -29,8 +29,8 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -95,7 +95,7 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
             return null;
         }
 
-        Map<String, Data> data = new HashMap<String, Data>();
+        Map<String, Data> data = MapUtil.createHashMap(containers.size() / 2);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, AtomicReferenceContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();

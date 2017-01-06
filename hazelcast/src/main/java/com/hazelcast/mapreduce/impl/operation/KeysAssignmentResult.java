@@ -22,9 +22,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -72,7 +72,7 @@ public class KeysAssignmentResult
             throws IOException {
         if (in.readBoolean()) {
             int size = in.readInt();
-            assignment = new HashMap<Object, Address>(size);
+            assignment = MapUtil.createHashMap(size);
             for (int i = 0; i < size; i++) {
                 assignment.put(in.readObject(), (Address) in.readObject());
             }

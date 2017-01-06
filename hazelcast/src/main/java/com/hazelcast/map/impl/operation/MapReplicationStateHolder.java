@@ -29,13 +29,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.record.Records.applyRecordInfo;
 
@@ -64,9 +65,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     }
 
     void prepare(PartitionContainer container, int replicaIndex) {
-        data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
-        loaded = new HashMap<String, Boolean>(container.getMaps().size());
-        for (Map.Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
+        final ConcurrentMap<String, RecordStore> maps = container.getMaps();
+	final int mapSize = maps.size();
+	data = MapUtil.createHashMap(mapSize);
+        loaded = MapUtil.createHashMap(mapSize);
+        for (Map.Entry<String, RecordStore> entry : maps.entrySet()) {
             RecordStore recordStore = entry.getValue();
 
             MapContainer mapContainer = recordStore.getMapContainer();
@@ -78,7 +81,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
             String mapName = entry.getKey();
             loaded.put(mapName, recordStore.isLoaded());
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            Set<RecordReplicationInfo> recordSet = SetUtil.createHashSet(recordStore.size());
             final Iterator<Record> iterator = recordStore.iterator();
             while (iterator.hasNext()) {
                 Record record = iterator.next();
@@ -133,11 +136,11 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        data = new HashMap<String, Set<RecordReplicationInfo>>(size);
+        data = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Set<RecordReplicationInfo> recordReplicationInfos = new HashSet<RecordReplicationInfo>(mapSize);
+            Set<RecordReplicationInfo> recordReplicationInfos = SetUtil.createHashSet(mapSize);
             for (int j = 0; j < mapSize; j++) {
                 RecordReplicationInfo recordReplicationInfo = in.readObject();
                 recordReplicationInfos.add(recordReplicationInfo);
@@ -146,7 +149,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
         }
 
         int loadedSize = in.readInt();
-        loaded = new HashMap<String, Boolean>(loadedSize);
+        loaded = MapUtil.createHashMap(loadedSize);
         for (int i = 0; i < loadedSize; i++) {
             loaded.put(in.readUTF(), in.readBoolean());
         }

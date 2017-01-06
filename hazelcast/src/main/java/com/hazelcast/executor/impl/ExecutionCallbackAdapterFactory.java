@@ -20,9 +20,9 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +49,7 @@ class ExecutionCallbackAdapterFactory {
     ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
                                     MultiExecutionCallback multiExecutionCallback) {
         this.multiExecutionCallback = multiExecutionCallback;
-        this.responses = new ConcurrentHashMap<Member, ValueWrapper>(members.size());
+        this.responses = new ConcurrentHashMap<Member, ValueWrapper>((int) ((members.size() * 1.35) + 1));
         this.members = new HashSet<Member>(members);
         this.logger = logger;
     }
@@ -67,7 +67,7 @@ class ExecutionCallbackAdapterFactory {
             return;
         }
 
-        Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());
+        Map<Member, Object> realResponses = MapUtil.createHashMap(members.size());
         for (Map.Entry<Member, ValueWrapper> entry : responses.entrySet()) {
             Member key = entry.getKey();
             Object value = entry.getValue().value;

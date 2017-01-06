@@ -143,8 +143,10 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         if (isEmpty(keys)) {
             return Collections.emptyMap();
         }
+        
+        final int roughSize = (int) (Math.min(partitionService.getPartitionCount(), keys.size()) * 1.35 + 1);
 
-        Map<Integer, List<Data>> partitionToKeys = new Int2ObjectHashMap<List<Data>>();
+        Map<Integer, List<Data>> partitionToKeys = new Int2ObjectHashMap<List<Data>>(roughSize);
         for (Data key : keys) {
             int partitionId = partitionService.getPartitionId(key);
             List<Data> keyList = partitionToKeys.get(partitionId);

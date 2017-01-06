@@ -23,10 +23,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -93,8 +93,7 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
-        Map<String, Map<String, ScheduledTaskDescriptor>> map =
-                new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
+        Map<String, Map<String, ScheduledTaskDescriptor>> map = MapUtil.createHashMap(containers.size());
 
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {

@@ -24,9 +24,9 @@ import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.InternalReplicatedMapStorage;
 import com.hazelcast.replicatedmap.impl.record.RecordMigrationInfo;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -98,7 +98,7 @@ public class SyncReplicatedMapDataOperation<K, V> extends AbstractSerializableOp
         name = in.readUTF();
         version = in.readLong();
         int size = in.readInt();
-        recordSet = new HashSet<RecordMigrationInfo>(size);
+        recordSet = SetUtil.createHashSet(size);
         for (int j = 0; j < size; j++) {
             RecordMigrationInfo record = new RecordMigrationInfo();
             record.readData(in);

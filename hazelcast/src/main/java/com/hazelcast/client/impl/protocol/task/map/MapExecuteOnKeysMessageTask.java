@@ -30,6 +30,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.SetUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class MapExecuteOnKeysMessageTask
         IPartitionService partitionService = nodeEngine.getPartitionService();
         int partitions = partitionService.getPartitionCount();
         int capacity = Math.min(partitions, parameters.keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = SetUtil.createHashSet(capacity);
         Iterator<Data> iterator = parameters.keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
             Data key = iterator.next();

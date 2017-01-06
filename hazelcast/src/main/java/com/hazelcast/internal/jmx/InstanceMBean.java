@@ -40,7 +40,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     final Config config;
     final Cluster cluster;

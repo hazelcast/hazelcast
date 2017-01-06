@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -24,7 +25,7 @@ import java.util.Map;
  */
 public final class MapUtil {
 
-    private static final double HASHMAP_DEFAULT_LOAD_FACTOR = 0.75;
+    private static final float HASHMAP_DEFAULT_LOAD_FACTOR = 0.75f;
 
     private MapUtil() { }
 
@@ -33,8 +34,17 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
-        int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
-        return new HashMap<K, V>(initialCapacity);
+        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new HashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Utility method that creates an {@link java.util.LinkedHashMap} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <K, V> Map<K, V> createLinkedHashMap(int expectedMapSize) {
+        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new LinkedHashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
     }
 
     /**

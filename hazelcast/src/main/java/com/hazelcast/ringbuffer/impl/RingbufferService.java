@@ -30,8 +30,8 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
@@ -107,7 +107,7 @@ public class RingbufferService implements ManagedService, RemoteService, Migrati
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        Map<String, RingbufferContainer> migrationData = new HashMap<String, RingbufferContainer>();
+        Map<String, RingbufferContainer> migrationData = MapUtil.createHashMap(containers.size());
         IPartitionService partitionService = nodeEngine.getPartitionService();
         for (Map.Entry<String, RingbufferContainer> entry : containers.entrySet()) {
             String name = entry.getKey();

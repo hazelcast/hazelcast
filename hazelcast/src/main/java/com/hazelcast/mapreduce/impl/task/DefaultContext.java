@@ -91,7 +91,7 @@ public class DefaultContext<KeyIn, ValueIn>
 
     public <Chunk> Map<KeyIn, Chunk> requestChunk() {
         int mapSize = MapReduceUtil.mapSize(combiners.size());
-        Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>(mapSize);
+        Map<KeyIn, Chunk> chunkMap = new HashMapAdapter<KeyIn, Chunk>((int) (mapSize * 1.35 + 1));
         for (Map.Entry<KeyIn, Combiner<ValueIn, ?>> entry : combiners.entrySet()) {
             Combiner<ValueIn, ?> combiner = entry.getValue();
             Chunk chunk = (Chunk) combiner.finalizeChunk();

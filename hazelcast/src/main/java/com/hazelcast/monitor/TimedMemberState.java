@@ -21,9 +21,9 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.impl.MemberStateImpl;
+import com.hazelcast.util.SetUtil;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -130,13 +130,13 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         time = getLong(json, "time");
         master = getBoolean(json, "master");
         clusterName = getString(json, "clusterName");
-        instanceNames = new HashSet<String>();
         final JsonArray jsonInstanceNames = getArray(json, "instanceNames");
+        instanceNames = SetUtil.createHashSet(jsonInstanceNames.size());
         for (JsonValue instanceName : jsonInstanceNames.values()) {
             instanceNames.add(instanceName.asString());
         }
-        memberList = new ArrayList<String>();
         final JsonArray jsonMemberList = getArray(json, "memberList");
+        memberList = new ArrayList<String>(jsonMemberList.size());
         for (JsonValue member : jsonMemberList.values()) {
             memberList.add(member.asString());
         }

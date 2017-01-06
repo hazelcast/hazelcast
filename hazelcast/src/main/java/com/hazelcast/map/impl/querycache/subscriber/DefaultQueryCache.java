@@ -42,6 +42,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -320,15 +321,17 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<K> resultingSet = new HashSet<K>();
+        final Set<K> resultingSet;
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
+            resultingSet = SetUtil.createHashSet(query.size());
             for (QueryableEntry entry : query) {
                 K key = (K) entry.getKey();
                 resultingSet.add(key);
             }
         } else {
+            resultingSet = new HashSet<K>();
             doFullKeyScan(predicate, resultingSet);
         }
 
@@ -339,17 +342,19 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
 
-        Set<Map.Entry<K, V>> resultingSet = new HashSet<Map.Entry<K, V>>();
+        final Set<Map.Entry<K, V>> resultingSet;
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
             if (query.isEmpty()) {
                 return Collections.emptySet();
             }
+            resultingSet = SetUtil.createHashSet(query.size());
             for (QueryableEntry entry : query) {
                 resultingSet.add(entry);
             }
         } else {
+            resultingSet = new HashSet<Map.Entry<K,V>>();
             doFullEntryScan(predicate, resultingSet);
         }
         return resultingSet;
@@ -363,14 +368,16 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
             return Collections.emptySet();
         }
 
-        Set<V> resultingSet = new HashSet<V>();
+        final Set<V> resultingSet;
 
         Set<QueryableEntry> query = indexes.query(predicate);
         if (query != null) {
+            resultingSet = SetUtil.createHashSet(query.size());
             for (QueryableEntry entry : query) {
                 resultingSet.add((V) entry.getValue());
             }
         } else {
+            resultingSet = new HashSet<V>();
             doFullValueScan(predicate, resultingSet);
         }
         return resultingSet;

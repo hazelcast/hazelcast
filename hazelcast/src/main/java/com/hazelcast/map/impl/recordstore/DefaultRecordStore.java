@@ -50,11 +50,11 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -427,7 +427,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 continue;
             }
             if (keySet == EMPTY_SET) {
-                keySet = new HashSet<Data>();
+                keySet = SetUtil.createHashSet(records.size());
             }
             keySet.add(key);
         }
