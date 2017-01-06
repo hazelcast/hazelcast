@@ -1,0 +1,84 @@
+<!--
+  ~ Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+    <id>hazelcast-jet</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <includes>
+                <include>com.hazelcast.jet:hazelcast-jet</include>
+                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
+                <include>com.hazelcast.jet:hazelcast-jet-hadoop</include>
+                <include>com.hazelcast:hazelcast</include>
+                <include>com.hazelcast:hazelcast-client</include>
+            </includes>
+            <outputDirectory>lib</outputDirectory>
+            <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}</outputFileNameMapping>
+        </dependencySet>
+        <dependencySet>
+            <includes>
+                <include>*:javadoc</include>
+            </includes>
+            <unpack>true</unpack>
+            <outputDirectory>docs/javadoc</outputDirectory>
+        </dependencySet>
+    </dependencySets>
+
+    <files>
+        <file>
+            <source>${resource.dir}/hazelcast-jet-default.xml</source>
+            <destName>hazelcast-jet.xml</destName>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>${resource.dir}/hazelcast-jet-member-default.xml</source>
+            <destName>hazelcast.xml</destName>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
+            <source>${resource.dir}/hazelcast-jet-client-default.xml</source>
+            <destName>hazelcast-client.xml</destName>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+    </files>
+    <fileSets>
+        <fileSet>
+            <directory>target/classes</directory>
+            <includes>
+                <include>*.sh</include>
+            </includes>
+            <fileMode>0755</fileMode>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/classes</directory>
+            <includes>
+                <include>*.bat</include>
+            </includes>
+            <outputDirectory>bin</outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>src/dist</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+    </fileSets>
+</assembly>

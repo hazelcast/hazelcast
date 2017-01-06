@@ -24,12 +24,30 @@
         <version>0.3-SNAPSHOT</version>
     </parent>
 
+    <properties>
+        <main.basedir>${project.parent.basedir}</main.basedir>
+    </properties>
+
     <name>hazelcast-jet-all</name>
     <artifactId>hazelcast-jet</artifactId>
     <packaging>jar</packaging>
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <compress>true</compress>
+                        <manifest>
+                            <mainClass>com.hazelcast.jet.StartServer</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -43,6 +61,8 @@
                 </executions>
                 <configuration>
                     <createSourcesJar>true</createSourcesJar>
+                    <createDependencyReducedPom>true</createDependencyReducedPom>
+                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
                     <artifactSet>
                         <excludes>
                             <exclude>com.hazelcast:hazelcast:*</exclude>
