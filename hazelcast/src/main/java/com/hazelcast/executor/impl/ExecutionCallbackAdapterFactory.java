@@ -25,7 +25,6 @@ import com.hazelcast.util.MapUtil;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -49,7 +48,7 @@ class ExecutionCallbackAdapterFactory {
     ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
                                     MultiExecutionCallback multiExecutionCallback) {
         this.multiExecutionCallback = multiExecutionCallback;
-        this.responses = new ConcurrentHashMap<Member, ValueWrapper>((int) ((members.size() * 1.35) + 1));
+        this.responses = MapUtil.createConcurrentHashMap(members.size());
         this.members = new HashSet<Member>(members);
         this.logger = logger;
     }
