@@ -18,22 +18,28 @@ package com.hazelcast.console;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
  * A simulated load test.
  */
-public final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
+public final class SimulateLoadTask implements Callable, DataSerializable, HazelcastInstanceAware {
 
-    private static final long serialVersionUID = 1;
     private static final int ONE_THOUSAND = 1000;
 
-    private final int delay;
-    private final int taskId;
-    private final String latchId;
+    private int delay;
+    private int taskId;
+    private String latchId;
+
     private transient HazelcastInstance hz;
+
+    public SimulateLoadTask() {
+    }
 
     public SimulateLoadTask(int delay, int taskId, String latchId) {
         this.delay = delay;
@@ -57,5 +63,19 @@ public final class SimulateLoadTask implements Callable, Serializable, Hazelcast
         hz.getCountDownLatch(latchId).countDown();
         System.out.println("Finished task: " + taskId);
         return null;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(delay);
+        out.writeInt(taskId);
+        out.writeUTF(latchId);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        delay = in.readInt();
+        taskId = in.readInt();
+        latchId = in.readUTF();
     }
 }

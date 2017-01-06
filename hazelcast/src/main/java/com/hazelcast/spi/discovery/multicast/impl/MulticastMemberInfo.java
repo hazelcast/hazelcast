@@ -16,12 +16,19 @@
 
 package com.hazelcast.spi.discovery.multicast.impl;
 
-import java.io.Serializable;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public class MulticastMemberInfo implements Serializable {
+import java.io.IOException;
+
+public class MulticastMemberInfo implements DataSerializable {
 
     private String host;
     private int port;
+
+    public MulticastMemberInfo() {
+    }
 
     public MulticastMemberInfo(String host, int port) {
         this.host = host;
@@ -34,5 +41,17 @@ public class MulticastMemberInfo implements Serializable {
 
     public String getHost() {
         return host;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(host);
+        out.writeInt(port);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        host = in.readUTF();
+        port = in.readInt();
     }
 }
