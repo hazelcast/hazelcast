@@ -37,7 +37,7 @@ public class JetConfig {
     private Config hazelcastConfig = defaultHazelcastConfig();
     private int threadCount = Runtime.getRuntime().availableProcessors();
     private int flowControlPeriodMs = DEFAULT_FLOW_CONTROL_PERIOD_MS;
-    private String resourceDirectory;
+    private String workingDirectory;
     private EdgeConfig defaultEdgeConfig = new EdgeConfig();
     private Properties properties = new Properties();
 
@@ -87,17 +87,17 @@ public class JetConfig {
     }
 
     /**
-     * @return the deployment directory used for storing deployed resources
+     * @return the working directory used for storing deployed resources
      */
-    public String getResourceDirectory() {
-        return resourceDirectory;
+    public String getWorkingDirectory() {
+        return workingDirectory;
     }
 
     /**
-     * Sets the deployment directory used for storing deployed resources
+     * Sets the working directory used for storing deployed resources
      */
-    public JetConfig setResourceDirectory(String resourceDirectory) {
-        this.resourceDirectory = resourceDirectory;
+    public JetConfig setWorkingDirectory(String workingDirectory) {
+        this.workingDirectory = workingDirectory;
         return this;
     }
 

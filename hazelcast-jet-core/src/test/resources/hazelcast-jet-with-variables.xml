@@ -20,7 +20,7 @@
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <!-- replace with system property -->
-    <resource-directory>${resource.directory}</resource-directory>
+    <working-directory>${working.directory}</working-directory>
     <execution-thread-count>${thread.count}</execution-thread-count>
 
     <properties>

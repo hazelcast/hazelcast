@@ -133,8 +133,8 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
                 case "execution-thread-count":
                     jetConfig.setExecutionThreadCount(getIntValue(node));
                     break;
-                case "resource-directory":
-                    jetConfig.setResourceDirectory(getStringValue(node));
+                case "working-directory":
+                    jetConfig.setWorkingDirectory(getStringValue(node));
                     break;
                 case "flow-control-period":
                     jetConfig.setFlowControlPeriodMs(getIntValue(node));

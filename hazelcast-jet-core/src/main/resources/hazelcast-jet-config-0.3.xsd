@@ -26,7 +26,7 @@
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="execution-thread-count" type="positive-int" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="resource-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="working-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="flow-control-period" type="positive-int" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="edge-defaults" type="edge" minOccurs="0" maxOccurs="1"/>
             </xs:choice>

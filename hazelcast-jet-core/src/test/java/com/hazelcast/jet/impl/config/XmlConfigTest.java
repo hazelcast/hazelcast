@@ -40,7 +40,7 @@ public class XmlConfigTest {
         JetConfig jetConfig = XmlJetConfigBuilder.getConfig(new Properties());
 
         // Then
-        assertNull("resourceDirectory", jetConfig.getResourceDirectory());
+        assertNull("workingDirectory", jetConfig.getWorkingDirectory());
         assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getExecutionThreadCount());
     }
 
@@ -84,7 +84,7 @@ public class XmlConfigTest {
         int threadCount = 55;
         Properties properties = new Properties();
         properties.put(XmlJetConfigLocator.HAZELCAST_JET_CONFIG_PROPERTY, "classpath:hazelcast-jet-with-variables.xml");
-        properties.put("resource.directory", dir);
+        properties.put("working.directory", dir);
         properties.put("thread.count", String.valueOf(threadCount));
 
         // When
@@ -113,7 +113,7 @@ public class XmlConfigTest {
 
     private void assertConfig(JetConfig jetConfig) {
         assertEquals(55, jetConfig.getExecutionThreadCount());
-        assertEquals("/var/tmp", jetConfig.getResourceDirectory());
+        assertEquals("/var/tmp", jetConfig.getWorkingDirectory());
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));

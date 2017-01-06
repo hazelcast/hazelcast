@@ -20,7 +20,7 @@
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
     <execution-thread-count>55</execution-thread-count>
-    <resource-directory>/var/tmp</resource-directory>
+    <working-directory>/var/tmp</working-directory>
 
     <properties>
         <property name="property1">value1</property>

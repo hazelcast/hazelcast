@@ -149,7 +149,7 @@ public class JetService
     }
 
     public ResourceStore getResourceStore(long executionId) {
-        return resourceStores.computeIfAbsent(executionId, (k) -> new ResourceStore(config.getResourceDirectory()));
+        return resourceStores.computeIfAbsent(executionId, (k) -> new ResourceStore(config.getWorkingDirectory()));
     }
 
     public ClassLoader getClassLoader(long executionId) {
