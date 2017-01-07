@@ -105,6 +105,16 @@ public class AsyncTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testSetAsync_issue9599() throws Exception {
+        IMap<String, String> map = instance.getMap(randomString());
+        Future<Void> f = map.setAsync(key, value1);
+
+        // the return value was not of type Void, but Boolean. So assignment to Void would fail.
+        Void v = f.get();
+        assertNull(v);
+    }
+
+    @Test
     public void testSetAsyncWithTtl() throws Exception {
         IMap<String, String> map = instance.getMap(randomString());
 
