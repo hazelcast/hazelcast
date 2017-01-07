@@ -19,8 +19,6 @@ package com.hazelcast.quorum;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,6 +33,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -113,8 +112,8 @@ public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
             public void onChange(QuorumEvent quorumEvent) {
                 if (!quorumEvent.isPresent()) {
                     final Collection<Member> currentMembers = quorumEvent.getCurrentMembers();
-                    assertEquals(2, currentMembers.size());
                     assertEquals(3, quorumEvent.getThreshold());
+                    assertTrue(currentMembers.size() < quorumEvent.getThreshold());
                     quorumNotPresent.countDown();
                 }
             }
