@@ -51,7 +51,7 @@ public class ClientDisconnectionOperation extends AbstractClientOperation implem
             Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
             for (ClientEndpoint endpoint : endpoints) {
                 endpointManager
-                        .removeEndpoint(endpoint, true, "ClientDisconnectionOperation: Cleanup of disconnected client resources");
+                        .removeEndpoint(endpoint, "ClientDisconnectionOperation: Cleanup of disconnected client resources");
             }
 
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();

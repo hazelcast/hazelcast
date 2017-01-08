@@ -96,21 +96,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
 
     @Override
     protected ClientEndpointImpl getEndpoint() {
-        if (connection.isAlive()) {
-            return new ClientEndpointImpl(clientEngine, connection);
-        } else {
-            handleEndpointNotCreatedConnectionNotAlive();
-        }
-        return null;
+        return new ClientEndpointImpl(clientEngine, connection);
     }
 
     @Override
     protected boolean isAuthenticationMessage() {
         return true;
-    }
-
-    private void handleEndpointNotCreatedConnectionNotAlive() {
-        logger.warning("Dropped: " + clientMessage + " -> endpoint not created for AuthenticationRequest, connection not alive");
     }
 
     @Override
