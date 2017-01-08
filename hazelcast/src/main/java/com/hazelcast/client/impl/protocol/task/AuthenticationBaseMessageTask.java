@@ -61,21 +61,12 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
 
     @Override
     protected ClientEndpointImpl getEndpoint() {
-        if (connection.isAlive()) {
-            return new ClientEndpointImpl(clientEngine, connection);
-        } else {
-            handleEndpointNotCreatedConnectionNotAlive();
-        }
-        return null;
+        return new ClientEndpointImpl(clientEngine, connection);
     }
 
     @Override
     protected boolean isAuthenticationMessage() {
         return true;
-    }
-
-    private void handleEndpointNotCreatedConnectionNotAlive() {
-        logger.warning("Dropped: " + clientMessage + " -> endpoint not created for AuthenticationRequest, connection not alive");
     }
 
     @Override
@@ -205,7 +196,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
                 op.setCallerUuid(localMember.getUuid());
                 try {
                     InvocationBuilder invocationBuilder = nodeEngine.getOperationService()
-                                                                    .createInvocationBuilder(null, op, member.getAddress());
+                            .createInvocationBuilder(null, op, member.getAddress());
                     invocationBuilder.setTryCount(1);
                     operationInfos.add(new OperationInfo(invocationBuilder.invoke(), member));
                 } catch (Exception e) {
@@ -259,7 +250,6 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
     }
 
     /**
-     *
      * @return true if client resources does not exist on this member, false otherwise
      */
     private boolean reAuthLocal() {

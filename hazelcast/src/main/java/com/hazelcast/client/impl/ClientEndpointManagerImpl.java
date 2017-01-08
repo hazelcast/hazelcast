@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.internal.util.counters.MwCounter.newMwCounter;
@@ -101,12 +100,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public void removeEndpoint(ClientEndpoint endpoint, String reason) {
-        removeEndpoint(endpoint, false, reason);
-    }
-
-    @Override
-    public void removeEndpoint(final ClientEndpoint clientEndpoint, boolean closeImmediately, final String reason) {
+    public void removeEndpoint(final ClientEndpoint clientEndpoint, final String reason) {
         checkNotNull(clientEndpoint, "endpoint can't be null");
 
         ClientEndpointImpl endpoint = (ClientEndpointImpl) clientEndpoint;
@@ -120,24 +114,10 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         }
 
         final Connection connection = endpoint.getConnection();
-        if (closeImmediately) {
-            try {
-                connection.close(reason, null);
-            } catch (Throwable e) {
-                logger.warning("While closing client connection: " + connection, e);
-            }
-        } else {
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                public void run() {
-                    if (connection.isAlive()) {
-                        try {
-                            connection.close(reason, null);
-                        } catch (Throwable e) {
-                            logger.warning("While closing client connection: " + e.toString());
-                        }
-                    }
-                }
-            }, DESTROY_ENDPOINT_DELAY_MS, TimeUnit.MILLISECONDS);
+        try {
+            connection.close(reason, null);
+        } catch (Throwable e) {
+            logger.warning("While closing client connection: " + connection, e);
         }
         ClientEvent event = new ClientEvent(endpoint.getUuid(),
                 ClientEventType.DISCONNECTED,
@@ -153,7 +133,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
             if (memberUuid.equals(ownerUuid)) {
                 iterator.remove();
-                removeEndpoint(endpoint, true, "Cleanup of disconnected client resources");
+                removeEndpoint(endpoint, "Cleanup of disconnected client resources");
             }
         }
     }
