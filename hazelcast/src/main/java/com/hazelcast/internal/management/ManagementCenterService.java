@@ -20,9 +20,6 @@ import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
-import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -125,19 +122,14 @@ public class ManagementCenterService {
         this.timedMemberStateFactory = new TimedMemberStateFactory(instance);
         this.identifier = newManagementCenterIdentifier();
 
-        registerListeners();
+        if (managementCenterConfig.isEnabled()) {
+            this.instance.getCluster().addMembershipListener(new MemberListenerImpl());
+            start();
+        }
     }
 
     private String getManagementCenterUrl() {
         return managementCenterConfig.getUrl();
-    }
-
-    private void registerListeners() {
-        if (!managementCenterConfig.isEnabled()) {
-            return;
-        }
-        instance.getLifecycleService().addLifecycleListener(new LifecycleListenerImpl());
-        instance.getCluster().addMembershipListener(new MemberListenerImpl());
     }
 
     private ManagementCenterConfig getManagementCenterConfig() {
@@ -162,7 +154,7 @@ public class ManagementCenterService {
         return url.endsWith("/") ? url : url + '/';
     }
 
-    public void start() {
+    private void start() {
         if (managementCenterUrl == null) {
             logger.warning("Can't start Hazelcast Management Center Service: web-server URL is null!");
             return;
@@ -601,23 +593,6 @@ public class ManagementCenterService {
             logger.finest(msg, t);
         } else {
             logger.info(msg);
-        }
-    }
-
-    /**
-     * LifecycleListener for listening for LifecycleState.STARTED event to start
-     * {@link com.hazelcast.internal.management.ManagementCenterService}.
-     */
-    private class LifecycleListenerImpl implements LifecycleListener {
-        @Override
-        public void stateChanged(final LifecycleEvent event) {
-            if (event.getState() == LifecycleState.STARTED) {
-                try {
-                    start();
-                } catch (Exception e) {
-                    logger.severe("ManagementCenterService could not be started!", e);
-                }
-            }
         }
     }
 
