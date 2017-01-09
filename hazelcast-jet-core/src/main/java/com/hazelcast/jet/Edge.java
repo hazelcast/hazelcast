@@ -52,10 +52,11 @@ public class Edge implements IdentifiedDataSerializable {
     private int destOrdinal;
 
     private int priority = Integer.MAX_VALUE;
+    private boolean isBuffered;
 
-    private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
-    private Partitioner partitioner;
     private boolean isDistributed;
+    private Partitioner partitioner;
+    private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
 
     private EdgeConfig config;
 
@@ -157,6 +158,27 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * Activates unbounded buffering on this edge. Normally this should be avoided,
+     * but at some points the logic of the DAG requires it. This is one scenario:
+     * a vertex sends output to two edges, creating a fork in the DAG. The forks
+     * later rejoin at a vertex with different priorities: the one with the lower
+     * priority won't be consumed until the higher-priority one is consumed in
+     * full. However, since the data for both forks is generated simultaneously,
+     * and since the lower-priority input will apply backpressure while waiting
+     * for the higher-priority input to be consumed, this will result in a deadlock.
+     * The deadlock is resolved by activating unbounded buffering on the
+     * lower-priority fork.
+     * <p>
+     * <strong>NOTE:</strong> when this feature is activated, the
+     * {@link EdgeConfig#getHighWaterMark() high water mark} property of
+     * {@code EdgeConfig} is ignored and the maximum value is used.
+     */
+    public Edge buffered() {
+        isBuffered = true;
+        return this;
+    }
+
+    /**
      * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
      * pattern and applies the default Hazelcast partitioning strategy.
      */
@@ -188,6 +210,7 @@ public class Edge implements IdentifiedDataSerializable {
         return this;
     }
 
+
     /**
      * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
      * pattern. All items will be assigned the same, randomly chosen partition ID.
@@ -195,7 +218,6 @@ public class Edge implements IdentifiedDataSerializable {
     public Edge allToOne() {
         return partitionedByCustom(new Single());
     }
-
 
     /**
      * Activates the {@link ForwardingPattern#BROADCAST BROADCAST} forwarding
@@ -256,6 +278,13 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
+     * @return whether unbounded buffering is activated for this edge
+     */
+    public boolean isBuffered() {
+        return isBuffered;
+    }
+
+    /**
      * @return the {@code EdgeConfig} instance associated with this edge.
      */
     public EdgeConfig getConfig() {
@@ -296,6 +325,7 @@ public class Edge implements IdentifiedDataSerializable {
         out.writeUTF(destination);
         out.writeInt(destOrdinal);
         out.writeInt(priority);
+        out.writeBoolean(isBuffered);
         out.writeBoolean(isDistributed);
         out.writeObject(forwardingPattern);
         CustomClassLoadedObject.write(out, partitioner);
@@ -309,6 +339,7 @@ public class Edge implements IdentifiedDataSerializable {
         destination = in.readUTF();
         destOrdinal = in.readInt();
         priority = in.readInt();
+        isBuffered = in.readBoolean();
         isDistributed = in.readBoolean();
         forwardingPattern = in.readObject();
         partitioner = CustomClassLoadedObject.read(in);
@@ -324,7 +355,6 @@ public class Edge implements IdentifiedDataSerializable {
     public int getId() {
         return JetDataSerializerHook.EDGE;
     }
-
 
     /**
      * Enumerates the supported patterns of forwarding data items along an edge. Since there

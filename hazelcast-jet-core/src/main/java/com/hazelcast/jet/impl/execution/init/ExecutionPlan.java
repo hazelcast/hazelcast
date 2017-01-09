@@ -204,13 +204,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     private void initProcSuppliers() {
         JetService service = nodeEngine.getService(JetService.SERVICE_NAME);
-        vertices.stream().forEach(v -> v.processorSupplier().init(
+        vertices.forEach(v -> v.processorSupplier().init(
                 new ProcSupplierContext(service.getJetInstance(), v.parallelism())));
     }
 
     private void initDag() {
         final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
-        vertices.stream().forEach(v -> {
+        vertices.forEach(v -> {
             v.inboundEdges().forEach(e -> e.initTransientFields(vMap, v, false));
             v.outboundEdges().forEach(e -> e.initTransientFields(vMap, v, true));
         });
@@ -319,7 +319,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                         processorIndex, entry.getValue());
             }
         }
-        return new OutboundEdgeStream(edge.sourceOrdinal(), edge.getConfig().getHighWaterMark(),
+        return new OutboundEdgeStream(edge.sourceOrdinal(),
+                edge.isBuffered() ? Integer.MAX_VALUE : edge.getConfig().getHighWaterMark(),
                 compositeCollector(allCollectors, edge, totalPtionCount));
     }
 
