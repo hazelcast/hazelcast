@@ -22,13 +22,12 @@ import static org.junit.Assert.assertNotSame;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapInstanceSharingTest extends HazelcastTestSupport {
 
-    private HazelcastInstance[] instances;
     private HazelcastInstance local;
     private HazelcastInstance remote;
 
     @Before
     public void setUp() {
-        instances = createHazelcastInstanceFactory(2).newInstances(getConfig());
+        HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(getConfig());
         warmUpPartitions(instances);
         local = instances[0];
         remote = instances[1];

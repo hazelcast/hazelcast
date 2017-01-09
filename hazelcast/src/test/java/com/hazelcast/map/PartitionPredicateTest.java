@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Collection;
 import java.util.Map;
 
@@ -58,7 +57,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     private Predicate<String, Integer> predicate;
 
     @Before
-    public void setup() {
+    public void setUp() {
         Config config = getConfig()
                 .setProperty(GroupProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
 
@@ -103,10 +102,10 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void entries() {
-        Collection<Map.Entry<String,Integer>> entries = map.entrySet(predicate);
+        Collection<Map.Entry<String, Integer>> entries = map.entrySet(predicate);
 
         assertEquals(ITEMS_PER_PARTITION, entries.size());
-        for (Map.Entry<String,Integer> entry : entries) {
+        for (Map.Entry<String, Integer> entry : entries) {
             assertEquals(partitionId, local.getPartitionService().getPartition(entry.getKey()).getPartitionId());
             assertEquals(partitionId, entry.getValue().intValue());
         }

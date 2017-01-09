@@ -281,10 +281,10 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     public void testPutStats_afterPutAll() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(getConfig());
-        Map map = new HashMap();
+        Map<Integer, Integer> map = new HashMap<Integer, Integer>();
         for (int i = 1; i <= 5000; i++) map.put(i, i);
 
-        IMap iMap = instances[0].getMap("example");
+        IMap<Integer, Integer> iMap = instances[0].getMap("example");
         iMap.putAll(map);
         final LocalMapStats localMapStats = iMap.getLocalMapStats();
         assertTrueEventually(new AssertTask() {
@@ -293,7 +293,6 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
                 assertEquals(5000, localMapStats.getPutOperationCount());
             }
         });
-
     }
 
     @Test
@@ -318,7 +317,6 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
     private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,
                                         final Collection<HazelcastInstance> nodes) {
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {

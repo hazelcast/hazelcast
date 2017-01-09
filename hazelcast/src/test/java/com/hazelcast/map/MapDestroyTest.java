@@ -94,7 +94,6 @@ public class MapDestroyTest extends HazelcastTestSupport {
             ConcurrentMap<String, RecordStore> maps = container.getMaps();
             assertTrue(maps.isEmpty());
         }
-
     }
 
     private MapServiceContext getMapServiceContext(HazelcastInstance instance) {

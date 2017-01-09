@@ -76,7 +76,6 @@ public class MapEvictAllTest extends HazelcastTestSupport {
         assertEquals(numberOfLockedKeys, map.size());
     }
 
-
     @Test
     public void testEvictAll_onBackup() throws Exception {
         int numberOfEntries = 10000;
@@ -117,5 +116,4 @@ public class MapEvictAllTest extends HazelcastTestSupport {
             }
         });
     }
-
 }

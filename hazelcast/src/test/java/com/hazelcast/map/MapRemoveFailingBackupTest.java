@@ -99,7 +99,6 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         }, 30);
     }
 
-
     private static class Factory implements DataSerializableFactory {
         @Override
         public IdentifiedDataSerializable create(int typeId) {
@@ -116,18 +115,20 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
 
         boolean successful;
 
-        public RemoveOperation(String name, Data dataKey) {
+        RemoveOperation(String name, Data dataKey) {
             super(name, dataKey);
         }
 
         public RemoveOperation() {
         }
 
+        @Override
         public void run() {
             dataOldValue = mapService.getMapServiceContext().toData(recordStore.remove(dataKey));
             successful = dataOldValue != null;
         }
 
+        @Override
         public void afterRun() {
             if (successful) {
                 super.afterRun();
@@ -139,6 +140,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
             return new ExceptionThrowingRemoveBackupOperation(name, dataKey);
         }
 
+        @Override
         public boolean shouldBackup() {
             return successful;
         }
@@ -155,10 +157,11 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
     }
 
     private static class ExceptionThrowingRemoveBackupOperation extends MutatingKeyBasedMapOperation {
+
         private ExceptionThrowingRemoveBackupOperation() {
         }
 
-        public ExceptionThrowingRemoveBackupOperation(String name, Data dataKey) {
+        ExceptionThrowingRemoveBackupOperation(String name, Data dataKey) {
             super(name, dataKey);
         }
 

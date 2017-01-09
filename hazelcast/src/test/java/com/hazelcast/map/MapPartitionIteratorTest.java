@@ -16,6 +16,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -32,10 +34,10 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapPartitionIteratorTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean prefetchValues;
 
-    @Parameterized.Parameters(name = "prefetchValues:{0}")
+    @Parameters(name = "prefetchValues:{0}")
     public static Iterable<Object[]> parameters() {
         return Arrays.asList(new Object[]{Boolean.TRUE}, new Object[]{Boolean.FALSE});
     }
@@ -139,7 +141,6 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         for (int i = 0; i < 100; i++) {
             Map.Entry entry = iterator.next();
             assertEquals(value, entry.getValue());
-
         }
     }
 
@@ -157,7 +158,6 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         // force rehashing
         putValuesToPartition(instance, proxy, randomString(), 1, 150);
         assertUniques(readKeys, iterator);
-
     }
 
     @Test
@@ -206,7 +206,8 @@ public class MapPartitionIteratorTest extends HazelcastTestSupport {
         }
     }
 
-    private void putValuesToPartition(HazelcastInstance instance, MapProxyImpl<String, String> proxy, String value, int partitionId, int count) {
+    private void putValuesToPartition(HazelcastInstance instance, MapProxyImpl<String, String> proxy, String value,
+                                      int partitionId, int count) {
         for (int i = 0; i < count; i++) {
             String key = generateKeyForPartition(instance, partitionId);
             proxy.put(key, value);

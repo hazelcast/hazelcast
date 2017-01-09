@@ -65,7 +65,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
 
         HazelcastInstance node = createHazelcastInstance(config);
 
-        IMap map = node.getMap(mapName);
+        IMap<Integer, Integer> map = node.getMap(mapName);
         map.put(1, 1);// trigger recordStore creation.
 
         boolean beforeUpdate = isRecordStoreExpirable(map) && isEvictionEnabled(map);
@@ -120,5 +120,4 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         InternalCompletableFuture future = operationService.invokeOnTarget(MapService.SERVICE_NAME, op, address);
         return future.get();
     }
-
 }

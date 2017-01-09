@@ -27,7 +27,6 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -35,23 +34,27 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.runners.Parameterized.Parameter;
+import static org.junit.runners.Parameterized.Parameters;
+
 /**
  * Common superclass to test types of events published with different filtering strategies (default & query cache natural event
  * types)
  */
 public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
 
-    @Parameterized.Parameters(name = "includeValues: {0}")
+    @Parameters(name = "includeValues: {0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
                 {true}, {false}
         });
     }
 
-    @Parameterized.Parameter
+    @Parameter
     public boolean includeValue;
 
-    final Predicate predicate = new SqlPredicate("age > 50");
+    @SuppressWarnings("unchecked")
+    final Predicate<Integer, Person> predicate = new SqlPredicate("age > 50");
 
     final AtomicInteger eventCounter = new AtomicInteger();
     HazelcastInstance instance;
@@ -65,9 +68,10 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     abstract Integer expectedCountFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate();
 
     public static class CountEntryAddedListener implements EntryAddedListener<Integer, Person> {
+
         private final AtomicInteger counter;
 
-        public CountEntryAddedListener(AtomicInteger counter) {
+        CountEntryAddedListener(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -78,9 +82,10 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     }
 
     public static class CountEntryRemovedListener implements EntryRemovedListener<Integer, Person> {
+
         private final AtomicInteger counter;
 
-        public CountEntryRemovedListener(AtomicInteger counter) {
+        CountEntryRemovedListener(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -91,9 +96,10 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     }
 
     public static class CountEntryUpdatedListener implements EntryUpdatedListener<Integer, Person> {
+
         private final AtomicInteger counter;
 
-        public CountEntryUpdatedListener(AtomicInteger counter) {
+        CountEntryUpdatedListener(AtomicInteger counter) {
             this.counter = counter;
         }
 
@@ -104,6 +110,7 @@ public abstract class AbstractEntryEventTypesTest extends HazelcastTestSupport {
     }
 
     public static class Person implements Serializable {
+
         String name;
         int age;
 

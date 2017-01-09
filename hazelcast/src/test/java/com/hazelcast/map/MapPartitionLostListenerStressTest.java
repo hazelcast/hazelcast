@@ -9,6 +9,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 @Category(SlowTest.class)
 public class MapPartitionLostListenerStressTest extends AbstractPartitionLostListenerTest {
 
-    @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
+    @Parameters(name = "numberOfNodesToCrash:{0},withData:{1},nodeLeaveType:{2},shouldExpectPartitionLostEvents:{3}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {1, true, NodeLeaveType.SHUTDOWN, false},
@@ -42,22 +44,24 @@ public class MapPartitionLostListenerStressTest extends AbstractPartitionLostLis
         });
     }
 
-    @Parameterized.Parameter(0)
+    @Parameter(0)
     public int numberOfNodesToCrash;
 
-    @Parameterized.Parameter(1)
+    @Parameter(1)
     public boolean withData;
 
-    @Parameterized.Parameter(2)
+    @Parameter(2)
     public NodeLeaveType nodeLeaveType;
 
-    @Parameterized.Parameter(3)
+    @Parameter(3)
     public boolean shouldExpectPartitionLostEvents;
 
+    @Override
     protected int getNodeCount() {
         return 5;
     }
 
+    @Override
     protected int getMapEntryCount() {
         return 5000;
     }

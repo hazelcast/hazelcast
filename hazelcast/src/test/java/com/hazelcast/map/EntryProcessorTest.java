@@ -112,7 +112,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertOpenEventually(latch, 5);
     }
 
-
     @Test
     public void testExecuteOnKeysWithEntryListener() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
@@ -206,12 +205,14 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return "[" + attr1 + " " + attr2 + "]";
         }
 
+        @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             serializationCount.incrementAndGet();
             out.writeObject(attr1);
             out.writeObject(attr2);
         }
 
+        @Override
         public void readData(ObjectDataInput in) throws IOException {
             attr1 = in.readObject();
             attr2 = in.readObject();
@@ -228,6 +229,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             this.newValue = newValue;
         }
 
+        @Override
         public Object process(Map.Entry<String, Issue1764Data> entry) {
             Issue1764Data data = entry.getValue();
             data.setAttr1(newValue);
@@ -639,6 +641,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         ChangeStateEntryProcessor() {
         }
 
+        @Override
         public Object process(Map.Entry<Integer, Employee> entry) {
             Employee value = entry.getValue();
             value.setState(SampleObjects.State.STATE2);
@@ -646,10 +649,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return value;
         }
 
+        @Override
         public EntryBackupProcessor<Integer, Employee> getBackupProcessor() {
             return ChangeStateEntryProcessor.this;
         }
 
+        @Override
         public void processBackup(Map.Entry<Integer, Employee> entry) {
             Employee value = entry.getValue();
             value.setState(SampleObjects.State.STATE2);
@@ -782,6 +787,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             this.value = v;
         }
 
+        @Override
         public Object process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(value);
             return value;
@@ -852,6 +858,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         ValueReaderEntryProcessor() {
         }
 
+        @Override
         public Integer process(Map.Entry<Integer, Integer> entry) {
             value = entry.getValue();
             return value;
@@ -932,6 +939,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         RemoveEntryProcessor() {
         }
 
+        @Override
         public Object process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(null);
             return null;
@@ -1504,20 +1512,20 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         config.getMapConfig("default")
                 .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
-        IMap map = node.getMap("test");
+        IMap<Integer, Integer> map = node.getMap("test");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryRemovedListener() {
+        map.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
-            public void entryRemoved(EntryEvent event) {
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 latch.countDown();
             }
         }, true);
 
         map.put(1, 1);
 
-        map.executeOnKey(1, new AbstractEntryProcessor() {
+        map.executeOnKey(1, new AbstractEntryProcessor<Integer, Integer>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Integer process(Map.Entry<Integer, Integer> entry) {
                 entry.setValue(null);
                 return null;
             }
@@ -1532,20 +1540,20 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         config.getMapConfig("default")
                 .getMapStoreConfig().setEnabled(true).setImplementation(new TestPostProcessingMapStore());
         HazelcastInstance node = createHazelcastInstance(config);
-        IMap map = node.getMap("test");
+        IMap<Integer, Integer> map = node.getMap("test");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryRemovedListener() {
+        map.addEntryListener(new EntryRemovedListener<Integer, Integer>() {
             @Override
-            public void entryRemoved(EntryEvent event) {
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 latch.countDown();
             }
         }, true);
 
         map.put(1, 1);
 
-        map.executeOnEntries(new AbstractEntryProcessor() {
+        map.executeOnEntries(new AbstractEntryProcessor<Integer,Integer>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Integer process(Map.Entry<Integer, Integer> entry) {
                 entry.setValue(null);
                 return null;
             }
@@ -1555,7 +1563,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     private static class TestPostProcessingMapStore extends MapStoreAdapter implements PostProcessingMapStore {
-
     }
 
     private static long getTotalOwnedAndBackupEntryCount(IMap map) {
@@ -1569,6 +1576,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             super(true);
         }
 
+        @Override
         public Object process(Map.Entry<Integer, Integer> entry) {
             Integer value = entry.getValue();
             if (value == null) {

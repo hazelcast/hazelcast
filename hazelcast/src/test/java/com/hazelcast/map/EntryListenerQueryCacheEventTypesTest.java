@@ -50,14 +50,17 @@ public class EntryListenerQueryCacheEventTypesTest extends AbstractEntryEventTyp
         instance.shutdown();
     }
 
+    @Override
     MapListener mapListenerFor_entryUpdatedEvent_whenOldValueOutside_newValueMatchesPredicate() {
         return new CountEntryAddedListener(eventCounter);
     }
 
+    @Override
     MapListener mapListenerFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate() {
         return new CountEntryRemovedListener(eventCounter);
     }
 
+    @Override
     Integer expectedCountFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate() {
         return 1;
     }

@@ -59,7 +59,7 @@ public class MapListenerTest {
     }
 
     static class AllListener implements EntryAddedListener<String, Person>, EntryRemovedListener<String, Person>,
-                                        EntryUpdatedListener<String, Person> {
+            EntryUpdatedListener<String, Person> {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(AllListener.class);
 
@@ -95,6 +95,7 @@ public class MapListenerTest {
     }
 
     static class Person implements Serializable {
+
         private int age;
         private String name;
 
@@ -103,7 +104,7 @@ public class MapListenerTest {
             this.name = name;
         }
 
-        public Person (Person p) {
+        public Person(Person p) {
             this.name = p.name;
             this.age = p.age;
         }
@@ -133,15 +134,17 @@ public class MapListenerTest {
     }
 
     static class MapRandomizer implements Runnable {
-        final IMap<String, Person> map;
-        volatile boolean running;
-        final Random random = new Random();
 
         private static final int ACTION_ADD = 0;
         private static final int ACTION_UPDATE_AGE = 1;
         private static final int ACTION_REMOVE = 2;
 
-        public MapRandomizer(IMap<String, Person> map) {
+        final Random random = new Random();
+        final IMap<String, Person> map;
+
+        volatile boolean running;
+
+        MapRandomizer(IMap<String, Person> map) {
             this.map = map;
             this.running = true;
         }
@@ -176,7 +179,7 @@ public class MapListenerTest {
                 String key = allKeys.toArray(new String[0])[random.nextInt(map.size())];
                 Person p = map.get(key);
                 int oldAge = p.getAge();
-                p.setAge(p.getAge() + random.nextInt(10) * ((int)Math.pow(-1, random.nextInt(2))));
+                p.setAge(p.getAge() + random.nextInt(10) * ((int) Math.pow(-1, random.nextInt(2))));
                 if (oldAge > AGE_THRESHOLD && p.getAge() <= AGE_THRESHOLD) {
                     EXITS.incrementAndGet();
                     LOGGER.info("updatePersonAge exit from " + oldAge + " to " + p.getAge());
@@ -211,13 +214,12 @@ public class MapListenerTest {
         }
     }
 
-    public static void main(String[] args)
-            throws InterruptedException {
-        // Create Hazelcast instance
+    public static void main(String[] args) throws InterruptedException {
+        // create Hazelcast instance
         Config config = new Config();
         config.setInstanceName("hz-maplistener");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        config.getNetworkConfig().getInterfaces().setInterfaces(Arrays.asList(new String[] {"127.0.0.1"}));
+        config.getNetworkConfig().getInterfaces().setInterfaces(Arrays.asList(new String[]{"127.0.0.1"}));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
 
         IMap<String, Person> map = hz.getMap("map");
@@ -243,8 +245,7 @@ public class MapListenerTest {
     private static void assertCount(AtomicInteger expected, AtomicInteger observed, String unit) {
         if (expected.get() != observed.get()) {
             LOGGER.error("Actually performed " + expected.get() + " " + unit + ", but observed " + observed.get());
-        }
-        else {
+        } else {
             LOGGER.info("Correctly observed " + expected.get() + " " + unit);
         }
     }

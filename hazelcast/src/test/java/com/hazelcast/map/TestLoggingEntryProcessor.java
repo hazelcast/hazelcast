@@ -22,6 +22,7 @@ public class TestLoggingEntryProcessor extends AbstractEntryProcessor<String, Te
 
     private static final long serialVersionUID = 1L;
 
+    @Override
     public Object process(Map.Entry<String, TestData> entry) {
         return true;
     }

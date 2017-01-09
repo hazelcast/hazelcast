@@ -93,7 +93,6 @@ public class InterceptorTest extends HazelcastTestSupport {
         assertEquals(map.get(5), "PARIS");
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
-
     }
 
     @Test
@@ -101,7 +100,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config config = getConfig();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        IMap map = instance1.getMap("map");
+        IMap<Integer, Object> map = instance1.getMap("map");
         for (int i = 0; i < 100; i++) {
             map.put(i, i);
         }
@@ -242,7 +241,7 @@ public class InterceptorTest extends HazelcastTestSupport {
         public EntryPutProcessor() {
         }
 
-        public EntryPutProcessor(String value) {
+        EntryPutProcessor(String value) {
             this.value = value;
         }
 
@@ -251,7 +250,6 @@ public class InterceptorTest extends HazelcastTestSupport {
             return entry.setValue(value);
         }
     }
-
 
     static class EntryAddedLatch implements EntryAddedListener<Integer, String> {
 

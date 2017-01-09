@@ -64,7 +64,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         final SerializationValue serializationValue = new SerializationValue();
         map.put("key", serializationValue);
 
-        //EntryProcessor should not trigger de-serialization
+        // EntryProcessor should not trigger de-serialization
         map.executeOnKey("key", new AbstractEntryProcessor<String, SerializationValue>() {
             @Override
             public Object process(final Map.Entry<String, SerializationValue> entry) {
@@ -131,10 +131,11 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
     }
 
     public static final class Pair implements Serializable {
+
         private final String significant;
         private final String insignificant;
 
-        public Pair(String significant, String insignificant) {
+        Pair(String significant, String insignificant) {
             this.significant = significant;
             this.insignificant = insignificant;
         }
@@ -159,7 +160,7 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
 
     public static class SerializationValue implements DataSerializable {
 
-        public static AtomicInteger deSerializeCount = new AtomicInteger();
+        static AtomicInteger deSerializeCount = new AtomicInteger();
 
         public SerializationValue() {
         }
@@ -182,7 +183,6 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         HazelcastInstance member = createHazelcastInstance(config);
         member.getMap("default");
     }
-
 
     @Test(expected = IllegalArgumentException.class)
     public void testNativeNearCache_throwsException() throws Exception {

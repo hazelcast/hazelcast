@@ -46,10 +46,11 @@ public class MapPutAllWithCustomInitialSizeTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        Config config = getConfig();
-        config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "2");
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000");
-        config.setProperty("hazelcast.map.put.all.initial.size.factor", "10");
+        Config config = getConfig()
+                .setProperty(GroupProperty.PARTITION_COUNT.getName(), "2")
+                .setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "3000")
+                .setProperty("hazelcast.map.put.all.initial.size.factor", "10");
+
         config.getMapConfig("default")
                 .setBackupCount(1)
                 .setAsyncBackupCount(0);

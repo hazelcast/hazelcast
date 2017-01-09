@@ -133,7 +133,6 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         for (Integer val : values) {
             assertEquals(value++, val);
         }
-
     }
 
     @Test
@@ -192,7 +191,8 @@ public class PagingPredicateTest extends HazelcastTestSupport {
     @Test
     public void testKeyPaging() {
         map.clear();
-        for (int i = 0; i < size; i++) {    // keys [50-1] values [0-49]
+        // keys [50-1] values [0-49]
+        for (int i = 0; i < size; i++) {
             map.put(size - i, i);
         }
 
@@ -214,12 +214,15 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testEqualValuesPaging() {
-        for (int i = size; i < 2 * size; i++) { //keys[50-99] values[0-49]
+        // keys[50-99] values[0-49]
+        for (int i = size; i < 2 * size; i++) {
             map.put(i, i - size);
         }
 
-        Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8); // entries which has value less than 8
-        TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
+        // entries which has value less than 8
+        Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 8);
+        // ascending values
+        TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
@@ -240,8 +243,10 @@ public class PagingPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testNextPageAfterResultSetEmpty() {
-        Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 3); // entries which has value less than 3
-        TestComparator comparator = new TestComparator(true, IterationType.VALUE); //ascending values
+        // entries which has value less than 3
+        Predicate<Integer, Integer> lessEqual = Predicates.lessEqual("this", 3);
+        // ascending values
+        TestComparator comparator = new TestComparator(true, IterationType.VALUE);
         PagingPredicate<Integer, Integer> predicate = new PagingPredicate<Integer, Integer>(lessEqual, comparator, pageSize); //pageSize = 5
 
         Collection<Integer> values = map.values(predicate);
@@ -255,7 +260,6 @@ public class PagingPredicateTest extends HazelcastTestSupport {
         values = map.values(predicate);
         assertEquals(0, values.size());
     }
-
 
     static class TestComparator implements Comparator<Map.Entry<Integer, Integer>>, Serializable {
 
@@ -271,23 +275,20 @@ public class PagingPredicateTest extends HazelcastTestSupport {
             this.iterationType = iterationType;
         }
 
+        @Override
         public int compare(Map.Entry<Integer, Integer> e1, Map.Entry<Integer, Integer> e2) {
-            Map.Entry<Integer, Integer> o1 = e1;
-            Map.Entry<Integer, Integer> o2 = e2;
-
             switch (iterationType) {
                 case KEY:
-                    return (o1.getKey() - o2.getKey()) * ascending;
+                    return (e1.getKey() - e2.getKey()) * ascending;
                 case VALUE:
-                    return (o1.getValue() - o2.getValue()) * ascending;
+                    return (e1.getValue() - e2.getValue()) * ascending;
                 default:
-                    int result = (o1.getValue() - o2.getValue()) * ascending;
+                    int result = (e1.getValue() - e2.getValue()) * ascending;
                     if (result != 0) {
                         return result;
                     }
-                    return (o1.getKey() - o2.getKey()) * ascending;
+                    return (e1.getKey() - e2.getKey()) * ascending;
             }
         }
     }
-
 }

@@ -37,12 +37,14 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(LatestUpdateMapMergePolicy.class.getName());
+        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+                .getMergePolicy(LatestUpdateMapMergePolicy.class.getName());
         long now = Clock.currentTimeMillis();
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
         initialEntry.setCreationTime(now);
         initialEntry.setLastUpdateTime(now);
-        sleepMillis(100); //Need some latency to be sure that target members time is greater than now
+        // need some latency to be sure that target members time is greater than now
+        sleepMillis(100);
         recordStore.merge(dataKey, initialEntry, mergePolicy);
 
         SimpleEntryView<String, String> mergingEntry = new SimpleEntryView<String, String>("key", "value2");
@@ -64,7 +66,8 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
+        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+                .getMergePolicy(PutIfAbsentMapMergePolicy.class.getName());
 
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
         recordStore.merge(dataKey, initialEntry, mergePolicy);
@@ -85,7 +88,8 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         Data dataKey = mapServiceContext.toData("key");
 
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(instance, "key"), name);
-        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider().getMergePolicy(PassThroughMergePolicy.class.getName());
+        MapMergePolicy mergePolicy = mapServiceContext.getMergePolicyProvider()
+                .getMergePolicy(PassThroughMergePolicy.class.getName());
         SimpleEntryView<String, String> initialEntry = new SimpleEntryView<String, String>("key", "value1");
         recordStore.merge(dataKey, initialEntry, mergePolicy);
 
@@ -100,5 +104,4 @@ public class MapMergePolicyQuickTest extends HazelcastTestSupport {
         MapService mapService = nodeEngine.getService(MapService.SERVICE_NAME);
         return mapService.getMapServiceContext();
     }
-
 }

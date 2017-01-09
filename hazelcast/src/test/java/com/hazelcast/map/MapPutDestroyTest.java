@@ -1,6 +1,5 @@
 package com.hazelcast.map;
 
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -18,6 +17,7 @@ import static junit.framework.TestCase.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class MapPutDestroyTest extends HazelcastTestSupport {
+
     @Test
     public void testConcurrentPutDestroy_doesNotCauseNPE() {
         final HazelcastInstance instance = createHazelcastInstance(getConfig());

@@ -22,6 +22,7 @@ class TestDeleteEntryProcessor extends AbstractEntryProcessor<String, TestData> 
 
     private static final long serialVersionUID = 1L;
 
+    @Override
     public Object process(Map.Entry<String, TestData> entry) {
         entry.setValue(null);
         return true;

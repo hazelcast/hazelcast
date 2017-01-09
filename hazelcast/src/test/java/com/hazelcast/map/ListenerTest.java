@@ -69,6 +69,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+@SuppressWarnings("deprecation")
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ListenerTest extends HazelcastTestSupport {
@@ -76,12 +77,6 @@ public class ListenerTest extends HazelcastTestSupport {
     private final AtomicInteger globalCount = new AtomicInteger();
     private final AtomicInteger localCount = new AtomicInteger();
     private final AtomicInteger valueCount = new AtomicInteger();
-
-    private static void putDummyData(IMap map, int k) {
-        for (int i = 0; i < k; i++) {
-            map.put("foo" + i, "bar");
-        }
-    }
 
     @Before
     public void before() {
@@ -189,10 +184,10 @@ public class ListenerTest extends HazelcastTestSupport {
         checkCountWithExpected(0, k, k);
     }
 
-    @Test
     /**
      * Test for issue 584 and 756
      */
+    @Test
     public void globalAndLocalListenerTest() throws InterruptedException {
         Config config = getConfig();
         String name = randomString();
@@ -212,10 +207,10 @@ public class ListenerTest extends HazelcastTestSupport {
         checkCountWithExpected(k * 3, k, k * 2);
     }
 
-    @Test
     /**
      * Test for issue 584 and 756
      */
+    @Test
     public void globalAndLocalListenerTest2() throws InterruptedException {
         Config config = getConfig();
         String name = randomString();
@@ -234,6 +229,12 @@ public class ListenerTest extends HazelcastTestSupport {
         int k = 3;
         putDummyData(map1, k);
         checkCountWithExpected(k * 3, k, k * 2);
+    }
+
+    private static void putDummyData(IMap<String, String> map, int size) {
+        for (int i = 0; i < size; i++) {
+            map.put("foo" + i, "bar");
+        }
     }
 
     private void checkCountWithExpected(final int expectedGlobal, final int expectedLocal, final int expectedValue) {
@@ -377,7 +378,7 @@ public class ListenerTest extends HazelcastTestSupport {
     @Test
     public void testEntryListenerEvent_withMapReplaceFail() throws Exception {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        final IMap map = instance.getMap(randomString());
+        final IMap<Integer, Object> map = instance.getMap(randomString());
 
         final CounterEntryListener listener = new CounterEntryListener();
 
@@ -414,8 +415,8 @@ public class ListenerTest extends HazelcastTestSupport {
     public void testEntryListenerEvent_getValueWhenEntryRemoved() {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<String, String> map = instance.getMap(randomString());
-        final AtomicReference valueRef = new AtomicReference();
-        final AtomicReference oldValueRef = new AtomicReference();
+        final AtomicReference<String> valueRef = new AtomicReference<String>();
+        final AtomicReference<String> oldValueRef = new AtomicReference<String>();
         final CountDownLatch latch = new CountDownLatch(1);
 
         map.addEntryListener(new EntryAdapter<String, String>() {
@@ -458,7 +459,7 @@ public class ListenerTest extends HazelcastTestSupport {
     @Test
     public void testEntryListenerEvent_withMapReplaceSuccess() throws Exception {
         HazelcastInstance instance = createHazelcastInstance(getConfig());
-        final IMap map = instance.getMap(randomString());
+        final IMap<Integer, Object> map = instance.getMap(randomString());
         final CounterEntryListener listener = new CounterEntryListener();
 
         map.addEntryListener(listener, true);
@@ -478,7 +479,6 @@ public class ListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-
                 for (int i = 0; i < replaceTotal; i++) {
                     assertEquals(newVal, map.get(i));
                 }
@@ -588,9 +588,9 @@ public class ListenerTest extends HazelcastTestSupport {
         IMap<Object, Object> map = instance.getMap(name);
         EntryAddedLatch latch = new EntryAddedLatch(1);
         map.addEntryListener(latch, false);
-        map.executeOnKey(key, new AbstractEntryProcessor() {
+        map.executeOnKey(key, new AbstractEntryProcessor<Object, Object>() {
             @Override
-            public Object process(Map.Entry entry) {
+            public Object process(Map.Entry<Object, Object> entry) {
                 entry.setValue(new SerializeCheckerObject());
                 return null;
             }
@@ -601,7 +601,7 @@ public class ListenerTest extends HazelcastTestSupport {
 
     private static class EntryAddedLatch extends CountDownLatch implements EntryAddedListener {
 
-        public EntryAddedLatch(int count) {
+        EntryAddedLatch(int count) {
             super(count);
         }
 
@@ -626,7 +626,7 @@ public class ListenerTest extends HazelcastTestSupport {
             deserialized = true;
         }
 
-        public static void assertNotSerialized() {
+        static void assertNotSerialized() {
             assertFalse(serialized);
             assertFalse(deserialized);
         }
@@ -663,10 +663,11 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     private class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {
+
         private volatile V oldValue;
         private final CountDownLatch latch = new CountDownLatch(1);
 
-        public V waitForOldValue() throws InterruptedException {
+        V waitForOldValue() throws InterruptedException {
             latch.await();
             return oldValue;
         }
@@ -711,6 +712,7 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     public static class PingPongListener implements EntryListener<Integer, String>, HazelcastInstanceAware {
+
         private HazelcastInstance instance;
 
         @Override
@@ -727,36 +729,31 @@ public class ListenerTest extends HazelcastTestSupport {
 
         @Override
         public void entryEvicted(EntryEvent<Integer, String> event) {
-
         }
 
         @Override
         public void entryRemoved(EntryEvent<Integer, String> event) {
-
         }
 
         @Override
         public void entryUpdated(EntryEvent<Integer, String> event) {
-
         }
 
         @Override
         public void mapCleared(MapEvent event) {
-
         }
 
         @Override
         public void mapEvicted(MapEvent event) {
-
         }
     }
 
     public class CounterEntryListener implements EntryListener<Object, Object> {
 
-        public final AtomicLong addCount = new AtomicLong();
-        public final AtomicLong removeCount = new AtomicLong();
-        public final AtomicLong updateCount = new AtomicLong();
-        public final AtomicLong evictCount = new AtomicLong();
+        final AtomicLong addCount = new AtomicLong();
+        final AtomicLong removeCount = new AtomicLong();
+        final AtomicLong updateCount = new AtomicLong();
+        final AtomicLong evictCount = new AtomicLong();
 
         public CounterEntryListener() {
         }

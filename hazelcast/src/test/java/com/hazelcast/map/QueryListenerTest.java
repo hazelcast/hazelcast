@@ -83,12 +83,10 @@ public class QueryListenerTest extends HazelcastTestSupport {
 
             @Override
             public void mapEvicted(MapEvent event) {
-
             }
 
             @Override
             public void mapCleared(MapEvent event) {
-
             }
         };
 
@@ -126,7 +124,7 @@ public class QueryListenerTest extends HazelcastTestSupport {
             }
         };
 
-        Predicate predicate = new SqlPredicate("age >= 50");
+        Predicate<Object, Object> predicate = new SqlPredicate("age >= 50");
         map.addEntryListener(listener, predicate, null, false);
         int size = 100;
         for (int i = 0; i < size; i++) {
@@ -144,17 +142,21 @@ public class QueryListenerTest extends HazelcastTestSupport {
             this.pref = pref;
         }
 
+        @Override
         public boolean apply(Map.Entry<Object, Object> mapEntry) {
             String val = (String) mapEntry.getValue();
-            if (val == null)
+            if (val == null) {
                 return false;
-            if (val.startsWith(pref))
+            }
+            if (val.startsWith(pref)) {
                 return true;
+            }
             return false;
         }
     }
 
     static class Person implements Serializable {
+
         String name;
         int age;
 
@@ -166,6 +168,4 @@ public class QueryListenerTest extends HazelcastTestSupport {
             this.age = age;
         }
     }
-
-
 }

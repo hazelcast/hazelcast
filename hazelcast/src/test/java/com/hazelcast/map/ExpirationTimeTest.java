@@ -52,9 +52,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expectedExpirationTime = creationTime + TTL;
 
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
-
     }
-
 
     @Test
     public void testExpirationTime_withTTL_afterMultipleUpdates() throws Exception {
@@ -78,7 +76,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expectedExpirationTime = lastUpdateTime + TTL;
 
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
-
     }
 
     @Test
@@ -96,7 +93,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         assertEquals(expectedExpirationTime, expirationTime);
     }
-
 
     @Test
     public void testExpirationTime_withMaxIdleTime_afterMultipleAccesses() throws Exception {
@@ -118,9 +114,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         long expectedExpirationTime = lastAccessTime + TimeUnit.SECONDS.toMillis(10);
 
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
-
     }
-
 
     @Test
     public void testExpirationTime_whenMaxIdleTime_isSmallerThan_TTL() throws Exception {
@@ -136,9 +130,7 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         // lastAccessTime is zero after put, we can find expiration by this calculation.
         long expectedExpirationTime = delayToExpiration + entryView.getCreationTime();
         assertEquals(expectedExpirationTime, entryView.getExpirationTime());
-
     }
-
 
     @Test
     public void testExpirationTime_whenMaxIdleTime_isBiggerThan_TTL() throws Exception {
@@ -156,7 +148,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         assertEquals(expectedExpirationTime, expirationTime);
     }
 
-
     @Test
     public void testLastAccessTime_isZero_afterFirstPut() throws Exception {
         IMap<Integer, Integer> map = createMap();
@@ -165,7 +156,6 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
 
         assertEquals(0L, entryView.getLastAccessTime());
     }
-
 
     @Test
     public void testExpirationTime_calculated_against_lastUpdateTime_after_PutWithNoTTL() throws Exception {

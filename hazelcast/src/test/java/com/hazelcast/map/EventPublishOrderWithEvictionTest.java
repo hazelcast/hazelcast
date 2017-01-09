@@ -24,7 +24,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.Assert.assertEquals;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
@@ -98,7 +97,6 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
         return createHazelcastInstance(config).getMap(mapName);
     }
 
-
     private static final class EventOrderAwareEntryListener extends EntryAdapter {
 
         private final List<EntryEvent> orderedEvents = new CopyOnWriteArrayList<EntryEvent>();
@@ -113,7 +111,7 @@ public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
             orderedEvents.add(event);
         }
 
-        public List<EntryEvent> getOrderedEvents() {
+        List<EntryEvent> getOrderedEvents() {
             return orderedEvents;
         }
     }

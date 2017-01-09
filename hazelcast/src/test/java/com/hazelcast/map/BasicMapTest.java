@@ -1000,6 +1000,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             this.pref = pref;
         }
 
+        @Override
         public boolean apply(Map.Entry<Object, Object> mapEntry) {
             String val = (String) mapEntry.getValue();
             if (val == null) {
@@ -1566,15 +1567,18 @@ public class BasicMapTest extends HazelcastTestSupport {
     private static class SampleEntryProcessor implements EntryProcessor<Integer, Integer>, EntryBackupProcessor<Integer, Integer>,
             Serializable {
 
+        @Override
         public Object process(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
             return true;
         }
 
+        @Override
         public EntryBackupProcessor<Integer, Integer> getBackupProcessor() {
             return SampleEntryProcessor.this;
         }
 
+        @Override
         public void processBackup(Map.Entry<Integer, Integer> entry) {
             entry.setValue(entry.getValue() + 1);
         }

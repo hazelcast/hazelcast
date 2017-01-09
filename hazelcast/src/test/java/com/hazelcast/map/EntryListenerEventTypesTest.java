@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-
 /**
  * Test event types as published by {@link com.hazelcast.map.impl.event.DefaultEntryEventFilteringStrategy}
  */
@@ -47,14 +46,17 @@ public class EntryListenerEventTypesTest extends AbstractEntryEventTypesTest {
         instance.shutdown();
     }
 
+    @Override
     MapListener mapListenerFor_entryUpdatedEvent_whenOldValueOutside_newValueMatchesPredicate() {
         return new CountEntryUpdatedListener(eventCounter);
     }
 
+    @Override
     MapListener mapListenerFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate() {
         return new CountEntryUpdatedListener(eventCounter);
     }
 
+    @Override
     Integer expectedCountFor_entryUpdatedEvent_whenOldValueMatches_newValueOutsidePredicate() {
         return 0;
     }

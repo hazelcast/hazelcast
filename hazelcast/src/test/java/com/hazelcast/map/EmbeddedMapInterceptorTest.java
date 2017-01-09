@@ -71,11 +71,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
     /**
      * Test for issue #3931 (https://github.com/hazelcast/hazelcast/issues/3931)
-     *
-     * @throws InterruptedException
      */
     @Test
-    public void testChainingOfSameInterceptor() throws InterruptedException {
+    public void testChainingOfSameInterceptor() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance i1 = startNode(nodeFactory);
@@ -93,11 +91,9 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
     /**
      * Test for issue #3932 (https://github.com/hazelcast/hazelcast/issues/3932)
-     *
-     * @throws InterruptedException
      */
     @Test
-    public void testStoppingNodeLeavesInterceptor() throws InterruptedException {
+    public void testStoppingNodeLeavesInterceptor() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance i1 = startNode(nodeFactory);
@@ -135,7 +131,6 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         assertEquals(key.toUpperCase() + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
         assertEquals(key.toUpperCase() + "-foo", map2.get(key));
-
     }
 
     @Test
@@ -150,7 +145,6 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         assertEquals(key.toUpperCase() + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
         assertEquals(key.toUpperCase() + "-foo", map2.get(key));
-
     }
 
     @Test
@@ -165,7 +159,6 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         assertEquals(key.toUpperCase() + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
         assertEquals(key.toUpperCase() + "-foo", map2.get(key));
-
     }
 
     @Test
@@ -181,7 +174,6 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
         assertEquals(key.toUpperCase() + "-foo", map1.get(key));
         h1.getLifecycleService().shutdown();
         assertEquals(key.toUpperCase() + "-foo", map2.get(key));
-
     }
 
     @Test
@@ -265,5 +257,4 @@ public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
             return 123456;
         }
     }
-
 }

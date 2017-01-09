@@ -107,7 +107,7 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
         private Book() {
         }
 
-        public Book(long id, String title, String author, int year) {
+        Book(long id, String title, String author, int year) {
             this.id = id;
             this.title = title;
             this.author = author;
@@ -156,7 +156,5 @@ public class MapIndexBackupTest extends HazelcastTestSupport {
             }
             return keys;
         }
-
     }
-
 }
