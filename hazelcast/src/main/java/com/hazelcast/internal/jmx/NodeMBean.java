@@ -21,7 +21,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.MapUtil;
 
-import java.util.Hashtable;
 import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;

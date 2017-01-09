@@ -257,8 +257,8 @@ abstract class AbstractCacheProxyBase<K, V>
 
         private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
             //assume that the key data is evenly distributed over the partition count, so multiply by number of partitions
-            final int roughSize = (int) (keysData.size() * partitions.size() / 
-                    (double) partitionService.getPartitionCount() * SIZING_FUDGE_FACTOR);
+            final int roughSize = (int) (keysData.size() * partitions.size()
+                    / (double) partitionService.getPartitionCount() * SIZING_FUDGE_FACTOR);
             Set<Data> ownerKeys = SetUtil.createHashSet(roughSize);
             for (Data key: keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);

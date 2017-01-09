@@ -40,7 +40,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -701,9 +700,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of removed items by id
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
-        final Deque<QueueItem> _itemQueue = getItemQueue();
-        final Map<Long, Data> map = MapUtil.createLinkedHashMap(Math.max(dataList.size(), _itemQueue.size()));
-        for (QueueItem item : _itemQueue) {
+        final Deque<QueueItem> localQueue = getItemQueue();
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(Math.max(dataList.size(), localQueue.size()));
+        for (QueueItem item : localQueue) {
             if (item.getData() == null && store.isEnabled()) {
                 try {
                     load(item);

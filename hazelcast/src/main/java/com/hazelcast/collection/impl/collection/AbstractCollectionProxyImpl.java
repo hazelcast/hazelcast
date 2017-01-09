@@ -128,7 +128,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public boolean contains(Object o) {
         checkObjectNotNull(o);
 
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, 
+        final CollectionContainsOperation operation = new CollectionContainsOperation(name,
                 Collections.singleton(getNodeEngine().toData(o)));
         final Boolean result = invoke(operation);
         return result;
