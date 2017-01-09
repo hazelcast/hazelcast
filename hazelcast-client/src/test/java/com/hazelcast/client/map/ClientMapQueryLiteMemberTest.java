@@ -22,11 +22,10 @@ public class ClientMapQueryLiteMemberTest {
 
     private TestHazelcastFactory factory;
 
-    private IMap<Integer, Integer> map;
+    private IMap<Integer, Object> map;
 
     @Before
-    public void setUp()
-            throws Exception {
+    public void setUp() {
         factory = new TestHazelcastFactory();
         factory.newHazelcastInstance();
         factory.newHazelcastInstance(new Config().setLiteMember(true));
@@ -35,8 +34,7 @@ public class ClientMapQueryLiteMemberTest {
     }
 
     @After
-    public void tearDown()
-            throws Exception {
+    public void tearDown() {
         factory.terminateAll();
     }
 
@@ -49,5 +47,4 @@ public class ClientMapQueryLiteMemberTest {
     public void testMapKeysQuery() {
         MapLiteMemberTest.testMapKeysQuery(map);
     }
-
 }
