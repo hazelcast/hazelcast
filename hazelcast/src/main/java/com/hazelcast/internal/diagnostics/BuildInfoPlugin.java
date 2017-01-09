@@ -48,6 +48,10 @@ public class BuildInfoPlugin extends DiagnosticsPlugin {
         // we convert to string to prevent formatting the number
         writer.writeKeyValueEntry("BuildNumber", "" + buildInfo.getBuildNumber());
         writer.writeKeyValueEntry("Revision", buildInfo.getRevision());
+        BuildInfo upstreamBuildInfo = buildInfo.getUpstreamBuildInfo();
+        if (upstreamBuildInfo != null) {
+            writer.writeKeyValueEntry("UpstreamRevision", upstreamBuildInfo.getRevision());
+        }
         writer.writeKeyValueEntry("Version", buildInfo.getVersion());
         writer.writeKeyValueEntry("SerialVersion", buildInfo.getSerializationVersion());
         writer.writeKeyValueEntry("Enterprise", buildInfo.isEnterprise());
