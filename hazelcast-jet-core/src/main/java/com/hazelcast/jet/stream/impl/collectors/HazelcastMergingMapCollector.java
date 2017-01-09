@@ -17,7 +17,6 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.IStreamMap;

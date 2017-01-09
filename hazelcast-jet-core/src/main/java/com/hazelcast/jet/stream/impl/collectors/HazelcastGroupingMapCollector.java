@@ -17,15 +17,14 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorP;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerP;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Processors;
-import com.hazelcast.jet.Vertex;
 
 import java.util.Map;
 import java.util.function.Function;

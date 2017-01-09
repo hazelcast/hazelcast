@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.stream.impl.processor.SkipP;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.impl.processor.SkipP;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;

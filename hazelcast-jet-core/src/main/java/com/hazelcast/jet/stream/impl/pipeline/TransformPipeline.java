@@ -16,12 +16,11 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.processor.TransformP;
-import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.Vertex;
 
 import java.util.ArrayList;
 import java.util.List;

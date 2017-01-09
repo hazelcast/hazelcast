@@ -70,7 +70,8 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Creates an edge between two vertices.
+     * Returns an edge between two vertices. The ordinal of the edge
+     * is 0 at both ends. Equivalent to {@code from(source).to(destination)}.
      *
      * @param source        the source vertex
      * @param destination   the destination vertex
@@ -79,19 +80,35 @@ public class Edge implements IdentifiedDataSerializable {
         return new Edge(source.getName(), 0, destination.getName(), 0);
     }
 
+    /**
+     * Returns an edge with the given source vertex and no destination vertex.
+     * The ordinal of the edge is 0. Typically followed by a call to one of
+     * the {@code to()} methods.
+     */
     public static Edge from(Vertex source) {
         return from(source, 0);
     }
 
+    /**
+     * Returns an edge with the given source vertex at the given ordinal
+     * and no destination vertex. Typically follewed by a call to one of
+     * the {@code to()} methods.
+     */
     public static Edge from(Vertex source, int ordinal) {
         return new Edge(source.getName(), ordinal, null, 0);
     }
 
+    /**
+     * Sets the destination vertex of this edge, with ordinal 0.
+     */
     public Edge to(Vertex dest) {
         this.destination = dest.getName();
         return this;
     }
 
+    /**
+     * Sets the destination vertex and ordinal of this edge.
+     */
     public Edge to(Vertex dest, int ordinal) {
         this.destination = dest.getName();
         this.destOrdinal = ordinal;

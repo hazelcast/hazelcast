@@ -17,10 +17,10 @@
 package com.hazelcast.jet.stream.impl.source;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipeline;
-import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.stream.impl.pipeline.AbstractSourcePipeline;
+import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
 

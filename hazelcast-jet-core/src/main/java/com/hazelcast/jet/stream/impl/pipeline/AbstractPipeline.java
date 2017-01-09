@@ -26,6 +26,7 @@ import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.collectors.CustomStreamCollector;
 import com.hazelcast.jet.stream.impl.terminal.Matcher;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
+
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;

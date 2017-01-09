@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.DistributedStream;
 
 public interface Pipeline<E_OUT> extends DistributedStream<E_OUT> {
     Vertex buildDAG(DAG dag);
