@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.stream.Distributed;
+
 import java.io.Serializable;
 
 /**
@@ -50,4 +52,12 @@ public interface Partitioner extends Serializable {
      */
     int getPartition(Object item, int partitionCount);
 
+    /**
+     * Takes a hashing function that maps the object to an {@code int} and
+     * returns a partitioner that transforms the unconstrained {@code int}
+     * value to a legal partition ID.
+     */
+    static Partitioner fromInt(Distributed.ToIntFunction<Object> hasher) {
+        return (item, partitionCount) -> Math.abs(hasher.applyAsInt(item) % partitionCount);
+    }
 }

@@ -183,7 +183,8 @@ public interface OutboundCollector {
         public ProgressState offer(Object item) {
             if (partitionId == -1) {
                 partitionId = partitioner.getPartition(item, partitionLookupTable.length);
-                assert partitionId >= 0 && partitionId < partitionLookupTable.length : "Partition number out of range";
+                assert partitionId >= 0 && partitionId < partitionLookupTable.length
+                        : "Partition number out of range: " + partitionId + ", offending item: " + item;
             }
             ProgressState result = offer(item, partitionId);
             if (result.isDone()) {

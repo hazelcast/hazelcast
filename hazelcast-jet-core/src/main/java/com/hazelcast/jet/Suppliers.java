@@ -32,6 +32,16 @@ public final class Suppliers {
     }
 
     /**
+     * Returns a simple adapter from {@code Iterator} to {@code Supplier}. Each
+     * time its {@code get()} method is called, the supplier will take another
+     * item from the iterator and return it. After the iterator has been exhausted,
+     * {@code get()} keeps returning {@code null}.
+     */
+    public static <T> Supplier<T> iterate(Iterator<T> iterator) {
+        return () -> iterator.hasNext() ? iterator.next() : null;
+    }
+
+    /**
      * Returns a supplier of all the items retrieved from an iterator. Both the iterator
      * and each iterator's element are obtained lazily. The iterator is obtained from this
      * method's argument just once, upon the first invocation of {@code get()}. Each

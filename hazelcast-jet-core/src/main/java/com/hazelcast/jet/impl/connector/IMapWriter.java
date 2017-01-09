@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -47,11 +46,6 @@ public final class IMapWriter extends AbstractProcessor {
 
     private IMapWriter(IMap map) {
         this.map = map;
-    }
-
-    @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
     }
 
     @Override
