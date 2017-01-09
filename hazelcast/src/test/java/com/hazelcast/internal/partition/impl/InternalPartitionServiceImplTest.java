@@ -40,12 +40,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -162,6 +165,33 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
 
         partitionService.setInitialState(new PartitionTableView(addresses, 0));
         assertEquals(0, listener.eventCount);
+    }
+
+    @Test
+    public void test_getMemberPartitions_whenNotInitialized() {
+        List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
+        assertTrue(partitionService.getPartitionStateManager().isInitialized());
+        assertEquals(partitionCount, partitions.size());
+    }
+
+    @Test
+    public void test_getMemberPartitions_whenInitialized() {
+        partitionService.firstArrangement();
+        List<Integer> partitions = partitionService.getMemberPartitions(getAddress(instance));
+        assertEquals(partitionCount, partitions.size());
+    }
+
+    @Test
+    public void test_getMemberPartitionsIfAssigned_whenNotInitialized() {
+        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
+        assertThat(partitions, empty());
+    }
+
+    @Test
+    public void test_getMemberPartitionsIfAssigned_whenInitialized() {
+        partitionService.firstArrangement();
+        List<Integer> partitions = partitionService.getMemberPartitionsIfAssigned(getAddress(instance));
+        assertEquals(partitionCount, partitions.size());
     }
 
     private static class TestPartitionListener implements PartitionListener {

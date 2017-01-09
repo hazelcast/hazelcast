@@ -39,7 +39,7 @@ public class PartitionServiceBeanDTO implements JsonSerializable {
                                    HazelcastInstanceImpl hazelcastInstance) {
         Address address = hazelcastInstance.getCluster().getLocalMember().getAddress();
         this.partitionCount = partitionService.getPartitionCount();
-        this.activePartitionCount = partitionService.getMemberPartitions(address).size();
+        this.activePartitionCount = partitionService.getMemberPartitionsIfAssigned(address).size();
     }
 
     public int getPartitionCount() {
