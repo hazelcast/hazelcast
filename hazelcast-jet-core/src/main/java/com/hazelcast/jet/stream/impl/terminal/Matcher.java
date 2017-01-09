@@ -22,10 +22,10 @@ import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -41,10 +41,10 @@ public class Matcher {
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
         Vertex anymatch = new Vertex(randomName(), () -> new AnyMatchP<>(predicate));
-        dag.addVertex(anymatch);
+        dag.vertex(anymatch);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != anymatch) {
-            dag.addEdge(new Edge(previous, anymatch));
+            dag.edge(between(previous, anymatch));
         }
         IList<Boolean> results = execute(dag, anymatch);
         boolean result = anyMatch(results);
@@ -52,7 +52,7 @@ public class Matcher {
         return result;
     }
 
-    private boolean anyMatch(IList<Boolean> results) {
+    private static boolean anyMatch(IList<Boolean> results) {
         for (Boolean result : results) {
             if (result) {
                 return true;
@@ -64,10 +64,8 @@ public class Matcher {
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         String listName = randomName(LIST_PREFIX);
         Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
-        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
+        dag.vertex(writer).edge(between(vertex, writer));
         executeJob(context, dag);
         return context.getJetInstance().getList(listName);
     }
-
-
 }

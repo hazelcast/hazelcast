@@ -79,7 +79,7 @@ public class TopologyChangeSplitClusterTest extends JetSplitBrainTestSupport {
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(PARALLELISM);
-        dag.addVertex(test);
+        dag.vertex(test);
         future = instances[0].newJob(dag).execute();
         StuckProcessor.executionStarted.await();
     }

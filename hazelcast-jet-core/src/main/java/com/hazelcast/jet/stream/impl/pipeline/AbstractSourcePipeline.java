@@ -32,7 +32,7 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
         if (isOrdered()) {
             vertex.localParallelism(1);
         }
-        dag.addVertex(vertex);
+        dag.vertex(vertex);
         return vertex;
     }
 

@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -120,18 +121,18 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
 
         dag
-                .addVertex(producer)
-                .addVertex(generator)
-                .addVertex(accumulator)
-                .addVertex(combiner)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, generator))
-                .addEdge(new Edge(generator, accumulator)
+                .vertex(producer)
+                .vertex(generator)
+                .vertex(accumulator)
+                .vertex(combiner)
+                .vertex(consumer)
+                .edge(between(producer, generator))
+                .edge(between(generator, accumulator)
                         .partitionedByCustom((item, n) -> Math.abs(((Entry) item).getKey().hashCode()) % n))
-                .addEdge(new Edge(accumulator, combiner)
+                .edge(between(accumulator, combiner)
                         .distributed()
                         .partitionedByKey(item -> ((Entry) item).getKey()))
-                .addEdge(new Edge(combiner, consumer));
+                .edge(between(combiner, consumer));
 
         benchmark("jet", () -> {
             uncheckedGet(instance.newJob(dag).execute());
@@ -152,17 +153,17 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"))
                 .localParallelism(1);
         dag
-                .addVertex(producer)
-                .addVertex(generator)
-                .addVertex(accumulator)
-                .addVertex(combiner)
-                .addVertex(consumer)
-                .addEdge(new Edge(producer, generator))
-                .addEdge(new Edge(generator, accumulator))
-                .addEdge(new Edge(accumulator, combiner)
+                .vertex(producer)
+                .vertex(generator)
+                .vertex(accumulator)
+                .vertex(combiner)
+                .vertex(consumer)
+                .edge(between(producer, generator))
+                .edge(between(generator, accumulator))
+                .edge(between(accumulator, combiner)
                         .distributed()
                         .allToOne())
-                .addEdge(new Edge(combiner, consumer));
+                .edge(between(combiner, consumer));
 
         benchmark("jet", () -> {
                     uncheckedGet(instance.newJob(dag).execute());

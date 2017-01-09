@@ -62,30 +62,40 @@ public class Edge implements IdentifiedDataSerializable {
     Edge() {
     }
 
-    /**
-     * Creates an edge between two vertices.
-     *
-     * @param source      the source vertex
-     * @param destination the destination vertex
-     */
-    public Edge(Vertex source, Vertex destination) {
-        this(source, 0, destination, 0);
+    private Edge(String source, int sourceOrdinal, String destination, int destOrdinal) {
+        this.source = source;
+        this.sourceOrdinal = sourceOrdinal;
+        this.destination = destination;
+        this.destOrdinal = destOrdinal;
     }
 
     /**
      * Creates an edge between two vertices.
      *
      * @param source        the source vertex
-     * @param sourceOrdinal ordinal at the source
      * @param destination   the destination vertex
-     * @param destOrdinal   ordinal at the destination
      */
-    public Edge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
-        this.source = source.getName();
-        this.sourceOrdinal = sourceOrdinal;
+    public static Edge between(Vertex source, Vertex destination) {
+        return new Edge(source.getName(), 0, destination.getName(), 0);
+    }
 
-        this.destination = destination.getName();
-        this.destOrdinal = destOrdinal;
+    public static Edge from(Vertex source) {
+        return from(source, 0);
+    }
+
+    public static Edge from(Vertex source, int ordinal) {
+        return new Edge(source.getName(), ordinal, null, 0);
+    }
+
+    public Edge to(Vertex dest) {
+        this.destination = dest.getName();
+        return this;
+    }
+
+    public Edge to(Vertex dest, int ordinal) {
+        this.destination = dest.getName();
+        this.destOrdinal = ordinal;
+        return this;
     }
 
     /**

@@ -61,7 +61,7 @@ public class TimeoutTest extends JetTestSupport {
         JetInstance instance = factory.newMember(config);
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
-        dag.addVertex(slow);
+        dag.vertex(slow);
 
         // When
         executeAndPeel(instance.newJob(dag));
@@ -75,7 +75,7 @@ public class TimeoutTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", SlowProcessor::new);
-        dag.addVertex(slow);
+        dag.vertex(slow);
 
         // When
         executeAndPeel(instance.newJob(dag));

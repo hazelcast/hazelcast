@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -63,12 +64,12 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                         mergeFunction));
         Vertex writer = new Vertex("map-writer-" + randomName(), Processors.mapWriter(mapName));
 
-        dag.addVertex(merger)
-           .addVertex(combiner)
-           .addVertex(writer)
-           .addEdge(new Edge(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
-           .addEdge(new Edge(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
-           .addEdge(new Edge(combiner, writer));
+        dag.vertex(merger)
+           .vertex(combiner)
+           .vertex(writer)
+           .edge(between(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
+           .edge(between(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
+           .edge(between(combiner, writer));
         executeJob(context, dag);
         return target;
     }

@@ -48,6 +48,8 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Edge.between;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 public class KafkaWriterTest extends JetTestSupport {
@@ -85,9 +87,9 @@ public class KafkaWriterTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", KafkaWriter.supplier(zkConnStr, producerGroup, topic, brokerConnectionString))
                 .localParallelism(4);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);

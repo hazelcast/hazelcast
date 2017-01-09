@@ -26,6 +26,7 @@ import com.hazelcast.jet.Vertex;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class TransformPipeline extends AbstractIntermediatePipeline {
@@ -48,8 +49,8 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
         }
-        dag.addVertex(transform)
-                .addEdge(new Edge(previous, transform));
+        dag.vertex(transform)
+                .edge(between(previous, transform));
 
         return transform;
     }

@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.Edge.between;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -78,9 +79,9 @@ public class IListWriterTest extends HazelcastTestSupport {
         Vertex producer = new Vertex("producer", IListReader.supplier("producer")).localParallelism(1);
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer", clientConfig)).localParallelism(4);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         Future<Void> execute = c1.newJob(dag).execute();
         assertCompletesEventually(execute);

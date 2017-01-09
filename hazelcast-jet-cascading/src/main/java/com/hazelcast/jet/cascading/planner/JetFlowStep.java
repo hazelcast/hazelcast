@@ -67,6 +67,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Edge.from;
 import static java.util.stream.Collectors.toList;
 
 public class JetFlowStep extends BaseFlowStep<JetConfig> {
@@ -168,7 +169,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
 
             Vertex vertex = new Vertex(node.getName(), new Supplier(node, getConfig().getProperties(),
                     inputMap, outputMap));
-            dag.addVertex(vertex);
+            dag.vertex(vertex);
 
             AnnotatedVertex annotatedVertex = new AnnotatedVertex(vertex);
             annotatedVertex.inputMap = inputMap;
@@ -185,14 +186,14 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                         String id = entry.getKey();
                         AnnotatedVertex tapVertex = vertexMap.computeIfAbsent(id, k -> {
                             AnnotatedVertex v = new AnnotatedVertex(new Vertex(id, entry.getValue()));
-                            dag.addVertex(v.vertex);
+                            dag.vertex(v.vertex);
                             return v;
                         });
-                        Edge edge = new Edge(tapVertex.vertex, tapVertex.currOutput++, vertex, annotatedVertex.currInput);
+                        Edge edge = from(tapVertex.vertex, tapVertex.currOutput++).to(vertex, annotatedVertex.currInput);
                         if (isAccumulated) {
                             edge = edge.broadcast().distributed().priority(0);
                         }
-                        dag.addEdge(edge);
+                        dag.edge(edge);
 
                         Map<Integer, Integer> ordinalMap = inputMap.computeIfAbsent(tapId, k -> new HashMap<>());
                         ordinalMap.put(annotatedVertex.currInput++, 0);
@@ -208,9 +209,9 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                     Map<String, ProcessorMetaSupplier> suppliers = sinkTapToSuppliers(tap);
                     for (Map.Entry<String, ProcessorMetaSupplier> entry : suppliers.entrySet()) {
                         Vertex tapVertex = new Vertex(entry.getKey(), entry.getValue());
-                        dag.addVertex(tapVertex);
-                        Edge edge = new Edge(vertex, annotatedVertex.currOutput, tapVertex, 0);
-                        dag.addEdge(edge);
+                        dag.vertex(tapVertex);
+                        Edge edge = from(vertex, annotatedVertex.currOutput).to(tapVertex, 0);
+                        dag.edge(edge);
 
                         Set<Integer> outputs = outputMap.computeIfAbsent(id, k -> new HashSet<>());
                         outputs.add(annotatedVertex.currOutput++);
@@ -231,10 +232,10 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
             Set<? extends FlowElement> accumulatedSources = targetNode.getSourceElements(StreamMode.Accumulated);
             boolean isAccumulated = accumulatedSources.contains(element);
 
-            Edge edge = new Edge(sourceVertex.vertex, sourceVertex.currOutput,
-                    targetVertex.vertex, targetVertex.currInput)
-                    .partitionedByCustom(getPartitioner(processEdge, targetNode, element))
-                    .distributed();
+            Edge edge = Edge.from(sourceVertex.vertex, sourceVertex.currOutput)
+                            .to(targetVertex.vertex, targetVertex.currInput)
+                            .partitionedByCustom(getPartitioner(processEdge, targetNode, element))
+                            .distributed();
             if (isAccumulated) {
                 edge = edge.broadcast().priority(0);
             }
@@ -245,7 +246,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
             Map<Integer, Integer> ordinalMap = targetVertex.inputMap.computeIfAbsent(id, k -> new HashMap<>());
             int ordinalAtTarget = (int) Util.getFirst(processEdge.getSourceProvidedOrdinals());
             ordinalMap.put(targetVertex.currInput++, ordinalAtTarget);
-            dag.addEdge(edge);
+            dag.edge(edge);
         }
         return dag;
     }

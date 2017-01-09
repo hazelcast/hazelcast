@@ -93,7 +93,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(Identity::new));
-        dag.addVertex(test);
+        dag.vertex(test);
 
         // When
         instance.newJob(dag).execute().get();
@@ -114,7 +114,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         RuntimeException e = new RuntimeException("mock error");
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(e, Identity::new));
-        dag.addVertex(test);
+        dag.vertex(test);
 
         // When
         try {
@@ -143,7 +143,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address ->
                 new MockSupplier(() -> new FaultyProducer(e)));
-        dag.addVertex(test);
+        dag.vertex(test);
 
         // When
         try {
@@ -170,7 +170,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(LOCAL_PARALLELISM);
-        dag.addVertex(test);
+        dag.vertex(test);
 
         // When
         try {

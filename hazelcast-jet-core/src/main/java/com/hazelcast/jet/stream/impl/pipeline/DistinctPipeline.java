@@ -21,6 +21,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -34,8 +35,8 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         if (upstream.isOrdered()) {
             Vertex previous = upstream.buildDAG(dag);
             Vertex distinct = new Vertex(randomName(), DistinctP::new).localParallelism(1);
-            dag.addVertex(distinct)
-                    .addEdge(new Edge(previous, distinct));
+            dag.vertex(distinct)
+                    .edge(between(previous, distinct));
 
             return distinct;
         }
@@ -45,10 +46,10 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex combiner = new Vertex("distinct-" + randomName(), DistinctP::new);
 
         dag
-                .addVertex(distinct)
-                .addVertex(combiner)
-                .addEdge(new Edge(previous, distinct).partitioned())
-                .addEdge(new Edge(distinct, combiner).partitioned().distributed());
+                .vertex(distinct)
+                .vertex(combiner)
+                .edge(between(previous, distinct).partitioned())
+                .edge(between(distinct, combiner).partitioned().distributed());
 
         return combiner;
     }

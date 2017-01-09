@@ -42,6 +42,7 @@ import org.junit.runner.RunWith;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -98,13 +99,13 @@ public class BackpressureTest extends JetTestSupport {
         Vertex hiccuper = new Vertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
         Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
         dag
-                .addVertex(generator)
-                .addVertex(hiccuper)
-                .addVertex(consumer)
-                .addEdge(new Edge(generator, hiccuper)
+                .vertex(generator)
+                .vertex(hiccuper)
+                .vertex(consumer)
+                .edge(between(generator, hiccuper)
                         .distributed()
                         .partitionedByCustom((x, y) -> ptionOwnedByMember2))
-                .addEdge(new Edge(hiccuper, consumer));
+                .edge(between(hiccuper, consumer));
 
         uncheckedGet(jet1.newJob(dag).execute());
         assertCounts(jet1.getMap("counts"));

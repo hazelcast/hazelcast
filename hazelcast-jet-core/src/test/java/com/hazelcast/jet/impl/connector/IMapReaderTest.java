@@ -39,6 +39,7 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -80,9 +81,9 @@ public class IMapReaderTest extends HazelcastTestSupport {
         Vertex producer = new Vertex("producer", IMapReader.supplier("producer", clientConfig)).localParallelism(4);
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         Future<Void> execute = c1.newJob(dag).execute();
         assertCompletesEventually(execute);

@@ -35,6 +35,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -67,9 +68,9 @@ public class FileStreamReaderTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);
@@ -103,9 +104,9 @@ public class FileStreamReaderTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);
@@ -141,9 +142,9 @@ public class FileStreamReaderTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(10);

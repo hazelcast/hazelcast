@@ -22,6 +22,7 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 import java.util.Comparator;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -39,8 +40,8 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         // required final for lambda variable capture
         final Comparator<? super T> comparator = this.comparator;
         Vertex sorter = new Vertex("sorter-" + randomName(), () -> new SortP<>(comparator)).localParallelism(1);
-        dag.addVertex(sorter)
-                .addEdge(new Edge(previous, sorter)
+        dag.vertex(sorter)
+                .edge(between(previous, sorter)
                         .distributed()
                         .allToOne()
                 );

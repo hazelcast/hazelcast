@@ -75,7 +75,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     /**
      * Adds a vertex to the DAG. The vertex name must be unique.
      */
-    public DAG addVertex(Vertex vertex) {
+    public DAG vertex(Vertex vertex) {
         if (vertices.containsKey(vertex.getName())) {
             throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
         }
@@ -92,7 +92,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * and outbound ordinals are independent, so there can be two edges at the
      * same ordinal, one inbound and one outbound.
      */
-    public DAG addEdge(Edge edge) {
+    public DAG edge(Edge edge) {
         if (!containsVertex(edge.getSource())) {
             throw new IllegalArgumentException("Source vertex " + edge.getSource() + " doesn't exist!");
         }

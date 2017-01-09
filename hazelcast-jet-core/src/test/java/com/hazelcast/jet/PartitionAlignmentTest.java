@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.Processors.listWriter;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.stream.Collectors.toList;
@@ -74,13 +76,13 @@ public class PartitionAlignmentTest {
         final Vertex consumer = new Vertex("consumer", listWriter("numbers")).localParallelism(1);
 
         executeAndPeel(instance.newJob(new DAG()
-                .addVertex(distributedProducer)
-                .addVertex(localProducer)
-                .addVertex(processor)
-                .addVertex(consumer)
-                .addEdge(new Edge(distributedProducer, processor).partitionedByCustom(partitioner).distributed())
-                .addEdge(new Edge(localProducer, 0, processor, 1).partitionedByCustom(partitioner))
-                .addEdge(new Edge(processor, consumer)))
+                .vertex(distributedProducer)
+                .vertex(localProducer)
+                .vertex(processor)
+                .vertex(consumer)
+                .edge(between(distributedProducer, processor).partitionedByCustom(partitioner).distributed())
+                .edge(from(localProducer, 0).to(processor, 1).partitionedByCustom(partitioner))
+                .edge(between(processor, consumer)))
         );
         assertEquals(
                 items.stream()

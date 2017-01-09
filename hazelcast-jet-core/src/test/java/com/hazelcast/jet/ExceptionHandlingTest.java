@@ -28,6 +28,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
 @Category(QuickTest.class)
@@ -62,7 +63,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
             throw e;
         };
         Vertex faulty = new Vertex("faulty", sup);
-        dag.addVertex(faulty);
+        dag.vertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -82,7 +83,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         Vertex faulty = new Vertex("faulty", (ProcessorMetaSupplier) address -> {
             throw e;
         });
-        dag.addVertex(faulty);
+        dag.vertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -111,7 +112,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
                 });
             }
         });
-        dag.addVertex(faulty);
+        dag.vertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -130,9 +131,9 @@ public class ExceptionHandlingTest extends JetTestSupport {
         RuntimeException e = new RuntimeException("mock error");
         Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
         Vertex consumer = new Vertex("consumer", TestProcessors.Identity::new);
-        dag.addVertex(faulty)
-           .addVertex(consumer)
-           .addEdge(new Edge(faulty, consumer));
+        dag.vertex(faulty)
+           .vertex(consumer)
+           .edge(between(faulty, consumer));
 
         // Then
         expectedException.expect(e.getClass());
@@ -151,9 +152,9 @@ public class ExceptionHandlingTest extends JetTestSupport {
         RuntimeException e = new RuntimeException("mock error");
         Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
         Vertex consumer = new Vertex("consumer", TestProcessors.BlockingIdentity::new);
-        dag.addVertex(faulty)
-           .addVertex(consumer)
-           .addEdge(new Edge(faulty, consumer));
+        dag.vertex(faulty)
+           .vertex(consumer)
+           .edge(between(faulty, consumer));
 
         // Then
         expectedException.expect(e.getClass());

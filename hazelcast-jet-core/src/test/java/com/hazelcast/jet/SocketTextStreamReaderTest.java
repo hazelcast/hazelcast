@@ -33,6 +33,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -81,9 +82,9 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
 

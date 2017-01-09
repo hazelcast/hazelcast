@@ -24,6 +24,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
 public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector<T, Object, R> {
@@ -37,7 +38,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         if (localParallelism() > 0) {
             writer.localParallelism(localParallelism());
         }
-        dag.addVertex(writer).addEdge(new Edge(vertex, writer));
+        dag.vertex(writer).edge(between(vertex, writer));
         executeJob(context, dag);
         return target;
     }

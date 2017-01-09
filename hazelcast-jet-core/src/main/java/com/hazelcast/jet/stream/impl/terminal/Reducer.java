@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
@@ -57,8 +58,8 @@ public class Reducer {
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
         SimpleProcessorSupplier supplier = () -> new CombinerP<>(combiner, Distributed.Function.<T>identity());
         Vertex combinerVertex = new Vertex(randomName(), supplier).localParallelism(1);
-        dag.addVertex(combinerVertex);
-        dag.addEdge(new Edge(accumulatorVertex, combinerVertex)
+        dag.vertex(combinerVertex);
+        dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
                 .allToOne()
         );
@@ -82,7 +83,7 @@ public class Reducer {
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         String listName = randomName(LIST_PREFIX);
         Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
-        dag.addVertex(writer).addEdge(new Edge(combiner, writer));
+        dag.vertex(writer).edge(between(combiner, writer));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);
         if (list.isEmpty()) {
@@ -101,10 +102,10 @@ public class Reducer {
 
 
         Vertex accumulatorVertex = new Vertex(randomName(), () -> new AccumulatorP<>(accumulator, identity));
-        dag.addVertex(accumulatorVertex);
+        dag.vertex(accumulatorVertex);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
-            dag.addEdge(new Edge(previous, accumulatorVertex));
+            dag.edge(between(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }
@@ -113,11 +114,11 @@ public class Reducer {
             DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, T identity
     ) {
         Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity);
-        dag.addVertex(accumulatorVertex);
+        dag.vertex(accumulatorVertex);
 
         Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
-            dag.addEdge(new Edge(previous, accumulatorVertex));
+            dag.edge(between(previous, accumulatorVertex));
         }
         return accumulatorVertex;
     }

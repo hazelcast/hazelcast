@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -65,9 +66,9 @@ public class ForwardingTest extends JetTestSupport {
         ProcSupplier supplier = new ProcSupplier();
         Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         execute(dag);
 
@@ -87,9 +88,9 @@ public class ForwardingTest extends JetTestSupport {
         ProcSupplier supplier = new ProcSupplier();
         Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer).broadcast());
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer).broadcast());
 
         execute(dag);
 
@@ -107,9 +108,9 @@ public class ForwardingTest extends JetTestSupport {
         ProcSupplier supplier = new ProcSupplier();
         Vertex consumer = new Vertex("consumer", supplier).localParallelism(parallelism);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer).partitionedByCustom(
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer).partitionedByCustom(
                    (item, numPartitions) -> (int) item % numPartitions
            ));
 

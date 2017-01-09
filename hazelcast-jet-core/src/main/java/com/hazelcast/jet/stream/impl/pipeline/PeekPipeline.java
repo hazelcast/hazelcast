@@ -23,6 +23,7 @@ import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 
+import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -43,8 +44,8 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         if (upstream.isOrdered()) {
             writer.localParallelism(1);
         }
-        dag.addVertex(writer);
-        dag.addEdge(new Edge(previous, 1, writer, 0));
+        dag.vertex(writer);
+        dag.edge(from(previous, 1).to(writer, 0));
         context.addStreamListener(() -> {
             list.forEach(consumer);
             list.destroy();

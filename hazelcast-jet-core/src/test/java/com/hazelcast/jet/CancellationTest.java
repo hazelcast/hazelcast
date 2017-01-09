@@ -75,7 +75,7 @@ public class CancellationTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.addVertex(slow);
+        dag.vertex(slow);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -101,7 +101,7 @@ public class CancellationTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.addVertex(slow);
+        dag.vertex(slow);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -124,7 +124,7 @@ public class CancellationTest extends JetTestSupport {
 
         DAG dag = new DAG();
         Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.addVertex(slow);
+        dag.vertex(slow);
 
         Future<Void> future = client.newJob(dag).execute();
         assertExecutionStarted();
@@ -150,7 +150,7 @@ public class CancellationTest extends JetTestSupport {
         SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance.getHazelcastInstance()),
                 fault);
         Vertex faulty = new Vertex("faulty", supplier).localParallelism(4);
-        dag.addVertex(faulty);
+        dag.vertex(faulty);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -179,7 +179,7 @@ public class CancellationTest extends JetTestSupport {
 
         Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(getAddress(other.getHazelcastInstance()), fault))
                 .localParallelism(4);
-        dag.addVertex(faulty);
+        dag.vertex(faulty);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();

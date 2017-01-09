@@ -21,6 +21,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Vertex;
 
+import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
 
 public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -37,15 +38,15 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         // required final for lambda variable capture
         final long skip = this.skip;
         Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipP(skip)).localParallelism(1);
-        dag.addVertex(skipVertex);
+        dag.vertex(skipVertex);
 
-        Edge edge = new Edge(previous, skipVertex);
+        Edge edge = between(previous, skipVertex);
 
         // if upstream is not ordered, we need to shuffle data to one node
         if (!upstream.isOrdered()) {
             edge = edge.distributed().allToOne();
         }
-        dag.addEdge(edge);
+        dag.edge(edge);
         return skipVertex;
     }
 }

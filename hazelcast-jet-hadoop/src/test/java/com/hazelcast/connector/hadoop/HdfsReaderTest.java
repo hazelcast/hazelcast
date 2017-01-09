@@ -18,7 +18,6 @@ package com.hazelcast.connector.hadoop;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -39,6 +38,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -58,9 +58,9 @@ public class HdfsReaderTest extends JetTestSupport {
         Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.addVertex(producer)
-           .addVertex(consumer)
-           .addEdge(new Edge(producer, consumer));
+        dag.vertex(producer)
+           .vertex(consumer)
+           .edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
@@ -70,7 +70,7 @@ public class HdfsReaderTest extends JetTestSupport {
         assertEquals(4, list.size());
     }
 
-    private Path writeToFile(String... values) throws IOException {
+    private static Path writeToFile(String... values) throws IOException {
         LocalFileSystem local = FileSystem.getLocal(new Configuration());
         Path path = new Path(randomString());
         local.createNewFile(path);
