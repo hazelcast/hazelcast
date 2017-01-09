@@ -151,6 +151,10 @@ public class ProcessorTasklet implements Tasklet {
         if (processorCompleted) {
             return;
         }
+        if (outbox.isHighWater()) {
+            progTracker.notDone();
+            return;
+        }
         progTracker.madeProgress(true);
         if (!processor.complete()) {
             progTracker.notDone();
