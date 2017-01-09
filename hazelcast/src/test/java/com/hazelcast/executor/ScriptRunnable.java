@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {
+
     private final String script;
     private final Map<String, ?> map;
     private transient HazelcastInstance hazelcastInstance;
@@ -30,7 +31,7 @@ class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {
         }
         e.put("hazelcast", hazelcastInstance);
         try {
-            // For new JavaScript engine called Nashorn we need the compatibility script
+            // for new JavaScript engine called Nashorn we need the compatibility script
             if (e.getFactory().getEngineName().toLowerCase().contains("nashorn")) {
                 e.eval("load('nashorn:mozilla_compat.js');");
             }

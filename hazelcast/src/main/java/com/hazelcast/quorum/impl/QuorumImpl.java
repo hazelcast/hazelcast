@@ -20,11 +20,13 @@ import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ReadonlyOperation;
@@ -34,7 +36,6 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
@@ -43,8 +44,12 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
  */
 public class QuorumImpl implements Quorum {
 
-    private final AtomicBoolean isPresent = new AtomicBoolean(true);
-    private final AtomicBoolean lastPresence = new AtomicBoolean(true);
+    private enum QuorumState {
+        INITIAL,
+        PRESENT,
+        ABSENT
+    }
+
 
     private final NodeEngineImpl nodeEngine;
     private final String quorumName;
@@ -53,7 +58,8 @@ public class QuorumImpl implements Quorum {
     private final InternalEventService eventService;
     private QuorumFunction quorumFunction;
 
-    private volatile boolean initialized;
+    // we are updating the quorum state within the single thread of membership event executor
+    private volatile QuorumState quorumState = QuorumState.INITIAL;
 
     public QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -70,10 +76,22 @@ public class QuorumImpl implements Quorum {
      *
      * @param members the members for which the presence is determined
      */
-    public void update(Collection<Member> members) {
-        boolean presence = quorumFunction.apply(members);
-        setLocalResult(presence);
-        updateLastResultAndFireEvent(members, presence);
+    void update(Collection<Member> members) {
+        QuorumState previousQuorumState = this.quorumState;
+        QuorumState newQuorumState = QuorumState.ABSENT;
+        try {
+            boolean present = quorumFunction.apply(members);
+            newQuorumState = present ? QuorumState.PRESENT : QuorumState.ABSENT;
+        } catch (Exception e) {
+            ILogger logger = nodeEngine.getLogger(QuorumService.class);
+            logger.severe("Quorum function of quorum: " + quorumName + " failed! Quorum status is set to "
+                    + newQuorumState, e);
+        }
+
+        this.quorumState = newQuorumState;
+        if (previousQuorumState != newQuorumState) {
+            createAndPublishEvent(members, newQuorumState == QuorumState.PRESENT);
+        }
     }
 
     public String getName() {
@@ -88,27 +106,9 @@ public class QuorumImpl implements Quorum {
         return config;
     }
 
-    public boolean isInitialized() {
-        return initialized;
-    }
-
     @Override
     public boolean isPresent() {
-        return isPresent.get();
-    }
-
-    /**
-     * Sets the current quorum presence to the given {@code presence} and marks the instance as initialized.
-     *
-     * @param presence the quorum presence to be set
-     */
-    public void setLocalResult(boolean presence) {
-        setLocalResultInternal(presence);
-    }
-
-    private void setLocalResultInternal(boolean presence) {
-        this.initialized = true;
-        this.isPresent.set(presence);
+        return quorumState == QuorumState.PRESENT;
     }
 
     /**
@@ -149,41 +149,23 @@ public class QuorumImpl implements Quorum {
      * @param op the operation for which the quorum should be present
      * @throws QuorumException if the operation requires a quorum and the quorum is not present
      */
-    public void ensureQuorumPresent(Operation op) {
+    void ensureQuorumPresent(Operation op) {
         if (!isQuorumNeeded(op)) {
             return;
         }
-        Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
-        if (!isInitialized()) {
-            update(memberList);
-        }
+
         if (!isPresent()) {
-            updateLastResultAndFireEvent(memberList, false);
-            throw newQuorumException(memberList);
+            throw newQuorumException();
         }
-        updateLastResultAndFireEvent(memberList, true);
     }
 
-    private QuorumException newQuorumException(Collection<Member> memberList) {
+    private QuorumException newQuorumException() {
         if (size == 0) {
             throw new QuorumException("Cluster quorum failed");
         }
+        Collection<Member> memberList = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         throw new QuorumException("Cluster quorum failed, quorum minimum size: "
                 + size + ", current size: " + memberList.size());
-    }
-
-
-    private void updateLastResultAndFireEvent(Collection<Member> memberList, Boolean presence) {
-        for (; ; ) {
-            boolean currentPresence = lastPresence.get();
-            if (presence.equals(currentPresence)) {
-                return;
-            }
-            if (lastPresence.compareAndSet(currentPresence, presence)) {
-                createAndPublishEvent(memberList, presence);
-                return;
-            }
-        }
     }
 
     private void createAndPublishEvent(Collection<Member> memberList, boolean presence) {
@@ -221,11 +203,10 @@ public class QuorumImpl implements Quorum {
     public String toString() {
         return "QuorumImpl{"
                 + "quorumName='" + quorumName + '\''
-                + ", isPresent=" + isPresent
+                + ", isPresent=" + isPresent()
                 + ", size=" + size
                 + ", config=" + config
                 + ", quorumFunction=" + quorumFunction
-                + ", initialized=" + initialized
                 + '}';
     }
 }
