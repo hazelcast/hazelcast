@@ -19,28 +19,18 @@ package com.hazelcast.jet;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.jet.impl.connector.IMapReader;
-import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
+@Category(NightlyTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class JetInstanceTest extends JetTestSupport {
 
@@ -53,8 +43,7 @@ public class JetInstanceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_twoJetInstancesCreated_then_clusterOfTwoShouldBeFormed()
-    {
+    public void when_twoJetInstancesCreated_then_clusterOfTwoShouldBeFormed() {
         JetInstance instance1 = Jet.newJetInstance();
         JetInstance instance2 = Jet.newJetInstance();
 
@@ -62,8 +51,7 @@ public class JetInstanceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_twoJetAndTwoHzInstancesCreated_then_twoClusterSOfTwoShouldBeFormed()
-    {
+    public void when_twoJetAndTwoHzInstancesCreated_then_twoClusterSOfTwoShouldBeFormed() {
         JetInstance jetInstance1 = Jet.newJetInstance();
         JetInstance jetInstance2 = Jet.newJetInstance();
 
@@ -75,8 +63,7 @@ public class JetInstanceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jetClientCreated_then_doesNotConnectToHazelcastCluster()
-    {
+    public void when_jetClientCreated_then_doesNotConnectToHazelcastCluster() {
         Hazelcast.newHazelcastInstance();
 
         expectedException.expect(IllegalStateException.class);
@@ -85,8 +72,7 @@ public class JetInstanceTest extends JetTestSupport {
     }
 
     @Test
-    public void when_hazelcastClientCreated_then_doesNotConnectToJetCluster()
-    {
+    public void when_hazelcastClientCreated_then_doesNotConnectToJetCluster() {
         Jet.newJetInstance();
 
         expectedException.expect(IllegalStateException.class);
