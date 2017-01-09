@@ -44,6 +44,7 @@ public class ProcessorTasklet implements Tasklet {
     private final ProgressTracker progTracker = new ProgressTracker();
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
+    private final String vertexName;
     private CircularCursor<InboundEdgeStream> instreamCursor;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outstreams;
@@ -52,10 +53,10 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(
-            Processor processor, List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams
-    ) {
+    public ProcessorTasklet(String vertexName, Processor processor, List<InboundEdgeStream> instreams,
+                            List<OutboundEdgeStream> outstreams) {
         Preconditions.checkNotNull(processor, "processor");
+        this.vertexName = vertexName;
         this.processor = processor;
         this.instreamGroupQueue = instreams
                 .stream()
@@ -72,6 +73,7 @@ public class ProcessorTasklet implements Tasklet {
         this.outbox = new ArrayDequeOutbox(outstreams.size(), highWaterMarks);
         this.instreamCursor = popInstreamGroup();
     }
+
 
     @Override
     public void init() {
@@ -180,7 +182,7 @@ public class ProcessorTasklet implements Tasklet {
 
     @Override
     public String toString() {
-        return "ProcessorTasklet{processor=" + processor + '}';
+        return "ProcessorTasklet{vertex=" + vertexName + ", processor=" + processor + '}';
     }
 
     private static final class ArrayDequeInbox extends ArrayDeque<Object> implements Inbox {

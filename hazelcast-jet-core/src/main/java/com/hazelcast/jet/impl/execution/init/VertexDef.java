@@ -33,14 +33,16 @@ public class VertexDef implements IdentifiedDataSerializable {
     private int id;
     private List<EdgeDef> inboundEdges = new ArrayList<>();
     private List<EdgeDef> outboundEdges = new ArrayList<>();
+    private String name;
     private ProcessorSupplier processorSupplier;
     private int parallelism;
 
     VertexDef() {
     }
 
-    public VertexDef(int id, ProcessorSupplier processorSupplier, int parallelism) {
+    public VertexDef(int id, String name, ProcessorSupplier processorSupplier, int parallelism) {
         this.id = id;
+        this.name = name;
         this.processorSupplier = processorSupplier;
         this.parallelism = parallelism;
     }
@@ -69,6 +71,10 @@ public class VertexDef implements IdentifiedDataSerializable {
         return processorSupplier;
     }
 
+    public String name() {
+        return name;
+    }
+
     public int parallelism() {
         return parallelism;
     }
@@ -86,6 +92,7 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(id);
+        out.writeUTF(name);
         writeList(out, inboundEdges);
         writeList(out, outboundEdges);
         CustomClassLoadedObject.write(out, processorSupplier);
@@ -95,6 +102,7 @@ public class VertexDef implements IdentifiedDataSerializable {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         id = in.readInt();
+        name = in.readUTF();
         inboundEdges = readList(in);
         outboundEdges = readList(in);
         processorSupplier = CustomClassLoadedObject.read(in);

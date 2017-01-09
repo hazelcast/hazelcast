@@ -114,7 +114,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             supplier.init(new ProcMetaSupplierContext(instance, totalParallelism, localParallelism));
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
-                final VertexDef vertexDef = new VertexDef(vertexId, processorSupplier, localParallelism);
+                final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);
                 e.getValue().vertices.add(vertexDef);
@@ -138,7 +138,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
                 final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
-                tasklets.add(new ProcessorTasklet(p, inboundStreams, outboundStreams));
+                tasklets.add(new ProcessorTasklet(srcVertex.name(), p, inboundStreams, outboundStreams));
             }
         }
         tasklets.addAll(receiverMap.values().stream().map(Map::values).flatMap(Collection::stream).collect(toList()));
