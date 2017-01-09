@@ -221,7 +221,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
     }
 
     private Map convertToObject(Map<Object, DelayedEntry> batchMap) {
-        final Map map = new HashMap();
+        final Map map = MapUtil.createHashMap(batchMap.size());
         for (DelayedEntry entry : batchMap.values()) {
             final Object key = toObject(entry.getKey());
             final Object value = toObject(entry.getValue());

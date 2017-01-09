@@ -144,7 +144,7 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
         if (isEmpty(keys)) {
             return Collections.emptyMap();
         }
-        
+
         final int roughSize = Math.min(partitionService.getPartitionCount(), keys.size());
 
         //using the type of Int2ObjectHashMap allows the get and put operations to avoid auto-boxing

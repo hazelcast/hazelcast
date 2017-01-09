@@ -27,7 +27,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class AtomicReferenceReplicationOperation extends Operation

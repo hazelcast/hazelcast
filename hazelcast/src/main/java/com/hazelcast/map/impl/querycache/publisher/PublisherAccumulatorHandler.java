@@ -86,11 +86,11 @@ public class PublisherAccumulatorHandler implements AccumulatorHandler<Sequenced
         if (events.isEmpty()) {
             return Collections.emptyMap();
         }
-        
+
         //using 271 as default partition count, no partition service here
         final int roughSize = Math.min(events.size(), 271);
 
-        Map<Integer, List<QueryCacheEventData>> map = MapUtil.createHashMap(roughSize);
+        final Map<Integer, List<QueryCacheEventData>> map = MapUtil.createHashMap(roughSize);
 
         do {
             QueryCacheEventData eventData = events.poll();

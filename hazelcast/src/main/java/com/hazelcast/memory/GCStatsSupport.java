@@ -32,10 +32,10 @@ public final class GCStatsSupport {
     private static final Set<String> OLD_GC;
 
     static {
-	final Set<String> youngGC = SetUtil.createHashSet(3);
-	youngGC.add("PS Scavenge");
-	youngGC.add("ParNew");
-	youngGC.add("G1 Young Generation");
+        final Set<String> youngGC = SetUtil.createHashSet(3);
+        youngGC.add("PS Scavenge");
+        youngGC.add("ParNew");
+        youngGC.add("G1 Young Generation");
         YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
         final Set<String> oldGC = SetUtil.createHashSet(3);

@@ -324,7 +324,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public Collection<Client> getClients() {
         final Collection<ClientEndpoint> endpoints = endpointManager.getEndpoints();
-	final Set<Client> clients = SetUtil.createHashSet(endpoints.size());
+        final Set<Client> clients = SetUtil.createHashSet(endpoints.size());
         for (ClientEndpoint endpoint : endpoints) {
             clients.add(endpoint);
         }
@@ -543,7 +543,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         final Map<ClientType, Integer> resultMap = new EnumMap<ClientType, Integer>(ClientType.class);
-        
+
         resultMap.put(ClientType.CPP, numberOfCppClients);
         resultMap.put(ClientType.CSHARP, numberOfDotNetClients);
         resultMap.put(ClientType.JAVA, numberOfJavaClients);

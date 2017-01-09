@@ -66,8 +66,8 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
 
     void prepare(PartitionContainer container, int replicaIndex) {
         final ConcurrentMap<String, RecordStore> maps = container.getMaps();
-	final int mapSize = maps.size();
-	data = MapUtil.createHashMap(mapSize);
+        final int mapSize = maps.size();
+        data = MapUtil.createHashMap(mapSize);
         loaded = MapUtil.createHashMap(mapSize);
         for (Map.Entry<String, RecordStore> entry : maps.entrySet()) {
             RecordStore recordStore = entry.getValue();

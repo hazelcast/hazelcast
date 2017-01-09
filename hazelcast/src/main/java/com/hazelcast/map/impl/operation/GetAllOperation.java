@@ -33,6 +33,8 @@ import java.util.Set;
 
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
+
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
 
@@ -48,7 +50,7 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        final int roughSize = (int) (keys.size() * 1.3 / partitionService.getPartitionCount());
+        final int roughSize = (int) (keys.size() * SIZING_FUDGE_FACTOR / partitionService.getPartitionCount());
         Set<Data> partitionKeySet = SetUtil.createHashSet(roughSize);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {

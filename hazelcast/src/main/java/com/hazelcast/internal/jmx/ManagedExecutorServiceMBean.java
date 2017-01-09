@@ -17,9 +17,10 @@
 package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -28,13 +29,13 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
  */
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
 public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
-    private static final int INITIAL_CAPACITY = 5;
+    private static final int INITIAL_CAPACITY = 3;
 
     public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService,
                                        ManagementService service) {
         super(executorService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
         properties.put("name", quote(executorService.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

@@ -24,12 +24,13 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.MapUtil;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
@@ -40,7 +41,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
-    private static final int INITIAL_CAPACITY = 5;
+    private static final int INITIAL_CAPACITY = 3;
 
     final Config config;
     final Cluster cluster;
@@ -110,7 +111,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     }
 
     private void createProperties(HazelcastInstanceImpl hazelcastInstance) {
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance"));
         properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", quote(hazelcastInstance.getName()));

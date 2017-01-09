@@ -49,26 +49,26 @@ class Parser {
     private static final Map<String, Integer> PRECEDENCE;
 
     static {
-	final Map<String, Integer> precedence = MapUtil.createHashMap(18);
-	precedence.put("(", PARENTHESIS_PRECEDENCE);
-	precedence.put(")", PARENTHESIS_PRECEDENCE);
-	precedence.put("not", NOT_PRECEDENCE);
-	precedence.put("=", EQUAL_PRECEDENCE);
-	precedence.put(">", GREATER_PRECEDENCE);
-	precedence.put("<", LESS_PRECEDENCE);
-	precedence.put(">=", GREATER_EQUAL_PRECEDENCE);
-	precedence.put("<=", LESS_EQUAL_PRECEDENCE);
-	precedence.put("==", ASSIGN_PRECEDENCE);
-	precedence.put("!=", NOT_EQUAL_PRECEDENCE);
-	precedence.put("<>", NOT_EQUAL_PRECEDENCE);
-	precedence.put("between", BETWEEN_PRECEDENCE);
-	precedence.put("in", IN_PRECEDENCE);
-	precedence.put("like", LIKE_PRECEDENCE);
-	precedence.put("ilike", ILIKE_PRECEDENCE);
-	precedence.put("regex", REGEX_PRECEDENCE);
-	precedence.put("and", AND_PRECEDENCE);
-	precedence.put("or", OR_PRECEDENCE);
-	PRECEDENCE = Collections.unmodifiableMap(precedence);
+        final Map<String, Integer> precedence = MapUtil.createHashMap(18);
+        precedence.put("(", PARENTHESIS_PRECEDENCE);
+        precedence.put(")", PARENTHESIS_PRECEDENCE);
+        precedence.put("not", NOT_PRECEDENCE);
+        precedence.put("=", EQUAL_PRECEDENCE);
+        precedence.put(">", GREATER_PRECEDENCE);
+        precedence.put("<", LESS_PRECEDENCE);
+        precedence.put(">=", GREATER_EQUAL_PRECEDENCE);
+        precedence.put("<=", LESS_EQUAL_PRECEDENCE);
+        precedence.put("==", ASSIGN_PRECEDENCE);
+        precedence.put("!=", NOT_EQUAL_PRECEDENCE);
+        precedence.put("<>", NOT_EQUAL_PRECEDENCE);
+        precedence.put("between", BETWEEN_PRECEDENCE);
+        precedence.put("in", IN_PRECEDENCE);
+        precedence.put("like", LIKE_PRECEDENCE);
+        precedence.put("ilike", ILIKE_PRECEDENCE);
+        precedence.put("regex", REGEX_PRECEDENCE);
+        precedence.put("and", AND_PRECEDENCE);
+        precedence.put("or", OR_PRECEDENCE);
+        PRECEDENCE = Collections.unmodifiableMap(precedence);
     }
 
     private static final List<String> CHAR_OPERATORS

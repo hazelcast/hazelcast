@@ -44,6 +44,8 @@ public class CardinalityEstimatorService
 
     public static final String SERVICE_NAME = "hz:impl:cardinalityEstimatorService";
 
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
+
     private NodeEngine nodeEngine;
     private final ConcurrentMap<String, CardinalityEstimatorContainer> containers =
             new ConcurrentHashMap<String, CardinalityEstimatorContainer>();
@@ -102,8 +104,8 @@ public class CardinalityEstimatorService
         }
 
         final IPartitionService partitionService = nodeEngine.getPartitionService();
-        
-        final int roughSize = (int) ((containers.size() * 1.3) / partitionService.getPartitionCount());
+
+        final int roughSize = (int) ((containers.size() * SIZING_FUDGE_FACTOR) / partitionService.getPartitionCount());
         Map<String, CardinalityEstimatorContainer> data = MapUtil.createHashMap(roughSize);
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {

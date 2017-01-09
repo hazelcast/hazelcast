@@ -143,7 +143,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         engine = getString(json, "engine", "");
         final JsonArray array = getArray(json, "targets", new JsonArray());
         targets = SetUtil.createHashSet(array.size());
-	for (JsonValue target : array) {
+        for (JsonValue target : array) {
             targets.add(target.asString());
         }
         targetAllMembers = getBoolean(json, "targetAllMembers", false);

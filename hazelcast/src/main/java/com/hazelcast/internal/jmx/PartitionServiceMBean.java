@@ -19,9 +19,10 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.MapUtil;
 
 import java.net.InetSocketAddress;
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -31,7 +32,7 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.PartitionServiceMBean")
 public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionService> {
 
-    private static final int INITIAL_CAPACITY = 5;
+    private static final int INITIAL_CAPACITY = 3;
     private final HazelcastInstanceImpl hazelcastInstance;
 
     public PartitionServiceMBean(HazelcastInstanceImpl hazelcastInstance, InternalPartitionService partitionService,
@@ -39,7 +40,7 @@ public class PartitionServiceMBean extends HazelcastMBean<InternalPartitionServi
         super(partitionService, service);
 
         this.hazelcastInstance = hazelcastInstance;
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.PartitionServiceMBean"));
         properties.put("name", quote(hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

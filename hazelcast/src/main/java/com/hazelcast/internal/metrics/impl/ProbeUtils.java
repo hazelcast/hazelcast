@@ -47,32 +47,32 @@ final class ProbeUtils {
     private static final Map<Class<?>, Integer> TYPES;
 
     static {
-	final Map<Class<?>, Integer> types = MapUtil.createHashMap(18);
-	
-	types.put(byte.class, TYPE_PRIMITIVE_LONG);
-	types.put(short.class, TYPE_PRIMITIVE_LONG);
-	types.put(int.class, TYPE_PRIMITIVE_LONG);
-	types.put(long.class, TYPE_PRIMITIVE_LONG);
+        final Map<Class<?>, Integer> types = MapUtil.createHashMap(18);
 
-	types.put(Byte.class, TYPE_LONG_NUMBER);
-	types.put(Short.class, TYPE_LONG_NUMBER);
-	types.put(Integer.class, TYPE_LONG_NUMBER);
-	types.put(Long.class, TYPE_LONG_NUMBER);
-	types.put(AtomicInteger.class, TYPE_LONG_NUMBER);
-	types.put(AtomicLong.class, TYPE_LONG_NUMBER);
+        types.put(byte.class, TYPE_PRIMITIVE_LONG);
+        types.put(short.class, TYPE_PRIMITIVE_LONG);
+        types.put(int.class, TYPE_PRIMITIVE_LONG);
+        types.put(long.class, TYPE_PRIMITIVE_LONG);
 
-	types.put(double.class, TYPE_DOUBLE_PRIMITIVE);
-	types.put(float.class, TYPE_DOUBLE_PRIMITIVE);
+        types.put(Byte.class, TYPE_LONG_NUMBER);
+        types.put(Short.class, TYPE_LONG_NUMBER);
+        types.put(Integer.class, TYPE_LONG_NUMBER);
+        types.put(Long.class, TYPE_LONG_NUMBER);
+        types.put(AtomicInteger.class, TYPE_LONG_NUMBER);
+        types.put(AtomicLong.class, TYPE_LONG_NUMBER);
 
-	types.put(Double.class, TYPE_DOUBLE_NUMBER);
-	types.put(Float.class, TYPE_DOUBLE_NUMBER);
+        types.put(double.class, TYPE_DOUBLE_PRIMITIVE);
+        types.put(float.class, TYPE_DOUBLE_PRIMITIVE);
 
-	types.put(Collection.class, TYPE_COLLECTION);
-	types.put(Map.class, TYPE_MAP);
-	types.put(Counter.class, TYPE_COUNTER);
+        types.put(Double.class, TYPE_DOUBLE_NUMBER);
+        types.put(Float.class, TYPE_DOUBLE_NUMBER);
 
-	types.put(Semaphore.class, TYPE_SEMAPHORE);
-        
+        types.put(Collection.class, TYPE_COLLECTION);
+        types.put(Map.class, TYPE_MAP);
+        types.put(Counter.class, TYPE_COUNTER);
+
+        types.put(Semaphore.class, TYPE_SEMAPHORE);
+
         TYPES = Collections.unmodifiableMap(types);
     }
 

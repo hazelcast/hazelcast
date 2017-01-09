@@ -29,6 +29,9 @@ import java.util.Set;
  */
 public class OrResultSet extends AbstractSet<QueryableEntry> {
 
+    private static final int ENTRY_MULTIPLE = 4;
+    private static final int ENTRY_MIN_SIZE = 8;
+
     private final List<Set<QueryableEntry>> indexedResults;
     private Set<QueryableEntry> entries;
 
@@ -55,7 +58,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
-                    entries = SetUtil.createHashSet(Math.max(4, indexedResults.size() * 4));
+                    entries = SetUtil.createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
                     for (Set<QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }

@@ -144,7 +144,7 @@ public class TimedMemberStateFactory {
 
         final Collection<Client> clients = instance.node.clientEngine.getClients();
         final Set<ClientEndPointDTO> serializableClientEndPoints = SetUtil.createHashSet(clients.size());
-	for (Client client : clients) {
+        for (Client client : clients) {
             serializableClientEndPoints.add(new ClientEndPointDTO(client));
         }
         memberState.setClients(serializableClientEndPoints);

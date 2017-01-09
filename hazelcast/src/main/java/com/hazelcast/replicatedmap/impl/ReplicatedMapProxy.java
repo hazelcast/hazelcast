@@ -76,6 +76,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     private static final int WAIT_INTERVAL_MILLIS = 1000;
     private static final int RETRY_INTERVAL_COUNT = 3;
+    private static final int KEY_SET_MIN_SIZE = 16;
+    private static final int KEY_SET_STORE_MULTIPLE = 4;
 
     private final String name;
     private final NodeEngine nodeEngine;
@@ -370,8 +372,8 @@ public class ReplicatedMapProxy<K, V> extends AbstractDistributedObject<Replicat
 
     @Override
     public Set<K> keySet() {
-        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
-        Set<K> keySet = SetUtil.createHashSet(Math.max(16, stores.size() * 4));
+        final Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getName());
+        final Set<K> keySet = SetUtil.createHashSet(Math.max(KEY_SET_MIN_SIZE, stores.size() * KEY_SET_STORE_MULTIPLE));
         for (ReplicatedRecordStore store : stores) {
             keySet.addAll(store.keySet(true));
         }

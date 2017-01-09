@@ -287,8 +287,8 @@ public class ScheduledExecutorServiceProxy
         List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
                 returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
 
-        Map<Member, List<IScheduledFuture<V>>> tasks = MapUtil.createHashMap(resolvedFutures.size());
-        
+        final Map<Member, List<IScheduledFuture<V>>> tasks = MapUtil.createHashMap(resolvedFutures.size());
+
         for (int i = 0; i < resolvedFutures.size(); i++) {
             Member member = members.get(i);
             List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);

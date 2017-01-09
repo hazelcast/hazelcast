@@ -93,8 +93,8 @@ public class KeysAssignmentOperation
                 return;
             }
         }
-        
-        Map<Object, Address> assignment = MapUtil.createHashMap(keys.size());
+
+        final Map<Object, Address> assignment = MapUtil.createHashMap(keys.size());
 
         try {
             for (Object key : keys) {

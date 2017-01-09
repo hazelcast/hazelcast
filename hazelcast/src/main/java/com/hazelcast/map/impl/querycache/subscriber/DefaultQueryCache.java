@@ -354,7 +354,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
                 resultingSet.add(entry);
             }
         } else {
-            resultingSet = new HashSet<Map.Entry<K,V>>();
+            resultingSet = new HashSet<Map.Entry<K, V>>();
             doFullEntryScan(predicate, resultingSet);
         }
         return resultingSet;

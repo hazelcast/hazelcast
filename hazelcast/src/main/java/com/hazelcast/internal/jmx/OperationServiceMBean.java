@@ -18,8 +18,9 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.util.MapUtil;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -29,13 +30,13 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.OperationService")
 public class OperationServiceMBean extends HazelcastMBean<InternalOperationService> {
 
-    private static final int INITIAL_CAPACITY = 5;
+    private static final int INITIAL_CAPACITY = 3;
 
     public OperationServiceMBean(HazelcastInstance hazelcastInstance, InternalOperationService operationService,
                                  ManagementService service) {
         super(operationService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.OperationService"));
         properties.put("name", quote("operationService" + hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

@@ -701,8 +701,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
      * @return map of removed items by id
      */
     public Map<Long, Data> compareAndRemove(Collection<Data> dataList, boolean retain) {
-        final LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>();
-        for (QueueItem item : getItemQueue()) {
+        final Deque<QueueItem> _itemQueue = getItemQueue();
+        final Map<Long, Data> map = MapUtil.createLinkedHashMap(Math.max(dataList.size(), _itemQueue.size()));
+        for (QueueItem item : _itemQueue) {
             if (item.getData() == null && store.isEnabled()) {
                 try {
                     load(item);
@@ -834,7 +835,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 itemQueue.clear();
                 itemQueue = null;
             } else {
-        	backupMap = new HashMap<Long, QueueItem>();
+                backupMap = new HashMap<Long, QueueItem>();
             }
         }
         return backupMap;

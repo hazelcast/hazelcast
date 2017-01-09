@@ -150,8 +150,9 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
     }
 
     public Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
-        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        final Collection<CollectionItem> collection = getCollection();
+        final Map<Long, Data> itemIdMap = MapUtil.createHashMap(Math.max(collection.size(), valueSet.size()));
+        final Iterator<CollectionItem> iterator = collection.iterator();
         while (iterator.hasNext()) {
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());

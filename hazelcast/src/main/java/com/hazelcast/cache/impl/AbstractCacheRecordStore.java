@@ -1392,7 +1392,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public Set<Data> loadAll(Set<Data> keys, boolean replaceExistingValues) {
-        
         Map<Data, Object> loaded = loadAllCacheEntry(keys);
         if (loaded == null || loaded.isEmpty()) {
             return Collections.emptySet();

@@ -42,17 +42,17 @@ public final class GarbageCollectionMetricSet {
     private static final int PUBLISH_FREQUENCY_SECONDS = 1;
 
     static {
-	final Set<String> youngGC = SetUtil.createHashSet(3);	
-	youngGC.add("PS Scavenge");
-	youngGC.add("ParNew");
-	youngGC.add("G1 Young Generation");	
-	YOUNG_GC = Collections.unmodifiableSet(youngGC);
+        final Set<String> youngGC = SetUtil.createHashSet(3);
+        youngGC.add("PS Scavenge");
+        youngGC.add("ParNew");
+        youngGC.add("G1 Young Generation");
+        YOUNG_GC = Collections.unmodifiableSet(youngGC);
 
-	final Set<String> oldGC = SetUtil.createHashSet(3);
-	oldGC.add("PS MarkSweep");
-	oldGC.add("ConcurrentMarkSweep");
-	oldGC.add("G1 Old Generation");
-	OLD_GC = Collections.unmodifiableSet(oldGC);
+        final Set<String> oldGC = SetUtil.createHashSet(3);
+        oldGC.add("PS MarkSweep");
+        oldGC.add("ConcurrentMarkSweep");
+        oldGC.add("G1 Old Generation");
+        OLD_GC = Collections.unmodifiableSet(oldGC);
     }
 
     private GarbageCollectionMetricSet() {
