@@ -65,4 +65,3 @@ public class ChangeClusterStateRequestTest extends HazelcastTestSupport {
         assertTrue(resultString.startsWith("FAILURE"));
     }
 }
-

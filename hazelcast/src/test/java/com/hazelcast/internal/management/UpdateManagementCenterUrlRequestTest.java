@@ -29,7 +29,7 @@ public class UpdateManagementCenterUrlRequestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecuteScriptRequest() throws Exception {
+    public void testExecuteScriptRequest() {
         byte[] result = managementCenterService.clusterWideUpdateManagementCenterUrl("dev", "dev-pass", "invalid");
         assertEquals(HttpCommand.RES_204, result);
     }

@@ -3,7 +3,6 @@ package com.hazelcast.internal.management;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.management.operation.ClearWanQueuesOperation;
 import com.hazelcast.internal.management.request.ChangeWanStateRequest;
 import com.hazelcast.internal.management.request.ClearWanQueuesRequest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -17,7 +16,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -43,7 +41,7 @@ public class ClearWanQueuesTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() throws IllegalAccessException {
+    public void testSerialization() {
         ClearWanQueuesRequest clearWanQueuesRequest1 = new ClearWanQueuesRequest("schema", "publisher");
         JsonObject jsonObject = clearWanQueuesRequest1.toJson();
 

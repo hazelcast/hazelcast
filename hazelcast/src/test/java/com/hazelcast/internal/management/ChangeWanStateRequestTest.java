@@ -48,7 +48,7 @@ public class ChangeWanStateRequestTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testSerialization() throws IllegalAccessException {
+    public void testSerialization() {
         ChangeWanStateRequest changeWanStateRequest1 = new ChangeWanStateRequest("schema", "publisher", false);
         JsonObject jsonObject = changeWanStateRequest1.toJson();
 
