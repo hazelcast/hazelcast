@@ -23,10 +23,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
@@ -96,7 +96,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 map.put(row++, sb.toString());
                 sb.setLength(0);
             } else {
-                sb.append(" ");
+                sb.append(' ');
             }
         }
         map.put(row, sb.toString());
@@ -128,16 +128,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 .vertex(consumer)
                 .edge(between(producer, generator))
                 .edge(between(generator, accumulator)
-                        .partitionedByCustom((item, n) -> Math.abs(((Entry) item).getKey().hashCode()) % n))
+                        .partitionedByCustom(Partitioner.fromInt(item -> ((Entry) item).getKey().hashCode())))
                 .edge(between(accumulator, combiner)
                         .distributed()
                         .partitionedByKey(item -> ((Entry) item).getKey()))
                 .edge(between(combiner, consumer));
 
-        benchmark("jet", () -> {
-            uncheckedGet(instance.newJob(dag).execute());
-        });
-
+        benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
         assertCounts(instance.getMap("counts"));
     }
 
@@ -146,29 +143,22 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
         Vertex generator = new Vertex("generator", Mapper::new);
-        Vertex accumulator = new Vertex("accumulator", Reducer::new)
-                .localParallelism(1);
-        Vertex combiner = new Vertex("combiner", Reducer::new)
-                .localParallelism(1);
-        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"))
-                .localParallelism(1);
+        Vertex accumulator = new Vertex("accumulator", Reducer::new);
+        Vertex combiner = new Vertex("combiner", Reducer::new);
+        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
         dag
                 .vertex(producer)
                 .vertex(generator)
-                .vertex(accumulator)
-                .vertex(combiner)
-                .vertex(consumer)
+                .vertex(accumulator.localParallelism(1))
+                .vertex(combiner.localParallelism(1))
+                .vertex(consumer.localParallelism(1))
+
                 .edge(between(producer, generator))
                 .edge(between(generator, accumulator))
-                .edge(between(accumulator, combiner)
-                        .distributed()
-                        .allToOne())
+                .edge(between(accumulator, combiner).distributed().allToOne())
                 .edge(between(combiner, consumer));
 
-        benchmark("jet", () -> {
-                    uncheckedGet(instance.newJob(dag).execute());
-                }
-        );
+        benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
 
         assertCounts((Map<String, Long>) instance.getMap("counts").get("result"));
     }
@@ -259,7 +249,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public boolean tryProcess(int ordinal, Object item) {
-            return p.tryProcess(ordinal, (Entry<Integer, String>) item);
+            return p.tryProcess((Entry<Integer, String>) item);
         }
     }
 
@@ -298,7 +288,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
-                accumulate(m.group(), 1);
+                accumulate(m.group());
             }
             return true;
         }
@@ -309,8 +299,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             return true;
         }
 
-        private void accumulate(String key, long addition) {
-            counts.compute(key, (k, v) -> v == null ? addition : v + addition);
+        private void accumulate(String key) {
+            counts.compute(key, (k, v) -> (v != null ? v : 0) + 1);
         }
     }
 

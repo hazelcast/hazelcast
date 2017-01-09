@@ -127,32 +127,52 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
+    /**
+     * Convenience for {@link #emitCooperatively(int, Supplier)} which emits to all ordinals.
+     */
     protected boolean emitCooperatively(Supplier<?> itemSupplier) {
         return emitCooperatively(-1, itemSupplier);
     }
 
+    /**
+     * Factory of {@link TryProcessor}s.
+     */
     protected <T, R> TryProcessor<T, R> tryProcessor(Function<T, Supplier<R>> lazyTransformer) {
         return new TryProcessor<>(lazyTransformer);
     }
 
+    /**
+     * A helper that simplifies the implementation of {@link AbstractProcessor#tryProcess(int, Object)}
+     * for {@code flatMap}-like behavior. The {@code lazyMapper} takes an item
+     * and returns the supplier of all output items that should be emitted. The
+     * {@link #tryProcess(Object, int)} method obtains and passes this supplier
+     * to {@link #emitCooperatively(int, Supplier)}.
+     *
+     * @param <T> type of the input item
+     * @param <R> type of the emitted item
+     */
     protected final class TryProcessor<T, R> {
 
-        private final Function<T, Supplier<R>> lazyTransformer;
+        private final Function<T, Supplier<R>> lazyMapper;
         private Supplier<R> outputSupplier;
 
-        private TryProcessor(Function<T, Supplier<R>> lazyTransformer) {
-            this.lazyTransformer = lazyTransformer;
+        TryProcessor(Function<T, Supplier<R>> lazyMapper) {
+            this.lazyMapper = lazyMapper;
         }
 
-        public boolean tryProcess(int ordinal, T item) {
+        public boolean tryProcess(T item, int outputOrdinal) {
             if (outputSupplier == null) {
-                outputSupplier = lazyTransformer.apply(item);
+                outputSupplier = lazyMapper.apply(item);
             }
-            if (emitCooperatively(ordinal, outputSupplier)) {
+            if (emitCooperatively(outputOrdinal, outputSupplier)) {
                 outputSupplier = null;
                 return true;
             }
             return false;
+        }
+
+        public boolean tryProcess(T item) {
+            return tryProcess(item, -1);
         }
     }
 }

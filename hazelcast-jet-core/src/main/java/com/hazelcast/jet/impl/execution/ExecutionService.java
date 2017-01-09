@@ -122,7 +122,7 @@ public class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new CooperativeWorker(workers));
-        Arrays.setAll(threads, i -> createThread(workers[i], "nonblocking-executor", i));
+        Arrays.setAll(threads, i -> createThread(workers[i], "cooperative-executor", i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 

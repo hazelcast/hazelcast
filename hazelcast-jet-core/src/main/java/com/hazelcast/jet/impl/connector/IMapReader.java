@@ -50,14 +50,14 @@ public final class IMapReader extends AbstractProducer {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
-    private final Function<Integer, Iterator<Map.Entry>> supplier;
+    private final Function<Integer, Iterator<Map.Entry>> partitionToIterator;
     private final List<Integer> partitions;
 
     private List<Iterator> iterators;
     private CircularCursor<Iterator> iteratorCursor;
 
-    private IMapReader(Function<Integer, Iterator<Map.Entry>> supplier, List<Integer> partitions) {
-        this.supplier = supplier;
+    private IMapReader(Function<Integer, Iterator<Map.Entry>> partitionToIterator, List<Integer> partitions) {
+        this.partitionToIterator = partitionToIterator;
         this.partitions = partitions;
         this.iterators = new ArrayList<>();
     }
@@ -65,14 +65,14 @@ public final class IMapReader extends AbstractProducer {
     @Override
     public void init(@Nonnull Outbox outbox) {
         super.init(outbox);
-        iterators = partitions.stream().map(supplier::apply).collect(toList());
+        iterators = partitions.stream().map(partitionToIterator).collect(toList());
         this.iteratorCursor = new CircularCursor<>(iterators);
     }
 
     @Override
     public boolean complete() {
         do {
-            Iterator<Map.Entry> currIterator = iteratorCursor.value();
+            final Iterator<Map.Entry> currIterator = iteratorCursor.value();
             if (!currIterator.hasNext()) {
                 iteratorCursor.remove();
                 continue;
@@ -239,7 +239,7 @@ public final class IMapReader extends AbstractProducer {
     }
 
     static List<Processor> getProcessors(int count, List<Integer> ownedPartitions,
-                                         Function<Integer, Iterator<Map.Entry>> supplier) {
+                                         Function<Integer, Iterator<Map.Entry>> partitionToIterator) {
         Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size()).boxed()
                 .map(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
                 .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
@@ -247,7 +247,7 @@ public final class IMapReader extends AbstractProducer {
         return processorToPartitions
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
-                                ? new IMapReader(supplier, partitions)
+                                ? new IMapReader(partitionToIterator, partitions)
                                 : new AbstractProducer() {
                         }
                 )
