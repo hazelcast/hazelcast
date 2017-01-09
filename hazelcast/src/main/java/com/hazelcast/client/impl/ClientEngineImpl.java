@@ -95,6 +95,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 /**
  * Class that requests, listeners from client handled in node side.
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwareService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEvent, ClientListener> {
 
