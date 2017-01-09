@@ -124,7 +124,7 @@ public final class Processors {
      * @param <A> type of the accumulated value
      * @param <R> type of the emitted value
      */
-    public static <T, K, A, R> ProcessorSupplier groupingAccumulator(
+    public static <T, K, A, R> ProcessorSupplier groupAndAccumulate(
             Distributed.Function<? super T, ? extends K> keyExtractor,
             Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
             Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
@@ -133,7 +133,7 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #groupingAccumulator(Function, BiFunction, BiFunction)}
+     * Convenience over {@link #groupAndAccumulate(Function, BiFunction, BiFunction)}
      * with the constructor of {@code SimpleImmutableEntry} as the finisher function,
      * which means the processor emits items of type
      * {@code java.util.Map.Entry<K, A>}. Note that {@code K} isn't a part of the
@@ -146,7 +146,7 @@ public final class Processors {
      * @param <T> type of item on the inbound edge
      * @param <A> type of the accumulated value
      */
-    public static <T, A> ProcessorSupplier groupingAccumulator(
+    public static <T, A> ProcessorSupplier groupAndAccumulate(
             Distributed.Function<? super T, ?> keyExtractor,
             Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
@@ -155,7 +155,7 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #groupingAccumulator(Function, BiFunction, BiFunction)}
+     * Convenience over {@link #groupAndAccumulate(Function, BiFunction, BiFunction)}
      * with identity function as the key extractor and constructor of
      * {@code SimpleImmutableEntry} as the finisher function, which means the
      * processor emits items of type {@code java.util.Map.Entry<T, A>}.
@@ -164,10 +164,10 @@ public final class Processors {
      * @param <T> type of item on the inbound edge
      * @param <A> type of the accumulated value
      */
-    public static <T, A> ProcessorSupplier groupingAccumulator(
+    public static <T, A> ProcessorSupplier groupAndAccumulate(
             Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupingAccumulator(x -> x, accumulator);
+        return groupAndAccumulate(x -> x, accumulator);
     }
 
     /**
@@ -190,25 +190,25 @@ public final class Processors {
      * @param <A> type of the accumulated value
      * @param <R> type of the emitted item
      */
-    public static <T, A, R> ProcessorSupplier accumulator(
+    public static <T, A, R> ProcessorSupplier accumulate(
             Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
             Distributed.Function<? super A, ? extends R> finisher
     ) {
-        return groupingAccumulator(x -> true, accumulator, (dummyTrueBoolean, a) -> finisher.apply(a));
+        return groupAndAccumulate(x -> true, accumulator, (dummyTrueBoolean, a) -> finisher.apply(a));
     }
 
     /**
-     * Convenience over {@link #accumulator(BiFunction, Function)} with identity function
+     * Convenience over {@link #accumulate(BiFunction, Function)} with identity function
      * as the finisher, which means the processor emits an item of type {@code A}.
      *
      * @param accumulator accumulates the result value across all the input items
      * @param <T> type of input item
      * @param <A> type of the accumulated value
      */
-    public static <T, A> ProcessorSupplier accumulator(
+    public static <T, A> ProcessorSupplier accumulate(
             Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupingAccumulator(x -> true, accumulator, (dummyTrueBoolean, a) -> a);
+        return groupAndAccumulate(x -> true, accumulator, (dummyTrueBoolean, a) -> a);
     }
 
     /**
@@ -225,18 +225,18 @@ public final class Processors {
      *     {@code Long} value.
      * </li></ul>
      */
-    public static <T, K> ProcessorSupplier distinctCounter(Distributed.Function<T, K> keyExtractor) {
+    public static <T, K> ProcessorSupplier countDistinct(Distributed.Function<T, K> keyExtractor) {
         return ProcessorSupplier.of(() -> new DistinctCounterP<>(keyExtractor));
     }
 
     /**
-     * Convenience over {@link #distinctCounter(Function)} with identity function
+     * Convenience over {@link #countDistinct(Function)} with identity function
      * as the key extractor, which means the processor will emit the number of
      * distinct items it has seen in the input.
      *
      * @param <T> the input item type.
      */
-    public static <T> ProcessorSupplier distinctCounter() {
+    public static <T> ProcessorSupplier countDistinct() {
         return ProcessorSupplier.of(() -> new DistinctCounterP<>(x -> x));
     }
 
