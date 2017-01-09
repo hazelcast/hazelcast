@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobConfig;
 import com.hazelcast.jet.ResourceConfig;
@@ -28,6 +29,7 @@ import com.hazelcast.jet.impl.deployment.ResourceIterator;
 import com.hazelcast.jet.impl.deployment.ResourceUpdateOperation;
 import com.hazelcast.jet.impl.operation.ExecuteJobOperation;
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -41,6 +43,7 @@ import static java.util.stream.Collectors.toList;
 public class JetInstanceImpl extends AbstractJetInstance {
     private final NodeEngine nodeEngine;
     private final JetConfig config;
+    private final ILogger logger;
 
     public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance) {
         this(hazelcastInstance, new JetConfig());
@@ -48,7 +51,8 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
     public JetInstanceImpl(HazelcastInstanceImpl hazelcastInstance, JetConfig config) {
         super(hazelcastInstance);
-        nodeEngine = hazelcastInstance.node.getNodeEngine();
+        this.nodeEngine = hazelcastInstance.node.getNodeEngine();
+        this.logger = nodeEngine.getLogger(JetInstance.class);
         this.config = config;
     }
 
@@ -93,10 +97,14 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         private void deployResources(long executionId) {
             final Set<ResourceConfig> resources = config.getResourceConfigs();
+            if (logger.isFineEnabled() && resources.size() > 0) {
+                logger.fine("Deploying the following resources for " + executionId + ":" + resources);
+            }
             new ResourceIterator(resources, config.getResourcePartSize()).forEachRemaining(
                     part -> invokeOnCluster(() -> new ResourceUpdateOperation(executionId, part))
             );
             resources.forEach(r -> invokeOnCluster(() -> new ResourceCompleteOperation(executionId, r.getDescriptor())));
+            logger.fine("Resource deployment for job " + executionId + " completed.");
         }
 
         private <T> List<T> invokeOnCluster(Supplier<Operation> supplier) {

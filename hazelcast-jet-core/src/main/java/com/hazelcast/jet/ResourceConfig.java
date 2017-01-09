@@ -72,5 +72,8 @@ public class ResourceConfig implements Serializable {
         return descriptor;
     }
 
-
+    @Override
+    public String toString() {
+        return "{resource=" + descriptor + ", url=" + url + '}';
+    }
 }

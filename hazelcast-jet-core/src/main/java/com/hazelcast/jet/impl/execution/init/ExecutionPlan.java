@@ -43,6 +43,8 @@ import com.hazelcast.jet.impl.execution.ProcessorTasklet;
 import com.hazelcast.jet.impl.execution.ReceiverTasklet;
 import com.hazelcast.jet.impl.execution.SenderTasklet;
 import com.hazelcast.jet.impl.execution.Tasklet;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -72,6 +74,9 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 public class ExecutionPlan implements IdentifiedDataSerializable {
+
+    private static final ILogger LOGGER = Logger.getLogger(ExecutionPlan.class);
+
     private final List<Tasklet> tasklets = new ArrayList<>();
     // vertex id --> ordinal --> receiver tasklet
     private final Map<Integer, Map<Integer, ReceiverTasklet>> receiverMap = new HashMap<>();

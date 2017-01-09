@@ -58,8 +58,12 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
 
     @Override
     protected void doRun() throws Exception {
+        long start = System.currentTimeMillis();
+        getLogger().info("Start executing job " + executionId + ".");
         JetService service = getService();
+        getLogger().fine("Building execution plan for job " + executionId + ".");
         Map<Member, ExecutionPlan> executionPlanMap = service.createExecutionPlans(dag);
+        getLogger().fine("Built execution plan for job " + executionId + ".");
 
         // Future that is signalled on a failure during Init
         CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,
@@ -85,7 +89,11 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                                  .handle((v, e) -> Util.peel(e));
 
         // Exception from ExecuteOperation should have precedence
-        execution.thenAcceptBoth(completion, (e1, e2) -> doSendResponse(e1 == null ? e2 : e1));
+        execution.thenAcceptBoth(completion, (e1, e2) -> {
+            long elapsed = System.currentTimeMillis() - start;
+            getLogger().info("Execution of job " + executionId + " completed in " + elapsed + "ms.");
+            doSendResponse(e1 == null ? e2 : e1);
+        });
         if (cachedExceptionResult != null) {
             executionInvocationFuture.completeExceptionally(cachedExceptionResult);
         }

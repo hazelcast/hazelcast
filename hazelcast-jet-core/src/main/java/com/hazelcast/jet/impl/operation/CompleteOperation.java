@@ -39,8 +39,10 @@ class CompleteOperation extends Operation {
 
     @Override
     public void run() throws Exception {
+        getLogger().fine("Completing execution of plan for job " + executionId + ".");
         JetService service = getService();
         service.completeExecution(executionId, error);
+        getLogger().fine("Completed execution of plan for job " + executionId + ".");
     }
 
 

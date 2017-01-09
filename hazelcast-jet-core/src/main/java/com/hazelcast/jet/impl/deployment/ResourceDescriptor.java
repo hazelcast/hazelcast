@@ -64,9 +64,6 @@ public class ResourceDescriptor implements Serializable {
 
     @Override
     public String toString() {
-        return "DeploymentDescriptor{"
-                + "id='" + id + '\''
-                + ", deploymentType=" + resourceType
-                + '}';
+        return id + " (" + getResourceType() + ")";
     }
 }
