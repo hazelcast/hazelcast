@@ -18,22 +18,33 @@
 package com.hazelcast.internal.partition.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.DefaultNodeExtension;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.partition.PartitionListener;
 import com.hazelcast.internal.partition.PartitionTableView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.mocknetwork.MockNodeContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -45,10 +56,24 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     private InternalPartitionServiceImpl partitionService;
     private Address thisAddress;
     private int partitionCount;
+    private final AtomicBoolean startupDone = new AtomicBoolean(true);
 
     @Before
     public void setup() {
-        instance = createHazelcastInstance();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        NodeContext nodeContext = new MockNodeContext(factory.getRegistry(), factory.nextAddress()) {
+            @Override
+            public NodeExtension createNodeExtension(Node node) {
+                return new DefaultNodeExtension(node) {
+                    @Override
+                    public boolean isStartCompleted() {
+                        return startupDone.get();
+                    }
+                };
+            }
+        };
+
+        instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(), nodeContext);
         partitionService = (InternalPartitionServiceImpl) getPartitionService(instance);
         thisAddress = getNode(instance).getThisAddress();
         partitionCount = partitionService.getPartitionCount();
@@ -71,10 +96,24 @@ public class InternalPartitionServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void test_initialAssignment_whenStartNotCompleted() {
+        startupDone.set(false);
+
+        partitionService.firstArrangement();
+
+        assertFalse(partitionService.getPartitionStateManager().isInitialized());
+        assertEquals(0, partitionService.getPartitionStateVersion());
+        assertNull(partitionService.getPartitionOwner(0));
+    }
+
+    @Test
     public void test_initialAssignment_whenClusterNotActive() {
         instance.getCluster().changeClusterState(ClusterState.FROZEN);
 
         partitionService.firstArrangement();
+
+        assertFalse(partitionService.getPartitionStateManager().isInitialized());
+        assertEquals(0, partitionService.getPartitionStateVersion());
         assertNull(partitionService.getPartitionOwner(0));
     }
 
