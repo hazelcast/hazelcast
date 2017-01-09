@@ -101,8 +101,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
-    public static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
-
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
     private static final int QUERY_THREADS_PER_CORE = 1;
@@ -131,6 +129,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private final MessageTaskFactory messageTaskFactory;
     private final ClientExceptionFactory clientExceptionFactory;
+    private final int endpointRemoveDelaySeconds;
+
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -142,7 +142,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.queryExecutor = newClientQueryExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
-
+        this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
@@ -333,7 +333,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final String deadMemberUuid = event.getMember().getUuid();
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
-                    ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                    endpointRemoveDelaySeconds, TimeUnit.SECONDS);
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e);
@@ -441,7 +441,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                             public void run() {
                                 callDisconnectionOperation(endpoint);
                             }
-                        }, ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                        }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
                     } catch (RejectedExecutionException e) {
                         if (logger.isFinestEnabled()) {
                             logger.finest(e);
@@ -463,6 +463,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 return;
             }
 
+            if (lastAuthenticationCorrelationIds.get(clientUuid).get() > endpoint.getAuthenticationCorrelationId()) {
+                //a new authentication already made for that client. This check is needed to detect
+                // "a disconnected client is reconnected back to same node"
+                return;
+            }
             ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid, memberUuid);
             operationService.run(op);
 

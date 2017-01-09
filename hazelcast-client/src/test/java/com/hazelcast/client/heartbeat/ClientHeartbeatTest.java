@@ -24,14 +24,17 @@ import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -46,6 +49,7 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -272,4 +276,50 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         });
     }
 
+    @Test
+    public void testClientEndpointsDelaySeconds_whenHeartbeatResumed() throws Exception {
+        int delaySeconds = 2;
+        Config config = new Config();
+        config.setProperty(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS.getName(), String.valueOf(delaySeconds));
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "4000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final AtomicLong stateChangeCount = new AtomicLong();
+
+        final CountDownLatch disconnectedLatch = new CountDownLatch(1);
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                stateChangeCount.incrementAndGet();
+                Logger.getLogger(this.getClass()).info("state event : " + event);
+                if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
+                    disconnectedLatch.countDown();
+                }
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
+        blockMessagesFromInstance(hazelcastInstance, client);
+        //Wait for client to disconnect because of hearBeat problem.
+        assertOpenEventually(disconnectedLatch);
+        unblockMessagesFromInstance(hazelcastInstance, client);
+        //Wait for client to connect back after heartbeat issue is resolved
+        assertOpenEventually(connectedLatch);
+
+        //After client connected, there should not be further change in client state
+        //We are specifically testing for scheduled ClientDisconnectionOperation not to take action when run
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, stateChangeCount.get());
+            }
+        }, delaySeconds * 2);
+    }
 }
