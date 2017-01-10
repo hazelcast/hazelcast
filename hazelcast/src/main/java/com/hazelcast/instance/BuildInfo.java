@@ -34,15 +34,22 @@ public class BuildInfo {
     private final int buildNumber;
     private final boolean enterprise;
     private final byte serializationVersion;
+    private final BuildInfo upstreamBuildInfo;
 
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion) {
+        this(version, build, revision, buildNumber, enterprise, serializationVersion, null);
+    }
+
+    public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
+                     byte serializationVersion, BuildInfo upstreamBuildInfo) {
         this.version = version;
         this.build = build;
         this.revision = revision;
         this.buildNumber = buildNumber;
         this.enterprise = enterprise;
         this.serializationVersion = serializationVersion;
+        this.upstreamBuildInfo = upstreamBuildInfo;
     }
 
     public String getRevision() {
@@ -67,6 +74,10 @@ public class BuildInfo {
 
     public byte getSerializationVersion() {
         return serializationVersion;
+    }
+
+    public BuildInfo getUpstreamBuildInfo() {
+        return upstreamBuildInfo;
     }
 
     public static int calculateVersion(String version) {
@@ -105,6 +116,7 @@ public class BuildInfo {
                 + ", revision=" + revision
                 + ", enterprise=" + enterprise
                 + ", serializationVersion=" + serializationVersion
+                + (upstreamBuildInfo == null ? "" : ", upstream=" + upstreamBuildInfo)
                 + '}';
     }
 }

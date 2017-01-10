@@ -39,6 +39,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
+import static com.hazelcast.util.StringUtil.isNullOrEmpty;
 
 /**
  * Default {@link com.hazelcast.core.LifecycleService} implementation for the client.
@@ -92,7 +93,19 @@ public final class LifecycleServiceImpl implements LifecycleService {
     public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
         final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
         String revision = buildInfo.getRevision();
-        revision = revision == null || revision.isEmpty() ? "" : " - " + revision;
+        if (isNullOrEmpty(revision)) {
+            revision = "";
+        } else {
+            revision = " - " + revision;
+            BuildInfo upstreamInfo = buildInfo.getUpstreamBuildInfo();
+            if (upstreamInfo != null) {
+                String upstreamRevision = upstreamInfo.getRevision();
+                if (!isNullOrEmpty(upstreamRevision)) {
+                    revision += ", " + upstreamRevision;
+                }
+            }
+        }
+
         getLogger().info("HazelcastClient " + buildInfo.getVersion() + " ("
                 + buildInfo.getBuild() + revision + ") is "
                 + lifecycleEvent.getState());
