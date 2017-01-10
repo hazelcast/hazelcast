@@ -93,7 +93,7 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
     @Test
     public void testWordCount() throws Exception {
         final Pattern space = Pattern.compile("\\s+");
-        IMap<String, Long> wordCounts = null;
+        IMap<String, Long> wordCounts;
 
         List<Long> times = new ArrayList<>();
         final int warmupCount = 10;
@@ -105,11 +105,12 @@ public class WordCountTest extends AbstractStreamTest implements Serializable {
             long time = System.currentTimeMillis() - start;
             times.add(time);
             System.out.println("java.util.stream: totalTime=" + time);
+            assertCounts(wordCounts);
+            wordCounts.clear();
         }
 
         System.out.println(times.stream()
                                 .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
-        assertCounts(wordCounts);
     }
 
     private void assertCounts(Map<String, Long> wordCounts) {
