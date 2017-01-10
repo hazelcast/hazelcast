@@ -17,50 +17,46 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
-import static com.hazelcast.jet.Suppliers.map;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
 
-    private Map<K, A> cache = new HashMap<>();
+    private Map<K, A> groups = new HashMap<>();
     private Collector<V, A, R> collector;
-    private Supplier<Entry<K, R>> cacheEntrySupplier;
+    private Traverser<Entry<K, R>> resultTraverser;
 
     public GroupingCombinerP(Collector<V, A, R> collector) {
         this.collector = collector;
-        this.cacheEntrySupplier = map(
-                lazyIterate(() -> cache.entrySet().iterator()),
-                item -> new SimpleImmutableEntry<>(item.getKey(), collector.finisher().apply(item.getValue())));
+        this.resultTraverser = lazy(() -> traverseStream(groups
+                .entrySet().stream()
+                .map(item -> new SimpleImmutableEntry<>(item.getKey(), collector.finisher().apply(item.getValue())))
+        ));
     }
-
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, A> entry = (Map.Entry) item;
-        A value = cache.get(entry.getKey());
-        if (value == null) {
-            value = collector.supplier().get();
-            cache.put(entry.getKey(), value);
-        }
+        A value = groups.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
         collector.combiner().apply(value, entry.getValue());
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(cacheEntrySupplier);
+        final boolean done = emitCooperatively(resultTraverser);
         if (done) {
-            cache = null;
+            groups = null;
             collector = null;
-            cacheEntrySupplier = null;
+            resultTraverser = null;
         }
         return done;
     }

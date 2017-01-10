@@ -17,33 +17,34 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Supplier;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 
 public class DistinctP<T> extends AbstractProcessor {
 
-    private Set<T> set = new HashSet<>();
-    private Supplier<T> iteratingSupplier = lazyIterate(set::iterator);
+    private Set<T> distinctItems = new HashSet<>();
+    private Traverser<T> resultTraverser = lazy(() -> traverseIterable(distinctItems));
 
     public DistinctP() {
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        set.add((T) item);
+        distinctItems.add((T) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(iteratingSupplier);
+        final boolean done = emitCooperatively(resultTraverser);
         if (done) {
-            set = null;
-            iteratingSupplier = null;
+            distinctItems = null;
+            resultTraverser = null;
         }
         return done;
     }

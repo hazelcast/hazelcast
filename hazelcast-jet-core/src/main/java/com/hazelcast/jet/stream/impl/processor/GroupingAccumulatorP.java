@@ -17,49 +17,50 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
-import static com.hazelcast.jet.Suppliers.map;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class GroupingAccumulatorP<T, K, V, A, R> extends AbstractProcessor {
 
-    private Map<K, A> cache = new HashMap<>();
+    private Map<K, A> groups = new HashMap<>();
     private Function<? super T, ? extends K> classifier;
     private Collector<V, A, R> collector;
-    private Supplier<Entry<K, A>> cacheEntrySupplier;
+    private Traverser<Entry<K, A>> resultTraverser;
 
     public GroupingAccumulatorP(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
         this.classifier = classifier;
         this.collector = collector;
-        this.cacheEntrySupplier = map(
-                lazyIterate(() -> cache.entrySet().iterator()),
-                entry -> new SimpleImmutableEntry<>(entry.getKey(), entry.getValue()));
+        this.resultTraverser = lazy(() -> traverseStream(groups
+                .entrySet().stream()
+                .map(entry -> new SimpleImmutableEntry<>(entry.getKey(), entry.getValue()))
+        ));
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
         Map.Entry<K, V> entry = new SimpleImmutableEntry<>(classifier.apply((T) item), (V) item);
-        A value = cache.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
+        A value = groups.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
         collector.accumulator().accept(value, entry.getValue());
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(cacheEntrySupplier);
+        final boolean done = emitCooperatively(resultTraverser);
         if (done) {
-            cache = null;
+            groups = null;
             classifier = null;
             collector = null;
-            cacheEntrySupplier = null;
+            resultTraverser = null;
         }
         return done;
     }

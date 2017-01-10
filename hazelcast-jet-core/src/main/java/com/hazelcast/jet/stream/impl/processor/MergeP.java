@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
 
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
@@ -24,18 +25,17 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
-import static com.hazelcast.jet.Suppliers.map;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class MergeP<T, K, V> extends AbstractProcessor {
 
     private Function<? super T, ? extends K> keyMapper;
     private Function<? super T, ? extends V> valueMapper;
     private BinaryOperator<V> merger;
-    private Map<K, V> cache = new HashMap<>();
-    private Supplier<Entry<K, V>> cacheEntrySupplier;
+    private Map<K, V> merged = new HashMap<>();
+    private Traverser<Entry<K, V>> resultTraverser;
 
     public MergeP(Function<? super T, ? extends K> keyMapper,
                   Function<? super T, ? extends V> valueMapper,
@@ -44,9 +44,10 @@ public class MergeP<T, K, V> extends AbstractProcessor {
         this.keyMapper = keyMapper;
         this.valueMapper = valueMapper;
         this.merger = merger;
-        this.cacheEntrySupplier = map(
-                lazyIterate(() -> cache.entrySet().iterator()),
-                item -> new SimpleImmutableEntry<>(item.getKey(), item.getValue()));
+        this.resultTraverser = lazy(() -> traverseStream(merged
+                .entrySet().stream()
+                .map(item -> new SimpleImmutableEntry<>(item.getKey(), item.getValue()))
+        ));
     }
 
     @Override
@@ -57,24 +58,24 @@ public class MergeP<T, K, V> extends AbstractProcessor {
         } else {
             entry = new SimpleImmutableEntry<>(keyMapper.apply((T) item), valueMapper.apply((T) item));
         }
-        V value = cache.get(entry.getKey());
+        V value = merged.get(entry.getKey());
         if (value == null) {
-            cache.put(entry.getKey(), entry.getValue());
+            merged.put(entry.getKey(), entry.getValue());
         } else {
-            cache.put(entry.getKey(), merger.apply(value, entry.getValue()));
+            merged.put(entry.getKey(), merger.apply(value, entry.getValue()));
         }
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(cacheEntrySupplier);
+        final boolean done = emitCooperatively(resultTraverser);
         if (done) {
             keyMapper = null;
             valueMapper = null;
             merger = null;
-            cache = null;
-            cacheEntrySupplier = null;
+            merged = null;
+            resultTraverser = null;
         }
         return done;
     }

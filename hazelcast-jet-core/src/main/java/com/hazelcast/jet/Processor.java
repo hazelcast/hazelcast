@@ -21,7 +21,7 @@ import javax.annotation.Nonnull;
 /**
  * Does the computation needed to transform zero or more input data streams into
  * zero or more output streams. Each input/output stream corresponds to one edge
- * of the vertex represented by this processor. The correspondence between a stream
+ * on the vertex represented by this processor. The correspondence between a stream
  * and an edge is established via the edge's <em>ordinal</em>.
  * <p>
  * The special case of zero input streams applies to a <em>source</em> vertex, which

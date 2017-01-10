@@ -17,39 +17,40 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.function.Supplier;
 
-import static com.hazelcast.jet.Suppliers.lazyIterate;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 
 public class SortP<T> extends AbstractProcessor {
 
-    private List<T> list;
-    private Supplier<T> itemSupplier;
+    private List<T> sorted;
+    private Traverser<T> resultTraverser;
 
     public SortP(Comparator<T> comparator) {
-        this.list = new ArrayList<>();
-        this.itemSupplier = lazyIterate(() -> {
-            list.sort(comparator);
-            return list.iterator();
+        this.sorted = new ArrayList<>();
+        this.resultTraverser = lazy(() -> {
+            sorted.sort(comparator);
+            return traverseIterable(sorted);
         });
     }
 
     @Override
     protected boolean tryProcess(int ordinal, Object item) {
-        list.add((T) item);
+        sorted.add((T) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(itemSupplier);
+        final boolean done = emitCooperatively(resultTraverser);
         if (done) {
-            list = null;
-            itemSupplier = null;
+            sorted = null;
+            resultTraverser = null;
         }
         return done;
     }

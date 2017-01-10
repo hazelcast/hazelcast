@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.proxy.ClientMapProxy;
@@ -39,6 +38,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.AbstractMap.SimpleImmutableEntry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
@@ -125,13 +125,13 @@ public final class IMapReader extends AbstractProducer {
         @Override
         public void init(Context context) {
             List<Member> members = new ArrayList<>(context.getJetInstance().getCluster().getMembers());
-            int memberSize = members.size();
-            HazelcastInstance client = HazelcastClient.newHazelcastClient(serializableClientConfig.asClientConfig());
+            int memberCount = members.size();
+            HazelcastInstance client = newHazelcastClient(serializableClientConfig.asClientConfig());
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
                 int partitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
                 memberToPartitions = IntStream.range(0, partitionCount).boxed().collect(
-                        groupingBy(partition -> members.get(partition % memberSize).getAddress())
+                        groupingBy(partition -> members.get(partition % memberCount).getAddress())
                 );
             } finally {
                 client.shutdown();
@@ -167,7 +167,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            client = HazelcastClient.newHazelcastClient(serializableClientConfig.asClientConfig());
+            client = newHazelcastClient(serializableClientConfig.asClientConfig());
             map = (ClientMapProxy) client.getMap(mapName);
         }
 

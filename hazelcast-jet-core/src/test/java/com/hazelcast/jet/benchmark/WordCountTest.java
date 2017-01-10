@@ -26,6 +26,7 @@ import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Partitioner;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
@@ -52,6 +53,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -255,7 +258,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     static class Combiner extends AbstractProcessor {
         private Map<String, Long> counts = new HashMap<>();
-        private Iterator<Map.Entry<String, Long>> iterator;
+        private Traverser<Entry<String, Long>> resultTraverser = lazy(() -> traverseIterable(counts.entrySet()));
 
         @Override
         public boolean tryProcess(int ordinal, Object item) {
@@ -266,14 +269,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public boolean complete() {
-            if (iterator == null) {
-                iterator = counts.entrySet().iterator();
-            }
-
-            while (iterator.hasNext() && !getOutbox().isHighWater()) {
-                emit(iterator.next());
-            }
-            return !iterator.hasNext();
+            return emitCooperatively(resultTraverser);
         }
     }
 

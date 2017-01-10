@@ -18,20 +18,31 @@ package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Base class to implement custom processors. Simplifies the contract of
- * {@code Processor} by abstracting away {@code Inbox} and {@code Outbox},
- * instead requiring a simple {@link #tryProcess(int, Object)} callback
- * to be implemented. The implementation should use the {@code emit()}
- * methods to emit its output. There are two overloads of {@code emit()} and
- * each delegates to the overload of {@code Outbox.add()} with the same
- * signature.
- * <p>
- * Processors which cannot be implemented in terms of the simplified API can
- * directly override Processor's {@code process()} method while still being
- * spared of the {@code init()}-related boilerplate.
+ * {@code Processor} with several levels of convenience:
+ * <ol><li>
+ *     {@link #init(Outbox)} retains the supplied outbox.
+ * </li><li>
+ *     {@link #process(int, Inbox)} delegates to {@link #tryProcess(int, Object)}
+ *     with each item received in the inbox.
+ * </li><li>
+ *     The {@code emit(...)} methods avoid the need to deal with {@code Outbox}
+ *     directly.
+ * </li><li>
+ *     The {@code emitCooperatively(...)} methods handle the boilerplate of
+ *     cooperative item emission. They are especially useful in the {@link #complete()}
+ *     step when there is a collection of items to emit. The {@link Traversers}
+ *     class contains traversers tailored to simplify the implementation of
+ *     {@code complete()}.
+ * </li><li>
+ *     The {@link TryProcessor TryProcessor} class additionally simplifies the
+ *     usage of {@code emitCooperatively()} inside {@code tryProcess()}, in a
+ *     scenario where an input item results in a collection of output items.
+ *     {@code TryProcessor} is obtained from its factory method
+ *     {@link #tryProcessor(Function)}.
+ * </li></ol>
  */
 public abstract class AbstractProcessor implements Processor {
 
@@ -92,34 +103,24 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Emits the items obtained from the supplier to the outbox bucket with the supplied ordinal,
-     * in a cooperative fashion: if the outbox reports a high-water condition, backs off and
-     * returns {@code false}.
+     * Emits the items obtained from the traverser to the outbox bucket with the
+     * supplied ordinal, in a cooperative fashion: if the outbox reports a
+     * high-water condition, backs off and returns {@code false}.
      * <p>
-     * The item supplier is expected to behave as follows:
-     * <ol><li>
-     *     Each invocation of its {@code get(()} method must return the next item to emit.
-     * </li><li>
-     *     If this method returns {@code false}, then the same supplier must be retained by
-     *     the caller and used again in the subsequent invocation of this method, so as to
-     *     resume emitting where it left off.
-     * </li><li>
-     *     When all the items have been supplied, {@code get()} must return {@code null}
-     *     in all subsequent invocations.
-     * </li></ol>
+     * If this method returns {@code false}, then the same traverser must be
+     * retained by the caller and passed again in the subsequent invocation of
+     * this method, so as to resume emitting where it left off.
      *
      * @param ordinal ordinal of the target bucket
-     * @param itemSupplier supplier of all items. It will be called repeatedly until
-     *                     it returns {@code null} or the outbox bucket reaches high water.
-     * @return {@code true} if all the items were emitted ({@code itemSupplier}
-     *         returned {@code null})
+     * @param traverser traverser over items to emit
+     * @return whether the traverser has been exhausted
      */
-    protected boolean emitCooperatively(int ordinal, Supplier<?> itemSupplier) {
+    protected boolean emitCooperatively(int ordinal, Traverser<?> traverser) {
         while (true) {
             if (getOutbox().isHighWater(ordinal)) {
                 return false;
             }
-            final Object item = itemSupplier.get();
+            final Object item = traverser.next();
             if (item == null) {
                 return true;
             }
@@ -128,44 +129,43 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Convenience for {@link #emitCooperatively(int, Supplier)} which emits to all ordinals.
+     * Convenience for {@link #emitCooperatively(int, Traverser)} which emits to all ordinals.
      */
-    protected boolean emitCooperatively(Supplier<?> itemSupplier) {
-        return emitCooperatively(-1, itemSupplier);
+    protected boolean emitCooperatively(Traverser<?> traverser) {
+        return emitCooperatively(-1, traverser);
     }
 
     /**
      * Factory of {@link TryProcessor}s.
      */
-    protected <T, R> TryProcessor<T, R> tryProcessor(Function<T, Supplier<R>> lazyTransformer) {
-        return new TryProcessor<>(lazyTransformer);
+    protected <T, R> TryProcessor<T, R> tryProcessor(Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        return new TryProcessor<>(mapper);
     }
 
     /**
      * A helper that simplifies the implementation of {@link AbstractProcessor#tryProcess(int, Object)}
      * for {@code flatMap}-like behavior. The {@code lazyMapper} takes an item
-     * and returns the supplier of all output items that should be emitted. The
-     * {@link #tryProcess(Object, int)} method obtains and passes this supplier
-     * to {@link #emitCooperatively(int, Supplier)}.
+     * and returns a traverser over all output items that should be emitted. The
+     * {@link #tryProcess(Object, int)} method obtains and passes the traverser
+     * to {@link #emitCooperatively(int, Traverser)}.
      *
      * @param <T> type of the input item
      * @param <R> type of the emitted item
      */
     protected final class TryProcessor<T, R> {
+        private Function<? super T, ? extends Traverser<? extends R>> mapper;
+        private Traverser<? extends R> outputTraverser;
 
-        private final Function<T, Supplier<R>> lazyMapper;
-        private Supplier<R> outputSupplier;
-
-        TryProcessor(Function<T, Supplier<R>> lazyMapper) {
-            this.lazyMapper = lazyMapper;
+        TryProcessor(Function<? super T, ? extends Traverser<? extends R>> mapper) {
+            this.mapper = mapper;
         }
 
         public boolean tryProcess(T item, int outputOrdinal) {
-            if (outputSupplier == null) {
-                outputSupplier = lazyMapper.apply(item);
+            if (outputTraverser == null) {
+                outputTraverser = mapper.apply(item);
             }
-            if (emitCooperatively(outputOrdinal, outputSupplier)) {
-                outputSupplier = null;
+            if (emitCooperatively(outputOrdinal, outputTraverser)) {
+                outputTraverser = null;
                 return true;
             }
             return false;
