@@ -33,6 +33,10 @@ public class ResultSet<K, V> extends AbstractSet<Map.Entry<K, V>> {
         this.iterationType = iterationType;
     }
 
+    public ResultSet() {
+        this(null, null);
+    }
+
     @Override
     public Iterator iterator() {
         if (entries == null) {
