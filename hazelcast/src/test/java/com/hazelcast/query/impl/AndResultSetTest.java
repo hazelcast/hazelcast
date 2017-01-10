@@ -1,8 +1,10 @@
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -11,32 +13,189 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AndResultSetTest extends HazelcastTestSupport {
 
-    // https://github.com/hazelcast/hazelcast/issues/1501
-    // tests that this method is not running into a stackoverflow
+
     @Test
     @SuppressWarnings("unchecked")
-    public void issue_1501() {
+    // https://github.com/hazelcast/hazelcast/issues/1501
+    public void iteratingOver_noException() {
         Set<QueryableEntry> entries = generateEntries(100000);
-        System.out.println(entries.size());
         AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
         Iterator it = resultSet.iterator();
+
         boolean result = it.hasNext();
+
         assertFalse(result);
     }
 
-    // TODO: we need to have more methods for regular behavior
+    @Test
+    // https://github.com/hazelcast/hazelcast/issues/9614
+    public void size_nonMatchingPredicate() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+
+        int size = resultSet.size();
+        int countedSize = 0;
+        for (QueryableEntry queryableEntry : resultSet) {
+            countedSize++;
+        }
+
+        assertEquals(0, countedSize);
+        assertEquals(size, countedSize);
+    }
+
+    @Test
+    // https://github.com/hazelcast/hazelcast/issues/9614
+    public void size_matchingPredicate_notInResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        int size = resultSet.size();
+        int countedSize = 0;
+        for (QueryableEntry queryableEntry : resultSet) {
+            countedSize++;
+        }
+
+        assertEquals(0, countedSize);
+        assertEquals(size, countedSize);
+    }
+
+    @Test
+    // https://github.com/hazelcast/hazelcast/issues/9614
+    public void size_matchingPredicate_noOtherResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        int size = resultSet.size();
+        int countedSize = 0;
+        for (QueryableEntry queryableEntry : resultSet) {
+            countedSize++;
+        }
+
+        assertEquals(100000, countedSize);
+        assertEquals(size, countedSize);
+    }
+
+    @Test
+    // https://github.com/hazelcast/hazelcast/issues/9614
+    public void size_matchingPredicate_inOtherResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
+        otherIndexResult.add(entries.iterator().next());
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        otherIndexedResults.add(otherIndexResult);
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        int size = resultSet.size();
+        int countedSize = 0;
+        for (QueryableEntry queryableEntry : resultSet) {
+            countedSize++;
+        }
+
+        assertEquals(1, countedSize);
+        assertEquals(size, countedSize);
+    }
+
+    @Test
+    public void contains_nonMatchingPredicate() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+
+        assertFalse(resultSet.contains(entries.iterator().next()));
+    }
+
+    @Test
+    public void contains_matchingPredicate_notInResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        assertFalse(resultSet.contains(entries.iterator().next()));
+    }
+
+    @Test
+    public void contains_matchingPredicate_noOtherResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        for (QueryableEntry entry : entries) {
+            assertTrue(resultSet.contains(entry));
+        }
+    }
+
+    @Test
+    public void contains_matchingPredicate_inOtherResult() {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        Set<QueryableEntry> otherIndexResult = new HashSet<QueryableEntry>();
+        otherIndexResult.add(entries.iterator().next());
+        List<Set<QueryableEntry>> otherIndexedResults = new ArrayList<Set<QueryableEntry>>();
+        otherIndexedResults.add(otherIndexResult);
+        AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
+
+        Iterator<QueryableEntry> it = entries.iterator();
+        assertTrue(resultSet.contains(it.next()));
+        while (it.hasNext()) {
+            assertFalse(resultSet.contains(it.next()));
+        }
+    }
+
+    @Test
+    public void toByteArray_nonMatchingPredicate() throws IOException {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
+
+        ObjectDataOutput objectDataOutput = mock(ObjectDataOutput.class);
+        resultSet.toByteArray(objectDataOutput);
+
+        verify(objectDataOutput, times(0)).writeData(any(Data.class));
+    }
+
+    @Test
+    public void toByteArray_matchingPredicate() throws IOException {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
+
+        ObjectDataOutput objectDataOutput = mock(ObjectDataOutput.class);
+        resultSet.toByteArray(objectDataOutput);
+
+        verify(objectDataOutput, times(100000)).writeData(any(Data.class));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void removeUnsupported() throws IOException {
+        Set<QueryableEntry> entries = generateEntries(100000);
+        AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
+
+        resultSet.remove(resultSet.iterator().next());
+    }
+
+// TODO: we need to have more methods for regular behavior
 
     class FalsePredicate implements Predicate {
         @Override
