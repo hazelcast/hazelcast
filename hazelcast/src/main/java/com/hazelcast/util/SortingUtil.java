@@ -16,10 +16,10 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.map.impl.query.SortedQueryResultSet;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.replicatedmap.impl.record.ResultSet;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -154,10 +154,11 @@ public final class SortingUtil {
         return list;
     }
 
-    public static SortedQueryResultSet getSortedQueryResultSet(List<Map.Entry> list,
-                                                               PagingPredicate pagingPredicate, IterationType iterationType) {
+    @SuppressWarnings("unchecked")
+    public static ResultSet getSortedQueryResultSet(List<Map.Entry> list,
+                                                    PagingPredicate pagingPredicate, IterationType iterationType) {
         if (list.isEmpty()) {
-            return new SortedQueryResultSet();
+            return new ResultSet();
         }
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
         Collections.sort(list, comparator);
@@ -169,7 +170,7 @@ public final class SortingUtil {
         int begin = pageSize * (page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
-            return new SortedQueryResultSet();
+            return new ResultSet();
         }
         int end = begin + pageSize;
         if (end > size) {
@@ -177,7 +178,7 @@ public final class SortingUtil {
         }
         setAnchor(list, pagingPredicate, nearestPage);
         List<Map.Entry> subList = list.subList(begin, end);
-        return new SortedQueryResultSet(subList, iterationType);
+        return new ResultSet(subList, iterationType);
     }
 
     public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry,
