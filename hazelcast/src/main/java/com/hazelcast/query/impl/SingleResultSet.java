@@ -19,12 +19,12 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.AbstractSet;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- *  Multiple result set for Predicates.
+ * Multiple result set for Predicates.
  */
 public class SingleResultSet extends AbstractSet<QueryableEntry> {
     private final ConcurrentMap<Data, QueryableEntry> records;
@@ -44,10 +44,10 @@ public class SingleResultSet extends AbstractSet<QueryableEntry> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Iterator<QueryableEntry> iterator() {
         if (records == null) {
-            //todo: why are we not returning Collections.EMPTY_SET.iterator?
-            return new HashSet<QueryableEntry>().iterator();
+            return Collections.EMPTY_SET.iterator();
         } else {
             return records.values().iterator();
         }
