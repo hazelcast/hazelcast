@@ -58,13 +58,26 @@ public final class BuildInfoProvider {
     public static BuildInfo getBuildInfo() {
         Properties properties = loadPropertiesFromResource("hazelcast-runtime.properties");
         Properties enterpriseProperties = loadPropertiesFromResource("hazelcast-enterprise-runtime.properties");
+        Properties jetProperties = loadPropertiesFromResource("jet-runtime.properties");
 
         BuildInfo buildInfo = readBuildInfoProperties(properties, null);
-        if (enterpriseProperties.isEmpty()) {
-            return buildInfo;
-        } else {
-            return readBuildInfoProperties(enterpriseProperties, buildInfo);
+        if (!enterpriseProperties.isEmpty()) {
+            buildInfo = readBuildInfoProperties(enterpriseProperties, buildInfo);
         }
+        setJetProperties(jetProperties, buildInfo);
+        return buildInfo;
+    }
+
+    private static void setJetProperties(Properties properties, BuildInfo buildInfo) {
+        if (properties.isEmpty()) {
+            return;
+        }
+        String version = properties.getProperty("jet.version");
+        String build = properties.getProperty("jet.build");
+        String revision = properties.getProperty("jet.git.revision");
+
+        JetBuildInfo jetBuildInfo = new JetBuildInfo(version, build, revision);
+        buildInfo.setJetBuildInfo(jetBuildInfo);
     }
 
     private static BuildInfo readBuildInfoProperties(Properties runtimeProperties, BuildInfo upstreamBuildInfo) {

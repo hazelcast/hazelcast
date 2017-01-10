@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
@@ -164,6 +165,8 @@ public final class PhoneHome {
         parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
         parameterCreator.addParam("jvmn", runtimeMxBean.getVmName());
         parameterCreator.addParam("jvmv", System.getProperty("java.version"));
+        JetBuildInfo jetBuildInfo = hazelcastNode.getBuildInfo().getJetBuildInfo();
+        parameterCreator.addParam("jetv", jetBuildInfo == null ? "" : jetBuildInfo.getVersion());
 
         try {
             parameterCreator.addParam("osn", osMxBean.getName());

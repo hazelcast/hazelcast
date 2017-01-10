@@ -36,6 +36,8 @@ public class BuildInfo {
     private final byte serializationVersion;
     private final BuildInfo upstreamBuildInfo;
 
+    private JetBuildInfo jetBuildInfo;
+
     public BuildInfo(String version, String build, String revision, int buildNumber, boolean enterprise,
                      byte serializationVersion) {
         this(version, build, revision, buildNumber, enterprise, serializationVersion, null);
@@ -80,6 +82,31 @@ public class BuildInfo {
         return upstreamBuildInfo;
     }
 
+    /**
+     * @return jet build info if Jet is used null otherwise
+     */
+    public JetBuildInfo getJetBuildInfo() {
+        return jetBuildInfo;
+    }
+
+    void setJetBuildInfo(JetBuildInfo jetBuildInfo) {
+        this.jetBuildInfo = jetBuildInfo;
+    }
+
+    @Override
+    public String toString() {
+        return "BuildInfo{"
+                + "version='" + version + '\''
+                + ", build='" + build + '\''
+                + ", buildNumber=" + buildNumber
+                + ", revision=" + revision
+                + ", enterprise=" + enterprise
+                + ", serializationVersion=" + serializationVersion
+                + (jetBuildInfo == null ? "" : ", jet=" + jetBuildInfo)
+                + (upstreamBuildInfo == null ? "" : ", upstream=" + upstreamBuildInfo)
+                + '}';
+    }
+
     public static int calculateVersion(String version) {
         if (null == version) {
             return UNKNOWN_HAZELCAST_VERSION;
@@ -105,18 +132,5 @@ public class BuildInfo {
         }
 
         return UNKNOWN_HAZELCAST_VERSION;
-    }
-
-    @Override
-    public String toString() {
-        return "BuildInfo{"
-                + "version='" + version + '\''
-                + ", build='" + build + '\''
-                + ", buildNumber=" + buildNumber
-                + ", revision=" + revision
-                + ", enterprise=" + enterprise
-                + ", serializationVersion=" + serializationVersion
-                + (upstreamBuildInfo == null ? "" : ", upstream=" + upstreamBuildInfo)
-                + '}';
     }
 }
