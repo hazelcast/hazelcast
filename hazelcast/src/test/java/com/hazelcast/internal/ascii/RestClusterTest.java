@@ -1,0 +1,189 @@
+/*
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.internal.ascii;
+
+import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
+
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
+public class RestClusterTest extends HazelcastTestSupport {
+
+    private static final String STATUS_FORBIDDEN = "{\"status\":\"forbidden\"}";
+
+    private Config config = new Config();
+
+    @Before
+    public void setup() {
+        config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
+
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig().setEnabled(false);
+        join.getTcpIpConfig().setEnabled(true).clear().addMember("127.0.0.1");
+    }
+
+    @After
+    public void tearDown() {
+        HazelcastInstanceFactory.terminateAll();
+    }
+
+    @Test
+    public void testDisabledRest() throws Exception {
+        // REST should be disabled by default
+        Config config = new Config();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        try {
+            communicator.getClusterInfo();
+            fail("Rest is disabled. Not expected to reach here!");
+        } catch (SocketException ignored) {
+        }
+    }
+
+    @Test
+    public void testClusterShutdown() throws Exception {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance2);
+
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.shutdownCluster("dev", "dev-pass"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(instance1.getLifecycleService().isRunning());
+                assertFalse(instance2.getLifecycleService().isRunning());
+            }
+        });
+    }
+
+    @Test
+    public void testGetClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+
+        HTTPCommunicator communicator1 = new HTTPCommunicator(instance1);
+        HTTPCommunicator communicator2 = new HTTPCommunicator(instance2);
+
+        instance1.getCluster().changeClusterState(ClusterState.FROZEN);
+        assertEquals("{\"status\":\"success\",\"state\":\"frozen\"}",
+                communicator1.getClusterState("dev", "dev-pass"));
+
+        instance1.getCluster().changeClusterState(ClusterState.PASSIVE);
+        assertEquals("{\"status\":\"success\",\"state\":\"passive\"}",
+                communicator2.getClusterState("dev", "dev-pass"));
+
+    }
+
+    @Test
+    public void testChangeClusterState() throws IOException {
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+
+        assertEquals(HttpURLConnection.HTTP_OK, communicator.changeClusterState("dev", "dev-pass", "frozen"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(ClusterState.FROZEN, instance1.getCluster().getClusterState());
+                assertEquals(ClusterState.FROZEN, instance2.getCluster().getClusterState());
+            }
+        });
+    }
+
+    @Test
+    public void testListNodes() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        HazelcastTestSupport.waitInstanceForSafeState(instance);
+        String result = String.format("{\"status\":\"success\" \"response\":\"[%s]\n%s\n%s\"}",
+                instance.getCluster().getLocalMember().toString(),
+                BuildInfoProvider.getBuildInfo().getVersion(),
+                System.getProperty("java.version"));
+        assertEquals(result, communicator.listClusterNodes("dev", "dev-pass"));
+    }
+
+    @Test
+    public void testListNodesWithWrongCredentials() throws Exception {
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance1);
+        HazelcastTestSupport.waitInstanceForSafeState(instance1);
+        assertEquals("{\"status\":\"forbidden\" \"response\":\"null\"}", communicator.listClusterNodes("dev1", "dev-pass"));
+    }
+
+    @Test
+    public void testShutdownNode() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        instance.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleEvent.LifecycleState.SHUTDOWN) {
+                    shutdownLatch.countDown();
+                }
+            }
+        });
+
+        try {
+            assertEquals("{\"status\":\"success\"}", communicator.shutdownMember("dev", "dev-pass"));
+        } catch (ConnectException ignored) {
+            // if node shuts down before response is received, `java.net.ConnectException: Connection refused` is expected
+        }
+
+        assertOpenEventually(shutdownLatch);
+        assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+    @Test
+    public void testShutdownNodeWithWrongCredentials() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+
+        assertEquals(STATUS_FORBIDDEN, communicator.shutdownMember("dev1", "dev-pass"));
+    }
+}
