@@ -31,11 +31,13 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 public class JetConfig {
 
     /**
-     * Javadoc pending
+     * The default value of the {@link #setFlowControlPeriodMs(int) flow-control period}.
      */
     public static final int DEFAULT_FLOW_CONTROL_PERIOD_MS = 100;
+
     /**
-     * Javadoc pending
+     * The default port number for the cluster auto-discovery mechanism's
+     * multicast communication.
      */
     public static final int DEFAULT_JET_MULTICAST_PORT = 54326;
 
@@ -47,14 +49,14 @@ public class JetConfig {
     private Properties properties = new Properties();
 
     /**
-     * @return Javadoc pending
+     * @return the configuration object for the underlying Hazelcast instance
      */
     public Config getHazelcastConfig() {
         return hazelcastConfig;
     }
 
     /**
-     * @return Javadoc pending
+     * Sets the underlying Hazelcast instance's configuration object.
      */
     public JetConfig setHazelcastConfig(Config config) {
         hazelcastConfig = config;
@@ -62,14 +64,14 @@ public class JetConfig {
     }
 
     /**
-     * @return Jet specific properties
+     * @return Jet-specific configuration properties
      */
     public Properties getProperties() {
         return properties;
     }
 
     /**
-     * Sets Jet specific properties
+     * Sets the Jet-specific configuration properties
      */
     public JetConfig setProperties(Properties properties) {
         this.properties = properties;
@@ -77,14 +79,16 @@ public class JetConfig {
     }
 
     /**
-     * @return the number of execution threads per node
+     * Returns the number of cooperative execution threads.
      */
     public int getExecutionThreadCount() {
         return threadCount;
     }
 
     /**
-     * Sets the number of execution threads per node
+     * Sets the number of threads each cluster member will use to execute Jet
+     * jobs. This refers only to threads executing <em>cooperative</em>
+     * processors; each blocking processor is assigned a separate thread.
      */
     public JetConfig setExecutionThreadCount(int size) {
         this.threadCount = size;
@@ -116,16 +120,18 @@ public class JetConfig {
     }
 
     /**
-     * @return Javadoc pending
+     * @return the flow-control period in milliseconds
      */
     public int getFlowControlPeriodMs() {
         return flowControlPeriodMs;
     }
 
     /**
-     * Javadoc pending
-     *
-     * @param flowControlPeriodMs
+     * While executing a Jet job there is the issue of regulating the rate
+     * at which one member of the cluster sends data to another member. The
+     * receiver will regularly report to each sender how much more data it
+     * is allowed to send over a given DAG edge. This method sets the length
+     * (in milliseconds) of the interval between flow-control packets.
      */
     public JetConfig setFlowControlPeriodMs(int flowControlPeriodMs) {
         this.flowControlPeriodMs = flowControlPeriodMs;
@@ -133,18 +139,15 @@ public class JetConfig {
     }
 
     /**
-     * Javadoc pending*
-     *
-     * @return
+     * @return the default DAG edge configuration
      */
     public EdgeConfig getDefaultEdgeConfig() {
         return defaultEdgeConfig;
     }
 
     /**
-     * Javadoc pending
-     *
-     * @param defaultEdgeConfig
+     * Sets the configuration object that specifies the defaults to use
+     * for DAG edge configuration.
      */
     public JetConfig setDefaultEdgeConfig(EdgeConfig defaultEdgeConfig) {
         this.defaultEdgeConfig = defaultEdgeConfig;

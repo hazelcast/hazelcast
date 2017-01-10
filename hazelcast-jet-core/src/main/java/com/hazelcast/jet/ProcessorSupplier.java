@@ -61,7 +61,7 @@ public interface ProcessorSupplier extends Serializable {
      * {@code SimpleProcessorSupplier} to create all {@code Processor} instances.
      */
     static ProcessorSupplier of(SimpleProcessorSupplier processorSupplier) {
-        return count -> Stream.generate(processorSupplier::get).limit(count).collect(toList());
+        return count -> Stream.generate(processorSupplier).limit(count).collect(toList());
     }
 
     /**

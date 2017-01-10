@@ -27,23 +27,26 @@ import java.util.function.Consumer;
 public interface Inbox {
 
     /**
-     * @return {@code true} if this inbox contains no elements; {@code false} otherwise
+     * @return {@code true} if this inbox contains no elements;
+     * {@code false} otherwise
      */
     boolean isEmpty();
 
     /**
-     * Retrieves, but does not remove, the head of this inbox, or returns {@code null} if it is empty.
+     * Retrieves, but does not remove, the head of this inbox, or returns
+     * {@code null} if it is empty.
      */
     Object peek();
 
     /**
-     * Retrieves and removes the head of this inbox, or returns {@code null} if it is empty.
+     * Retrieves and removes the head of this inbox, or returns {@code null}
+     * if it is empty.
      */
     Object poll();
 
     /**
-     * Retrieves and removes the head of this inbox.  This method differs from {@link #poll poll} only in that
-     * it throws an exception if the inbox is empty.
+     * Retrieves and removes the head of this inbox.  This method differs from
+     * {@link #poll poll} only in that it throws an exception if the inbox is empty.
      *
      * @throws NoSuchElementException if this inbox is empty
      */

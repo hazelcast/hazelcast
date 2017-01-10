@@ -32,7 +32,7 @@ import com.hazelcast.jet.impl.config.XmlJetConfigBuilder;
 import static com.hazelcast.jet.impl.config.XmlJetConfigBuilder.getClientConfig;
 
 /**
- * Javadoc pending
+ * Entry point to the Jet product.
  */
 public final class Jet {
 
@@ -40,7 +40,7 @@ public final class Jet {
     }
 
     /**
-     * Creates a new Jet member with the given configuration
+     * Creates a member of the Jet cluster with the given configuration.
      */
     public static JetInstance newJetInstance(JetConfig config) {
         configureJetService(config);
@@ -50,7 +50,7 @@ public final class Jet {
     }
 
     /**
-     * Creates a new Jet member with the default configuration
+     * Creates a member of the Jet cluster with the default configuration.
      */
     public static JetInstance newJetInstance() {
         JetConfig config = XmlJetConfigBuilder.getConfig();
@@ -58,7 +58,7 @@ public final class Jet {
     }
 
     /**
-     * Creates a new Jet client with default configuration
+     * Creates a Jet client with the default configuration.
      */
     public static JetInstance newJetClient() {
         ClientConfig clientConfig = getClientConfig();
@@ -66,14 +66,14 @@ public final class Jet {
     }
 
     /**
-     * Creates a new Jet client with a given Hazelcast client configuration
+     * Creates a Jet client with the given Hazelcast client configuration.
      */
     public static JetInstance newJetClient(ClientConfig config) {
         return getJetClientInstance(HazelcastClient.newHazelcastClient(config));
     }
 
     /**
-     * Shutdown all running Jet client and member instances
+     * Shuts down all running Jet client and member instances.
      */
     public static void shutdownAll() {
         HazelcastClient.shutdownAll();

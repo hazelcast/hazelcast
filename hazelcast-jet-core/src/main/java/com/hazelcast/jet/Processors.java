@@ -113,8 +113,8 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor which emits the result of applying the
-     * given mapping function to each received item. If the result is {@code null},
+     * Returns a supplier of processor which, for each received item, emits the result
+     * of applying the given mapping function to it. If the result is {@code null},
      * nothing will be emitted. Therefore this processor can be used to implement
      * filtering semantics as well.
      *
@@ -167,24 +167,11 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Applies the key extractor to each item and obtains the key of type {@code K}.
-     * </li><li>
-     *     Stores for each key the result of applying the accumulator function to
-     *     the previously accumulated value and the current item. The initial
-     *     accumulated value for all keys is {@code null}.
-     * </li><li>
-     *     When all the input is consumed, begins emitting the accumulated results.
-     * </li><li>
-     *     Emits items of type {@code R} obtained by applying the finisher function
-     *     to each seen key and its accumulated value.
-     * </li></ul>
+     * Returns a supplier of {@link GroupAndAccumulateP} processors.
      *
      * @param keyExtractor computes the key from the entry
      * @param accumulator accumulates the result value across all entries under the same key
+     *
      * @param <T> type of received item
      * @param <K> type of key
      * @param <A> type of accumulated value
@@ -255,6 +242,8 @@ public final class Processors {
      * </li></ul>
      *
      * @param accumulator accumulates the result value across all the input items
+     * @param finisher transforms the accumulated value to the item to emit
+     *
      * @param <T> type of received item
      * @param <A> type of accumulated value
      * @param <R> type of emitted item
@@ -283,18 +272,11 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Computes the key of type {@code K} by applying the key extractor
-     *     to the item.
-     * </li><li>
-     *     Maintains a set of all seen keys.
-     * </li><li>
-     *     Emits the size of the set (the number of seen distinct keys) as a
-     *     {@code Long} value.
-     * </li></ul>
+     * Returns a supplier of {@link CountDistinctP} processors.
+     *
+     * @param keyExtractor the key extractor function
+     * @param <T> received item type
+     * @param <K> key type
      */
     @Nonnull
     public static <T, K> ProcessorSupplier countDistinct(@Nonnull Distributed.Function<T, K> keyExtractor) {
@@ -319,10 +301,20 @@ public final class Processors {
     public static class NoopProducer extends AbstractProducer {
     }
 
-    private static class TransformP<T, R> extends AbstractProcessor {
+    /**
+     * Processor which, for each received item, emits all the items from the
+     * traverser returned by the given item-to-traverser function.
+     *
+     * @param <T> received item type
+     * @param <R> emitted item type
+     */
+    public static class TransformP<T, R> extends AbstractProcessor {
         private TryProcessor<T, R> tryProcessor;
 
-        TransformP(Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        /**
+         * Constructs a processor with the given mapping function.
+         */
+        public TransformP(@Nonnull  Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
             this.tryProcessor = tryProcessor(mapper);
         }
 
@@ -338,15 +330,43 @@ public final class Processors {
         }
     }
 
-    private static class GroupAndAccumulateP<T, K, A, R> extends AbstractProcessor {
+    /**
+     * Processor with the following semantics:
+     * <ul><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     Applies the key extractor to each item and obtains the key of type {@code K}.
+     * </li><li>
+     *     Stores for each key the result of applying the accumulator function to
+     *     the previously accumulated value and the current item. The initial
+     *     accumulated value for all keys is {@code null}.
+     * </li><li>
+     *     When all the input is consumed, begins emitting the accumulated results.
+     * </li><li>
+     *     Emits items of type {@code R} obtained by applying the finisher function
+     *     to each seen key and its accumulated value.
+     * </li></ul>
+     *
+     * @param keyExtractor computes the key from the entry
+     * @param accumulator accumulates the result value across all entries under the same key
+     * @param <T> type of received item
+     * @param <K> type of key
+     * @param <A> type of accumulated value
+     * @param <R> type of emitted item
+     */
+    public static class GroupAndAccumulateP<T, K, A, R> extends AbstractProcessor {
         private final Function<? super T, ? extends K> keyExtractor;
         private BiFunction<? super A, ? super T, ? extends A> accumulator;
         private Map<K, A> groups = new HashMap<>();
         private Traverser<R> resultTraverser;
 
-        GroupAndAccumulateP(Distributed.Function<? super T, ? extends K> keyExtractor,
-                            Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
-                            Distributed.BiFunction<? super K, ? super A, ? extends R> finisher) {
+        /**
+         * Creates the processor from the given key extractor, accumulator, and finisher
+         * functions.
+         */
+        public GroupAndAccumulateP(@Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
+                                   @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
+                                   @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher) {
             this.keyExtractor = keyExtractor;
             this.accumulator = accumulator;
             this.resultTraverser = lazy(() -> traverseStream(groups
@@ -375,18 +395,38 @@ public final class Processors {
         }
     }
 
-    private static class CountDistinctP<I, K> extends AbstractProcessor {
-        private Distributed.Function<I, K> extractKey;
+    /**
+     * Processor with the following semantics:
+     * <ul><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     Computes the key of type {@code K} by applying the key extractor
+     *     to the item.
+     * </li><li>
+     *     Maintains a set of all seen keys.
+     * </li><li>
+     *     Emits the size of the set (the number of seen distinct keys) as a
+     *     {@code Long} value.
+     * </li></ul>
+     *
+     * @param <T> type of received item
+     * @param <K> type of grouping key
+     */
+    public static class CountDistinctP<T, K> extends AbstractProcessor {
+        private Distributed.Function<T, K> extractKey;
         private Set<K> seenItems = new HashSet<>();
 
-        CountDistinctP(Distributed.Function<I, K> extractKey) {
+        /**
+         * Constructs the processor with the given key extractor function.
+         */
+        public CountDistinctP(@Nonnull Distributed.Function<T, K> extractKey) {
             this.extractKey = extractKey;
         }
 
         @Override
         protected boolean tryProcess(int ordinal, Object item) {
             assert ordinal == 0;
-            seenItems.add(extractKey.apply((I) item));
+            seenItems.add(extractKey.apply((T) item));
             return true;
         }
 

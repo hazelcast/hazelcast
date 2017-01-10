@@ -22,12 +22,12 @@ import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
 /**
- * Javadoc pending
+ * Represents a member of the Jet cluster.
  */
 public interface JetInstance {
 
     /**
-     * @return javadoc pending
+     * @return name of the Jet instance
      */
     String getName();
 
