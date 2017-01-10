@@ -46,20 +46,20 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.mocknetwork.MockConnection;
 import com.hazelcast.test.mocknetwork.TestNodeRegistry;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Map;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 
-public class TestClientRegistry {
+class TestClientRegistry {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
 
@@ -105,15 +105,14 @@ public class TestClientRegistry {
         }
     }
 
-    public class MockClientConnectionManager extends ClientConnectionManagerImpl {
-
+    class MockClientConnectionManager extends ClientConnectionManagerImpl {
         private final String host;
         private final AtomicInteger ports;
         private final HazelcastClientInstanceImpl client;
-        private final Map<Address, State> stateMap = new ConcurrentHashMap<Address, State>();
+        private final ConcurrentHashMap<Address, TwoWayBlockableExecutor.LockPair> addressBlockMap = new ConcurrentHashMap<Address, TwoWayBlockableExecutor.LockPair>();
 
-        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator, String host,
-                                    AtomicInteger ports) {
+        MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
+                                    String host, AtomicInteger ports) {
             super(client, addressTranslator);
             this.client = client;
             this.host = host;
@@ -144,8 +143,16 @@ public class TestClientRegistry {
                 }
                 Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                MockedClientConnection connection = new MockedClientConnection(client, connectionIdGen.incrementAndGet(),
-                        node.nodeEngine, address, localAddress, stateMap);
+                TwoWayBlockableExecutor.LockPair lockPair = ConcurrencyUtil.getOrPutIfAbsent(addressBlockMap, address,
+                        new ConstructorFunction<Address, TwoWayBlockableExecutor.LockPair>() {
+                    @Override
+                    public TwoWayBlockableExecutor.LockPair createNew(Address arg) {
+                        return new TwoWayBlockableExecutor.LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
+                    }
+                });
+
+                MockedClientConnection connection = new MockedClientConnection(client,
+                        connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, lockPair);
                 LOGGER.info("Created connection to endpoint: " + address + ", connection: " + connection);
                 return connection;
             } catch (Exception e) {
@@ -154,63 +161,64 @@ public class TestClientRegistry {
         }
 
         /**
-         * Stores incoming messages from address to a temporary queue
-         * When unblocked first this queue will be processed after that new messages will be consumed
+         * Blocks incoming messages to client from given address
          */
-        public void block(Address address) {
-            stateMap.put(address, State.BLOCKING);
+        void blockFrom(Address address) {
             LOGGER.info("Blocked messages from " + address);
+            TwoWayBlockableExecutor.LockPair executor = addressBlockMap.get(address);
+            executor.blockIncoming();
         }
 
         /**
-         * Removes the filter that is put by either block or drop
-         * Consumes from the temporary queue if there is anything then continues to normal behaviour
+         * Unblocks incoming messages to client from given address
          */
-        public void unblock(Address address) {
-            stateMap.remove(address);
+        void unblockFrom(Address address) {
             LOGGER.info("Unblocked messages from " + address);
-            ClientConnection connection = getConnection(address);
-            if (connection != null) {
-                MockedClientConnection clientConnection = (MockedClientConnection) connection;
-                clientConnection.processBufferedIncomingMessages();
-            }
+            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            lockPair.unblockIncoming();
         }
 
         /**
-         * Drops incoming messages from address
+         * Blocks outgoing messages from client to given address
          */
-        public void drop(Address address) {
-            stateMap.put(address, State.DROPPING);
-            LOGGER.info("Dropping messages from " + address);
+        void blockTo(Address address) {
+            LOGGER.info("Blocked messages to " + address);
+            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            lockPair.blockOutgoing();
         }
+
+        /**
+         * Unblocks outgoing messages from client to given address
+         */
+        void unblockTo(Address address) {
+            LOGGER.info("Unblocked messages to " + address);
+            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            lockPair.unblockOutgoing();
+        }
+
     }
 
-    enum State {
-        BLOCKING, DROPPING
-    }
-
-    public class MockedClientConnection extends ClientConnection {
-
+    private class MockedClientConnection extends ClientConnection {
+        private volatile long lastReadTime;
+        private volatile long lastWriteTime;
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
         private final Connection serverSideConnection;
+        private final TwoWayBlockableExecutor executor;
 
-        private final Queue<ClientMessage> incomingMessages = new ConcurrentLinkedQueue<ClientMessage>();
-        private final Map<Address, State> stateMap;
+        MockedClientConnection(HazelcastClientInstanceImpl client,
+                               int connectionId, NodeEngineImpl serverNodeEngine,
+                               Address address, Address localAddress,
+                               TwoWayBlockableExecutor.LockPair lockPair) throws IOException {
 
-        private volatile long lastReadTime;
-        private volatile long lastWriteTime;
-
-        MockedClientConnection(HazelcastClientInstanceImpl client, int connectionId, NodeEngineImpl serverNodeEngine,
-                               Address address, Address localAddress, Map<Address, State> stateMap) throws IOException {
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
             this.remoteAddress = address;
             this.localAddress = localAddress;
-            this.stateMap = stateMap;
-            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress, localAddress, serverNodeEngine,
-                    this);
+            this.executor = new TwoWayBlockableExecutor(lockPair);
+            this.serverSideConnection = new MockedNodeConnection(connectionId, remoteAddress,
+                    localAddress, serverNodeEngine, this);
         }
 
         @Override
@@ -218,41 +226,42 @@ public class TestClientRegistry {
             // no init for mock connections
         }
 
-        void handleClientMessage(ClientMessage clientMessage) {
-            if (getState() == State.DROPPING) {
-                return;
-            }
+        void handleClientMessage(final ClientMessage clientMessage) {
+            executor.executeIncoming(new Runnable() {
+                @Override
+                public void run() {
+                    lastReadTime = System.currentTimeMillis();
+                    getConnectionManager().handleClientMessage(clientMessage, MockedClientConnection.this);
+                }
 
-            if (getState() == State.BLOCKING) {
-                incomingMessages.add(clientMessage);
-                return;
-            }
-            processBufferedIncomingMessages();
-            lastReadTime = System.currentTimeMillis();
-            getConnectionManager().handleClientMessage(clientMessage, this);
-        }
-
-        private void processBufferedIncomingMessages() {
-            ClientMessage message;
-            while ((message = incomingMessages.poll()) != null) {
-                lastReadTime = System.currentTimeMillis();
-                getConnectionManager().handleClientMessage(message, this);
-            }
-        }
-
-        private State getState() {
-            return stateMap.get(remoteAddress);
+                @Override
+                public String toString() {
+                    return "Runnable message " + clientMessage;
+                }
+            });
         }
 
         @Override
-        public boolean write(OutboundFrame frame) {
-            Node node = serverNodeEngine.getNode();
+        public boolean write(final OutboundFrame frame) {
+            final Node node = serverNodeEngine.getNode();
             if (node.getState() == NodeState.SHUT_DOWN) {
                 return false;
             }
-            ClientMessage newPacket = readFromPacket((ClientMessage) frame);
-            lastWriteTime = System.currentTimeMillis();
-            node.clientEngine.handleClientMessage(newPacket, serverSideConnection);
+            executor.executeOutgoing(new Runnable() {
+                @Override
+                public String toString() {
+                    return "Runnable message " + frame;
+                }
+
+                @Override
+                public void run() {
+                    ClientMessage newPacket = readFromPacket((ClientMessage) frame);
+                    lastWriteTime = System.currentTimeMillis();
+                    node.clientEngine.handleClientMessage(newPacket, serverSideConnection);
+
+
+                }
+            });
             return true;
         }
 
@@ -307,7 +316,35 @@ public class TestClientRegistry {
 
         @Override
         protected void innerClose() throws IOException {
-            serverSideConnection.close(null, null);
+            executor.executeOutgoing((new Runnable() {
+                @Override
+                public void run() {
+                    serverSideConnection.close(null, null);
+
+                }
+
+                @Override
+                public String toString() {
+                    return "Client Closed EOF";
+                }
+            }));
+            executor.shutdownIncoming();
+
+        }
+
+        void onServerClose(final String reason) {
+            executor.executeIncoming(new Runnable() {
+                @Override
+                public String toString() {
+                    return "Server Closed EOF";
+                }
+
+                @Override
+                public void run() {
+                    MockedClientConnection.this.close(reason, new TargetDisconnectedException("Mocked Remote socket closed"));
+                }
+            });
+            executor.shutdownOutgoing();
         }
     }
 
@@ -370,7 +407,7 @@ public class TestClientRegistry {
         @Override
         public void close(String reason, Throwable cause) {
             super.close(reason, cause);
-            responseConnection.close(reason, new TargetDisconnectedException("Mocked Remote socket closed"));
+            responseConnection.onServerClose(reason);
         }
 
         @Override
