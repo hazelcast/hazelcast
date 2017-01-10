@@ -21,15 +21,14 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.stream.IStreamList;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
 public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, IStreamList<T>> {
 
     private final String listName;
 
     public HazelcastListCollector() {
-        this(randomName(LIST_PREFIX));
+        this(uniqueListName());
     }
 
     public HazelcastListCollector(String listName) {

@@ -29,9 +29,10 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector<T, K, V> {
 
@@ -40,7 +41,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     public HazelcastMergingMapCollector(Function<? super T, ? extends K> keyMapper,
                                         Function<? super T, ? extends V> valueMapper,
                                         BinaryOperator<V> mergeFunction) {
-        this(randomName(MAP_PREFIX), keyMapper, valueMapper, mergeFunction);
+        this(uniqueMapName(), keyMapper, valueMapper, mergeFunction);
     }
 
     public HazelcastMergingMapCollector(String mapName, Function<? super T, ? extends K> keyMapper,
@@ -55,13 +56,13 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 
-        Vertex merger = new Vertex("merging-accumulator-" + randomName(),
-                () -> new MergeP<T, K, V>(keyMapper,
+        Vertex merger = new Vertex(uniqueVertexName("merging-accumulator"),
+                () -> new MergeP<>(keyMapper,
                         valueMapper, mergeFunction));
-        Vertex combiner = new Vertex("merging-combiner-" + randomName(),
+        Vertex combiner = new Vertex(uniqueVertexName("merging-combiner"),
                 () -> new MergeP<T, K, V>(null, null,
                         mergeFunction));
-        Vertex writer = new Vertex("map-writer-" + randomName(), Processors.mapWriter(mapName));
+        Vertex writer = new Vertex(writerVertexName(mapName), Processors.mapWriter(mapName));
 
         dag.vertex(merger)
            .vertex(combiner)

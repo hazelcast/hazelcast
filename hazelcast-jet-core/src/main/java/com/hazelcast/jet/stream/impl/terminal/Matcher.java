@@ -26,9 +26,10 @@ import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class Matcher {
 
@@ -40,13 +41,13 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Vertex anymatch = new Vertex(randomName(), () -> new AnyMatchP<>(predicate));
-        dag.vertex(anymatch);
+        Vertex anyMatch = new Vertex(uniqueVertexName("any-match"), () -> new AnyMatchP<>(predicate));
+        dag.vertex(anyMatch);
         Vertex previous = upstream.buildDAG(dag);
-        if (previous != anymatch) {
-            dag.edge(between(previous, anymatch));
+        if (previous != anyMatch) {
+            dag.edge(between(previous, anyMatch));
         }
-        IList<Boolean> results = execute(dag, anymatch);
+        IList<Boolean> results = execute(dag, anyMatch);
         boolean result = anyMatch(results);
         results.destroy();
         return result;
@@ -62,8 +63,8 @@ public class Matcher {
     }
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
-        String listName = randomName(LIST_PREFIX);
-        Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
+        String listName = uniqueListName();
+        Vertex writer = new Vertex(writerVertexName(listName), Processors.listWriter(listName));
         dag.vertex(writer).edge(between(vertex, writer));
         executeJob(context, dag);
         return context.getJetInstance().getList(listName);

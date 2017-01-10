@@ -35,9 +35,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<T, A, R> {
 
@@ -71,11 +71,11 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     }
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
-        String name = randomName(LIST_PREFIX);
-        Vertex writer = new Vertex("writer-" + randomName(), Processors.listWriter(name));
+        String listName = uniqueListName();
+        Vertex writer = new Vertex(uniqueVertexName("writer"), Processors.listWriter(listName));
         dag.vertex(writer).edge(between(combiner, writer));
         executeJob(context, dag);
-        IList<R> list = context.getJetInstance().getList(name);
+        IList<R> list = context.getJetInstance().getList(listName);
         R result = list.get(0);
         list.destroy();
         return result;
@@ -83,7 +83,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Vertex accumulatorVertex = new Vertex("accumulator-" + randomName(),
+        Vertex accumulatorVertex = new Vertex(uniqueVertexName("accumulator"),
                 () -> new CollectorAccumulatorP<>(accumulator, supplier));
         if (upstream.isOrdered()) {
             accumulatorVertex.localParallelism(1);
@@ -101,7 +101,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
         SimpleProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
-        Vertex combinerVertex = new Vertex("combiner-" + randomName(), processorSupplier).localParallelism(1);
+        Vertex combinerVertex = new Vertex(uniqueVertexName("combiner"), processorSupplier).localParallelism(1);
         dag.vertex(combinerVertex);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()

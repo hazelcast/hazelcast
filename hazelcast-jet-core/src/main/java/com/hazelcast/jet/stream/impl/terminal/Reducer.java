@@ -32,9 +32,10 @@ import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.LIST_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class Reducer {
 
@@ -56,7 +57,7 @@ public class Reducer {
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
         SimpleProcessorSupplier supplier = () -> new CombinerP<>(combiner, Distributed.Function.<T>identity());
-        Vertex combinerVertex = new Vertex(randomName(), supplier).localParallelism(1);
+        Vertex combinerVertex = new Vertex(uniqueVertexName("combiner"), supplier).localParallelism(1);
         dag.vertex(combinerVertex);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
@@ -80,8 +81,8 @@ public class Reducer {
     }
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
-        String listName = randomName(LIST_PREFIX);
-        Vertex writer = new Vertex(randomName(), Processors.listWriter(listName));
+        String listName = uniqueListName();
+        Vertex writer = new Vertex(writerVertexName(listName), Processors.listWriter(listName));
         dag.vertex(writer).edge(between(combiner, writer));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);
@@ -100,7 +101,7 @@ public class Reducer {
                                                   BiFunction<U, ? super T, U> accumulator) {
 
 
-        Vertex accumulatorVertex = new Vertex(randomName(), () -> new AccumulatorP<>(accumulator, identity));
+        Vertex accumulatorVertex = new Vertex(uniqueVertexName("accumulator"), () -> new AccumulatorP<>(accumulator, identity));
         dag.vertex(accumulatorVertex);
         Vertex previous = upstream.buildDAG(dag);
         if (previous != accumulatorVertex) {
@@ -127,9 +128,9 @@ public class Reducer {
     ) {
         return identity != null
                 ?
-                new Vertex(randomName(), () -> new AccumulatorP<>(accumulator, identity))
+                new Vertex(uniqueVertexName("accumulator"), () -> new AccumulatorP<>(accumulator, identity))
                 :
-                new Vertex(randomName(), () -> new CombinerP<>(accumulator, Distributed.Function.identity()));
+                new Vertex(uniqueVertexName("combiner"), () -> new CombinerP<>(accumulator, Distributed.Function.identity()));
     }
 
 }

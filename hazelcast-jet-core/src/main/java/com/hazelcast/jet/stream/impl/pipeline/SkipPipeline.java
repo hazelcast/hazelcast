@@ -22,7 +22,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.processor.SkipP;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long skip;
@@ -37,7 +37,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final long skip = this.skip;
-        Vertex skipVertex = new Vertex("skip-" + randomName(), () -> new SkipP(skip)).localParallelism(1);
+        Vertex skipVertex = new Vertex(uniqueVertexName("skip"), () -> new SkipP(skip)).localParallelism(1);
         dag.vertex(skipVertex);
 
         Edge edge = between(previous, skipVertex);

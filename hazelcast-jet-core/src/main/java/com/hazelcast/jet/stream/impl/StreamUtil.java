@@ -40,19 +40,32 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
 
-    public static final String MAP_PREFIX = "__hz_map_";
-    public static final String LIST_PREFIX = "__hz_list_";
-
+    private static final String MAP_PREFIX = "__jet_map_";
+    private static final String LIST_PREFIX = "__jet_list_";
 
     private StreamUtil() {
     }
 
-    public static String randomName() {
-        return UuidUtil.newUnsecureUUID().toString().replaceAll("-", "");
+    public static String uniqueListName() {
+        return LIST_PREFIX + randomName();
     }
 
-    public static String randomName(String prefix) {
-        return prefix + randomName();
+    public static String uniqueMapName() {
+        return MAP_PREFIX + randomName();
+    }
+
+    /**
+     * @return the name for a writer vertex
+     */
+    public static String writerVertexName(String name) {
+        return name + "-writer";
+    }
+
+    /**
+     * @return a unique name for a vertex which includes the given name
+     */
+    public static String uniqueVertexName(String name) {
+        return name + "-" + UuidUtil.newUnsecureUUID().toString();
     }
 
     public static void executeJob(StreamContext context, DAG dag) {
@@ -70,6 +83,10 @@ public final class StreamUtil {
         Field field = clazz.getDeclaredField(name);
         field.setAccessible(true);
         field.set(instance, val);
+    }
+
+    private static String randomName() {
+        return UuidUtil.newUnsecureUUID().toString();
     }
 
     public static JetInstance getJetInstance(DistributedObject object) {

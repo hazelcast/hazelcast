@@ -23,8 +23,7 @@ import com.hazelcast.jet.stream.IStreamMap;
 
 import java.util.function.Function;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
 public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T, IStreamMap<K, V>> {
 
@@ -35,7 +34,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
 
     public HazelcastMapCollector(Function<? super T, ? extends K> keyMapper,
                                  Function<? super T, ? extends V> valueMapper) {
-        this(randomName(MAP_PREFIX), keyMapper, valueMapper);
+        this(uniqueMapName(), keyMapper, valueMapper);
     }
 
     public HazelcastMapCollector(String mapName, Function<? super T, ? extends K> keyMapper,

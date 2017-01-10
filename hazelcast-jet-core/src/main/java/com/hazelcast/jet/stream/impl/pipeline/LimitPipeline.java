@@ -21,7 +21,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.processor.LimitP;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long limit;
@@ -36,20 +36,20 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final long lim = limit;
-        Vertex first = new Vertex(randomName(), () -> new LimitP(lim)).localParallelism(1);
+        Vertex first = new Vertex(uniqueVertexName("limit-local"), () -> new LimitP(lim)).localParallelism(1);
         dag.vertex(first)
-                .edge(between(previous, first));
+           .edge(between(previous, first));
 
         if (upstream.isOrdered()) {
             return first;
         }
 
-        Vertex second = new Vertex(randomName(), () -> new LimitP(lim)).localParallelism(1);
+        Vertex second = new Vertex(uniqueVertexName("limit-global"), () -> new LimitP(lim)).localParallelism(1);
         dag.vertex(second)
-                .edge(between(first, second)
-                        .distributed()
-                        .allToOne()
-                );
+           .edge(between(first, second)
+                   .distributed()
+                   .allToOne()
+           );
 
         return second;
     }

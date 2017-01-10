@@ -31,9 +31,10 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.MAP_PREFIX;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector<T, A, IMap<K, D>> {
 
@@ -43,7 +44,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
     public HazelcastGroupingMapCollector(Distributed.Function<? super T, ? extends K> classifier,
                                          Distributed.Collector<? super T, A, D> collector) {
-        this(randomName(MAP_PREFIX), classifier, collector);
+        this(uniqueMapName(), classifier, collector);
     }
 
     public HazelcastGroupingMapCollector(String mapName, Function<? super T, ? extends K> classifier,
@@ -59,11 +60,11 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
-        Vertex merger = new Vertex("grouping-accumulator-" + randomName(),
+        Vertex merger = new Vertex(uniqueVertexName("grouping-accumulator"),
                 () -> new GroupingAccumulatorP<>(classifier, collector));
-        Vertex combiner = new Vertex("grouping-combiner-" + randomName(),
+        Vertex combiner = new Vertex(uniqueVertexName("grouping-combiner"),
                 () -> new GroupingCombinerP<>(collector));
-        Vertex writer = new Vertex("map-writer-" + mapName, Processors.mapWriter(mapName));
+        Vertex writer = new Vertex(writerVertexName(mapName), Processors.mapWriter(mapName));
 
         dag.vertex(merger)
            .vertex(combiner)

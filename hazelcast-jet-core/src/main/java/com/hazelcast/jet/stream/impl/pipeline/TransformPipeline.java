@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.Edge.between;
-import static com.hazelcast.jet.stream.impl.StreamUtil.randomName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class TransformPipeline extends AbstractIntermediatePipeline {
 
@@ -44,12 +44,12 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final List<TransformOperation> ops = operations;
-        Vertex transform = new Vertex("transform-" + randomName(), () -> new TransformP(ops));
+        Vertex transform = new Vertex(uniqueVertexName("transform"), () -> new TransformP(ops));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
         }
         dag.vertex(transform)
-                .edge(between(previous, transform));
+           .edge(between(previous, transform));
 
         return transform;
     }
