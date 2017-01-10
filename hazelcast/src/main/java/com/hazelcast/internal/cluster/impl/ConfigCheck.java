@@ -87,7 +87,7 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     /**
      * Checks if two Hazelcast configurations are compatible.
      *
-     * @param found
+     * @param found the {@link ConfigCheck} to compare this to
      * @return true if compatible. False if part of another group.
      * @throws ConfigMismatchException if the configuration is not compatible.
      *                                 An exception is thrown so we can pass a nice message.

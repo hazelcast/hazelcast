@@ -439,6 +439,15 @@ public abstract class AbstractJoiner implements Joiner {
         operationService.run(mergeClustersOperation);
     }
 
+    /**
+     * Prepares the cluster state for cluster merge by changing it to {@link ClusterState#FROZEN}. It expects the current
+     * cluster state to be {@link ClusterState#ACTIVE}.
+     * The method will keep trying to change the cluster state until {@link GroupProperty#MERGE_NEXT_RUN_DELAY_SECONDS} elapses
+     * or until the sleep period between two attempts has been interrupted.
+     *
+     * @param clusterService the cluster service used for state change
+     * @return true if the cluster state was successfully prepared
+     */
     private boolean prepareClusterState(ClusterServiceImpl clusterService) {
         if (!preCheckClusterState(clusterService)) {
             return false;
@@ -472,6 +481,7 @@ public abstract class AbstractJoiner implements Joiner {
         return false;
     }
 
+    /** Returns true if the current cluster state is {@link com.hazelcast.cluster.ClusterState#ACTIVE} */
     private boolean preCheckClusterState(final ClusterService clusterService) {
         final ClusterState initialState = clusterService.getClusterState();
         if (initialState != ClusterState.ACTIVE) {
