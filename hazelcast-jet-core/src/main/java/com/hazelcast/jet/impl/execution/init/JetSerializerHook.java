@@ -31,8 +31,56 @@ public final class JetSerializerHook {
 
     public static final int MAP_ENTRY = -300;
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
+    public static final int OBJECT_ARRAY = -302;
 
     private JetSerializerHook() {
+    }
+
+    public static final class ObjectArray implements SerializerHook<Object[]> {
+
+        @Override
+        public Class<Object[]> getSerializationType() {
+            return Object[].class;
+        }
+
+        @Override
+        public Serializer createSerializer() {
+            return new StreamSerializer<Object[]>() {
+
+                @Override
+                public int getTypeId() {
+                    return OBJECT_ARRAY;
+                }
+
+                @Override
+                public void destroy() {
+
+                }
+
+                @Override
+                public void write(ObjectDataOutput out, Object[] array) throws IOException {
+                    out.writeInt(array.length);
+                    for (int i = 0; i < array.length; i++) {
+                        out.writeObject(array[i]);
+                    }
+                }
+
+                @Override
+                public Object[] read(ObjectDataInput in) throws IOException {
+                    int length = in.readInt();
+                    Object[] array = new Object[length];
+                    for (int i = 0; i < array.length; i++) {
+                        array[i] = in.readObject();
+                    }
+                    return array;
+                }
+            };
+        }
+
+        @Override
+        public boolean isOverwritable() {
+            return true;
+        }
     }
 
     public static final class MapEntry implements SerializerHook<Map.Entry> {
