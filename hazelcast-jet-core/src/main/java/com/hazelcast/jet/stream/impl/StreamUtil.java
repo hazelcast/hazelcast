@@ -16,27 +16,15 @@
 
 package com.hazelcast.jet.stream.impl;
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.JetInstanceImpl;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.util.UuidUtil;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.jet.impl.util.Util.unchecked;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
 
@@ -87,22 +75,5 @@ public final class StreamUtil {
 
     private static String randomName() {
         return UuidUtil.newUnsecureUUID().toString();
-    }
-
-    public static JetInstance getJetInstance(DistributedObject object) {
-        if (object instanceof AbstractDistributedObject) {
-            HazelcastInstance hz = ((AbstractDistributedObject) object).getNodeEngine().getHazelcastInstance();
-            return new JetInstanceImpl((HazelcastInstanceImpl) hz);
-        } else if (object instanceof ClientProxy) {
-            try {
-                Method method = ClientProxy.class.getDeclaredMethod("getContext");
-                method.setAccessible(true);
-                ClientContext context = (ClientContext) method.invoke(object);
-                return new JetClientInstanceImpl((HazelcastClientInstanceImpl) context.getHazelcastInstance());
-            } catch (Exception e) {
-                throw rethrow(e);
-            }
-        }
-        throw new IllegalArgumentException(object + " is not of a known proxy type");
     }
 }
