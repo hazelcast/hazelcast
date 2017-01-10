@@ -39,17 +39,17 @@ public class HTTPCommunicator {
         this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
     }
 
-    public String poll(String queueName, long timeout) throws IOException {
+    public String queuePoll(String queueName, long timeout) throws IOException {
         String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
         return doGet(url);
     }
 
-    public int size(String queueName) throws IOException {
+    public int queueSize(String queueName) throws IOException {
         String url = address + "queues/" + queueName + "/size";
         return Integer.parseInt(doGet(url));
     }
 
-    public int offer(String queueName, String data) throws IOException {
+    public int queueOffer(String queueName, String data) throws IOException {
         final String url = address + "queues/" + queueName;
         final HttpURLConnection urlConnection = setupConnection(url, "POST");
 
@@ -63,7 +63,7 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
-    public String get(String mapName, String key) throws IOException {
+    public String mapGet(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
         return doGet(url);
     }
@@ -79,7 +79,7 @@ public class HTTPCommunicator {
         return doGet(url);
     }
 
-    public int put(String mapName, String key, String value) throws IOException {
+    public int mapPut(String mapName, String key, String value) throws IOException {
         final String url = address + "maps/" + mapName + "/" + key;
         final HttpURLConnection urlConnection = setupConnection(url, "POST");
 
@@ -93,12 +93,12 @@ public class HTTPCommunicator {
         return urlConnection.getResponseCode();
     }
 
-    public int deleteAll(String mapName) throws IOException {
+    public int mapDeleteAll(String mapName) throws IOException {
         String url = address + "maps/" + mapName;
         return setupConnection(url, "DELETE").getResponseCode();
     }
 
-    public int delete(String mapName, String key) throws IOException {
+    public int mapDelete(String mapName, String key) throws IOException {
         String url = address + "maps/" + mapName + "/" + key;
         return setupConnection(url, "DELETE").getResponseCode();
     }
@@ -209,9 +209,13 @@ public class HTTPCommunicator {
         HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
         try {
             InputStream inputStream = httpUrlConnection.getInputStream();
-            byte[] buffer = new byte[4096];
-            int readBytes = inputStream.read(buffer);
-            return readBytes == -1 ? "" : new String(buffer, 0, readBytes);
+            StringBuilder builder = new StringBuilder();
+            byte[] buffer = new byte[1024];
+            int readBytes;
+            while ((readBytes = inputStream.read(buffer)) > -1) {
+                builder.append(new String(buffer, 0, readBytes));
+            }
+            return builder.toString();
         } finally {
             httpUrlConnection.disconnect();
         }
