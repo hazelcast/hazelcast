@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -219,15 +220,15 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testQuorumEventProvidesCorrectMemberListSize() throws Exception {
-        final CountDownLatch belowLatch = new CountDownLatch(1);
+        final CountDownLatch belowLatch = new CountDownLatch(2);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
         listenerConfig.setImplementation(new QuorumListener() {
             public void onChange(QuorumEvent quorumEvent) {
                 if (!quorumEvent.isPresent()) {
                     Collection<Member> currentMembers = quorumEvent.getCurrentMembers();
-                    assertEquals(2, currentMembers.size());
                     assertEquals(3, quorumEvent.getThreshold());
+                    assertTrue(currentMembers.size() < quorumEvent.getThreshold());
                     belowLatch.countDown();
                 }
             }
