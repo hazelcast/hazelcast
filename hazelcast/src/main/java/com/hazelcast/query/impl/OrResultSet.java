@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
 /**
  * Or result set for Predicates.
  */
@@ -46,6 +47,15 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public Iterator<QueryableEntry> iterator() {
+        return getEntries().iterator();
+    }
+
+    @Override
+    public int size() {
+        return getEntries().size();
+    }
+
+    private Set<QueryableEntry> getEntries() {
         if (entries == null) {
             if (indexedResults.isEmpty()) {
                 entries = Collections.emptySet();
@@ -60,15 +70,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 }
             }
         }
-        return entries.iterator();
+        return entries;
     }
 
-    @Override
-    public int size() {
-        if (indexedResults.isEmpty()) {
-            return 0;
-        } else {
-            return indexedResults.get(0).size();
-        }
-    }
 }
