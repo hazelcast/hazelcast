@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
@@ -152,18 +151,18 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of processor that, for each received item, emits all
-     * the items from the stream returned by the given item-to-stream function.
+     * Returns a supplier of {@link TransformP} processors with the given
+     * item-to-traverser function.
      *
-     * @param mapper function that maps an item to a stream of output items
+     * @param mapper function that maps the received item to a traverser over output items
      * @param <T> received item type
      * @param <R> emitted item type
      */
     @Nonnull
     public static <T, R> ProcessorSupplier flatMap(
-            @Nonnull Distributed.Function<? super T, ? extends Stream<? extends R>> mapper
+            @Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return ProcessorSupplier.of(() -> new TransformP<T, R>(item -> traverseStream(mapper.apply(item))));
+        return ProcessorSupplier.of(() -> new TransformP<T, R>(mapper));
     }
 
     /**
