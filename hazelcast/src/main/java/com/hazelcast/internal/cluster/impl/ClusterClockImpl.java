@@ -44,11 +44,17 @@ public class ClusterClockImpl implements ClusterClock {
         return Clock.currentTimeMillis() + clusterTimeDiff;
     }
 
+    /**
+     * Calculate and set the cluster clock diff.
+     *
+     * @param masterTime the cluster clock timestamp sent by the master node
+     */
     public void setMasterTime(long masterTime) {
         long diff = masterTime - Clock.currentTimeMillis();
         setClusterTimeDiff(diff);
     }
 
+    /** Set the cluster time diff and records the maximum observed cluster time diff */
     void setClusterTimeDiff(long diff) {
         if (logger.isFineEnabled()) {
             logger.fine("Setting cluster time diff to " + diff + "ms.");

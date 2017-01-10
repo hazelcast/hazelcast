@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+/** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
 public final class HeartbeatOperation extends AbstractClusterOperation {
 
     private long timestamp;

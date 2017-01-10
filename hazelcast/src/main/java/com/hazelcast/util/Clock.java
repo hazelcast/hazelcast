@@ -37,6 +37,7 @@ public final class Clock {
     private Clock() {
     }
 
+    /** Returns the current time in ms for the configured {@link ClockImpl} */
     public static long currentTimeMillis() {
         return CLOCK.currentTimeMillis();
     }
@@ -80,7 +81,7 @@ public final class Clock {
     }
 
     /**
-     * Default clock implementation, which is used if no properties are defined.
+     * Default clock implementation, which is used if no properties are defined. It will return the system time.
      */
     private static final class SystemClock extends ClockImpl {
 
@@ -91,7 +92,8 @@ public final class Clock {
     }
 
     /**
-     * Clock implementation with static offset, which is used if {@link ClockProperties#HAZELCAST_CLOCK_OFFSET} is defined.
+     * Clock implementation that returns the system time with a static offset, which is used if
+     * {@link ClockProperties#HAZELCAST_CLOCK_OFFSET} is defined.
      */
     private static final class SystemOffsetClock extends ClockImpl {
 

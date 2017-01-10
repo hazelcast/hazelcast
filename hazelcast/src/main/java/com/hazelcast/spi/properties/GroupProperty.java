@@ -176,8 +176,11 @@ public final class GroupProperty {
     public static final HazelcastProperty MAP_LOAD_CHUNK_SIZE
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 
+    /** The delay until the first run of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler} */
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.first.run.delay.seconds", 300, SECONDS);
+
+    /** The interval between invocations of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler} */
     public static final HazelcastProperty MERGE_NEXT_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.next.run.delay.seconds", 120, SECONDS);
 
@@ -286,12 +289,22 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.max.join.merge.target.seconds", 20, SECONDS);
     public static final HazelcastProperty HEARTBEAT_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.heartbeat.interval.seconds", 5, SECONDS);
+    /**
+     * The timeout which defines when a cluster member is removed because it has not sent any heartbeats.
+     */
     public static final HazelcastProperty MAX_NO_HEARTBEAT_SECONDS
             = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 300, SECONDS);
+
+    /** The interval at which master confirmations are sent from non-master nodes to the master node */
     public static final HazelcastProperty MASTER_CONFIRMATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.master.confirmation.interval.seconds", 30, SECONDS);
+    /**
+     * The timeout which defines when a cluster member is removed because it has not sent any master confirmations.
+     */
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
             = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 350, SECONDS);
+
+    /** The interval at which the master sends the member lists are sent to other non-master members */
     public static final HazelcastProperty MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.member.list.publish.interval.seconds", 300, SECONDS);
 
@@ -301,10 +314,20 @@ public final class GroupProperty {
     public static final HazelcastProperty CLUSTER_SHUTDOWN_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.cluster.shutdown.timeout.seconds", 900, SECONDS);
 
+    /**
+     * If a member should be pinged when a sufficient amount of heartbeats have passed and the member has not sent any
+     * heartbeats. If the member is not reachable, it will be removed.
+     */
     public static final HazelcastProperty ICMP_ENABLED
             = new HazelcastProperty("hazelcast.icmp.enabled", false);
+
+    /** Ping timeout in milliseconds. */
     public static final HazelcastProperty ICMP_TIMEOUT
             = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
+    /**
+     * Ping TTL (maximum numbers of hops to try the maximum numbers of hops the packets should go through or 0 for the
+     * default.
+     */
     public static final HazelcastProperty ICMP_TTL
             = new HazelcastProperty("hazelcast.icmp.ttl", 0);
 
