@@ -156,7 +156,8 @@ public class MapConfig {
     // and #setCacheDeserializedValues()
     private boolean optimizeQueryExplicitlyInvoked;
     private boolean setCacheDeserializedValuesExplicitlyInvoked;
-
+    
+    private boolean forceDefensiveCopy = true;
 
     public MapConfig(String name) {
         this.name = name;
@@ -180,6 +181,7 @@ public class MapConfig {
         this.mapStoreConfig = config.mapStoreConfig != null ? new MapStoreConfig(config.mapStoreConfig) : null;
         this.nearCacheConfig = config.nearCacheConfig != null ? new NearCacheConfig(config.nearCacheConfig) : null;
         this.readBackupData = config.readBackupData;
+        this.forceDefensiveCopy = config.forceDefensiveCopy;
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
@@ -869,6 +871,21 @@ public class MapConfig {
         this.quorumName = quorumName;
     }
 
+    /**
+     * @return the forceDefensiveCopy
+     */
+    public boolean isForceDefensiveCopy() {
+        return this.forceDefensiveCopy;
+    }
+
+    /**
+     * @param forceDefensiveCopy the forceDefensiveCopy to set
+     */
+    public MapConfig setForceDefensiveCopy(boolean forceDefensiveCopy) {
+        this.forceDefensiveCopy = forceDefensiveCopy;
+        return this;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -903,6 +920,7 @@ public class MapConfig {
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + cacheDeserializedValues.hashCode();
         result = prime * result + (this.readBackupData ? 1231 : 1237);
+        result = prime * result + (this.forceDefensiveCopy ? 1231 : 1237);
         return result;
     }
 
@@ -925,6 +943,7 @@ public class MapConfig {
                         && this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
                         && this.timeToLiveSeconds == other.timeToLiveSeconds
                         && this.readBackupData == other.readBackupData
+                        && this.forceDefensiveCopy == other.forceDefensiveCopy
                         && (this.cacheDeserializedValues == other.cacheDeserializedValues)
                         && (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null)
                         && (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat)
@@ -954,6 +973,7 @@ public class MapConfig {
                 + ", minEvictionCheckMillis=" + minEvictionCheckMillis
                 + ", maxSizeConfig=" + maxSizeConfig
                 + ", readBackupData=" + readBackupData
+                + ", forceDefensiveCopy=" + forceDefensiveCopy
                 + ", hotRestart=" + hotRestartConfig
                 + ", nearCacheConfig=" + nearCacheConfig
                 + ", mapStoreConfig=" + mapStoreConfig

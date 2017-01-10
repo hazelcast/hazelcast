@@ -1179,6 +1179,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 mapConfig.setHotRestartConfig(createHotRestartConfig(node));
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(getBooleanValue(value));
+            } else if ("force-defensive-copy".equals(nodeName)) {
+                mapConfig.setForceDefensiveCopy(getBooleanValue(value));
             } else if ("statistics-enabled".equals(nodeName)) {
                 mapConfig.setStatisticsEnabled(getBooleanValue(value));
             } else if ("optimize-queries".equals(nodeName)) {

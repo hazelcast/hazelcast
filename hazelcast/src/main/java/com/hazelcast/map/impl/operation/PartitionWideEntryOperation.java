@@ -74,10 +74,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             }
 
             Map.Entry entry = createMapEntry(dataKey, oldValue);
-            Data response = process(entry);
-            if (response != null) {
-                responses.add(dataKey, response);
-            }
+            processToEntries(dataKey, entry, responses);
 
             // first call noOp, other if checks below depends on it.
             if (noOp(entry, oldValue, now)) {

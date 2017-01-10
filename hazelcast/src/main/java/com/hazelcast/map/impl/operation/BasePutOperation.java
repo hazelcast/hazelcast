@@ -30,7 +30,7 @@ import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    protected transient Data dataOldValue;
+    protected transient Object oldValue;
     protected transient EntryEventType eventType;
     protected transient boolean putTransient;
 
@@ -50,7 +50,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapServiceContext.interceptAfterPut(name, dataValue);
         Object value = isPostProcessing(recordStore) ? recordStore.getRecord(dataKey).getValue() : dataValue;
 
-        mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(), dataKey, dataOldValue, value);
+        mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(), dataKey, oldValue, value);
         invalidateNearCache(dataKey);
         publishWANReplicationEvent(mapEventPublisher, value);
         evict(dataKey);
@@ -72,7 +72,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     private EntryEventType getEventType() {
         if (eventType == null) {
-            eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+            eventType = oldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         }
         return eventType;
     }

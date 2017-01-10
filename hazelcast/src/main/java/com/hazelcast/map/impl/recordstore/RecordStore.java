@@ -104,6 +104,19 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     Data readBackupData(Data key);
 
+    /**
+     * Called when {@link com.hazelcast.config.MapConfig#isReadBackupData} is <code>true</code> from
+     * {@link com.hazelcast.map.impl.proxy.MapProxySupport#getInternal}
+     * <p/>
+     * Returns corresponding value for key as {@link com.hazelcast.nio.serialization.Data}.
+     * This will only add an extra serialization step if {@link MapConfig#isForceDefensiveCopy()}. 
+     * For the reason of the potential needs for a defensive copy, please see issue 1292 on github.
+     *
+     * @param key key to be accessed
+     * @return value based on {@link com.hazelcast.config.InMemoryFormat}
+     */
+    Object readBackup(Data key);
+
     MapEntries getAll(Set<Data> keySet);
 
     boolean containsKey(Data dataKey);

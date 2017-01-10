@@ -643,6 +643,32 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return mapServiceContext.toData(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object readBackup(Data key) {
+        final long now = getNow();
+        
+        final Record  record = getRecord(key);
+        
+        if (record == null) {
+            return null;
+        }
+
+        // expiration has delay on backups, but reading backup data should not be affected by this delay.
+        // this is the reason why we are passing `false` to isExpired() method.
+        final boolean expired = isExpired(record, now, false);
+        if (expired) {
+            return null;
+        }
+        final MapServiceContext mapServiceContext = this.mapServiceContext;
+        final Object value = record.getValue();
+        mapServiceContext.interceptAfterGet(name, value);
+
+        return this.mapContainer.getMapConfig().isForceDefensiveCopy() ? mapServiceContext.toData(value) : value;
+    }
+
     @Override
     public MapEntries getAll(Set<Data> keys) {
         checkIfLoaded();
@@ -707,8 +733,15 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         value = mapServiceContext.interceptGet(name, value);
         final Data dataKey = mapServiceContext.toData(key);
+        if (this.mapContainer.getMapConfig().isForceDefensiveCopy())
+        {
         final Data dataValue = mapServiceContext.toData(value);
         mapEntries.add(dataKey, dataValue);
+    }
+        else
+        {
+            mapEntries.add(dataKey, value, serializationService);
+        }
     }
 
     protected void addMapEntrySet(Map<Object, Object> entries, MapEntries mapEntries) {

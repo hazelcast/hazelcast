@@ -32,9 +32,9 @@ public class PutIfAbsentOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        final Object oldValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
-        dataOldValue = mapServiceContext.toData(oldValue);
-        successful = dataOldValue == null;
+        final Object prevValue = recordStore.putIfAbsent(dataKey, dataValue, ttl);
+        oldValue = this.mapContainer.getMapConfig().isForceDefensiveCopy() ?  mapServiceContext.toData(prevValue) : prevValue;
+        successful = oldValue == null;
     }
 
     @Override
@@ -46,7 +46,7 @@ public class PutIfAbsentOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override

@@ -32,8 +32,8 @@ public class ReplaceOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        Object oldValue = recordStore.replace(dataKey, dataValue);
-        dataOldValue = mapServiceContext.toData(oldValue);
+        Object prevValue = recordStore.replace(dataKey, dataValue);
+        oldValue = this.mapContainer.getMapConfig().isForceDefensiveCopy() ? mapServiceContext.toData(prevValue) : prevValue;
         successful = oldValue != null;
     }
 
@@ -52,7 +52,7 @@ public class ReplaceOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override

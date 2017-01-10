@@ -245,6 +245,17 @@ abstract class AbstractMultipleEntryOperation extends MapOperation implements Mu
         return toData(result);
     }
 
+    protected void processToEntries(Data key, Map.Entry entry, MapEntries mapEntries) {
+        final Object result = entryProcessor.process(entry);
+        if (result != null) {
+            if (this.mapContainer.getMapConfig().isForceDefensiveCopy()) {
+                mapEntries.add(key, toData(result));
+            } else {
+                mapEntries.add(key, result, this.mapServiceContext.getNodeEngine().getSerializationService());
+            }
+        }
+    }
+
     protected void processBackup(Map.Entry entry) {
         backupProcessor.processBackup(entry);
     }

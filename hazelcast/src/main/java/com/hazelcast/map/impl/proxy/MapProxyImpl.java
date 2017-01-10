@@ -126,7 +126,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         Data key = toData(k, partitionStrategy);
         Data value = toData(v);
-        Data result = putInternal(key, value, ttl, timeunit);
+        Object result = putInternal(key, value, ttl, timeunit);
         return toObject(result);
     }
 
@@ -152,7 +152,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         Data key = toData(k, partitionStrategy);
         Data value = toData(v);
-        Data result = putIfAbsentInternal(key, value, ttl, timeunit);
+        Object result = putIfAbsentInternal(key, value, ttl, timeunit);
         return toObject(result);
     }
 
@@ -360,15 +360,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             requestedKeys.add(dataKey);
         }
 
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keys.size());
-        getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
-
-        Map<K, V> result = MapUtil.createHashMap(keys.size());
-        for (int i = 0; i < resultingKeyValuePairs.size(); ) {
-            K key = toObject(resultingKeyValuePairs.get(i++));
-            V value = toObject(resultingKeyValuePairs.get(i++));
-            result.put(key, value);
-        }
+        final Map<K, V> result = MapUtil.createHashMap(keys.size());
+        getAllObjectInternal(requestedKeys, result);
+        
         return result;
     }
 

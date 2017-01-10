@@ -295,7 +295,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Object getInternal(Data key) {
         // todo action for read-backup true is not well tested.
         if (getMapConfig().isReadBackupData()) {
-            Object fromBackup = readBackupDataOrNull(key);
+            Object fromBackup = readBackupOrNull(key);
             if (fromBackup != null) {
                 return fromBackup;
             }
@@ -305,7 +305,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return invokeOperation(key, operation);
     }
 
-    private Data readBackupDataOrNull(Data key) {
+    private Object readBackupOrNull(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);
         if (!partition.isOwnerOrBackup(thisAddress)) {
@@ -316,22 +316,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (recordStore == null) {
             return null;
         }
-        return recordStore.readBackupData(key);
+        return recordStore.readBackup(key);
     }
 
-    protected InternalCompletableFuture<Data> getAsyncInternal(Data key) {
+    protected InternalCompletableFuture<Object> getAsyncInternal(Data key) {
         int partitionId = partitionService.getPartitionId(key);
 
         MapOperation operation = operationProvider.createGetOperation(name, key);
         try {
             long startTime = System.currentTimeMillis();
-            InternalCompletableFuture<Data> future = operationService
+            InternalCompletableFuture<Object> future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .setResultDeserialized(false)
                     .invoke();
 
             if (statisticsEnabled) {
-                future.andThen(new IncrementStatsExecutionCallback<Data>(operation, startTime));
+                future.andThen(new IncrementStatsExecutionCallback<Object>(operation, startTime));
             }
 
             return future;
@@ -340,9 +340,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected Object putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         MapOperation operation = operationProvider.createPutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        return (Data) invokeOperation(key, operation);
+        return invokeOperation(key, operation);
     }
 
     protected boolean tryPutInternal(Data key, Data value, long timeout, TimeUnit timeunit) {
@@ -350,9 +350,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Boolean) invokeOperation(key, operation);
     }
 
-    protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+    protected Object putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         MapOperation operation = operationProvider.createPutIfAbsentOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        return (Data) invokeOperation(key, operation);
+        return invokeOperation(key, operation);
     }
 
     protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
@@ -418,9 +418,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return (Boolean) invokeOperation(key, operation);
     }
 
-    protected Data replaceInternal(Data key, Data value) {
+    protected Object replaceInternal(Data key, Data value) {
         MapOperation operation = operationProvider.createReplaceOperation(name, key, value);
-        return (Data) invokeOperation(key, operation);
+        return invokeOperation(key, operation);
     }
 
     //warning: When UpdateEvent is fired it does *NOT* contain oldValue.
@@ -665,7 +665,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
+    protected <K, V> void getAllObjectInternal(List<Data> keys, Map<K, V> resultingKeyValuePairs) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
@@ -681,8 +681,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
                 for (int i = 0; i < entries.size(); i++) {
-                    resultingKeyValuePairs.add(toObject(entries.getKey(i)));
-                    resultingKeyValuePairs.add(toObject(entries.getValue(i)));
+                    final K key = toObject(entries.getKey(i));
+                    final V value = toObject(entries.getObjectValue(i));
+                    resultingKeyValuePairs.put(key, value);
                 }
             }
             localMapStats.incrementGets(keys.size(), System.currentTimeMillis() - time);

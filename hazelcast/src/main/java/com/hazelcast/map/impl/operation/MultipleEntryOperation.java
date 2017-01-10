@@ -70,10 +70,7 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
                 continue;
             }
 
-            Data response = process(entry);
-            if (response != null) {
-                responses.add(key, response);
-            }
+            processToEntries(key, entry, responses);
 
             // first call noOp, other if checks below depends on it.
             if (noOp(entry, value, now)) {

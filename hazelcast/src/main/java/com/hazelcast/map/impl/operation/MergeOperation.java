@@ -58,7 +58,9 @@ public class MergeOperation extends BasePutOperation {
     public void run() {
         Record oldRecord = recordStore.getRecord(dataKey);
         if (oldRecord != null) {
-            dataOldValue = mapServiceContext.toData(oldRecord.getValue());
+            final Object putResult = oldRecord.getValue();
+            this.oldValue = this.mapContainer.getMapConfig().isForceDefensiveCopy() ? mapServiceContext.toData(putResult)
+                    : putResult;
         }
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
@@ -84,8 +86,8 @@ public class MergeOperation extends BasePutOperation {
     public void afterRun() {
         if (merged) {
             mapServiceContext.interceptAfterPut(name, dataValue);
-            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, dataOldValue,
-                    dataValue, mergingValue);
+            mapEventPublisher.publishEvent(getCallerAddress(), name, EntryEventType.MERGED, dataKey, oldValue, dataValue,
+                    mergingValue);
             invalidateNearCache(dataKey);
             evict(dataKey);
         }

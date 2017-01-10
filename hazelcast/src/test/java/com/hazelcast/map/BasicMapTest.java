@@ -17,6 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -26,21 +28,28 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -54,26 +63,59 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class BasicMapTest extends HazelcastTestSupport {
 
     private static final int INSTANCE_COUNT = 3;
     private static final Random RANDOM = new Random();
+    
+    @Parameter(0)
+    public boolean defensiveCopy;
+    
+    @Parameter(1)
+    public boolean readFromBackups;
 
     HazelcastInstance[] instances;
+
+    @Parameters(name = "Defensive copy: [{0}]  Read from backups: [{1}]")
+    public static Iterable<Object[]> parameters() {
+        final List<Object[]> params = new ArrayList<Object[]>(4);
+
+        for (int i = 0; i < 2; ++i) {
+            for (int j = 0; j < 2; ++j) {
+                params.add(new Object[] { i == 0, j == 0 });
+            }
+        }
+
+        return params;
+    }
 
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(INSTANCE_COUNT);
         Config config = getConfig();
+        final MapConfig mapConfig = config.getMapConfig("default");
+        if (!defensiveCopy)
+        {
+            mapConfig.setForceDefensiveCopy(false);
+            mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
+        }
+        if (readFromBackups)
+        {
+            mapConfig.setAsyncBackupCount(0);
+            mapConfig.setBackupCount(1);
+            mapConfig.setReadBackupData(true);
+        }
+        else
+        {
+            mapConfig.setAsyncBackupCount(1);
+            mapConfig.setBackupCount(0);
+            mapConfig.setReadBackupData(false);
+        }
         instances = factory.newInstances(config);
     }
 
@@ -116,39 +158,76 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         boolean[] booleanArray = {true, false};
         map.put("boolean", booleanArray);
-        assertTrue(Arrays.equals(booleanArray, (boolean[]) map.get("boolean")));
+        final boolean[] actualBooleanArray = (boolean[]) map.get("boolean");
+        assertTrue(Arrays.equals(booleanArray, actualBooleanArray));
+        assertValue(map, "boolean", actualBooleanArray);
 
         int[] intArray = {1, 2};
         map.put("int", intArray);
-        assertArrayEquals(intArray, (int[]) map.get("int"));
+        final int[] actualIntArray = (int[]) map.get("int");
+        assertArrayEquals(intArray, actualIntArray);
+        assertValue(map, "int", actualIntArray);
 
         short[] shortArray = {(short) 1, (short) 2};
         map.put("short", shortArray);
-        assertArrayEquals(shortArray, (short[]) map.get("short"));
+        final short[] actualShortArray = (short[]) map.get("short");
+        assertArrayEquals(shortArray, actualShortArray);
+        assertValue(map, "short", actualShortArray);
 
-        short[] byteArray = {(byte) 1, (byte) 2};
+        byte[] byteArray = {(byte) 1, (byte) 2};
         map.put("byte", byteArray);
-        assertArrayEquals(byteArray, (short[]) map.get("byte"));
+        final byte[] actualByteArray = (byte[]) map.get("byte");
+        assertArrayEquals(byteArray, actualByteArray);
+        assertValue(map, "byte", actualByteArray);
 
         long[] longArray = {1L, 2L};
         map.put("long", longArray);
-        assertArrayEquals(longArray, (long[]) map.get("long"));
+        final long[] actualLongArray = (long[]) map.get("long");
+        assertArrayEquals(longArray, actualLongArray);
+        assertValue(map, "long", actualLongArray);
 
         float[] floatArray = {(float) 1, (float) 2};
         map.put("float", floatArray);
-        assertTrue(Arrays.equals(floatArray, (float[]) map.get("float")));
+        final float[] actualFloatArray = (float[]) map.get("float");
+        assertTrue(Arrays.equals(floatArray, actualFloatArray));
+        assertValue(map, "float", actualFloatArray);
 
         double[] doubleArray = {(double) 1, (double) 2};
         map.put("double", doubleArray);
-        assertTrue(Arrays.equals(doubleArray, (double[]) map.get("double")));
+        final double[] actualDoubleArray = (double[]) map.get("double");
+        assertTrue(Arrays.equals(doubleArray, actualDoubleArray));
+        assertValue(map, "double", actualDoubleArray);
 
         char[] charArray = {'1', '2'};
         map.put("char", charArray);
-        assertArrayEquals(charArray, (char[]) map.get("char"));
+        final char[] actualCharArray = (char[]) map.get("char");
+        assertArrayEquals(charArray, actualCharArray);
+        assertValue(map, "char", actualCharArray);
 
         Object[] objectArray = {"foo", null, Integer.decode("3")};
         map.put("object", objectArray);
-        assertArrayEquals(objectArray, (Object[]) map.get("object"));
+        final Object[] actualObjectArray = (Object[]) map.get("object");
+        assertArrayEquals(objectArray, actualObjectArray);
+        assertValue(map, "object", actualObjectArray);
+
+        final Set<String> keys = map.keySet();
+        final Map<String, Object> entries = map.getAll(keys);
+        for (Map.Entry<String, Object> entry : entries.entrySet()){
+            assertValue(map, entry.getKey(), entry.getValue());
+        }
+    }
+    
+    private void assertValue(IMap<String, Object> map, String key, Object v1) {
+        if (defensiveCopy) {
+            assertNotSame(map.get(key), v1);
+        } else {
+            final Set<String> localKeys = map.localKeySet();
+            // TODO: anyway to identify what should be locally backed up to
+            // assert those the same?
+            if (localKeys.contains(key)) {
+                assertSame(map.get(key), v1);
+            }
+        }
     }
 
     @Test
@@ -671,9 +750,17 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertEquals((Integer) 22, entryView2.getValue());
         assertEquals((Integer) 3, entryView3.getValue());
 
-        assertEquals(2, entryView1.getHits());
-        assertEquals(3, entryView2.getHits());
-        assertEquals(3, entryView3.getHits());
+        //when reading from backups, hit counts and access time not tracked if actually read from a backup
+        if (!readFromBackups)
+        {
+            assertEquals(2, entryView1.getHits());
+            assertEquals(3, entryView2.getHits());
+            assertEquals(3, entryView3.getHits());
+
+            assertTrue(entryView1.getLastAccessTime() >= time1 && entryView1.getLastAccessTime() <= time2);
+            assertTrue(entryView2.getLastAccessTime() >= time3);
+            assertTrue(entryView3.getLastAccessTime() >= time2 && entryView3.getLastAccessTime() <= time3);
+        }
 
         assertEquals(1, entryView1.getVersion());
         assertEquals(2, entryView2.getVersion());
@@ -683,13 +770,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         assertTrue(entryView2.getCreationTime() >= time1 && entryView2.getCreationTime() <= time2);
         assertTrue(entryView3.getCreationTime() >= time1 && entryView3.getCreationTime() <= time2);
 
-        assertTrue(entryView1.getLastAccessTime() >= time1 && entryView1.getLastAccessTime() <= time2);
-        assertTrue(entryView2.getLastAccessTime() >= time3);
-        assertTrue(entryView3.getLastAccessTime() >= time2 && entryView3.getLastAccessTime() <= time3);
-
         assertTrue(entryView1.getLastUpdateTime() >= time1 && entryView1.getLastUpdateTime() <= time2);
         assertTrue(entryView2.getLastUpdateTime() >= time3);
-        assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
+assertTrue(entryView3.getLastUpdateTime() >= time1 && entryView3.getLastUpdateTime() <= time2);
     }
 
     @Test

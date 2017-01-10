@@ -318,6 +318,7 @@
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="force-defensive-copy" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:annotation>

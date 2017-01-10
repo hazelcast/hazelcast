@@ -27,7 +27,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 
 public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
-    private Data result;
+    private Object result;
 
     public GetOperation() {
     }
@@ -40,7 +40,8 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
 
     @Override
     public void run() {
-        result = mapServiceContext.toData(recordStore.get(dataKey, false));
+        final Object storeData = recordStore.get(dataKey, false);
+        result = this.mapContainer.getMapConfig().isForceDefensiveCopy() ? mapServiceContext.toData(storeData) : storeData;
     }
 
     @Override
@@ -67,7 +68,7 @@ public final class GetOperation extends ReadonlyKeyBasedMapOperation implements 
     }
 
     @Override
-    public Data getResponse() {
+    public Object getResponse() {
         return result;
     }
 

@@ -405,4 +405,18 @@ public class MapConfigTest {
         // then
         assertEquals(mapConfig, otherMapConfig);
     }
+
+    @Test
+    public void testDefaultTrueDefensiveCopy() {
+        MapConfig mapConfig = new MapConfig();
+
+        assertTrue(mapConfig.isForceDefensiveCopy());
+    }
+
+    @Test
+    public void testDefensiveCopyFalse() {
+        MapConfig mapConfig = new MapConfig();
+        mapConfig.setForceDefensiveCopy(false);
+        assertFalse(mapConfig.isForceDefensiveCopy());
+    }
 }

@@ -118,20 +118,20 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected InternalCompletableFuture<Data> getAsyncInternal(final Data key) {
+    protected InternalCompletableFuture<Object> getAsyncInternal(final Data key) {
         Object value = nearCache.get(key);
         if (value != null) {
             if (isCachedNull(value)) {
                 value = null;
             }
-            return new CompletedFuture<Data>(
+            return new CompletedFuture<Object>(
                     getNodeEngine().getSerializationService(),
                     value,
                     getNodeEngine().getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
 
         final boolean marked = keyStateMarker.markIfUnmarked(key);
-        InternalCompletableFuture<Data> future;
+        InternalCompletableFuture<Object> future;
         try {
             future = super.getAsyncInternal(key);
         } catch (Throwable t) {
@@ -139,9 +139,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             throw rethrow(t);
         }
 
-        future.andThen(new ExecutionCallback<Data>() {
+        future.andThen(new ExecutionCallback<Object>() {
             @Override
-            public void onResponse(Data value) {
+            public void onResponse(Object value) {
                 if (marked) {
                     tryToPutNearCache(key, value);
                 }
@@ -161,8 +161,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data = super.putInternal(key, value, ttl, timeunit);
+    protected Object putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        Object data = super.putInternal(key, value, ttl, timeunit);
         invalidateCache(key);
         return data;
     }
@@ -175,8 +175,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        Data data = super.putIfAbsentInternal(key, value, ttl, timeunit);
+    protected Object putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
+        Object data = super.putIfAbsentInternal(key, value, ttl, timeunit);
         invalidateCache(key);
         return data;
     }
@@ -209,8 +209,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected Data replaceInternal(Data key, Data value) {
-        Data replaceInternal = super.replaceInternal(key, value);
+    protected Object replaceInternal(Data key, Data value) {
+        Object replaceInternal = super.replaceInternal(key, value);
         invalidateCache(key);
         return replaceInternal;
     }
@@ -304,7 +304,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     @Override
-    protected void getAllObjectInternal(List<Data> keys, List<Object> resultingKeyValuePairs) {
+    protected <K, V> void getAllObjectInternal(List<Data> keys, Map<K, V> resultingKeyValuePairs) {
         getCachedValue(keys, resultingKeyValuePairs);
 
         Map<Data, Boolean> keyStates = createHashMap(keys.size());
@@ -403,7 +403,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         return cached;
     }
 
-    protected void getCachedValue(List<Data> keys, List<Object> resultingKeyValuePairs) {
+    protected <K, V> void getCachedValue(List<Data> keys, Map<K, V> resultingKeyValuePairs) {
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
@@ -412,8 +412,9 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 continue;
             }
             if (!isCachedNull(value)) {
-                resultingKeyValuePairs.add(toObject(key));
-                resultingKeyValuePairs.add(toObject(value));
+                final K keyValue = toObject(key);
+                final V objectValue = toObject(value);
+                resultingKeyValuePairs.put(keyValue, objectValue);
             }
             iterator.remove();
         }

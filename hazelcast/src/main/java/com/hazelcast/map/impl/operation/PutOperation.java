@@ -30,12 +30,13 @@ public class PutOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, ttl));
+        final Object putResult = recordStore.put(dataKey, dataValue, ttl);
+        oldValue = this.mapContainer.getMapConfig().isForceDefensiveCopy() ? mapServiceContext.toData(putResult) : putResult;
     }
 
     @Override
     public Object getResponse() {
-        return dataOldValue;
+        return oldValue;
     }
 
     @Override
