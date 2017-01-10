@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
@@ -41,6 +42,18 @@ public final class ConcurrencyUtil {
 
             if (updater.compareAndSet(obj, current, value)) {
                 return;
+            }
+        }
+    }
+
+    public static boolean setIfGreaterThan(AtomicLong oldValue, long newValue) {
+        while (true) {
+            long local = oldValue.get();
+            if (newValue <= local) {
+                return false;
+            }
+            if (oldValue.compareAndSet(local, newValue)) {
+                return true;
             }
         }
     }

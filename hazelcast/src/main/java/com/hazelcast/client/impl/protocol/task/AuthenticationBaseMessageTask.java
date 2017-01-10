@@ -181,7 +181,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
 
-        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion);
+        clientEngine.trySetLastAuthenticationCorrelationId(principal.getUuid(), clientMessage.getCorrelationId());
+        endpoint.authenticated(principal, credentials, isOwnerConnection(), clientVersion, clientMessage.getCorrelationId());
         setConnectionType();
         logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
                 + ", owner connection : " + isOwnerConnection() + ", client version : " + clientVersion);

@@ -70,6 +70,8 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.ExecutorType;
 
 import javax.security.auth.login.LoginException;
@@ -86,6 +88,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
@@ -100,11 +103,15 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
      */
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
-    public static final int ENDPOINT_REMOVE_DELAY_SECONDS = 10;
-
     private static final int EXECUTOR_QUEUE_CAPACITY_PER_CORE = 100000;
     private static final int THREADS_PER_CORE = 20;
-
+    private static final ConstructorFunction<String, AtomicLong> LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC =
+            new ConstructorFunction<String, AtomicLong>() {
+                @Override
+                public AtomicLong createNew(String arg) {
+                    return new AtomicLong();
+                }
+            };
     private final Node node;
     private final NodeEngineImpl nodeEngine;
     private final Executor executor;
@@ -119,6 +126,9 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     private final MessageTaskFactory messageTaskFactory;
     private final ClientExceptionFactory clientExceptionFactory;
+    private final int endpointRemoveDelaySeconds;
+    private final ConcurrentMap<String, AtomicLong> lastAuthenticationCorrelationIds
+            = new ConcurrentHashMap<String, AtomicLong>();
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -129,7 +139,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.executor = newExecutor();
         this.messageTaskFactory = new CompositeMessageTaskFactory(this.nodeEngine);
         this.clientExceptionFactory = initClientExceptionFactory();
-
+        this.endpointRemoveDelaySeconds = node.getProperties().getInteger(GroupProperty.CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS);
         ClientHeartbeatMonitor heartbeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.getProperties());
         heartbeatMonitor.start();
@@ -293,7 +303,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final String deadMemberUuid = event.getMember().getUuid();
         try {
             nodeEngine.getExecutionService().schedule(new DestroyEndpointTask(deadMemberUuid),
-                    ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                    endpointRemoveDelaySeconds, TimeUnit.SECONDS);
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e);
@@ -349,7 +359,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     }
 
     public void removeClient(String clientUuid) {
-         ownershipMappings.remove(clientUuid);
+        ownershipMappings.remove(clientUuid);
 
         Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
@@ -405,7 +415,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                             public void run() {
                                 callDisconnectionOperation(endpoint);
                             }
-                        }, ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS);
+                        }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
                     } catch (RejectedExecutionException e) {
                         if (logger.isFinestEnabled()) {
                             logger.finest(e);
@@ -427,6 +437,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 return;
             }
 
+            if (getAuthenticationCorrelationId(clientUuid).get() > endpoint.getAuthenticationCorrelationId()) {
+                //a new authentication already made for that client. This check is needed to detect
+                // "a disconnected client is reconnected back to same node"
+                return;
+            }
             ClientDisconnectionOperation op = createClientDisconnectionOperation(clientUuid);
             operationService.run(op);
 
@@ -437,6 +452,16 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 }
             }
         }
+    }
+
+    private AtomicLong getAuthenticationCorrelationId(String clientUuid) {
+        return ConcurrencyUtil.getOrPutIfAbsent(lastAuthenticationCorrelationIds,
+                clientUuid, LAST_AUTH_CORRELATION_ID_CONSTRUCTOR_FUNC);
+    }
+
+    public boolean trySetLastAuthenticationCorrelationId(String clientUuid, long newCorrelationId) {
+        AtomicLong lastCorrelationId = getAuthenticationCorrelationId(clientUuid);
+        return ConcurrencyUtil.setIfGreaterThan(lastCorrelationId, newCorrelationId);
     }
 
     private ClientDisconnectionOperation createClientDisconnectionOperation(String clientUuid) {
