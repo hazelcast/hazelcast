@@ -19,7 +19,6 @@ package com.hazelcast.jet.benchmark;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
@@ -31,7 +30,7 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.AfterClass;
@@ -58,8 +57,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @Category(NightlyTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
-@Ignore
+@RunWith(HazelcastSerialClassRunner.class)
 public class WordCountTest extends HazelcastTestSupport implements Serializable {
 
     private static final int NODE_COUNT = 2;
@@ -72,7 +70,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @AfterClass
     public static void afterClass() {
-        Hazelcast.shutdownAll();
+        Jet.shutdownAll();
     }
 
     @Before
@@ -103,6 +101,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
     @Test
+    @Ignore
     public void testAggregations() {
         final Map<String, Long>[] counts = new Map[1];
         benchmark("aggregations", () -> {
@@ -133,12 +132,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                         .distributed()
                         .partitionedByKey(item -> ((Entry) item).getKey()))
                 .edge(between(combiner, consumer));
-
+        
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
         assertCounts(instance.getMap("counts"));
     }
 
     @Test
+    @Ignore
     public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
         Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
@@ -194,7 +194,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
         logger.info("Test complete");
         System.out.println(times.stream()
-                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
+                                .skip(warmupCount).mapToLong(l -> l).summaryStatistics());
     }
 
     private static void assertCounts(Map<String, Long> wordCounts) {
