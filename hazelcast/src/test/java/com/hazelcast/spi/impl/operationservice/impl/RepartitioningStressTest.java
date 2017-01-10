@@ -63,6 +63,8 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
     private Config config;
     private HazelcastInstance hz;
 
+    private RestartThread restartThread;
+
     @Before
     public void setUp() {
         Hazelcast.shutdownAll();
@@ -78,10 +80,13 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
         for (int i = 0; i < INITIAL_MEMBER_COUNT; i++) {
             queue.add(createHazelcastInstance());
         }
+
+        restartThread = new RestartThread();
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws InterruptedException {
+        restartThread.stopAndJoin();
         Hazelcast.shutdownAll();
     }
 
@@ -100,7 +105,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             map.put(i, 0);
         }
 
-        RestartThread restartThread = new RestartThread();
         restartThread.start();
 
         UpdateThread[] testThreads = new UpdateThread[THREAD_COUNT];
@@ -128,8 +132,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             int found = map.get(i);
             assertEquals("value not the same", expected, found);
         }
-
-        restartThread.stop = true;
     }
 
     @Test
@@ -141,7 +143,7 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        RestartThread restartThread = new RestartThread();
+        restartThread = new RestartThread();
         restartThread.start();
 
         TestThread[] testThreads = new TestThread[THREAD_COUNT];
@@ -170,8 +172,6 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
             thread.join(TimeUnit.MINUTES.toMillis(1));
             thread.assertDiedPeacefully();
         }
-
-        restartThread.stop = true;
     }
 
     private abstract class TestThread extends Thread {
@@ -206,19 +206,27 @@ public class RepartitioningStressTest extends HazelcastTestSupport {
 
     public class RestartThread extends Thread {
 
-        private volatile boolean stop;
+        private volatile boolean stopRequested;
 
         @Override
         public void run() {
-            while (!stop) {
+            while (!stopRequested) {
                 try {
                     sleepSeconds(10);
                     HazelcastInstance hz = queue.take();
                     hz.shutdown();
-                    queue.add(createHazelcastInstance());
+                    if (!Thread.interrupted()) {
+                        queue.add(createHazelcastInstance());
+                    }
                 } catch (InterruptedException ignored) {
                 }
             }
+        }
+
+        public void stopAndJoin() throws InterruptedException {
+            stopRequested = true;
+            interrupt();
+            join();
         }
     }
 
