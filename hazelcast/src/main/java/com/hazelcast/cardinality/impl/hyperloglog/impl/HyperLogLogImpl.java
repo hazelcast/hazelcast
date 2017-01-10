@@ -60,7 +60,6 @@ public class HyperLogLogImpl implements HyperLogLog {
     @Override
     public long estimate() {
         if (cachedEstimate == null) {
-            convertToDenseIfNeeded();
             cachedEstimate = encoder.estimate();
         }
 
@@ -69,6 +68,7 @@ public class HyperLogLogImpl implements HyperLogLog {
 
     @Override
     public void add(long hash) {
+        convertToDenseIfNeeded();
         boolean changed = encoder.add(hash);
         if (changed) {
             cachedEstimate = null;
@@ -103,7 +103,7 @@ public class HyperLogLogImpl implements HyperLogLog {
     }
 
     private void convertToDenseIfNeeded() {
-        boolean shouldConvertToDense = encoder.getEncodingType() == SPARSE
+        boolean shouldConvertToDense = SPARSE.equals(encoder.getEncodingType())
                 && encoder.getMemoryFootprint() >= m;
         if (shouldConvertToDense) {
             encoder = ((SparseHyperLogLogEncoder) encoder).asDense();
