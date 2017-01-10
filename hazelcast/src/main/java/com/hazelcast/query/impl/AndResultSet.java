@@ -28,6 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * And Result set for Predicates.
  */
@@ -35,30 +36,18 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
     private final Set<QueryableEntry> setSmallest;
     private final List<Set<QueryableEntry>> otherIndexedResults;
     private final List<Predicate> lsNoIndexPredicates;
+    private int size;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
                         List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
+        this.size = -1;
     }
 
     public byte[] toByteArray(ObjectDataOutput out) throws IOException {
-        for (QueryableEntry entry : setSmallest) {
-            if (otherIndexedResults != null) {
-                for (Set<QueryableEntry> otherIndexedResult : otherIndexedResults) {
-                    if (!otherIndexedResult.contains(entry)) {
-                        break;
-                    }
-                }
-            }
-            if (lsNoIndexPredicates != null) {
-                for (Predicate noIndexPredicate : lsNoIndexPredicates) {
-                    if (!noIndexPredicate.apply(entry)) {
-                        break;
-                    }
-                }
-            }
+        for (QueryableEntry entry : this) {
             out.writeData(entry.getKeyData());
         }
         return out.toByteArray();
@@ -103,7 +92,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                 return true;
             }
 
-            for (; it.hasNext();) {
+            for (; it.hasNext(); ) {
                 QueryableEntry entry = it.next();
 
                 if (checkOtherIndexedResults(entry) && checkNoIndexPredicates(entry)) {
@@ -161,6 +150,14 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        return setSmallest.size();
+        if (size == -1) {
+            int calculatedSize = 0;
+            for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
+                calculatedSize++;
+            }
+            size = calculatedSize;
+        }
+        return size;
     }
+
 }
