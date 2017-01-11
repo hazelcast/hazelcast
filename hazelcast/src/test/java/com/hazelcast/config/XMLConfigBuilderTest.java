@@ -1051,6 +1051,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testCardinalityEstimatorConfig() {
+        String xml = HAZELCAST_START_TAG
+                + "    <cardinality-estimator name=\"foobar\">\n"
+                + "        <durability>4</durability>\n"
+                + "    </cardinality-estimator>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = config.getCardinalityEstimatorConfig("foobar");
+
+        assertFalse(config.getCardinalityEstimatorConfigs().isEmpty());
+        assertEquals(4, cardinalityEstimatorConfig.getDurability());
+    }
+
+    @Test
     public void testIndexesConfig() {
         String xml = HAZELCAST_START_TAG
                 + "   <map name=\"people\">\n"

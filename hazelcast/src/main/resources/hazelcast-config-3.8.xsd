@@ -65,6 +65,7 @@
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="distributed-classloading" type="distributed-classloading" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="cardinality-estimator" type="cardinality-estimator-service" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1716,6 +1717,25 @@
             <xs:annotation>
                 <xs:documentation>
                     Name of the scheduled executor.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="cardinality-estimator-service">
+        <xs:all>
+            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The durability of the cardinality estimator.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the cardinality estimator.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

@@ -17,6 +17,7 @@
 package com.hazelcast.cardinality.impl;
 
 import com.hazelcast.cardinality.impl.operations.ReplicationOperation;
+import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -50,8 +51,9 @@ public class CardinalityEstimatorService
     private final ConstructorFunction<String, CardinalityEstimatorContainer> cardinalityEstimatorContainerConstructorFunction =
             new ConstructorFunction<String, CardinalityEstimatorContainer>() {
                 @Override
-                public CardinalityEstimatorContainer createNew(String arg) {
-                    return new CardinalityEstimatorContainer();
+                public CardinalityEstimatorContainer createNew(String name) {
+                    CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
+                    return new CardinalityEstimatorContainer(config.getDurability());
                 }
             };
 
@@ -97,15 +99,13 @@ public class CardinalityEstimatorService
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        if (event.getReplicaIndex() > 1) {
-            return null;
-        }
-
         Map<String, CardinalityEstimatorContainer> data = new HashMap<String, CardinalityEstimatorContainer>();
         int partitionId = event.getPartitionId();
         for (Map.Entry<String, CardinalityEstimatorContainer> containerEntry : containers.entrySet()) {
             String name = containerEntry.getKey();
-            if (partitionId == getPartitionId(name)) {
+            CardinalityEstimatorContainer container = containerEntry.getValue();
+
+            if (partitionId == getPartitionId(name) && event.getReplicaIndex() <= container.getDurability()) {
                 data.put(name, containerEntry.getValue());
             }
         }
@@ -117,9 +117,7 @@ public class CardinalityEstimatorService
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             int thresholdReplicaIndex = event.getNewReplicaIndex();
-            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
-                clearPartitionReplica(event.getPartitionId());
-            }
+            clearPartitionReplica(event.getPartitionId(), thresholdReplicaIndex);
         }
     }
 
@@ -127,17 +125,18 @@ public class CardinalityEstimatorService
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             int thresholdReplicaIndex = event.getCurrentReplicaIndex();
-            if (thresholdReplicaIndex == -1 || thresholdReplicaIndex > 1) {
-                clearPartitionReplica(event.getPartitionId());
-            }
+            clearPartitionReplica(event.getPartitionId(), thresholdReplicaIndex);
         }
     }
 
-    private void clearPartitionReplica(int partitionId) {
+    private void clearPartitionReplica(int partitionId, int thresholdReplicaIndex) {
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
-            if (getPartitionId(name) == partitionId) {
+            CardinalityEstimatorContainer container = containers.get(name);
+
+            if (getPartitionId(name) == partitionId
+                    && (thresholdReplicaIndex == -1 || thresholdReplicaIndex > container.getDurability())) {
                 iterator.remove();
             }
         }

@@ -26,10 +26,17 @@ import java.io.IOException;
 
 public class CardinalityEstimatorContainer implements IdentifiedDataSerializable {
 
+    private int durability;
+
     private HyperLogLog hll;
 
     public CardinalityEstimatorContainer() {
         hll = new HyperLogLogImpl();
+    }
+
+    public CardinalityEstimatorContainer(int durability) {
+        this();
+        this.durability = durability;
     }
 
     public void add(long hash) {
@@ -40,14 +47,20 @@ public class CardinalityEstimatorContainer implements IdentifiedDataSerializable
         return hll.estimate();
     }
 
+    public int getDurability() {
+        return durability;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(hll);
+        out.writeInt(durability);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         hll = in.readObject();
+        durability = in.readInt();
     }
 
     @Override

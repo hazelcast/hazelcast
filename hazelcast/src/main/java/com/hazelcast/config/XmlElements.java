@@ -53,6 +53,7 @@ enum XmlElements {
     LITE_MEMBER("lite-member", false),
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
     DISTRIBUTED_CLASSLOADING("distributed-classloading", false),
+    CARDINALITY_ESTIMATOR("cardinality-estimator", false),
     ;
 
     final String name;
