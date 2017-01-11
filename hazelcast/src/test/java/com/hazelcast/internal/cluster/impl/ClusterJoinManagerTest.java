@@ -74,8 +74,7 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
 
     @Test
     public void testHandleJoinRequest() {
-        JoinRequest request = new JoinRequest(Packet.VERSION, 0, MemberVersion.UNKNOWN, joinAddress, "anyUuid", false,
-                configCheck, null, Collections.<String, Object>emptyMap(), Collections.<String>emptySet());
+        JoinRequest request = createJoinRequest("anyUuid", Collections.<String>emptySet());
 
         manager.handleJoinRequest(request, connection);
 
@@ -89,8 +88,7 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
         excludeUuidSet.add(masterUuid);
 
         // we use the real address, but a faked UUID to have the operation sent to our second node
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, 0, MemberVersion.UNKNOWN, joinAddress, "anyUuid", false,
-                configCheck, null, Collections.<String, Object>emptyMap(), excludeUuidSet);
+        JoinRequest joinRequest = createJoinRequest("anyUuid", excludeUuidSet);
 
         manager.handleJoinRequest(joinRequest, connection);
 
@@ -106,11 +104,10 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
 
         // we create another Hazelcast instance, so we have a real target to send an operation to
         HazelcastInstance hz = factory.newHazelcastInstance();
-        Address address = getAddress(hz);
+        joinAddress = getAddress(hz);
 
         // we use the real address, but a faked UUID to have the operation sent to our second node
-        JoinRequest joinRequest = new JoinRequest(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, "excludedUuid", false,
-                configCheck, null, Collections.<String, Object>emptyMap(), Collections.<String>emptySet());
+        JoinRequest joinRequest = createJoinRequest("excludedUuid", Collections.<String>emptySet());
 
         manager.handleJoinRequest(joinRequest, connection);
 
@@ -118,5 +115,10 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
         verifyNoMoreInteractions(hotRestartService);
 
         // TODO: find a way to verify that the SendExcludedMemberUuidsOperation has been sent
+    }
+
+    private JoinRequest createJoinRequest(String uuid, Set<String> excludedMemberUuids) {
+        return new JoinRequest(Packet.VERSION, 0, MemberVersion.UNKNOWN, joinAddress, uuid, false, configCheck, null,
+                Collections.<String, Object>emptyMap(), excludedMemberUuids);
     }
 }
