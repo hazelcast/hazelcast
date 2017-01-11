@@ -4,8 +4,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
@@ -21,11 +19,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import static java.util.Collections.singleton;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -37,24 +34,28 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClusterJoinManagerTest extends HazelcastTestSupport {
 
-    private final ILogger logger = Logger.getLogger(getClass());
-    private final Lock lock = new ReentrantLock();
+    private final Set<String> excludeUuidSet = new HashSet<String>();
 
-    private Connection connection = mock(Connection.class);
-    private InternalHotRestartService hotRestartService = mock(InternalHotRestartService.class);
+    private Address joinAddress;
+    private Connection connection;
+    private InternalHotRestartService hotRestartService;
 
     private TestHazelcastInstanceFactory factory;
+    private String masterUuid;
+    private ConfigCheck configCheck;
 
     private ClusterJoinManager manager;
-    private ConfigCheck configCheck;
-    private String masterUuid;
-    private Address joinAddress;
 
     @Before
     public void setUp() throws Exception {
-        factory = createHazelcastInstanceFactory();
+        excludeUuidSet.add(randomString());
+
+        joinAddress = new Address("127.0.0.1", 1234);
+        connection = mock(Connection.class);
+        hotRestartService = mock(InternalHotRestartService.class);
 
         // we get a real Node, NodeEngine and NodeExtension from a Hazelcast instance
+        factory = createHazelcastInstanceFactory();
         HazelcastInstance hz = factory.newHazelcastInstance();
         Node realNode = getNode(hz);
         NodeExtension realNodeNodeExtension = realNode.getNodeExtension();
@@ -65,10 +66,10 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
         Node node = spy(realNode);
         when(node.getNodeExtension()).thenReturn(nodeExtension);
 
-        manager = new ClusterJoinManager(node, node.getClusterService(), lock);
-        configCheck = node.createConfigCheck();
         masterUuid = hz.getCluster().getLocalMember().getUuid();
-        joinAddress = new Address("127.0.0.1", 1234);
+        configCheck = node.createConfigCheck();
+
+        manager = new ClusterJoinManager(node, node.getClusterService(), new ReentrantLock());
     }
 
     @Test
@@ -84,23 +85,24 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
 
     @Test
     public void testHandleJoinRequest_whenLocalUuidIsExcluded_thenHandleExcludedMemberUuids() {
-        Set<String> excludeUuid = singleton(masterUuid);
+        // add the UUID of the existing node
+        excludeUuidSet.add(masterUuid);
 
         // we use the real address, but a faked UUID to have the operation sent to our second node
         JoinRequest joinRequest = new JoinRequest(Packet.VERSION, 0, MemberVersion.UNKNOWN, joinAddress, "anyUuid", false,
-                configCheck, null, Collections.<String, Object>emptyMap(), excludeUuid);
+                configCheck, null, Collections.<String, Object>emptyMap(), excludeUuidSet);
 
         manager.handleJoinRequest(joinRequest, connection);
 
         verify(hotRestartService).getExcludedMemberUuids();
-        verify(hotRestartService).handleExcludedMemberUuids(eq(joinAddress), eq(excludeUuid));
+        verify(hotRestartService).handleExcludedMemberUuids(eq(joinAddress), eq(excludeUuidSet));
         verifyNoMoreInteractions(hotRestartService);
     }
 
     @Test
     public void testHandleJoinRequest_whenRemoteUuidIsExcluded_thenSendExcludedMemberUuidsOperation() {
-        Set<String> excludedUuid = singleton("excludedUuid");
-        when(hotRestartService.getExcludedMemberUuids()).thenReturn(excludedUuid);
+        excludeUuidSet.add("excludedUuid");
+        when(hotRestartService.getExcludedMemberUuids()).thenReturn(excludeUuidSet);
 
         // we create another Hazelcast instance, so we have a real target to send an operation to
         HazelcastInstance hz = factory.newHazelcastInstance();
@@ -112,9 +114,9 @@ public class ClusterJoinManagerTest extends HazelcastTestSupport {
 
         manager.handleJoinRequest(joinRequest, connection);
 
-        // TODO: find a way to verify that the SendExcludedMemberUuidsOperation has been sent
-
         verify(hotRestartService).getExcludedMemberUuids();
         verifyNoMoreInteractions(hotRestartService);
+
+        // TODO: find a way to verify that the SendExcludedMemberUuidsOperation has been sent
     }
 }
