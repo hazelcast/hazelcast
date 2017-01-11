@@ -64,6 +64,8 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 The following are the issues solved for 3.8 release.
 
+- Replicated Map configured with `async-fillup` as `false` prevents further members from joining the cluster. Members are stuck in an endless loop. [9592]
+- When an exception is thrown from an `InitializingObject`'s initialize method, it is logged in WARNING level but then swallowed and the proxy object is added to the `ProxyRegistry`. Instead, the exception should result in removing the object from the `ProxyRegistry`, as it is already done for exceptions thrown from `service.createDistributedObject`. [9578]
 - JCache client needs access to CacheLoader implementation to work. [9453]
 - The matching wildcard is strict, but no declaration can be found for element hz:hazelcast. [9406]
 - "Connection Reset" warning shows up in the class `CloudyUtility`. [9404]
@@ -77,6 +79,7 @@ The following are the issues solved for 3.8 release.
 - `LifecycleState` events are not received when Hazelcast docker image is used. [9189]
 - If there is no network, multicast socket exception is thrown. [9081]
 - Hazelcast is not handling XML configuration attribute for DurableExecutorService. [9078]
+- When retrieving data from Java Hazelcast instance, `HazelcastSerializationException` is thrown from the .NET client. [8985]
 - Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
 - "Warning 2" in IMap::tryRemove method's code comments is not correct. This method returns only a boolean. [8884]
 - When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
@@ -88,12 +91,15 @@ The following are the issues solved for 3.8 release.
 - Distributed objects present in the cluster do not show the same values. [8743]
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
 - Bulk get operation with 100 keys fails. [8535]
+- An `IllegalThreadStateException` may be thrown sometimes on a member of a cluster with two or more members when a Hazelcast client creates a new map with configured indexes. This exception is not thrown when indexes are created programmatically. [8492]
 - Group and password attributes in Hibernate integration module should be validated. [7978]
 - There appears to be an inconsistency where JCache uses the EvictionConfig object, but IMap directly uses properties of the NearCacheConfig. [7788]
+- Topic listeners are lost after merging from a split-brain scenario. [7742]
 - Member attributes go missing after merging from a split-brain scenario. [7697]
 - There should be a distributed class loading feature to perform distributed loading of classes so that jobs like MapReduce and Aggregate can be done more effectively. [7394]
 - MapLoader misses state updates on second load on the receiver members. [7364]
 - If the system retries an operation because a member is leaving the cluster, the invocation can be retried due to the response but also due to the "member-left" event. In most cases this should not lead to a problem, but the invocation may be executed twice. This can be a problem and can lead to a permanent inconsistent system. [7270]
+- Using Lock and Map, the heap memory on Hazelcast server keeps increasing. All the created Locks and Maps are destroyed by the method `destroy()`, but the memory cannot be destroyed by the garbage collector even via FGC. When an application runs for some time, Hazelcast server goes down. [7246]
 - Hazelcast 3.5 throws InvalidConfigurationException. [6523]
 - More granular mutexes should be used when creating and removing a set of closeable cache resources. [6273]
 - Running `PredicateBuilder` queries when nodes join causes timeouts and cluster crash. [6242]
