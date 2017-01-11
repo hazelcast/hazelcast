@@ -132,14 +132,11 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Handle a {@link JoinRequestOperation}:
-     * <ul>
-     *     <li>If this node is not master, reply with a {@link SetMasterOperation} to let the joining node know the current
-     *     master</li>
-     *     <li>Otherwise, if no other join is in progress, execute the {@link JoinRequest}</li>
-     * </ul>
-     * @param joinRequest
-     * @param connection
+     * Handle a {@link JoinRequestOperation}. If this node is not master, reply with a {@link SetMasterOperation} to let the
+     * joining node know the current master. Otherwise, if no other join is in progress, execute the {@link JoinRequest}
+     *
+     * @param joinRequest the join request
+     * @param connection the connection to the joining node
      * @see JoinRequestOperation
      */
     public void handleJoinRequest(JoinRequest joinRequest, Connection connection) {
@@ -212,10 +209,11 @@ public class ClusterJoinManager {
     /**
      * Validate that the configuration received from the remote node in {@code joinMessage} is compatible with the
      * configuration of this node.
-     * @param joinMessage   the {@link JoinMessage} received from another node.
-     * @return              {@code true} if packet version of join message matches this node's packet version and configurations
-     *                      are found to be compatible, otherwise {@code false}.
-     * @throws Exception
+     *
+     * @param joinMessage the {@link JoinMessage} received from another node.
+     * @return {@code true} if packet version of join message matches this node's packet version and configurations
+     * are found to be compatible, otherwise {@code false}.
+     * @throws Exception in case any exception occurred while checking compatibilty
      * @see ConfigCheck
      */
     public boolean validateJoinMessage(JoinMessage joinMessage) throws Exception {
@@ -234,8 +232,9 @@ public class ClusterJoinManager {
 
     /**
      * Executed by a master node to process the {@link JoinRequest} sent by a node attempting to join the cluster.
-     * @param joinRequest   the join request from a node attempting to join
-     * @param connection    the connection of this node to the joining node
+     *
+     * @param joinRequest the join request from a node attempting to join
+     * @param connection  the connection of this node to the joining node
      */
     private void executeJoinRequest(JoinRequest joinRequest, Connection connection) {
         clusterServiceLock.lock();
@@ -397,8 +396,16 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Executed by a master node
-     * @param memberInfo
+     * Start processing the join request. This method is executed by the master node. In the case that there hasn't been any
+     * previous join requests from the {@code memberInfo}'s address the master will first respond by sending the master answer.
+     *
+     * Also, during the first {@link GroupProperty#MAX_WAIT_SECONDS_BEFORE_JOIN} period since the master received the first
+     * join request from any node, the master will always wait for {@link GroupProperty#WAIT_SECONDS_BEFORE_JOIN} before
+     * allowing any join request to proceed. This means that in the initial period from receiving the first ever join request,
+     * every new join request from a different address will prolong the wait time. After the initial period, join requests
+     * will get processed as they arrive for the first time.
+     *
+     * @param memberInfo the joining member info
      */
     private void startJoinRequest(MemberInfo memberInfo) {
         long now = Clock.currentTimeMillis();
@@ -430,8 +437,9 @@ public class ClusterJoinManager {
 
     /**
      * Send join request to {@code toAddress}.
-     * @param toAddress         the currently known master address.
-     * @param withCredentials   use cluster credentials
+     *
+     * @param toAddress       the currently known master address.
+     * @param withCredentials use cluster credentials
      * @return {@code true} if join request was sent successfully, otherwise {@code false}.
      */
     public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
@@ -559,10 +567,10 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Send a {@code MasterDiscoveryOperation} to designated address.
+     * Send a {@link MasterDiscoveryOperation} to designated address.
      *
      * @param toAddress the address to which the operation will be sent.
-     * @return          {@code true} if the operation was sent, otherwise {@code false}.
+     * @return {@code true} if the operation was sent, otherwise {@code false}.
      */
     public boolean sendMasterQuestion(Address toAddress) {
         checkNotNull(toAddress, "No endpoint is specified!");
@@ -576,8 +584,9 @@ public class ClusterJoinManager {
 
     /**
      * Respond to a {@link MasterDiscoveryOperation}.
-     * @param joinMessage   the {@code JoinMessage} from the request.
-     * @param connection    the connection to operation caller, to which response will be sent.
+     *
+     * @param joinMessage the {@code JoinMessage} from the request.
+     * @param connection  the connection to operation caller, to which response will be sent.
      * @see MasterDiscoveryOperation
      */
     public void answerMasterQuestion(JoinMessage joinMessage, Connection connection) {
@@ -600,7 +609,8 @@ public class ClusterJoinManager {
     /**
      * Respond to a join request by sending the master address in a {@link SetMasterOperation}. This happens when current node
      * receives a join request but is not the cluster's master.
-     * @param target
+     *
+     * @param target the node receiving the master answer
      */
     private void sendMasterAnswer(Address target) {
         Address masterAddress = node.getMasterAddress();

@@ -29,7 +29,9 @@ public final class ClockProperties {
     public static final String HAZELCAST_CLOCK_OFFSET = "com.hazelcast.clock.offset";
 
     /**
-     * will call the <code>currentTimeMillis()</code> method of given <code>ClockImpl</code>.
+     * The implementation of {@link com.hazelcast.util.Clock.ClockImpl} to use. If not defined we will use
+     * {@link com.hazelcast.util.Clock.SystemClock} or {@link com.hazelcast.util.Clock.SystemOffsetClock}, depending on
+     * whether an offset is defined with {@link #HAZELCAST_CLOCK_OFFSET}.
      */
     public static final String HAZELCAST_CLOCK_IMPL = "com.hazelcast.clock.impl";
 
