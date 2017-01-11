@@ -25,6 +25,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.AndResultSet;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.OrResultSet;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -78,7 +79,7 @@ public final class AndPredicate
                     Set<QueryableEntry> s = iap.filter(queryContext);
                     if (smallestIndexedResult == null) {
                         smallestIndexedResult = s;
-                    } else if (s.size() < smallestIndexedResult.size()) {
+                    } else if (size(s) < size(smallestIndexedResult)) {
                         otherIndexedResults.add(smallestIndexedResult);
                         smallestIndexedResult = s;
                     } else {
@@ -97,6 +98,16 @@ public final class AndPredicate
             return null;
         }
         return new AndResultSet(smallestIndexedResult, otherIndexedResults, lsNoIndexPredicates);
+    }
+
+    private int size(Set<QueryableEntry> result) {
+        // In case of AndResultSet and OrResultSet calling size() may be very expensive so quicker estimatedSize() is used
+        if (result instanceof AndResultSet) {
+            return ((AndResultSet) result).estimatedSize();
+        } else if (result instanceof OrResultSet) {
+            return ((OrResultSet) result).estimatedSize();
+        }
+        return result.size();
     }
 
     @Override
