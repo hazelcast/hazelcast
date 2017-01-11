@@ -103,6 +103,12 @@ public interface IPartitionService extends CoreService {
      */
     int getPartitionCount();
 
+    /**
+     * Returns partition id list assigned to given target.
+     * Triggers partition assignment if partitions are not assigned yet.
+     *
+     * @return partition id list assigned to given target
+     */
     List<Integer> getMemberPartitions(Address target);
 
     /**

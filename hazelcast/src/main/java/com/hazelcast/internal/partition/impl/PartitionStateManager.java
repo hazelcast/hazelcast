@@ -114,9 +114,7 @@ public class PartitionStateManager {
     }
 
     boolean initializePartitionAssignments(Set<Address> excludedAddresses) {
-        ClusterState clusterState = node.getClusterService().getClusterState();
-        if (clusterState != ClusterState.ACTIVE) {
-            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+        if (!isPartitionAssignmentAllowed()) {
             return false;
         }
 
@@ -136,7 +134,7 @@ public class PartitionStateManager {
         // increment state version to make fail cluster state transaction
         // if it's started and not locked the state yet.
         stateVersion.incrementAndGet();
-        clusterState = node.getClusterService().getClusterState();
+        ClusterState clusterState = node.getClusterService().getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             // cluster state is either changed or locked, decrement version back and fail.
             stateVersion.decrementAndGet();
@@ -150,6 +148,20 @@ public class PartitionStateManager {
             partition.setReplicaAddresses(replicas);
         }
         setInitialized();
+        return true;
+    }
+
+    private boolean isPartitionAssignmentAllowed() {
+        if (!node.getNodeExtension().isStartCompleted()) {
+            logger.warning("Partitions can't be assigned since startup is not completed yet.");
+            return false;
+        }
+
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        if (clusterState != ClusterState.ACTIVE) {
+            logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
+            return false;
+        }
         return true;
     }
 

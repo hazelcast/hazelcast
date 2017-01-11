@@ -67,6 +67,7 @@ import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -914,6 +915,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         }
         return ownedPartitions;
+    }
+
+    @Override
+    public List<Integer> getMemberPartitionsIfAssigned(Address target) {
+        if (!partitionStateManager.isInitialized()) {
+            return Collections.emptyList();
+        }
+        return getMemberPartitions(target);
     }
 
     @Override

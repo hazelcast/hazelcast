@@ -20,6 +20,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.partition.IPartitionService;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public interface InternalPartitionService extends IPartitionService {
@@ -98,4 +99,12 @@ public interface InternalPartitionService extends IPartitionService {
     long[] incrementPartitionReplicaVersions(int partitionId, int totalBackupCount);
 
     PartitionTableView createPartitionTableView();
+
+    /**
+     * Returns partition id list assigned to given target if partitions are assigned when method is called.
+     * Does not trigger partition assignment otherwise.
+     *
+     * @return partition id list assigned to given target if partitions are assigned already
+     */
+    List<Integer> getMemberPartitionsIfAssigned(Address target);
 }
