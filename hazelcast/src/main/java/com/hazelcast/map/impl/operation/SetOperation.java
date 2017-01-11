@@ -43,9 +43,4 @@ public class SetOperation extends BasePutOperation {
     public void run() {
         newRecord = recordStore.set(dataKey, dataValue, ttl);
     }
-
-    @Override
-    public Object getResponse() {
-        return newRecord;
-    }
 }
