@@ -80,7 +80,7 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         // configure the engine to have a sane thread count
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
         JetConfig config = new JetConfig()
-                .setExecutionThreadCount(parallelism <= 2 ? 2 : parallelism);
+                .setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
         instance = createCluster(NODE_COUNT, config);
         client = factory.newClient();
     }

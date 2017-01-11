@@ -10,9 +10,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.impl.deployment.ResourceType.CLASS;
-import static com.hazelcast.jet.impl.deployment.ResourceType.DATA;
-import static com.hazelcast.jet.impl.deployment.ResourceType.JAR;
+import static com.hazelcast.jet.impl.deployment.ResourceKind.CLASS;
+import static com.hazelcast.jet.impl.deployment.ResourceKind.DATA;
+import static com.hazelcast.jet.impl.deployment.ResourceKind.JAR;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
@@ -26,7 +26,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(this.getClass().getName(), resourceConfig.getDescriptor().getId());
-        assertEquals(CLASS, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(CLASS, resourceConfig.getDescriptor().getResourceKind());
     }
 
     @Test
@@ -37,7 +37,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("jarfile", resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -50,7 +50,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(jarName, resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -62,7 +62,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("jarfile", resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(path, resourceConfig.getUrl().getPath());
     }
 
@@ -75,7 +75,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(jarName, resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(path, resourceConfig.getUrl().getPath());
     }
 
@@ -87,7 +87,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("jarfile", resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(file.getPath(), resourceConfig.getUrl().getPath());
     }
 
@@ -100,7 +100,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(jarName, resourceConfig.getDescriptor().getId());
-        assertEquals(JAR, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(JAR, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(file.getPath(), resourceConfig.getUrl().getPath());
     }
 
@@ -112,7 +112,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resourceFile", resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -125,7 +125,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(urlString, resourceConfig.getUrl().toString());
     }
 
@@ -137,7 +137,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resource", resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(path, resourceConfig.getUrl().getPath());
     }
 
@@ -150,7 +150,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(path, resourceConfig.getUrl().getPath());
     }
 
@@ -162,7 +162,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals("resource", resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(file.getPath(), resourceConfig.getUrl().getPath());
     }
 
@@ -175,7 +175,7 @@ public class ResourceConfigTest {
         ResourceConfig resourceConfig = config.getResourceConfigs().iterator().next();
 
         assertEquals(resourceName, resourceConfig.getDescriptor().getId());
-        assertEquals(DATA, resourceConfig.getDescriptor().getResourceType());
+        assertEquals(DATA, resourceConfig.getDescriptor().getResourceKind());
         assertEquals(file.getPath(), resourceConfig.getUrl().getPath());
     }
 

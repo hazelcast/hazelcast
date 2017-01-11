@@ -45,7 +45,6 @@ import java.io.Serializable;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -78,7 +77,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig().setExecutionThreadCount(PARALLELISM);
+        JetConfig config = new JetConfig().setCooperativeThreadCount(PARALLELISM);
         Config hazelcastConfig = config.getHazelcastConfig();
         final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
@@ -135,7 +134,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                         .distributed()
                         .partitionedByKey(item -> ((Entry) item).getKey()))
                 .edge(between(combiner, consumer));
-        
+
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
         assertCounts(instance.getMap("counts"));
     }
