@@ -58,6 +58,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private volatile boolean authenticated;
     private int clientVersion;
     private String clientVersionString;
+    private long authenticationCorrelationId;
 
     public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
         this.clientEngine = clientEngine;
@@ -110,11 +111,13 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
-    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion) {
+    public void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
+                              String clientVersion, long authCorrelationId) {
         this.principal = principal;
         this.firstConnection = firstConnection;
         this.credentials = credentials;
         this.authenticated = true;
+        this.authenticationCorrelationId = authCorrelationId;
         this.setClientVersion(clientVersion);
     }
 
@@ -277,5 +280,9 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
                 + '}';
+    }
+
+    public long getAuthenticationCorrelationId() {
+        return authenticationCorrelationId;
     }
 }

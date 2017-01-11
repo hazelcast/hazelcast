@@ -85,7 +85,8 @@ public interface ClientEndpoint extends Client {
 
     void setLoginContext(LoginContext lc);
 
-    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection, String clientVersion);
+    void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection,
+                       String clientVersion, long authCorrelationId);
 
     void authenticated(ClientPrincipal principal);
 

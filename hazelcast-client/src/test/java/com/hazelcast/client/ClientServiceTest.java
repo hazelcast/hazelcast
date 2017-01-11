@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.impl.ClusterListenerSupport;
@@ -54,7 +53,6 @@ import java.util.LinkedList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
@@ -218,8 +216,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
         client1.getLifecycleService().shutdown();
         client2.getLifecycleService().shutdown();
 
-        assertTrue(latchAdd.await(2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
-        assertTrue(latchRemove.await(2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS, TimeUnit.SECONDS));
+        assertOpenEventually(latchAdd);
+        assertOpenEventually(latchRemove);
 
         assertTrue(clientService.removeClientListener(id));
 
@@ -227,7 +225,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
         assertEquals(0, clientService.getConnectedClients().size());
 
-        final HazelcastInstance client3 = hazelcastFactory.newHazelcastClient();
+        hazelcastFactory.newHazelcastClient();
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -102,6 +102,13 @@ public final class GroupProperty {
 
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
+    /**
+     *  Client connection is removed or owner node of a client is removed from cluster
+     *  ClientDisconnectedOperation runs and clean all resources of client(listeners are removed, locks/txn are released)
+     *  With this property, client has a window to connect back and prevent cleaning up its resources.
+     */
+    public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
+            = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
 
     public static final HazelcastProperty EVENT_THREAD_COUNT
             = new HazelcastProperty("hazelcast.event.thread.count", 5);
