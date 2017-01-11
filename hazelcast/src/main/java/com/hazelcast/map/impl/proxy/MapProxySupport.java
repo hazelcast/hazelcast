@@ -78,6 +78,7 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.ThreadUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -680,11 +681,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             responses = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitions);
             for (Object response : responses.values()) {
                 MapEntries entries = toObject(response);
-                for (int i = 0; i < entries.size(); i++) {
-                    final K key = toObject(entries.getKey(i));
-                    final V value = toObject(entries.getObjectValue(i));
-                    resultingKeyValuePairs.put(key, value);
-                }
+                entries.putAllToMapDeserialized(serializationService, resultingKeyValuePairs);
             }
             localMapStats.incrementGets(keys.size(), System.currentTimeMillis() - time);
         } catch (Exception e) {
@@ -1009,7 +1006,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
         // callback? now there is a lot of code duplication
-        Map<Object, Object> result = new HashMap<Object, Object>();
+        Map<Object, Object> result = MapUtil.createHashMap(keys.size());
         Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
         try {
             OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, keys, entryProcessor);
@@ -1017,7 +1014,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object object : results.values()) {
                 if (object != null) {
                     MapEntries mapEntries = (MapEntries) object;
-                    mapEntries.putAllToMap(serializationService, result);
+                    mapEntries.putAllToMapDeserialized(serializationService, result);
                 }
             }
         } catch (Throwable t) {
@@ -1047,7 +1044,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
+     * @deprecated Use {@link #executeOnEntriesInternalToMap(EntryProcessor, Predicate)}
      */
+    @Deprecated
     public void executeOnEntriesInternal(EntryProcessor entryProcessor, Predicate predicate, List<Data> result) {
         try {
             OperationFactory operation
@@ -1062,6 +1061,42 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     }
                 }
             }
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+    
+    /**
+     * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
+     */
+    protected Map<Data, Object> executeOnEntriesInternalToMap(EntryProcessor entryProcessor, Predicate predicate) {
+        try {
+            final OperationFactory operation = operationProvider
+                    .createPartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate);
+            final Map<Integer, Object> opResults = operationService.invokeOnAllPartitions(SERVICE_NAME, operation);
+
+            //the final resulting map has the potential to be quite large (potentially 10s of thousands of entries or more
+            //it also has the potential to be quite small
+            //it is worth the cost of looping through the results once to determine how to size the Map to avoid 
+            //the costs of re-allocating the map as individual results are added
+            final List<MapEntries> populatedResults = new ArrayList<MapEntries>(opResults.size());
+            int count = 0;
+            for (Object object : opResults.values()) {
+                if (object != null) {
+                    MapEntries mapEntries = (MapEntries) object;
+                    final int size = mapEntries.size();
+                    if (size > 0) {
+                        count += size;
+                        populatedResults.add(mapEntries);
+                    }
+                }
+            }
+
+            final Map<Data, Object> results = MapUtil.createHashMap(count);
+            for (MapEntries mapEntries : populatedResults) {
+                mapEntries.putAllToMap(results);
+            }
+            return results;
         } catch (Throwable t) {
             throw rethrow(t);
         }

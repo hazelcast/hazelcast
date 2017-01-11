@@ -743,19 +743,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
-        List<Data> result = new ArrayList<Data>();
+        final Map<Data, Object> results = executeOnEntriesInternalToMap(entryProcessor, predicate);
 
-        executeOnEntriesInternal(entryProcessor, predicate, result);
-        if (result.isEmpty()) {
-            return emptyMap();
-        }
-
-        Map<K, Object> resultingMap = MapUtil.createHashMap(result.size() / 2);
-        for (int i = 0; i < result.size(); ) {
-            Data key = result.get(i++);
-            Data value = result.get(i++);
-
-            resultingMap.put((K) toObject(key), toObject(value));
+        final Map<K, Object> resultingMap = MapUtil.createHashMap(results.size());
+        for (Map.Entry<Data, Object> entry : results.entrySet()) {
+            final K key = toObject(entry.getKey());
+            resultingMap.put(key, toObject(entry.getValue()));
 
         }
         return resultingMap;
