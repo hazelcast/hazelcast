@@ -96,6 +96,17 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidRootElement() {
+        String xml = "<hazelcast-client>"
+                + "<group>"
+                + "<name>dev</name>"
+                + "<password>clusterpass</password>"
+                + "</group>"
+                + "</hazelcast-client>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
     public void testJoinValidation() {
         String xml = HAZELCAST_START_TAG
                 + "    <network>\n"
