@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -67,7 +67,7 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keySet = new HashSet<Long>(size);
+        keySet = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             keySet.add(in.readLong());
         }

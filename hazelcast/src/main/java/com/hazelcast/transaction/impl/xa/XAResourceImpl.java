@@ -43,10 +43,12 @@ import com.hazelcast.util.ExceptionUtil;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -249,8 +251,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             InternalCompletableFuture<SerializableList> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
             futureList.add(future);
         }
-        HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
-        xids.addAll(xaService.getPreparedXids());
+        Set<SerializableXID> xids = new HashSet<SerializableXID>(xaService.getPreparedXids());
 
         for (Future<SerializableList> future : futureList) {
             try {

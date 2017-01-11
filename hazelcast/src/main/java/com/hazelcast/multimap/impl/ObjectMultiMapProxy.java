@@ -42,6 +42,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -360,7 +361,7 @@ public class ObjectMultiMapProxy<K, V>
 
     private Set<K> toObjectSet(Set<Data> dataSet) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Set<K> keySet = new HashSet<K>(dataSet.size());
+        Set<K> keySet = SetUtil.createHashSet(dataSet.size());
         for (Data dataKey : dataSet) {
             keySet.add((K) nodeEngine.toObject(dataKey));
         }

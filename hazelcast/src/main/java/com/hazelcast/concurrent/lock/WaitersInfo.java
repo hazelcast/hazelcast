@@ -29,8 +29,10 @@ import static com.hazelcast.concurrent.lock.LockDataSerializerHook.WAITERS_INFO;
 
 final class WaitersInfo implements IdentifiedDataSerializable {
 
+    private static final int INITAIL_WAITER_SIZE = 4;
+
     private String conditionId;
-    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(2);
+    private Set<ConditionWaiter> waiters = new HashSet<ConditionWaiter>(INITAIL_WAITER_SIZE);
 
     public WaitersInfo() {
     }

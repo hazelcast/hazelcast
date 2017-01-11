@@ -32,6 +32,7 @@ import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.collection.InflatableSet;
 import com.hazelcast.util.collection.Int2ObjectHashMap;
 
@@ -144,7 +145,10 @@ public class PartitionWideEntryWithPredicateOperationFactory extends PartitionAw
             return Collections.emptyMap();
         }
 
-        Map<Integer, List<Data>> partitionToKeys = new Int2ObjectHashMap<List<Data>>();
+        final int roughSize = Math.min(partitionService.getPartitionCount(), keys.size());
+
+        //using the type of Int2ObjectHashMap allows the get and put operations to avoid auto-boxing
+        final Int2ObjectHashMap<List<Data>> partitionToKeys = MapUtil.createInt2ObjectHashMap(roughSize);
         for (Data key : keys) {
             int partitionId = partitionService.getPartitionId(key);
             List<Data> keyList = partitionToKeys.get(partitionId);

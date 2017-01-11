@@ -35,11 +35,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,7 +89,7 @@ public class MapPublisherCreateWithValueMessageTask
     }
 
     private Set<Map.Entry<Data, Data>> getQueryResults(List<Future> futures) {
-        HashMap<Data, Data> results = new HashMap<Data, Data>(futures.size());
+        Map<Data, Data> results = MapUtil.createHashMap(futures.size());
         for (Future future : futures) {
             Object result = null;
             try {

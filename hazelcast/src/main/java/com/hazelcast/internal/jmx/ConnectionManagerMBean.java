@@ -18,8 +18,9 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.util.MapUtil;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -29,11 +30,14 @@ import static com.hazelcast.internal.jmx.ManagementService.quote;
 @ManagedDescription("HazelcastInstance.ConnectionManager")
 public class ConnectionManagerMBean extends HazelcastMBean<ConnectionManager> {
 
+    private static final int PROPERTY_COUNT = 3;
+
     public ConnectionManagerMBean(HazelcastInstance hazelcastInstance, ConnectionManager connectionManager,
                                   ManagementService service) {
         super(connectionManager, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        //no need to create HashTable here, as the setObjectName method creates a copy of the given properties
+        final Map<String, String> properties = MapUtil.createHashMap(PROPERTY_COUNT);
         properties.put("type", quote("HazelcastInstance.ConnectionManager"));
         properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", quote(hazelcastInstance.getName()));

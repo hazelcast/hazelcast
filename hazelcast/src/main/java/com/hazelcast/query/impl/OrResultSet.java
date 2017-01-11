@@ -16,6 +16,8 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.util.SetUtil;
+
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.HashSet;
@@ -26,6 +28,9 @@ import java.util.Set;
  * Or result set for Predicates.
  */
 public class OrResultSet extends AbstractSet<QueryableEntry> {
+
+    private static final int ENTRY_MULTIPLE = 4;
+    private static final int ENTRY_MIN_SIZE = 8;
 
     private final List<Set<QueryableEntry>> indexedResults;
     private Set<QueryableEntry> entries;
@@ -53,7 +58,7 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
                 if (indexedResults.size() == 1) {
                     entries = new HashSet<QueryableEntry>(indexedResults.get(0));
                 } else {
-                    entries = new HashSet<QueryableEntry>();
+                    entries = SetUtil.createHashSet(Math.max(ENTRY_MIN_SIZE, indexedResults.size() * ENTRY_MULTIPLE));
                     for (Set<QueryableEntry> result : indexedResults) {
                         entries.addAll(result);
                     }

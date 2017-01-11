@@ -24,9 +24,9 @@ import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.util.SetUtil;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -49,7 +49,7 @@ public class SPIAwareMemberGroupFactory extends BackupSafeMemberGroupFactory imp
 
     @Override
     protected Set<MemberGroup> createInternalMemberGroups(Collection<? extends Member> allMembers) {
-        Set<MemberGroup> memberGroups = new HashSet<MemberGroup>();
+        Set<MemberGroup> memberGroups = SetUtil.createHashSet(allMembers.size());
 
         for (Member member : allMembers) {
             try {

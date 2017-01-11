@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
@@ -61,7 +61,7 @@ public class MultipleEntryOperationFactory extends AbstractMapOperationFactory {
     public void readData(ObjectDataInput in) throws IOException {
         this.name = in.readUTF();
         int size = in.readInt();
-        this.keys = new HashSet<Data>(size);
+        this.keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             Data key = in.readData();
             keys.add(key);

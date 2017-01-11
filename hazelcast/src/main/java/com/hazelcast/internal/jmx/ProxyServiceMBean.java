@@ -18,8 +18,9 @@ package com.hazelcast.internal.jmx;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.util.MapUtil;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -34,7 +35,7 @@ public class ProxyServiceMBean extends HazelcastMBean<ProxyService> {
     public ProxyServiceMBean(HazelcastInstance hazelcastInstance, ProxyService proxyService, ManagementService service) {
         super(proxyService, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.ProxyService"));
         properties.put("name", quote("proxyService" + hazelcastInstance.getName()));
         properties.put("instance", quote(hazelcastInstance.getName()));

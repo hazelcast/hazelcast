@@ -27,10 +27,11 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.util.SetUtil;
 
 import javax.security.auth.login.LoginException;
+
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -71,7 +72,7 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     public Set<ClientEndpoint> getEndpoints(String clientUuid) {
         checkNotNull(clientUuid, "clientUuid can't be null");
 
-        Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
+        Set<ClientEndpoint> endpointSet = SetUtil.createHashSet(endpoints.size());
         for (ClientEndpoint endpoint : endpoints.values()) {
             if (clientUuid.equals(endpoint.getUuid())) {
                 endpointSet.add(endpoint);

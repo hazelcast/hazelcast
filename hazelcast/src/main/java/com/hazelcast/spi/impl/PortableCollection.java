@@ -22,11 +22,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 public final class PortableCollection implements Portable {
@@ -78,7 +78,7 @@ public final class PortableCollection implements Portable {
         if (list) {
             collection = new ArrayList<Data>(size);
         } else {
-            collection = new HashSet<Data>(size);
+            collection = SetUtil.createHashSet(size);
         }
         final ObjectDataInput in = reader.getRawDataInput();
         for (int i = 0; i < size; i++) {

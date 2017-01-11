@@ -16,15 +16,21 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.mapreduce.impl.HashMapAdapter;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
+
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Utility class for Maps
  */
 public final class MapUtil {
 
-    private static final double HASHMAP_DEFAULT_LOAD_FACTOR = 0.75;
+    private static final float HASHMAP_DEFAULT_LOAD_FACTOR = 0.75f;
 
     private MapUtil() { }
 
@@ -33,8 +39,44 @@ public final class MapUtil {
      * to minimize rehash operations
      */
     public static <K, V> Map<K, V> createHashMap(int expectedMapSize) {
-        int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
-        return new HashMap<K, V>(initialCapacity);
+        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new HashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Utility method that creates an {@link HashMapAdapter} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <K, V> Map<K, V> createHashMapAdapter(int expectedMapSize) {
+        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new HashMapAdapter<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Utility method that creates an {@link java.util.LinkedHashMap} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <K, V> Map<K, V> createLinkedHashMap(int expectedMapSize) {
+        final int initialCapacity = (int) (expectedMapSize / HASHMAP_DEFAULT_LOAD_FACTOR) + 1;
+        return new LinkedHashMap<K, V>(initialCapacity, HASHMAP_DEFAULT_LOAD_FACTOR);
+    }
+
+    /**
+     * Utility method that creates an {@link java.util.LinkedHashMap} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <K, V> ConcurrentMap<K, V> createConcurrentHashMap(int expectedMapSize) {
+        //concurrent hash map will size itself to accomodate this many elements
+        return new ConcurrentHashMap<K, V>(expectedMapSize);
+    }
+
+    /**
+     * Utility method that creates an {@link Int2ObjectHashMap} with its initialCapacity calculated
+     * to minimize rehash operations
+     */
+    public static <V> Int2ObjectHashMap<V> createInt2ObjectHashMap(int expectedMapSize) {
+        final int initialCapacity = (int) (expectedMapSize / Int2ObjectHashMap.DEFAULT_LOAD_FACTOR) + 1;
+        return new Int2ObjectHashMap<V>(initialCapacity, Int2ObjectHashMap.DEFAULT_LOAD_FACTOR);
     }
 
     /**

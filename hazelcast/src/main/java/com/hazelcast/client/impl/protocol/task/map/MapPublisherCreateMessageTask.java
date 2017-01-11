@@ -35,11 +35,11 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -88,7 +88,7 @@ public class MapPublisherCreateMessageTask
     }
 
     private Set<Data> getQueryResults(List<Future> futures) {
-        Set<Data> results = new HashSet<Data>(futures.size());
+        Set<Data> results = SetUtil.createHashSet(futures.size());
         for (Future future : futures) {
             Object result = null;
             try {

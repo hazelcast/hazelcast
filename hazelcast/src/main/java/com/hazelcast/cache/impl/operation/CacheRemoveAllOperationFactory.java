@@ -23,9 +23,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -80,7 +80,7 @@ public class CacheRemoveAllOperationFactory implements OperationFactory, Identif
         if (size == -1) {
             return;
         }
-        keys = new HashSet<Data>(size);
+        keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readData());
         }

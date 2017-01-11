@@ -63,7 +63,7 @@ public class ReplicatedMapSplitBrainHandlerService implements SplitBrainHandlerS
 
     @Override
     public Runnable prepareMergeRunnable() {
-        HashMap<String, Collection<ReplicatedRecord>> recordMap = new HashMap<String, Collection<ReplicatedRecord>>();
+        Map<String, Collection<ReplicatedRecord>> recordMap = new HashMap<String, Collection<ReplicatedRecord>>();
         Address thisAddress = service.getNodeEngine().getThisAddress();
         List<Integer> partitions = nodeEngine.getPartitionService().getMemberPartitions(thisAddress);
         for (Integer partition : partitions) {

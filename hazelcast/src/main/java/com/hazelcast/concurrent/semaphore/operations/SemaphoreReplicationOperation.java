@@ -23,9 +23,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.MapUtil;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 public class SemaphoreReplicationOperation extends Operation implements IdentifiedDataSerializable {
@@ -77,7 +77,7 @@ public class SemaphoreReplicationOperation extends Operation implements Identifi
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        migrationData = new HashMap<String, SemaphoreContainer>(size);
+        migrationData = MapUtil.createHashMap(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             SemaphoreContainer semaphoreContainer = new SemaphoreContainer();

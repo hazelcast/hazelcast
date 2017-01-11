@@ -31,11 +31,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -64,7 +64,7 @@ public class PartitionServiceProxy implements PartitionService {
         this.partitionService = partitionService;
 
         int partitionCount = partitionService.getPartitionCount();
-        Map<Integer, Partition> map = new HashMap<Integer, Partition>(partitionCount);
+        Map<Integer, Partition> map = MapUtil.createHashMap(partitionCount);
         Set<Partition> set = new TreeSet<Partition>();
         for (int i = 0; i < partitionCount; i++) {
             Partition partition = new PartitionProxy(i);

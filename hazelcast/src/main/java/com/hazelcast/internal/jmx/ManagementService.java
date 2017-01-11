@@ -27,6 +27,7 @@ import com.hazelcast.spi.properties.GroupProperty;
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
+
 import java.lang.management.ManagementFactory;
 import java.util.Hashtable;
 import java.util.List;
@@ -44,7 +45,7 @@ import static com.hazelcast.internal.jmx.MBeans.getObjectTypeOrNull;
 public class ManagementService implements DistributedObjectListener {
 
     static final String DOMAIN = "com.hazelcast";
-    private static final int INITIAL_CAPACITY = 3;
+    private static final int INITIAL_CAPACITY = 5;
 
     final HazelcastInstanceImpl instance;
     private final boolean enabled;

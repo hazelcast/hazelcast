@@ -24,8 +24,8 @@ import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +55,9 @@ final class InvokeOnPartitions {
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
         this.memberPartitions = memberPartitions;
-        this.futures = new HashMap<Address, Future>(memberPartitions.size());
+        this.futures = MapUtil.createHashMap(memberPartitions.size());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
-        this.partitionResults = new HashMap<Integer, Object>(partitionCount);
+        this.partitionResults = MapUtil.createHashMap(partitionCount);
     }
 
     /**

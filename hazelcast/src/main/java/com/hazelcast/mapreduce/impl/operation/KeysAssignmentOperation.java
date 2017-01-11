@@ -25,10 +25,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.util.MapUtil;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,10 +72,10 @@ public class KeysAssignmentOperation
             return;
         }
 
-        Map<Object, Address> assignment = new HashMap<Object, Address>();
 
         // Precheck if still all members are available
         if (!supervisor.checkAssignedMembersAvailable()) {
+            Map<Object, Address> assignment = new HashMap<Object, Address>();
             TopologyChangedStrategy tcs = supervisor.getConfiguration().getTopologyChangedStrategy();
             if (tcs == CANCEL_RUNNING_OPERATION) {
                 Exception exception = new TopologyChangedException();
@@ -92,6 +93,8 @@ public class KeysAssignmentOperation
                 return;
             }
         }
+
+        final Map<Object, Address> assignment = MapUtil.createHashMap(keys.size());
 
         try {
             for (Object key : keys) {
@@ -120,7 +123,7 @@ public class KeysAssignmentOperation
             throws IOException {
         super.readInternal(in);
         int size = in.readInt();
-        keys = new HashSet<Object>();
+        keys = SetUtil.createHashSet(size);
         for (int i = 0; i < size; i++) {
             keys.add(in.readObject());
         }

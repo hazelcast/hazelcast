@@ -18,9 +18,9 @@ package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Properties;
 
@@ -39,7 +39,7 @@ public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
 
     @Override
     public Object readResponse(JsonObject in) {
-        Map<String, String> properties = new LinkedHashMap<String, String>();
+        Map<String, String> properties = MapUtil.createLinkedHashMap(in.size());
         final Iterator<JsonObject.Member> iterator = in.iterator();
         while (iterator.hasNext()) {
             final JsonObject.Member property = iterator.next();

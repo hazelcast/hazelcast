@@ -20,8 +20,8 @@ import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ItemCounter;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -66,7 +66,7 @@ class LoadTracker {
         this.ioThreads = new NonBlockingIOThread[ioThreads.length];
         System.arraycopy(ioThreads, 0, this.ioThreads, 0, ioThreads.length);
 
-        this.selectorToHandlers = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
+        this.selectorToHandlers = MapUtil.createHashMap(ioThreads.length);
         for (NonBlockingIOThread selector : ioThreads) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }

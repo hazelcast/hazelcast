@@ -27,6 +27,7 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.SetUtil;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -40,7 +41,7 @@ import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This implementation of {@link CacheEventListener} uses the adapter pattern for wrapping all cache event listener
@@ -188,7 +189,7 @@ public class CacheEventListenerAdaptor<K, V>
     }
 
     private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
-        HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
+        Set<CacheEntryEvent<? extends K, ? extends V>> evt = SetUtil.createHashSet(keys.size());
         for (CacheEventData cacheEventData : keys) {
             final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
             final K key = toObject(cacheEventData.getDataKey());

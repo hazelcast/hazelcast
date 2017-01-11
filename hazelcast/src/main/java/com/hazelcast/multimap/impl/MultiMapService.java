@@ -51,6 +51,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.util.EventListener;
 import java.util.HashMap;
@@ -227,7 +228,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         if (partitionContainer == null) {
             return null;
         }
-        Map<String, Map> map = new HashMap<String, Map>(partitionContainer.containerMap.size());
+        Map<String, Map> map = MapUtil.createHashMap(partitionContainer.containerMap.size());
         for (Map.Entry<String, MultiMapContainer> entry : partitionContainer.containerMap.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = entry.getValue();

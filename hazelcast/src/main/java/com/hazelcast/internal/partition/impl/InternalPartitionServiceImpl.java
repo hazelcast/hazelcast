@@ -63,11 +63,11 @@ import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -890,7 +890,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         int dataMembersSize = dataMembers.size();
         int partitionsPerMember = (dataMembersSize > 0 ? (int) ceil((float) partitionCount / dataMembersSize) : 0);
 
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
+        Map<Address, List<Integer>> memberPartitions = MapUtil.createHashMap(dataMembersSize);
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             Address owner = getPartitionOwnerOrWait(partitionId);
 

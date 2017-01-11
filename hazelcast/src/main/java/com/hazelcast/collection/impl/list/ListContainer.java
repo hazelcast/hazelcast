@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.collection.TxCollectionItem;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -130,7 +131,7 @@ public class ListContainer extends CollectionContainer {
 
     public Map<Long, Data> addAll(int index, List<Data> valueList) {
         final int size = valueList.size();
-        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        final Map<Long, Data> map = MapUtil.createHashMap(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
@@ -178,7 +179,7 @@ public class ListContainer extends CollectionContainer {
     protected Map<Long, CollectionItem> getMap() {
         if (itemMap == null) {
             if (itemList != null && !itemList.isEmpty()) {
-                itemMap = new HashMap<Long, CollectionItem>(itemList.size());
+                itemMap = MapUtil.createHashMap(itemList.size());
                 for (CollectionItem item : itemList) {
                     itemMap.put(item.getItemId(), item);
                 }

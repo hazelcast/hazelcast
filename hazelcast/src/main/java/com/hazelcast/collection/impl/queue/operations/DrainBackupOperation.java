@@ -22,9 +22,9 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -73,7 +73,7 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
         super.readInternal(in);
         if (in.readBoolean()) {
             int size = in.readInt();
-            itemIdSet = new HashSet<Long>(size);
+            itemIdSet = SetUtil.createHashSet(size);
             for (int i = 0; i < size; i++) {
                 itemIdSet.add(in.readLong());
             }

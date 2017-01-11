@@ -28,9 +28,9 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -82,7 +82,7 @@ public class RequestMapDataOperation extends AbstractSerializableOperation {
     }
 
     private Set<RecordMigrationInfo> getRecordSet(ReplicatedRecordStore store) {
-        Set<RecordMigrationInfo> recordSet = new HashSet<RecordMigrationInfo>(store.size());
+        Set<RecordMigrationInfo> recordSet = SetUtil.createHashSet(store.size());
         Iterator<ReplicatedRecord> iterator = store.recordIterator();
         while (iterator.hasNext()) {
             ReplicatedRecord record = iterator.next();

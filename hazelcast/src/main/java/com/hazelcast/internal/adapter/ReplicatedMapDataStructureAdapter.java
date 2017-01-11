@@ -19,8 +19,8 @@ package com.hazelcast.internal.adapter;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.util.MapUtil;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,7 +64,7 @@ public class ReplicatedMapDataStructureAdapter<K, V> implements DataStructureAda
 
     @Override
     public Map<K, V> getAll(Set<K> keys) {
-        Map<K, V> result = new HashMap<K, V>(keys.size());
+        Map<K, V> result = MapUtil.createHashMap(keys.size());
         for (K key : keys) {
             result.put(key, map.get(key));
         }

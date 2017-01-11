@@ -16,8 +16,9 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.util.MapUtil;
+
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -70,7 +71,7 @@ public class MapStoreAdapter<K, V> implements MapStore<K, V> {
      * {@inheritDoc}
      */
     public Map<K, V> loadAll(final Collection<K> keys) {
-        Map<K, V> result = new HashMap<K, V>();
+        Map<K, V> result = MapUtil.createHashMap(keys.size());
         for (K key : keys) {
             V value = load(key);
             if (value != null) {

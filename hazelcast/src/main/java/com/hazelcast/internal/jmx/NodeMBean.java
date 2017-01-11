@@ -19,8 +19,9 @@ package com.hazelcast.internal.jmx;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.MapUtil;
 
-import java.util.Hashtable;
+import java.util.Map;
 
 import static com.hazelcast.internal.jmx.ManagementService.quote;
 
@@ -35,7 +36,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
     public NodeMBean(HazelcastInstance hazelcastInstance, Node node, ManagementService service) {
         super(node, service);
 
-        Hashtable<String, String> properties = new Hashtable<String, String>(INITIAL_CAPACITY);
+        final Map<String, String> properties = MapUtil.createHashMap(INITIAL_CAPACITY);
         properties.put("type", quote("HazelcastInstance.Node"));
         properties.put("name", quote("node" + node.address));
         properties.put("instance", quote(hazelcastInstance.getName()));

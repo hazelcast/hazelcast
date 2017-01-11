@@ -24,14 +24,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.SetUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 public class GetAllOperation extends MapOperation implements ReadonlyOperation, PartitionAwareOperation {
+
+    private static final double SIZING_FUDGE_FACTOR = 1.3;
 
     private List<Data> keys = new ArrayList<Data>();
     private MapEntries entries;
@@ -48,7 +50,8 @@ public class GetAllOperation extends MapOperation implements ReadonlyOperation, 
     public void run() {
         IPartitionService partitionService = getNodeEngine().getPartitionService();
         int partitionId = getPartitionId();
-        Set<Data> partitionKeySet = new HashSet<Data>();
+        final int roughSize = (int) (keys.size() * SIZING_FUDGE_FACTOR / partitionService.getPartitionCount());
+        Set<Data> partitionKeySet = SetUtil.createHashSet(roughSize);
         for (Data key : keys) {
             if (partitionId == partitionService.getPartitionId(key)) {
                 partitionKeySet.add(key);

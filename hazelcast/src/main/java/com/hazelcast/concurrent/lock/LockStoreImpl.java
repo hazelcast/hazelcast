@@ -25,12 +25,12 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -221,7 +221,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public Set<Data> getLockedKeys() {
-        Set<Data> keySet = new HashSet<Data>(locks.size());
+        final Set<Data> keySet = SetUtil.createHashSet(locks.size());
         for (Map.Entry<Data, LockResourceImpl> entry : locks.entrySet()) {
             Data key = entry.getKey();
             LockResource lock = entry.getValue();

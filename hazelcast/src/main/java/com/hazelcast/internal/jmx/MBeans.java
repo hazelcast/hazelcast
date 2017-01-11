@@ -43,8 +43,8 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapProxy;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.util.MapUtil;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -53,7 +53,7 @@ import java.util.concurrent.ConcurrentMap;
 final class MBeans {
 
     private static final ConcurrentMap<String, MBeanFactory> MBEAN_FACTORY_TYPES_REGISTRY
-            = new ConcurrentHashMap<String, MBeanFactory>(MBeanFactory.values().length);
+            = MapUtil.createConcurrentHashMap(MBeanFactory.values().length);
 
     static {
         MBeanFactory[] mBeanFactories = MBeanFactory.values();

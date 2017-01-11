@@ -32,10 +32,10 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
@@ -58,8 +58,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
         final long now = getNow();
 
         final Map<String, MapContainer> mapContainers = getMapContainers();
-        final Map<MapContainer, Collection<Record>> recordMap = new HashMap<MapContainer,
-                Collection<Record>>(mapContainers.size());
+        final Map<MapContainer, Collection<Record>> recordMap = MapUtil.createHashMap(mapContainers.size());
         final IPartitionService partitionService = nodeEngine.getPartitionService();
         final int partitionCount = partitionService.getPartitionCount();
         final Address thisAddress = nodeEngine.getClusterService().getThisAddress();

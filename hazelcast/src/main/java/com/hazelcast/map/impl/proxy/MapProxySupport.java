@@ -78,8 +78,11 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
+import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.MutableLong;
+import com.hazelcast.util.SetUtil;
 import com.hazelcast.util.ThreadUtil;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -87,7 +90,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EventListener;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -695,7 +697,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitions = partitionService.getPartitionCount();
         // TODO: is there better way to estimate the size?
         int capacity = min(partitions, keys.size());
-        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        Set<Integer> partitionIds = SetUtil.createHashSet(capacity);
 
         Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
@@ -710,7 +712,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return Collections.emptyMap();
         }
 
-        Map<Integer, List<Data>> idToKeys = new HashMap<Integer, List<Data>>();
+        Map<Integer, List<Data>> idToKeys = MapUtil.createHashMap(partitionService.getPartitionCount());
         for (Data key : keys) {
             int partitionId = partitionService.getPartitionId(key);
             List<Data> keyList = idToKeys.get(partitionId);
@@ -1008,7 +1010,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public Map executeOnKeysInternal(Set<Data> keys, EntryProcessor entryProcessor) {
         // TODO: why are we not forwarding to executeOnKeysInternal(keys, entryProcessor, null) or some other kind of fake
         // callback? now there is a lot of code duplication
-        Map<Object, Object> result = new HashMap<Object, Object>();
+        Map<Object, Object> result = MapUtil.createHashMap(keys.size());
         Collection<Integer> partitionsForKeys = getPartitionsForKeys(keys);
         try {
             OperationFactory operationFactory = operationProvider.createMultipleEntryOperationFactory(name, keys, entryProcessor);

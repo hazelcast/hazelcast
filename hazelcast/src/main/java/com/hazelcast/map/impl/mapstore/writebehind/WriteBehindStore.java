@@ -31,10 +31,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
@@ -212,7 +212,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         if (keys == null || keys.isEmpty()) {
             return Collections.emptyMap();
         }
-        Map<Object, Object> map = new HashMap<Object, Object>();
+        Map<Object, Object> map = MapUtil.createHashMap(keys.size());
         Iterator iterator = keys.iterator();
         while (iterator.hasNext()) {
             Object key = iterator.next();

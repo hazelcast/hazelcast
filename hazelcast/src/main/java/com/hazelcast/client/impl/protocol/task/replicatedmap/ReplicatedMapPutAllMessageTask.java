@@ -28,9 +28,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.MapUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ReplicatedMapPutAllMessageTask
@@ -88,7 +88,7 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
+        final Map map = MapUtil.createHashMap(parameters.entries.size());
         for (Map.Entry entry : parameters.entries) {
             map.put(entry.getKey(), entry.getValue());
         }
