@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.execution.init;
 
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
@@ -29,9 +30,22 @@ import java.util.Map.Entry;
 
 public final class JetSerializerHook {
 
+    /**
+     * Start of reserved space for Jet-specific serializers.
+     * Any ID greater than this number might be used by some other Hazelcast serializer.
+     * For more information, {@see SerializationConstants}
+     */
+    public static final int JET_RESERVED_SPACE_START = SerializationConstants.JET_SERIALIZER_FIRST;
+
     public static final int MAP_ENTRY = -300;
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
+
+    /**
+     * End of reserved space for Jet-specific serializers.
+     * Any ID less than this number might be used by some other Hazelcast serializer.
+     */
+    public static final int JET_RESERVED_SPACE_END = SerializationConstants.JET_SERIALIZER_LAST;
 
     private JetSerializerHook() {
     }
