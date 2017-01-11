@@ -30,12 +30,12 @@ import java.util.Set;
 import static java.util.Collections.unmodifiableSet;
 
 /**
- * Sends excluded member uuids to a member which is in that set.
+ * Sends excluded member UUIDs to a member which is in that set.
+ *
  * We need this operation because we don't allow an excluded member to join to the cluster.
  * Therefore, we notify it so that the excluded member can force-start itself.
  */
 public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
-
 
     private Set<String> excludedMemberUuids;
 
@@ -48,9 +48,8 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
 
     @Override
     public void run() {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final InternalHotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension()
-                                                                      .getInternalHotRestartService();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        InternalHotRestartService hotRestartService = nodeEngine.getNode().getNodeExtension().getInternalHotRestartService();
         hotRestartService.handleExcludedMemberUuids(getCallerAddress(), excludedMemberUuids);
     }
 
@@ -71,7 +70,6 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
         for (int i = 0; i < size; i++) {
             excludedMemberUuids.add(in.readUTF());
         }
-
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
     }
 
@@ -79,5 +77,4 @@ public class SendExcludedMemberUuidsOperation extends AbstractClusterOperation {
     public int getId() {
         return ClusterDataSerializerHook.SEND_EXCLUDED_MEMBER_UUIDS;
     }
-
 }
