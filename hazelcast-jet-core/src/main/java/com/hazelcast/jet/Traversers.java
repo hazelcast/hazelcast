@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import javax.annotation.Nonnull;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
@@ -34,7 +35,7 @@ public final class Traversers {
 
     /**
      * Returns a simple adapter from {@code Iterator} to {@code Traverser}. The
-     * iterator must return non-{@code null} items. Each time its {@code get()}
+     * iterator must return non-{@code null} items. Each time its {@code next()}
      * method is called, the traverser will take another item from the iterator
      * and return it.
      */
@@ -45,7 +46,7 @@ public final class Traversers {
 
     /**
      * Returns a simple adapter from {@code Spliterator} to {@code Traverser}.
-     * Each time its {@code get()} method is called, the traverser will take
+     * Each time its {@code next()} method is called, the traverser will take
      * another item from the spliterator and return it.
      */
     @Nonnull
@@ -55,6 +56,17 @@ public final class Traversers {
             spliterator.tryAdvance(trav);
             return trav.next();
         };
+    }
+
+    /**
+     * Returns a simple adapter from {@code Enumeration} to {@code Traverser}. The
+     * enumeration must return non-{@code null} items. Each time its {@code next()}
+     * method is called, the traverser will take another item from the enumeration
+     * and return it.
+     */
+    @Nonnull
+    public static <T> Traverser<T> enumerate(@Nonnull Enumeration<T> enumeration) {
+        return () -> enumeration.hasMoreElements() ? enumeration.nextElement() : null;
     }
 
     /**

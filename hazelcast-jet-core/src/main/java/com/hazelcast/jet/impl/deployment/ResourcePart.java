@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.JetDataSerializerHook;
+import com.hazelcast.jet.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -54,6 +54,14 @@ public class ResourcePart implements IdentifiedDataSerializable {
     }
 
     @Override
+    public String toString() {
+        return "Chunk{length=" + bytes.length + ", descriptor=" + descriptor + ", offset=" + offset + '}';
+    }
+
+
+    // Implementation of IdentifiedDataSerializable
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(this.descriptor);
         out.writeByteArray(bytes);
@@ -69,21 +77,13 @@ public class ResourcePart implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetDataSerializerHook.FACTORY_ID;
+        return SerializationConstants.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetDataSerializerHook.RESOURCE_PART;
+        return SerializationConstants.RESOURCE_PART;
     }
 
-    @Override
-    public String toString() {
-        return "Chunk{"
-                + "length=" + bytes.length
-                + ", descriptor=" + descriptor
-                + ", offset=" + offset
-                + '}';
-    }
-
+    // END Implementation of IdentifiedDataSerializable
 }

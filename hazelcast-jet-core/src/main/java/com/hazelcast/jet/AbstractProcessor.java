@@ -82,7 +82,7 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * @return the outbox received in the {@code init()} method call.
+     * Returns the outbox received in the {@code init()} method call.
      */
     protected Outbox getOutbox() {
         return outbox;

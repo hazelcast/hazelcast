@@ -33,7 +33,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * Enclosing class for serializable versions of {@code java.util.function} interfaces.
+ * Utility class with serializable versions of {@code java.util.function} interfaces.
  */
 public final class Distributed {
 
@@ -245,6 +245,7 @@ public final class Distributed {
          * @return a predicate that represents the logical negation of this
          * predicate
          */
+        @Override
         default BiPredicate<T, U> negate() {
             return (T t, U u) -> !test(t, u);
         }
@@ -700,6 +701,7 @@ public final class Distributed {
          * @return a predicate that represents the logical negation of this
          * predicate
          */
+        @Override
         default Predicate<T> negate() {
             return (t) -> !test(t);
         }
@@ -782,6 +784,7 @@ public final class Distributed {
          * @return a predicate that represents the logical negation of this
          * predicate
          */
+        @Override
         default IntPredicate negate() {
             return (value) -> !test(value);
         }
@@ -848,6 +851,7 @@ public final class Distributed {
          * @return a predicate that represents the logical negation of this
          * predicate
          */
+        @Override
         default DoublePredicate negate() {
             return (value) -> !test(value);
         }
@@ -914,6 +918,7 @@ public final class Distributed {
          * @return a predicate that represents the logical negation of this
          * predicate
          */
+        @Override
         default LongPredicate negate() {
             return (value) -> !test(value);
         }

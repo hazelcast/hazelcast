@@ -17,14 +17,13 @@
 package com.hazelcast.jet;
 
 /**
- * Exception thrown when a topology change (member addition/removal) happens while executing a job.
+ * Thrown when a topology change (member addition/removal) happens
+ * while executing a job.
  */
 public class TopologyChangedException extends RuntimeException {
 
     /**
-     * Exception constructor
-     *
-     * @param message exception message
+     * Creates the exception with a message.
      */
     public TopologyChangedException(String message) {
         super(message);

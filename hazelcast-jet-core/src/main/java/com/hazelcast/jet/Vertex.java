@@ -29,7 +29,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * Represents a unit of data processing in a Jet computation job. Conceptually,
  * a vertex receives data items over its inbound {@link Edge edges} and pushes
  * data items to its outbound edges. Practically, a single vertex is represented
- * by a set of instances of {@link Processor}. The {@code parallelism} property
+ * by a set of instances of {@link Processor}. The {@code localParallelism} property
  * determines the number of processor instances running on each cluster member.
  * <p>
  * Each processor is assigned a set of partition IDs it is responsible for. When
@@ -126,14 +126,14 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return name of the vertex
+     * Returns the name of this vertex.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * @return the processor meta-supplier
+     * Returns this vertex's meta-supplier of processors.
      */
     public ProcessorMetaSupplier getSupplier() {
         return supplier;
@@ -143,6 +143,9 @@ public class Vertex implements IdentifiedDataSerializable {
     public String toString() {
         return "Vertex " + name;
     }
+
+
+    // Implementation of IdentifiedDataSerializable
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -160,11 +163,13 @@ public class Vertex implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetDataSerializerHook.FACTORY_ID;
+        return SerializationConstants.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetDataSerializerHook.VERTEX;
+        return SerializationConstants.VERTEX;
     }
+
+    // END Implementation of IdentifiedDataSerializable
 }

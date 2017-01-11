@@ -19,8 +19,7 @@ package com.hazelcast.jet;
 import java.util.concurrent.Future;
 
 /**
- * A Jet computation job created from a {@link DAG},
- * ready to be executed.
+ * A Jet computation job created from a {@link DAG}, ready to be executed.
  */
 public interface Job {
     /**

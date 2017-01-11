@@ -15,6 +15,6 @@
  */
 
 /**
- * Javadoc pending
+ * Hazelcast Jet is a distributed computation engine.
  */
 package com.hazelcast.jet;

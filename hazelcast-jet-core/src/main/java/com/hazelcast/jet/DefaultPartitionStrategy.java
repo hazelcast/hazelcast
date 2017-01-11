@@ -24,7 +24,7 @@ package com.hazelcast.jet;
 public interface DefaultPartitionStrategy {
 
     /**
-     * @return the Hazelcast partition ID of the given object
+     * Returns the Hazelcast partition ID of the given object.
      */
     int getPartition(Object object);
 }

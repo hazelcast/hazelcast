@@ -89,13 +89,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     interface Context {
 
         /**
-         * @return the Hazelcast instance
+         * Returns the Hazelcast instance.
          */
         JetInstance getJetInstance();
 
         /**
-         * @return the total number of {@code Processor}s that will be
-         * created across the cluster
+         * Returns the total number of {@code Processor}s that will be
+         * created across the cluster.
          */
         int totalParallelism();
 

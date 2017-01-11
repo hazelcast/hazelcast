@@ -18,9 +18,9 @@ package com.hazelcast.jet;
 
 /**
  * Traverses over a sequence of non-{@code null} items, then starts returning
- * {@code null}. Each invocation of {@code get()} consumes and returns the next
+ * {@code null}. Each invocation of {@code next()} consumes and returns the next
  * item in the sequence, until it is exhausted. All subsequent invocations of
- * {@code get()} return {@code null}.
+ * {@code next()} return {@code null}.
  *
  * @param <T> traversed item type
  */

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.nio.ObjectDataInput;
@@ -117,28 +118,28 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return the name of the source vertex
+     * Returns the name of the source vertex.
      */
     public String getSource() {
         return source;
     }
 
     /**
-     * @return ordinal of the edge at the source vertex
+     * Returns the ordinal of the edge at the source vertex.
      */
     public int getSourceOrdinal() {
         return sourceOrdinal;
     }
 
     /**
-     * @return the name of the destination vertex
+     * Returns the name of the destination vertex.
      */
     public String getDestination() {
         return destination;
     }
 
     /**
-     * @return ordinal of the edge at the destination vertex
+     * Returns the ordinal of the edge at the destination vertex.
      */
     public int getDestOrdinal() {
         return destOrdinal;
@@ -160,17 +161,17 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Activates unbounded buffering on this edge. Normally this should be avoided,
      * but at some points the logic of the DAG requires it. This is one scenario:
-     * a vertex sends output to two edges, creating a fork in the DAG. The forks
-     * later rejoin at a vertex with different priorities: the one with the lower
-     * priority won't be consumed until the higher-priority one is consumed in
-     * full. However, since the data for both forks is generated simultaneously,
-     * and since the lower-priority input will apply backpressure while waiting
-     * for the higher-priority input to be consumed, this will result in a deadlock.
-     * The deadlock is resolved by activating unbounded buffering on the
-     * lower-priority fork.
+     * a vertex sends output to two edges, creating a fork in the DAG. The branches
+     * later rejoin at a downstream vertex which assigns different priorities to its
+     * two inbound edges. The one with the lower priority won't be consumed until the
+     * higher-priority one is consumed in full. However, since the data for both edges
+     * is generated simultaneously, and since the lower-priority input will apply
+     * backpressure while waiting for the higher-priority input to be consumed, this
+     * will result in a deadlock. The deadlock is resolved by activating unbounded
+     * buffering on the lower-priority edge.
      * <p>
      * <strong>NOTE:</strong> when this feature is activated, the
-     * {@link EdgeConfig#getHighWaterMark() high water mark} property of
+     * {@link EdgeConfig#setHighWaterMark(int) high water mark} property of
      * {@code EdgeConfig} is ignored and the maximum value is used.
      */
     public Edge buffered() {
@@ -212,8 +213,9 @@ public class Edge implements IdentifiedDataSerializable {
 
 
     /**
-     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
-     * pattern. All items will be assigned the same, randomly chosen partition ID.
+     * Activates a special-cased {@link ForwardingPattern#PARTITIONED PARTITIONED}
+     * forwarding pattern where all items will be assigned the same, randomly chosen
+     * partition ID. Therefore all items will be directed to the same processor.
      */
     public Edge allToOne() {
         return partitionedByCustom(new Single());
@@ -270,7 +272,7 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return the value of edge's <em>priority</em>, as explained on
+     * Returns the value of edge's <em>priority</em>, as explained on
      * {@link #priority(int)}.
      */
     public int getPriority() {
@@ -278,14 +280,14 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * @return whether unbounded buffering is activated for this edge
+     * Returns whether {@link #buffered() unbounded buffering} is activated for this edge.
      */
     public boolean isBuffered() {
         return isBuffered;
     }
 
     /**
-     * @return the {@code EdgeConfig} instance associated with this edge.
+     * Returns the {@code EdgeConfig} instance associated with this edge.
      */
     public EdgeConfig getConfig() {
         return config;
@@ -318,6 +320,9 @@ public class Edge implements IdentifiedDataSerializable {
         return 37 * source.hashCode() + destination.hashCode();
     }
 
+
+    // Implementation of IdentifiedDataSerializable
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(source);
@@ -348,13 +353,16 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public int getFactoryId() {
-        return JetDataSerializerHook.FACTORY_ID;
+        return SerializationConstants.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetDataSerializerHook.EDGE;
+        return SerializationConstants.EDGE;
     }
+
+    // END Implementation of IdentifiedDataSerializable
+
 
     /**
      * Enumerates the supported patterns of forwarding data items along an edge. Since there

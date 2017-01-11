@@ -84,28 +84,30 @@ public final class Processors {
     }
 
     /**
-     * @return processors for reading from a Hazelcast IList
+     * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList.
      */
     public static ProcessorMetaSupplier listReader(String listName) {
         return IListReader.supplier(listName);
     }
 
     /**
-     * @return processors for reading from a remote Hazelcast IList
+     * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList
+     * in a remote cluster.
      */
     public static ProcessorMetaSupplier listReader(String listName, ClientConfig clientConfig) {
         return IListReader.supplier(listName, clientConfig);
     }
 
     /**
-     * @return a processor for writing to a Hazelcast IList
+     * Returns a meta-supplier of processors that write received items to an IMDG IList.
      */
     public static ProcessorSupplier listWriter(String listName) {
         return IListWriter.supplier(listName);
     }
 
     /**
-     * @return a processor for writing to a remote Hazelcast IList
+     * Returns a meta-supplier of processors that write received items to an IMDG IList in
+     * a remote cluster.
      */
     public static ProcessorSupplier listWriter(String listName, ClientConfig clientConfig) {
         return IListWriter.supplier(listName, clientConfig);
@@ -186,13 +188,13 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #groupAndAccumulate(Function, BiFunction, BiFunction)}
-     * with the constructor of {@code SimpleImmutableEntry} as the finisher function,
-     * which means the processor emits items of type
-     * {@code java.util.Map.Entry<K, A>}. Note that {@code K} isn't a part of the
-     * method's signature since nothing in the processor depends on it. The
-     * receiving processor will in any case have to perform an unchecked cast to
-     * {@code Entry<K, A>}.
+     * Convenience over {@link #groupAndAccumulate(Distributed.Function,
+     * Distributed.BiFunction, Distributed.BiFunction)} with the constructor of
+     * {@code SimpleImmutableEntry} as the finisher function, which means the
+     * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
+     * {@code K} isn't a part of the method's signature since nothing in the
+     * processor depends on it. The receiving processor will in any case have to
+     * perform an unchecked cast to {@code Entry<K, A>}.
      *
      * @param keyExtractor computes the key from the entry
      * @param accumulator accumulates the result value across all entries under the same key
@@ -209,10 +211,11 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #groupAndAccumulate(Function, BiFunction, BiFunction)}
-     * with identity function as the key extractor and constructor of
-     * {@code SimpleImmutableEntry} as the finisher function, which means the
-     * processor emits items of type {@code java.util.Map.Entry<T, A>}.
+     * Convenience over {@link #groupAndAccumulate(Distributed.Function,
+     * Distributed.BiFunction, Distributed.BiFunction)} with identity
+     * function as the key extractor and constructor of {@code SimpleImmutableEntry}
+     * as the finisher function, which means the processor emits items of type
+     * {@code java.util.Map.Entry<T, A>}.
      *
      * @param accumulator accumulates the result value across all entries under the same key
      * @param <T> type of received item
@@ -256,8 +259,9 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #accumulate(BiFunction, Function)} with identity function
-     * as the finisher, which means the processor emits an item of type {@code A}.
+     * Convenience over {@link #accumulate(Distributed.BiFunction, Distributed.Function)}
+     * with identity function as the finisher, which means the processor emits an
+     * item of type {@code A}.
      *
      * @param accumulator accumulates the result value across all the input items
      * @param <T> type of received item
@@ -283,9 +287,9 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #countDistinct(Function)} with identity function
-     * as the key extractor, which means the processor will emit the number of
-     * distinct items it has seen in the input.
+     * Convenience over {@link #countDistinct(Distributed.Function)} with identity
+     * function as the key extractor, which means the processor will emit the number
+     * of distinct items it has seen in the input.
      *
      * @param <T> type of received item
      */
