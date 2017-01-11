@@ -2520,7 +2520,7 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="hot-restart">
-        <xs:attribute name="fsync" type="xs:boolean" default="false">
+        <xs:attribute name="fsync" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     True if disk write should be followed by an fsync() system call,
@@ -2528,7 +2528,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="enabled" type="xs:boolean" default="false">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     True if hot-restart is enabled, false otherwise

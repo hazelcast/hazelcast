@@ -189,7 +189,7 @@
                     <hz:attribute name="weight" extractor="com.car.WeightExtractor" />
                 </hz:attributes>
                 <hz:quorum-ref>my-quorum</hz:quorum-ref>
-                <hz:hot-restart enabled="true" fsync="true" />
+                <hz:hot-restart enabled="${testMap.hotRestart.enabled}" fsync="${testMap.hotRestart.fsync}" />
             </hz:map>
             <hz:map name="testMap2"
                     backup-count="2"

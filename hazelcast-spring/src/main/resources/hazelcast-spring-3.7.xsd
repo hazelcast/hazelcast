@@ -932,7 +932,7 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
-                                    <xs:element name="multi-threading-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" 
+                                    <xs:element name="multi-threading-enabled" type="parameterized-boolean" minOccurs="0" maxOccurs="1"
                                                 default="false">
                                         <xs:annotation>
 		                                    <xs:documentation>
@@ -1582,7 +1582,7 @@
         <xs:attribute name="multicast-port" type="xs:string" use="optional" default="54327"/>
         <xs:attribute name="multicast-timeout-seconds" type="xs:string" use="optional" default="2"/>
         <xs:attribute name="multicast-time-to-live" type="xs:string" use="optional" default="32"/>
-        <xs:attribute name="loopback-mode-enabled" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="loopback-mode-enabled" type="parameterized-boolean" use="optional" default="false"/>
     </xs:complexType>
 
     <xs:complexType name="aws">
@@ -2648,7 +2648,7 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="hot-restart">
-        <xs:attribute name="fsync" type="xs:boolean" default="false">
+        <xs:attribute name="fsync" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     True if disk write should be followed by an fsync() system call,
@@ -2656,7 +2656,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="enabled" type="xs:boolean" default="false">
+        <xs:attribute name="enabled" type="parameterized-boolean" default="false">
             <xs:annotation>
                 <xs:documentation>
                     True if hot-restart is enabled, false otherwise
