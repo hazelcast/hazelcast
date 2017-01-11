@@ -82,7 +82,7 @@ public class ResourceStore {
         File resource = resources.get(descriptor);
         String resourceUri = resource.toURI().toString();
         try (FileInputStream stream = new FileInputStream(resource)) {
-            switch (descriptor.getResourceType()) {
+            switch (descriptor.getResourceKind()) {
                 case JAR:
                     loadJarStream(stream, resourceUri);
                     return;
@@ -93,7 +93,7 @@ public class ResourceStore {
                     dataEntries.put(descriptor.getId(), new ClassLoaderEntry(read(stream), resourceUri));
                     return;
                 default:
-                    throw new AssertionError("Unhandled resource type " + descriptor.getResourceType());
+                    throw new AssertionError("Unhandled resource type " + descriptor.getResourceKind());
             }
         }
     }

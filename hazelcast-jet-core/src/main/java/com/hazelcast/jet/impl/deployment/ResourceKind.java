@@ -18,7 +18,10 @@ package com.hazelcast.jet.impl.deployment;
 
 import java.io.Serializable;
 
-public enum ResourceType implements Serializable {
+/**
+ * Describes the kind of resource that is deployed to the Jet cluster.
+ */
+public enum ResourceKind implements Serializable {
     JAR,
     CLASS,
     DATA

@@ -20,15 +20,15 @@ import java.io.Serializable;
 
 public class ResourceDescriptor implements Serializable {
     private final String id;
-    private final ResourceType resourceType;
+    private final ResourceKind resourceKind;
 
-    public ResourceDescriptor(String id, ResourceType resourceType) {
+    public ResourceDescriptor(String id, ResourceKind resourceKind) {
         this.id = id;
-        this.resourceType = resourceType;
+        this.resourceKind = resourceKind;
     }
 
-    public ResourceType getResourceType() {
-        return resourceType;
+    public ResourceKind getResourceKind() {
+        return resourceKind;
     }
 
     public String getId() {
@@ -51,19 +51,19 @@ public class ResourceDescriptor implements Serializable {
             return false;
         }
 
-        return resourceType == that.resourceType;
+        return resourceKind == that.resourceKind;
 
     }
 
     @Override
     public int hashCode() {
         int result = id.hashCode();
-        result = 31 * result + resourceType.hashCode();
+        result = 31 * result + resourceKind.hashCode();
         return result;
     }
 
     @Override
     public String toString() {
-        return id + " (" + getResourceType() + ")";
+        return id + " (" + getResourceKind() + ")";
     }
 }

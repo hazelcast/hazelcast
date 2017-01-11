@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.deployment.ResourceType;
+import com.hazelcast.jet.impl.deployment.ResourceKind;
 
 import java.io.File;
 import java.io.Serializable;
@@ -81,7 +81,7 @@ public class JobConfig implements Serializable {
      * @param id  identifier for the JAR file
      */
     public void addJar(URL url, String id) {
-        add(url, id, ResourceType.JAR);
+        add(url, id, ResourceKind.JAR);
     }
 
     /**
@@ -157,7 +157,7 @@ public class JobConfig implements Serializable {
      * @param id  identifier for the resource
      */
     public void addResource(URL url, String id) {
-        add(url, id, ResourceType.DATA);
+        add(url, id, ResourceKind.DATA);
     }
 
     /**
@@ -182,7 +182,7 @@ public class JobConfig implements Serializable {
      */
     public void addResource(File file, String id) {
         try {
-            add(file.toURI().toURL(), id, ResourceType.DATA);
+            add(file.toURI().toURL(), id, ResourceKind.DATA);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -226,7 +226,7 @@ public class JobConfig implements Serializable {
         return resourceConfigs;
     }
 
-    private void add(URL url, String id, ResourceType type) {
+    private void add(URL url, String id, ResourceKind type) {
         resourceConfigs.add(new ResourceConfig(url, id, type));
     }
 
