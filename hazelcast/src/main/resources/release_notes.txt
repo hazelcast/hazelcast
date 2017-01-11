@@ -85,6 +85,7 @@ The following are the fixed issues for 3.7.5 release.
 - Hazelcast Management Center is not working with Tomcat 8 and higher. [9452]
 - The configuration schema `hazelcast-spring.xsd` should use `<xs:all>` instead of `<xs:sequence>` for "hazelcast-bean" base type. [9289]
 - Stuck threads are seen in Hazelcast 3.6.2 client when session replication is used. [9060]
+- When cluster service starts when a member starts, it registers itself as the only member and publishes the membership event. `QuorumService` is a `MembershipAwareService`, therefore it is expected to update quorums when it receives these membership events. The problem is as follows: services are not registered to `ServiceManager` yet when the cluster service publishes this event on a member start. So, it seems that `QuorumService` is missing it and failing to update its internal quorum status. [8820]
 - Client disconnection leads to a stuck `clusterExecutor` shutdown in Hazelcast 3.6.2. [8721]
 - Near cache updates may cause `OutofMemoryException` under high load and high number of `ICache.getAsync` calls. [8593]
 - `HazelcastInstanceAware` should be supported for `QuorumFunction`. [7499]
