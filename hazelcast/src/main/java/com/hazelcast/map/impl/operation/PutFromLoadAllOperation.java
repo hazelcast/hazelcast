@@ -116,7 +116,6 @@ public class PutFromLoadAllOperation extends MapOperation implements PartitionAw
     @Override
     public void afterRun() throws Exception {
         invalidateNearCache(invalidationKeys);
-        evict(null);
 
         super.afterRun();
     }

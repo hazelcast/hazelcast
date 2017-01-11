@@ -80,9 +80,6 @@ public final class PutBackupOperation extends MutatingKeyBasedMapOperation imple
 
     @Override
     public void afterRun() throws Exception {
-        if (recordInfo != null) {
-            evict(dataKey);
-        }
         if (!disableWanReplicationEvent) {
             publishWANReplicationEventBackup(mapServiceContext, mapEventPublisher);
         }

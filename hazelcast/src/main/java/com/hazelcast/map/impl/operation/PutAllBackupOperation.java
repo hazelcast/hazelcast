@@ -62,8 +62,6 @@ public class PutAllBackupOperation extends MapOperation implements PartitionAwar
                 EntryView entryView = createSimpleEntryView(dataKey, dataValueAsData, record);
                 mapEventPublisher.publishWanReplicationUpdateBackup(name, entryView);
             }
-
-            evict(dataKey);
         }
     }
 

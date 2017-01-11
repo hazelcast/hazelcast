@@ -53,7 +53,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
             // todo should evict operation replicated??
             mapEventPublisher.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
-        evict(dataKey);
     }
 
     @Override
