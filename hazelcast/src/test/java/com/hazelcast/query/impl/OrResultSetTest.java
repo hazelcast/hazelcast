@@ -32,8 +32,8 @@ public class OrResultSetTest {
             sizeIterator++;
         }
 
-        assertEquals(sizeIterator, 2 * size);
-        assertEquals(sizeMethod, 2 * size);
+        assertEquals(2 * size, sizeIterator);
+        assertEquals(2 * size, sizeMethod);
     }
 
     @Test
@@ -105,5 +105,4 @@ public class OrResultSetTest {
             return null;
         }
     }
-
 }

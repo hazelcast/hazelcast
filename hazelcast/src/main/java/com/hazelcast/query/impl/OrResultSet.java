@@ -55,6 +55,20 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
         return getEntries().size();
     }
 
+    /**
+     * @return returns estimated size without allocating the full result set
+     */
+    public int estimatedSize() {
+        if (entries == null) {
+            if (indexedResults.isEmpty()) {
+                return 0;
+            } else {
+                return indexedResults.get(0).size();
+            }
+        }
+        return entries.size();
+    }
+
     private Set<QueryableEntry> getEntries() {
         if (entries == null) {
             if (indexedResults.isEmpty()) {
