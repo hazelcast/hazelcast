@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LogEvent;
@@ -34,8 +35,6 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class ClientLoggingService implements LoggingService {
 
-    private final String groupName;
-
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
     private final ConstructorFunction<String, ILogger> loggerConstructor
@@ -48,14 +47,14 @@ public class ClientLoggingService implements LoggingService {
     };
 
     private final LoggerFactory loggerFactory;
-    private final BuildInfo buildInfo;
-    private final String clientName;
+    private final String versionMessage;
 
     public ClientLoggingService(String groupName, String loggingType, BuildInfo buildInfo, String clientName) {
-        this.groupName = groupName;
-        this.clientName = clientName;
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
-        this.buildInfo = buildInfo;
+        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
+        this.versionMessage = clientName + " [" + groupName + "]"
+                + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
+                + " [" + buildInfo.getVersion() + "] ";
     }
 
     @Override
@@ -94,7 +93,7 @@ public class ClientLoggingService implements LoggingService {
         @Override
         public void log(Level level, String message, Throwable thrown) {
             if (logger.isLoggable(level)) {
-                String logMessage = clientName + " [" + groupName + "] [" + buildInfo.getVersion() + "] " + message;
+                String logMessage = versionMessage + message;
                 logger.log(level, logMessage, thrown);
             }
         }
