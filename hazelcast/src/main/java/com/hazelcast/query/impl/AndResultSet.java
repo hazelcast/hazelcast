@@ -33,17 +33,20 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * And Result set for Predicates.
  */
 public class AndResultSet extends AbstractSet<QueryableEntry> {
+
+    private static final int SIZE_UNINITIALIZED = -1;
+
     private final Set<QueryableEntry> setSmallest;
     private final List<Set<QueryableEntry>> otherIndexedResults;
     private final List<Predicate> lsNoIndexPredicates;
-    private int size;
+    private int cachedSize;
 
     public AndResultSet(Set<QueryableEntry> setSmallest, List<Set<QueryableEntry>> otherIndexedResults,
                         List<Predicate> lsNoIndexPredicates) {
         this.setSmallest = isNotNull(setSmallest, "setSmallest");
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
-        this.size = -1;
+        this.cachedSize = SIZE_UNINITIALIZED;
     }
 
     public byte[] toByteArray(ObjectDataOutput out) throws IOException {
@@ -92,7 +95,7 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
                 return true;
             }
 
-            for (; it.hasNext(); ) {
+            while (it.hasNext()) {
                 QueryableEntry entry = it.next();
 
                 if (checkOtherIndexedResults(entry) && checkNoIndexPredicates(entry)) {
@@ -150,14 +153,28 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public int size() {
-        if (size == -1) {
+        if (cachedSize == SIZE_UNINITIALIZED) {
             int calculatedSize = 0;
             for (Iterator<QueryableEntry> it = iterator(); it.hasNext(); it.next()) {
                 calculatedSize++;
             }
-            size = calculatedSize;
+            cachedSize = calculatedSize;
         }
-        return size;
+        return cachedSize;
+    }
+
+    /**
+     * @return returns estimated size without calculating the full result set in full-result scan.
+     */
+    public int estimatedSize() {
+        if (cachedSize == SIZE_UNINITIALIZED) {
+            if (setSmallest == null) {
+                return 0;
+            } else {
+                return setSmallest.size();
+            }
+        }
+        return cachedSize;
     }
 
 }
