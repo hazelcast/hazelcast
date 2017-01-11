@@ -1235,7 +1235,7 @@
         <xs:complexType>
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
-                    <xs:all>
+                    <xs:sequence>
                         <xs:element name="spring-aware" type="xs:string" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
@@ -1245,9 +1245,9 @@
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="1"/>
-                    </xs:all>
+                        <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="query-caches" type="query-caches-client" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                 </xs:extension>
@@ -2119,9 +2119,9 @@
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
             <xs:element name="discovery-strategies" type="discovery-strategies" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
-        <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="true"/>
+        <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
-        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="5000"/>
+        <xs:attribute name="connection-timeout" use="optional" type="parameterized-positive-integer" default="60000"/>
         <xs:attribute name="connection-attempt-period" use="optional" type="parameterized-positive-integer" default="3000"/>
         <xs:attribute name="connection-attempt-limit" use="optional" type="parameterized-non-negative-integer" default="2"/>
     </xs:complexType>
