@@ -322,4 +322,8 @@ public class TestHazelcastInstanceFactory {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }
+
+    public int getCount() {
+        return count;
+    }
 }
