@@ -76,15 +76,9 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
             }
         };
         new Thread(server).start();
-        Vertex producer = new Vertex("producer", SocketTextStreamReader.supplier(host, port))
-                .localParallelism(1);
-
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
-
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        Vertex producer = dag.newVertex("producer", SocketTextStreamReader.supplier(host, port)).localParallelism(1);
+        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        dag.edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
 

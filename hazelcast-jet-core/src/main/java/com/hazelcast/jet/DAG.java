@@ -74,19 +74,46 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
 
     /**
-     * Adds a vertex to the DAG. The vertex name must be unique.
+     * Creates a vertex from a {@code SimpleProcessorSupplier} and adds it to this DAG.
+     *
+     * @param name the unique name of the vertex
+     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
+     */
+    public Vertex newVertex(String name, SimpleProcessorSupplier simpleSupplier) {
+        return addVertex(new Vertex(name, simpleSupplier));
+    }
+
+    /**
+     * Creates a vertex from a {@code ProcessorSupplier} and adds it to this DAG.
+     *
+     * @param name the unique name of the vertex
+     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
+     */
+    public Vertex newVertex(String name, ProcessorSupplier processorSupplier) {
+        return addVertex(new Vertex(name, processorSupplier));
+    }
+
+    /**
+     * Creates a vertex from a {@code ProcessorMetaSupplier} and adds it to this DAG.
+     *
+     * @param name the unique name of the vertex
+     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
+     *
+     */
+    public Vertex newVertex(String name, ProcessorMetaSupplier metaSupplier) {
+        return addVertex(new Vertex(name, metaSupplier));
+    }
+
+    /**
+     * Adds a vertex to this DAG. The vertex name must be unique.
      */
     public DAG vertex(Vertex vertex) {
-        if (vertices.containsKey(vertex.getName())) {
-            throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
-        }
-
-        vertices.put(vertex.getName(), vertex);
+        addVertex(vertex);
         return this;
     }
 
     /**
-     * Adds an edge to the DAG. The vertices it connects must already be present
+     * Adds an edge to this DAG. The vertices it connects must already be present
      * in the DAG. It is an error to add an edge that connects the same two
      * vertices as another existing edge. It is an error to connect an edge to
      * a vertex at the same ordinal as another existing edge. However, inbound
@@ -177,6 +204,11 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         return Collections.unmodifiableCollection(vertices).iterator();
     }
 
+    @Override
+    public String toString() {
+        return "Vertices " + vertices + "\nEdges " + edges;
+    }
+
     void validate() throws IllegalArgumentException {
         topologicalVertexStack.clear();
         checkTrue(!vertices.isEmpty(), "DAG must contain at least one vertex");
@@ -189,9 +221,12 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                         .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
     }
 
-    @Override
-    public String toString() {
-        return "Vertices " + vertices + "\nEdges " + edges;
+    private Vertex addVertex(Vertex vertex) {
+        if (vertices.containsKey(vertex.getName())) {
+            throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
+        }
+        vertices.put(vertex.getName(), vertex);
+        return vertex;
     }
 
     private boolean containsVertex(String vertexName) {

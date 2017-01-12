@@ -91,20 +91,17 @@ public class BackpressureTest extends JetTestSupport {
                     .map(Partition::getPartitionId)
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
-        Vertex generator = new Vertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
+        Vertex generator = dag.newVertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
                 ? ProcessorSupplier.of(GeneratingProducer::new)
                 : ProcessorSupplier.of(Processors.NoopProducer::new)
         );
-        Vertex hiccuper = new Vertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
-        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
-        dag
-                .vertex(generator)
-                .vertex(hiccuper)
-                .vertex(consumer)
-                .edge(between(generator, hiccuper)
-                        .distributed()
-                        .partitionedByCustom((x, y) -> ptionOwnedByMember2))
-                .edge(between(hiccuper, consumer));
+        Vertex hiccuper = dag.newVertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
+        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
+
+        dag.edge(between(generator, hiccuper)
+                .distributed()
+                .partitionedByCustom((x, y) -> ptionOwnedByMember2))
+           .edge(between(hiccuper, consumer));
 
         uncheckedGet(jet1.newJob(dag).execute());
         assertCounts(jet1.getMap("counts"));

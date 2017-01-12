@@ -115,25 +115,19 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Test
     public void testJet() {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
-        Vertex generator = new Vertex("generator", Generator::new);
-        Vertex accumulator = new Vertex("accumulator", Combiner::new);
-        Vertex combiner = new Vertex("combiner", Combiner::new);
-        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"));
+        Vertex generator = dag.newVertex("generator", Generator::new);
+        Vertex accumulator = dag.newVertex("accumulator", Combiner::new);
+        Vertex combiner = dag.newVertex("combiner", Combiner::new);
+        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 
-        dag
-                .vertex(producer)
-                .vertex(generator)
-                .vertex(accumulator)
-                .vertex(combiner)
-                .vertex(consumer)
-                .edge(between(producer, generator))
-                .edge(between(generator, accumulator)
-                        .partitionedByCustom(Partitioner.fromInt(item -> ((Entry) item).getKey().hashCode())))
-                .edge(between(accumulator, combiner)
-                        .distributed()
-                        .partitionedByKey(item -> ((Entry) item).getKey()))
-                .edge(between(combiner, consumer));
+        dag.edge(between(producer, generator))
+           .edge(between(generator, accumulator)
+                   .partitionedByCustom(Partitioner.fromInt(item -> ((Entry) item).getKey().hashCode())))
+           .edge(between(accumulator, combiner)
+                   .distributed()
+                   .partitionedByKey(item -> ((Entry) item).getKey()))
+           .edge(between(combiner, consumer));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
         assertCounts(instance.getMap("counts"));
@@ -143,22 +137,16 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Ignore
     public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", IMapReader.supplier("words"));
-        Vertex generator = new Vertex("generator", Mapper::new);
-        Vertex accumulator = new Vertex("accumulator", Reducer::new);
-        Vertex combiner = new Vertex("combiner", Reducer::new);
-        Vertex consumer = new Vertex("consumer", IMapWriter.supplier("counts"));
-        dag
-                .vertex(producer)
-                .vertex(generator)
-                .vertex(accumulator.localParallelism(1))
-                .vertex(combiner.localParallelism(1))
-                .vertex(consumer.localParallelism(1))
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"));
+        Vertex generator = dag.newVertex("generator", Mapper::new);
+        Vertex accumulator = dag.newVertex("accumulator", Reducer::new);
+        Vertex combiner = dag.newVertex("combiner", Reducer::new);
+        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 
-                .edge(between(producer, generator))
-                .edge(between(generator, accumulator))
-                .edge(between(accumulator, combiner).distributed().allToOne())
-                .edge(between(combiner, consumer));
+        dag.edge(between(producer, generator))
+           .edge(between(generator, accumulator))
+           .edge(between(accumulator, combiner).distributed().allToOne())
+           .edge(between(combiner, consumer));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
 

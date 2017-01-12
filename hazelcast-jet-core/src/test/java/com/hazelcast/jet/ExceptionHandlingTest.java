@@ -62,8 +62,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         final SimpleProcessorSupplier sup = () -> {
             throw e;
         };
-        Vertex faulty = new Vertex("faulty", sup);
-        dag.vertex(faulty);
+        dag.newVertex("faulty", sup);
 
         // Then
         expectedException.expect(e.getClass());
@@ -80,10 +79,9 @@ public class ExceptionHandlingTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        Vertex faulty = new Vertex("faulty", (ProcessorMetaSupplier) address -> {
+        dag.newVertex("faulty", (ProcessorMetaSupplier) address -> {
             throw e;
         });
-        dag.vertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -102,7 +100,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         final int localPort = instance.getCluster().getLocalMember().getAddress().getPort();
-        Vertex faulty = new Vertex("faulty", (ProcessorMetaSupplier) address -> {
+        dag.newVertex("faulty", (ProcessorMetaSupplier) address -> {
             if (address.getPort() == localPort) {
                 return ProcessorSupplier.of(() -> new AbstractProcessor() {
                 });
@@ -112,7 +110,6 @@ public class ExceptionHandlingTest extends JetTestSupport {
                 });
             }
         });
-        dag.vertex(faulty);
 
         // Then
         expectedException.expect(e.getClass());
@@ -129,11 +126,9 @@ public class ExceptionHandlingTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
-        Vertex consumer = new Vertex("consumer", TestProcessors.Identity::new);
-        dag.vertex(faulty)
-           .vertex(consumer)
-           .edge(between(faulty, consumer));
+        Vertex faulty = dag.newVertex("faulty", () -> new FaultyProducer(e));
+        Vertex consumer = dag.newVertex("consumer", TestProcessors.Identity::new);
+        dag.edge(between(faulty, consumer));
 
         // Then
         expectedException.expect(e.getClass());
@@ -150,11 +145,9 @@ public class ExceptionHandlingTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        Vertex faulty = new Vertex("faulty", () -> new FaultyProducer(e));
-        Vertex consumer = new Vertex("consumer", TestProcessors.BlockingIdentity::new);
-        dag.vertex(faulty)
-           .vertex(consumer)
-           .edge(between(faulty, consumer));
+        Vertex faulty = dag.newVertex("faulty", () -> new FaultyProducer(e));
+        Vertex consumer = dag.newVertex("consumer", TestProcessors.BlockingIdentity::new);
+        dag.edge(between(faulty, consumer));
 
         // Then
         expectedException.expect(e.getClass());

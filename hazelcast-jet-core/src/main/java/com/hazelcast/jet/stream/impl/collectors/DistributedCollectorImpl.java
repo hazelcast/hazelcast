@@ -72,8 +72,8 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = new Vertex(uniqueVertexName("writer"), Processors.listWriter(listName));
-        dag.vertex(writer).edge(between(combiner, writer));
+        Vertex writer = dag.newVertex(uniqueVertexName("writer"), Processors.listWriter(listName));
+        dag.edge(between(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getJetInstance().getList(listName);
         R result = list.get(0);
@@ -83,12 +83,11 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Vertex accumulatorVertex = new Vertex(uniqueVertexName("accumulator"),
+        Vertex accumulatorVertex = dag.newVertex(uniqueVertexName("accumulator"),
                 () -> new CollectorAccumulatorP<>(accumulator, supplier));
         if (upstream.isOrdered()) {
             accumulatorVertex.localParallelism(1);
         }
-        dag.vertex(accumulatorVertex);
         Vertex previous = upstream.buildDAG(dag);
 
         if (previous != accumulatorVertex) {
@@ -101,8 +100,7 @@ public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
         SimpleProcessorSupplier processorSupplier = getCombinerSupplier(combiner, finisher);
-        Vertex combinerVertex = new Vertex(uniqueVertexName("combiner"), processorSupplier).localParallelism(1);
-        dag.vertex(combinerVertex);
+        Vertex combinerVertex = dag.newVertex(uniqueVertexName("combiner"), processorSupplier).localParallelism(1);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
                 .allToOne()

@@ -37,8 +37,7 @@ public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final long skip = this.skip;
-        Vertex skipVertex = new Vertex(uniqueVertexName("skip"), () -> new SkipP(skip)).localParallelism(1);
-        dag.vertex(skipVertex);
+        Vertex skipVertex = dag.newVertex(uniqueVertexName("skip"), () -> new SkipP(skip)).localParallelism(1);
 
         Edge edge = between(previous, skipVertex);
 

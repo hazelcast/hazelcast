@@ -33,22 +33,18 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     public Vertex buildDAG(DAG dag) {
         if (upstream.isOrdered()) {
             Vertex previous = upstream.buildDAG(dag);
-            Vertex distinct = new Vertex(uniqueVertexName("distinct"), DistinctP::new).localParallelism(1);
-            dag.vertex(distinct)
-               .edge(between(previous, distinct));
+            Vertex distinct = dag.newVertex(uniqueVertexName("distinct"), DistinctP::new).localParallelism(1);
+            dag.edge(between(previous, distinct));
 
             return distinct;
         }
 
         Vertex previous = upstream.buildDAG(dag);
-        Vertex distinct = new Vertex(uniqueVertexName("distinct-local"), DistinctP::new);
-        Vertex combiner = new Vertex(uniqueVertexName("distinct-global"), DistinctP::new);
+        Vertex distinct = dag.newVertex(uniqueVertexName("distinct-local"), DistinctP::new);
+        Vertex combiner = dag.newVertex(uniqueVertexName("distinct-global"), DistinctP::new);
 
-        dag
-                .vertex(distinct)
-                .vertex(combiner)
-                .edge(between(previous, distinct).partitioned())
-                .edge(between(distinct, combiner).partitioned().distributed());
+        dag.edge(between(previous, distinct).partitioned())
+           .edge(between(distinct, combiner).partitioned().distributed());
 
         return combiner;
     }

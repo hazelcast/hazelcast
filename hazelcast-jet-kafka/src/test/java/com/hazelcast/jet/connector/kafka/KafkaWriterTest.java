@@ -23,7 +23,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -81,15 +80,13 @@ public class KafkaWriterTest extends JetTestSupport {
         Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
         instance.getMap("producer").putAll(map);
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", IMapReader.supplier("producer"))
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer"))
                 .localParallelism(1);
 
-        Vertex consumer = new Vertex("consumer", KafkaWriter.supplier(zkConnStr, producerGroup, topic, brokerConnectionString))
+        Vertex consumer = dag.newVertex("consumer", KafkaWriter.supplier(zkConnStr, producerGroup, topic, brokerConnectionString))
                 .localParallelism(4);
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);

@@ -34,11 +34,11 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
         R target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);
-        Vertex writer = new Vertex(writerVertexName(getName()), getConsumer());
+        Vertex writer = dag.newVertex(writerVertexName(getName()), getConsumer());
         if (localParallelism() > 0) {
             writer.localParallelism(localParallelism());
         }
-        dag.vertex(writer).edge(between(vertex, writer));
+        dag.edge(between(vertex, writer));
         executeJob(context, dag);
         return target;
     }

@@ -19,7 +19,6 @@ package deployment;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JobConfig;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.FilteringClassLoader;
 import java.lang.reflect.Method;
@@ -40,7 +39,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.vertex(new Vertex("create and print person", LoadPersonIsolated::new));
+        dag.newVertex("create and print person", LoadPersonIsolated::new);
 
 
         JetInstance jetInstance = getJetInstance();
@@ -57,7 +56,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
         createCluster();
 
         DAG dag = new DAG();
-        dag.vertex(new Vertex("create and print person", LoadPersonIsolated::new));
+        dag.newVertex("create and print person", LoadPersonIsolated::new);
 
         JobConfig jobConfig = new JobConfig();
         URL classUrl = this.getClass().getResource("/cp1/");

@@ -74,8 +74,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance instance = newInstance();
 
         DAG dag = new DAG();
-        Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.vertex(slow);
+        dag.newVertex("slow", StuckProcessor::new);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -100,8 +99,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance instance = newInstance();
 
         DAG dag = new DAG();
-        Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.vertex(slow);
+        dag.newVertex("slow", StuckProcessor::new);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -123,8 +121,7 @@ public class CancellationTest extends JetTestSupport {
         JetInstance client = factory.newClient();
 
         DAG dag = new DAG();
-        Vertex slow = new Vertex("slow", StuckProcessor::new);
-        dag.vertex(slow);
+        dag.newVertex("slow", StuckProcessor::new);
 
         Future<Void> future = client.newJob(dag).execute();
         assertExecutionStarted();
@@ -147,10 +144,8 @@ public class CancellationTest extends JetTestSupport {
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
 
-        SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance.getHazelcastInstance()),
-                fault);
-        Vertex faulty = new Vertex("faulty", supplier).localParallelism(4);
-        dag.vertex(faulty);
+        SingleNodeFaultSupplier supplier = new SingleNodeFaultSupplier(getAddress(instance.getHazelcastInstance()), fault);
+        dag.newVertex("faulty", supplier).localParallelism(4);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();
@@ -176,10 +171,8 @@ public class CancellationTest extends JetTestSupport {
 
         RuntimeException fault = new RuntimeException("fault");
         DAG dag = new DAG();
-
-        Vertex faulty = new Vertex("faulty", new SingleNodeFaultSupplier(getAddress(other.getHazelcastInstance()), fault))
-                .localParallelism(4);
-        dag.vertex(faulty);
+        dag.newVertex("faulty", new SingleNodeFaultSupplier(getAddress(other.getHazelcastInstance()), fault))
+           .localParallelism(4);
 
         Future<Void> future = instance.newJob(dag).execute();
         assertExecutionStarted();

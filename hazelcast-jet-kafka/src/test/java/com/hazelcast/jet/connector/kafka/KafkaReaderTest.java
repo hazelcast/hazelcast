@@ -22,7 +22,6 @@ import com.github.charithe.kafka.KafkaJunitRule;
 import com.hazelcast.core.IList;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -75,15 +74,13 @@ public class KafkaReaderTest extends JetTestSupport {
         final String consumerGroupId = "test";
         JetInstance instance = createJetInstance();
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
+        Vertex producer = dag.newVertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
                 .localParallelism(4);
 
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
+        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);

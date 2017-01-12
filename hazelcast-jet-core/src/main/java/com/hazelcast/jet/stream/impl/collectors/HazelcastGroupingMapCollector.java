@@ -60,16 +60,13 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
-        Vertex merger = new Vertex(uniqueVertexName("grouping-accumulator"),
+        Vertex merger = dag.newVertex(uniqueVertexName("grouping-accumulator"),
                 () -> new GroupingAccumulatorP<>(classifier, collector));
-        Vertex combiner = new Vertex(uniqueVertexName("grouping-combiner"),
+        Vertex combiner = dag.newVertex(uniqueVertexName("grouping-combiner"),
                 () -> new GroupingCombinerP<>(collector));
-        Vertex writer = new Vertex(writerVertexName(mapName), Processors.mapWriter(mapName));
+        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.mapWriter(mapName));
 
-        dag.vertex(merger)
-           .vertex(combiner)
-           .vertex(writer)
-           .edge(between(previous, merger).partitionedByKey(item -> classifier.apply((T) item)))
+        dag.edge(between(previous, merger).partitionedByKey(item -> classifier.apply((T) item)))
            .edge(between(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
            .edge(between(combiner, writer));
         executeJob(context, dag);

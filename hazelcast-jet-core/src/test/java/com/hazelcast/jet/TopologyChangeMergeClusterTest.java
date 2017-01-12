@@ -68,9 +68,8 @@ public class TopologyChangeMergeClusterTest extends JetSplitBrainTestSupport {
     protected void onAfterSplitBrainCreated(JetInstance[] firstBrain, JetInstance[] secondBrain) throws Exception {
         // Given
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
+        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(PARALLELISM);
-        dag.vertex(test);
         future = firstBrain[0].newJob(dag).execute();
         StuckProcessor.executionStarted.await();
     }

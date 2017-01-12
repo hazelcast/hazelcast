@@ -81,9 +81,8 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_addNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
+        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(PARALLELISM);
-        dag.vertex(test);
 
         // When
         try {
@@ -113,9 +112,8 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_removeNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
+        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(PARALLELISM);
-        dag.vertex(test);
 
         // When
         try {
@@ -146,9 +144,8 @@ public class TopologyChangeTest extends JetTestSupport {
     public void when_removeCallingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
         DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
+        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
                 .localParallelism(PARALLELISM);
-        dag.vertex(test);
 
         // When
         try {

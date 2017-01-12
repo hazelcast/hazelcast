@@ -41,8 +41,7 @@ public class Matcher {
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
         DAG dag = new DAG();
-        Vertex anyMatch = new Vertex(uniqueVertexName("any-match"), () -> new AnyMatchP<>(predicate));
-        dag.vertex(anyMatch);
+        Vertex anyMatch = dag.newVertex(uniqueVertexName("any-match"), () -> new AnyMatchP<>(predicate));
         Vertex previous = upstream.buildDAG(dag);
         if (previous != anyMatch) {
             dag.edge(between(previous, anyMatch));
@@ -64,8 +63,8 @@ public class Matcher {
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         String listName = uniqueListName();
-        Vertex writer = new Vertex(writerVertexName(listName), Processors.listWriter(listName));
-        dag.vertex(writer).edge(between(vertex, writer));
+        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.listWriter(listName));
+        dag.edge(between(vertex, writer));
         executeJob(context, dag);
         return context.getJetInstance().getList(listName);
     }

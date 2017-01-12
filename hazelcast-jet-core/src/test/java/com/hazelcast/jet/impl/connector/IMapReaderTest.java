@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.Vertex;
@@ -78,12 +77,10 @@ public class IMapReaderTest extends HazelcastTestSupport {
         Address address = c2.getCluster().getLocalMember().getAddress();
         clientConfig.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
 
-        Vertex producer = new Vertex("producer", IMapReader.supplier("producer", clientConfig)).localParallelism(4);
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer", clientConfig)).localParallelism(4);
+        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
 
         Future<Void> execute = c1.newJob(dag).execute();
         assertCompletesEventually(execute);

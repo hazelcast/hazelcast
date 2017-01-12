@@ -70,20 +70,18 @@ public class PartitionAlignmentTest {
         final SimpleProcessorSupplier supplierOfListProducer = () -> new ListProducer(items, items.size());
         final Partitioner partitioner = (item, partitionCount) -> (int) item % partitionCount;
 
-        final Vertex distributedProducer = new Vertex("distributedProducer", supplierOfListProducer).localParallelism(1);
-        final Vertex localProducer = new Vertex("localProducer", supplierOfListProducer).localParallelism(1);
-        final Vertex processor = new Vertex("processor", Counter::new).localParallelism(localProcessorCount);
-        final Vertex consumer = new Vertex("consumer", listWriter("numbers")).localParallelism(1);
+        final DAG dag = new DAG();
 
-        executeAndPeel(instance.newJob(new DAG()
-                .vertex(distributedProducer)
-                .vertex(localProducer)
-                .vertex(processor)
-                .vertex(consumer)
-                .edge(between(distributedProducer, processor).partitionedByCustom(partitioner).distributed())
-                .edge(from(localProducer, 0).to(processor, 1).partitionedByCustom(partitioner))
-                .edge(between(processor, consumer)))
-        );
+        final Vertex distributedProducer = dag.newVertex("distributedProducer", supplierOfListProducer).localParallelism(1);
+        final Vertex localProducer = dag.newVertex("localProducer", supplierOfListProducer).localParallelism(1);
+        final Vertex processor = dag.newVertex("processor", Counter::new).localParallelism(localProcessorCount);
+        final Vertex consumer = dag.newVertex("consumer", listWriter("numbers")).localParallelism(1);
+
+        dag.edge(between(distributedProducer, processor).partitionedByCustom(partitioner).distributed())
+           .edge(from(localProducer, 0).to(processor, 1).partitionedByCustom(partitioner))
+           .edge(between(processor, consumer));
+
+        executeAndPeel(instance.newJob(dag));
         assertEquals(
                 items.stream()
                      .flatMap(i -> IntStream.of(0, 2)

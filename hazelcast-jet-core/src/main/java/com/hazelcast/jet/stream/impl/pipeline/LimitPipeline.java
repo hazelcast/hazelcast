@@ -36,20 +36,18 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final long lim = limit;
-        Vertex first = new Vertex(uniqueVertexName("limit-local"), () -> new LimitP(lim)).localParallelism(1);
-        dag.vertex(first)
-           .edge(between(previous, first));
+        Vertex first = dag.newVertex(uniqueVertexName("limit-local"), () -> new LimitP(lim)).localParallelism(1);
+        dag.edge(between(previous, first));
 
         if (upstream.isOrdered()) {
             return first;
         }
 
-        Vertex second = new Vertex(uniqueVertexName("limit-global"), () -> new LimitP(lim)).localParallelism(1);
-        dag.vertex(second)
-           .edge(between(first, second)
-                   .distributed()
-                   .allToOne()
-           );
+        Vertex second = dag.newVertex(uniqueVertexName("limit-global"), () -> new LimitP(lim)).localParallelism(1);
+        dag.edge(between(first, second)
+                .distributed()
+                .allToOne()
+        );
 
         return second;
     }

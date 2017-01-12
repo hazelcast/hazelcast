@@ -40,13 +40,10 @@ public class DAGTest {
     public void test_iteratorOrder() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(c)
-           .vertex(b)
-           .vertex(a)
-           .edge(from(a, 0).to(b, 0))
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(b, 0))
            .edge(from(b, 0).to(c, 0))
            .edge(from(a, 1).to(c, 1));
 
@@ -67,13 +64,10 @@ public class DAGTest {
     public void test_reverseIteratorOrder() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(c)
-           .vertex(b)
-           .vertex(a)
-           .edge(from(a, 0).to(b, 0))
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(b, 0))
            .edge(from(b, 0).to(c, 0))
            .edge(from(a, 1).to(c, 1));
 
@@ -94,11 +88,9 @@ public class DAGTest {
     public void when_cycleInGraph_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .edge(between(a, b))
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        dag.edge(between(a, b))
            .edge(between(b, a));
 
         // Then
@@ -112,13 +104,10 @@ public class DAGTest {
     public void when_duplicateOutputOrdinal_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .vertex(c)
-           .edge(from(a, 0).to(b, 0));
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(b, 0));
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -131,13 +120,10 @@ public class DAGTest {
     public void when_gapInOutputOrdinal_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .vertex(c)
-           .edge(from(a, 0).to(b, 0))
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(b, 0))
            .edge(from(a, 2).to(c, 0));
 
         // Then
@@ -151,13 +137,10 @@ public class DAGTest {
     public void when_duplicateInputOrdinal_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .vertex(c)
-           .edge(from(a, 0).to(c, 0));
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(c, 0));
 
         // Then
         expectedException.expect(IllegalArgumentException.class);
@@ -170,13 +153,10 @@ public class DAGTest {
     public void when_gapInInputOrdinal_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        Vertex c = new Vertex("c", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .vertex(c)
-           .edge(from(a, 0).to(c, 0))
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(c, 0))
            .edge(from(b, 0).to(c, 2));
 
         // Then
@@ -190,11 +170,9 @@ public class DAGTest {
     public void when_multigraph_then_error() {
         // Given
         DAG dag = new DAG();
-        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
-        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
-        dag.vertex(a)
-           .vertex(b)
-           .edge(from(a, 0).to(b, 0));
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        dag.edge(from(a, 0).to(b, 0));
 
         // Then
         expectedException.expect(IllegalArgumentException.class);

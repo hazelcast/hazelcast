@@ -28,11 +28,10 @@ public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_O
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        Vertex vertex = new Vertex(getName(), getProducer());
+        Vertex vertex = dag.newVertex(getName(), getProducer());
         if (isOrdered()) {
             vertex.localParallelism(1);
         }
-        dag.vertex(vertex);
         return vertex;
     }
 

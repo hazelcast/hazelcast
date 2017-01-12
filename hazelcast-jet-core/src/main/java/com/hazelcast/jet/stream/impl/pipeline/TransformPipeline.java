@@ -44,12 +44,11 @@ public class TransformPipeline extends AbstractIntermediatePipeline {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final List<TransformOperation> ops = operations;
-        Vertex transform = new Vertex(uniqueVertexName("transform"), () -> new TransformP(ops));
+        Vertex transform = dag.newVertex(uniqueVertexName("transform"), () -> new TransformP(ops));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
         }
-        dag.vertex(transform)
-           .edge(between(previous, transform));
+        dag.edge(between(previous, transform));
 
         return transform;
     }

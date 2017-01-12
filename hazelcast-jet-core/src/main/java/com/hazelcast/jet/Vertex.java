@@ -62,14 +62,13 @@ public class Vertex implements IdentifiedDataSerializable {
      * Creates a vertex from a {@code SimpleProcessorSupplier}.
      *
      * @param name the unique name of the vertex
-     * @param processorSupplier the simple, parameterless
-     *                          supplier of {@code Processor} instances
+     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex(String name, SimpleProcessorSupplier processorSupplier) {
+    public Vertex(String name, SimpleProcessorSupplier simpleSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(processorSupplier, "supplier");
+        checkNotNull(simpleSupplier, "supplier");
 
-        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
+        this.supplier = ProcessorMetaSupplier.of(simpleSupplier);
         this.name = name;
     }
 
@@ -77,8 +76,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * Creates a vertex from a {@code ProcessorSupplier}.
      *
      * @param name the unique name of the vertex
-     * @param processorSupplier the supplier of {@code Processor} instances
-     *                          which will be used on all members
+     * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      */
     public Vertex(String name, ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
@@ -92,8 +90,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * Creates a vertex from a {@code ProcessorMetaSupplier}.
      *
      * @param name the unique name of the vertex
-     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s
-     *                     for each member
+     * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      *
      */
     public Vertex(String name, ProcessorMetaSupplier metaSupplier) {

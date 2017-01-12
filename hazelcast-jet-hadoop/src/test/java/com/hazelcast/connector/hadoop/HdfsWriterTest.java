@@ -18,7 +18,6 @@ package com.hazelcast.connector.hadoop;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Edge;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -58,31 +57,27 @@ public class HdfsWriterTest extends JetTestSupport {
         instance.getMap(mapName).putAll(map);
 
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", IMapReader.supplier(mapName))
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier(mapName))
                 .localParallelism(1);
 
         Path path = getPath();
-        Vertex consumer = new Vertex("consumer", HdfsWriter.supplier(path.toString()))
+        Vertex consumer = dag.newVertex("consumer", HdfsWriter.supplier(path.toString()))
                 .localParallelism(4);
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 
         dag = new DAG();
-        producer = new Vertex("producer", HdfsReader.supplier(path.toString()))
+        producer = dag.newVertex("producer", HdfsReader.supplier(path.toString()))
                 .localParallelism(8);
 
-        consumer = new Vertex("consumer", IListWriter.supplier("results"))
+        consumer = dag.newVertex("consumer", IListWriter.supplier("results"))
                 .localParallelism(1);
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
         future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 

@@ -52,15 +52,11 @@ public class HdfsReaderTest extends JetTestSupport {
         JetInstance instance = createJetInstance();
         createJetInstance();
         DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", HdfsReader.supplier(path.toString()))
+        Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString()))
                 .localParallelism(4);
-
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
+        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
                 .localParallelism(1);
-
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        dag.edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);

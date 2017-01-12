@@ -56,18 +56,15 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 
-        Vertex merger = new Vertex(uniqueVertexName("merging-accumulator"),
+        Vertex merger = dag.newVertex(uniqueVertexName("merging-accumulator"),
                 () -> new MergeP<>(keyMapper,
                         valueMapper, mergeFunction));
-        Vertex combiner = new Vertex(uniqueVertexName("merging-combiner"),
+        Vertex combiner = dag.newVertex(uniqueVertexName("merging-combiner"),
                 () -> new MergeP<T, K, V>(null, null,
                         mergeFunction));
-        Vertex writer = new Vertex(writerVertexName(mapName), Processors.mapWriter(mapName));
+        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.mapWriter(mapName));
 
-        dag.vertex(merger)
-           .vertex(combiner)
-           .vertex(writer)
-           .edge(between(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
+        dag.edge(between(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
            .edge(between(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
            .edge(between(combiner, writer));
         executeJob(context, dag);
