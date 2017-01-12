@@ -16,6 +16,12 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.impl.util.FlatMappingTraverser;
+
+import javax.annotation.Nonnull;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 /**
  * Traverses over a sequence of non-{@code null} items, then starts returning
  * {@code null}. Each invocation of {@code next()} consumes and returns the next
@@ -31,4 +37,40 @@ public interface Traverser<T> {
      * already exhausted
      */
     T next();
+
+    /**
+     * Adds a mapping layer to this traverser. The returned traverser will emit
+     * the results of applying the mapper function to this traverser's items.
+     */
+    default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapper) {
+        return () -> {
+            final T t = next();
+            return t != null ? mapper.apply(t) : null;
+        };
+    }
+
+    /**
+     * Adds a filtering layer to this traverser. The returned traverser will
+     * emit the same items as this traverser, but only those that pass the given
+     * predicate.
+     */
+    default Traverser<T> filter(@Nonnull Predicate<? super T> pred) {
+        return () -> {
+            for (T t; (t = next()) != null;) {
+                if (pred.test(t)) {
+                    return t;
+                }
+            }
+            return null;
+        };
+    }
+
+    /**
+     * Adds a flat-mapping layer to this traverser. The returned traverser
+     * will apply the given mapping function to each item retrieved from this
+     * traverser, and will emit all the items from the resulting traverser(s).
+     */
+    default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        return new FlatMappingTraverser<>(this, mapper);
+    }
 }
