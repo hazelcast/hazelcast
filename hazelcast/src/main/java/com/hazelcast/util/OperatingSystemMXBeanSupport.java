@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
  * Support class for reading attributes from OperatingSystemMXBean.
@@ -43,7 +44,10 @@ public final class OperatingSystemMXBeanSupport {
             String methodName = "get" + attributeName;
             OperatingSystemMXBean systemMXBean = OPERATING_SYSTEM_MX_BEAN;
             Method method = systemMXBean.getClass().getMethod(methodName);
-            method.setAccessible(true);
+            // the method is public in Java 9
+            if (!Modifier.isPublic(method.getModifiers())) {
+                method.setAccessible(true);
+            }
 
             Object value = method.invoke(systemMXBean);
             if (value == null) {
