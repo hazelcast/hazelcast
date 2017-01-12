@@ -167,8 +167,8 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
             Map<String, Map<Integer, Integer>> inputMap = new HashMap<>();
             Map<String, Set<Integer>> outputMap = new HashMap<>();
 
-            Vertex vertex = new Vertex(node.getName(), new Supplier(node, getConfig().getProperties(),
-                    inputMap, outputMap));
+            Vertex vertex = new Vertex(node.getName(),
+                    new Supplier(node, getConfig().getProperties(), inputMap, outputMap));
             dag.vertex(vertex);
 
             AnnotatedVertex annotatedVertex = new AnnotatedVertex(vertex);
@@ -191,7 +191,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                         });
                         Edge edge = from(tapVertex.vertex, tapVertex.currOutput++).to(vertex, annotatedVertex.currInput);
                         if (isAccumulated) {
-                            edge = edge.broadcast().distributed().priority(0);
+                            edge = edge.broadcast().distributed().priority(-1);
                         }
                         dag.edge(edge);
 
@@ -237,7 +237,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                             .partitionedByCustom(getPartitioner(processEdge, targetNode, element))
                             .distributed();
             if (isAccumulated) {
-                edge = edge.broadcast().priority(0);
+                edge = edge.broadcast().priority(-1);
             }
 
             Set<Integer> outputs = sourceVertex.outputMap.computeIfAbsent(id, k -> new HashSet<>());
@@ -251,7 +251,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         return dag;
     }
 
-    private Partitioner getPartitioner(ProcessEdge edge, FlowNode targetNode, FlowElement element) {
+    private static Partitioner getPartitioner(ProcessEdge edge, FlowNode targetNode, FlowElement element) {
         if (element instanceof Group && element instanceof Splice) {
             Splice splice = (Splice) element;
             Map<String, Fields> keySelectors = splice.getKeySelectors();
@@ -275,7 +275,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         return item instanceof Map.Entry ? ((Map.Entry) item).getKey() : item;
     }
 
-    private Map<String, ProcessorMetaSupplier> sinkTapToSuppliers(Tap tap) {
+    private static Map<String, ProcessorMetaSupplier> sinkTapToSuppliers(Tap tap) {
         if (tap instanceof InternalJetTap) {
             InternalJetTap jetTap = (InternalJetTap) tap;
             return Collections.singletonMap(tap.getIdentifier(), jetTap.getSink());
@@ -288,7 +288,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         throw new UnsupportedOperationException("Unsupported sink tap: " + tap);
     }
 
-    private Map<String, ProcessorMetaSupplier> sourceTapToSuppliers(Tap tap) {
+    private static Map<String, ProcessorMetaSupplier> sourceTapToSuppliers(Tap tap) {
         if (tap instanceof InternalJetTap) {
             InternalJetTap jetTap = (InternalJetTap) tap;
             return Collections.singletonMap(tap.getIdentifier(), jetTap.getSource());
@@ -302,11 +302,11 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         throw new UnsupportedOperationException("Unsupported source tap: " + tap);
     }
 
-    private String formatMessage(String message, Object[] arguments) {
+    private static String formatMessage(String message, Object[] arguments) {
         return MessageFormatter.arrayFormat(message, arguments).getMessage();
     }
 
-    private void initTaps(FlowProcess<JetConfig> flowProcess, JetConfig config, Set<Tap> taps, boolean isSink) {
+    private static void initTaps(FlowProcess<JetConfig> flowProcess, JetConfig config, Set<Tap> taps, boolean isSink) {
         if (!taps.isEmpty()) {
             for (Tap tap : taps) {
                 if (isSink) {
@@ -327,7 +327,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         initConfFromStepConfigDef(getSetterFor(jetConfig));
     }
 
-    private ConfigDef.Setter getSetterFor(final JetConfig jetConfig) {
+    private static ConfigDef.Setter getSetterFor(final JetConfig jetConfig) {
         return new ConfigDef.Setter() {
             @Override
             public String set(String key, String value) {
@@ -342,7 +342,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                 if (oldValue == null) {
                     jetConfig.getProperties().setProperty(key, value);
                 } else if (!oldValue.contains(value)) {
-                    jetConfig.getProperties().setProperty(key, oldValue + "," + value);
+                    jetConfig.getProperties().setProperty(key, oldValue + ',' + value);
                 }
                 return oldValue;
             }

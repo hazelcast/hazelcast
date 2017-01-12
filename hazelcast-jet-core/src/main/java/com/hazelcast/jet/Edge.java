@@ -52,7 +52,7 @@ public class Edge implements IdentifiedDataSerializable {
     private String destination;
     private int destOrdinal;
 
-    private int priority = Integer.MAX_VALUE;
+    private int priority;
     private boolean isBuffered;
 
     private boolean isDistributed;
@@ -147,7 +147,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     /**
      * Sets the priority of the edge. A lower number means higher priority
-     * and the default is {@code Integer.MAX_VALUE}, the lowest possible priority.
+     * and the default is 0.
      * <p>
      * Example: there two incoming edges on a vertex, with priorities 1 and 2. The
      * data from the edge with priority 1 will be processed in full before accepting
@@ -156,6 +156,14 @@ public class Edge implements IdentifiedDataSerializable {
     public Edge priority(int priority) {
         this.priority = priority;
         return this;
+    }
+
+    /**
+     * Returns the value of edge's <em>priority</em>, as explained on
+     * {@link #priority(int)}.
+     */
+    public int getPriority() {
+        return priority;
     }
 
     /**
@@ -177,6 +185,13 @@ public class Edge implements IdentifiedDataSerializable {
     public Edge buffered() {
         isBuffered = true;
         return this;
+    }
+
+    /**
+     * Returns whether {@link #buffered() unbounded buffering} is activated for this edge.
+     */
+    public boolean isBuffered() {
+        return isBuffered;
     }
 
     /**
@@ -211,7 +226,6 @@ public class Edge implements IdentifiedDataSerializable {
         return this;
     }
 
-
     /**
      * Activates a special-cased {@link ForwardingPattern#PARTITIONED PARTITIONED}
      * forwarding pattern where all items will be assigned the same, randomly chosen
@@ -228,6 +242,21 @@ public class Edge implements IdentifiedDataSerializable {
     public Edge broadcast() {
         forwardingPattern = ForwardingPattern.BROADCAST;
         return this;
+    }
+
+    /**
+     * Returns the instance encapsulating the partitioning strategy in effect
+     * on this edge.
+     */
+    public Partitioner getPartitioner() {
+        return partitioner;
+    }
+
+    /**
+     * Returns the {@link ForwardingPattern} in effect on the edge.
+     */
+    public ForwardingPattern getForwardingPattern() {
+        return forwardingPattern;
     }
 
     /**
@@ -249,41 +278,11 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Returns the instance encapsulating the partitioning strategy in effect
-     * on this edge.
-     */
-    public Partitioner getPartitioner() {
-        return partitioner;
-    }
-
-    /**
-     * Returns the {@link ForwardingPattern} in effect on the edge.
-     */
-    public ForwardingPattern getForwardingPattern() {
-        return forwardingPattern;
-    }
-
-    /**
      * Says whether this edge is <em>distributed</em>. The effects of this
      * property are discussed in {@link #distributed()}.
      */
     public boolean isDistributed() {
         return isDistributed;
-    }
-
-    /**
-     * Returns the value of edge's <em>priority</em>, as explained on
-     * {@link #priority(int)}.
-     */
-    public int getPriority() {
-        return priority;
-    }
-
-    /**
-     * Returns whether {@link #buffered() unbounded buffering} is activated for this edge.
-     */
-    public boolean isBuffered() {
-        return isBuffered;
     }
 
     /**
