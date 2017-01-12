@@ -128,13 +128,12 @@ public class CardinalityEstimatorService
     }
 
     private void clearPartitionReplica(int partitionId, int durabilityThreshold) {
-        final Iterator<String> iterator = containers.keySet().iterator();
+        final Iterator<Map.Entry<String, CardinalityEstimatorContainer>> iterator = containers.entrySet().iterator();
         while (iterator.hasNext()) {
-            String name = iterator.next();
-            CardinalityEstimatorContainer container = containers.get(name);
+            Map.Entry<String, CardinalityEstimatorContainer> entry = iterator.next();
 
-            if (getPartitionId(name) == partitionId
-                    && (durabilityThreshold == -1 || durabilityThreshold > container.getTotalBackupCount())) {
+            if (getPartitionId(entry.getKey()) == partitionId
+                    && (durabilityThreshold == -1 || durabilityThreshold > entry.getValue().getTotalBackupCount())) {
                 iterator.remove();
             }
         }
