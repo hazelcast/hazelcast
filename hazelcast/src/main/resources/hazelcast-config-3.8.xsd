@@ -1724,10 +1724,21 @@
 
     <xs:complexType name="cardinality-estimator-service">
         <xs:all>
-            <xs:element name="durability" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="1">
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>
                     <xs:documentation>
-                        The durability of the cardinality estimator.
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then the cardinality estimation will be copied to one other JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then cardinality estimation will be copied to one other JVM (asynchronously) for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

@@ -53,7 +53,7 @@ public class CardinalityEstimatorService
                 @Override
                 public CardinalityEstimatorContainer createNew(String name) {
                     CardinalityEstimatorConfig config = nodeEngine.getConfig().findCardinalityEstimatorConfig(name);
-                    return new CardinalityEstimatorContainer(config.getDurability());
+                    return new CardinalityEstimatorContainer(config.getBackupCount(), config.getAsyncBackupCount());
                 }
             };
 
@@ -105,7 +105,7 @@ public class CardinalityEstimatorService
             String name = containerEntry.getKey();
             CardinalityEstimatorContainer container = containerEntry.getValue();
 
-            if (partitionId == getPartitionId(name) && event.getReplicaIndex() <= container.getDurability()) {
+            if (partitionId == getPartitionId(name) && event.getReplicaIndex() <= container.getTotalBackupCount()) {
                 data.put(name, containerEntry.getValue());
             }
         }
@@ -134,7 +134,7 @@ public class CardinalityEstimatorService
             CardinalityEstimatorContainer container = containers.get(name);
 
             if (getPartitionId(name) == partitionId
-                    && (durabilityThreshold == -1 || durabilityThreshold > container.getDurability())) {
+                    && (durabilityThreshold == -1 || durabilityThreshold > container.getTotalBackupCount())) {
                 iterator.remove();
             }
         }

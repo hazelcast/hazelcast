@@ -16,7 +16,8 @@
 
 package com.hazelcast.config;
 
-import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
+import static com.hazelcast.util.Preconditions.checkBackupCount;
 
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
@@ -24,15 +25,20 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 public class CardinalityEstimatorConfig {
 
     /**
-     * The number of replicas per estimator
+     * The number of sync backups per estimator
      */
-    private static final int DEFAULT_DURABILITY = 1;
+    public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
 
-    private static final int MAX_DURABILITY = 8;
+    /**
+     * The number of async backups per estimator
+     */
+    public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
     private String name = "default";
 
-    private int durability = DEFAULT_DURABILITY;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
+
+    private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
     private com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly readOnly;
 
@@ -43,13 +49,14 @@ public class CardinalityEstimatorConfig {
         this.name = name;
     }
 
-    public CardinalityEstimatorConfig(String name, int durability) {
+    public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount) {
         this.name = name;
-        this.durability = durability;
+        this.backupCount = backupCount;
+        this.asyncBackupCount = asyncBackupCount;
     }
 
     public CardinalityEstimatorConfig(com.hazelcast.config.CardinalityEstimatorConfig config) {
-        this(config.getName(), config.getDurability());
+        this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount());
     }
 
     public com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly getAsReadOnly() {
@@ -80,32 +87,68 @@ public class CardinalityEstimatorConfig {
     }
 
     /**
-     * Gets the durability of the estimator
+     * Gets the number of synchronous backups.
      *
-     * @return the durability of the estimator
+     * @return number of synchronous backups.
      */
-    public int getDurability() {
-        return durability;
+    public int getBackupCount() {
+        return backupCount;
     }
 
     /**
-     * Sets the durability of the cardinality estimator
-     * The durability represents the number of replicas that exist in a cluster for any given estimator.
-     * If this is set to 0 then there is only 1 copy of the estimator in the cluster, meaning that if the partition owning it,
-     * goes down then the estimation is lost.
+     * Sets the number of synchronous backups.
      *
-     * @param durability the durability of the estimator
-     * @return The cardinality estimator config instance.
+     * @param backupCount the number of synchronous backups to set
+     * @return the updated CardinalityEstimatorConfig
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setAsyncBackupCount(int)
+     * @see #getBackupCount()
      */
-    public com.hazelcast.config.CardinalityEstimatorConfig setDurability(int durability) {
-        checkNotNegative(durability, "durability can't be smaller than 0");
-        this.durability = durability;
+    public CardinalityEstimatorConfig setBackupCount(int backupCount) {
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
         return this;
+    }
+
+    /**
+     * Gets the number of synchronous backups.
+     *
+     * @return number of synchronous backups.
+     */
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
+    }
+
+    /**
+     * Sets the number of synchronous backups.
+     *
+     * @param asyncBackupCount the number of synchronous backups to set
+     * @return the updated CardinalityEstimatorConfig
+     * @throws IllegalArgumentException if backupCount smaller than 0,
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     * @see #setAsyncBackupCount(int)
+     * @see #getBackupCount()
+     */
+    public CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
+        return this;
+    }
+
+    /**
+     * Returns the total number of backups: backupCount plus asyncBackupCount.
+     *
+     * @return the total number of backups: backupCount plus asyncBackupCount
+     */
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 
     @Override
     public String toString() {
-        return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", durability=" + durability + '}';
+        return "CardinalityEstimatorConfig{" + "name='" + name + '\'' + ", backupCount=" + backupCount + ", asyncBackupCount="
+                + asyncBackupCount + ", readOnly=" + readOnly + '}';
     }
 
     private static class CardinalityEstimatorConfigReadOnly
@@ -121,7 +164,12 @@ public class CardinalityEstimatorConfig {
         }
 
         @Override
-        public com.hazelcast.config.CardinalityEstimatorConfig setDurability(int durability) {
+        public com.hazelcast.config.CardinalityEstimatorConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
+        }
+
+        @Override
+        public com.hazelcast.config.CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
     }

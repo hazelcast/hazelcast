@@ -38,12 +38,12 @@ public abstract class CardinalityEstimatorBackupAwareOperation
 
     @Override
     public int getSyncBackupCount() {
-        return getCardinalityEstimatorContainer().getDurability();
+        return getCardinalityEstimatorContainer().getBackupCount();
     }
 
     @Override
     public int getAsyncBackupCount() {
-        return 0;
+        return getCardinalityEstimatorContainer().getAsyncBackupCount();
     }
 
 }
