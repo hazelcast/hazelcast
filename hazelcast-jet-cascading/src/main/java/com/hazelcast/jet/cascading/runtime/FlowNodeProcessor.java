@@ -19,7 +19,7 @@ package com.hazelcast.jet.cascading.runtime;
 import cascading.flow.FlowNode;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.cascading.JetFlowProcess;

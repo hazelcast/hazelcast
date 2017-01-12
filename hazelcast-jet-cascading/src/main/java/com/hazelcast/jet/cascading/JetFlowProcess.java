@@ -20,7 +20,7 @@ import cascading.flow.FlowProcess;
 import cascading.tap.Tap;
 import cascading.tuple.TupleEntryCollector;
 import cascading.tuple.TupleEntryIterator;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 
 import java.io.IOException;

@@ -21,7 +21,7 @@ import cascading.flow.FlowDef;
 import cascading.flow.FlowException;
 import cascading.flow.FlowProcess;
 import cascading.flow.planner.PlatformInfo;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

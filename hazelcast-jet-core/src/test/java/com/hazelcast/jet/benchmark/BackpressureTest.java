@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
@@ -65,7 +65,8 @@ public class BackpressureTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
+        JetConfig config = new JetConfig();
+        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM_PER_MEMBER);
         factory = new JetTestInstanceFactory();
         jet1 = factory.newMember(config);
         jet2 = factory.newMember(config);

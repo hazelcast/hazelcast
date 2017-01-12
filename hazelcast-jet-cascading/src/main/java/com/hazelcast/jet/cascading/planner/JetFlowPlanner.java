@@ -31,7 +31,7 @@ import cascading.flow.planner.rule.RuleRegistry;
 import cascading.flow.planner.rule.transformer.BoundaryElementFactory;
 import cascading.pipe.Boundary;
 import cascading.tap.Tap;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.JetFlow;
 

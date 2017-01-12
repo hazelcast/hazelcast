@@ -14,59 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.impl.deployment.ResourceDescriptor;
 import com.hazelcast.jet.impl.deployment.ResourceKind;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Represents deployment configuration
+ * Describes a single resource to deploy to the Jet cluster.
  */
 public class ResourceConfig implements Serializable {
     private ResourceDescriptor descriptor;
     private URL url;
 
     /**
+     * Creates a resource config with the given properties.
+     *
      * @param url  url of the resource
      * @param id   id of the resource
-     * @param type type of the resource
-     * @throws IOException if IO error happens
+     * @param kind the kind of resource
      */
-    public ResourceConfig(URL url, String id, ResourceKind type) {
-        this.descriptor = new ResourceDescriptor(id, type);
+    public ResourceConfig(URL url, String id, ResourceKind kind) {
+        this.descriptor = new ResourceDescriptor(id, kind);
         this.url = url;
     }
 
     /**
-     * @param clazz class file to deploy
-     * @throws IOException if IO error happens
+     * Creates a config for a class to be deployed. Derives the config
+     * properties automatically.
+     *
+     * @param clazz the class to deploy
      */
     public ResourceConfig(Class clazz) {
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
         this.url = clazz.getClassLoader().getResource(classAsPath);
-        checkNotNull(this.url, "URL is null");
+        checkNotNull(this.url, "Couldn't derive URL from class " + clazz);
         this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceKind.CLASS);
     }
 
     /**
-     * Returns the URL of the deployment
-     *
-     * @return URL
+     * Returns the URL at which the resource will be available.
      */
     public URL getUrl() {
         return url;
     }
 
     /**
-     * Returns the {@link ResourceDescriptor} for the resource
-     *
-     * @return DeploymentDescriptor
+     * Returns the {@link ResourceDescriptor} for the resource.
      */
     public ResourceDescriptor getDescriptor() {
         return descriptor;

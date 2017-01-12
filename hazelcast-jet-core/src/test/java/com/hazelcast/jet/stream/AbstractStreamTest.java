@@ -18,7 +18,7 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
@@ -79,8 +79,8 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         setLogLevel(Level.INFO);
         // configure the engine to have a sane thread count
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
-        JetConfig config = new JetConfig()
-                .setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
+        JetConfig config = new JetConfig();
+        config.getInstanceConfig().setCooperativeThreadCount(parallelism <= 2 ? 2 : parallelism);
         instance = createCluster(NODE_COUNT, config);
         client = factory.newClient();
     }

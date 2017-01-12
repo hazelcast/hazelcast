@@ -41,7 +41,7 @@ import cascading.util.Util;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.DefaultPartitionStrategy;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Processor;

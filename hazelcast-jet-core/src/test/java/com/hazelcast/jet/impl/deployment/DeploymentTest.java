@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.deployment;
 
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -55,7 +55,8 @@ public class DeploymentTest extends AbstractDeploymentTest {
         Thread thread = Thread.currentThread();
         ClassLoader tccl = thread.getContextClassLoader();
         try {
-            isolatedNode = createIsolatedNode(thread, new FilteringClassLoader(Collections.singletonList("deployment"), "com.hazelcast"));
+            isolatedNode = createIsolatedNode(thread,
+                    new FilteringClassLoader(Collections.singletonList("deployment"), "com.hazelcast"));
         } catch (Exception e) {
             throw new RuntimeException("Could not start isolated Hazelcast instance", e);
         } finally {

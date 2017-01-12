@@ -22,7 +22,7 @@ import cascading.management.state.ClientState;
 import cascading.stats.FlowNodeStats;
 import cascading.stats.FlowStepStats;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.util.UuidUtil;

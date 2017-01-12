@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.config.EdgeConfig;
 
 import java.io.IOException;
 import java.nio.file.Files;

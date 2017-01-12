@@ -32,7 +32,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.runtime.TupleSerializer;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;

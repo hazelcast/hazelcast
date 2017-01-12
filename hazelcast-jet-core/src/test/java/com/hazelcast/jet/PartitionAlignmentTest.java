@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;

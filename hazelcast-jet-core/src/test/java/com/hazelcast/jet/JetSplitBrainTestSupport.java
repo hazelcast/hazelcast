@@ -23,6 +23,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;

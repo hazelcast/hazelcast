@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.deployment;
 
-import com.hazelcast.jet.ResourceConfig;
+import com.hazelcast.jet.config.ResourceConfig;
 
 import java.io.IOException;
 import java.io.InputStream;

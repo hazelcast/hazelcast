@@ -23,8 +23,8 @@ import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Edge;
-import com.hazelcast.jet.EdgeConfig;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -339,7 +339,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                        final OutboundCollector collector = compositeCollector(collectors, edge, totalPtionCount);
                        final int senderCount = nodeEngine.getClusterService().getSize() - 1;
                        return new ReceiverTasklet(collector, edge.getConfig().getReceiveWindowMultiplier(),
-                               getConfig().getFlowControlPeriodMs(), senderCount);
+                               getConfig().getInstanceConfig().getFlowControlPeriodMs(), senderCount);
                    });
     }
 

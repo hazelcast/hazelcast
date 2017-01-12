@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 import com.hazelcast.nio.Address;

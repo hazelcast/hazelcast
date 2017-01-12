@@ -18,13 +18,14 @@ package deployment;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.JobConfig;
+import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.util.FilteringClassLoader;
+import org.junit.Test;
+
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
-import org.junit.Test;
 
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 
@@ -71,7 +72,7 @@ public abstract class AbstractDeploymentTest extends HazelcastTestSupport {
 
     protected Object createIsolatedNode(Thread thread, FilteringClassLoader cl) throws Exception {
         thread.setContextClassLoader(cl);
-        Class<?> jetConfigClazz = cl.loadClass("com.hazelcast.jet.JetConfig");
+        Class<?> jetConfigClazz = cl.loadClass("com.hazelcast.jet.config.JetConfig");
         Class<?> hazelcastConfigClazz = cl.loadClass("com.hazelcast.config.Config");
         Object config = jetConfigClazz.newInstance();
         Method getHazelcastConfig = jetConfigClazz.getDeclaredMethod("getHazelcastConfig");

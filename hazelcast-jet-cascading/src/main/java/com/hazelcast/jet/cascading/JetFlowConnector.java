@@ -20,7 +20,7 @@ import cascading.flow.FlowConnector;
 import cascading.flow.planner.FlowPlanner;
 import cascading.flow.planner.rule.RuleRegistrySet;
 import cascading.scheme.Scheme;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.planner.JetFlowPlanner;
 import com.hazelcast.jet.cascading.planner.rule.tez.HashJoinHadoop2TezRuleRegistry;

@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Traverser;
@@ -77,7 +77,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     @Before
     public void setUp() {
-        JetConfig config = new JetConfig().setCooperativeThreadCount(PARALLELISM);
+        JetConfig config = new JetConfig();
+        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         Config hazelcastConfig = config.getHazelcastConfig();
         final JoinConfig join = hazelcastConfig.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);

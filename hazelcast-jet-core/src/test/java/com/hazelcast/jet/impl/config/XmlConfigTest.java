@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.impl.config;
 
-import com.hazelcast.jet.EdgeConfig;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.util.Util;
 import org.junit.Test;
 
@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.TestCase.assertNull;
 
 public class XmlConfigTest {
 
@@ -40,8 +40,8 @@ public class XmlConfigTest {
         JetConfig jetConfig = XmlJetConfigBuilder.getConfig(new Properties());
 
         // Then
-        assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getExecutionThreadCount());
-        assertEquals(JetConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getFlowControlPeriodMs());
+        assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getInstanceConfig().getCooperativeThreadCount());
+        assertEquals(DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
     }
 
 
@@ -111,9 +111,9 @@ public class XmlConfigTest {
         assertEquals("receiveWindowMultiplier", 996, edgeConfig.getReceiveWindowMultiplier());
     }
 
-    private void assertConfig(JetConfig jetConfig) {
-        assertEquals(55, jetConfig.getExecutionThreadCount());
-        assertEquals("/var/tmp", jetConfig.getWorkingDirectory());
+    private static void assertConfig(JetConfig jetConfig) {
+        assertEquals(55, jetConfig.getInstanceConfig().getCooperativeThreadCount());
+        assertEquals("/var/tmp", jetConfig.getInstanceConfig().getTempDir());
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));

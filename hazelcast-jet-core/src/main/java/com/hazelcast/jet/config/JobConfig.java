@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.config;
 
 import com.hazelcast.jet.impl.deployment.ResourceKind;
 

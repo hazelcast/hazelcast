@@ -20,7 +20,7 @@ import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.util.CloseableIterator;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 

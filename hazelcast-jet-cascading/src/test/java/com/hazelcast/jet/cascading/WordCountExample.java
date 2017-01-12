@@ -26,12 +26,11 @@ import cascading.pipe.Pipe;
 import cascading.tap.SinkMode;
 import cascading.tuple.Fields;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import org.junit.Ignore;
 import org.junit.Test;
 
