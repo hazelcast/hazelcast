@@ -350,8 +350,6 @@ public final class Processors {
      *     to each seen key and its accumulated value.
      * </li></ul>
      *
-     * @param keyExtractor computes the key from the entry
-     * @param accumulator accumulates the result value across all entries under the same key
      * @param <T> type of received item
      * @param <K> type of key
      * @param <A> type of accumulated value
