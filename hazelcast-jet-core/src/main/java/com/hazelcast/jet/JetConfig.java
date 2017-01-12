@@ -90,7 +90,7 @@ public class JetConfig {
      * jobs. This refers only to threads executing <em>cooperative</em>
      * processors; each blocking processor is assigned a separate thread.
      */
-    public JetConfig setExecutionThreadCount(int size) {
+    public JetConfig setCooperativeThreadCount(int size) {
         this.threadCount = size;
         return this;
     }

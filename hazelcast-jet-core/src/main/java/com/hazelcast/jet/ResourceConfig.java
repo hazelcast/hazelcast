@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.impl.deployment.ResourceDescriptor;
-import com.hazelcast.jet.impl.deployment.ResourceType;
+import com.hazelcast.jet.impl.deployment.ResourceKind;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -38,7 +38,7 @@ public class ResourceConfig implements Serializable {
      * @param type type of the resource
      * @throws IOException if IO error happens
      */
-    public ResourceConfig(URL url, String id, ResourceType type) {
+    public ResourceConfig(URL url, String id, ResourceKind type) {
         this.descriptor = new ResourceDescriptor(id, type);
         this.url = url;
     }
@@ -51,7 +51,7 @@ public class ResourceConfig implements Serializable {
         String classAsPath = clazz.getName().replace('.', '/') + ".class";
         this.url = clazz.getClassLoader().getResource(classAsPath);
         checkNotNull(this.url, "URL is null");
-        this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceType.CLASS);
+        this.descriptor = new ResourceDescriptor(clazz.getName(), ResourceKind.CLASS);
     }
 
     /**

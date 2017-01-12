@@ -17,14 +17,15 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.deployment.ResourcePart;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import static com.hazelcast.jet.SerializationConstants.DAG;
-import static com.hazelcast.jet.SerializationConstants.EDGE;
-import static com.hazelcast.jet.SerializationConstants.RESOURCE_PART;
-import static com.hazelcast.jet.SerializationConstants.VERTEX;
+import static com.hazelcast.jet.impl.SerializationConstants.DAG;
+import static com.hazelcast.jet.impl.SerializationConstants.EDGE;
+import static com.hazelcast.jet.impl.SerializationConstants.RESOURCE_PART;
+import static com.hazelcast.jet.impl.SerializationConstants.VERTEX;
 
 /**
  * A Java Service Provider hook for Hazelcast's Identified Data Serializable

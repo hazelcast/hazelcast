@@ -131,7 +131,7 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
             String name = cleanNodeName(node);
             switch (name) {
                 case "execution-thread-count":
-                    jetConfig.setExecutionThreadCount(getIntValue(node));
+                    jetConfig.setCooperativeThreadCount(getIntValue(node));
                     break;
                 case "working-directory":
                     jetConfig.setWorkingDirectory(getStringValue(node));
