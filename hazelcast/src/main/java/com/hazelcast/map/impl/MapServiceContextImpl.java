@@ -611,4 +611,9 @@ class MapServiceContextImpl implements MapServiceContext {
     public void removePartitioningStrategyFromCache(String mapName) {
         partitioningStrategyFactory.removePartitioningStrategyFromCache(mapName);
     }
+
+    @Override
+    public PartitionContainer[] getPartitionContainers() {
+        return partitionContainers;
+    }
 }
