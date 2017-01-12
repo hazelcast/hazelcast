@@ -257,7 +257,7 @@ public class ScheduledExecutorContainer {
             try {
                 ScheduledTaskDescriptor replica = new ScheduledTaskDescriptor(
                         descriptor.getDefinition(),
-                        descriptor.getStateSnapshot(),
+                        descriptor.getState(),
                         descriptor.getStatsSnapshot(),
                         descriptor.getTaskResult());
                 replicas.put(descriptor.getDefinition().getName(), replica);
@@ -397,7 +397,7 @@ public class ScheduledExecutorContainer {
                 return;
             }
 
-            Map snapshot = descriptor.getStateSnapshot();
+            Map snapshot = descriptor.getState();
             if (original instanceof StatefulTask && !snapshot.isEmpty()) {
                 ((StatefulTask) original).load(snapshot);
             }

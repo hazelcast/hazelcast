@@ -51,7 +51,7 @@ public class ScheduledTaskResult
         this.done = true;
     }
 
-    public Object getResult() {
+    public Object getReturnValue() {
         return result;
     }
 

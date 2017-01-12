@@ -82,7 +82,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         return stats.snapshot();
     }
 
-    Map<?, ?> getStateSnapshot() {
+    Map<?, ?> getState() {
         return state;
     }
 
@@ -116,6 +116,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
         ScheduledTaskResult result = resultRef.get();
         if (result != null) {
             result.checkErroneousState();
+            return result.getReturnValue();
         }
 
         return future.get();

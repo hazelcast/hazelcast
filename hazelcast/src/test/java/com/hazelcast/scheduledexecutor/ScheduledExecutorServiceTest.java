@@ -240,7 +240,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
 
     @Test
-    public void schedule_withCallable()
+    public void scheduleAndGet_withCallable()
             throws ExecutionException, InterruptedException {
 
         int delay = 5;
@@ -254,6 +254,32 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         double result = future.get();
 
         assertEquals(expectedResult, result, 0);
+        assertEquals(true, future.isDone());
+        assertEquals(false, future.isCancelled());
+    }
+
+    @Test
+    public void scheduleAndGet_withCallable_durableAfterTaskCompletion()
+            throws ExecutionException, InterruptedException {
+
+        int delay = 5;
+        double expectedResult = 25.0;
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        String key = generateKeyOwnedBy(instances[1]);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
+                new PlainCallableTask(), key, delay, TimeUnit.SECONDS);
+
+        double resultFromOriginalTask = future.get();
+
+        instances[1].getLifecycleService().shutdown();
+
+        double resultFromMigratedTask = future.get();
+
+        assertEquals(expectedResult, resultFromOriginalTask, 0);
+        assertEquals(expectedResult, resultFromMigratedTask, 0);
         assertEquals(true, future.isDone());
         assertEquals(false, future.isCancelled());
     }
