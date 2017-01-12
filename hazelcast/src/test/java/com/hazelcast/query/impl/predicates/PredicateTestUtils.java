@@ -16,11 +16,18 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.VisitablePredicate;
 import com.hazelcast.query.impl.Indexes;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.getters.Extractors;
 import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 
+import java.util.Map;
+import java.util.UUID;
+
+import static com.hazelcast.instance.TestUtil.toData;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -80,5 +87,14 @@ public class PredicateTestUtils {
 
     public static String setAttributeName(AbstractPredicate predicate, String attributeName) {
         return predicate.attributeName = attributeName;
+    }
+
+    public static Map.Entry entry(Object value) {
+        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(UUID.randomUUID().toString()),
+                value, Extractors.empty());
+    }
+
+    public static Map.Entry entry(Object key, Object value) {
+        return new QueryEntry(new DefaultSerializationServiceBuilder().build(), toData(key), value, Extractors.empty());
     }
 }

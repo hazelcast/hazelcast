@@ -23,11 +23,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -87,5 +90,88 @@ public class GreaterLessPredicateTest {
         assertThat(negate.attributeName, equalTo(attribute));
         assertThat(negate.equal, is(true));
         assertThat(negate.less, is(false));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    // should be fixed in 4.0; See: https://github.com/hazelcast/hazelcast/issues/6188
+    public void equal_zeroMinusZero() {
+        final boolean equal = true;
+        final boolean less = false;
+
+        // in GreaterLessPredicate predicate
+        assertFalse(new GreaterLessPredicate("this", 0.0, equal, less).apply(entry(-0.0)));
+        assertFalse(new GreaterLessPredicate("this", 0.0d, equal, less).apply(entry(-0.0d)));
+        assertFalse(new GreaterLessPredicate("this", 0.0, equal, less).apply(entry(-0.0d)));
+        assertFalse(new GreaterLessPredicate("this", 0.0d, equal, less).apply(entry(-0.0)));
+
+        // whereas in Java
+        assertTrue(0.0 == -0.0);
+        assertTrue(0.0d == -0.0d);
+        assertTrue(0.0 == -0.0d);
+        assertTrue(0.0d == -0.0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    // should be fixed in 4.0; See: https://github.com/hazelcast/hazelcast/issues/6188
+    public void equal_NaN() {
+        final boolean equal = true;
+        final boolean less = false;
+
+        // in GreaterLessPredicate
+        assertTrue(new GreaterLessPredicate("this", Double.NaN, equal, less).apply(entry(Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", Float.NaN, equal, less).apply(entry(Float.NaN)));
+        assertTrue(new GreaterLessPredicate("this", Double.NaN, equal, less).apply(entry(-Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", Float.NaN, equal, less).apply(entry(-Float.NaN)));
+        assertTrue(new GreaterLessPredicate("this", Double.NaN, equal, less).apply(entry(-Float.NaN)));
+        assertTrue(new GreaterLessPredicate("this", Float.NaN, equal, less).apply(entry(-Double.NaN)));
+
+        // whereas in Java
+        assertFalse(Double.NaN == Double.NaN);
+        assertFalse(Float.NaN == Float.NaN);
+        assertFalse(Double.NaN == -Double.NaN);
+        assertFalse(Float.NaN == -Float.NaN);
+        assertFalse(Double.NaN == -Float.NaN);
+        assertFalse(Float.NaN == -Double.NaN);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    // should be fixed in 4.0; See: https://github.com/hazelcast/hazelcast/issues/6188
+    public void greaterThan() {
+        final boolean equal = true;
+
+        // in GreaterLessPredicate
+        assertTrue(new GreaterLessPredicate("this", 100.0, equal, false).apply(entry(Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0d, equal, false).apply(entry(Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0, equal, false).apply(entry(Float.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0d, equal, false).apply(entry(Float.NaN)));
+
+        assertTrue(new GreaterLessPredicate("this", 100.0, equal, false).apply(entry(-Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0d, equal, false).apply(entry(-Double.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0, equal, false).apply(entry(-Float.NaN)));
+        assertTrue(new GreaterLessPredicate("this", 100.0d, equal, false).apply(entry(-Float.NaN)));
+
+        assertFalse(new GreaterLessPredicate("this", -100.0, equal, true).apply(entry(-Double.NaN)));
+        assertFalse(new GreaterLessPredicate("this", -100.0d, equal, true).apply(entry(-Double.NaN)));
+        assertFalse(new GreaterLessPredicate("this", -100.0, equal, true).apply(entry(-Float.NaN)));
+        assertFalse(new GreaterLessPredicate("this", -100.0d, equal, true).apply(entry(-Float.NaN)));
+
+        // whereas in Java
+        assertFalse(Double.NaN > 100.0);
+        assertFalse(Double.NaN > 100.0d);
+        assertFalse(Float.NaN > 100.0);
+        assertFalse(Float.NaN > 100.0d);
+
+        assertFalse(-Double.NaN > 100.0);
+        assertFalse(-Double.NaN > 100.0d);
+        assertFalse(-Float.NaN > 100.0);
+        assertFalse(-Float.NaN > 100.0d);
+
+        assertFalse(-Double.NaN < -100.0);
+        assertFalse(-Double.NaN < -100.0d);
+        assertFalse(-Float.NaN < -100.0);
+        assertFalse(-Float.NaN < -100.0d);
     }
 }
