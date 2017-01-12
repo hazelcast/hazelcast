@@ -172,6 +172,7 @@ public class MemcacheTest extends HazelcastTestSupport {
         String value = "value";
         for (String key : keys) {
             OperationFuture<Boolean> future = client.set(key, 0, value);
+            future.get();
         }
 
         result = client.getBulk(keys);
