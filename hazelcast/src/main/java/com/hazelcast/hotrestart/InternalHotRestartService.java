@@ -61,6 +61,13 @@ public interface InternalHotRestartService {
     Set<String> getExcludedMemberUuids();
 
     /**
+     * Notifies the excluded member and triggers the member force start process.
+     *
+     * @param memberAddress address of the member to notify
+     */
+    void notifyExcludedMember(Address memberAddress);
+
+    /**
      * Handles the uuid set of excluded members only if this member is also excluded, and triggers the member force start process.
      *
      * @param sender              the member that has sent the excluded members set

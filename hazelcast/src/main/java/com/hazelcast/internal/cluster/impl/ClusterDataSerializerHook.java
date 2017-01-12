@@ -21,7 +21,6 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.AuthorizationOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
-import com.hazelcast.internal.cluster.impl.operations.SendExcludedMemberUuidsOperation;
 import com.hazelcast.internal.cluster.impl.operations.ChangeClusterStateOperation;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
@@ -92,8 +91,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int NODE_VERSION = 32;
     public static final int CLUSTER_STATE_CHANGE = 33;
     public static final int SPLIT_BRAIN_JOIN_MESSAGE = 34;
-    public static final int SEND_EXCLUDED_MEMBER_UUIDS = 35;
-    public static final int CLUSTER_VERSION = 36;
+    public static final int CLUSTER_VERSION = 35;
 
     private static final int LEN = CLUSTER_VERSION + 1;
 
@@ -281,11 +279,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new SplitBrainJoinMessage();
             }
         };
-        constructors[SEND_EXCLUDED_MEMBER_UUIDS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SendExcludedMemberUuidsOperation();
-            }
-        };
         constructors[CLUSTER_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClusterVersion();
@@ -294,5 +287,4 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
         return new ArrayDataSerializableFactory(constructors);
     }
-
 }

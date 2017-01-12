@@ -32,7 +32,6 @@ import com.hazelcast.internal.cluster.impl.operations.JoinRequestOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
 import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
-import com.hazelcast.internal.cluster.impl.operations.SendExcludedMemberUuidsOperation;
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
@@ -57,7 +56,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
@@ -263,19 +261,17 @@ public class ClusterJoinManager {
             return true;
         }
 
-        Address target = joinRequest.getAddress();
         final InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
-        final Set<String> excludedMemberUuids = hotRestartService.getExcludedMemberUuids();
+        Address target = joinRequest.getAddress();
+        String targetUuid = joinRequest.getUuid();
 
-        if (excludedMemberUuids.contains(joinRequest.getUuid())) {
+        if (hotRestartService.isMemberExcluded(target, targetUuid)) {
             logger.fine("cannot join " + target + " because it is excluded in cluster start.");
-            OperationService operationService = nodeEngine.getOperationService();
-            Operation op = new SendExcludedMemberUuidsOperation(excludedMemberUuids);
-            operationService.send(op, target);
+            hotRestartService.notifyExcludedMember(target);
             return true;
         }
 
-        if (checkClusterStateBeforeJoin(target, joinRequest.getUuid())) {
+        if (checkClusterStateBeforeJoin(target, targetUuid)) {
             return true;
         }
 
@@ -377,10 +373,6 @@ public class ClusterJoinManager {
     /**
      * Invoked from master node while executing a join request to validate it, delegating to
      * {@link com.hazelcast.instance.NodeExtension#validateJoinRequest(JoinMessage)}
-     *
-     * @param joinRequest
-     * @param target
-     * @return
      */
     private boolean validateJoinRequest(JoinRequest joinRequest, Address target) {
         if (node.isMaster()) {
