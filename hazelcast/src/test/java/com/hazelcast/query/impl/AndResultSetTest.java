@@ -165,28 +165,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void toByteArray_nonMatchingPredicate() throws IOException {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
-
-        ObjectDataOutput objectDataOutput = mock(ObjectDataOutput.class);
-        resultSet.toByteArray(objectDataOutput);
-
-        verify(objectDataOutput, times(0)).writeData(any(Data.class));
-    }
-
-    @Test
-    public void toByteArray_matchingPredicate() throws IOException {
-        Set<QueryableEntry> entries = generateEntries(100000);
-        AndResultSet resultSet = new AndResultSet(entries, null, asList(new TruePredicate()));
-
-        ObjectDataOutput objectDataOutput = mock(ObjectDataOutput.class);
-        resultSet.toByteArray(objectDataOutput);
-
-        verify(objectDataOutput, times(100000)).writeData(any(Data.class));
-    }
-
     @Test(expected = UnsupportedOperationException.class)
     public void removeUnsupported() throws IOException {
         Set<QueryableEntry> entries = generateEntries(100000);
@@ -194,8 +172,6 @@ public class AndResultSetTest extends HazelcastTestSupport {
 
         resultSet.remove(resultSet.iterator().next());
     }
-
-// TODO: we need to have more methods for regular behavior
 
     class FalsePredicate implements Predicate {
         @Override
