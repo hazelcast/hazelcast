@@ -31,14 +31,15 @@ import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
 import com.hazelcast.internal.ascii.rest.HttpDeleteCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpGetCommandParser;
 import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
+import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.StringUtil;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,7 +63,11 @@ public class TextReadHandler implements ReadHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
-    private static final int CAPACITY = 500;
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static final int INITIAL_CAPACITY = 1 << 8;
+    // 65536, no specific reason, similar to UDP packet size limit
+    @SuppressWarnings("checkstyle:magicnumber")
+    private static final int MAX_CAPACITY = 1 << 16;
 
     static {
         MAP_COMMAND_PARSERS.put("get", new GetCommandParser());
@@ -85,7 +90,7 @@ public class TextReadHandler implements ReadHandler {
         MAP_COMMAND_PARSERS.put("DELETE", new HttpDeleteCommandParser());
     }
 
-    private ByteBuffer commandLine = ByteBuffer.allocate(CAPACITY);
+    private ByteBuffer commandLineBuffer = ByteBuffer.allocate(INITIAL_CAPACITY);
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
@@ -114,25 +119,25 @@ public class TextReadHandler implements ReadHandler {
     }
 
     @Override
-    public void onRead(ByteBuffer src) {
+    public void onRead(ByteBuffer src) throws Exception {
         while (src.hasRemaining()) {
             doRead(src);
         }
     }
 
-    private void doRead(ByteBuffer bb) {
+    private void doRead(ByteBuffer bb) throws IOException {
         while (!commandLineRead && bb.hasRemaining()) {
             byte b = bb.get();
             char c = (char) b;
             if (c == '\n') {
                 commandLineRead = true;
             } else if (c != '\r') {
-                commandLine.put(b);
+                appendToBuffer(b);
             }
         }
         if (commandLineRead) {
             if (command == null) {
-                processCmd(toStringAndClear(commandLine));
+                processCmd(toStringAndClear(commandLineBuffer));
             }
             if (command != null) {
                 boolean complete = command.readFrom(bb);
@@ -146,13 +151,36 @@ public class TextReadHandler implements ReadHandler {
         }
     }
 
-    void reset() {
+    private void appendToBuffer(byte b) throws IOException {
+        if (!commandLineBuffer.hasRemaining()) {
+            expandBuffer();
+        }
+        commandLineBuffer.put(b);
+    }
+
+    private void expandBuffer() throws IOException {
+        if (commandLineBuffer.capacity() == MAX_CAPACITY) {
+            throw new IOException("Max command size capacity [" + MAX_CAPACITY + "] has been reached!");
+        }
+
+        int capacity = commandLineBuffer.capacity() << 1;
+        if (logger.isFineEnabled()) {
+            logger.fine("Expanding buffer capacity to " + capacity);
+        }
+
+        ByteBuffer newBuffer = ByteBuffer.allocate(capacity);
+        commandLineBuffer.flip();
+        newBuffer.put(commandLineBuffer);
+        commandLineBuffer = newBuffer;
+    }
+
+    private void reset() {
         command = null;
-        commandLine.clear();
+        commandLineBuffer.clear();
         commandLineRead = false;
     }
 
-    public static String toStringAndClear(ByteBuffer bb) {
+    private static String toStringAndClear(ByteBuffer bb) {
         if (bb == null) {
             return "";
         }
@@ -193,7 +221,7 @@ public class TextReadHandler implements ReadHandler {
         textCommandService.processRequest(command);
     }
 
-    void processCmd(String cmd) {
+    private void processCmd(String cmd) {
         try {
             int space = cmd.indexOf(' ');
             String operation = (space == -1) ? cmd : cmd.substring(0, space);
