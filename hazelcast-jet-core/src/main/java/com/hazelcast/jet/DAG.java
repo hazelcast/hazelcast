@@ -320,12 +320,12 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public int getFactoryId() {
-        return JetDataSerializerHook.FACTORY_ID;
+        return SerializationConstants.FACTORY_ID;
     }
 
     @Override
     public int getId() {
-        return JetDataSerializerHook.DAG;
+        return SerializationConstants.DAG;
     }
 
     private static void validateAgainstMultigraph(Collection<Edge> edges) {

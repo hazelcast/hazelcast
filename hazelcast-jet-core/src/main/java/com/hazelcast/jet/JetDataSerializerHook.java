@@ -17,26 +17,24 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
-import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.jet.impl.deployment.ResourcePart;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class JetDataSerializerHook implements DataSerializerHook {
+import static com.hazelcast.jet.SerializationConstants.DAG;
+import static com.hazelcast.jet.SerializationConstants.EDGE;
+import static com.hazelcast.jet.SerializationConstants.RESOURCE_PART;
+import static com.hazelcast.jet.SerializationConstants.VERTEX;
 
-    public static final String JET_DS_FACTORY = "hazelcast.serialization.ds.jet";
-    public static final int JET_DS_FACTORY_ID = -10001;
-
-    public static final int DAG = 0;
-    public static final int VERTEX = 1;
-    public static final int EDGE = 2;
-    public static final int RESOURCE_PART = 3;
-    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_DS_FACTORY, JET_DS_FACTORY_ID);
-
+/**
+ * A Java Service Provider hook for Hazelcast's Identified Data Serializable
+ * mechanism.
+ */
+final class JetDataSerializerHook implements DataSerializerHook {
 
     @Override
     public int getFactoryId() {
-        return FACTORY_ID;
+        return SerializationConstants.FACTORY_ID;
     }
 
     @Override
