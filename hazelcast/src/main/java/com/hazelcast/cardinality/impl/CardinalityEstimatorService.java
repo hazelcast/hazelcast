@@ -116,27 +116,25 @@ public class CardinalityEstimatorService
     @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            int thresholdReplicaIndex = event.getNewReplicaIndex();
-            clearPartitionReplica(event.getPartitionId(), thresholdReplicaIndex);
+            clearPartitionReplica(event.getPartitionId(), event.getNewReplicaIndex());
         }
     }
 
     @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            int thresholdReplicaIndex = event.getCurrentReplicaIndex();
-            clearPartitionReplica(event.getPartitionId(), thresholdReplicaIndex);
+            clearPartitionReplica(event.getPartitionId(), event.getCurrentReplicaIndex());
         }
     }
 
-    private void clearPartitionReplica(int partitionId, int thresholdReplicaIndex) {
+    private void clearPartitionReplica(int partitionId, int durabilityThreshold) {
         final Iterator<String> iterator = containers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
             CardinalityEstimatorContainer container = containers.get(name);
 
             if (getPartitionId(name) == partitionId
-                    && (thresholdReplicaIndex == -1 || thresholdReplicaIndex > container.getDurability())) {
+                    && (durabilityThreshold == -1 || durabilityThreshold > container.getDurability())) {
                 iterator.remove();
             }
         }

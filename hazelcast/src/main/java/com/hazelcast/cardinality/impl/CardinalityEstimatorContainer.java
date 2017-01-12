@@ -26,16 +26,18 @@ import java.io.IOException;
 
 public class CardinalityEstimatorContainer implements IdentifiedDataSerializable {
 
+    private static final int DEFAULT_DURABILITY = 1;
+
     private int durability;
 
     private HyperLogLog hll;
 
     public CardinalityEstimatorContainer() {
-        hll = new HyperLogLogImpl();
+        this(DEFAULT_DURABILITY);
     }
 
     public CardinalityEstimatorContainer(int durability) {
-        this();
+        this.hll = new HyperLogLogImpl();
         this.durability = durability;
     }
 

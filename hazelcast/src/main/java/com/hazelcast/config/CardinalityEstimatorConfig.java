@@ -28,6 +28,8 @@ public class CardinalityEstimatorConfig {
      */
     private static final int DEFAULT_DURABILITY = 1;
 
+    private static final int MAX_DURABILITY = 8;
+
     private String name = "default";
 
     private int durability = DEFAULT_DURABILITY;
