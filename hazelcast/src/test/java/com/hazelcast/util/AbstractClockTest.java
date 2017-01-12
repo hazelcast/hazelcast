@@ -82,6 +82,7 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
             Method method = instanceClass.getMethod("shutdown");
             method.invoke(isolatedNode);
             isolatedNode = null;
+            System.gc();
         } catch (Exception e) {
             throw new RuntimeException("Could not start shutdown Hazelcast instance", e);
         }
