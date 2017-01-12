@@ -16,10 +16,8 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 
-import java.io.IOException;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.List;
@@ -47,13 +45,6 @@ public class AndResultSet extends AbstractSet<QueryableEntry> {
         this.otherIndexedResults = otherIndexedResults;
         this.lsNoIndexPredicates = lsNoIndexPredicates;
         this.cachedSize = SIZE_UNINITIALIZED;
-    }
-
-    public byte[] toByteArray(ObjectDataOutput out) throws IOException {
-        for (QueryableEntry entry : this) {
-            out.writeData(entry.getKeyData());
-        }
-        return out.toByteArray();
     }
 
     @Override
