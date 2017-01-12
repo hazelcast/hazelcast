@@ -24,12 +24,10 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public void backup() {
-
     }
 
     @Override
     public void backup(long backupSeq) {
-
     }
 
     @Override
@@ -39,11 +37,9 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public void interruptLocalBackupTask() {
-
     }
 
     @Override
     public void interruptBackupTask() {
-
     }
 }
