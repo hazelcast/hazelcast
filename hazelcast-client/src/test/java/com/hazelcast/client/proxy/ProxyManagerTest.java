@@ -7,6 +7,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -21,14 +22,11 @@ import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
-import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ProxyManagerTest {
+public class ProxyManagerTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory factory;
 
@@ -70,7 +68,7 @@ public class ProxyManagerTest {
 
         assertEquals(3, addresses.size());
         for (HazelcastInstance lite : instances.subList(3, 6)) {
-            assertTrue(addresses.contains(getAddress(lite)));
+            assertContains(addresses, getAddress(lite));
         }
     }
 
@@ -109,5 +107,4 @@ public class ProxyManagerTest {
 
         return instances;
     }
-
 }

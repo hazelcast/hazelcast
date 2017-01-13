@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class XmlClientConfigImportVariableReplacementTest {
+public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestSupport {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testImportElementOnlyAppersInTopLevel() throws Exception {
@@ -102,8 +103,8 @@ public class XmlClientConfigImportVariableReplacementTest {
         ClientConfig config = buildConfig(xml, "config.location", file.getAbsolutePath());
         assertFalse(config.getNetworkConfig().isSmartRouting());
         assertTrue(config.getNetworkConfig().isRedoOperation());
-        assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.100.100"));
-        assertTrue(config.getNetworkConfig().getAddresses().contains("127.0.0.10"));
+        assertContains(config.getNetworkConfig().getAddresses(), "192.168.100.100");
+        assertContains(config.getNetworkConfig().getAddresses(), "127.0.0.10");
     }
 
     @Test
@@ -128,7 +129,7 @@ public class XmlClientConfigImportVariableReplacementTest {
         properties.setProperty("config.location", file.getAbsolutePath());
         properties.setProperty("ip.address", "192.168.5.5");
         ClientConfig config = buildConfig(xml, properties);
-        assertTrue(config.getNetworkConfig().getAddresses().contains("192.168.5.5"));
+        assertContains(config.getNetworkConfig().getAddresses(), "192.168.5.5");
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -225,6 +226,4 @@ public class XmlClientConfigImportVariableReplacementTest {
         os.flush();
         os.close();
     }
-
-
 }
