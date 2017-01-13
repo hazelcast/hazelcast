@@ -80,6 +80,7 @@ import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -707,6 +708,34 @@ public abstract class HazelcastTestSupport {
         } catch (Throwable e) {
             fail("could not invoke valueOf(" + lastValue + ") method of enum " + enumClass);
         }
+    }
+
+    public static <E> void assertContains(Collection<E> collection, E expected) {
+        assertTrue(format("Collection %s didn't contain expected '%s'", collection, expected),
+                collection.contains(expected));
+    }
+
+    public static <E> void assertNotContains(Collection<E> collection, E expected) {
+        assertFalse(format("Collection %s contained unexpected '%s'", collection, expected),
+                collection.contains(expected));
+    }
+
+    public static <E> void assertContainsAll(Collection<E> collection, Collection<E> expected) {
+        assertTrue(format("Collection %s didn't contain expected %s", collection, expected),
+                collection.containsAll(expected));
+    }
+
+    public static <E> void assertNotContainsAll(Collection<E> collection, Collection<E> expected) {
+        assertFalse(format("Collection %s contained unexpected %s", collection, expected),
+                collection.containsAll(expected));
+    }
+
+    public static void assertContains(String string, String expected) {
+        assertTrue(format("'%s' didn't contain expected '%s'", string, expected), string.contains(expected));
+    }
+
+    public static void assertNotContains(String string, String expected) {
+        assertFalse(format("'%s' contained unexpected '%s'", string, expected), string.contains(expected));
     }
 
     public static void assertStartsWith(String expected, String actual) {
