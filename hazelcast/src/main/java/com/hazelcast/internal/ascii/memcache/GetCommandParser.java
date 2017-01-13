@@ -20,6 +20,8 @@ import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.nio.ascii.TextReadHandler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 
 public class GetCommandParser implements CommandParser {
@@ -32,11 +34,12 @@ public class GetCommandParser implements CommandParser {
             readHandler.publishRequest(r);
         } else {
             StringTokenizer st = new StringTokenizer(key);
+            List<String> keys = new ArrayList<String>();
             while (st.hasMoreTokens()) {
-                PartialGetCommand r = new PartialGetCommand(st.nextToken());
-                readHandler.publishRequest(r);
+                String singleKey = st.nextToken();
+                keys.add(singleKey);
             }
-            readHandler.publishRequest(new EndCommand());
+            readHandler.publishRequest(new BulkGetCommand(keys));
         }
         return null;
     }
