@@ -82,7 +82,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     private void assertContainsSensor(String parameter) {
         boolean contains = metricsRegistry.getNames().contains(parameter);
-        assertTrue("sensor:" + parameter + " is not found", contains);
+        assertTrue("sensor: " + parameter + " is not found", contains);
     }
 
     private void assumeOperatingSystemMXBean(String expected) {

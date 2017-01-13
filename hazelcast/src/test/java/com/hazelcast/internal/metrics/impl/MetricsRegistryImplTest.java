@@ -18,7 +18,6 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -92,7 +91,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
         Set<String> names = metricsRegistry.getNames();
         for (String name : expected) {
-            assertTrue(names.contains(name));
+            assertContains(names, name);
         }
     }
 

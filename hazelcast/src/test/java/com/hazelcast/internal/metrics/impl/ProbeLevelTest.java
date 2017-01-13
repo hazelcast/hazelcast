@@ -5,6 +5,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,11 +17,10 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class ProbeLevelTest {
+public class ProbeLevelTest extends HazelcastTestSupport {
 
     private ILogger logger;
 
@@ -54,7 +54,7 @@ public class ProbeLevelTest {
             }
         });
 
-        assertTrue(metricsRegistry.getNames().contains("foo"));
+        assertContains(metricsRegistry.getNames(), "foo");
         assertEquals(10, metricsRegistry.newLongGauge("foo").read());
     }
 
