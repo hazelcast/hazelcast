@@ -15,7 +15,6 @@ import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -43,11 +42,11 @@ public class TimedMemberStateIntegrationTest extends HazelcastTestSupport {
         Set<String> instanceNames = timedMemberState.getInstanceNames();
 
         assertEquals("dev", timedMemberState.clusterName);
-        assertTrue(instanceNames.contains("c:trial"));
-        assertTrue(instanceNames.contains("m:trial"));
-        assertTrue(instanceNames.contains("q:trial"));
-        assertTrue(instanceNames.contains("t:trial"));
-        assertTrue(instanceNames.contains("r:trial"));
-        assertTrue(instanceNames.contains("e:trial"));
+        assertContains(instanceNames, "c:trial");
+        assertContains(instanceNames, "m:trial");
+        assertContains(instanceNames, "q:trial");
+        assertContains(instanceNames, "t:trial");
+        assertContains(instanceNames, "r:trial");
+        assertContains(instanceNames, "e:trial");
     }
 }

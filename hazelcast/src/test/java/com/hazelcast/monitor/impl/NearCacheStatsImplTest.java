@@ -2,6 +2,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -18,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class NearCacheStatsImplTest {
+public class NearCacheStatsImplTest extends HazelcastTestSupport {
 
     private NearCacheStatsImpl nearCacheStats;
 
@@ -76,8 +77,8 @@ public class NearCacheStatsImplTest {
         assertNearCacheStats(deserialized, 2, 0, 0, 0, true);
 
         String lastPersistenceFailure = deserialized.getLastPersistenceFailure();
-        assertTrue(lastPersistenceFailure.contains(throwable.getClass().getSimpleName()));
-        assertTrue(lastPersistenceFailure.contains("expected exception"));
+        assertContains(lastPersistenceFailure, throwable.getClass().getSimpleName());
+        assertContains(lastPersistenceFailure, "expected exception");
     }
 
     @Test

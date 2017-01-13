@@ -20,7 +20,6 @@ import java.util.Set;
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -52,7 +51,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertEquals(1827731, cloned.getTime());
         assertNotNull(cloned.getInstanceNames());
         assertEquals(1, cloned.getInstanceNames().size());
-        assertTrue(cloned.getInstanceNames().contains("topicStats"));
+        assertContains(cloned.getInstanceNames(), "topicStats");
         assertNotNull(cloned.getMemberState());
         assertNotNull(cloned.toString());
     }
@@ -68,7 +67,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertEquals(1827731, deserialized.getTime());
         assertNotNull(deserialized.getInstanceNames());
         assertEquals(1, deserialized.getInstanceNames().size());
-        assertTrue(deserialized.getInstanceNames().contains("topicStats"));
+        assertContains(deserialized.getInstanceNames(), "topicStats");
         assertNotNull(deserialized.getMemberState());
         assertNotNull(deserialized.toString());
     }
