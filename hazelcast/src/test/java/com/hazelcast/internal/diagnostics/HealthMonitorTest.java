@@ -5,7 +5,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,7 +25,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class HealthMonitorTest extends HazelcastTestSupport {
 
-    private HealthMonitor healthMonitor;
     private HealthMonitor.HealthMetrics metrics;
     private MetricsRegistry metricsRegistry;
 
@@ -39,7 +37,7 @@ public class HealthMonitorTest extends HazelcastTestSupport {
                 .setProperty(HEALTH_MONITORING_THRESHOLD_CPU_PERCENTAGE.getName(), "70");
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        healthMonitor = new HealthMonitor(getNode(hz));
+        HealthMonitor healthMonitor = new HealthMonitor(getNode(hz));
         metricsRegistry = getMetricsRegistry(hz);
         metrics = healthMonitor.healthMetrics;
     }
@@ -104,10 +102,5 @@ public class HealthMonitorTest extends HazelcastTestSupport {
 
         //8, physical.memory.total= 9.8G, physical.memory.free=704.0M, swap.space.total=18.6G, swap.space.free=18.6G, heap.memory.used=26.3M, heap.memory.free=96.7M, heap.memory.total=123.0M, heap.memory.max=910.5M, heap.memory.used/total=0.00%, heap.memory.used/max=0.00%, minor.gc.count=0, minor.gc.time=0ms, major.gc.count=0, major.gc.time=0ms, os.processCpuLoad=0.33%, os.systemCpuLoad=1.00%, os.systemLoadAverage=34.00%, thread.count=31, thread.peakCount=31, cluster.timeDiff=9223372036854775807, event.q.size=0, executor.q.async.size=0, executor.q.client.size=0, executor.q.query.size=0, executor.q.scheduled.size=0, executor.q.io.size=0, executor.q.system.size=0, executor.q.mapLoad.size=0, executor.q.mapLoadAllKeys.size=0, executor.q.cluster.size=0, operations.completed.count=0, operations.executor.q.size=0, operations.executor.priority.q.size=0, operations.response.q.size=0, operations.running.count=0, operations.pending.invocations.percentage=0.00%, operations.pending.invocations.count=0, proxy.count=0, clientEndpoint.count=0, connection.active.count=0, client.connection.count=0, connection.count=0
         //System.out.println(s);
-    }
-
-    private void assertContains(String s, String expected) {
-        boolean contains = s.contains(expected);
-        assertTrue(contains);
     }
 }

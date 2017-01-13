@@ -26,6 +26,7 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -63,7 +64,7 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
             for (File file : files) {
                 String name = file.getName();
                 if (name.startsWith("diagnostics-") && name.endsWith(".log")) {
-                    file.delete();
+                    deleteQuietly(file);
                 }
             }
         }
@@ -138,10 +139,10 @@ public class DiagnosticsLogTest extends HazelcastTestSupport {
                 String content = loadLogfile();
                 assertNotNull(content);
 
-                assertTrue(content.contains("SystemProperties["));
-                assertTrue(content.contains("BuildInfo["));
-                assertTrue(content.contains("ConfigProperties["));
-                assertTrue(content.contains("Metrics["));
+                assertContains(content, "SystemProperties[");
+                assertContains(content, "BuildInfo[");
+                assertContains(content, "ConfigProperties[");
+                assertContains(content, "Metrics[");
             }
         });
     }

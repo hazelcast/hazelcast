@@ -6,9 +6,6 @@ import org.junit.Before;
 import java.io.CharArrayWriter;
 import java.io.PrintWriter;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
 
     protected DiagnosticsLogWriter logWriter;
@@ -30,12 +27,10 @@ public class AbstractDiagnosticsPluginTest extends HazelcastTestSupport {
     }
 
     protected void assertContains(String expected) {
-        String message = getContent();
-        assertTrue("'" + message + "' doesn't contains '" + expected + "'", message.contains(expected));
+        assertContains(getContent(), expected);
     }
 
     protected void assertNotContains(String expected) {
-        String message = getContent();
-        assertFalse("'" + message + "' does contains '" + expected + "'", message.contains(expected));
+        assertNotContains(getContent(), expected);
     }
 }

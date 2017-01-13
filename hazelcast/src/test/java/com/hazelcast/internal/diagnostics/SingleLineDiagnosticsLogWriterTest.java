@@ -14,11 +14,11 @@ import java.io.PrintWriter;
 
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
+
     private CharArrayWriter out = new CharArrayWriter();
     private SingleLineDiagnosticsLogWriter writer;
 
@@ -45,7 +45,8 @@ public class SingleLineDiagnosticsLogWriterTest extends HazelcastTestSupport {
 
         writer.endSection();
 
-         assertTrue(out.toString().contains("SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]"));
+        assertContains(out.toString(),
+                "SomeSection[boolean=true,long=10,SubSection[integer=10],string=foo,double=11.0,foobar]");
     }
 
     @Test
