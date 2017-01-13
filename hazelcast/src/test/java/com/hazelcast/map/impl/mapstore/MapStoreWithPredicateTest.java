@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -42,9 +41,9 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
             public void run() throws Exception {
                 Set expected = map.keySet(Predicates.greaterThan("value", 1));
                 assertEquals(3, expected.size());
-                assertTrue(expected.contains("key1"));
-                assertTrue(expected.contains("key2"));
-                assertTrue(expected.contains("key3"));
+                assertContains(expected, "key1");
+                assertContains(expected, "key2");
+                assertContains(expected, "key3");
             }
         });
     }
@@ -68,9 +67,9 @@ public class MapStoreWithPredicateTest extends AbstractMapStoreTest {
             public void run() throws Exception {
                 final Collection values = map.values(Predicates.greaterThan("value", 1));
                 assertEquals(3, values.size());
-                assertTrue(values.contains(17));
-                assertTrue(values.contains(37));
-                assertTrue(values.contains(47));
+                assertContains(values, 17);
+                assertContains(values, 37);
+                assertContains(values, 47);
             }
         });
     }
