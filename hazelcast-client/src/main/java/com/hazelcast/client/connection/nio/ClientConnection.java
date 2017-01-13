@@ -263,7 +263,7 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         try {
             innerClose();
         } catch (Exception e) {
-            logger.warning(e);
+            logger.warning("Exception while closing connection" + e.getMessage());
         }
 
         if (lifecycleService.isRunning()) {
