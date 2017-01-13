@@ -159,7 +159,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(listener.objects.contains(msg));
+                assertContains(listener.objects, msg);
             }
         });
     }
@@ -174,8 +174,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                //System.out.println("tail sequence:"+ringbuffer.tailSequence());
-                assertTrue(listener.objects.contains(null));
+                assertContains(listener.objects, null);
             }
         });
     }

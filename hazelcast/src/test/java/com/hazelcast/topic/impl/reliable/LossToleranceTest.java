@@ -91,7 +91,7 @@ public class LossToleranceTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(listener.objects.contains("newItem"));
+                assertContains(listener.objects, "newItem");
                 assertFalse(topic.runnersMap.isEmpty());
             }
         });

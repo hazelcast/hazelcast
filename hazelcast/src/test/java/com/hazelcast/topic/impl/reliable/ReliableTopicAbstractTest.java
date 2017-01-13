@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
-    public static final int CAPACITY = 10;
+    private static final int CAPACITY = 10;
 
     private ReliableTopicProxy<String> topic;
     private HazelcastInstance local;
@@ -82,7 +82,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         assertTrue(removed);
         topic.publish("1");
 
-        // it should not receive any events.
+        // it should not receive any events
         assertTrueDelayed5sec(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -109,7 +109,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
 
         topic.publish("1");
 
-        // it should not receive any events.
+        // it should not receive any events
         assertTrueDelayed5sec(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -130,7 +130,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(listener.objects.contains(msg));
+                assertContains(listener.objects, msg);
             }
         });
     }
@@ -144,8 +144,7 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                //System.out.println("tail sequence:"+ringbuffer.tailSequence());
-                assertTrue(listener.objects.contains(null));
+                assertContains(listener.objects, null);
             }
         });
     }
@@ -226,7 +225,6 @@ public abstract class ReliableTopicAbstractTest extends HazelcastTestSupport {
             }
         });
     }
-
 
     @Test
     public void statistics() {

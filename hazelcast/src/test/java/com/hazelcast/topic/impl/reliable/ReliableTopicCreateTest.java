@@ -123,7 +123,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(messageListener.objects.contains("item"));
+                assertContains(messageListener.objects, "item");
             }
         });
     }
@@ -147,7 +147,7 @@ public class ReliableTopicCreateTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(messageListener.objects.contains("item"));
+                assertContains(messageListener.objects, "item");
             }
         });
     }
