@@ -27,6 +27,7 @@ import java.util.Set;
  * is not available or not enabled.
  */
 public class NoopInternalHotRestartService implements InternalHotRestartService {
+
     @Override
     public boolean triggerForceStart() {
         return false;
@@ -48,8 +49,11 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
+    public void notifyExcludedMember(Address memberAddress) {
+    }
 
+    @Override
+    public void handleExcludedMemberUuids(Address sender, Set<String> excludedMemberUuids) {
     }
 
     @Override
@@ -59,6 +63,5 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
 
     @Override
     public void resetHotRestartData() {
-
     }
 }

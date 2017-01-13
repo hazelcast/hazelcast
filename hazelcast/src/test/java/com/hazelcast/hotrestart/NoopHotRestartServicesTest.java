@@ -29,6 +29,7 @@ public class NoopHotRestartServicesTest {
     @Test
     public void testNoOpInternalHotRestartService() {
         final NoopInternalHotRestartService service = new NoopInternalHotRestartService();
+        service.notifyExcludedMember(null);
         service.handleExcludedMemberUuids(null, null);
         service.resetHotRestartData();
 
