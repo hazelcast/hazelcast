@@ -22,11 +22,15 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Edge.from;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 @Category(QuickTest.class)
 public class DAGTest {
@@ -34,10 +38,66 @@ public class DAGTest {
     private static final SimpleProcessorSupplier PROCESSOR_SUPPLIER = TestProcessor::new;
 
     @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
-    public void whenDifferentSourceWithSameName_thenInvalid() {
+    public void when_newVertex_then_hasIt() {
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        assertSame(a, dag.getVertex("a"));
+    }
+
+    @Test
+    public void when_connectKnownVertices_then_success() {
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        dag.edge(between(a, b));
+    }
+
+    @Test
+    public void when_unknownSource_then_illegalArgument() {
+        // Given
+        final DAG dag = new DAG();
+        final Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(between(a, b));
+    }
+
+    @Test
+    public void when_unknownDestination_then_illegalArgument() {
+        // Given
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        final Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(between(a, b));
+    }
+
+    @Test
+    public void when_addEdgeWithoutDestination_then_illegalArgument() {
+        // Given
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(from(a));
+    }
+
+    @Test
+    public void when_differentSourceWithSameName_then_illegalArgument() {
         // Given
         Vertex a1 = new Vertex("a", Processors.map(Object::hashCode));
         Vertex a2 = new Vertex("a", Processors.map(Object::toString));
@@ -47,14 +107,14 @@ public class DAGTest {
                 .vertex(b);
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(between(a2, b));
     }
 
     @Test
-    public void whenDifferentDestinationWithSameName_thenInvalid() {
+    public void when_differentDestinationWithSameName_then_illegalArgument() {
         // Given
         Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
         Vertex b1 = new Vertex("b", Processors.map(Object::toString));
@@ -64,14 +124,60 @@ public class DAGTest {
                 .vertex(b1);
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(between(a, b2));
     }
 
     @Test
-    public void test_iteratorOrder() {
+    public void inboundEdges() {
+        // Given
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        final Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        final Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
+        final Edge e1 = from(a).to(d, 0);
+        final Edge e2 = from(b).to(d, 1);
+        final Edge e3 = from(c).to(d, 2);
+        dag.edge(e1)
+           .edge(e2)
+           .edge(e3)
+           .edge(from(a, 1).to(b));
+
+        // When
+        final Set<Edge> edges = new HashSet<>(dag.getInboundEdges("d"));
+
+        // Then
+        assertEquals(new HashSet<>(asList(e1, e2, e3)), edges);
+    }
+
+    @Test
+    public void outboundEdges() {
+        // Given
+        final DAG dag = new DAG();
+        final Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        final Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        final Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        final Vertex d = dag.newVertex("d", PROCESSOR_SUPPLIER);
+        final Edge e1 = from(a, 0).to(b);
+        final Edge e2 = from(a, 1).to(c);
+        final Edge e3 = from(a, 2).to(d);
+        dag.edge(e1)
+           .edge(e2)
+           .edge(e3)
+           .edge(from(b).to(c, 1));
+
+        // When
+        final Set<Edge> edges = new HashSet<>(dag.getOutboundEdges("a"));
+
+        // Then
+        assertEquals(new HashSet<>(asList(e1, e2, e3)), edges);
+    }
+
+    @Test
+    public void iteratorOrder() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -95,7 +201,7 @@ public class DAGTest {
     }
 
     @Test
-    public void test_reverseIteratorOrder() {
+    public void reverseIteratorOrder() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -119,7 +225,7 @@ public class DAGTest {
     }
 
     @Test
-    public void when_cycleInGraph_then_error() {
+    public void when_cycleInGraph_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -128,14 +234,14 @@ public class DAGTest {
            .edge(between(b, a));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.validate();
     }
 
     @Test
-    public void when_duplicateOutputOrdinal_then_error() {
+    public void when_duplicateOutputOrdinal_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -144,14 +250,14 @@ public class DAGTest {
         dag.edge(from(a, 0).to(b, 0));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(from(a, 0).to(c, 0));
     }
 
     @Test
-    public void when_gapInOutputOrdinal_then_error() {
+    public void when_gapInOutputOrdinal_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -161,14 +267,14 @@ public class DAGTest {
            .edge(from(a, 2).to(c, 0));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.validate();
     }
 
     @Test
-    public void when_duplicateInputOrdinal_then_error() {
+    public void when_duplicateInputOrdinal_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -177,14 +283,14 @@ public class DAGTest {
         dag.edge(from(a, 0).to(c, 0));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(from(b, 0).to(c, 0));
     }
 
     @Test
-    public void when_gapInInputOrdinal_then_error() {
+    public void when_gapInInputOrdinal_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -194,14 +300,14 @@ public class DAGTest {
            .edge(from(b, 0).to(c, 2));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.validate();
     }
 
     @Test
-    public void when_multigraph_then_error() {
+    public void when_multigraph_then_invalid() {
         // Given
         DAG dag = new DAG();
         Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
@@ -209,7 +315,7 @@ public class DAGTest {
         dag.edge(from(a, 0).to(b, 0));
 
         // Then
-        expectedException.expect(IllegalArgumentException.class);
+        exceptionRule.expect(IllegalArgumentException.class);
 
         // When
         dag.edge(from(a, 1).to(b, 1));

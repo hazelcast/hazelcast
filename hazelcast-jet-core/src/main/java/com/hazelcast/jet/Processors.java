@@ -499,11 +499,11 @@ public final class Processors {
         }
     }
 
-    private static abstract class ReducingProcessorBase<T, K, A, R> extends AbstractProcessor {
-        protected Function<? super T, ? extends K> keyExtractor;
-        protected Supplier<? extends A> supplier;
-        protected Map<K, A> groups = new HashMap<>();
-        protected Traverser<R> resultTraverser;
+    private abstract static class ReducingProcessorBase<T, K, A, R> extends AbstractProcessor {
+        Function<? super T, ? extends K> keyExtractor;
+        Supplier<? extends A> supplier;
+        Map<K, A> groups = new HashMap<>();
+        Traverser<R> resultTraverser;
 
         ReducingProcessorBase(@Nonnull Function<? super T, ? extends K> keyExtractor,
                               @Nonnull Supplier<? extends A> supplier,
@@ -538,9 +538,9 @@ public final class Processors {
         private BiFunction<? super A, ? super T, ? extends A> accumulator;
 
         GroupAndAccumulateP(@Nonnull Function<? super T, ? extends K> keyExtractor,
-                                   @Nonnull Supplier<? extends A> supplier,
-                                   @Nonnull BiFunction<? super A, ? super T, ? extends A> accumulator,
-                                   @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
+                            @Nonnull Supplier<? extends A> supplier,
+                            @Nonnull BiFunction<? super A, ? super T, ? extends A> accumulator,
+                            @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
         ) {
             super(keyExtractor, supplier, finisher);
             this.accumulator = accumulator;
