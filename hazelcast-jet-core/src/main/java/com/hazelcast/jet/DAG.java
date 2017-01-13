@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import java.util.Set;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.util.Collections.newSetFromMap;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
@@ -69,7 +71,8 @@ import static java.util.stream.Collectors.toMap;
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private Set<Edge> edges = new HashSet<>();
-    private Map<String, Vertex> vertices = new HashMap<>();
+    private Map<String, Vertex> verticesByName = new HashMap<>();
+    private Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<Vertex, Boolean>());
 
     private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
 
@@ -121,24 +124,37 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * same ordinal, one inbound and one outbound.
      */
     public DAG edge(Edge edge) {
-        if (!containsVertex(edge.getSource())) {
-            throw new IllegalArgumentException("Source vertex " + edge.getSource() + " doesn't exist!");
-        }
-        if (!containsVertex(edge.getDestination())) {
-            throw new IllegalArgumentException("Destination vertex " + edge.getDestination() + " doesn't exist!");
+        if (edge.getDestination() == null) {
+            throw new IllegalArgumentException("Edge has no destination");
         }
         if (edges.contains(edge)) {
-            throw new IllegalArgumentException("Edge " + edge + " already defined!");
+            throw new IllegalArgumentException("This DAG already has an edge between '" + edge.getSourceName()
+                    + "' and '" + edge.getDestName() + '\'');
         }
-        if (getInboundEdges(edge.getDestination())
+        if (!containsVertex(edge.getSource())) {
+            throw new IllegalArgumentException(
+                    containsVertexName(edge.getSource())
+                        ? "This DAG has a vertex called '" + edge.getSourceName()
+                            + "', but the supplied edge's source is a different vertex with the same name"
+                        : "Source vertex '" + edge.getSourceName() + "' is not in this DAG"
+            );
+        }
+        if (!containsVertex(edge.getDestination())) {
+            throw new IllegalArgumentException(
+                    containsVertexName(edge.getDestination())
+                        ? "This DAG has a vertex called '" + edge.getDestName()
+                            + "', but the supplied edge's destination is a different vertex with the same name"
+                        : "Destination vertex '" + edge.getDestName() + "' is not in this DAG");
+        }
+        if (getInboundEdges(edge.getDestName())
                 .stream().anyMatch(e -> e.getDestOrdinal() == edge.getDestOrdinal())) {
-            throw new IllegalArgumentException("Another edge with same destination ordinal "
-                    + edge.getDestOrdinal() + " exists");
+            throw new IllegalArgumentException("Vertex '" + edge.getDestName()
+                    + "' already has an inbound edge at ordinal " + edge.getDestOrdinal());
         }
-        if (getOutboundEdges(edge.getSource())
+        if (getOutboundEdges(edge.getSourceName())
                 .stream().anyMatch(e -> e.getSourceOrdinal() == edge.getSourceOrdinal())) {
-            throw new IllegalArgumentException("Another edge with same source ordinal "
-                    + edge.getSourceOrdinal() + " exists");
+            throw new IllegalArgumentException("Vertex '" + edge.getSourceName()
+                    + "' already has an outbound edge at ordinal " + edge.getSourceOrdinal());
         }
         edges.add(edge);
         return this;
@@ -148,13 +164,13 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the inbound edges connected to the vertex with the given name.
      */
     public List<Edge> getInboundEdges(String vertexName) {
-        if (!containsVertex(vertexName)) {
+        if (!verticesByName.containsKey(vertexName)) {
             throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
 
         List<Edge> inboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getDestination().equals(vertexName)) {
+            if (edge.getDestName().equals(vertexName)) {
                 inboundEdges.add(edge);
             }
         }
@@ -165,13 +181,13 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the outbound edges connected to the vertex with the given name.
      */
     public List<Edge> getOutboundEdges(String vertexName) {
-        if (!containsVertex(vertexName)) {
+        if (!verticesByName.containsKey(vertexName)) {
             throw new IllegalArgumentException("No vertex with name '" + vertexName + "' found in this DAG");
         }
 
         List<Edge> outboundEdges = new ArrayList<>();
         for (Edge edge : edges) {
-            if (edge.getSource().equals(vertexName)) {
+            if (edge.getSourceName().equals(vertexName)) {
                 outboundEdges.add(edge);
             }
         }
@@ -182,7 +198,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
      * Returns the vertex with the given name.
      */
     public Vertex getVertex(String vertexName) {
-        return vertices.get(vertexName);
+        return verticesByName.get(vertexName);
     }
 
     /**
@@ -206,31 +222,36 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public String toString() {
-        return "Vertices " + vertices + "\nEdges " + edges;
+        return "Vertices " + verticesByName + "\nEdges " + edges;
     }
 
     void validate() throws IllegalArgumentException {
         topologicalVertexStack.clear();
-        checkTrue(!vertices.isEmpty(), "DAG must contain at least one vertex");
-        Map<String, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSource));
+        checkTrue(!verticesByName.isEmpty(), "DAG must contain at least one vertex");
+        Map<String, List<Edge>> outgoingEdgeMap = edges.stream().collect(groupingBy(Edge::getSourceName));
         validateAgainstMultigraph(edges);
         validateOutboundEdgeOrdinals(outgoingEdgeMap);
-        validateInboundEdgeOrdinals(edges.stream().collect(groupingBy(Edge::getDestination)));
+        validateInboundEdgeOrdinals(edges.stream().collect(groupingBy(Edge::getDestName)));
         detectCycles(outgoingEdgeMap,
-                vertices.entrySet().stream()
-                        .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
+                verticesByName.entrySet().stream()
+                              .collect(toMap(Entry::getKey, v -> new AnnotatedVertex(v.getValue()))));
     }
 
     private Vertex addVertex(Vertex vertex) {
-        if (vertices.containsKey(vertex.getName())) {
+        if (verticesByName.containsKey(vertex.getName())) {
             throw new IllegalArgumentException("Vertex " + vertex.getName() + " is already defined.");
         }
-        vertices.put(vertex.getName(), vertex);
+        verticesByIdentity.add(vertex);
+        verticesByName.put(vertex.getName(), vertex);
         return vertex;
     }
 
-    private boolean containsVertex(String vertexName) {
-        return vertices.containsKey(vertexName);
+    private boolean containsVertex(Vertex vertex) {
+        return verticesByIdentity.contains(vertex);
+    }
+
+    private boolean containsVertexName(Vertex vertex) {
+        return verticesByName.containsKey(vertex.getName());
     }
 
     private static void validateOutboundEdgeOrdinals(Map<String, List<Edge>> outgoingEdgeMap) {
@@ -279,7 +300,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
         if (edges != null) {
             for (Edge e : edgeMap.get(av.v.getName())) {
-                AnnotatedVertex outVertex = vertexMap.get(e.getDestination());
+                AnnotatedVertex outVertex = vertexMap.get(e.getDestName());
 
                 if (outVertex.index == -1) {
                     strongConnect(outVertex, vertexMap, edgeMap, stack, nextIndex);
@@ -310,7 +331,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 // detect self-cycle
                 if (edgeMap.containsKey(pop.v.getName())) {
                     for (Edge edge : edgeMap.get(pop.v.getName())) {
-                        if (edge.getDestination().equals(pop.v.getName())) {
+                        if (edge.getDestName().equals(pop.v.getName())) {
                             throw new IllegalArgumentException("DAG contains a self-cycle on vertex:" + pop.v.getName());
                         }
                     }
@@ -322,9 +343,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(vertices.size());
+        out.writeInt(verticesByName.size());
 
-        for (Map.Entry<String, Vertex> entry : vertices.entrySet()) {
+        for (Map.Entry<String, Vertex> entry : verticesByName.entrySet()) {
             out.writeObject(entry.getKey());
             out.writeObject(entry.getValue());
         }
@@ -343,7 +364,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (int i = 0; i < vertexCount; i++) {
             String key = in.readObject();
             Vertex value = in.readObject();
-            vertices.put(key, value);
+            verticesByName.put(key, value);
         }
 
         int edgeCount = in.readInt();
@@ -368,7 +389,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         final Set<SimpleImmutableEntry<String, String>> distinctSrcDest = new HashSet<>();
         for (Edge e : edges) {
             final SimpleImmutableEntry<String, String> srcDestId =
-                    new SimpleImmutableEntry<>(e.getSource(), e.getDestination());
+                    new SimpleImmutableEntry<>(e.getSourceName(), e.getDestName());
             if (!distinctSrcDest.add(srcDestId)) {
                 throw new IllegalArgumentException(
                         String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));

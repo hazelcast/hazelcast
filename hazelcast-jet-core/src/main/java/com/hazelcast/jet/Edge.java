@@ -47,14 +47,16 @@ import java.io.Serializable;
  */
 public class Edge implements IdentifiedDataSerializable {
 
-    private String source;
+    private Vertex source; // transient field
+    private String sourceName;
     private int sourceOrdinal;
-    private String destination;
+
+    private Vertex destination; // transient field
+    private String destName;
     private int destOrdinal;
 
     private int priority;
     private boolean isBuffered;
-
     private boolean isDistributed;
     private Partitioner partitioner;
     private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
@@ -64,10 +66,13 @@ public class Edge implements IdentifiedDataSerializable {
     Edge() {
     }
 
-    private Edge(String source, int sourceOrdinal, String destination, int destOrdinal) {
+    private Edge(Vertex source, int sourceOrdinal, Vertex destination, int destOrdinal) {
         this.source = source;
+        this.sourceName = source.getName();
         this.sourceOrdinal = sourceOrdinal;
+
         this.destination = destination;
+        this.destName = destination != null ? destination.getName() : null;
         this.destOrdinal = destOrdinal;
     }
 
@@ -79,13 +84,13 @@ public class Edge implements IdentifiedDataSerializable {
      * @param destination   the destination vertex
      */
     public static Edge between(Vertex source, Vertex destination) {
-        return new Edge(source.getName(), 0, destination.getName(), 0);
+        return new Edge(source, 0, destination, 0);
     }
 
     /**
      * Returns an edge with the given source vertex and no destination vertex.
-     * The ordinal of the edge is 0. Typically followed by a call to one of
-     * the {@code to()} methods.
+     * The ordinal of the edge is 0. Typically followed by one of the
+     * {@code to()} method calls.
      */
     public static Edge from(Vertex source) {
         return from(source, 0);
@@ -97,31 +102,47 @@ public class Edge implements IdentifiedDataSerializable {
      * the {@code to()} methods.
      */
     public static Edge from(Vertex source, int ordinal) {
-        return new Edge(source.getName(), ordinal, null, 0);
+        return new Edge(source, ordinal, null, 0);
     }
 
     /**
      * Sets the destination vertex of this edge, with ordinal 0.
      */
-    public Edge to(Vertex dest) {
-        this.destination = dest.getName();
+    public Edge to(Vertex destination) {
+        this.destination = destination;
+        this.destName = destination.getName();
         return this;
     }
 
     /**
      * Sets the destination vertex and ordinal of this edge.
      */
-    public Edge to(Vertex dest, int ordinal) {
-        this.destination = dest.getName();
+    public Edge to(Vertex destination, int ordinal) {
+        this.destination = destination;
+        this.destName = destination.getName();
         this.destOrdinal = ordinal;
         return this;
     }
 
     /**
+     * Returns this edge's source vertex.
+     */
+    public Vertex getSource() {
+        return source;
+    }
+
+    /**
+     * Returns this edge's destination vertex.
+     */
+    public Vertex getDestination() {
+        return destination;
+    }
+
+    /**
      * Returns the name of the source vertex.
      */
-    public String getSource() {
-        return source;
+    public String getSourceName() {
+        return sourceName;
     }
 
     /**
@@ -134,8 +155,8 @@ public class Edge implements IdentifiedDataSerializable {
     /**
      * Returns the name of the destination vertex.
      */
-    public String getDestination() {
-        return destination;
+    public String getDestName() {
+        return destName;
     }
 
     /**
@@ -302,7 +323,7 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return '(' + source + ", " + sourceOrdinal + ") -> (" + destination + ", " + destOrdinal + ')';
+        return '(' + sourceName + ", " + sourceOrdinal + ") -> (" + destName + ", " + destOrdinal + ')';
     }
 
     @Override
@@ -310,13 +331,13 @@ public class Edge implements IdentifiedDataSerializable {
         final Edge that;
         return this == obj
                 || obj instanceof Edge
-                    && this.source.equals((that = (Edge) obj).source)
-                    && this.destination.equals(that.destination);
+                    && this.sourceName.equals((that = (Edge) obj).sourceName)
+                    && this.destName.equals(that.destName);
     }
 
     @Override
     public int hashCode() {
-        return 37 * source.hashCode() + destination.hashCode();
+        return 37 * sourceName.hashCode() + destName.hashCode();
     }
 
 
@@ -324,9 +345,9 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(source);
+        out.writeUTF(sourceName);
         out.writeInt(sourceOrdinal);
-        out.writeUTF(destination);
+        out.writeUTF(destName);
         out.writeInt(destOrdinal);
         out.writeInt(priority);
         out.writeBoolean(isBuffered);
@@ -338,9 +359,9 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        source = in.readUTF();
+        sourceName = in.readUTF();
         sourceOrdinal = in.readInt();
-        destination = in.readUTF();
+        destName = in.readUTF();
         destOrdinal = in.readInt();
         priority = in.readInt();
         isBuffered = in.readBoolean();

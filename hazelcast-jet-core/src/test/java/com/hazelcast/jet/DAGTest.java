@@ -37,6 +37,40 @@ public class DAGTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     @Test
+    public void whenDifferentSourceWithSameName_thenInvalid() {
+        // Given
+        Vertex a1 = new Vertex("a", Processors.map(Object::hashCode));
+        Vertex a2 = new Vertex("a", Processors.map(Object::toString));
+        Vertex b = new Vertex("b", PROCESSOR_SUPPLIER);
+        final DAG dag = new DAG()
+                .vertex(a1)
+                .vertex(b);
+
+        // Then
+        expectedException.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(between(a2, b));
+    }
+
+    @Test
+    public void whenDifferentDestinationWithSameName_thenInvalid() {
+        // Given
+        Vertex a = new Vertex("a", PROCESSOR_SUPPLIER);
+        Vertex b1 = new Vertex("b", Processors.map(Object::toString));
+        Vertex b2 = new Vertex("b", Processors.map(Object::hashCode));
+        final DAG dag = new DAG()
+                .vertex(a)
+                .vertex(b1);
+
+        // Then
+        expectedException.expect(IllegalArgumentException.class);
+
+        // When
+        dag.edge(between(a, b2));
+    }
+
+    @Test
     public void test_iteratorOrder() {
         // Given
         DAG dag = new DAG();

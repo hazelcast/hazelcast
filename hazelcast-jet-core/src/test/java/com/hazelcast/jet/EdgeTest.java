@@ -46,8 +46,8 @@ public class EdgeTest {
     @Test
     public void whenBetween_thenFromAndToAtOrdinalZero() {
         final Edge e = Edge.between(a, b);
-        assertEquals(A, e.getSource());
-        assertEquals(B, e.getDestination());
+        assertEquals(A, e.getSourceName());
+        assertEquals(B, e.getDestName());
         assertEquals(0, e.getSourceOrdinal());
         assertEquals(0, e.getDestOrdinal());
     }
@@ -55,28 +55,28 @@ public class EdgeTest {
     @Test
     public void whenFrom_thenSourceSet() {
         final Edge e = Edge.from(a);
-        assertEquals(A, e.getSource());
+        assertEquals(A, e.getSourceName());
         assertEquals(0, e.getSourceOrdinal());
     }
 
     @Test
     public void whenTo_thenDestSet() {
         final Edge e = Edge.from(a).to(b);
-        assertEquals(B, e.getDestination());
+        assertEquals(B, e.getDestName());
         assertEquals(0, e.getDestOrdinal());
     }
 
     @Test
     public void whenFromWithOrdinal_thenSourceAndOrdinalSet() {
         final Edge e = Edge.from(a, 1);
-        assertEquals(A, e.getSource());
+        assertEquals(A, e.getSourceName());
         assertEquals(1, e.getSourceOrdinal());
     }
 
     @Test
     public void whenToWithOrdinal_thenDestAndOrdinalSet() {
         final Edge e = Edge.from(a).to(b, 1);
-        assertEquals(B, e.getDestination());
+        assertEquals(B, e.getDestName());
         assertEquals(1, e.getDestOrdinal());
     }
 
