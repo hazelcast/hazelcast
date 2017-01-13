@@ -65,7 +65,7 @@
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="distributed-classloading" type="distributed-classloading" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="cardinality-estimator" type="cardinality-estimator-service" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1722,7 +1722,7 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="cardinality-estimator-service">
+    <xs:complexType name="cardinality-estimator">
         <xs:all>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>

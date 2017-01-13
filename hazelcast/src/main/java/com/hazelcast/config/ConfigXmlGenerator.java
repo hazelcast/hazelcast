@@ -126,6 +126,8 @@ public class ConfigXmlGenerator {
 
         scheduledExecutorXmlGenerator(xml, config);
 
+        cardinalityEstimatorXmlGenerator(xml, config);
+
         partitionGroupXmlGenerator(xml, config);
 
         listenerXmlGenerator(xml, config);
@@ -216,6 +218,15 @@ public class ConfigXmlGenerator {
             appendNode(xml, "pool-size", ex.getPoolSize());
             appendNode(xml, "durability", ex.getDurability());
             xml.append("</scheduled-executor-service>");
+        }
+    }
+
+    private void cardinalityEstimatorXmlGenerator(StringBuilder xml, Config config) {
+        for (CardinalityEstimatorConfig ex : config.getCardinalityEstimatorConfigs().values()) {
+            xml.append("<cardinality-estimator name=\"").append(ex.getName()).append("\">");
+            appendNode(xml, "backup-count", ex.getBackupCount());
+            appendNode(xml, "async-backup-count", ex.getAsyncBackupCount());
+            xml.append("</cardinality-estimator>");
         }
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
@@ -40,7 +41,7 @@ public class CardinalityEstimatorConfig {
 
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
-    private com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly readOnly;
+    private CardinalityEstimatorConfigReadOnly readOnly;
 
     public CardinalityEstimatorConfig() {
     }
@@ -55,13 +56,13 @@ public class CardinalityEstimatorConfig {
         this.asyncBackupCount = asyncBackupCount;
     }
 
-    public CardinalityEstimatorConfig(com.hazelcast.config.CardinalityEstimatorConfig config) {
+    public CardinalityEstimatorConfig(CardinalityEstimatorConfig config) {
         this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount());
     }
 
-    public com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly getAsReadOnly() {
+    public CardinalityEstimatorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
-            readOnly = new com.hazelcast.config.CardinalityEstimatorConfig.CardinalityEstimatorConfigReadOnly(this);
+            readOnly = new CardinalityEstimatorConfigReadOnly(this);
         }
         return readOnly;
     }
@@ -81,7 +82,8 @@ public class CardinalityEstimatorConfig {
      * @param name The name of the estimator.
      * @return The cardinality estimator config instance.
      */
-    public com.hazelcast.config.CardinalityEstimatorConfig setName(String name) {
+    public CardinalityEstimatorConfig setName(String name) {
+        checkNotNull(name);
         this.name = name;
         return this;
     }
@@ -152,24 +154,24 @@ public class CardinalityEstimatorConfig {
     }
 
     private static class CardinalityEstimatorConfigReadOnly
-            extends com.hazelcast.config.CardinalityEstimatorConfig {
+            extends CardinalityEstimatorConfig {
 
-        CardinalityEstimatorConfigReadOnly(com.hazelcast.config.CardinalityEstimatorConfig config) {
+        CardinalityEstimatorConfigReadOnly(CardinalityEstimatorConfig config) {
             super(config);
         }
 
         @Override
-        public com.hazelcast.config.CardinalityEstimatorConfig setName(String name) {
+        public CardinalityEstimatorConfig setName(String name) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
 
         @Override
-        public com.hazelcast.config.CardinalityEstimatorConfig setBackupCount(int backupCount) {
+        public CardinalityEstimatorConfig setBackupCount(int backupCount) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
 
         @Override
-        public com.hazelcast.config.CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
+        public CardinalityEstimatorConfig setAsyncBackupCount(int asyncBackupCount) {
             throw new UnsupportedOperationException("This config is read-only cardinality estimator: " + getName());
         }
     }
