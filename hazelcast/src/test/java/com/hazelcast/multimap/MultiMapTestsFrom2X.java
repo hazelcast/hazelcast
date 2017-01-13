@@ -44,14 +44,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-/**
- * @author ali 6/4/13
- */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class MultiMapTestsFrom2X extends HazelcastTestSupport {
-
 
     @Test
     public void testMultiMapEntryListener() {
@@ -75,7 +72,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
                 } else {
                     assertEquals("1", key);
                 }
-                assertTrue(expectedValues.contains(value));
+                assertContains(expectedValues, value);
                 expectedValues.remove(value);
                 latchAdded.countDown();
             }
@@ -86,11 +83,11 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
                 latchRemoved.countDown();
             }
 
-            public void entryUpdated(EntryEvent event) {
+            public void entryUpdated(EntryEvent<String, String> event) {
                 throw new AssertionError("MultiMap cannot get update event!");
             }
 
-            public void entryEvicted(EntryEvent event) {
+            public void entryEvicted(EntryEvent<String, String> event) {
                 entryRemoved(event);
             }
 
@@ -108,8 +105,8 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         map.put("2", "again");
         Collection<String> values = map.get("1");
         assertEquals(2, values.size());
-        assertTrue(values.contains("hello"));
-        assertTrue(values.contains("world"));
+        assertContains(values, "hello");
+        assertContains(values, "world");
         assertEquals(1, map.get("2").size());
         assertEquals(3, map.size());
         map.remove("2");
@@ -121,7 +118,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
             assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
-            assertFalse(e.getMessage(), true);
+            fail(e.getMessage());
         }
     }
 
@@ -151,32 +148,32 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
     public void testMultiMapPutGetRemove() {
         final HazelcastInstance instance = createHazelcastInstance();
 
-        MultiMap mm = instance.getMultiMap("testMultiMapPutGetRemove");
+        MultiMap<String, String> mm = instance.getMultiMap("testMultiMapPutGetRemove");
         mm.put("1", "C");
         mm.put("2", "x");
         mm.put("2", "y");
         mm.put("1", "A");
         mm.put("1", "B");
         Collection g1 = mm.get("1");
-        assertTrue(g1.contains("A"));
-        assertTrue(g1.contains("B"));
-        assertTrue(g1.contains("C"));
+        assertContains(g1, "A");
+        assertContains(g1, "B");
+        assertContains(g1, "C");
         assertEquals(5, mm.size());
         assertTrue(mm.remove("1", "C"));
         assertEquals(4, mm.size());
         Collection g2 = mm.get("1");
-        assertTrue(g2.contains("A"));
-        assertTrue(g2.contains("B"));
+        assertContains(g2, "A");
+        assertContains(g2, "B");
         assertFalse(g2.contains("C"));
         Collection r1 = mm.remove("2");
-        assertTrue(r1.contains("x"));
-        assertTrue(r1.contains("y"));
+        assertContains(r1, "x");
+        assertContains(r1, "y");
         assertNotNull(mm.get("2"));
         assertTrue(mm.get("2").isEmpty());
         assertEquals(2, mm.size());
         Collection r2 = mm.remove("1");
-        assertTrue(r2.contains("A"));
-        assertTrue(r2.contains("B"));
+        assertContains(r2, "A");
+        assertContains(r2, "B");
         assertNotNull(mm.get("1"));
         assertTrue(mm.get("1").isEmpty());
         assertEquals(0, mm.size());
@@ -221,14 +218,14 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         private String dummy2 = String.valueOf(dummy1);
     }
 
-    @Test
     /**
      * Issue 818
      */
+    @Test
     public void testMultiMapWithCustomSerializable() {
         final HazelcastInstance instance = createHazelcastInstance();
 
-        MultiMap map = instance.getMultiMap("testMultiMapWithCustomSerializable");
+        MultiMap<String, CustomSerializable> map = instance.getMultiMap("testMultiMapWithCustomSerializable");
         map.put("1", new CustomSerializable());
         assertEquals(1, map.size());
         map.remove("1");
@@ -238,10 +235,12 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testContains() throws Exception {
         final HazelcastInstance instance = createHazelcastInstance();
-        instance.getConfig().addMultiMapConfig(new MultiMapConfig().setName("testContains").setBinary(false));
+        instance.getConfig().addMultiMapConfig(new MultiMapConfig()
+                .setName("testContains")
+                .setBinary(false));
 
         MultiMap<String, ComplexValue> multiMap = instance.getMultiMap("testContains");
-        // Now MultiMap
+        // MultiMap
         assertTrue(multiMap.put("1", new ComplexValue("text", 1)));
         assertFalse(multiMap.put("1", new ComplexValue("text", 1)));
         assertFalse(multiMap.put("1", new ComplexValue("text", 2)));
@@ -253,8 +252,12 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 1)));
         assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 2)));
         assertTrue(multiMap.remove("1", new ComplexValue("text", 1)));
-        //Now MultiMap List
-        instance.getConfig().addMultiMapConfig(new MultiMapConfig().setName("testContains.list").setValueCollectionType("LIST").setBinary(false));
+
+        // MultiMap List
+        instance.getConfig().addMultiMapConfig(new MultiMapConfig()
+                .setName("testContains.list")
+                .setValueCollectionType("LIST")
+                .setBinary(false));
         MultiMap<String, ComplexValue> mmList = instance.getMultiMap("testContains.list");
         assertTrue(mmList.put("1", new ComplexValue("text", 1)));
         assertTrue(mmList.put("1", new ComplexValue("text", 1)));
@@ -368,7 +371,6 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertEquals(3, map.valueCount(2));
     }
 
-
     @Test
     public void testMultiMapContainsEntryTxn() {
         final HazelcastInstance instance = createHazelcastInstance();
@@ -378,7 +380,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertTrue(mm.containsEntry("1", "value"));
 
         context.beginTransaction();
-        TransactionalMultiMap txnMap = context.getMultiMap("testMultiMapContainsEntry");
+        TransactionalMultiMap<String, String> txnMap = context.getMultiMap("testMultiMapContainsEntry");
         txnMap.put("1", "value2");
         assertTrue(mm.containsEntry("1", "value"));
         assertFalse(mm.containsEntry("1", "value2"));
@@ -391,11 +393,10 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertEquals(1, mm.size());
     }
 
-
     @Test
     public void testMultiMapPutRemoveWithTxn() {
         final HazelcastInstance instance = createHazelcastInstance();
-        MultiMap multiMap = instance.getMultiMap("testMultiMapPutRemoveWithTxn");
+        MultiMap<String, String> multiMap = instance.getMultiMap("testMultiMapPutRemoveWithTxn");
 
         multiMap.put("1", "C");
         multiMap.put("2", "x");
@@ -403,33 +404,31 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
         final TransactionContext context = instance.newTransactionContext();
         context.beginTransaction();
-        TransactionalMultiMap txnMap = context.getMultiMap("testMultiMapPutRemoveWithTxn");
+        TransactionalMultiMap<String, String> txnMap = context.getMultiMap("testMultiMapPutRemoveWithTxn");
         txnMap.put("1", "A");
         txnMap.put("1", "B");
         Collection g1 = txnMap.get("1");
-        assertTrue(g1.contains("A"));
-        assertTrue(g1.contains("B"));
-        assertTrue(g1.contains("C"));
+        assertContains(g1, "A");
+        assertContains(g1, "B");
+        assertContains(g1, "C");
         assertTrue(txnMap.remove("1", "C"));
         assertEquals(4, txnMap.size());
         Collection g2 = txnMap.get("1");
-        assertTrue(g2.contains("A"));
-        assertTrue(g2.contains("B"));
+        assertContains(g2, "A");
+        assertContains(g2, "B");
         assertFalse(g2.contains("C"));
         Collection r1 = txnMap.remove("2");
-        assertTrue(r1.contains("x"));
-        assertTrue(r1.contains("y"));
+        assertContains(r1, "x");
+        assertContains(r1, "y");
         assertEquals(0, txnMap.get("2").size());
         Collection r2 = txnMap.remove("1");
         assertEquals(2, r2.size());
-        assertTrue(r2.contains("A"));
-        assertTrue(r2.contains("B"));
+        assertContains(r2, "A");
+        assertContains(r2, "B");
         assertEquals(0, txnMap.get("1").size());
         assertEquals(0, txnMap.size());
         assertEquals(3, multiMap.size());
         context.commitTransaction();
         assertEquals(0, multiMap.size());
     }
-
-
 }
