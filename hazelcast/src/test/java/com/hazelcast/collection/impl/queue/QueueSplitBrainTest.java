@@ -22,9 +22,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class QueueSplitBrainTest extends HazelcastTestSupport {
@@ -79,12 +76,12 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, h3);
 
         IQueue<Object> testQueue = h1.getQueue(name);
-        assertFalse(testQueue.contains("lostQueueItem0"));
-        assertFalse(testQueue.contains("lostQueueItem49"));
-        assertTrue(testQueue.contains("item0"));
-        assertTrue(testQueue.contains("item199"));
-        assertTrue(testQueue.contains("item121"));
-        assertTrue(testQueue.contains("item45"));
+        assertNotContains(testQueue, "lostQueueItem0");
+        assertNotContains(testQueue, "lostQueueItem49");
+        assertContains(testQueue, "item0");
+        assertContains(testQueue, "item199");
+        assertContains(testQueue, "item121");
+        assertContains(testQueue, "item45");
     }
 
     private Config newConfig() {

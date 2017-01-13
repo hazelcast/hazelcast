@@ -109,10 +109,10 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         String[] items = new String[]{"one", "two", "three", "four"};
         queue.addAll(asList(items));
 
-        assertTrue(queue.contains("one"));
-        assertTrue(queue.contains("two"));
-        assertTrue(queue.contains("three"));
-        assertTrue(queue.contains("four"));
+        assertContains(queue, "one");
+        assertContains(queue, "two");
+        assertContains(queue, "three");
+        assertContains(queue, "four");
     }
 
     @Test
@@ -120,15 +120,14 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> queue = instance.getQueue("testQueueContainsAll");
 
-        String[] items = new String[]{"one", "two", "three", "four"};
-        List<String> list = asList(items);
+        List<String> list = asList("one", "two", "three", "four");
         queue.addAll(list);
 
-        assertTrue(queue.containsAll(list));
+        assertContainsAll(queue, list);
     }
 
     @Test
-    public void testQueueRemove() throws Exception {
+    public void testQueueRemove() {
         HazelcastInstance instance = createHazelcastInstance();
         IQueue<String> q = instance.getQueue("testQueueRemove");
 

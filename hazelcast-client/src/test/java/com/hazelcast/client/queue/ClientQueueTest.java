@@ -24,6 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -42,10 +43,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.interruptCurrentThread;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
-import static com.hazelcast.test.HazelcastTestSupport.spawn;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -54,10 +52,10 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientQueueTest {
+public class ClientQueueTest extends HazelcastTestSupport {
 
-    final static int maxSizeForQueue = 8;
-    final static String queueWithMaxSize = "queueWithMaxSize*";
+    private final static int MAX_SIZE_FOR_QUEUE = 8;
+    private final static String QUEUE_WITH_MAX_SIZE = "queueWithMaxSize*";
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -66,8 +64,8 @@ public class ClientQueueTest {
     public void setup() {
         Config config = new Config();
 
-        QueueConfig queueConfig = config.getQueueConfig(queueWithMaxSize);
-        queueConfig.setMaxSize(maxSizeForQueue);
+        QueueConfig queueConfig = config.getQueueConfig(QUEUE_WITH_MAX_SIZE);
+        queueConfig.setMaxSize(MAX_SIZE_FOR_QUEUE);
 
         hazelcastFactory.newHazelcastInstance(config);
         client = hazelcastFactory.newHazelcastClient();
@@ -80,43 +78,44 @@ public class ClientQueueTest {
 
     @Test
     public void testOffer() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         assertTrue(q.offer(1));
         assertEquals(1, q.size());
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("ConstantConditions")
     public void testOffer_whenNullItem() {
-        IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testOfferWithTimeout_whenNullItem() throws InterruptedException {
-        IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(null, 1, TimeUnit.SECONDS);
     }
 
     @Test
     public void testAdd() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         assertTrue(q.add(1));
         assertEquals(1, q.size());
     }
 
     @Test
     public void testAdd_whenReachingMaximumCapacity() {
-        final IQueue q = client.getQueue(queueWithMaxSize + randomString());
-        for (int i = 0; i < maxSizeForQueue; i++) {
+        IQueue<Integer> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
+        for (int i = 0; i < MAX_SIZE_FOR_QUEUE; i++) {
             q.add(1);
         }
-        assertEquals(maxSizeForQueue, q.size());
+        assertEquals(MAX_SIZE_FOR_QUEUE, q.size());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testAdd_whenExceedingMaximumCapacity() {
-        final IQueue q = client.getQueue(queueWithMaxSize + randomString());
-        for (int i = 0; i < maxSizeForQueue; i++) {
+        IQueue<Integer> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
+        for (int i = 0; i < MAX_SIZE_FOR_QUEUE; i++) {
             q.add(1);
         }
         q.add(1);
@@ -124,28 +123,28 @@ public class ClientQueueTest {
 
     @Test(expected = NullPointerException.class)
     public void testAdd_whenNullItem() {
-        IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.add(null);
     }
 
     @Test
     public void testPut() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.put(1);
         assertEquals(1, q.size());
     }
 
     @Test(expected = NullPointerException.class)
     public void testPut_whenNullItem() throws InterruptedException {
-        IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.put(null);
     }
 
     @Test
     public void testTake() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.put(1);
-        assertEquals(1, q.take());
+        assertEquals(1, q.take().intValue());
     }
 
 
@@ -159,37 +158,37 @@ public class ClientQueueTest {
 
     @Test
     public void testEmptyPeak() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         assertNull(q.peek());
     }
 
     @Test
     public void testPeak() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
-        assertEquals(1, q.peek());
-        assertEquals(1, q.peek());
+        assertEquals(1, q.peek().intValue());
+        assertEquals(1, q.peek().intValue());
         assertEquals(1, q.size());
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testEmptyElement() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.element();
     }
 
     @Test
     public void testElement() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
-        assertEquals(1, q.element());
+        assertEquals(1, q.element().intValue());
     }
 
     @Test
     public void testPoll() throws InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
-        assertEquals(1, q.poll());
+        assertEquals(1, q.poll().intValue());
     }
 
     @Test(expected = InterruptedException.class)
@@ -202,14 +201,14 @@ public class ClientQueueTest {
 
     @Test
     public void testOfferWithTimeOut() throws IOException, InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         boolean result = q.offer(1, 50, TimeUnit.MILLISECONDS);
         assertTrue(result);
     }
 
     @Test
     public void testRemainingCapacity() throws IOException {
-        final IQueue q = client.getQueue(randomString());
+        final IQueue<String> q = client.getQueue(randomString());
 
         assertEquals(Integer.MAX_VALUE, q.remainingCapacity());
         q.offer("one");
@@ -218,20 +217,20 @@ public class ClientQueueTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testEmptyRemove() throws IOException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.remove();
     }
 
     @Test
     public void testRemoveTop() throws IOException, InterruptedException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
-        assertEquals(1, q.remove());
+        assertEquals(1, q.remove().intValue());
     }
 
     @Test
     public void testRemove() throws IOException {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         q.offer(1);
         assertTrue(q.remove(1));
@@ -240,40 +239,40 @@ public class ClientQueueTest {
 
     @Test
     public void testContains() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         q.offer(1);
-        assertTrue(q.contains(1));
-        assertFalse(q.contains(2));
+        assertContains(q, 1);
+        assertNotContains(q, 2);
     }
 
     @Test
     public void testContainsAll() {
         final int maxItems = 11;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List trueList = new ArrayList();
-        List falseList = new ArrayList();
+        List<Integer> trueList = new ArrayList<Integer>();
+        List<Integer> falseList = new ArrayList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             trueList.add(i);
             falseList.add(i + 1);
         }
-        assertTrue(q.containsAll(trueList));
-        assertFalse(q.containsAll(falseList));
+        assertContainsAll(q, trueList);
+        assertNotContainsAll(q, falseList);
     }
 
     @Test
     public void testDrain() {
         final int maxItems = 12;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List offeredList = new LinkedList();
+        List<Integer> offeredList = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             offeredList.add(i);
         }
-        List drainedList = new LinkedList();
+        List<Integer> drainedList = new LinkedList<Integer>();
         int totalDrained = q.drainTo(drainedList);
 
         assertEquals(maxItems, totalDrained);
@@ -285,16 +284,16 @@ public class ClientQueueTest {
         final int maxItems = 15;
         final int itemsToDrain = maxItems / 2;
 
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List expectedList = new LinkedList();
+        List<Integer> expectedList = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
             if (i < itemsToDrain) {
                 expectedList.add(i);
             }
         }
-        List drainedList = new LinkedList();
+        List<Integer> drainedList = new LinkedList<Integer>();
         int totalDrained = q.drainTo(drainedList, itemsToDrain);
 
         assertEquals(itemsToDrain, totalDrained);
@@ -304,7 +303,7 @@ public class ClientQueueTest {
     @Test
     public void testIterator() {
         final int maxItems = 18;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         for (int i = 0; i < maxItems; i++) {
             q.offer(i);
@@ -329,7 +328,7 @@ public class ClientQueueTest {
     @Test
     public void testToArray() {
         final int maxItems = 19;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         Object[] offered = new Object[maxItems];
         for (int i = 0; i < maxItems; i++) {
@@ -345,7 +344,7 @@ public class ClientQueueTest {
     public void testToPartialArray() {
         final int maxItems = 74;
         final int arraySZ = maxItems / 2;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         Object[] offered = new Object[maxItems];
         for (int i = 0; i < maxItems; i++) {
@@ -360,10 +359,9 @@ public class ClientQueueTest {
     @Test
     public void testAddAll() throws IOException {
         final int maxItems = 13;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        Collection coll = new ArrayList(maxItems);
-
+        Collection<Integer> coll = new ArrayList<Integer>(maxItems);
         for (int i = 0; i < maxItems; i++) {
             coll.add(i);
         }
@@ -371,10 +369,8 @@ public class ClientQueueTest {
         assertEquals(coll.size(), q.size());
 
         // assert queue is same
-        ArrayList actual = new ArrayList();
-        for (Object item : q) {
-            actual.add(item);
-        }
+        ArrayList<Integer> actual = new ArrayList<Integer>();
+        actual.addAll(q);
 
         assertEquals(coll, actual);
     }
@@ -382,9 +378,9 @@ public class ClientQueueTest {
     @Test
     public void testRemoveList() throws IOException {
         final int maxItems = 131;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List removeList = new LinkedList();
+        List<Integer> removeList = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
             removeList.add(i);
@@ -397,9 +393,9 @@ public class ClientQueueTest {
     @Test
     public void testRemoveList_whereNotFound() throws IOException {
         final int maxItems = 131;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List removeList = new LinkedList();
+        List<Integer> removeList = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
@@ -413,23 +409,24 @@ public class ClientQueueTest {
     @Test
     public void testRetainEmptyList() throws IOException {
         final int maxItems = 131;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
 
-        List retain = new LinkedList();
+        List<Integer> retain = emptyList();
         assertTrue(q.retainAll(retain));
+
         assertEquals(0, q.size());
     }
 
     @Test
     public void testRetainAllList() throws IOException {
         final int maxItems = 181;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List retain = new LinkedList();
+        List<Integer> retain = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
             retain.add(i);
@@ -442,9 +439,9 @@ public class ClientQueueTest {
     @Test
     public void testRetainAll_ListNotFound() throws IOException {
         final int maxItems = 181;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List retain = new LinkedList();
+        List<Integer> retain = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
@@ -458,9 +455,9 @@ public class ClientQueueTest {
     @Test
     public void testRetainAll_mixedList() throws IOException {
         final int maxItems = 181;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
-        List retain = new LinkedList();
+        List<Integer> retain = new LinkedList<Integer>();
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
         }
@@ -474,7 +471,7 @@ public class ClientQueueTest {
     @Test
     public void testSize() {
         final int maxItems = 143;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
@@ -484,13 +481,13 @@ public class ClientQueueTest {
 
     @Test
     public void testIsEmpty() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         assertTrue(q.isEmpty());
     }
 
     @Test
     public void testNotIsEmpty() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.offer(1);
         assertFalse(q.isEmpty());
     }
@@ -498,7 +495,7 @@ public class ClientQueueTest {
     @Test
     public void testClear() {
         final int maxItems = 123;
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
 
         for (int i = 0; i < maxItems; i++) {
             q.add(i);
@@ -516,15 +513,15 @@ public class ClientQueueTest {
         final CountDownLatch itemRemovedLatch = new CountDownLatch(maxItems);
 
 
-        final IQueue queue = client.getQueue(randomString());
+        final IQueue<Integer> queue = client.getQueue(randomString());
 
-        String id = queue.addItemListener(new ItemListener() {
+        String id = queue.addItemListener(new ItemListener<Integer>() {
 
-            public void itemAdded(ItemEvent itemEvent) {
+            public void itemAdded(ItemEvent<Integer> itemEvent) {
                 itemAddedLatch.countDown();
             }
 
-            public void itemRemoved(ItemEvent item) {
+            public void itemRemoved(ItemEvent<Integer> item) {
                 itemRemovedLatch.countDown();
             }
         }, true);
@@ -545,34 +542,33 @@ public class ClientQueueTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testGetLocalQueueStats() {
-        final IQueue q = client.getQueue(randomString());
+        IQueue<Integer> q = client.getQueue(randomString());
         q.getLocalQueueStats();
     }
 
     @Test
     public void testOffer_whenExceedingMaxCapacity() {
-        final IQueue q = client.getQueue(queueWithMaxSize + randomString());
+        IQueue<Integer> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
 
-        for (int i = 0; i < maxSizeForQueue; i++) {
+        for (int i = 0; i < MAX_SIZE_FOR_QUEUE; i++) {
             q.offer(i);
         }
-        assertFalse(q.offer(maxSizeForQueue));
+        assertFalse(q.offer(MAX_SIZE_FOR_QUEUE));
     }
 
     @Test
     public void testOfferPoll() throws IOException, InterruptedException {
-
-        final IQueue q = client.getQueue(queueWithMaxSize + randomString());
+        final IQueue<String> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
 
         for (int i = 0; i < 10; i++) {
             boolean result = q.offer("item");
-            if (i < maxSizeForQueue) {
+            if (i < MAX_SIZE_FOR_QUEUE) {
                 assertTrue(result);
             } else {
                 assertFalse(result);
             }
         }
-        assertEquals(maxSizeForQueue, q.size());
+        assertEquals(MAX_SIZE_FOR_QUEUE, q.size());
 
         spawn(new Runnable() {
             @Override
@@ -588,7 +584,7 @@ public class ClientQueueTest {
 
         for (int i = 0; i < 10; i++) {
             Object o = q.poll();
-            if (i < maxSizeForQueue) {
+            if (i < MAX_SIZE_FOR_QUEUE) {
                 assertNotNull(o);
             } else {
                 assertNull(o);

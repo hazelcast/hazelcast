@@ -110,7 +110,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         offerThread.start();
         queue.poll();
         assertSizeEventually(queueConfig.getMaxSize(), queue);
-        assertTrue(queue.contains("waiting"));
+        assertContains(queue, "waiting");
     }
 
     // ================ poll ==============================
@@ -145,7 +145,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         queue.offer("remain");
 
         assertSizeEventually(1, queue);
-        assertTrue(queue.contains("remain"));
+        assertContains(queue, "remain");
     }
 
     // ================ remove ==============================
@@ -237,7 +237,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
 
         queue.drainTo(list, 4);
         assertEquals(4, list.size());
-        assertTrue(list.contains("item3"));
+        assertContains(list, "item3");
         assertEquals(6, queue.size());
     }
 
@@ -277,8 +277,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
             queue.offer("item" + i);
         }
 
-        assertTrue(queue.contains("item4"));
-        assertTrue(queue.contains("item8"));
+        assertContains(queue, "item4");
+        assertContains(queue, "item8");
     }
 
     @Test
@@ -287,8 +287,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
             queue.offer("item" + i);
         }
 
-        assertFalse(queue.contains("item10"));
-        assertFalse(queue.contains("item19"));
+        assertNotContains(queue, "item10");
+        assertNotContains(queue, "item19");
     }
 
     // ================ containsAll ==============================
@@ -320,7 +320,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         list.add("item1");
         list.add("item2");
         list.add("item3");
-        assertTrue(queue.containsAll(list));
+        assertContainsAll(queue, list);
     }
 
     @Test
@@ -333,7 +333,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         list.add("item10");
         list.add("item11");
         list.add("item12");
-        assertFalse(queue.containsAll(list));
+        assertNotContainsAll(queue, list);
     }
 
     @Test
@@ -347,7 +347,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         list.add("item2");
         list.add("item14");
         list.add("item13");
-        assertFalse(queue.containsAll(list));
+        assertNotContainsAll(queue, list);
     }
 
     @Test(expected = NullPointerException.class)
@@ -400,7 +400,7 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         List<String> list = new ArrayList<String>();
         list.add("item3");
 
-        assertTrue(queue.contains("item3"));
+        assertContains(queue, "item3");
         queue.addAll(list);
         assertEquals(11, queue.size());
     }
