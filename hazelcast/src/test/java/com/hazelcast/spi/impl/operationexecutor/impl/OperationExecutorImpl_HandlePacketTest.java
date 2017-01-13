@@ -63,7 +63,7 @@ public class OperationExecutorImpl_HandlePacketTest extends OperationExecutorImp
             public void run() throws Exception {
                 OperationRunner[] partitionHandlers = executor.getPartitionOperationRunners();
                 DummyOperationRunner handler = (DummyOperationRunner) partitionHandlers[operation.getPartitionId()];
-                assertTrue(handler.packets.contains(packet));
+                assertContains(handler.packets, packet);
             }
         });
     }

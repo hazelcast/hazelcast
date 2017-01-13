@@ -28,7 +28,6 @@ import java.util.concurrent.TimeoutException;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -180,7 +179,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             assertInstanceOf(OperationTimeoutException.class, cause);
-            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
+            assertContains(cause.getMessage(), "operation-heartbeat-timeout");
         }
     }
 
@@ -236,7 +235,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             assertInstanceOf(OperationTimeoutException.class, cause);
-            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
+            assertContains(cause.getMessage(), "operation-heartbeat-timeout");
         }
     }
 
@@ -290,7 +289,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             assertInstanceOf(OperationTimeoutException.class, cause);
-            assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
+            assertContains(cause.getMessage(), "operation-call-timeout");
         }
     }
 
@@ -330,7 +329,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
                 verify(callback).onFailure(argument.capture());
                 Throwable cause = argument.getValue();
                 assertInstanceOf(OperationTimeoutException.class, cause);
-                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-heartbeat-timeout"));
+                assertContains(cause.getMessage(), "operation-heartbeat-timeout");
             }
         });
     }
@@ -344,7 +343,7 @@ public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
                 Throwable cause = argument.getValue();
                 assertInstanceOf(OperationTimeoutException.class, cause);
-                assertTrue(cause.getMessage(), cause.getMessage().contains("operation-call-timeout"));
+                assertContains(cause.getMessage(), "operation-call-timeout");
             }
         });
     }

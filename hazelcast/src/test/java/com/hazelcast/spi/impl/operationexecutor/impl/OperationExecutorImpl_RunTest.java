@@ -35,7 +35,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
         executor.run(genericOperation);
 
         DummyOperationRunner adhocHandler = ((DummyOperationRunnerFactory) handlerFactory).adhocHandler;
-        assertTrue(adhocHandler.operations.contains(genericOperation));
+        assertContains(adhocHandler.operations, genericOperation);
     }
 
     @Test
@@ -87,7 +87,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
             @Override
             public void run() throws Exception {
                 DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertTrue(handler.operations.contains(genericOperation));
+                assertContains(handler.operations, genericOperation);
             }
         });
     }
@@ -195,7 +195,7 @@ public class OperationExecutorImpl_RunTest extends OperationExecutorImpl_Abstrac
             @Override
             public void run() throws Exception {
                 DummyOperationRunner handler = (DummyOperationRunner) executor.getPartitionOperationRunners()[partitionId];
-                assertTrue(handler.operations.contains(partitionOperation));
+                assertContains(handler.operations, partitionOperation);
             }
         });
     }
