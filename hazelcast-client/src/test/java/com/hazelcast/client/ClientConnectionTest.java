@@ -146,7 +146,6 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         });
 
         connectionToServer.close(null, null);
-
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()
@@ -156,7 +155,6 @@ public class ClientConnectionTest extends HazelcastTestSupport {
         });
 
         connectionToServer.close(null, null);
-
         assertEquals("connection removed should be called only once", 1, listener.count.get());
     }
 
@@ -166,7 +164,6 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         @Override
         public void connectionAdded(Connection connection) {
-
         }
 
         @Override
@@ -210,16 +207,14 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             thread.join();
             countDownLatch.countDown();
         }
-
     }
-
 
     static class WaitingCredentials extends UsernamePasswordCredentials {
 
         private final CountDownLatch countDownLatch;
         AtomicBoolean waitFlag = new AtomicBoolean();
 
-        public WaitingCredentials(String username, String password, CountDownLatch countDownLatch) {
+        WaitingCredentials(String username, String password, CountDownLatch countDownLatch) {
             super(username, password);
             this.countDownLatch = countDownLatch;
         }
@@ -241,5 +236,4 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             return super.getPassword();
         }
     }
-
 }
