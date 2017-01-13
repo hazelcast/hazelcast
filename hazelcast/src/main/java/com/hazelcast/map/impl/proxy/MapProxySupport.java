@@ -81,6 +81,7 @@ import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.MapUtil;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.ThreadUtil;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -1067,9 +1068,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
     
     /**
-     * {@link IMap#executeOnEntries(EntryProcessor, Predicate)}
+     * The {@link List} returned has the keys and values stored 1 after the other (key1, value1, key2, value2, etc.). The keys are 
+     * guaranteed to be {@link Data} instances. However, the value might be of any type.
+     * 
+     * @see IMap#executeOnEntries(EntryProcessor, Predicate)
      */
-    protected Map<Data, Object> executeOnEntriesInternalToMap(EntryProcessor entryProcessor, Predicate predicate) {
+    protected List<Object> executeOnEntriesInternalToMixedList(EntryProcessor entryProcessor, Predicate predicate) {
         try {
             final OperationFactory operation = operationProvider
                     .createPartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate);
@@ -1077,8 +1081,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             //the final resulting map has the potential to be quite large (potentially 10s of thousands of entries or more
             //it also has the potential to be quite small
-            //it is worth the cost of looping through the results once to determine how to size the Map to avoid 
-            //the costs of re-allocating the map as individual results are added
+            //it is worth the cost of looping through the results once to determine how to size the List to avoid 
+            //the costs of re-allocating the backing Object[] as individual results are added
             final List<MapEntries> populatedResults = new ArrayList<MapEntries>(opResults.size());
             int count = 0;
             for (Object object : opResults.values()) {
@@ -1092,9 +1096,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 }
             }
 
-            final Map<Data, Object> results = MapUtil.createHashMap(count);
+            final List<Object> results = new ArrayList<Object>(count * 2);
             for (MapEntries mapEntries : populatedResults) {
-                mapEntries.putAllToMap(results);
+                mapEntries.putAllToListDataKeysObjectValue(results);
             }
             return results;
         } catch (Throwable t) {

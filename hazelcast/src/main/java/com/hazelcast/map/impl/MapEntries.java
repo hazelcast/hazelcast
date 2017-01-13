@@ -34,96 +34,66 @@ import java.util.Map;
  */
 public final class MapEntries implements IdentifiedDataSerializable {
 
-    private final class Entry {
-        final Data key;
-        final Object value;
-        private final SerializationService serializationService;
-
-        /**
-         * @param key
-         * @param value
-         */
-        public Entry(Data key, Data value) {
-            this(key, value, null);
-        }
-
-        /**
-         * @param key
-         * @param value
-         * @param serializationService
-         */
-        public Entry(Data key, Object value, SerializationService serializationService) {
-            super();
-            this.key = key;
-            this.value = value;
-            this.serializationService = serializationService;
-        }
-
-        public Data getValueAsData() {
-            return serializationService != null ? serializationService.toData(value) : (Data) value;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String toString() {
-            return "Entry [key=" + this.key + ", value=" + this.value + ", serializationService="
-                    + this.serializationService + "]";
-        }
-    }
-
-    private List<Entry> entries;
+    /**
+     * Contains key/value in pairs
+     */
+    private List<Object> entries;
+    private SerializationService serializationService;
 
     public MapEntries() {
     }
 
     public MapEntries(int initialSize) {
-        entries = new ArrayList<Entry>(initialSize);
+        entries = new ArrayList<Object>(initialSize * 2);
     }
 
     public MapEntries(List<Map.Entry<Data, Data>> entries) {
         int initialSize = entries.size();
-        this.entries = new ArrayList<MapEntries.Entry>(initialSize);
+        this.entries = new ArrayList<Object>(initialSize * 2);
         for (Map.Entry<Data, Data> entry : entries) {
-            this.entries.add(new Entry(entry.getKey(), entry.getValue()));
+            this.entries.add(entry.getKey());
+            this.entries.add(entry.getValue());
         }
     }
 
     public void add(Data key, Data value) {
         ensureEntriesCreated();
-        this.entries.add(new Entry(key, value));
+        this.entries.add(key);
+        this.entries.add(value);
     }
 
     public void add(Data key, Object value, SerializationService serializationService) {
         ensureEntriesCreated();
-        this.entries.add(new Entry(key, value, serializationService));
+        this.entries.add(key);
+        this.entries.add(value);
+        this.serializationService = serializationService;
     }
 
     public List<Map.Entry<Data, Data>> entries() {
-        final List<Map.Entry<Data, Data>> dataEntries = new ArrayList<Map.Entry<Data, Data>>(entries.size());
+        final List<Map.Entry<Data, Data>> dataEntries = new ArrayList<Map.Entry<Data, Data>>(size());
         putAllToList(dataEntries);
         return dataEntries;
     }
 
     public Data getKey(int index) {
-        return entries.get(index).key;
+        return (Data) entries.get(index * 2);
     }
 
     public Data getValue(int index) {
-        return entries.get(index).getValueAsData();
+        final Object oValue = entries.get((2 * index) + 1);
+        return serializationService == null ? (Data) oValue : serializationService.toData(oValue);
     }
 
     public Object getObjectValue(int index) {
-        return entries.get(index).value;
+        return entries.get((2 * index) + 1);
     }
 
     public int size() {
-        return (entries == null ? 0 : entries.size());
+        return (entries == null ? 0 : entries.size() / 2);
     }
 
     public boolean isEmpty() {
-        return (entries == null || entries.size() == 0);
+        return (entries == null || entries.isEmpty());
     }
 
     public void clear() {
@@ -133,12 +103,8 @@ public final class MapEntries implements IdentifiedDataSerializable {
     }
 
     public void putAllToList(Collection<Map.Entry<Data, Data>> targetList) {
-        if (entries == null) {
-            return;
-        }
-        
-        for (Entry entry : entries) {
-            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(entry.key, entry.getValueAsData()));
+        for (int i=0, j=size(); i<j; ++i) {
+            targetList.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(getKey(i), getValue(i)));            
         }
     }
 
@@ -147,26 +113,29 @@ public final class MapEntries implements IdentifiedDataSerializable {
             return;
         }
         
-        for (Entry entry : entries) {
-            final K key = serializationService.toObject(entry.key);
-            final V value = serializationService.toObject(entry.value);
+        for (int i=0,j=entries.size(); i<j; ++i) {
+            final K key = serializationService.toObject(entries.get(i));
+            ++i;
+            final V value = serializationService.toObject(entries.get(i));
             map.put(key, value);
         }
     }
 
-    public void putAllToMap(Map<Data, Object> map) {
+    /**
+     * The {@link List} returned has the keys and values stored 1 after the other (key1, value1, key2, value2, etc.). The keys are 
+     * guaranteed to be {@link Data} instances. However, the value might be of any type.
+     */
+    public void putAllToListDataKeysObjectValue(List<Object> values) {
         if (entries == null) {
             return;
         }
         
-        for (Entry entry : entries) {
-            map.put(entry.key, entry.value);
-        }
+        values.addAll(entries);
     }
 
     private void ensureEntriesCreated() {
         if (entries == null) {
-            entries = new ArrayList<MapEntries.Entry>();
+            entries = new ArrayList<Object>();
         }
     }
 
@@ -185,18 +154,18 @@ public final class MapEntries implements IdentifiedDataSerializable {
         int size = size();
         out.writeInt(size);
         for (int i = 0; i < size; i++) {
-            final Entry entry = entries.get(i);
-            out.writeData(entry.key);
-            out.writeData(entry.getValueAsData());
+            out.writeData(getKey(i));
+            out.writeData(getValue(i));
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        entries = new ArrayList<Entry>(size);
+        entries = new ArrayList<Object>(size * 2);
         for (int i = 0; i < size; i++) {
-            entries.add(new Entry(in.readData(), in.readData()));
+            entries.add(in.readData());
+            entries.add(in.readData());
         }
     }
 }

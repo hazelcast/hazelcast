@@ -388,9 +388,11 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
      * {@inheritDoc}
      */
     @Override
-    protected Map<Data, Object> executeOnEntriesInternalToMap(EntryProcessor entryProcessor, Predicate predicate) {
-        final Map<Data, Object> results = super.executeOnEntriesInternalToMap(entryProcessor, predicate);
-        invalidateCache(results.keySet());
+    protected List<Object> executeOnEntriesInternalToMixedList(EntryProcessor entryProcessor, Predicate predicate) {
+        final List<Object> results = super.executeOnEntriesInternalToMixedList(entryProcessor, predicate);
+        for (int i=0, j=results.size(); i<j; i+=2) {
+            invalidateCache((Data) results.get(i));
+        }
         return results;
     }
 
