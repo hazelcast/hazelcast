@@ -23,27 +23,36 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Metadata holder for scheduled tasks.
- * Scheduled ones have a reference in their future in {@link #scheduledFuture}.
+ * Scheduled ones have a reference in their future in {@link #future}.
  * Stashed ones have this reference null.
  */
 public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
 
     private TaskDefinition definition;
 
-    private ScheduledFuture<?> scheduledFuture;
+    private ScheduledFuture<?> future;
 
     /**
-     * Stats are written from a single thread and read by many outside the partition threads. (see. Member owned tasks)
+     * SPMC (see. Member owned tasks)
      */
-    private AtomicReference<ScheduledTaskStatisticsImpl> stats = new AtomicReference<ScheduledTaskStatisticsImpl>(null);
+    private volatile ScheduledTaskStatisticsImpl stats;
 
     /**
-     * State is only write/read only through the partition threads.
+     * MPMC (Multiple Producers Multiple Concumers)
+     * MP when cancelling, due to member owned tasks, all other writes are SP and through partition threads.
+     * Reads are MP for member owned tasks.
+     */
+    private AtomicReference<ScheduledTaskResult> resultRef = new AtomicReference<ScheduledTaskResult>(null);
+
+    /**
+     * SPMC
      */
     private Map<?, ?> state;
 
@@ -53,13 +62,16 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     public ScheduledTaskDescriptor(TaskDefinition definition) {
         this.definition = definition;
         this.state = new HashMap();
-        this.stats.set(new ScheduledTaskStatisticsImpl());
+        this.stats = new ScheduledTaskStatisticsImpl();
     }
+
     public ScheduledTaskDescriptor(TaskDefinition definition,
-                                   Map<?, ?> state, ScheduledTaskStatisticsImpl stats) {
+                                   Map<?, ?> state, ScheduledTaskStatisticsImpl stats,
+                                   ScheduledTaskResult result) {
         this.definition = definition;
-        this.stats.set(stats);
+        this.stats = stats;
         this.state = state;
+        this.resultRef.set(result);
     }
 
     public TaskDefinition getDefinition() {
@@ -67,15 +79,19 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     }
 
     ScheduledTaskStatisticsImpl getStatsSnapshot() {
-        return stats.get().snapshot();
+        return stats.snapshot();
+    }
+
+    Map<?, ?> getState() {
+        return state;
+    }
+
+    ScheduledTaskResult getTaskResult() {
+        return resultRef.get();
     }
 
     void setStats(ScheduledTaskStatisticsImpl stats) {
-        this.stats.set(stats);
-    }
-
-    Map<?, ?> getStateSnapshot() {
-        return new HashMap(state);
+        this.stats = stats;
     }
 
     void setState(Map<?, ?> snapshot) {
@@ -83,11 +99,64 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     }
 
     ScheduledFuture<?> getScheduledFuture() {
-        return scheduledFuture;
+        return future;
     }
 
     void setScheduledFuture(ScheduledFuture<?> future) {
-        this.scheduledFuture = future;
+        this.future = future;
+    }
+
+    void setTaskResult(ScheduledTaskResult result) {
+        this.resultRef.set(result);
+    }
+
+    Object get()
+            throws ExecutionException, InterruptedException {
+
+        ScheduledTaskResult result = resultRef.get();
+        if (result != null) {
+            result.checkErroneousState();
+            return result.getReturnValue();
+        }
+
+        return future.get();
+    }
+
+    boolean cancel(boolean mayInterrupt)
+            throws ExecutionException, InterruptedException {
+
+        if (!resultRef.compareAndSet(null, new ScheduledTaskResult(true)) || future == null) {
+            return false;
+        }
+
+        return future.cancel(mayInterrupt);
+    }
+
+    long getDelay(TimeUnit unit) {
+        boolean wasDoneOrCancelled = resultRef.get() != null;
+        if (wasDoneOrCancelled) {
+            return 0;
+        }
+
+        return future.getDelay(unit);
+    }
+
+    boolean isCancelled()
+            throws ExecutionException, InterruptedException {
+        ScheduledTaskResult result = resultRef.get();
+        boolean wasCancelled = result != null && result.isCancelled();
+        return wasCancelled || (future != null && future.isCancelled());
+    }
+
+    boolean isDone()
+            throws ExecutionException, InterruptedException {
+        boolean wasDone = resultRef.get() != null;
+        return wasDone || (future != null && future.isDone());
+    }
+
+    boolean shouldSchedule() {
+        // Stashed tasks that never got scheduled, and weren't cancelled in-between
+        return future == null && this.resultRef.get() == null;
     }
 
     @Override
@@ -105,7 +174,8 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
             throws IOException {
         out.writeObject(definition);
         out.writeObject(state);
-        out.writeObject(stats.get());
+        out.writeObject(stats);
+        out.writeObject(resultRef.get());
     }
 
     @Override
@@ -113,13 +183,19 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
             throws IOException {
         definition = in.readObject();
         state = in.readObject();
-        stats.set((ScheduledTaskStatisticsImpl) in.readObject());
+        stats = in.readObject();
+        resultRef.set((ScheduledTaskResult) in.readObject());
     }
 
     @Override
     public String toString() {
-        return "ScheduledTaskDescriptor{" + "definition=" + definition + ", scheduledFuture=" + scheduledFuture + ", stats="
-                + stats + ", state=" + state + '}';
+        return "ScheduledTaskDescriptor{"
+                + "definition=" + definition + ", "
+                + "future=" + future + ", "
+                + "stats=" + stats + ", "
+                + "state=" + state + ", "
+                + "result=" + resultRef.get()
+                + '}';
     }
 
 }

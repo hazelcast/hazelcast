@@ -39,7 +39,7 @@ public class CancelTaskBackupOperation
     @Override
     public void run()
             throws Exception {
-        getContainer().unstash(taskName);
+        getContainer().cancel(taskName);
     }
 
     @Override

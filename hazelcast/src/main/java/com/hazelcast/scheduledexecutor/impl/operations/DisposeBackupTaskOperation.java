@@ -38,7 +38,7 @@ public class DisposeBackupTaskOperation
     @Override
     public void run()
             throws Exception {
-        getContainer().unstash(taskName);
+        getContainer().dispose(taskName);
     }
 
     @Override
