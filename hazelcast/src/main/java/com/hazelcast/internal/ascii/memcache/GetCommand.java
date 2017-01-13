@@ -28,7 +28,7 @@ public class GetCommand extends AbstractTextCommand {
 
     protected final String key;
     private ByteBuffer value;
-    private ByteBuffer lastOne;
+    private ByteBuffer endMarker;
 
     public GetCommand(TextCommandConstants.TextCommandType type, String key) {
         super(type);
@@ -48,11 +48,11 @@ public class GetCommand extends AbstractTextCommand {
         return true;
     }
 
-    public void setValue(MemcacheEntry entry, boolean singleGet) {
+    public void setValue(MemcacheEntry entry) {
         if (entry != null) {
             value = entry.toNewBuffer();
         }
-        lastOne = (singleGet) ? ByteBuffer.wrap(TextCommandConstants.END) : null;
+        endMarker = ByteBuffer.wrap(TextCommandConstants.END);
     }
 
     @Override
@@ -60,11 +60,9 @@ public class GetCommand extends AbstractTextCommand {
         if (value != null) {
             copyToHeapBuffer(value, dst);
         }
-        if (lastOne != null) {
-            copyToHeapBuffer(lastOne, dst);
-        }
+        copyToHeapBuffer(endMarker, dst);
         return !((value != null && value.hasRemaining())
-                || (lastOne != null && lastOne.hasRemaining()));
+                || endMarker.hasRemaining());
     }
 
     @Override

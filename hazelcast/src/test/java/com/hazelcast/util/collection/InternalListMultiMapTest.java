@@ -35,13 +35,13 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InternalMultiMapTest {
+public class InternalListMultiMapTest {
 
-    private InternalMultiMap<Integer, String> multiMap;
+    private InternalListMultiMap<Integer, String> multiMap;
 
     @Before
     public void setUp() {
-        this.multiMap = new InternalMultiMap<Integer, String>();
+        this.multiMap = new InternalListMultiMap<Integer, String>();
     }
 
     @Test

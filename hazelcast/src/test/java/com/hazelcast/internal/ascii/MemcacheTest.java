@@ -35,7 +35,6 @@ import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.internal.OperationFuture;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -341,7 +340,6 @@ public class MemcacheTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9637")
     public void testBulkSetGet_withManyKeys() throws Exception {
         int numberOfKeys = 1000;
         Collection<String> keys = new HashSet<String>(numberOfKeys);

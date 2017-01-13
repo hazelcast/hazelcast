@@ -22,7 +22,7 @@ import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.util.collection.ArrayUtils;
-import com.hazelcast.util.collection.InternalMultiMap;
+import com.hazelcast.util.collection.InternalListMultiMap;
 
 import java.util.List;
 import java.util.Map;
@@ -49,7 +49,7 @@ public class BetweenVisitor extends AbstractVisitor {
     @Override
     public Predicate visit(AndPredicate andPredicate, Indexes indexes) {
         final Predicate[] originalPredicates = andPredicate.predicates;
-        InternalMultiMap<String, GreaterLessPredicate> candidates =
+        InternalListMultiMap<String, GreaterLessPredicate> candidates =
                 findCandidatesAndGroupByAttribute(originalPredicates, indexes);
 
         if (candidates == null) {
@@ -155,9 +155,9 @@ public class BetweenVisitor extends AbstractVisitor {
     /**
      * Find GreaterLessPredicates with equal flag set to true and group them by attribute name
      */
-    private InternalMultiMap<String, GreaterLessPredicate> findCandidatesAndGroupByAttribute(Predicate[] predicates,
-                                                                                             Indexes indexService) {
-        InternalMultiMap<String, GreaterLessPredicate> candidates = null;
+    private InternalListMultiMap<String, GreaterLessPredicate> findCandidatesAndGroupByAttribute(Predicate[] predicates,
+                                                                                                 Indexes indexService) {
+        InternalListMultiMap<String, GreaterLessPredicate> candidates = null;
         for (Predicate predicate : predicates) {
             if (!(predicate instanceof GreaterLessPredicate)) {
                 continue;
@@ -176,10 +176,10 @@ public class BetweenVisitor extends AbstractVisitor {
         return candidates;
     }
 
-    private InternalMultiMap<String, GreaterLessPredicate> addIntoCandidates(
-            GreaterLessPredicate predicate, InternalMultiMap<String, GreaterLessPredicate> currentCandidates) {
+    private InternalListMultiMap<String, GreaterLessPredicate> addIntoCandidates(
+            GreaterLessPredicate predicate, InternalListMultiMap<String, GreaterLessPredicate> currentCandidates) {
         if (currentCandidates == null) {
-            currentCandidates = new InternalMultiMap<String, GreaterLessPredicate>();
+            currentCandidates = new InternalListMultiMap<String, GreaterLessPredicate>();
         }
         String attributeName = predicate.attributeName;
         currentCandidates.put(attributeName, predicate);

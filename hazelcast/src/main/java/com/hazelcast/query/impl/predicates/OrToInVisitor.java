@@ -18,7 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.util.collection.InternalMultiMap;
+import com.hazelcast.util.collection.InternalListMultiMap;
 
 import java.util.List;
 import java.util.Map;
@@ -54,7 +54,7 @@ public class OrToInVisitor extends AbstractVisitor {
             return orPredicate;
         }
 
-        InternalMultiMap<String, Integer> candidates = findAndGroupCandidates(originalInnerPredicates);
+        InternalListMultiMap<String, Integer> candidates = findAndGroupCandidates(originalInnerPredicates);
         if (candidates == null) {
             return orPredicate;
         }
@@ -121,15 +121,15 @@ public class OrToInVisitor extends AbstractVisitor {
         return newPredicates;
     }
 
-    private InternalMultiMap<String, Integer> findAndGroupCandidates(Predicate[] innerPredicates) {
-        InternalMultiMap<String, Integer> candidates = null;
+    private InternalListMultiMap<String, Integer> findAndGroupCandidates(Predicate[] innerPredicates) {
+        InternalListMultiMap<String, Integer> candidates = null;
         for (int i = 0; i < innerPredicates.length; i++) {
             Predicate p = innerPredicates[i];
             if (p.getClass().equals(EqualPredicate.class)) {
                 EqualPredicate equalPredicate = (EqualPredicate) p;
                 String attribute = equalPredicate.attributeName;
                 if (candidates == null) {
-                    candidates = new InternalMultiMap<String, Integer>();
+                    candidates = new InternalListMultiMap<String, Integer>();
                 }
                 candidates.put(attribute, i);
             }

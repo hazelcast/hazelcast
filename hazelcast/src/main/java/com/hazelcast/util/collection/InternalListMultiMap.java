@@ -34,10 +34,10 @@ import java.util.Set;
  * @param <K>
  * @param <V>
  */
-public class InternalMultiMap<K, V> {
+public class InternalListMultiMap<K, V> {
     private final Map<K, List<V>> backingMap;
 
-    public InternalMultiMap() {
+    public InternalListMultiMap() {
         this.backingMap = new HashMap<K, List<V>>();
     }
 
