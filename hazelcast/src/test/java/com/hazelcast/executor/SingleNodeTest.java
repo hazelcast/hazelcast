@@ -135,7 +135,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
             future.get(1, TimeUnit.MILLISECONDS);
             fail("Should throw TimeoutException!");
         } catch (TimeoutException expected) {
-            consume(expected);
+            ignore(expected);
         }
         assertFalse(future.isDone());
         assertTrue(future.cancel(true));
@@ -257,11 +257,11 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
             if (i < 2) {
                 assertEquals(futures.get(i).get(), Boolean.TRUE);
             } else {
-                //noinspection EmptyCatchBlock
                 try {
                     futures.get(i).get();
                     fail();
                 } catch (CancellationException expected) {
+                    ignore(expected);
                 }
             }
         }
