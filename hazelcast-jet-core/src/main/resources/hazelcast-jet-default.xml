@@ -18,19 +18,21 @@
 <hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-0.3.xsd"
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-    <!-- frequency of flow control packets, in milliseconds -->
-    <flow-control-period>100</flow-control-period>
+    <instance>
+        <!-- time spacing of flow-control (ack) packets -->
+       <flow-control-period>100</flow-control-period>
+    </instance>
     <edge-defaults>
-        <!-- number of available slots for each concurrent queue between two vertices -->
-        <queue-size>1024</queue-size>
+        <!-- capacity of the concurrent SPSC queue between each two processors -->
+       <queue-size>1024</queue-size>
 
-        <!-- number of slots before high water is triggered for the outbox -->
-        <high-water-mark>2048</high-water-mark>
+        <!-- number of slots before hitting the high water mark in the outbox -->
+       <high-water-mark>2048</high-water-mark>
 
-        <!-- maximum packet size in bytes, only applies to distributed edges -->
-        <packet-size-limit>16384</packet-size-limit>
+        <!-- network packet size limit in bytes, only applies to distributed edges -->
+       <packet-size-limit>16384</packet-size-limit>
 
-        <!-- target receive window size multiplier, only applies to distributed edges -->
-        <receive-window-multiplier>3</receive-window-multiplier>
+        <!-- receive window size multiplier, only applies to distributed edges -->
+       <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>
 </hazelcast-jet>

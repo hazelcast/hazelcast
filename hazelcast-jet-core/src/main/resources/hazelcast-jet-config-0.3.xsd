@@ -23,26 +23,40 @@
 
     <xs:element name="hazelcast-jet">
         <xs:complexType>
-            <xs:choice minOccurs="1" maxOccurs="unbounded">
-                <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="execution-thread-count" type="positive-int" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="working-directory" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="flow-control-period" type="positive-int" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="edge-defaults" type="edge" minOccurs="0" maxOccurs="1"/>
-            </xs:choice>
+            <xs:all>
+                <xs:element name="instance" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="cooperative-thread-count" type="positive-int" minOccurs="0"/>
+                            <xs:element name="temp-dir" type="xs:string" minOccurs="0"/>
+                            <xs:element name="flow-control-period" type="positive-int" minOccurs="0"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="properties" minOccurs="0">
+                    <xs:complexType>
+                        <xs:choice minOccurs="0" maxOccurs="unbounded">
+                            <xs:element name="property" type="property"/>
+                        </xs:choice>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="edge-defaults" minOccurs="0">
+                    <xs:complexType>
+                        <xs:all>
+                            <xs:element name="queue-size" type="positive-int" minOccurs="0"/>
+                            <xs:element name="packet-size-limit" type="positive-int" minOccurs="0"/>
+                            <xs:element name="high-water-mark" type="positive-int" minOccurs="0"/>
+                            <xs:element name="receive-window-multiplier" type="positive-int" minOccurs="0"/>
+                        </xs:all>
+                    </xs:complexType>
+                </xs:element>
+            </xs:all>
         </xs:complexType>
     </xs:element>
-    <!-- TYPES -->
-    <xs:simpleType name="non-space-string">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="\S.*"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:simpleType name="positive-int">
-        <xs:restriction base="xs:int">
-            <xs:minInclusive value="1"/>
-        </xs:restriction>
-    </xs:simpleType>
+
+
+    <!-- COMPLEX TYPES -->
+
     <xs:complexType name="property">
         <xs:simpleContent>
             <xs:extension base="xs:string">
@@ -50,17 +64,17 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
-    <xs:complexType name="properties">
-        <xs:sequence minOccurs="0" maxOccurs="unbounded">
-            <xs:element name="property" type="property"/>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="edge">
-        <xs:choice minOccurs="1" maxOccurs="unbounded">
-            <xs:element name="queue-size" type="positive-int" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="packet-size-limit" type="positive-int" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="high-water-mark" type="positive-int" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="receive-window-multiplier" type="positive-int" minOccurs="0" maxOccurs="1"/>
-        </xs:choice>
-    </xs:complexType>
+
+    <!-- SIMPLE TYPES -->
+
+    <xs:simpleType name="positive-int">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:simpleType name="non-space-string">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\S.*"/>
+        </xs:restriction>
+    </xs:simpleType>
 </xs:schema>

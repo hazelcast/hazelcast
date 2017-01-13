@@ -18,15 +18,18 @@
 <hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-0.3.xsd"
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
-    <execution-thread-count>10</execution-thread-count>
-    <working-directory>/var/tmp</working-directory>
+    <instance>
+       <cooperative-thread-count>10</cooperative-thread-count>
+       <flow-control-period>100</flow-control-period>
+       <temp-dir>/var/tmp</temp-dir>
+    </instance>
     <properties>
+       <property name="custom.property">custom property</property>
     </properties>
     <edge-defaults>
-        <queue-size>1024</queue-size>
-        <high-water-mark>2048</high-water-mark>
-        <packet-size-limit>16384</packet-size-limit>
-        <receive-window-multiplier>3</receive-window-multiplier>
+       <queue-size>1024</queue-size>
+       <high-water-mark>2048</high-water-mark>
+       <packet-size-limit>16384</packet-size-limit>
+       <receive-window-multiplier>3</receive-window-multiplier>
     </edge-defaults>
 </hazelcast-jet>

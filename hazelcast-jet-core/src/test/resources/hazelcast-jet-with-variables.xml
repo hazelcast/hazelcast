@@ -18,13 +18,14 @@
 <hazelcast-jet xsi:schemaLocation="http://www.hazelcast.com/schema/jet-config hazelcast-jet-config-0.3.xsd"
                xmlns="http://www.hazelcast.com/schema/jet-config"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
-    <!-- replace with system property -->
-    <working-directory>${working.directory}</working-directory>
-    <execution-thread-count>${thread.count}</execution-thread-count>
+    <instance>
+        <!-- replace with system property -->
+       <temp-dir>${working.directory}</temp-dir>
+       <cooperative-thread-count>${thread.count}</cooperative-thread-count>
+    </instance>
 
     <properties>
-        <property name="property1">value1</property>
-        <property name="property2">value2</property>
+       <property name="property1">value1</property>
+       <property name="property2">value2</property>
     </properties>
 </hazelcast-jet>

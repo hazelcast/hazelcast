@@ -46,7 +46,7 @@ import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 /**
  * Loads the {@link JetConfig} using XML.
  */
-public class XmlJetConfigBuilder extends AbstractConfigBuilder {
+public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
 
     private static final ILogger LOGGER = Logger.getLogger(XmlJetConfigBuilder.class);
 
@@ -64,7 +64,7 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
      * <li>it loads the hazelcast-jet-default.xml</li>
      * </ol>
      */
-    XmlJetConfigBuilder(Properties properties, InputStream in) {
+    private XmlJetConfigBuilder(Properties properties, InputStream in) {
         this.properties = properties;
         try {
             parseAndBuildConfig(in);
@@ -75,8 +75,28 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
         }
     }
 
-    public JetConfig getJetConfig() {
-        return jetConfig;
+    public static JetConfig getConfig(Properties properties) {
+        InputStream in = getJetConfigStream(properties);
+        JetConfig cfg = new XmlJetConfigBuilder(properties, in).jetConfig;
+        cfg.setHazelcastConfig(getMemberConfig(properties));
+        return cfg;
+    }
+
+    public static JetConfig getConfig() {
+        Properties properties = System.getProperties();
+        return getConfig(properties);
+    }
+
+    public static ClientConfig getClientConfig() {
+        return getClientConfig(System.getProperties());
+    }
+
+    public static ClientConfig getClientConfig(Properties properties) {
+        return new XmlClientConfigBuilder(getClientConfigStream(properties)).build();
+    }
+
+    public static Config getMemberConfig(Properties properties) {
+        return new XmlConfigBuilder(getMemberConfigStream(properties)).build();
     }
 
     @Override
@@ -131,84 +151,71 @@ public class XmlJetConfigBuilder extends AbstractConfigBuilder {
         for (Node node : childElements(docElement)) {
             String name = cleanNodeName(node);
             switch (name) {
-                case "execution-thread-count":
-                    jetConfig.setCooperativeThreadCount(getIntValue(node));
-                    break;
-                case "working-directory":
-                    jetConfig.setWorkingDirectory(getStringValue(node));
-                    break;
-                case "flow-control-period":
-                    jetConfig.setFlowControlPeriodMs(getIntValue(node));
+                case "instance":
+                    parseInstanceConfig(node);
                     break;
                 case "properties":
                     fillProperties(node, jetConfig.getProperties());
                     break;
                 case "edge-defaults":
-                    jetConfig.setDefaultEdgeConfig(parseEdgeDefaults(node));
+                    parseEdgeDefaults(node);
                     break;
                 default:
+                    throw new AssertionError("Unrecognized XML element: " + name);
+            }
+        }
+    }
+
+    private void parseInstanceConfig(Node instanceNode) {
+        final InstanceConfig instanceConfig = jetConfig.getInstanceConfig();
+        for (Node node : childElements(instanceNode)) {
+            String name = cleanNodeName(node);
+            switch (name) {
+                case "cooperative-thread-count":
+                    instanceConfig.setCooperativeThreadCount(intValue(node));
                     break;
+                case "temp-dir":
+                    instanceConfig.setTempDir(stringValue(node));
+                    break;
+                case "flow-control-period":
+                    instanceConfig.setFlowControlPeriodMs(intValue(node));
+                    break;
+                default:
+                    throw new AssertionError("Unrecognized XML element: " + name);
             }
         }
     }
 
     private EdgeConfig parseEdgeDefaults(Node edgeNode) {
-        EdgeConfig config = new EdgeConfig();
+        EdgeConfig config = jetConfig.getDefaultEdgeConfig();
         for (Node child : childElements(edgeNode)) {
             String name = cleanNodeName(child);
             switch (name) {
                 case "queue-size":
-                    config.setQueueSize(getIntValue(child));
+                    config.setQueueSize(intValue(child));
                     break;
                 case "packet-size-limit":
-                    config.setPacketSizeLimit(getIntValue(child));
+                    config.setPacketSizeLimit(intValue(child));
                     break;
                 case "high-water-mark":
-                    config.setHighWaterMark(getIntValue(child));
+                    config.setHighWaterMark(intValue(child));
                     break;
                 case "receive-window-multiplier":
-                    config.setReceiveWindowMultiplier(getIntValue(child));
+                    config.setReceiveWindowMultiplier(intValue(child));
                     break;
                 default:
-                    break;
+                    throw new AssertionError("Unrecognized XML element: " + name);
             }
         }
         return config;
     }
 
-    private int getIntValue(Node node) {
-        return Integer.parseInt(getStringValue(node));
+    private int intValue(Node node) {
+        return Integer.parseInt(stringValue(node));
     }
 
-    private String getStringValue(Node node) {
+    private String stringValue(Node node) {
         return getTextContent(node);
     }
 
-    static JetConfig getConfig(InputStream in, Properties properties) {
-        JetConfig jetConfig = new XmlJetConfigBuilder(properties, in).getJetConfig();
-        jetConfig.setHazelcastConfig(getMemberConfig(properties));
-        return jetConfig;
-    }
-
-    public static JetConfig getConfig(Properties properties) {
-        InputStream in = getJetConfigStream(properties);
-        return getConfig(in, properties);
-    }
-
-    public static JetConfig getConfig() {
-        Properties properties = System.getProperties();
-        return getConfig(properties);
-    }
-
-    public static ClientConfig getClientConfig() {
-        return getClientConfig(System.getProperties());
-    }
-
-    public static ClientConfig getClientConfig(Properties properties) {
-        return new XmlClientConfigBuilder(getClientConfigStream(properties)).build();
-    }
-
-    public static Config getMemberConfig(Properties properties) {
-        return new XmlConfigBuilder(getMemberConfigStream(properties)).build();
-    }
 }

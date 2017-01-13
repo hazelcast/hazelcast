@@ -21,7 +21,7 @@ import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.JetConfig;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
@@ -94,9 +94,9 @@ public class JetService
     public void init(NodeEngine engine, Properties properties) {
         engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
-        networking = new Networking(engine, executionContexts, config.getFlowControlPeriodMs());
+        networking = new Networking(engine, executionContexts, config.getInstanceConfig().getFlowControlPeriodMs());
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
-                config.getExecutionThreadCount());
+                config.getInstanceConfig().getCooperativeThreadCount());
     }
 
     @Override
@@ -149,7 +149,7 @@ public class JetService
     }
 
     public ResourceStore getResourceStore(long executionId) {
-        return resourceStores.computeIfAbsent(executionId, (k) -> new ResourceStore(config.getWorkingDirectory()));
+        return resourceStores.computeIfAbsent(executionId, (k) -> new ResourceStore(config.getInstanceConfig().getTempDir()));
     }
 
     public ClassLoader getClassLoader(long executionId) {
@@ -163,7 +163,7 @@ public class JetService
     }
 
     public Map<Member, ExecutionPlan> createExecutionPlans(DAG dag) {
-        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getExecutionThreadCount());
+        return ExecutionPlan.createExecutionPlans(nodeEngine, dag, config.getInstanceConfig().getCooperativeThreadCount());
     }
 
 
