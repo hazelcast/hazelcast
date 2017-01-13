@@ -76,7 +76,9 @@ import java.util.concurrent.ConcurrentMap;
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 @PrivateApi
 public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
+
     protected volatile HazelcastInstanceImpl original;
+
     private final String name;
 
     protected HazelcastInstanceProxy(HazelcastInstanceImpl original) {
@@ -290,6 +292,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
         getLifecycleService().shutdown();
     }
 
+    @Override
     public InternalSerializationService getSerializationService() {
         return getOriginal().getSerializationService();
     }
