@@ -47,8 +47,8 @@ public class ClusterListTest extends HazelcastTestSupport {
         final int count = 100;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
-        IList list1 = instances[0].getList(name);
-        IList list2 = instances[1].getList(name);
+        IList<String> list1 = instances[0].getList(name);
+        IList<String> list2 = instances[1].getList(name);
         for (int i = 0; i < count; i++) {
             assertTrue(list1.add("item" + i));
             assertTrue(list2.add("item" + i));
@@ -77,19 +77,19 @@ public class ClusterListTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance();
         HazelcastInstance instance2 = factory.newHazelcastInstance();
-        IList list1 = instance1.getList(name);
-        IList list2 = instance2.getList(name);
-        List listTest1 = new ArrayList();
+        IList<String> list1 = instance1.getList(name);
+        IList<String> list2 = instance2.getList(name);
+        List<String> listTest1 = new ArrayList<String>();
         for (int i = 0; i < 100; i++) {
             listTest1.add("item" + i);
         }
         assertTrue(list1.addAll(listTest1));
         assertSizeEventually(100, list2);
-        List listTest2 = new ArrayList();
+        List<String> listTest2 = new ArrayList<String>();
         for (int i = 30; i < 40; i++) {
             listTest2.add("item" + i);
         }
-        assertTrue(list2.containsAll(listTest2));
+        assertContainsAll(list2, listTest2);
         assertTrue(list2.retainAll(listTest2));
         assertSizeEventually(10, list1);
         assertTrue(list1.removeAll(listTest2));
@@ -101,8 +101,8 @@ public class ClusterListTest extends HazelcastTestSupport {
         final String name = randomString();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances();
-        IList list1 = instances[0].getList(name);
-        IList list2 = instances[1].getList(name);
+        IList<String> list1 = instances[0].getList(name);
+        IList<String> list2 = instances[1].getList(name);
         warmUpPartitions(instances);
 
         for (int i = 0; i < 50; i++) {
@@ -126,7 +126,7 @@ public class ClusterListTest extends HazelcastTestSupport {
         final int insCount = 4;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        IList list = instance1.getList(name);
+        IList<String> list = instance1.getList(name);
 
         for (int i = 0; i < 100; i++) {
             list.add("item" + i);
@@ -154,7 +154,6 @@ public class ClusterListTest extends HazelcastTestSupport {
 
         instance3.shutdown();
         assertEquals(200, instance1.getList(name).size());
-
     }
 
     @Test
@@ -169,7 +168,7 @@ public class ClusterListTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
-        IList list = instance1.getList(name);
+        IList<String> list = instance1.getList(name);
 
         for (int i = 0; i < 100; i++) {
             assertTrue(list.add("item" + i));
@@ -178,5 +177,4 @@ public class ClusterListTest extends HazelcastTestSupport {
         assertNotNull(list.remove(0));
         assertTrue(list.add("item"));
     }
-
 }

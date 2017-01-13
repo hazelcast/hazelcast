@@ -98,12 +98,11 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
         IList<Object> testList = h1.getList(name);
         assertFalse(testList.contains("lostListItem0"));
         assertFalse(testList.contains("lostListItem49"));
-        assertTrue(testList.contains("item0"));
-        assertTrue(testList.contains("item199"));
-        assertTrue(testList.contains("item121"));
-        assertTrue(testList.contains("item45"));
+        assertContains(testList, "item0");
+        assertContains(testList, "item199");
+        assertContains(testList, "item121");
+        assertContains(testList, "item45");
     }
-
 
     private Config getConfig(boolean multicast) {
         Config config = new Config();
@@ -145,7 +144,6 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberAdded(MembershipEvent membershipEvent) {
-
         }
 
         @Override
@@ -155,8 +153,6 @@ public class ListSplitBrainTest extends HazelcastTestSupport {
 
         @Override
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
         }
     }
 }
-

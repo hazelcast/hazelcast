@@ -48,7 +48,7 @@ import static org.junit.Assert.assertTrue;
 public class ClientListTest extends HazelcastTestSupport {
 
     private TestHazelcastFactory hazelcastFactory;
-    private IList list;
+    private IList<String> list;
 
     @Before
     public void setup() throws IOException {
@@ -65,7 +65,7 @@ public class ClientListTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll() {
-        List l = new ArrayList();
+        List<String> l = new ArrayList<String>();
         l.add("item1");
         l.add("item2");
 
@@ -87,8 +87,8 @@ public class ClientListTest extends HazelcastTestSupport {
         assertTrue(list.add("item2"));
         list.add(0, "item3");
         assertEquals(3, list.size());
-        Object o = list.set(2, "item4");
-        assertEquals("item2", o);
+        String element = list.set(2, "item4");
+        assertEquals("item2", element);
 
         assertEquals(3, list.size());
         assertEquals("item3", list.get(0));
@@ -98,8 +98,8 @@ public class ClientListTest extends HazelcastTestSupport {
         assertFalse(list.remove("item2"));
         assertTrue(list.remove("item3"));
 
-        o = list.remove(1);
-        assertEquals("item4", o);
+        element = list.remove(1);
+        assertEquals("item4", element);
 
         assertEquals(1, list.size());
         assertEquals("item1", list.get(0));
@@ -151,16 +151,16 @@ public class ClientListTest extends HazelcastTestSupport {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
-        assertFalse(list.contains("item3"));
-        assertTrue(list.contains("item2"));
+        assertNotContains(list, "item3");
+        assertContains(list, "item2");
 
-        List l = new ArrayList();
+        List<String> l = new ArrayList<String>();
         l.add("item4");
         l.add("item3");
 
-        assertFalse(list.containsAll(l));
+        assertNotContainsAll(list, l);
         assertTrue(list.add("item3"));
-        assertTrue(list.containsAll(l));
+        assertContainsAll(list, l);
     }
 
     @Test
@@ -170,7 +170,7 @@ public class ClientListTest extends HazelcastTestSupport {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
-        List l = new ArrayList();
+        List<String> l = new ArrayList<String>();
         l.add("item4");
         l.add("item3");
 
@@ -188,7 +188,6 @@ public class ClientListTest extends HazelcastTestSupport {
         l.clear();
         assertTrue(list.retainAll(l));
         assertEquals(0, list.size());
-
     }
 
     @Test
@@ -196,13 +195,13 @@ public class ClientListTest extends HazelcastTestSupport {
 
         final CountDownLatch latch = new CountDownLatch(6);
 
-        ItemListener listener = new ItemListener() {
+        ItemListener<String> listener = new ItemListener<String>() {
 
-            public void itemAdded(ItemEvent itemEvent) {
+            public void itemAdded(ItemEvent<String> itemEvent) {
                 latch.countDown();
             }
 
-            public void itemRemoved(ItemEvent item) {
+            public void itemRemoved(ItemEvent<String> item) {
             }
         };
         String registrationId = list.addItemListener(listener, true);
@@ -217,7 +216,6 @@ public class ClientListTest extends HazelcastTestSupport {
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         list.removeItemListener(registrationId);
-
     }
 
     @Test
