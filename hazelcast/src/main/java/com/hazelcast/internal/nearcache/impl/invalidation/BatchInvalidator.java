@@ -196,18 +196,16 @@ public class BatchInvalidator extends Invalidator {
 
     @Override
     public void destroy(String dataStructureName, String sourceUuid) {
-        super.destroy(dataStructureName, sourceUuid);
-
         InvalidationQueue invalidationQueue = invalidationQueues.remove(dataStructureName);
         if (invalidationQueue != null) {
             invalidateInternal(newClearInvalidation(dataStructureName, sourceUuid), dataStructureName.hashCode());
         }
+
+        super.destroy(dataStructureName, sourceUuid);
     }
 
     @Override
     public void shutdown() {
-        super.shutdown();
-
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.shutdownExecutor(invalidationExecutorName);
 
@@ -216,13 +214,15 @@ public class BatchInvalidator extends Invalidator {
         lifecycleService.removeLifecycleListener(nodeShutdownListenerId);
 
         invalidationQueues.clear();
+
+        super.shutdown();
     }
 
     @Override
     public void reset() {
-        super.reset();
-
         invalidationQueues.clear();
+
+        super.reset();
     }
 
     public static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
