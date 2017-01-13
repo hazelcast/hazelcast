@@ -93,7 +93,7 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="scheduled-executor" minOccurs="0" maxOccurs="unbounded">
+                        <xs:element name="scheduled-executor-service" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
