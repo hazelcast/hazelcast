@@ -8,6 +8,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -21,30 +22,23 @@ import java.util.Set;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientClusterServiceMemberListTest {
+public class ClientClusterServiceMemberListTest extends HazelcastTestSupport {
 
     private Config liteConfig = new Config().setLiteMember(true);
 
     private TestHazelcastFactory factory;
 
     private HazelcastInstance liteInstance;
-
     private HazelcastInstance dataInstance;
-
     private HazelcastInstance dataInstance2;
-
     private HazelcastInstance client;
-
 
     @Before
     public void before() {
@@ -99,7 +93,7 @@ public class ClientClusterServiceMemberListTest {
 
     private void verifyMembers(Collection<Member> membersToCheck, Collection<HazelcastInstance> membersToExpect) {
         for (HazelcastInstance instance : membersToExpect) {
-            assertTrue(membersToCheck.contains(getLocalMember(instance)));
+            assertContains(membersToCheck, getLocalMember(instance));
         }
 
         assertEquals(membersToExpect.size(), membersToCheck.size());
