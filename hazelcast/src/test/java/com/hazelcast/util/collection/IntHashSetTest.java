@@ -18,6 +18,7 @@
 package com.hazelcast.util.collection;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -32,17 +33,16 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.Set;
 
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IntHashSetTest {
+public class IntHashSetTest extends HazelcastTestSupport {
+
     @Rule
     public final ExpectedException rule = ExpectedException.none();
 
@@ -51,14 +51,15 @@ public class IntHashSetTest {
     @Test
     public void initiallyContainsNoElements() throws Exception {
         for (int i = 0; i < 10000; i++) {
-            assertFalse(set.contains(i));
+            assertNotContains(set, i);
         }
     }
 
     @Test
+    @SuppressWarnings("UnnecessaryBoxing")
     public void initiallyContainsNoBoxedElements() {
         for (int i = 0; i < 10000; i++) {
-            assertFalse(set.contains(Integer.valueOf(i)));
+            assertNotContains(set, Integer.valueOf(i));
         }
     }
 
@@ -66,7 +67,7 @@ public class IntHashSetTest {
     public void containsAddedBoxedElement() {
         assertTrue(set.add(1));
 
-        assertTrue(set.contains(1));
+        assertContains(set, 1);
     }
 
     @Test
@@ -77,12 +78,13 @@ public class IntHashSetTest {
     }
 
     @Test
+    @SuppressWarnings("UnnecessaryBoxing")
     public void containsAddedBoxedElements() {
         assertTrue(set.add(1));
         assertTrue(set.add(Integer.valueOf(2)));
 
-        assertTrue(set.contains(Integer.valueOf(1)));
-        assertTrue(set.contains(2));
+        assertContains(set, Integer.valueOf(1));
+        assertContains(set, 2);
     }
 
     @Test
@@ -102,7 +104,7 @@ public class IntHashSetTest {
         assertEquals(jdkSet, set);
         for (Iterator<Integer> iter = jdkSet.iterator(); iter.hasNext(); ) {
             final int value = iter.next();
-            assertTrue("Set suddenly doesn't contain " + value, set.contains(value));
+            assertContains(set, value);
             assertTrue("Didn't remove " + value, set.remove(value));
             iter.remove();
         }
@@ -152,8 +154,8 @@ public class IntHashSetTest {
         set.clear();
 
         assertEquals(0, set.size());
-        assertFalse(set.contains(1));
-        assertFalse(set.contains(2));
+        assertNotContains(set, 1);
+        assertNotContains(set, 2);
     }
 
     @Test
@@ -178,7 +180,7 @@ public class IntHashSetTest {
 
         final IntHashSet diff = set.difference(other);
         assertEquals(1, diff.size());
-        assertTrue(diff.contains(2));
+        assertContains(diff, 2);
     }
 
     @Test
@@ -189,7 +191,8 @@ public class IntHashSetTest {
         final IntHashSet other = new IntHashSet(1000, -1);
         other.copy(set);
 
-        assertThat(other, contains(2, 1));
+        assertContains(other, 1);
+        assertContains(other, 2);
     }
 
     @Test
@@ -266,8 +269,8 @@ public class IntHashSetTest {
         final IntHashSet set = new IntHashSet(2, 0);
         set.add(1);
         set.add(2);
-        assertTrue(set.contains(2));
-        assertFalse(set.contains(3));
+        assertContains(set, 2);
+        assertNotContains(set, 3);
     }
 
     @Test

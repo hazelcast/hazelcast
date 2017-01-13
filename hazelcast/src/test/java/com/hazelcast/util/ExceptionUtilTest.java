@@ -18,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ExceptionUtilTest extends HazelcastTestSupport {
 
-    private final Throwable throwable = new RuntimeException("expected exception");;
+    private final Throwable throwable = new RuntimeException("expected exception");
 
     @Test
     public void testConstructor() {
@@ -29,8 +29,8 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     public void testToString() {
         String result = ExceptionUtil.toString(throwable);
 
-        assertTrue(result.contains("RuntimeException"));
-        assertTrue(result.contains("expected exception"));
+        assertContains(result, "RuntimeException");
+        assertContains(result, "expected exception");
     }
 
     @Test
