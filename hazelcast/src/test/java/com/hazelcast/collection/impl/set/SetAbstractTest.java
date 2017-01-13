@@ -34,6 +34,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.test.AbstractHazelcastClassRunner.getTestMethodName;
+import static java.util.Collections.emptySet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -104,7 +105,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_Basic() {
-        Set added = new HashSet();
+        Set<String> added = new HashSet<String>();
         added.add("item1");
         added.add("item2");
         set.addAll(added);
@@ -113,7 +114,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_whenAllElementsSame() {
-        Set added = new HashSet();
+        Set<String> added = new HashSet<String>();
         for (int i = 1; i <= 10; i++) {
             added.add("item");
         }
@@ -123,18 +124,18 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testAddAll_whenCollectionContainsNull() {
-        Set added = new HashSet();
+        Set<String> added = new HashSet<String>();
         added.add("item1");
         added.add(null);
         try {
             assertFalse(set.addAll(added));
         } catch (NullPointerException e) {
+            ignore(e);
         }
         assertEquals(0, set.size());
     }
 
     //    ======================== remove  - removeAll ==========================
-
 
     @Test
     public void testRemoveBasic() {
@@ -157,7 +158,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRemoveAll() {
-        Set removed = new HashSet();
+        Set<String> removed = new HashSet<String>();
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
             removed.add("item" + i);
@@ -167,6 +168,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     }
 
     //    ======================== iterator ==========================
+
     @Test
     public void testIterator() {
         set.add("item");
@@ -202,12 +204,11 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
         assertEquals(0, set.size());
     }
 
-
     //    ======================== retainAll ==========================
 
     @Test
     public void testRetainAll_whenArgumentEmptyCollection() {
-        Set retained = new HashSet();
+        Set<String> retained = emptySet();
 
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
@@ -218,7 +219,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
 
     @Test
     public void testRetainAll_whenArgumentHasSameElements() {
-        Set retained = new HashSet();
+        Set<String> retained = new HashSet<String>();
 
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
@@ -229,6 +230,7 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
+    @SuppressWarnings("ConstantConditions")
     public void testRetainAll_whenCollectionNull() {
         set.retainAll(null);
     }
@@ -237,23 +239,23 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
     @Test
     public void testContains() {
         set.add("item1");
-        assertTrue(set.contains("item1"));
+        assertContains(set, "item1");
     }
 
     @Test
     public void testContains_whenEmpty() {
-        assertFalse(set.contains("notExist"));
+        assertNotContains(set, "notExist");
     }
 
     @Test
     public void testContains_whenNotContains() {
         set.add("item1");
-        assertFalse(set.contains("notExist"));
+        assertNotContains(set, "notExist");
     }
 
     @Test
     public void testContainsAll() {
-        Set contains = new HashSet();
+        Set<String> contains = new HashSet<String>();
 
         contains.add("item1");
         contains.add("item2");
@@ -261,19 +263,19 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
             set.add("item" + i);
             contains.add("item" + i);
         }
-        assertTrue(set.containsAll(contains));
+        assertContainsAll(set, contains);
     }
 
     @Test
     public void testContainsAll_whenSetNotContains() {
-        Set contains = new HashSet();
+        Set<String> contains = new HashSet<String>();
         contains.add("item1");
         contains.add("item100");
         for (int i = 1; i <= 10; i++) {
             set.add("item" + i);
             contains.add("item" + i);
         }
-        assertFalse(set.containsAll(contains));
+        assertNotContainsAll(set, contains);
     }
 
     @Test
@@ -309,6 +311,5 @@ public abstract class SetAbstractTest extends HazelcastTestSupport {
         for (ISet set : localSets) {
             assertEquals(1, set.size());
         }
-
     }
 }

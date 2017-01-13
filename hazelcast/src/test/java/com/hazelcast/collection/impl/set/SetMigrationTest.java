@@ -13,21 +13,19 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class SetMigrationTest extends HazelcastTestSupport {
 
     private Set<Object> set;
-    private HazelcastInstance local;
     private HazelcastInstance remote1;
     private HazelcastInstance remote2;
 
     @Before
     public void setup() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(3).newInstances();
-        local = cluster[0];
+        HazelcastInstance local = cluster[0];
         remote1 = cluster[1];
         remote2 = cluster[2];
 
@@ -37,17 +35,17 @@ public class SetMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void test() {
-        for (int k = 0; k < 100; k++) {
-            set.add(k);
+        int size = 100;
+        for (int element = 0; element < size; element++) {
+            set.add(element);
         }
 
         remote1.shutdown();
         remote2.shutdown();
 
-        assertEquals(100, set.size());
-
-        for (int k = 0; k < 100; k++) {
-            assertTrue("the set doesn't contain:" + k, set.contains(k));
+        assertEquals(size, set.size());
+        for (int element = 0; element < size; element++) {
+            assertContains(set, element);
         }
     }
 }
