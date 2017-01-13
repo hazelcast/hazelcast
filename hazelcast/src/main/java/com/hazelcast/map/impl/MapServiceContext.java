@@ -149,4 +149,5 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
 
     void removePartitioningStrategyFromCache(String mapName);
 
+    PartitionContainer[] getPartitionContainers();
 }

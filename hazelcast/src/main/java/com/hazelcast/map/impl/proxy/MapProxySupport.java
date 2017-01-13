@@ -107,6 +107,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.config.MapIndexConfig.validateIndexAttribute;
+import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
@@ -1106,6 +1107,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public LocalMapStats getLocalMapStats() {
+        if (!mapConfig.isStatisticsEnabled()) {
+            return EMPTY_LOCAL_MAP_STATS;
+        }
         return mapServiceContext.getLocalMapStatsProvider().createLocalMapStats(name);
     }
 

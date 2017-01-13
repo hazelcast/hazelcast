@@ -81,7 +81,7 @@ public class NearCacheProvider {
         return ConcurrencyUtil.getOrPutIfAbsent(nearCacheMap, mapName, nearCacheConstructor);
     }
 
-    NearCache getOrNullNearCache(String mapName) {
+    public NearCache getOrNullNearCache(String mapName) {
         return nearCacheMap.get(mapName);
     }
 
