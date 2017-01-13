@@ -37,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -287,7 +288,7 @@ public final class TcpIpConnection implements SocketConnection, MetricsProvider,
         }
 
         if (ioService.isActive()) {
-            if (closeCause == null || closeCause instanceof EOFException) {
+            if (closeCause == null || closeCause instanceof EOFException || closeCause instanceof CancelledKeyException) {
                 logger.info(message);
             } else {
                 logger.warning(message, closeCause);
