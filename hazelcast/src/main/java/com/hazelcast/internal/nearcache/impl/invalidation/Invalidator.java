@@ -33,7 +33,7 @@ import static java.lang.String.format;
 
 
 /**
- * Contains common functionality of a {@code Invalidator}
+ * Invalidates near caches. Contains shared functionality.
  */
 public abstract class Invalidator {
 
@@ -64,7 +64,7 @@ public abstract class Invalidator {
     /**
      * Invalidates supplied key from near-caches of supplied data structure name.
      *
-     * @param key     key of the entry to be removed from near-cache
+     * @param key               key of the entry to be removed from near-cache
      * @param dataStructureName name of the data structure to be invalidated
      */
     public final void invalidateKey(Data key, String dataStructureName, String sourceUuid) {
@@ -142,7 +142,7 @@ public abstract class Invalidator {
      * @see com.hazelcast.map.impl.MapRemoteService#destroyDistributedObject(String)
      */
     public void destroy(String dataStructureName, String sourceUuid) {
-        // nop.
+        metaDataGenerator.destroyMetaDataFor(dataStructureName);
     }
 
     /**

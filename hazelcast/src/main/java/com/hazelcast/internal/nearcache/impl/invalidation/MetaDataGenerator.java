@@ -37,8 +37,9 @@ import static com.hazelcast.util.UuidUtil.newSecureUUID;
  */
 public class MetaDataGenerator {
 
+    final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
+
     private final int partitionCount;
-    private final ConcurrentMap<String, AtomicLongArray> sequenceGenerators = new ConcurrentHashMap<String, AtomicLongArray>();
     private final ConstructorFunction<String, AtomicLongArray> sequenceGeneratorConstructor
             = new ConstructorFunction<String, AtomicLongArray>() {
         @Override
@@ -101,5 +102,9 @@ public class MetaDataGenerator {
         for (AtomicLongArray sequences : sequenceGenerators.values()) {
             sequences.set(partitionId, 0);
         }
+    }
+
+    public void destroyMetaDataFor(String dataStructureName) {
+        sequenceGenerators.remove(dataStructureName);
     }
 }
