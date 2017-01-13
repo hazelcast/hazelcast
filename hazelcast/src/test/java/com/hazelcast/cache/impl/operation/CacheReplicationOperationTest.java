@@ -30,8 +30,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertTrue;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheReplicationOperationTest extends HazelcastTestSupport {
@@ -54,6 +52,6 @@ public class CacheReplicationOperationTest extends HazelcastTestSupport {
         CacheReplicationOperation cacheReplicationOperation = (CacheReplicationOperation) nodeEngineImpl.toObject(data);
 
         // new operation instance should have previously added config.
-        assertTrue(cacheReplicationOperation.configs.contains(config));
+        assertContains(cacheReplicationOperation.configs, config);
     }
 }

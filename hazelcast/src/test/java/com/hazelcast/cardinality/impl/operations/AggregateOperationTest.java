@@ -1,6 +1,7 @@
 package com.hazelcast.cardinality.impl.operations;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -9,11 +10,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AggregateOperationTest {
+public class AggregateOperationTest extends HazelcastTestSupport {
 
     private AggregateOperation operation;
 
@@ -26,7 +26,7 @@ public class AggregateOperationTest {
     public void testName() {
         String operationString = operation.toString();
         assertNotNull(operationString);
-        assertTrue(operationString.contains("AggregateOperation"));
-        assertTrue(operationString.contains("name=testName"));
+        assertContains(operationString, "AggregateOperation");
+        assertContains(operationString, "name=testName");
     }
 }

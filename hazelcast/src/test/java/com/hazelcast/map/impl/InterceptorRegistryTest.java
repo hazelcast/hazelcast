@@ -177,7 +177,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
     private void assertInterceptorRegistryContainsInterceptor() {
         List<MapInterceptor> interceptors = registry.getInterceptors();
-        assertTrue(interceptors.contains(interceptor));
+        assertContains(interceptors, interceptor);
 
         Map<String, MapInterceptor> id2InterceptorMap = registry.getId2InterceptorMap();
         assertTrue(id2InterceptorMap.containsKey(interceptor.id));
@@ -186,7 +186,7 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
 
     private void assertInterceptorRegistryContainsNotInterceptor() {
         List<MapInterceptor> interceptors = registry.getInterceptors();
-        assertFalse(interceptors.contains(interceptor));
+        assertNotContains(interceptors, interceptor);
 
         Map<String, MapInterceptor> id2InterceptorMap = registry.getId2InterceptorMap();
         assertFalse(id2InterceptorMap.containsKey(interceptor.id));
@@ -194,14 +194,13 @@ public class InterceptorRegistryTest extends HazelcastTestSupport {
     }
 
     private PartitionOperationThread getPartitionOperationThread(OperationQueue queue) {
-        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("instanceName", LOGGER, getClass().getClassLoader());
+        HazelcastThreadGroup threadGroup = new HazelcastThreadGroup("instanceName", LOGGER, getClass().getClassLoader());
         NodeExtension nodeExtension = mock(NodeExtension.class);
 
         OperationRunner operationRunner = mock(OperationRunner.class);
         OperationRunner[] operationRunners = new OperationRunner[]{operationRunner};
 
-        return new PartitionOperationThread("threadName", 0, queue, LOGGER, hazelcastThreadGroup,
-                nodeExtension, operationRunners);
+        return new PartitionOperationThread("threadName", 0, queue, LOGGER, threadGroup, nodeExtension, operationRunners);
     }
 
     private static class TestMapInterceptor implements MapInterceptor {

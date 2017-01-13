@@ -29,7 +29,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,12 +38,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author mdogan 8/25/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class DistributedObjectTest extends HazelcastTestSupport {
@@ -138,7 +135,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         assertEquals(object.getServiceName(), object2.getServiceName());
         assertEquals(object.getName(), object2.getName());
         assertEquals(object, object2);
-        assertTrue(instance.getDistributedObjects().contains(object));
+        assertContains(instance.getDistributedObjects(), object);
     }
 
     @Test
@@ -172,7 +169,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             instances[i] = factory.newHazelcastInstance(config);
             TestInitializingObject obj2 = instances[i].getDistributedObject(serviceName, objectName);
             assertTrue(obj2.init.get());
-            Assert.assertFalse(obj2.error);
+            assertFalse(obj2.error);
         }
     }
 
@@ -208,27 +205,31 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             }
         }
 
-        for (int i = 0; i < instances.length; i++) {
-            TestInitializingObject obj = instances[i].getDistributedObject(serviceName, objectName);
+        for (HazelcastInstance instance : instances) {
+            TestInitializingObject obj = instance.getDistributedObject(serviceName, objectName);
             assertTrue(obj.init.get());
-            Assert.assertFalse(obj.error);
+            assertFalse(obj.error);
         }
     }
 
     private static class TestInitializingObjectService implements RemoteService {
+
         static final String NAME = "TestInitializingObjectService";
 
+        @Override
         public DistributedObject createDistributedObject(final String objectName) {
             return new TestInitializingObject(objectName);
         }
 
+        @Override
         public void destroyDistributedObject(final String objectName) {
         }
     }
 
     private static class TestInitializingObject implements DistributedObject, InitializingObject {
-        private final String name;
+
         private final AtomicBoolean init = new AtomicBoolean(false);
+        private final String name;
         private volatile boolean error = false;
 
         protected TestInitializingObject(final String name) {
@@ -303,6 +304,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
                             hz.getDistributedObject(serviceName, objectName);
                             fail("Proxy creation should fail!");
                         } catch (HazelcastException expected) {
+                            ignore(expected);
                         }
                         LockSupport.parkNanos(1);
                     }
@@ -316,10 +318,12 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     private static class FailingInitializingObjectService implements RemoteService {
         static final String NAME = "FailingInitializingObjectService";
 
+        @Override
         public DistributedObject createDistributedObject(String objectName) {
             throw new HazelcastException("Object creation is not allowed!");
         }
 
+        @Override
         public void destroyDistributedObject(final String objectName) {
         }
     }

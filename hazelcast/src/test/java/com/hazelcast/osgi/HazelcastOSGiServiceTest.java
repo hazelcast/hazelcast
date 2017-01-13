@@ -6,6 +6,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.osgi.impl.HazelcastInternalOSGiService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -31,7 +32,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class HazelcastOSGiServiceTest {
+public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
 
     private static String loggingType;
     private static Level log4jLogLevel;
@@ -124,8 +125,7 @@ public class HazelcastOSGiServiceTest {
     }
 
     private HazelcastInternalOSGiService getService(TestBundleContext bundleContext) {
-        ServiceReference serviceRef =
-                bundleContext.getServiceReference(HazelcastOSGiService.class.getName());
+        ServiceReference serviceRef = bundleContext.getServiceReference(HazelcastOSGiService.class.getName());
         if (serviceRef == null) {
             return null;
         }
@@ -192,6 +192,7 @@ public class HazelcastOSGiServiceTest {
             testBundle.start();
 
             HazelcastInternalOSGiService service = getService(testBundle.getBundleContext());
+            assertNotNull(service);
 
             assertNotNull(service.getDefaultHazelcastInstance());
         } finally {
@@ -314,6 +315,7 @@ public class HazelcastOSGiServiceTest {
             testBundle.start();
 
             HazelcastInternalOSGiService service = getService(testBundleContext);
+            assertNotNull(service);
 
             service.newHazelcastInstance();
 
@@ -403,6 +405,7 @@ public class HazelcastOSGiServiceTest {
             testBundle.start();
 
             HazelcastInternalOSGiService service = getService(testBundleContext);
+            assertNotNull(service);
 
             HazelcastOSGiInstance osgiInstance = service.newHazelcastInstance();
             assertEquals(GroupConfig.DEFAULT_GROUP_NAME, osgiInstance.getConfig().getGroupConfig().getName());
@@ -434,6 +437,7 @@ public class HazelcastOSGiServiceTest {
             testBundle.start();
 
             HazelcastInternalOSGiService service = getService(testBundleContext);
+            assertNotNull(service);
 
             Config config = new Config();
             config.getGroupConfig().setName(GROUP_NAME);
@@ -483,7 +487,7 @@ public class HazelcastOSGiServiceTest {
 
         Set<HazelcastOSGiInstance> allOSGiInstances = service.getAllHazelcastInstances();
         assertEquals(osgiInstances.size(), allOSGiInstances.size());
-        assertTrue(allOSGiInstances.containsAll(osgiInstances));
+        assertContainsAll(allOSGiInstances, osgiInstances);
     }
 
     @Test
@@ -600,16 +604,17 @@ public class HazelcastOSGiServiceTest {
             testBundle.start();
 
             HazelcastInternalOSGiService service = getService(testBundleContext);
+            assertNotNull(service);
 
             testBundle.stop();
             testBundle = null;
 
             try {
                 service.newHazelcastInstance();
-                fail("OSGI service is not active so it is not in operation mode. " +
-                        "It is expected to get `IllegalStateException` here!");
+                fail("OSGI service is not active so it is not in operation mode."
+                        + " It is expected to get `IllegalStateException` here!");
             } catch (IllegalStateException e) {
-                // Since bundle is not active, it is expected to get `IllegalStateException`
+                // since the bundle is not active, it is expected to get `IllegalStateException`
             }
         } finally {
             if (testBundle != null) {
@@ -617,5 +622,4 @@ public class HazelcastOSGiServiceTest {
             }
         }
     }
-
 }

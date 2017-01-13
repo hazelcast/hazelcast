@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_AbstractTest {
     private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<Packet>());
 
+    @Override
     @Before
     public void setup() throws Exception {
         super.setup();
@@ -111,7 +112,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(packetsB.contains(packet));
+                assertContains(packetsB, packet);
             }
         });
     }
@@ -128,7 +129,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertTrue(packetsB.contains(packet));
+                assertContains(packetsB, packet);
             }
         });
         assertNotNull(connManagerA.getConnection(addressB));
@@ -140,8 +141,7 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
 
         boolean result = connManagerA.transmit(packet, new Address(addressA.getHost(), 6701));
 
-        // true is being returned because there is no synchronization on the connection being
-        // established.
+        // true is being returned because there is no synchronization on the connection being established
         assertTrue(result);
     }
 }
