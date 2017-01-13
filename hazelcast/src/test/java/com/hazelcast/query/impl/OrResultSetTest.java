@@ -2,7 +2,13 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -10,10 +16,10 @@ import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
-public class OrResultSetTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class OrResultSetTest extends HazelcastTestSupport {
 
     @Test
     public void size() {
@@ -46,13 +52,13 @@ public class OrResultSetTest {
         indexedResults.add(entries2);
 
         OrResultSet resultSet = new OrResultSet(indexedResults);
-        Set<QueryableEntry> combinedEntries = new HashSet(entries1);
+        Set<QueryableEntry> combinedEntries = new HashSet<QueryableEntry>(entries1);
         combinedEntries.addAll(entries2);
 
         for (QueryableEntry entry : combinedEntries) {
-            assertTrue(resultSet.contains(entry));
+            assertContains(resultSet, entry);
         }
-        assertFalse(resultSet.contains(new DummyEntry()));
+        assertNotContains(resultSet, new DummyEntry());
     }
 
     private Set<QueryableEntry> generateEntries(int count) {

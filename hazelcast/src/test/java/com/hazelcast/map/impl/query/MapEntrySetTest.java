@@ -75,10 +75,6 @@ public class MapEntrySetTest extends HazelcastTestSupport {
         assertResultContains(result, "3", "c");
     }
 
-    private void assertResultContains(Set<Map.Entry<String, String>> result, String key, String value) {
-        assertTrue(result.contains(new SimpleEntry<String, String>(key, value)));
-    }
-
     @Test
     public void whenSelectingSomeEntries() {
         map.put("1", "good1");
@@ -103,10 +99,15 @@ public class MapEntrySetTest extends HazelcastTestSupport {
         assertEquals(serializationService.toData("a"), row.getValue());
     }
 
+    private static void assertResultContains(Set<Map.Entry<String, String>> result, String key, String value) {
+        assertContains(result, new SimpleEntry<String, String>(key, value));
+    }
+
     static class GoodPredicate implements Predicate<String, String> {
         @Override
         public boolean apply(Map.Entry<String, String> mapEntry) {
             return mapEntry.getValue().startsWith("good");
         }
+
     }
 }

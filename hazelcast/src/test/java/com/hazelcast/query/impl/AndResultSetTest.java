@@ -1,6 +1,5 @@
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
@@ -25,19 +24,13 @@ import java.util.Set;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("unchecked")
 public class AndResultSetTest extends HazelcastTestSupport {
 
-
     @Test
-    @SuppressWarnings("unchecked")
     // https://github.com/hazelcast/hazelcast/issues/1501
     public void iteratingOver_noException() {
         Set<QueryableEntry> entries = generateEntries(100000);
@@ -125,7 +118,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         Set<QueryableEntry> entries = generateEntries(100000);
         AndResultSet resultSet = new AndResultSet(entries, null, asList(new FalsePredicate()));
 
-        assertFalse(resultSet.contains(entries.iterator().next()));
+        assertNotContains(resultSet, entries.iterator().next());
     }
 
     @Test
@@ -135,7 +128,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         otherIndexedResults.add(Collections.<QueryableEntry>emptySet());
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
-        assertFalse(resultSet.contains(entries.iterator().next()));
+        assertNotContains(resultSet, entries.iterator().next());
     }
 
     @Test
@@ -145,7 +138,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
         for (QueryableEntry entry : entries) {
-            assertTrue(resultSet.contains(entry));
+            assertContains(resultSet, entry);
         }
     }
 
@@ -159,9 +152,9 @@ public class AndResultSetTest extends HazelcastTestSupport {
         AndResultSet resultSet = new AndResultSet(entries, otherIndexedResults, asList(new TruePredicate()));
 
         Iterator<QueryableEntry> it = entries.iterator();
-        assertTrue(resultSet.contains(it.next()));
+        assertContains(resultSet, it.next());
         while (it.hasNext()) {
-            assertFalse(resultSet.contains(it.next()));
+            assertNotContains(resultSet, it.next());
         }
     }
 
@@ -173,14 +166,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         resultSet.remove(resultSet.iterator().next());
     }
 
-    class FalsePredicate implements Predicate {
-        @Override
-        public boolean apply(Map.Entry mapEntry) {
-            return false;
-        }
-    }
-
-    private Set<QueryableEntry> generateEntries(int count) {
+    private static Set<QueryableEntry> generateEntries(int count) {
         Set<QueryableEntry> result = new HashSet<QueryableEntry>();
         for (int k = 0; k < count; k++) {
             QueryableEntry entry = new DummyEntry();
@@ -189,7 +175,16 @@ public class AndResultSetTest extends HazelcastTestSupport {
         return result;
     }
 
-    private class DummyEntry extends QueryableEntry {
+    private static class FalsePredicate implements Predicate {
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            return false;
+        }
+    }
+
+    private static class DummyEntry extends QueryableEntry {
+
         @Override
         public Object getValue() {
             return null;
