@@ -28,7 +28,6 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
     @Test
     public void test_clientOwnedByMember() {
         HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
@@ -60,7 +59,6 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
                 assertEquals(instanceUuid, clientEngine2.getOwnerUuid(clientUuid));
             }
         });
-
     }
 
     @Test
@@ -88,7 +86,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
         HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        //Make sure client connected to all nodes
+        // make sure client connected to all nodes
         IExecutorService exec = client.getExecutorService("exec");
         exec.submitToAllMembers(new DummySerializableCallable());
         assertTrueEventually(new AssertTask() {
@@ -98,7 +96,6 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
                 assertEquals(1, instance2.getClientService().getConnectedClients().size());
             }
         });
-
 
         instance1.shutdown();
 
@@ -144,7 +141,6 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
                 assertEquals(null, clientEngine2.getOwnerUuid(clientUuid));
             }
         });
-
     }
 
     @Test
@@ -158,7 +154,7 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
 
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
-        //Wait for client to connect to node
+        // wait for client to connect to node
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -178,6 +174,4 @@ public class ClientOwnershipTest extends HazelcastTestSupport {
             }
         });
     }
-
-
 }
