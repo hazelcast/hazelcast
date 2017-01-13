@@ -318,7 +318,7 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertEquals(keySet.size(), 3);
 
         for (Object key : keySet) {
-            assertTrue(totalKeySet.contains(key));
+            assertContains(totalKeySet, key);
         }
 
         Set<Map.Entry> entrySet = getMultiMap(instances, name).entrySet();

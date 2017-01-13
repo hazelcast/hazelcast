@@ -90,7 +90,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
 
         assertEquals(1, map.size());
         assertEquals(2, list.size());
-        assertTrue(list.contains(42));
+        assertContains(list, 42);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class CollectionUtilTest extends HazelcastTestSupport {
 
         List<Integer> list = map.get("nonExistingKey");
         assertEquals(1, list.size());
-        assertTrue(list.contains(42));
+        assertContains(list, 42);
     }
 
     @Test
