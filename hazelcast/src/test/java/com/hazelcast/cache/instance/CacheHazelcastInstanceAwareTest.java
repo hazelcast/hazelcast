@@ -49,17 +49,22 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
-    public static ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP =
-            new ConcurrentHashMap<Long, Boolean>();
+    static ConcurrentMap<Long, Boolean> HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = new ConcurrentHashMap<Long, Boolean>();
 
     private static final String CACHE_NAME = "MyCache";
+
+    @AfterClass
+    public static void destroy() {
+        HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.clear();
+        HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = null;
+    }
 
     protected Config createConfig() {
         return new Config();
     }
 
-    protected CacheConfig createCacheConfig(String cacheName) {
-        return new CacheConfig(cacheName);
+    protected CacheConfig<Integer, Integer> createCacheConfig(String cacheName) {
+        return new CacheConfig<Integer, Integer>(cacheName);
     }
 
     protected CachingProvider createCachingProvider(HazelcastInstance instance) {
@@ -74,7 +79,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     private long generateUniqueHazelcastInjectionId() {
         long id;
-        for (;;) {
+        for (; ; ) {
             id = System.nanoTime();
             if (HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.putIfAbsent(id, false) == null) {
                 break;
@@ -83,19 +88,11 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         return id;
     }
 
-    @AfterClass
-    public static void destroy() {
-        HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.clear();
-        HAZELCAST_INSTANCE_INJECTION_RESULT_MAP = null;
-    }
-
-    //////////////////////////////////////////////////////////////////////////////////
-
     @Test
     public void test_inject_hazelcastInstance_to_cacheLoader_if_itIs_hazelcastInstanceAware() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setCacheLoaderFactory(new HazelcastInstanceAwareCacheLoaderFactory(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
@@ -105,16 +102,16 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.put(1, 1);
 
         assertEquals("Hazelcast instance has not been injected into cache loader factory!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into cache loader!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_cacheWriter_if_itIs_hazelcastInstanceAware() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setCacheWriterFactory(new HazelcastInstanceAwareCacheWriterFactory(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
@@ -124,16 +121,16 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.put(1, 1);
 
         assertEquals("Hazelcast instance has not been injected into cache writer factory!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into cache writer!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_expiryPolicy_if_itIs_hazelcastInstanceAware() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.setExpiryPolicyFactory(new HazelcastInstanceAwareExpiryPolicyFactory(id1, id2));
 
         HazelcastInstance hazelcastInstance = createInstance();
@@ -143,15 +140,15 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.put(1, 1);
 
         assertEquals("Hazelcast instance has not been injected into expiry policy factory!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into expiry policy!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_entryProcessor_if_itIs_hazelcastInstanceAware() {
         long id = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -160,13 +157,13 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.invoke(1, new HazelcastInstanceAwareEntryProcessor(id));
 
         assertEquals("Hazelcast instance has not been injected into entry processor!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_completionListener_if_itIs_hazelcastInstanceAware() {
         final long id = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -175,18 +172,18 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.loadAll(new HashSet<Integer>(), false, new HazelcastInstanceAwareCompletionListener(id));
 
         assertEqualsEventually(new Callable<Boolean>() {
-                                   @Override
-                                   public Boolean call() throws Exception {
-                                       return HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id);
-                                   }
-                               }, Boolean.TRUE);
+            @Override
+            public Boolean call() throws Exception {
+                return HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id);
+            }
+        }, Boolean.TRUE);
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_entryListener_if_itIs_hazelcastInstanceAware() {
         long id1 = generateUniqueHazelcastInjectionId();
         long id2 = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
         cacheConfig.addCacheEntryListenerConfiguration(
                 new HazelcastInstanceAwareCacheEntryListenerConfiguration(id1, id2));
 
@@ -195,15 +192,15 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cacheManager.createCache(CACHE_NAME, cacheConfig);
 
         assertEquals("Hazelcast instance has not been injected into entry listener factory!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id1));
         assertEquals("Hazelcast instance has not been injected into entry listener!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id2));
     }
 
     @Test
     public void test_inject_hazelcastInstance_to_partitionLostListener_if_itIs_hazelcastInstanceAware() {
         long id = generateUniqueHazelcastInjectionId();
-        CacheConfig cacheConfig = createCacheConfig(CACHE_NAME);
+        CacheConfig<Integer, Integer> cacheConfig = createCacheConfig(CACHE_NAME);
 
         HazelcastInstance hazelcastInstance = createInstance();
         CacheManager cacheManager = createCachingProvider(hazelcastInstance).getCacheManager();
@@ -212,10 +209,8 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         cache.addPartitionLostListener(new HazelcastInstanceAwareCachePartitionLostListener(id));
 
         assertEquals("Hazelcast instance has not been injected into partition lost listener!",
-                     Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
+                Boolean.TRUE, HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.get(id));
     }
-
-    //////////////////////////////////////////////////////////////////////////////////
 
     public static class HazelcastInstanceAwareCacheLoaderFactory
             implements Factory<CacheLoader<Integer, Integer>>, HazelcastInstanceAware {
@@ -223,7 +218,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         private final long id1;
         private final long id2;
 
-        public HazelcastInstanceAwareCacheLoaderFactory(long id1, long id2) {
+        HazelcastInstanceAwareCacheLoaderFactory(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
@@ -239,12 +234,11 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareCacheLoader
-            implements CacheLoader<Integer, Integer>, HazelcastInstanceAware {
+    public static class HazelcastInstanceAwareCacheLoader implements CacheLoader<Integer, Integer>, HazelcastInstanceAware {
 
         private final long id2;
 
-        public HazelcastInstanceAwareCacheLoader(long id2) {
+        HazelcastInstanceAwareCacheLoader(long id2) {
             this.id2 = id2;
         }
 
@@ -266,15 +260,13 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
-
     public static class HazelcastInstanceAwareCacheWriterFactory
             implements Factory<CacheWriter<Integer, Integer>>, HazelcastInstanceAware {
 
         private final long id1;
         private final long id2;
 
-        public HazelcastInstanceAwareCacheWriterFactory(long id1, long id2) {
+        HazelcastInstanceAwareCacheWriterFactory(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
@@ -290,12 +282,11 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareCacheWriter
-            implements CacheWriter<Integer, Integer>, HazelcastInstanceAware {
+    public static class HazelcastInstanceAwareCacheWriter implements CacheWriter<Integer, Integer>, HazelcastInstanceAware {
 
         private final long id2;
 
-        public HazelcastInstanceAwareCacheWriter(long id2) {
+        HazelcastInstanceAwareCacheWriter(long id2) {
             this.id2 = id2;
         }
 
@@ -324,15 +315,12 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
 
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
-
-    public static class HazelcastInstanceAwareExpiryPolicyFactory
-            implements Factory<ExpiryPolicy>, HazelcastInstanceAware {
+    public static class HazelcastInstanceAwareExpiryPolicyFactory implements Factory<ExpiryPolicy>, HazelcastInstanceAware {
 
         private final long id1;
         private final long id2;
 
-        public HazelcastInstanceAwareExpiryPolicyFactory(long id1, long id2) {
+        HazelcastInstanceAwareExpiryPolicyFactory(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
@@ -348,12 +336,11 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareExpiryPolicy
-            implements ExpiryPolicy, HazelcastInstanceAware {
+    public static class HazelcastInstanceAwareExpiryPolicy implements ExpiryPolicy, HazelcastInstanceAware {
 
         private final long id2;
 
-        public HazelcastInstanceAwareExpiryPolicy(long id2) {
+        HazelcastInstanceAwareExpiryPolicy(long id2) {
             this.id2 = id2;
         }
 
@@ -376,17 +363,14 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         public Duration getExpiryForUpdate() {
             return Duration.ETERNAL;
         }
-
     }
-
-    //////////////////////////////////////////////////////////////////////////////////
 
     public static class HazelcastInstanceAwareEntryProcessor
             implements EntryProcessor<Integer, Integer, Integer>, HazelcastInstanceAware, Serializable {
 
         private final long id;
 
-        public HazelcastInstanceAwareEntryProcessor(long id) {
+        HazelcastInstanceAwareEntryProcessor(long id) {
             this.id = id;
         }
 
@@ -400,17 +384,13 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
                 throws EntryProcessorException {
             return null;
         }
-
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
-
-    public static class HazelcastInstanceAwareCompletionListener
-            implements CompletionListener, HazelcastInstanceAware {
+    public static class HazelcastInstanceAwareCompletionListener implements CompletionListener, HazelcastInstanceAware {
 
         private final long id;
 
-        public HazelcastInstanceAwareCompletionListener(long id) {
+        HazelcastInstanceAwareCompletionListener(long id) {
             this.id = id;
         }
 
@@ -426,24 +406,21 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         @Override
         public void onException(Exception e) {
         }
-
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
-
     public static class HazelcastInstanceAwareCacheEntryListenerConfiguration
-            implements CacheEntryListenerConfiguration {
+            implements CacheEntryListenerConfiguration<Integer, Integer> {
 
         private final long id1;
         private final long id2;
 
-        public HazelcastInstanceAwareCacheEntryListenerConfiguration(long id1, long id2) {
+        HazelcastInstanceAwareCacheEntryListenerConfiguration(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
-        public Factory<CacheEntryListener> getCacheEntryListenerFactory() {
+        public Factory<CacheEntryListener<? super Integer, ? super Integer>> getCacheEntryListenerFactory() {
             return new HazelcastInstanceAwareCacheEntryListenerFactory(id1, id2);
         }
 
@@ -453,7 +430,7 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Factory<CacheEntryEventFilter> getCacheEntryEventFilterFactory() {
+        public Factory<CacheEntryEventFilter<? super Integer, ? super Integer>> getCacheEntryEventFilterFactory() {
             return null;
         }
 
@@ -464,18 +441,18 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
     }
 
     public static class HazelcastInstanceAwareCacheEntryListenerFactory
-            implements Factory<CacheEntryListener>, HazelcastInstanceAware, Serializable {
+            implements Factory<CacheEntryListener<? super Integer, ? super Integer>>, HazelcastInstanceAware, Serializable {
 
         private final long id1;
         private final long id2;
 
-        public HazelcastInstanceAwareCacheEntryListenerFactory(long id1, long id2) {
+        HazelcastInstanceAwareCacheEntryListenerFactory(long id1, long id2) {
             this.id1 = id1;
             this.id2 = id2;
         }
 
         @Override
-        public CacheEntryListener create() {
+        public CacheEntryListener<? super Integer, ? super Integer> create() {
             return new HazelcastInstanceAwareCacheEntryListener(id2);
         }
 
@@ -483,15 +460,14 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id1, true);
         }
-
     }
 
     public static class HazelcastInstanceAwareCacheEntryListener
-            implements CacheEntryListener, HazelcastInstanceAware, Serializable {
+            implements CacheEntryListener<Integer, Integer>, HazelcastInstanceAware, Serializable {
 
         private final long id2;
 
-        public HazelcastInstanceAwareCacheEntryListener(long id2) {
+        HazelcastInstanceAwareCacheEntryListener(long id2) {
             this.id2 = id2;
         }
 
@@ -499,17 +475,14 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             HAZELCAST_INSTANCE_INJECTION_RESULT_MAP.put(id2, true);
         }
-
     }
-
-    //////////////////////////////////////////////////////////////////////////////////
 
     public static class HazelcastInstanceAwareCachePartitionLostListener
             implements CachePartitionLostListener, HazelcastInstanceAware, Serializable {
 
         private final long id;
 
-        public HazelcastInstanceAwareCachePartitionLostListener(long id) {
+        HazelcastInstanceAwareCachePartitionLostListener(long id) {
             this.id = id;
         }
 
@@ -521,7 +494,5 @@ public class CacheHazelcastInstanceAwareTest extends HazelcastTestSupport {
         @Override
         public void partitionLost(CachePartitionLostEvent event) {
         }
-
     }
-
 }
