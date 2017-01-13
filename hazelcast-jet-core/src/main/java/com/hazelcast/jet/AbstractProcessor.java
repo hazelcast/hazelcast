@@ -47,6 +47,7 @@ import java.util.function.Function;
 public abstract class AbstractProcessor implements Processor {
 
     private Outbox outbox;
+    private Object pendingItem;
 
     @Override
     public void init(@Nonnull Outbox outbox) {
@@ -84,7 +85,7 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Returns the outbox received in the {@code init()} method call.
      */
-    protected Outbox getOutbox() {
+    protected final Outbox getOutbox() {
         return outbox;
     }
 
@@ -116,16 +117,21 @@ public abstract class AbstractProcessor implements Processor {
      * @return whether the traverser has been exhausted
      */
     protected boolean emitCooperatively(int ordinal, Traverser<?> traverser) {
-        while (true) {
-            if (getOutbox().isHighWater(ordinal)) {
+        Object item;
+        if (pendingItem != null) {
+            item = pendingItem;
+            pendingItem = null;
+        } else {
+            item = traverser.next();
+        }
+        for (; item != null; item = traverser.next()) {
+            if (outbox.isHighWater(ordinal)) {
+                pendingItem = item;
                 return false;
-            }
-            final Object item = traverser.next();
-            if (item == null) {
-                return true;
             }
             emit(ordinal, item);
         }
+        return true;
     }
 
     /**
