@@ -428,8 +428,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         Set<Integer> values2 = new HashSet<Integer>(map2.values());
 
         for (SimpleEntry<Integer, Integer> e : testValues) {
-            assertTrue(values1.contains(e.getValue()));
-            assertTrue(values2.contains(e.getValue()));
+            assertContains(values1, e.getValue());
+            assertContains(values2, e.getValue());
         }
     }
 
@@ -463,8 +463,8 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         Set<Integer> keys2 = new HashSet<Integer>(map2.keySet());
 
         for (SimpleEntry<Integer, Integer> e : testValues) {
-            assertTrue(keys1.contains(e.getKey()));
-            assertTrue(keys2.contains(e.getKey()));
+            assertContains(keys1, e.getKey());
+            assertContains(keys2, e.getKey());
         }
     }
 
@@ -646,18 +646,22 @@ public class ClientReplicatedMapTest extends HazelcastTestSupport {
         SamplePortable() {
         }
 
+        @Override
         public int getFactoryId() {
             return 5;
         }
 
+        @Override
         public int getClassId() {
             return 6;
         }
 
+        @Override
         public void writePortable(PortableWriter writer) throws IOException {
             writer.writeInt("a", a);
         }
 
+        @Override
         public void readPortable(PortableReader reader) throws IOException {
             a = reader.readInt("a");
         }

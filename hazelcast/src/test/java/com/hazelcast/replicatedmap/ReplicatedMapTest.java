@@ -811,11 +811,11 @@ public class ReplicatedMapTest extends ReplicatedMapAbstractTest {
                 assertEquals(keys.size(), entrySet2.size());
 
                 for (Entry<String, String> e : entrySet1) {
-                    assertTrue(keys.contains(e.getKey()));
+                    assertContains(keys, e.getKey());
                 }
 
                 for (Entry<String, String> e : entrySet2) {
-                    assertTrue(keys.contains(e.getKey()));
+                    assertContains(keys, e.getKey());
                 }
             }
         });
