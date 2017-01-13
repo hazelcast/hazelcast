@@ -16,19 +16,29 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PARTIAL_GET;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class PartialGetCommand extends GetCommand {
+/**
+ * Value object for (mapName, key) pair
+ */
+public final class MapNameAndKeyPair {
+    private final String mapName;
+    private final String key;
 
-    public PartialGetCommand(String key) {
-        super(PARTIAL_GET, key);
+    public MapNameAndKeyPair(String mapName, String key) {
+        checkNotNull(mapName);
+        checkNotNull(key);
+
+        this.mapName = mapName;
+        this.key = key;
     }
 
-    @Override
-    public String toString() {
-        return "PartialGetCommand{"
-                + "key='"
-                + key + '\''
-                + '}';
+    public String getMapName() {
+        return mapName;
     }
+
+    public String getKey() {
+        return key;
+    }
+
 }
