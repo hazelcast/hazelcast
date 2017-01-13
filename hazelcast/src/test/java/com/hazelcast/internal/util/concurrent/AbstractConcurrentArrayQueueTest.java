@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.util.concurrent;
 
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.util.function.Consumer;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-public abstract class AbstractConcurrentArrayQueueTest {
+public abstract class AbstractConcurrentArrayQueueTest extends HazelcastTestSupport {
 
     // must be a power of two to work
     static final int CAPACITY = 1 << 2;
@@ -117,17 +118,17 @@ public abstract class AbstractConcurrentArrayQueueTest {
     public void testContains_whenContains() {
         queue.offer(23);
 
-        assertTrue(queue.contains(23));
+        assertContains(queue, 23);
     }
 
     @Test
     public void testContains_whenNotContains() {
-        assertFalse(queue.contains(42));
+        assertNotContains(queue, 42);
     }
 
     @Test
     public void testContains_whenNull() {
-        assertFalse(queue.contains(null));
+        assertNotContains(queue, null);
     }
 
     @Test
@@ -137,7 +138,7 @@ public abstract class AbstractConcurrentArrayQueueTest {
         queue.offer(42);
         queue.offer(95);
 
-        assertTrue(queue.containsAll(asList(23, 42)));
+        assertContainsAll(queue, asList(23, 42));
     }
 
     @Test
@@ -145,7 +146,7 @@ public abstract class AbstractConcurrentArrayQueueTest {
         queue.offer(1);
         queue.offer(95);
 
-        assertFalse(queue.containsAll(asList(23, 42)));
+        assertNotContainsAll(queue, asList(23, 42));
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -173,8 +174,8 @@ public abstract class AbstractConcurrentArrayQueueTest {
         queue.addAll(asList(23, 42));
 
         assertEquals(2, queue.size());
-        assertTrue(queue.contains(23));
-        assertTrue(queue.contains(42));
+        assertContains(queue, 23);
+        assertContains(queue, 42);
     }
 
     @Test(expected = IllegalStateException.class)

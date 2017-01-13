@@ -73,7 +73,7 @@ public abstract class NearCacheManagerTestSupport extends CommonNearCacheTestSup
         assertEquals(DEFAULT_NEAR_CACHE_COUNT, nearCaches2.size());
 
         for (NearCache nearCache : nearCaches2) {
-            assertTrue(nearCacheNames.contains(nearCache.getName()));
+            assertContains(nearCacheNames, nearCache.getName());
         }
     }
 

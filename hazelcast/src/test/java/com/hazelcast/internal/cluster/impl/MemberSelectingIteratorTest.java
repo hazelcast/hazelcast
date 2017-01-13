@@ -4,6 +4,7 @@ import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.version.MemberVersion;
@@ -23,11 +24,10 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MemberSelectingIteratorTest {
+public class MemberSelectingIteratorTest extends HazelcastTestSupport {
 
     private MemberImpl thisMember;
 
@@ -67,9 +67,9 @@ public class MemberSelectingIteratorTest {
         }
 
         assertEquals(3, filteredMembers.size());
-        assertTrue(filteredMembers.contains(thisMember));
-        assertTrue(filteredMembers.contains(matchingMember));
-        assertTrue(filteredMembers.contains(matchingMember2));
+        assertContains(filteredMembers, thisMember);
+        assertContains(filteredMembers, matchingMember);
+        assertContains(filteredMembers, matchingMember2);
     }
 
     @Test
@@ -84,8 +84,8 @@ public class MemberSelectingIteratorTest {
         }
 
         assertEquals(2, filteredMembers.size());
-        assertTrue(filteredMembers.contains(matchingMember));
-        assertTrue(filteredMembers.contains(matchingMember2));
+        assertContains(filteredMembers, matchingMember);
+        assertContains(filteredMembers, matchingMember2);
     }
 
     @Test
@@ -99,7 +99,7 @@ public class MemberSelectingIteratorTest {
         }
 
         assertEquals(1, filteredMembers.size());
-        assertTrue(filteredMembers.contains(nonMatchingMember));
+        assertContains(filteredMembers, nonMatchingMember);
     }
 
     @Test
@@ -114,7 +114,7 @@ public class MemberSelectingIteratorTest {
         }
 
         assertEquals(1, filteredMembers.size());
-        assertTrue(filteredMembers.contains(nonMatchingMember));
+        assertContains(filteredMembers, nonMatchingMember);
     }
 
     @Test
@@ -141,5 +141,4 @@ public class MemberSelectingIteratorTest {
 
         iterator.next();
     }
-
 }
