@@ -44,9 +44,12 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.in;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -207,6 +210,27 @@ public class ClientMapStandaloneTest {
 
         Collection values = map.values(Predicates.lessThan("date", new Date().getTime()));
         assertEquals(values.iterator().next(), element);
+    }
+
+    @Test
+    public void testRemoveAllWithPredicate_DoesNotDeserializeValues() {
+        IMap<Integer, MyPortableElement> map = createMap();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, new MyPortableElement(i));
+        }
+
+        Predicate predicate = in("id", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+        map.removeAll(predicate);
+
+        for (int i = 0; i < 10; i++) {
+            MyPortableElement entry = map.get(i);
+            assertNull(entry);
+        }
+
+        for (int i = 10; i < 100; i++) {
+            MyPortableElement entry = map.get(i);
+            assertNotNull(entry);
+        }
     }
 
 }
