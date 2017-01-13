@@ -16,8 +16,8 @@ import org.junit.Test;
 import java.io.File;
 import java.util.Random;
 
+import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.test.TestStringUtils.fileAsText;
-import static org.junit.Assert.assertTrue;
 
 public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestSupport {
 
@@ -39,7 +39,7 @@ public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestS
     @After
     public void after(){
         File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
-        file.delete();
+        deleteQuietly(file);
     }
 
     @Test
@@ -53,7 +53,7 @@ public class StoreLatencyPlugin_RingbufferIntegrationTest extends HazelcastTestS
             public void run() throws Exception {
                 File file = getNodeEngineImpl(hz).getDiagnostics().currentFile();
                 String content = fileAsText(file);
-                assertTrue(content.contains("ringworm"));
+                assertContains(content, "ringworm");
             }
         });
     }
