@@ -39,11 +39,11 @@ import static org.junit.Assert.assertNotNull;
 public class MapStatisticsAwareServiceTest extends HazelcastTestSupport {
 
     @Test
-    public void getStats() {
+    public void getStats_whenMapHasData() {
         HazelcastInstance hz = createHazelcastInstance();
         warmUpPartitions(hz);
         // when one map exists
-        hz.getMap("map");
+        hz.getMap("map").put(1, 1);
         MapService mapService = getNodeEngineImpl(hz).getService(MapService.SERVICE_NAME);
         Map<String, LocalMapStats> mapStats = mapService.getStats();
 
