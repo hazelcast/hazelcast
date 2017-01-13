@@ -17,6 +17,7 @@
 package com.hazelcast.durableexecutor;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.BusinessException;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
@@ -24,7 +25,7 @@ import com.hazelcast.spi.annotation.Beta;
  * result of the task is overwritten. This means the task is executed but the result isn't available anymore
  */
 @Beta
-public class StaleTaskIdException extends HazelcastException {
+public class StaleTaskIdException extends HazelcastException implements BusinessException {
 
     public StaleTaskIdException(String message) {
         super(message);

@@ -486,7 +486,9 @@ public abstract class Operation implements DataSerializable {
      */
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
-        if (e instanceof RetryableException) {
+        if (e instanceof BusinessException) {
+            logger.finest(e.getMessage(), e);
+        } else if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
