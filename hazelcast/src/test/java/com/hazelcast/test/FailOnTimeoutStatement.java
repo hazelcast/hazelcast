@@ -11,11 +11,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class FailOnTimeoutStatement extends Statement {
+
     private final Statement originalStatement;
     private final TimeUnit timeUnit;
     private String name;
     private final long timeout;
-
 
     /**
      * Creates an instance wrapping the given statement with the given timeout in milliseconds.
@@ -30,7 +30,6 @@ public class FailOnTimeoutStatement extends Statement {
         this.timeUnit = TimeUnit.MILLISECONDS;
         this.originalStatement = statement;
     }
-
 
     @Override
     public void evaluate() throws Throwable {
@@ -80,8 +79,10 @@ public class FailOnTimeoutStatement extends Statement {
     }
 
     private class CallableStatement implements Callable<Throwable> {
+
         private final CountDownLatch startLatch = new CountDownLatch(1);
 
+        @Override
         public Throwable call() throws Exception {
             try {
                 startLatch.countDown();
@@ -94,7 +95,7 @@ public class FailOnTimeoutStatement extends Statement {
             return null;
         }
 
-        public void awaitStarted() throws InterruptedException {
+        void awaitStarted() throws InterruptedException {
             startLatch.await();
         }
     }
