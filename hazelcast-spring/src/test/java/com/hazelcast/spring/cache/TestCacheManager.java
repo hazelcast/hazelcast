@@ -39,16 +39,14 @@ import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"cacheManager-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestCacheManager {
+public class TestCacheManager extends HazelcastTestSupport {
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -123,7 +121,7 @@ public class TestCacheManager {
         HazelcastTestSupport.assertOpenEventually(distributionSignal);
 
         Collection<String> test = cacheManager.getCacheNames();
-        assertTrue(test.contains(testMap));
+        assertContains(test, testMap);
         testInstance.shutdown();
     }
 
