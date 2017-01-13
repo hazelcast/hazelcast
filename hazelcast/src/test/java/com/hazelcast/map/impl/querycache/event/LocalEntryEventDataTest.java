@@ -14,7 +14,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -141,7 +140,7 @@ public class LocalEntryEventDataTest extends HazelcastTestSupport {
 
     @Test
     public void testToString() {
-        assertTrue(dataEvent.toString().contains("LocalEntryEventData"));
+        assertContains(dataEvent.toString(), "LocalEntryEventData");
     }
 
     private Data toData(Object obj) {
