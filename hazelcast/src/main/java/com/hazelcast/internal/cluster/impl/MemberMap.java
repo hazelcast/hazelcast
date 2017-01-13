@@ -40,7 +40,7 @@ final class MemberMap {
     private final Map<String, MemberImpl> uuidToMemberMap;
     private final Set<MemberImpl> members;
 
-    private MemberMap(Map<Address, MemberImpl> addressMap, Map<String, MemberImpl> uuidMap) {
+    MemberMap(Map<Address, MemberImpl> addressMap, Map<String, MemberImpl> uuidMap) {
         assert new HashSet<MemberImpl>(addressMap.values()).equals(new HashSet<MemberImpl>(uuidMap.values()))
                 : "Maps are different! AddressMap: " + addressMap + ", UuidMap: " + uuidMap;
 
@@ -51,6 +51,7 @@ final class MemberMap {
 
     /**
      * Creates an empty {@code MemberMap}.
+     *
      * @return empty {@code MemberMap}
      */
     static MemberMap empty() {
@@ -59,6 +60,7 @@ final class MemberMap {
 
     /**
      * Creates a singleton {@code MemberMap} including only specified member.
+     *
      * @param member sole member in map
      * @return singleton {@code MemberMap}
      */
@@ -68,6 +70,7 @@ final class MemberMap {
 
     /**
      * Creates a new {@code MemberMap} including given members.
+     *
      * @param members members
      * @return a new {@code MemberMap}
      */
@@ -86,7 +89,8 @@ final class MemberMap {
      * Creates clone of source {@code MemberMap}, excluding given members.
      * If source is empty, same map instance will be returned. If excluded members are empty or not present in
      * source, a new map will be created containing the same members with source.
-     * @param source source map
+     *
+     * @param source         source map
      * @param excludeMembers members to exclude
      * @return clone map
      */
@@ -115,7 +119,8 @@ final class MemberMap {
 
     /**
      * Creates clone of source {@code MemberMap} additionally including new members.
-     * @param source source map
+     *
+     * @param source     source map
      * @param newMembers new members to add
      * @return clone map
      */
@@ -131,7 +136,7 @@ final class MemberMap {
     }
 
     private static void putMember(Map<Address, MemberImpl> addressMap,
-            Map<String, MemberImpl> uuidMap, MemberImpl member) {
+                                  Map<String, MemberImpl> uuidMap, MemberImpl member) {
 
         MemberImpl current = addressMap.put(member.getAddress(), member);
         if (current != null) {
