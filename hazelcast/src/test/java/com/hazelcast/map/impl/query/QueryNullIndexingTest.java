@@ -31,11 +31,10 @@ import org.junit.runner.RunWith;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -45,70 +44,70 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
     public void testIndexedNullValueOnUnorderedIndexStoreWithLessPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(false, Predicates.lessThan("date", 5000000L));
         assertEquals(2, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(2000000L, 4000000L)));
+        assertContainsAll(dates, asList(2000000L, 4000000L));
     }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithLessEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(false, Predicates.lessEqual("date", 5000000L));
         assertEquals(2, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(2000000L, 4000000L)));
+        assertContainsAll(dates, asList(2000000L, 4000000L));
     }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithGreaterPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(false, Predicates.greaterThan("date", 5000000L));
         assertEquals(3, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(6000000L, 8000000L, 10000000L)));
+        assertContainsAll(dates, asList(6000000L, 8000000L, 10000000L));
     }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithGreaterEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(false, Predicates.greaterEqual("date", 6000000L));
         assertEquals(3, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(6000000L, 8000000L, 10000000L)));
+        assertContainsAll(dates, asList(6000000L, 8000000L, 10000000L));
     }
 
     @Test
     public void testIndexedNullValueOnUnorderedIndexStoreWithNotEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(false, Predicates.notEqual("date", 2000000L));
         assertEquals(9, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L, null)));
+        assertContainsAll(dates, asList(4000000L, 6000000L, 8000000L, 10000000L, null));
     }
 
     @Test
     public void testIndexedNullValueOnOrderedIndexStoreWithLessPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(true, Predicates.lessThan("date", 5000000L));
         assertEquals(2, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(2000000L, 4000000L)));
+        assertContainsAll(dates, asList(2000000L, 4000000L));
     }
 
     @Test
     public void testIndexedNullValueOnOrderedIndexStoreWithLessEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(true, Predicates.lessEqual("date", 5000000L));
         assertEquals(2, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(2000000L, 4000000L)));
+        assertContainsAll(dates, asList(2000000L, 4000000L));
     }
 
     @Test
     public void testIndexedNullValueOnOrderedIndexStoreWithGreaterPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(true, Predicates.greaterThan("date", 5000000L));
         assertEquals(3, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(6000000L, 8000000L, 10000000L)));
+        assertContainsAll(dates, asList(6000000L, 8000000L, 10000000L));
     }
 
     @Test
     public void testIndexedNullValueOnOrderedIndexStoreWithGreaterEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(true, Predicates.greaterEqual("date", 6000000L));
         assertEquals(3, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(6000000L, 8000000L, 10000000L)));
+        assertContainsAll(dates, asList(6000000L, 8000000L, 10000000L));
     }
 
     @Test
     public void testIndexedNullValueOnOrderedIndexStoreWithNotEqualPredicate() {
         List<Long> dates = queryIndexedDateFieldAsNullValue(true, Predicates.notEqual("date", 2000000L));
         assertEquals(9, dates.size());
-        assertTrue(dates.containsAll(Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L, null)));
+        assertContainsAll(dates, asList(4000000L, 6000000L, 8000000L, 10000000L, null));
     }
 
     private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {

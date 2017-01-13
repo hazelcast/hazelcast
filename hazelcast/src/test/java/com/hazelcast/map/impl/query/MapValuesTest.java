@@ -59,9 +59,9 @@ public class MapValuesTest extends HazelcastTestSupport {
         Collection<String> result = map.values();
 
         assertEquals(3, result.size());
-        assertTrue(result.contains("a"));
-        assertTrue(result.contains("b"));
-        assertTrue(result.contains("c"));
+        assertContains(result, "a");
+        assertContains(result, "b");
+        assertContains(result, "c");
     }
 
     @Test
@@ -73,9 +73,9 @@ public class MapValuesTest extends HazelcastTestSupport {
         Collection<String> result = map.values(TruePredicate.INSTANCE);
 
         assertEquals(3, result.size());
-        assertTrue(result.contains("a"));
-        assertTrue(result.contains("b"));
-        assertTrue(result.contains("c"));
+        assertContains(result, "a");
+        assertContains(result, "b");
+        assertContains(result, "c");
     }
 
     @Test
@@ -87,8 +87,8 @@ public class MapValuesTest extends HazelcastTestSupport {
         Collection<String> result = map.values(new GoodPredicate());
 
         assertEquals(2, result.size());
-        assertTrue(result.contains("good1"));
-        assertTrue(result.contains("good2"));
+        assertContains(result, "good1");
+        assertContains(result, "good2");
     }
 
     @Test
