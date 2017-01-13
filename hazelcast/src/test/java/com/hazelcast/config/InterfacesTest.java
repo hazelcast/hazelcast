@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -32,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InterfacesTest {
+public class InterfacesTest extends HazelcastTestSupport {
 
     final String interfaceA = "127.0.0.1";
     final String interfaceB = "127.0.0.2";
@@ -53,7 +54,7 @@ public class InterfacesTest {
     @Test
     public void testAddInterface() {
         InterfacesConfig interfaces = new InterfacesConfig().addInterface(interfaceA);
-        assertTrue(interfaces.getInterfaces().contains(interfaceA));
+        assertContains(interfaces.getInterfaces(), interfaceA);
     }
 
     @Test
@@ -80,9 +81,9 @@ public class InterfacesTest {
         interfaceList.add(interfaceB);
         interfaceList.add(interfaceC);
         InterfacesConfig interfaces = new InterfacesConfig().setInterfaces(interfaceList);
-        assertTrue(interfaces.getInterfaces().contains(interfaceA));
-        assertTrue(interfaces.getInterfaces().contains(interfaceB));
-        assertTrue(interfaces.getInterfaces().contains(interfaceC));
+        assertContains(interfaces.getInterfaces(), interfaceA);
+        assertContains(interfaces.getInterfaces(), interfaceB);
+        assertContains(interfaces.getInterfaces(), interfaceC);
     }
 
     @Test

@@ -89,6 +89,6 @@ public class QueryCacheConfigTest extends HazelcastTestSupport {
         QueryCacheConfig config = new QueryCacheConfig();
 
         assertNotNull(config.toString());
-        assertTrue(config.toString().contains("QueryCacheConfig"));
+        assertContains(config.toString(), "QueryCacheConfig");
     }
 }

@@ -1,6 +1,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -19,20 +20,17 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * Test MapStoreConfig
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MapStoreConfigTest {
+public class MapStoreConfigTest extends HazelcastTestSupport {
 
     MapStoreConfig defaultCfg = new MapStoreConfig();
     MapStoreConfig cfgNotEnabled = new MapStoreConfig().setEnabled(false);
     MapStoreConfig cfgNotWriteCoalescing = new MapStoreConfig().setWriteCoalescing(false);
     MapStoreConfig cfgNonDefaultWriteDelaySeconds = new MapStoreConfig()
-            .setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS+1);
+            .setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS + 1);
     MapStoreConfig cfgNonDefaultWriteBatchSize = new MapStoreConfig()
-            .setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE+1);
+            .setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE + 1);
     MapStoreConfig cfgNonNullClassName = new MapStoreConfig().setClassName("some.class");
     MapStoreConfig cfgNonNullOtherClassName = new MapStoreConfig().setClassName("some.class.other");
     MapStoreConfig cfgNonNullFactoryClassName = new MapStoreConfig().setFactoryClassName("factoryClassName");
@@ -41,7 +39,7 @@ public class MapStoreConfigTest {
     MapStoreConfig cfgNonNullOtherImplementation = new MapStoreConfig().setImplementation(new Object());
     MapStoreConfig cfgNonNullFactoryImplementation = new MapStoreConfig().setFactoryImplementation(new Object());
     MapStoreConfig cfgNonNullOtherFactoryImplementation = new MapStoreConfig().setFactoryImplementation(new Object());
-    MapStoreConfig cfgWithProperties = new MapStoreConfig().setProperty("a","b");
+    MapStoreConfig cfgWithProperties = new MapStoreConfig().setProperty("a", "b");
     MapStoreConfig cfgEagerMode = new MapStoreConfig().setInitialLoadMode(EAGER);
     MapStoreConfig cfgNullMode = new MapStoreConfig().setInitialLoadMode(null);
 
@@ -83,8 +81,8 @@ public class MapStoreConfigTest {
 
     @Test
     public void setWriteDelaySeconds() {
-        assertEquals(DEFAULT_WRITE_DELAY_SECONDS+1, cfgNonDefaultWriteDelaySeconds.getWriteDelaySeconds());
-        assertEquals(new MapStoreConfig().setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS+1), cfgNonDefaultWriteDelaySeconds);
+        assertEquals(DEFAULT_WRITE_DELAY_SECONDS + 1, cfgNonDefaultWriteDelaySeconds.getWriteDelaySeconds());
+        assertEquals(new MapStoreConfig().setWriteDelaySeconds(DEFAULT_WRITE_DELAY_SECONDS + 1), cfgNonDefaultWriteDelaySeconds);
     }
 
     @Test
@@ -94,8 +92,8 @@ public class MapStoreConfigTest {
 
     @Test
     public void setWriteBatchSize() {
-        assertEquals(DEFAULT_WRITE_BATCH_SIZE+1, cfgNonDefaultWriteBatchSize.getWriteBatchSize());
-        assertEquals(new MapStoreConfig().setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE+1), cfgNonDefaultWriteBatchSize);
+        assertEquals(DEFAULT_WRITE_BATCH_SIZE + 1, cfgNonDefaultWriteBatchSize.getWriteBatchSize());
+        assertEquals(new MapStoreConfig().setWriteBatchSize(DEFAULT_WRITE_BATCH_SIZE + 1), cfgNonDefaultWriteBatchSize);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -260,7 +258,6 @@ public class MapStoreConfigTest {
 
     @Test
     public void testToString() {
-        String toString = defaultCfg.toString();
-        assertTrue(toString.contains("MapStoreConfig"));
+        assertContains(defaultCfg.toString(), "MapStoreConfig");
     }
 }
