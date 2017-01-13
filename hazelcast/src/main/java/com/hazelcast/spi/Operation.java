@@ -25,7 +25,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.properties.GroupProperty;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -486,7 +486,9 @@ public abstract class Operation implements DataSerializable {
      */
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
-        if (e instanceof RetryableException) {
+        if (e instanceof SilentException) {
+            logger.finest(e.getMessage(), e);
+        } else if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getClass().getName() + ": " + e.getMessage());
@@ -497,8 +499,6 @@ public abstract class Operation implements DataSerializable {
             } catch (Throwable ignored) {
                 ignore(ignored);
             }
-        } else if (e instanceof QuorumException) {
-            logger.log(Level.WARNING, e.getMessage());
         } else {
             final Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
             if (logger.isLoggable(level)) {
