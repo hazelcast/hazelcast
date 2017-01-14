@@ -113,7 +113,7 @@
                                 </xs:attribute>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="cardinality-estimator-service">
+                        <xs:element name="cardinality-estimator" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:all>
                                     <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
