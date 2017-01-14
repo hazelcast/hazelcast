@@ -106,6 +106,9 @@ public class Config {
 
     private final Map<String, RingbufferConfig> ringbufferConfigs = new ConcurrentHashMap<String, RingbufferConfig>();
 
+    private final Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs =
+            new ConcurrentHashMap<String, CardinalityEstimatorConfig>();
+
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
@@ -783,6 +786,15 @@ public class Config {
         }
         return getScheduledExecutorConfig("default").getAsReadOnly();
     }
+
+    public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
+        String baseName = getBaseName(name);
+        CardinalityEstimatorConfig config = lookupByPattern(cardinalityEstimatorConfigs, baseName);
+        if (config != null) {
+            return config.getAsReadOnly();
+        }
+        return getCardinalityEstimatorConfig("default").getAsReadOnly();
+    }
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -856,6 +868,30 @@ public class Config {
     }
 
     /**
+     * Returns the CardinalityEstimatorConfig for the given name
+     *
+     * @param name name of the cardinality estimator config
+     * @return CardinalityEstimatorConfig
+     */
+    public CardinalityEstimatorConfig getCardinalityEstimatorConfig(String name) {
+        String baseName = getBaseName(name);
+        CardinalityEstimatorConfig config = lookupByPattern(cardinalityEstimatorConfigs, baseName);
+        if (config != null) {
+            return config;
+        }
+        CardinalityEstimatorConfig defConfig = cardinalityEstimatorConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new CardinalityEstimatorConfig();
+            defConfig.setName("default");
+            addCardinalityEstimatorConfig(defConfig);
+        }
+        config = new CardinalityEstimatorConfig(defConfig);
+        config.setName(name);
+        addCardinalityEstimatorConfig(config);
+        return config;
+    }
+
+    /**
      * Adds a new ExecutorConfig by name
      *
      * @param executorConfig executor config to add
@@ -885,6 +921,17 @@ public class Config {
      */
     public Config addScheduledExecutorConfig(ScheduledExecutorConfig scheduledExecutorConfig) {
         this.scheduledExecutorConfigs.put(scheduledExecutorConfig.getName(), scheduledExecutorConfig);
+        return this;
+    }
+
+    /**
+     * Adds a new CardinalityEstimatorConfig by name
+     *
+     * @param cardinalityEstimatorConfig estimator config to add
+     * @return this config instance
+     */
+    public Config addCardinalityEstimatorConfig(CardinalityEstimatorConfig cardinalityEstimatorConfig) {
+        this.cardinalityEstimatorConfigs.put(cardinalityEstimatorConfig.getName(), cardinalityEstimatorConfig);
         return this;
     }
 
@@ -922,6 +969,19 @@ public class Config {
         this.scheduledExecutorConfigs.clear();
         this.scheduledExecutorConfigs.putAll(scheduledExecutorConfigs);
         for (Entry<String, ScheduledExecutorConfig> entry : scheduledExecutorConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Map<String, CardinalityEstimatorConfig> getCardinalityEstimatorConfigs() {
+        return cardinalityEstimatorConfigs;
+    }
+
+    public Config setCardinalityEstimatorConfigs(Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
+        this.cardinalityEstimatorConfigs.clear();
+        this.cardinalityEstimatorConfigs.putAll(cardinalityEstimatorConfigs);
+        for (Entry<String, CardinalityEstimatorConfig> entry : cardinalityEstimatorConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

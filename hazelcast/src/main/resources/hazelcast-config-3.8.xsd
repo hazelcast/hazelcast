@@ -65,6 +65,7 @@
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="distributed-classloading" type="distributed-classloading" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -1716,6 +1717,36 @@
             <xs:annotation>
                 <xs:documentation>
                     Name of the scheduled executor.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="cardinality-estimator">
+        <xs:all>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then the cardinality estimation will be copied to one other JVM for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the async-backup-count,
+                        then cardinality estimation will be copied to one other JVM (asynchronously) for
+                        fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the cardinality estimator.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

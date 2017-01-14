@@ -460,6 +460,26 @@ https://hazelcast.org/documentation/.
     </scheduled-executor-service>
 
 <!--
+===== HAZELCAST CARDINALITY ESTIMATOR SERVICE CONFIGURATION =====
+
+Configuration element's name is <cardinality-estimator-service>. It has the optional attribute "name" with which you
+can specify the name of your estimator. Its default value is "default".
+It has the following sub-elements:
+* <backup-count>:
+   Number of synchronous backups. For example, if 1 is set as the backup-count,
+   then the cardinality estimation will be copied to one other JVM for
+   fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+* <async-backup-count>:
+    Number of asynchronous backups. For example, if 1 is set as the backup-count,
+   then the cardinality estimation will be copied to one other JVM for
+   fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
+-->
+    <cardinality-estimator name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </cardinality-estimator>
+
+<!--
     ===== HAZELCAST QUEUE CONFIGURATION =====
     
     Configuration element's name is <queue>. It has the optional attribute "name" with which you 

@@ -61,6 +61,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
+import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
 import static com.hazelcast.config.XmlElements.DISTRIBUTED_CLASSLOADING;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -368,6 +369,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleHotRestartPersistence(node);
         } else if (DISTRIBUTED_CLASSLOADING.isEqual(nodeName)) {
             handleDistributedClassLoading(node);
+        } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
+            handleCardinalityEstimator(node);
         } else {
             return true;
         }
@@ -618,6 +621,11 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     private void handleScheduledExecutor(Node node) throws Exception {
         ScheduledExecutorConfig scheduledExecutorConfig = new ScheduledExecutorConfig();
         handleViaReflection(node, config, scheduledExecutorConfig);
+    }
+
+    private void handleCardinalityEstimator(Node node) throws Exception {
+        CardinalityEstimatorConfig cardinalityEstimatorConfig = new CardinalityEstimatorConfig();
+        handleViaReflection(node, config, cardinalityEstimatorConfig);
     }
 
     private void handleGroup(Node node) {
