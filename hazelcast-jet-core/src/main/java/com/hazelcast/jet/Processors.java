@@ -24,9 +24,6 @@ import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.jet.stream.Distributed;
-import com.hazelcast.jet.stream.Distributed.BiFunction;
-import com.hazelcast.jet.stream.Distributed.Function;
-import com.hazelcast.jet.stream.Distributed.Supplier;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -34,6 +31,10 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
@@ -154,7 +155,7 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of {@link TransformP} processors with the given
+     * Returns a supplier of {@link TransformP} processor with the given
      * item-to-traverser function.
      *
      * @param mapper function that maps the received item to a traverser over output items
@@ -169,13 +170,26 @@ public final class Processors {
     }
 
     /**
-     * Returns a supplier of {@link GroupAndAccumulateP} processors.
+     * Returns a supplier of processor with the following semantics:
+     * <ul><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     Applies the key extractor to each item and obtains the key of type {@code K}.
+     * </li><li>
+     *     Stores for each key the result of applying the accumulator function to
+     *     the previously accumulated value and the current item. The initial
+     *     accumulated value is obtained from the supplier function.
+     * </li><li>
+     *     When all the input is consumed, begins emitting the accumulated results.
+     * </li><li>
+     *     Emits items of type {@code R} obtained by applying the finisher function
+     *     to each seen key and its accumulated value.
+     * </li></ul>
      *
      * @param keyExtractor computes the key from the entry
      * @param supplier supplies the initial accumulated value
      * @param accumulator accumulates the result value across all entries under the same key
-     * @param finisher transforms the (key, accumulatedValue) pair into the emitted item
-     *
+     * @param finisher transforms a key and its accumulated value into the item to emit
      * @param <T> type of received item
      * @param <K> type of key
      * @param <A> type of accumulated value
@@ -193,7 +207,8 @@ public final class Processors {
 
     /**
      * Convenience over {@link #groupAndAccumulate(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiFunction, Distributed.BiFunction)} with the constructor of
+     * Distributed.BiFunction, Distributed.BiFunction) groupAndAccumulate(keyExtractor,
+     * supplier, accumulator, finisher)} with the constructor of
      * {@code SimpleImmutableEntry} as the finisher function, which means the
      * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
      * {@code K} isn't a part of the method's signature since nothing in the
@@ -212,13 +227,13 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return ProcessorSupplier.of(() -> new GroupAndAccumulateP<>(
-                keyExtractor, supplier, accumulator, SimpleImmutableEntry::new));
+        return groupAndAccumulate(keyExtractor, supplier, accumulator, SimpleImmutableEntry::new);
     }
 
     /**
      * Convenience over {@link #groupAndAccumulate(Distributed.Function, Distributed.Supplier,
-     * Distributed.BiFunction, Distributed.BiFunction)} with identity
+     * Distributed.BiFunction, Distributed.BiFunction)
+     * groupAndAccumulate(keyExtractor, supplier, accumulator, finisher)} with identity
      * function as the key extractor and constructor of {@code SimpleImmutableEntry}
      * as the finisher function, which means the processor emits items of type
      * {@code java.util.Map.Entry<T, A>}.
@@ -233,7 +248,7 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupAndAccumulate(x -> x, supplier, accumulator);
+        return groupAndAccumulate(Distributed.Function.identity(), supplier, accumulator);
     }
 
     /**
@@ -241,20 +256,106 @@ public final class Processors {
      * <ul><li>
      *     Accepts items of type {@code T}.
      * </li><li>
-     *     Stores the result of applying the accumulator function to the previously
-     *     accumulated value and the current item. The initial accumulated value is
-     *     {@code null}.
+     *     Applies the key extractor to each item and obtains the key of type {@code K}.
      * </li><li>
-     *     When all the input is consumed, emits the accumulated result.
+     *     Stores for each seen key an accumulated value container obtained from the
+     *     supplier function.
      * </li><li>
-     *     Emits an item of type {@code R} obtained by applying the finisher function
-     *     to the accumulated value.
+     *     For each received item, applies the collector function to the accumulated
+     *     value container and the item.
+     * </li><li>
+     *     When all the input is consumed, begins emitting the accumulated results.
+     * </li><li>
+     *     Emits items of type {@code R} obtained by applying the finisher function
+     *     to each seen key and its accumulated value.
+     * </li></ul>
+     *
+     * @param keyExtractor computes the key from the entry
+     * @param supplier supplies the mutable result container
+     * @param collector collects the results of all entries under the same key
+     *                  into the mutable container
+     * @param finisher transforms a key and its result container into the item to emit
+     * @param <T> type of received item
+     * @param <K> type of key
+     * @param <A> type of accumulated value
+     * @param <R> type of emitted item
+     */
+    @Nonnull
+    public static <T, K, A, R> ProcessorSupplier groupAndCollect(
+            @Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
+            @Nonnull Distributed.Supplier<? extends A> supplier,
+            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
+            @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher
+    ) {
+        return ProcessorSupplier.of(() -> new GroupAndCollectP<>(keyExtractor, supplier, collector, finisher));
+    }
+
+    /**
+     * Convenience over {@link #groupAndCollect(Distributed.Function, Distributed.Supplier,
+     * Distributed.BiConsumer, Distributed.BiFunction) groupAndCollect(keyExtractor,
+     * supplier, collector, finisher)} with the constructor of
+     * {@code SimpleImmutableEntry} as the finisher function, which means the
+     * processor emits items of type {@code java.util.Map.Entry<K, A>}. Note that
+     * {@code K} isn't a part of the method's signature since nothing in the
+     * processor depends on it. The receiving processor will in any case have to
+     * perform an unchecked cast to {@code Entry<K, A>}.
+     *
+     * @param keyExtractor computes the key from the entry
+     * @param supplier supplies the mutable result container
+     * @param collector collects the results of all entries under the same key
+     *                  into the mutable container
+     * @param <T> type of received item
+     * @param <A> type of result container
+     */
+    @Nonnull
+    public static <T, A> ProcessorSupplier groupAndCollect(
+            @Nonnull Distributed.Function<? super T, ?> keyExtractor,
+            @Nonnull Distributed.Supplier<? extends A> supplier,
+            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    ) {
+        return groupAndCollect(keyExtractor, supplier, collector, SimpleImmutableEntry::new);
+    }
+
+    /**
+     * Convenience over {@link #groupAndCollect(Distributed.Function, Distributed.Supplier,
+     * Distributed.BiConsumer, Distributed.BiFunction)
+     * groupAndCollect(keyExtractor, supplier, collector, finisher)} with identity
+     * function as the key extractor and constructor of {@code SimpleImmutableEntry}
+     * as the finisher function, which means the processor emits items of type
+     * {@code java.util.Map.Entry<T, A>}.
+     *
+     * @param supplier supplies the mutable result container
+     * @param collector collects the results of all entries under the same key
+     *                  into the mutable container
+     * @param <T> type of received item
+     * @param <A> type of accumulated value
+     */
+    @Nonnull
+    public static <T, A> ProcessorSupplier groupAndCollect(
+            @Nonnull Distributed.Supplier<? extends A> supplier,
+            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    ) {
+        return groupAndCollect(Distributed.Function.identity(), supplier, collector);
+    }
+
+    /**
+     * Returns a supplier of processor with the following semantics:
+     * <ul><li>
+     *     Calls the {@code supplier} function to obtain the initial accumulated value.
+     * </li><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     Stores the result of applying the {@code accumulator} function to the previously
+     *     accumulated value and the current item.
+     * </li><li>
+     *     When all the input is consumed, emits the result as a single item of type
+     *     {@code R}, obtained by applying the {@code finisher} function to the
+     *     accumulated value.
      * </li></ul>
      *
      * @param supplier supplies the initial accumulated value
      * @param accumulator accumulates the result value across all the input items
-     * @param finisher transforms the accumulated value to the item to emit
-     *
+     * @param finisher transforms the accumulated value into the item to emit
      * @param <T> type of received item
      * @param <A> type of accumulated value
      * @param <R> type of emitted item
@@ -269,7 +370,8 @@ public final class Processors {
     }
 
     /**
-     * Convenience over {@link #accumulate(Distributed.Supplier, Distributed.BiFunction, Distributed.Function)}
+     * Convenience over {@link #accumulate(Distributed.Supplier, Distributed.BiFunction,
+     * Distributed.Function) accumulate(supplier, accumulator, finisher)}
      * with identity function as the finisher, which means the processor emits an
      * item of type {@code A}.
      *
@@ -284,6 +386,58 @@ public final class Processors {
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
         return groupAndAccumulate(x -> true, supplier, accumulator, (dummyTrueBoolean, a) -> a);
+    }
+
+    /**
+     * Returns a supplier of processor with the following semantics:
+     * <ul><li>
+     *     Calls the {@code supplier} function to obtain the mutable result container.
+     * </li><li>
+     *     Accepts items of type {@code T}.
+     * </li><li>
+     *     For each received item, calls the {@code collector} function with the
+     *     result container and the current item.
+     * </li><li>
+     *     When all the input is consumed, emits the result as a single item of type
+     *     {@code R}, obtained by applying the {@code finisher} function to the
+     *     result container.
+     * </li></ul>
+     *
+     * @param supplier supplies the mutable result container
+     * @param collector collects the result across all the input items
+     *                  into the result container
+     * @param finisher transforms the result container into the item to emit
+     * @param <T> type of received item
+     * @param <A> type of accumulated value
+     * @param <R> type of emitted item
+     */
+    @Nonnull
+    public static <T, A, R> ProcessorSupplier collect(
+            @Nonnull Distributed.Supplier<? extends A> supplier,
+            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector,
+            @Nonnull Distributed.Function<? super A, ? extends R> finisher
+    ) {
+        return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> finisher.apply(a));
+    }
+
+    /**
+     * Convenience over {@link #collect(Distributed.Supplier, Distributed.BiConsumer,
+     * Distributed.Function) collect(supplier, collector, finisher)} with
+     * identity function as the finisher, which means the processor emits an
+     * item of type {@code A}.
+     *
+     * @param supplier supplies the mutable result container
+     * @param collector collects the result across all the input items
+     *                  into the result container
+     * @param <T> type of received item
+     * @param <A> type of result container
+     */
+    @Nonnull
+    public static <T, A> ProcessorSupplier collect(
+            @Nonnull Distributed.Supplier<? extends A> supplier,
+            @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
+    ) {
+        return groupAndCollect(x -> true, supplier, collector, (dummyTrueBoolean, a) -> a);
     }
 
     /**
@@ -345,50 +499,51 @@ public final class Processors {
         }
     }
 
-    /**
-     * Processor with the following semantics:
-     * <ul><li>
-     *     Accepts items of type {@code T}.
-     * </li><li>
-     *     Applies the key extractor to each item and obtains the key of type {@code K}.
-     * </li><li>
-     *     Stores for each key the result of applying the accumulator function to
-     *     the previously accumulated value and the current item. The initial
-     *     accumulated value is obtained from the supplier function.
-     * </li><li>
-     *     When all the input is consumed, begins emitting the accumulated results.
-     * </li><li>
-     *     Emits items of type {@code R} obtained by applying the finisher function
-     *     to each seen key and its accumulated value.
-     * </li></ul>
-     *
-     * @param <T> type of received item
-     * @param <K> type of key
-     * @param <A> type of accumulated value
-     * @param <R> type of emitted item
-     */
-    public static class GroupAndAccumulateP<T, K, A, R> extends AbstractProcessor {
-        private final Function<? super T, ? extends K> keyExtractor;
-        @Nonnull private final Supplier<? extends A> supplier;
-        private BiFunction<? super A, ? super T, ? extends A> accumulator;
-        private Map<K, A> groups = new HashMap<>();
-        private Traverser<R> resultTraverser;
+    private static abstract class ReducingProcessorBase<T, K, A, R> extends AbstractProcessor {
+        protected Function<? super T, ? extends K> keyExtractor;
+        protected Supplier<? extends A> supplier;
+        protected Map<K, A> groups = new HashMap<>();
+        protected Traverser<R> resultTraverser;
 
-        /**
-         * Creates the processor from the given key extractor, supplier, accumulator,
-         * and finisher functions.
-         */
-        public GroupAndAccumulateP(@Nonnull Distributed.Function<? super T, ? extends K> keyExtractor,
-                                   @Nonnull Distributed.Supplier<? extends A> supplier,
-                                   @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator,
-                                   @Nonnull Distributed.BiFunction<? super K, ? super A, ? extends R> finisher) {
+        ReducingProcessorBase(@Nonnull Function<? super T, ? extends K> keyExtractor,
+                              @Nonnull Supplier<? extends A> supplier,
+                              @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
+        ) {
             this.keyExtractor = keyExtractor;
             this.supplier = supplier;
-            this.accumulator = accumulator;
             this.resultTraverser = lazy(() -> traverseStream(groups
                     .entrySet().stream()
                     .map(entry -> finisher.apply(entry.getKey(), entry.getValue()))
             ));
+        }
+
+        @Override
+        public boolean complete() {
+            final boolean done = emitCooperatively(resultTraverser);
+            if (done) {
+                keyExtractor = null;
+                supplier = null;
+                groups = null;
+                resultTraverser = null;
+                cleanUp();
+            }
+            return done;
+        }
+
+        void cleanUp() {
+        }
+    }
+
+    private static class GroupAndAccumulateP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
+        private BiFunction<? super A, ? super T, ? extends A> accumulator;
+
+        GroupAndAccumulateP(@Nonnull Function<? super T, ? extends K> keyExtractor,
+                                   @Nonnull Supplier<? extends A> supplier,
+                                   @Nonnull BiFunction<? super A, ? super T, ? extends A> accumulator,
+                                   @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
+        ) {
+            super(keyExtractor, supplier, finisher);
+            this.accumulator = accumulator;
         }
 
         @Override
@@ -400,14 +555,33 @@ public final class Processors {
         }
 
         @Override
-        public boolean complete() {
-            final boolean done = emitCooperatively(resultTraverser);
-            if (done) {
-                groups = null;
-                accumulator = null;
-                resultTraverser = null;
-            }
-            return done;
+        void cleanUp() {
+            accumulator = null;
+        }
+    }
+
+    private static class GroupAndCollectP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
+        private BiConsumer<? super A, ? super T> collector;
+
+        GroupAndCollectP(@Nonnull Function<? super T, ? extends K> keyExtractor,
+                         @Nonnull Supplier<? extends A> supplier,
+                         @Nonnull BiConsumer<? super A, ? super T> collector,
+                         @Nonnull BiFunction<? super K, ? super A, ? extends R> finisher
+        ) {
+            super(keyExtractor, supplier, finisher);
+            this.collector = collector;
+        }
+
+        @Override
+        protected boolean tryProcess(int ordinal, Object item) {
+            final A acc = groups.computeIfAbsent(keyExtractor.apply((T) item), k -> supplier.get());
+            collector.accept(acc, (T) item);
+            return true;
+        }
+
+        @Override
+        void cleanUp() {
+            collector = null;
         }
     }
 
