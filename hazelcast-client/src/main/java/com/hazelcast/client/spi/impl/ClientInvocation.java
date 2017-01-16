@@ -48,9 +48,9 @@ import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIME
 public class ClientInvocation implements Runnable {
 
     public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
-    protected static final int UNASSIGNED_PARTITION = -1;
+    private static final int UNASSIGNED_PARTITION = -1;
 
-    protected final ClientInvocationFuture clientInvocationFuture;
+    private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
@@ -211,7 +211,7 @@ public class ClientInvocation implements Runnable {
         executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
-    protected boolean shouldRetry() {
+    private boolean shouldRetry() {
         return System.currentTimeMillis() < retryTimeoutPointInMillis;
     }
 
