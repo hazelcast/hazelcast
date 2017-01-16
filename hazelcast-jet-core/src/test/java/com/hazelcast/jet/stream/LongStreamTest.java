@@ -56,7 +56,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFlatMapToLong() {
+    public void flatMapToLong() {
         long[] values = map.stream().flatMapToLong(e -> LongStream.of(e.getValue(), e.getValue())).toArray();
         Arrays.sort(values);
 
@@ -67,19 +67,19 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAllMatch() {
+    public void allMatch() {
         assertTrue(stream.allMatch(f -> f < COUNT));
         assertFalse(stream.allMatch(f -> f > COUNT / 2));
     }
 
     @Test
-    public void testAnyMatch() {
+    public void anyMatch() {
         assertTrue(stream.anyMatch(f -> f < COUNT / 2));
         assertFalse(stream.anyMatch(f -> f > COUNT));
     }
 
     @Test
-    public void testAsDoubleStream() {
+    public void asDoubleStream() {
         DistributedDoubleStream doubleStream = stream.asDoubleStream();
 
         double[] doubles = doubleStream.toArray();
@@ -90,7 +90,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAverage() {
+    public void average() {
         OptionalDouble average = stream.average();
 
         assertTrue(average.isPresent());
@@ -98,14 +98,14 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAverage_whenEmpty() {
+    public void average_whenEmpty() {
         map.clear();
 
         assertFalse(stream.average().isPresent());
     }
 
     @Test
-    public void testBoxed() {
+    public void boxed() {
         DistributedStream<Long> boxed = stream.boxed();
 
         IList<Long> list = boxed.collect(DistributedCollectors.toIList());
@@ -114,7 +114,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollect() {
+    public void collect() {
         Long[] sum = stream.collect(() -> new Long[]{0L},
                 (a, b) -> a[0] += b,
                 (a, b) -> a[0] += b[0]);
@@ -123,14 +123,14 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCount() throws Exception {
+    public void count() throws Exception {
         long result = stream.count();
 
         assertEquals(COUNT, result);
     }
 
     @Test
-    public void testDistinct() {
+    public void distinct() {
         long mod = 10;
         long[] values = stream.map(m -> m % mod).distinct().toArray();
 
@@ -138,7 +138,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFlatMap() {
+    public void flatMap() {
         int repetitions = 10;
         long[] longs = stream
                 .filter(n -> n < repetitions)
@@ -155,7 +155,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFilter() {
+    public void filter() {
         long[] result = stream
                 .filter(f -> f < 100)
                 .toArray();
@@ -169,7 +169,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindFirst() {
+    public void findFirst() {
         OptionalLong first = stream.sorted().findFirst();
 
         assertTrue(first.isPresent());
@@ -177,7 +177,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindFirst_whenEmpty() {
+    public void findFirst_whenEmpty() {
         map.clear();
         OptionalLong first = stream.findFirst();
 
@@ -185,14 +185,14 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindAny() {
+    public void findAny() {
         OptionalLong any = stream.findAny();
 
         assertTrue(any.isPresent());
     }
 
     @Test
-    public void testFindAny_whenEmpty() {
+    public void findAny_whenEmpty() {
         map.clear();
         OptionalLong any = stream.findAny();
 
@@ -200,7 +200,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testForEach() {
+    public void forEach() {
         final AtomicLong runningTotal = new AtomicLong(0);
 
         stream.forEach(runningTotal::addAndGet);
@@ -209,7 +209,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testForEachOrdered() {
+    public void forEachOrdered() {
         List<Long> values = new ArrayList<>();
 
         stream.sorted().forEachOrdered(values::add);
@@ -220,7 +220,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIterator() {
+    public void iterator() {
         PrimitiveIterator.OfLong iterator = stream.iterator();
 
         List<Long> values = new ArrayList<>();
@@ -232,7 +232,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testLimit() {
+    public void limit() {
         long limit = 10;
         long[] longs = stream.limit(limit).toArray();
 
@@ -240,7 +240,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMap() {
+    public void map() {
         long[] longs = stream.map(m -> m * m).toArray();
         Arrays.sort(longs);
         for (int i = 0; i < COUNT; i++) {
@@ -249,7 +249,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToDouble() {
+    public void mapToDouble() {
         double[] doubles = stream.mapToDouble(m -> (double) m).toArray();
 
         Arrays.sort(doubles);
@@ -259,7 +259,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToInt() {
+    public void mapToInt() {
         int[] longs = stream.mapToInt(m -> (int) m).toArray();
 
         Arrays.sort(longs);
@@ -269,7 +269,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToObj() {
+    public void mapToObj() {
         IList<Long> list = stream.mapToObj(m -> (Long) m).collect(DistributedCollectors.toIList());
 
         Object[] array = list.toArray();
@@ -282,7 +282,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMax() {
+    public void max() {
         OptionalLong max = stream.max();
 
         assertTrue(max.isPresent());
@@ -290,7 +290,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMax_whenEmpty() {
+    public void max_whenEmpty() {
         map.clear();
         OptionalLong max = stream.max();
 
@@ -298,7 +298,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMin() {
+    public void min() {
         OptionalLong min = stream.min();
 
         assertTrue(min.isPresent());
@@ -306,7 +306,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMin_whenEmpty() {
+    public void min_whenEmpty() {
         map.clear();
         OptionalLong min = stream.min();
 
@@ -314,20 +314,20 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatch() {
+    public void noneMatch() {
         assertTrue(stream.noneMatch(f -> f > COUNT));
         assertFalse(stream.noneMatch(f -> f < COUNT / 2));
     }
 
     @Test
-    public void testReduceWithIdentity() {
+    public void reduceWithIdentity() {
         long sum = stream.reduce(0, (a, b) -> a + b);
 
         assertEquals(COUNT * (COUNT - 1) / 2, sum);
     }
 
     @Test
-    public void testReduceWithIdentity_whenEmpty() {
+    public void reduceWithIdentity_whenEmpty() {
         map.clear();
         long sum = stream.reduce(0, (a, b) -> a + b);
 
@@ -335,7 +335,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReduce() {
+    public void reduce() {
         OptionalLong sum = stream.reduce((a, b) -> a + b);
 
         assertTrue(sum.isPresent());
@@ -343,7 +343,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReduce_whenEmpty() {
+    public void reduce_whenEmpty() {
         map.clear();
         OptionalLong sum = stream.reduce((a, b) -> a + b);
 
@@ -351,7 +351,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSorted() throws Exception {
+    public void sorted() throws Exception {
         long[] array = stream.sorted().toArray();
 
         for (int i = 0; i < array.length; i++) {
@@ -360,7 +360,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testPeek() {
+    public void peek() {
         List<Long> list = new ArrayList<>();
 
         long[] longs = stream.peek(list::add).toArray();
@@ -377,7 +377,7 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSkip() {
+    public void skip() {
         long skip = 10;
         long[] longs = stream.skip(10).toArray();
 
@@ -385,14 +385,14 @@ public class LongStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSum() {
+    public void sum() {
         long result = stream.sum();
 
         assertEquals(COUNT * (COUNT - 1) / 2, result);
     }
 
     @Test
-    public void testSummaryStatistics() {
+    public void summaryStatistics() {
         LongSummaryStatistics longSummaryStatistics = stream.summaryStatistics();
 
         assertEquals(COUNT, longSummaryStatistics.getCount());

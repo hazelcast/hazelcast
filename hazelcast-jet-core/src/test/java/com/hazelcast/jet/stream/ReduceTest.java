@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class ReduceTest extends AbstractStreamTest {
 
     @Test
-    public void testReduceWithIdentity() throws Exception {
+    public void wIdentity() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -38,7 +38,7 @@ public class ReduceTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReduceWithNoIdentity() throws Exception {
+    public void withoutIdentity() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

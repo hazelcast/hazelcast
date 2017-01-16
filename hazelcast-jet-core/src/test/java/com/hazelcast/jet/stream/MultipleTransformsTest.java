@@ -25,10 +25,10 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
-public class TransformTest extends AbstractStreamTest {
+public class MultipleTransformsTest extends AbstractStreamTest {
 
     @Test
-    public void testMultipleTransforms_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -49,7 +49,7 @@ public class TransformTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMultipleTransforms_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -69,7 +69,7 @@ public class TransformTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMultipleTransform_whenIntermediateOperation() {
+    public void intermediateOperation() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

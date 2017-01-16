@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull;
 public class HazelcastCollectorTest extends AbstractStreamTest {
 
     @Test
-    public void testIMapCollect_whenNoIntermediaries() throws Exception {
+    public void imapCollect_whenNoIntermediaries() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -47,7 +47,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIMapCollectWithMerge() throws Exception {
+    public void imapCollectWithMerge() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -65,7 +65,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testGrouping_whenSourceMap() throws Exception {
+    public void grouping_whenSourceMap() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -88,7 +88,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testTwoLevelGrouping_whenSourceMap() throws Exception {
+    public void twoLevelGrouping_whenSourceMap() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -118,7 +118,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testGrouping_whenSourceList() throws Exception {
+    public void grouping_whenSourceList() throws Exception {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -140,7 +140,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testWordCount() throws Exception {
+    public void wordCount() throws Exception {
         IStreamMap<String, String> map = getMap();
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
@@ -159,7 +159,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIMapCollectWithMerge_whenSourceList() throws Exception {
+    public void imapCollectWithMerge_whenSourceList() throws Exception {
         IStreamList<String> list = getList();
         String words = "0 1 2 3 4 5 6 7 8 9";
         for (int i = 0; i < COUNT; i++) {
@@ -178,7 +178,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIListCollect_whenNoIntermediaries() throws Exception {
+    public void ilistCollect_whenNoIntermediaries() throws Exception {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -188,7 +188,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIListCollect_whenSourceMap() throws Exception {
+    public void ilistCollect_whenSourceMap() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

@@ -21,11 +21,13 @@ import org.junit.Test;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class AllMatchTest extends AbstractStreamTest {
 
     @Test
-    public void testAllMatchTrue_whenSourceMap() {
+    public void sourceMap_matchSuccess() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -33,11 +35,11 @@ public class AllMatchTest extends AbstractStreamTest {
                            .allMatch(m -> m.getValue() < COUNT);
 
 
-        assertEquals(true, found);
+        assertTrue(found);
     }
 
     @Test
-    public void testAllMatchFalse_whenSourceMap() {
+    public void sourceMap_matchFail() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -45,11 +47,11 @@ public class AllMatchTest extends AbstractStreamTest {
                            .allMatch(m -> m.getValue() > COUNT / 2);
 
 
-        assertEquals(false, found);
+        assertFalse(found);
     }
 
     @Test
-    public void testAllMatchTrue_whenIntermediateOperation() {
+    public void intermediateOperation_matchSuccess() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -58,11 +60,11 @@ public class AllMatchTest extends AbstractStreamTest {
                            .allMatch(m -> m < COUNT);
 
 
-        assertEquals(true, found);
+        assertTrue(found);
     }
 
     @Test
-    public void testAllMatchFalse_whenIntermediateOperation() {
+    public void intermediateOperation_matchFail() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -71,18 +73,18 @@ public class AllMatchTest extends AbstractStreamTest {
                            .allMatch(m -> m > COUNT / 2);
 
 
-        assertEquals(false, found);
+        assertFalse(found);
     }
 
     @Test
-    public void testAllMatch_whenSourceList() {
+    public void sourceList_matchSuccess() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
         boolean found = list.stream()
                             .allMatch(l -> l < COUNT);
 
-        assertEquals(true, found);
+        assertTrue(found);
     }
 
 }

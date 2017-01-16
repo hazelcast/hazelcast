@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class SortTest extends AbstractStreamTest {
 
     @Test
-    public void testSort_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list, IntStream.range(0, COUNT).map(i -> COUNT - i - 1).limit(COUNT).iterator());
 
@@ -46,7 +46,7 @@ public class SortTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSort_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -65,7 +65,7 @@ public class SortTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSortWithComparator_whenSourceMap() {
+    public void sourceMap_withComparator() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -84,7 +84,7 @@ public class SortTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testOperationsAfterSort() {
+    public void operationsAfterSort() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

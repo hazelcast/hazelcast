@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
 public class FindFirstTest extends AbstractStreamTest {
 
     @Test
-    public void testFindFirst_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -42,7 +42,7 @@ public class FindFirstTest extends AbstractStreamTest {
     }
 
     @Test
-    public void findFirst_whenSourceEmptyMap() {
+    public void sourceEmptyMap() {
         IStreamMap<String, Integer> map = getMap();
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findFirst();
@@ -51,7 +51,7 @@ public class FindFirstTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindFirst_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -62,7 +62,7 @@ public class FindFirstTest extends AbstractStreamTest {
     }
 
     @Test
-    public void findFirst_whenSourceEmptyList() {
+    public void sourceEmptyList() {
         IStreamList<Integer> list = getList();
 
         Optional<Integer> first = list.stream().findFirst();

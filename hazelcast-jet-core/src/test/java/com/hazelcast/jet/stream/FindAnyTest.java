@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 public class FindAnyTest extends AbstractStreamTest {
 
     @Test
-    public void testFindAny_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -43,7 +43,7 @@ public class FindAnyTest extends AbstractStreamTest {
     }
 
     @Test
-    public void findAny_whenSourceEmptyMap() {
+    public void sourceEmptyMap() {
         IStreamMap<String, Integer> map = getMap();
 
         Optional<Map.Entry<String, Integer>> first = map.stream().findAny();
@@ -52,7 +52,7 @@ public class FindAnyTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindAny_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -63,7 +63,7 @@ public class FindAnyTest extends AbstractStreamTest {
     }
 
     @Test
-    public void findAny_whenSourceEmptyList() {
+    public void sourceEmptyList() {
         IStreamList<Integer> list = getList();
 
         Optional<Integer> first = list.stream().findAny();

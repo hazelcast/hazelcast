@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class MaxTest extends AbstractStreamTest {
 
     @Test
-    public void testMax_whenSourceMap() throws Exception {
+    public void sourceMap() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -38,7 +38,7 @@ public class MaxTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMax_whenSourceList() throws Exception {
+    public void sourceList() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 

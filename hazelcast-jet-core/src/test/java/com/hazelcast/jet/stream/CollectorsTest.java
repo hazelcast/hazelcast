@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public class CollectorsTest extends AbstractStreamTest {
 
     @Test
-    public void testToCollection_whenSourceMap() {
+    public void map_toCollection() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -53,7 +53,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToCollection_whenSourceList() {
+    public void list_toCollection() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -70,7 +70,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToList_whenSourceMap() {
+    public void map_toList() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -88,7 +88,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToList_whenSourceList() {
+    public void list_toList() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -104,7 +104,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToSet_whenSourceMap() {
+    public void map_toSet() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -121,7 +121,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToSet_whenSourceList() {
+    public void list_toSet() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -138,7 +138,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testJoining() {
+    public void joining() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -157,7 +157,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testJoiningWithDelimiter() {
+    public void joiningWithDelimiter() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -177,7 +177,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testJoiningWithDelimiterPrefixSuffix() {
+    public void joiningWithDelimiterPrefixSuffix() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -200,7 +200,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapping_whenSourceMap() {
+    public void map_mapping() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -216,7 +216,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapping_whenSourceList() {
+    public void list_mapping() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -231,7 +231,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollectingAndThen_whenSourceList() {
+    public void list_collectingAndThen() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -243,7 +243,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollectingAndThen_whenSourceMap() {
+    public void map_collectingAndThen() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -255,7 +255,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCounting_whenSourceMap() throws Exception {
+    public void map_counting() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -265,7 +265,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCounting_whenSourceList() throws Exception {
+    public void list_counting() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -275,7 +275,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMinBy_whenSourceList() throws Exception {
+    public void list_minBy() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -288,7 +288,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMinBy_whenSourceEmpty() throws Exception {
+    public void empty_minBy() throws Exception {
         IStreamList<Integer> list = getList();
 
         Distributed.Optional<Integer> min = list
@@ -299,7 +299,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMaxBy_whenSourceList() throws Exception {
+    public void list_maxBy() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -312,7 +312,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMaxBy_whenSourceEmpty() throws Exception {
+    public void empty_maxBy() throws Exception {
         IStreamList<Integer> list = getList();
 
         Distributed.Optional<Integer> max = list
@@ -323,7 +323,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummingInt_whenSourceList() throws Exception {
+    public void list_summingInt() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -333,7 +333,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummingLong_whenSourceList() throws Exception {
+    public void list_summingLong() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -343,7 +343,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummingDouble_whenSourceList() throws Exception {
+    public void list_summingDouble() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -353,7 +353,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAveragingInt_whenSourceList() throws Exception {
+    public void list_averagingInt() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -363,7 +363,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAveragingLong_whenSourceList() throws Exception {
+    public void list_averagingLong() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -373,7 +373,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAveragingDouble_whenSourceList() throws Exception {
+    public void list_averagingDouble() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -383,7 +383,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReducingCollector_whenSourceMap() throws Exception {
+    public void map_reducing() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -396,7 +396,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReducingCollector_whenSourceEmpty() throws Exception {
+    public void empty_reducing() throws Exception {
         IStreamMap<String, Integer> map = getMap();
 
         Distributed.Optional<Integer> sum = map.stream()
@@ -407,7 +407,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReducingCollectorWithIdentity_whenSourceMap() throws Exception {
+    public void map_reducingWithIdentity() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -419,7 +419,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReducingCollectorWithMappingAndIdentity_whenSourceMap() throws Exception {
+    public void map_reducingWithMappingAndIdentity() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -431,7 +431,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testGroupingBy_whenSourceList() {
+    public void list_groupingBy() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -453,7 +453,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testGroupingByWithDownstream_whenSourceList() {
+    public void list_groupingByWithDownstream() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -471,7 +471,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testPartitioningBy_whenSourceList() {
+    public void list_partitioningBy() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -489,7 +489,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testPartitioningByWithDownstream_whenSourceList() {
+    public void list_partitioningByWithDownstream() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -507,7 +507,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummarizingInt_whenSourceList() {
+    public void list_summarizingInt() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -522,7 +522,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummarizingLong_whenSourceList() {
+    public void list_summarizingLong() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -537,7 +537,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSummarizingDouble_whenSourceList() {
+    public void list_summarizingDouble() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -552,7 +552,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToMap_whenSourceMap() {
+    public void map_toMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -567,7 +567,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToMap_whenSourceList() {
+    public void list_toMap() {
         IList<Integer> list = getList();
         fillList(list);
 
@@ -581,7 +581,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollect_whenSourceMap() throws Exception {
+    public void map_collect() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -595,7 +595,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCustomCollector_whenSourceMap() throws Exception {
+    public void map_customCollector() throws Exception {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -615,7 +615,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollect_whenSourceList() throws Exception {
+    public void list_collect() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -629,7 +629,7 @@ public class CollectorsTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCustomCollector_whenSourceList() throws Exception {
+    public void list_customCollector() throws Exception {
         IStreamList<Integer> list = getList();
         fillList(list);
 

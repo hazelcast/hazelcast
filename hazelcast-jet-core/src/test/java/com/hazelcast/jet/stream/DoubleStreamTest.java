@@ -46,7 +46,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
         stream = map.stream().mapToDouble(Map.Entry::getValue);
     }
 
-    private long fillMapDoubles(IStreamMap<String, Double> map) {
+    private static long fillMapDoubles(IStreamMap<String, Double> map) {
         for (double i = 0D; i < COUNT; i++) {
             map.put("key-" + i, i);
         }
@@ -54,7 +54,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFlatMapToDouble() {
+    public void flatMapToDouble() {
         double[] values = map.stream().flatMapToDouble(e -> DoubleStream.of(e.getValue(), e.getValue())).toArray();
         Arrays.sort(values);
 
@@ -65,19 +65,19 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAllMatch() {
+    public void allMatch() {
         assertTrue(stream.allMatch(f -> f < COUNT));
         assertFalse(stream.allMatch(f -> f > COUNT / 2));
     }
 
     @Test
-    public void testAnyMatch() {
+    public void anyMatch() {
         assertTrue(stream.anyMatch(f -> f < COUNT / 2));
         assertFalse(stream.anyMatch(f -> f > COUNT));
     }
 
     @Test
-    public void testAverage() {
+    public void average() {
         OptionalDouble average = stream.average();
 
         assertTrue(average.isPresent());
@@ -85,14 +85,14 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testAverage_whenEmpty() {
+    public void average_whenEmpty() {
         map.clear();
 
         assertFalse(stream.average().isPresent());
     }
 
     @Test
-    public void testBoxed() {
+    public void boxed() {
         DistributedStream<Double> boxed = stream.boxed();
 
         IList<Double> list = boxed.collect(DistributedCollectors.toIList());
@@ -101,7 +101,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCollect() {
+    public void collect() {
         Double[] sum = stream.collect(() -> new Double[]{0D},
                 (a, b) -> a[0] += b,
                 (a, b) -> a[0] += b[0]);
@@ -110,14 +110,14 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testCount() throws Exception {
+    public void count() throws Exception {
         long result = stream.count();
 
         assertEquals(COUNT, result);
     }
 
     @Test
-    public void testDistinct() {
+    public void distinct() {
         double mod = 10;
         double[] values = stream.map(m -> m % mod).distinct().toArray();
 
@@ -125,7 +125,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFlatMap() {
+    public void flatMap() {
         int repetitions = 10;
         double[] doubles = stream
                 .filter(n -> n < repetitions)
@@ -142,7 +142,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFilter() {
+    public void filter() {
         double[] result = stream
                 .filter(f -> f < 100)
                 .toArray();
@@ -156,7 +156,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindFirst() {
+    public void findFirst() {
         OptionalDouble first = stream.sorted().findFirst();
 
         assertTrue(first.isPresent());
@@ -164,7 +164,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindFirst_whenEmpty() {
+    public void findFirst_whenEmpty() {
         map.clear();
         OptionalDouble first = stream.findFirst();
 
@@ -172,14 +172,14 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFindAny() {
+    public void findAny() {
         OptionalDouble any = stream.findAny();
 
         assertTrue(any.isPresent());
     }
 
     @Test
-    public void testFindAny_whenEmpty() {
+    public void findAny_whenEmpty() {
         map.clear();
         OptionalDouble any = stream.findAny();
 
@@ -187,7 +187,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testForEach() {
+    public void forEach() {
         final Double[] runningTotal = new Double[]{0D};
 
         stream.forEach(m -> runningTotal[0] += m);
@@ -196,7 +196,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testForEachOrdered() {
+    public void forEachOrdered() {
         List<Double> values = new ArrayList<>();
 
         stream.sorted().forEachOrdered(values::add);
@@ -207,7 +207,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIterator() {
+    public void iterator() {
         PrimitiveIterator.OfDouble iterator = stream.iterator();
 
         List<Double> values = new ArrayList<>();
@@ -219,7 +219,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testLimit() {
+    public void limit() {
         long limit = 10;
         double[] doubles = stream.limit(limit).toArray();
 
@@ -227,7 +227,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMap() {
+    public void map() {
         double[] doubles = stream.map(m -> m * m).toArray();
         Arrays.sort(doubles);
         for (int i = 0; i < COUNT; i++) {
@@ -236,7 +236,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToLong() {
+    public void mapToLong() {
         long[] longs = stream.mapToLong(m -> (long) m).toArray();
 
         Arrays.sort(longs);
@@ -246,7 +246,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToInt() {
+    public void mapToInt() {
         int[] ints = stream.mapToInt(m -> (int) m).toArray();
 
         Arrays.sort(ints);
@@ -256,7 +256,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMapToObj() {
+    public void mapToObj() {
         IList<Double> list = stream.mapToObj(m -> (Double) m).collect(DistributedCollectors.toIList());
 
         Object[] array = list.toArray();
@@ -269,7 +269,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMax() {
+    public void max() {
         OptionalDouble max = stream.max();
 
         assertTrue(max.isPresent());
@@ -277,7 +277,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMax_whenEmpty() {
+    public void max_whenEmpty() {
         map.clear();
         OptionalDouble max = stream.max();
 
@@ -285,7 +285,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMin() {
+    public void min() {
         OptionalDouble min = stream.min();
 
         assertTrue(min.isPresent());
@@ -293,7 +293,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testMin_whenEmpty() {
+    public void min_whenEmpty() {
         map.clear();
         OptionalDouble min = stream.min();
 
@@ -301,20 +301,20 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatch() {
+    public void noneMatch() {
         assertTrue(stream.noneMatch(f -> f > COUNT));
         assertFalse(stream.noneMatch(f -> f < COUNT / 2));
     }
 
     @Test
-    public void testReduceWithIdentity() {
+    public void reduceWithIdentity() {
         double sum = stream.reduce(0, (a, b) -> a + b);
 
         assertEquals(COUNT * (COUNT - 1) / 2, sum, 0D);
     }
 
     @Test
-    public void testReduceWithIdentity_whenEmpty() {
+    public void reduceWithIdentity_whenEmpty() {
         map.clear();
         double sum = stream.reduce(0, (a, b) -> a + b);
 
@@ -322,7 +322,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReduce() {
+    public void reduce() {
         OptionalDouble sum = stream.reduce((a, b) -> a + b);
 
         assertTrue(sum.isPresent());
@@ -330,7 +330,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testReduce_whenEmpty() {
+    public void reduce_whenEmpty() {
         map.clear();
         OptionalDouble sum = stream.reduce((a, b) -> a + b);
 
@@ -338,7 +338,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSorted() throws Exception {
+    public void sorted() throws Exception {
         double[] array = stream.sorted().toArray();
 
         for (int i = 0; i < array.length; i++) {
@@ -347,7 +347,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testPeek() {
+    public void peek() {
         List<Double> list = new ArrayList<>();
 
         double[] doubles = stream.peek(list::add).toArray();
@@ -364,7 +364,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSkip() {
+    public void skip() {
         long skip = 10;
         double[] doubles = stream.skip(10).toArray();
 
@@ -372,14 +372,14 @@ public class DoubleStreamTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSum() {
+    public void sum() {
         double result = stream.sum();
 
         assertEquals(COUNT * (COUNT - 1) / 2, result, 0D);
     }
 
     @Test
-    public void testSummaryStatistics() {
+    public void summaryStatistics() {
         DoubleSummaryStatistics longSummaryStatistics = stream.summaryStatistics();
 
         assertEquals(COUNT, longSummaryStatistics.getCount());

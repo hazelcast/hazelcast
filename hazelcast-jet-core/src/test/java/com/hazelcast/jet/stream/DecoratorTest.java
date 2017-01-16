@@ -58,13 +58,13 @@ public class DecoratorTest {
     );
 
     @Test
-    public void testListDecorator() throws Exception {
+    public void listDecorator() throws Exception {
         JetInstance instance = Mockito.mock(JetInstance.class);
         assertDecorator(IList.class, IStreamList.class, l -> new ListDecorator<>(l, instance));
     }
 
     @Test
-    public void testMapDecorator() throws Exception {
+    public void mapDecorator() throws Exception {
         JetInstance instance = Mockito.mock(JetInstance.class);
         assertDecorator(IMap.class, IStreamMap.class, m -> new MapDecorator<>(m, instance));
     }

@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class MapTest extends AbstractStreamTest {
 
     @Test
-    public void testSimpleMap_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -46,7 +46,7 @@ public class MapTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSimpleMap_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

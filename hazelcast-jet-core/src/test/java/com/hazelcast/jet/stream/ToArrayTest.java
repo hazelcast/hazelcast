@@ -26,7 +26,7 @@ import static org.junit.Assert.assertNotNull;
 public class ToArrayTest extends AbstractStreamTest {
 
     @Test
-    public void testToArray_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -40,7 +40,7 @@ public class ToArrayTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToArrayWithGenerator_whenSourceMap() {
+    public void sourceMap_withArraySupplier() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -53,7 +53,7 @@ public class ToArrayTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToArray_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -66,7 +66,7 @@ public class ToArrayTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testToArrayWithGenerator_whenSourceList() {
+    public void sourceList_withArraySupplier() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

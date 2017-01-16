@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class DistinctTest extends AbstractStreamTest {
 
     @Test
-    public void testDistinct_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         int modulus = 10;
         fillList(list, i -> i % modulus);
@@ -43,7 +43,7 @@ public class DistinctTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testDistinct_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

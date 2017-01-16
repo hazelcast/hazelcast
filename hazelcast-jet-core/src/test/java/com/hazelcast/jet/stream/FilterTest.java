@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class FilterTest extends AbstractStreamTest {
 
     @Test
-    public void testSimpleFilter_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -42,7 +42,7 @@ public class FilterTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSimpleFilter_whenSourceList() throws InterruptedException {
+    public void sourceList() throws InterruptedException {
         IStreamList<Integer> list = getList();
         fillList(list);
 

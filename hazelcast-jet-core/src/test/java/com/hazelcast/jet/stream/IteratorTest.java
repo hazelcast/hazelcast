@@ -27,7 +27,7 @@ import static org.junit.Assert.assertNotNull;
 public class IteratorTest extends AbstractStreamTest {
 
     @Test
-    public void testIterator_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -43,7 +43,7 @@ public class IteratorTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testIterator_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

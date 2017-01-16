@@ -31,7 +31,7 @@ import java.util.Map;
 public class Demo extends AbstractStreamTest {
 
     @Test
-    public void testFilterSquares() {
+    public void filterSquares() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -47,7 +47,7 @@ public class Demo extends AbstractStreamTest {
     }
 
     @Test
-    public void testSumAllValues() {
+    public void sumAllValues() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -60,7 +60,7 @@ public class Demo extends AbstractStreamTest {
     }
 
     @Test
-    public void testDistinctValues() {
+    public void distinctValues() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

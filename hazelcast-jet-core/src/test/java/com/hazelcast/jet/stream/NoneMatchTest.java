@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class NoneMatchTest extends AbstractStreamTest {
 
     @Test
-    public void testNoneMatchTrue_whenSourceMap() {
+    public void sourceMap_noneMatchTrue() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -37,7 +37,7 @@ public class NoneMatchTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatchFalse_whenSourceMap() {
+    public void sourceMap_noneMatchFalse() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -49,7 +49,7 @@ public class NoneMatchTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatchTrue_whenIntermediateOperation() {
+    public void intermediateOperation_noneMatchTrue() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -62,7 +62,7 @@ public class NoneMatchTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatchFalse_whenIntermediateOperation() {
+    public void intermediateOperation_noneMatchFalse() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -75,7 +75,7 @@ public class NoneMatchTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testNoneMatch_whenSourceList() {
+    public void sourceList_noneMatch() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

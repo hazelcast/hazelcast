@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public class FlatMapTest extends AbstractStreamTest {
 
     @Test
-    public void testFlatMap_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -52,7 +52,7 @@ public class FlatMapTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testFlatMap_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

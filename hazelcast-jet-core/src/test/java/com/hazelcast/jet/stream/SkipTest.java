@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class SkipTest extends AbstractStreamTest {
 
     @Test
-    public void testSkip_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -40,7 +40,7 @@ public class SkipTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSkip_whenIntermediateOperation() {
+    public void intermediateOperation() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -55,7 +55,7 @@ public class SkipTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testSkip_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 

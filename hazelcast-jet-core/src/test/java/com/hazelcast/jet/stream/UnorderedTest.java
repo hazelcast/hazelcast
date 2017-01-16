@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 public class UnorderedTest extends AbstractStreamTest {
 
     @Test
-    public void testUnordered_whenOrderedSource() {
+    public void orderedSource() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -48,7 +48,7 @@ public class UnorderedTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testUnordered_whenOrderedSource_asIntermediateOperation() {
+    public void orderedSource_asIntermediateOperation() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
@@ -71,7 +71,7 @@ public class UnorderedTest extends AbstractStreamTest {
 
 
     @Test
-    public void testUnordered_whenUnorderedSource() {
+    public void unorderedSource() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 

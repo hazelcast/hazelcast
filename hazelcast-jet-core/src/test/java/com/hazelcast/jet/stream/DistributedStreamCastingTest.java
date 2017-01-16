@@ -39,119 +39,119 @@ public class DistributedStreamCastingTest extends AbstractStreamTest {
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMap() {
+    public void map() {
         stream.map(Object::toString);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testFlatMap() {
+    public void flatMap() {
         stream.flatMap(Stream::of);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testCollect() {
+    public void collect() {
         stream.collect(Collectors.counting());
     }
 
     @Test(expected = ClassCastException.class)
-    public void testCollect2() {
+    public void collect2() {
         stream.collect(() -> new Integer[]{0},
                 (r, e) -> r[0] += e,
                 (a, b) -> a[0] += b[0]);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testForEach() {
+    public void forEach() {
         stream.forEach(System.out::println);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testForEachOrdered() {
+    public void forEachOrdered() {
         stream.forEachOrdered(System.out::println);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testAllMatch() {
+    public void allMatch() {
         stream.allMatch(m -> true);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testAnyMatch() {
+    public void anyMatch() {
         stream.anyMatch(m -> true);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testNoneMatch() {
+    public void noneMatch() {
         stream.noneMatch(m -> true);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testFilter() {
+    public void filter() {
         stream.filter(m -> true);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMapToInt() {
+    public void mapToInt() {
         stream.mapToInt(m -> m);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMapToDouble() {
+    public void mapToDouble() {
         stream.mapToDouble(m -> (double) m);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMapToLong() {
+    public void mapToLong() {
         stream.mapToLong(m -> (long) m);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testFlatMapToInt() {
+    public void flatMapToInt() {
         stream.flatMapToInt(IntStream::of);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testFlatMapToDouble() {
+    public void flatMapToDouble() {
         stream.flatMapToDouble(DoubleStream::of);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testFlatMapToLong() {
+    public void flatMapToLong() {
         stream.flatMapToLong(LongStream::of);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMax() {
+    public void max() {
         stream.max(Comparator.naturalOrder());
     }
 
     @Test(expected = ClassCastException.class)
-    public void testMin() {
+    public void min() {
         stream.min(Comparator.naturalOrder());
     }
 
     @Test(expected = ClassCastException.class)
-    public void testPeek() {
+    public void peek() {
         stream.peek(System.out::println);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testReduce() {
+    public void reduce() {
         stream.reduce((l, r) -> l + r);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testReduce2() {
+    public void reduce2() {
         stream.reduce(0, (l, r) -> l + r);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testReduce3() {
+    public void reduce3() {
         stream.reduce(0, (l, r) -> l + r, (l, r) -> l + r);
     }
 
     @Test(expected = ClassCastException.class)
-    public void testSorted() {
+    public void sorted() {
         stream.sorted(Comparator.naturalOrder());
     }
 }

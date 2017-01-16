@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class ForEachTest extends AbstractStreamTest {
 
     @Test
-    public void testForEach_whenSourceMap() {
+    public void sourceMap() {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
@@ -36,7 +36,7 @@ public class ForEachTest extends AbstractStreamTest {
     }
 
     @Test
-    public void testForEach_whenSourceList() {
+    public void sourceList() {
         IStreamList<Integer> list = getList();
         fillList(list);
 
