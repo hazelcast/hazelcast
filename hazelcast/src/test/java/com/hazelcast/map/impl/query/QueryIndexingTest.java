@@ -68,7 +68,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
     public void testResultsHaveNullFields_whenPredicateTestsForNull() {
         IMap<Integer, Employee> map = h1.getMap("employees");
         map.putAll(employees);
-        waitAllForSafeState();
+        waitAllForSafeState(h1, h2);
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
 
@@ -86,7 +86,7 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         map.addIndex("city", true);
 
         map.putAll(employees);
-        waitAllForSafeState();
+        waitAllForSafeState(h1, h2);
 
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
         assertEquals(count / 2, matchingEntries.size());

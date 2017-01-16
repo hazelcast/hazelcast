@@ -59,7 +59,7 @@ public class MigrationTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        waitAllForSafeState();
+        waitAllForSafeState(instance1, instance2);
 
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
@@ -67,7 +67,7 @@ public class MigrationTest extends HazelcastTestSupport {
         }
 
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
-        waitAllForSafeState();
+        waitAllForSafeState(instance1, instance2, instance3);
 
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
@@ -101,7 +101,7 @@ public class MigrationTest extends HazelcastTestSupport {
         instance2.shutdown();
         instance3.shutdown();
 
-        waitAllForSafeState();
+        waitAllForSafeState(instance1);
         assertEquals("Some records have been lost.", size, map.values().size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i).intValue());

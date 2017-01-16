@@ -51,7 +51,7 @@ public class QueueSplitBrainTest extends HazelcastTestSupport {
             queue.add("item" + i);
         }
 
-        waitAllForSafeState();
+        waitAllForSafeState(h1, h2, h3);
 
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);

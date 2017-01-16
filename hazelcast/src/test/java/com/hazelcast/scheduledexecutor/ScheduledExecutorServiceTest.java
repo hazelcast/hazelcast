@@ -891,7 +891,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     public HazelcastInstance[] createClusterWithCount(int count, Config config) {
         factory = createHazelcastInstanceFactory();
         HazelcastInstance[] instances = factory.newInstances(config, count);
-        waitAllForSafeState();
+        waitAllForSafeState(instances);
         return instances;
     }
 

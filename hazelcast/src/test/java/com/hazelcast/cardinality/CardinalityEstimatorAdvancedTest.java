@@ -31,7 +31,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
         estimator.add(1L);
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
-            waitAllForSafeState();
+            waitAllForSafeState(instance, newInstance);
             CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
             assertEquals((long) 1 + i, newEstimator.estimate());
             newEstimator.add(String.valueOf(i + 1));
@@ -57,7 +57,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
 
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
-            waitAllForSafeState();
+            waitAllForSafeState(instance, newInstance);
             CardinalityEstimator newEstimator = newInstance.getCardinalityEstimator(name);
             assertEquals(estimateSoFar, newEstimator.estimate());
 
@@ -92,7 +92,6 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                             try {
                                 counter.incrementAndGet();
                                 instances[id] = nodeFactory.newHazelcastInstance();
-                                waitAllForSafeState();
                                 instances[id].getCardinalityEstimator(name)
                                         .add(String.valueOf(counter.get()));
                             } catch (Exception e) {
@@ -114,6 +113,7 @@ public class CardinalityEstimatorAdvancedTest extends HazelcastTestSupport {
                 assertEquals(expectedValue, newEstimator.estimate());
                 instance.shutdown();
                 instance = instances[0];
+                waitAllForSafeState(instances);
             }
         } finally {
             ex.shutdownNow();

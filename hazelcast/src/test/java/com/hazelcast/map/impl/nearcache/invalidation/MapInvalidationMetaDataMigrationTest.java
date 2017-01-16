@@ -76,7 +76,7 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
         waitAllForSafeState(instance3);
         instance2.shutdown();
-        waitAllForSafeState();
+        waitAllForSafeState(instance3);
 
         Map<Integer, Long> destination = getPartitionToSequenceMap(mapName, instance3);
 
