@@ -54,7 +54,7 @@ public final class TextCommandConstants {
 
     public enum TextCommandType {
         GET((byte) 0),
-        PARTIAL_GET((byte) 1),
+        BULK_GET((byte) 1),
         GETS((byte) 2),
         SET((byte) 3),
         APPEND((byte) 4),

@@ -16,17 +16,23 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import com.hazelcast.internal.ascii.NoOpCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import org.junit.Test;
 
-public class EndCommand extends NoOpCommand {
+import static org.junit.Assert.*;
 
-    public EndCommand() {
-        super(TextCommandConstants.END);
+public class MemcacheUtilsTest {
+
+    @Test
+    public void withDefaultMap() {
+        MapNameAndKeyPair mapNameKeyPair = MemcacheUtils.parseMemcacheKey("key");
+        assertEquals("hz_memcache_default", mapNameKeyPair.getMapName());
+        assertEquals("key", mapNameKeyPair.getKey());
     }
 
-    @Override
-    public String toString() {
-        return "EndCommand{}";
+    @Test
+    public void withExplicitMap() {
+        MapNameAndKeyPair mapNameKeyPair = MemcacheUtils.parseMemcacheKey("map:key");
+        assertEquals("hz_memcache_map", mapNameKeyPair.getMapName());
+        assertEquals("key", mapNameKeyPair.getKey());
     }
 }

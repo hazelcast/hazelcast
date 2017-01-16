@@ -19,6 +19,10 @@ package com.hazelcast.internal.ascii;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.memcache.Stats;
 
+import java.util.Map;
+import java.util.Set;
+
+@SuppressWarnings("checkstyle:methodcount")
 public interface TextCommandService {
 
     boolean offer(String queueName, Object value);
@@ -32,6 +36,8 @@ public interface TextCommandService {
     void sendResponse(TextCommand textCommand);
 
     Object get(String mapName, String key);
+
+    Map<String, Object> getAll(String mapName, Set<String> keys);
 
     byte[] getByteArray(String mapName, String key);
 

@@ -193,6 +193,15 @@ public class TextReadHandler implements ReadHandler {
     }
 
     public void publishRequest(TextCommand command) {
+        if (!isCommandTypeEnabled(command)) {
+            return;
+        }
+        long requestId = (command.shouldReply()) ? requestIdGen++ : -1;
+        command.init(this, requestId);
+        textCommandService.processRequest(command);
+    }
+
+    private boolean isCommandTypeEnabled(TextCommand command) {
         if (!connectionTypeSet) {
             if (command instanceof HttpCommand) {
                 boolean isMancenterRequest = ((HttpCommand) command).getURI().
@@ -201,21 +210,19 @@ public class TextReadHandler implements ReadHandler {
                         startsWith(HttpCommandProcessor.URI_CLUSTER_MANAGEMENT_BASE_URL);
                 if (!restEnabled && (!isMancenterRequest && !isClusterManagementRequest)) {
                     connection.close("REST not enabled", null);
-                    return;
+                    return false;
                 }
                 connection.setType(ConnectionType.REST_CLIENT);
             } else {
                 if (!memcacheEnabled) {
                     connection.close("Memcached not enabled", null);
-                    return;
+                    return false;
                 }
                 connection.setType(ConnectionType.MEMCACHE_CLIENT);
             }
             connectionTypeSet = true;
         }
-        long requestId = (command.shouldReply()) ? requestIdGen++ : -1;
-        command.init(this, requestId);
-        textCommandService.processRequest(command);
+        return true;
     }
 
     private void processCmd(String cmd) {

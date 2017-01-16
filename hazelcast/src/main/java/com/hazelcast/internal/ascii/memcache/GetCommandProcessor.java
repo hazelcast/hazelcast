@@ -16,68 +16,37 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.ascii.TextCommandService;
-import com.hazelcast.logging.ILogger;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-
-import static com.hazelcast.util.StringUtil.stringToBytes;
+import static com.hazelcast.internal.ascii.memcache.MemcacheUtils.parseMemcacheKey;
 
 public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
-    private final boolean single;
-    private final ILogger logger;
+    private final EntryConverter entryConverter;
 
-    public GetCommandProcessor(TextCommandService textCommandService, boolean single) {
+    public GetCommandProcessor(TextCommandService textCommandService, EntryConverter entryConverter) {
         super(textCommandService);
-        this.single = single;
-        logger = textCommandService.getNode().getLogger(getClass());
+        this.entryConverter = entryConverter;
     }
 
     @Deprecated
     public void handle(GetCommand getCommand) {
-        String key;
-        try {
-            key = URLDecoder.decode(getCommand.getKey(), "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new HazelcastException(e);
-        }
-        String mapName = DEFAULT_MAP_NAME;
-        int index = key.indexOf(':');
-        if (index != -1) {
-            mapName = MAP_NAME_PRECEDER + key.substring(0, index);
-            key = key.substring(index + 1);
-        }
-        Object value = textCommandService.get(mapName, key);
-        MemcacheEntry entry = null;
-        if (value != null) {
-            if (value instanceof MemcacheEntry) {
-                entry = (MemcacheEntry) value;
-            } else if (value instanceof byte[]) {
-                entry = new MemcacheEntry(getCommand.getKey(), ((byte[]) value), 0);
-            } else if (value instanceof String) {
-                entry = new MemcacheEntry(getCommand.getKey(), stringToBytes((String) value), 0);
-            } else {
-                try {
-                    entry = new MemcacheEntry(getCommand.getKey(), textCommandService.toByteArray(value), 0);
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-            }
-        }
+        String memcacheKey = getCommand.getKey();
+        MapNameAndKeyPair mapNameAndKeyPair = parseMemcacheKey(memcacheKey);
+        Object value = textCommandService.get(mapNameAndKeyPair.getMapName(), mapNameAndKeyPair.getKey());
+        MemcacheEntry entry = entryConverter.toEntry(memcacheKey, value);
         if (entry != null) {
             textCommandService.incrementGetHitCount();
         } else {
             textCommandService.incrementGetMissCount();
         }
-        getCommand.setValue(entry, single);
+        getCommand.setValue(entry);
         textCommandService.sendResponse(getCommand);
     }
 
+
     @Override
     public void handleRejection(GetCommand getCommand) {
-        getCommand.setValue(null, single);
+        getCommand.setValue(null);
         textCommandService.sendResponse(getCommand);
     }
 }
