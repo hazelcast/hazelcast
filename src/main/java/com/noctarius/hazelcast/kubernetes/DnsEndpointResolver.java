@@ -31,9 +31,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -56,9 +54,11 @@ final class DnsEndpointResolver
                 return Collections.emptyList();
             }
 
-            Set<Address> discoveredAddresses = new HashSet<Address>();
+            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
 
-            for (Record record : records) {
+            if (records.length > 0) {
+                // Get only the first record, because all of them have the same name
+                // Example:
                 // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
                 //      Server:         172.30.0.1
                 //      Address:        172.30.0.1#53
@@ -69,7 +69,7 @@ final class DnsEndpointResolver
                 //      Address: 10.1.5.28
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
                 //      Address: 10.1.9.33
-                SRVRecord srv = (SRVRecord) record;
+                SRVRecord srv = (SRVRecord) records[0];
                 InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = getHazelcastPort(srv.getPort());
 
@@ -79,19 +79,12 @@ final class DnsEndpointResolver
                     if (logger.isFinestEnabled()) {
                         logger.finest("Found node ip-address is: " + address);
                     }
-                    discoveredAddresses.add(address);
+                    discoveredNodes.add(new SimpleDiscoveryNode(address));
                 }
 
-            }
-            if (discoveredAddresses.isEmpty()) {
+            } else {
                 logger.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
                 return Collections.EMPTY_LIST;
-            }
-
-            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>(discoveredAddresses.size());
-
-            for (Address address : discoveredAddresses) {
-                discoveredNodes.add(new SimpleDiscoveryNode(address));
             }
 
             return discoveredNodes;
