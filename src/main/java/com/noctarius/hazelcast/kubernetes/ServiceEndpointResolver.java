@@ -50,7 +50,7 @@ class ServiceEndpointResolver
 
     private final KubernetesClient client;
 
-    public ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue,
+    ServiceEndpointResolver(ILogger logger, String serviceName, String serviceLabel, String serviceLabelValue,
                                    String namespace, String kubernetesMaster, String apiToken) {
 
         super(logger);

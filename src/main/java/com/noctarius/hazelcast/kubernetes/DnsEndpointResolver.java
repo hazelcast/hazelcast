@@ -42,7 +42,7 @@ final class DnsEndpointResolver
     private final String serviceDns;
     private final int serviceDnsTimeout;
 
-    public DnsEndpointResolver(ILogger logger, String serviceDns, int serviceDnsTimeout) {
+    DnsEndpointResolver(ILogger logger, String serviceDns, int serviceDnsTimeout) {
         super(logger);
         this.serviceDns = serviceDns;
         this.serviceDnsTimeout = serviceDnsTimeout;
@@ -50,11 +50,7 @@ final class DnsEndpointResolver
 
     List<DiscoveryNode> resolve() {
         try {
-            ExtendedResolver resolver = new ExtendedResolver();
-            resolver.setTimeout(serviceDnsTimeout);
-            Lookup lookup = new Lookup(serviceDns, Type.SRV);
-            lookup.setResolver(resolver);
-            lookup.setCache(null); // Avoid caching temporary DNS lookup failures indefinitely in global cache
+            Lookup lookup = buildLookup();
             Record[] records = lookup.run();
 
             if (lookup.getResult() != Lookup.SUCCESSFUL) {
@@ -92,7 +88,7 @@ final class DnsEndpointResolver
 
             if (addresses.size() == 0) {
                 logger.warning("Could not find any service for serviceDns '" + serviceDns + "'");
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             }
 
             return asDiscoveredNodes(addresses);
@@ -102,6 +98,21 @@ final class DnsEndpointResolver
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not resolve services via DNS", e);
         }
+    }
+
+    private Lookup buildLookup()
+            throws TextParseException, UnknownHostException {
+
+        ExtendedResolver resolver = new ExtendedResolver();
+        resolver.setTimeout(serviceDnsTimeout);
+
+        Lookup lookup = new Lookup(serviceDns, Type.SRV);
+        lookup.setResolver(resolver);
+
+        // Avoid caching temporary DNS lookup failures indefinitely in global cache
+        lookup.setCache(null);
+
+        return lookup;
     }
 
     private List<DiscoveryNode> asDiscoveredNodes(Set<Address> addresses) {

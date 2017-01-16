@@ -58,7 +58,7 @@ public final class KubernetesProperties {
 
     /**
      * <p>Configuration key: <tt>service-dns-timeout</tt></p>
-     * Defines the DNS service lookup timeout in seconds.
+     * Defines the DNS service lookup timeout in seconds. Defaults to: 5 secs.
      */
     public static final PropertyDefinition SERVICE_DNS_TIMEOUT = property("service-dns-timeout", INTEGER);
 
