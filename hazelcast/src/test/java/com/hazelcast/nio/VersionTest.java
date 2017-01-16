@@ -14,7 +14,6 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-
 public class VersionTest {
 
     private Version v3 = of(3);
@@ -77,7 +76,6 @@ public class VersionTest {
         assertFalse(Version.of(0).isUnknown());
     }
 
-
     @Test
     public void equals() throws Exception {
         assertEquals(Version.UNKNOWN, Version.UNKNOWN);
@@ -95,5 +93,4 @@ public class VersionTest {
 
         assertTrue(Version.UNKNOWN.hashCode() != Version.of(4).hashCode());
     }
-
 }

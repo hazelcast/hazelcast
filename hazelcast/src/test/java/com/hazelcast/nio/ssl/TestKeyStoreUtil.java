@@ -28,10 +28,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
 
-/**
- * @author mdogan 9/6/13
- */
-
 public class TestKeyStoreUtil {
 
     public static final String JAVAX_NET_SSL_KEY_STORE = "javax.net.ssl.keyStore";
@@ -86,5 +82,4 @@ public class TestKeyStoreUtil {
         props.setProperty(JAVAX_NET_SSL_TRUST_STORE_PASSWORD, "123456");
         return props;
     }
-
 }

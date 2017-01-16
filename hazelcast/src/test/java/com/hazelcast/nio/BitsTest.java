@@ -339,5 +339,4 @@ public class BitsTest {
         assertEquals(x, Bits.extractInt(k, false));
         assertEquals(y, Bits.extractInt(k, true));
     }
-
 }
