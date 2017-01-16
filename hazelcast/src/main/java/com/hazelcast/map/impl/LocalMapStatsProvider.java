@@ -26,6 +26,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -37,7 +38,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Provides node local statistics of a map via {@link #createLocalMapStats}
@@ -50,8 +53,14 @@ public class LocalMapStatsProvider {
     private static final int RETRY_COUNT = 3;
     private static final int WAIT_PARTITION_TABLE_UPDATE_MILLIS = 100;
 
-    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap
-            = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ILogger logger;
+    private final Address localAddress;
+    private final NodeEngine nodeEngine;
+    private final ClusterService clusterService;
+    private final MapServiceContext mapServiceContext;
+    private final IPartitionService partitionService;
+    private final NearCacheProvider nearCacheProvider;
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
     private final ConstructorFunction<String, LocalMapStatsImpl> constructorFunction
             = new ConstructorFunction<String, LocalMapStatsImpl>() {
         public LocalMapStatsImpl createNew(String key) {
@@ -59,18 +68,11 @@ public class LocalMapStatsProvider {
         }
     };
 
-    private final MapServiceContext mapServiceContext;
-    private final NearCacheProvider nearCacheProvider;
-    private final ClusterService clusterService;
-    private final IPartitionService partitionService;
-    private final Address localAddress;
-    private final ILogger logger;
-
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        this.logger = nodeEngine.getLogger(getClass());
+        this.nodeEngine = mapServiceContext.getNodeEngine();
         this.nearCacheProvider = mapServiceContext.getNearCacheProvider();
+        this.logger = nodeEngine.getLogger(getClass());
         this.clusterService = nodeEngine.getClusterService();
         this.partitionService = nodeEngine.getPartitionService();
         this.localAddress = clusterService.getThisAddress();
@@ -114,6 +116,7 @@ public class LocalMapStatsProvider {
             }
         }
 
+
         // reuse same HashMap to return calculated LocalMapStats.
         for (Object object : statsPerMap.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
@@ -127,7 +130,24 @@ public class LocalMapStatsProvider {
             entry.setValue(updatedStats);
         }
 
+        addStatsOfNoDataIncludedMaps(statsPerMap);
+
         return statsPerMap;
+    }
+
+    /**
+     * Some maps may have a proxy but no data has been put yet. Think of one created a proxy but not put any data in it.
+     * By calling this method we are returning an empty stats object for those maps. This is helpful to monitor those kind
+     * of maps.
+     */
+    private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
+        ProxyService proxyService = nodeEngine.getProxyService();
+        Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
+        for (String mapName : mapNames) {
+            if (!statsPerMap.containsKey(mapName)) {
+                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+            }
+        }
     }
 
     private static boolean isStatisticsCalculationEnabledFor(RecordStore recordStore) {
@@ -249,9 +269,10 @@ public class LocalMapStatsProvider {
         return replicaAddress;
     }
 
+
     private static void sleep() {
         try {
-            TimeUnit.MILLISECONDS.sleep(WAIT_PARTITION_TABLE_UPDATE_MILLIS);
+            MILLISECONDS.sleep(WAIT_PARTITION_TABLE_UPDATE_MILLIS);
         } catch (InterruptedException e) {
             throw ExceptionUtil.rethrow(e);
         }
