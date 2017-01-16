@@ -31,7 +31,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 final class DnsEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -54,10 +56,9 @@ final class DnsEndpointResolver
                 return Collections.emptyList();
             }
 
-            List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
-
-            if (records.length > 0) {
-                // Get only the first record, because all of them have the same name
+            // We collect all records as some instances seem to return multiple dns records
+            Set<Address> addresses = new HashSet<Address>();
+            for (Record record : records) {
                 // Example:
                 // nslookup u219692-hazelcast.u219692-hazelcast.svc.cluster.local 172.30.0.1
                 //      Server:         172.30.0.1
@@ -69,31 +70,40 @@ final class DnsEndpointResolver
                 //      Address: 10.1.5.28
                 //      Name:   u219692-hazelcast.u219692-hazelcast.svc.cluster.local
                 //      Address: 10.1.9.33
-                SRVRecord srv = (SRVRecord) records[0];
+                SRVRecord srv = (SRVRecord) record;
                 InetAddress[] inetAddress = getAllAddresses(srv);
                 int port = getHazelcastPort(srv.getPort());
 
                 for (InetAddress i : inetAddress) {
                     Address address = new Address(i, port);
 
-                    if (logger.isFinestEnabled()) {
-                        logger.finest("Found node ip-address is: " + address);
+                    // If address is newly discovered and logger is finest, emit log entry
+                    if (addresses.add(address) && logger.isFinestEnabled()) {
+                        logger.finest("Found node service with address: " + address);
                     }
-                    discoveredNodes.add(new SimpleDiscoveryNode(address));
                 }
+            }
 
-            } else {
-                logger.warning("Could not find any service for serviceDns '" + serviceDns + "' failed");
+            if (addresses.size() == 0) {
+                logger.warning("Could not find any service for serviceDns '" + serviceDns + "'");
                 return Collections.EMPTY_LIST;
             }
 
-            return discoveredNodes;
+            return asDiscoveredNodes(addresses);
 
         } catch (TextParseException e) {
             throw new RuntimeException("Could not resolve services via DNS", e);
         } catch (UnknownHostException e) {
             throw new RuntimeException("Could not resolve services via DNS", e);
         }
+    }
+
+    private List<DiscoveryNode> asDiscoveredNodes(Set<Address> addresses) {
+        List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>();
+        for (Address address : addresses) {
+            discoveryNodes.add(new SimpleDiscoveryNode(address));
+        }
+        return discoveryNodes;
     }
 
     private int getHazelcastPort(int port) {
