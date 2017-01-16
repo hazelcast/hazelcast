@@ -81,13 +81,16 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 The following are the fixed issues for 3.7.5 release.
 
+- Map statistics are disappeared in Management Center when the member is restarted. [9590]
 - Clients are not updated when `DistributedObject` is removed from the member. [9457], [9423]
 - Hazelcast Management Center is not working with Tomcat 8 and higher. [9452]
+- `TextReadHandler` (for REST and Memcache) commands has a size restriction. Large responses cannot be handled. There is a hardcoded buffer size in `TextReadHandler` but it should be converted as dynamic so that it can handle responses of any size. [9355]
 - The configuration schema `hazelcast-spring.xsd` should use `<xs:all>` instead of `<xs:sequence>` for "hazelcast-bean" base type. [9289]
 - Stuck threads are seen in Hazelcast 3.6.2 client when session replication is used. [9060]
 - When cluster service starts when a member starts, it registers itself as the only member and publishes the membership event. `QuorumService` is a `MembershipAwareService`, therefore it is expected to update quorums when it receives these membership events. The problem is as follows: services are not registered to `ServiceManager` yet when the cluster service publishes this event on a member start. So, it seems that `QuorumService` is missing it and failing to update its internal quorum status. [8820]
 - Client disconnection leads to a stuck `clusterExecutor` shutdown in Hazelcast 3.6.2. [8721]
 - Near cache updates may cause `OutofMemoryException` under high load and high number of `ICache.getAsync` calls. [8593]
+- The tag hot-restart cannot resolve the placeholder for the value of enabled and fsync within Spring context. [8500]
 - `HazelcastInstanceAware` should be supported for `QuorumFunction`. [7499]
 
 
