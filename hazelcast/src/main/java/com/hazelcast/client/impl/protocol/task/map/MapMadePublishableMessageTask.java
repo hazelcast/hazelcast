@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapMadePublishableCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -30,23 +30,23 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.codec.EnterpriseMapMessageType#ENTERPRISEMAP_MADEPUBLISHABLE}
+ * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_MADEPUBLISHABLE}
  */
 public class MapMadePublishableMessageTask
-        extends AbstractAllPartitionsMessageTask<EnterpriseMapMadePublishableCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<ContinuousQueryMadePublishableCodec.RequestParameters> {
 
     public MapMadePublishableMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected EnterpriseMapMadePublishableCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return EnterpriseMapMadePublishableCodec.decodeRequest(clientMessage);
+    protected ContinuousQueryMadePublishableCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ContinuousQueryMadePublishableCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return EnterpriseMapMadePublishableCodec.encodeResponse((Boolean) response);
+        return ContinuousQueryMadePublishableCodec.encodeResponse((Boolean) response);
     }
 
     @Override

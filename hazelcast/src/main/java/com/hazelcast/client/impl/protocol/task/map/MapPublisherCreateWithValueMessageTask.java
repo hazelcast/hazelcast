@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapPublisherCreateWithValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -49,10 +49,10 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.codec.EnterpriseMapMessageType#ENTERPRISEMAP_PUBLISHERCREATEWITHVALUE}
+ * {@link com.hazelcast.client.impl.protocol.codec.ContinuousQueryMessageType#CONTINUOUSQUERY_PUBLISHERCREATEWITHVALUE}
  */
 public class MapPublisherCreateWithValueMessageTask
-        extends AbstractCallableMessageTask<EnterpriseMapPublisherCreateWithValueCodec.RequestParameters> {
+        extends AbstractCallableMessageTask<ContinuousQueryPublisherCreateWithValueCodec.RequestParameters> {
 
     public MapPublisherCreateWithValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -108,13 +108,13 @@ public class MapPublisherCreateWithValueMessageTask
     }
 
     @Override
-    protected EnterpriseMapPublisherCreateWithValueCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return EnterpriseMapPublisherCreateWithValueCodec.decodeRequest(clientMessage);
+    protected ContinuousQueryPublisherCreateWithValueCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ContinuousQueryPublisherCreateWithValueCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return EnterpriseMapPublisherCreateWithValueCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return ContinuousQueryPublisherCreateWithValueCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override
