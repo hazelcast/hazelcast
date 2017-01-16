@@ -183,7 +183,7 @@
               </sourceFileIncludes>
               <detectJavaApiLink>true</detectJavaApiLink>
               <links>
-                <link>http://docs.hazelcast.org/docs/3.6/javadoc/</link>
+                <link>http://docs.hazelcast.org/docs/3.7/javadoc/</link>
               </links>
               <!-- additionalparam>-Xdoclint:none</additionalparam -->
             </configuration>
@@ -222,7 +222,7 @@
           </sourceFileIncludes>
           <detectJavaApiLink>true</detectJavaApiLink>
           <links>
-            <link>http://docs.hazelcast.org/docs/3.6/javadoc/</link>
+            <link>http://docs.hazelcast.org/docs/3.7/javadoc/</link>
           </links>
         </configuration>
       </plugin>
