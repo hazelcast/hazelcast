@@ -29,9 +29,9 @@ import java.io.Closeable;
  * The provided mutexes are closeable as we want to know when the granular mutexes from Java are no longer needed.
  */
 public class ClassloadingMutexProvider {
+
     private static final String JAVA_VERSION_WHERE_PARALLEL_CLASSLOADING_IS_NOT_POSSIBLE = "1.6";
     private static final boolean USE_PARALLEL_LOADING = isParallelClassLoadingPossible();
-
 
     private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
     private final GlobalMutex globalMutex = new GlobalMutex();

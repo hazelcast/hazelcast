@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.internal.distributedclassloading.impl.ClassloadingMutexProvider;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -28,24 +28,28 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.regex.Pattern;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * This is used to separate Server and Client inside the same JVM on new
- * standalone client unittests!<br/>
+ * This is used to separate Server and Client inside the same JVM on new standalone client unit tests.
+ *
  * NEVER EVER use this anywhere in production! :D
  */
-public class FilteringClassLoader
-        extends ClassLoader {
+@PrivateApi
+public class FilteringClassLoader extends ClassLoader {
 
     private static final int BUFFER_SIZE = 1024;
+
+    private final ClassloadingMutexProvider mutexProvider = new ClassloadingMutexProvider();
+    private final Pattern pattern = Pattern.compile("\\.");
+    private final byte[] buffer = new byte[BUFFER_SIZE];
 
     private final List<String> excludePackages;
     private final ClassLoader delegatingClassLoader;
     private final String enforcedSelfLoadingPackage;
-
-    private final ClassloadingMutexProvider mutexProvider = new ClassloadingMutexProvider();
 
     public FilteringClassLoader(List<String> excludePackages, String enforcedSelfLoadingPackage) {
         this.excludePackages = Collections.unmodifiableList(excludePackages);
@@ -57,7 +61,6 @@ public class FilteringClassLoader
 
             delegatingClassLoader = (ClassLoader) parent.get(this);
             parent.set(this, null);
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -69,9 +72,7 @@ public class FilteringClassLoader
     }
 
     @Override
-    public Enumeration<URL> getResources(String name)
-            throws IOException {
-
+    public Enumeration<URL> getResources(String name) throws IOException {
         return delegatingClassLoader.getResources(name);
     }
 
@@ -81,9 +82,7 @@ public class FilteringClassLoader
     }
 
     @Override
-    protected Class<?> loadClass(String name, boolean resolve)
-            throws ClassNotFoundException {
-
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         isNotNull(name, "name");
 
         for (String excludePackage : excludePackages) {
@@ -95,6 +94,7 @@ public class FilteringClassLoader
         if (enforcedSelfLoadingPackage != null && name.startsWith(enforcedSelfLoadingPackage)) {
             Closeable classLoadingMutex = mutexProvider.getMutexForClass(name);
             try {
+                //noinspection SynchronizationOnLocalVariableOrMethodParameter
                 synchronized (classLoadingMutex) {
                     Class<?> clazz = findLoadedClass(name);
                     if (clazz == null) {
@@ -103,30 +103,31 @@ public class FilteringClassLoader
                     return clazz;
                 }
             } finally {
-                IOUtil.closeResource(classLoadingMutex);
+                closeResource(classLoadingMutex);
             }
         }
         return delegatingClassLoader.loadClass(name);
     }
 
     private Class<?> loadAndDefineClass(String name) throws ClassNotFoundException {
-        InputStream is = getResourceAsStream(name.replaceAll("\\.", "/").concat(".class"));
+        InputStream is = null;
+        ByteArrayOutputStream os = null;
         try {
-            byte[] temp = new byte[BUFFER_SIZE];
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            is = getResourceAsStream(pattern.matcher(name).replaceAll("/").concat(".class"));
+            os = new ByteArrayOutputStream();
 
             int length;
-            while ((length = is.read(temp)) != -1) {
-                baos.write(temp, 0, length);
+            while ((length = is.read(buffer)) != -1) {
+                os.write(buffer, 0, length);
             }
 
-            byte[] data = baos.toByteArray();
-            Class<?> clazz = defineClass(name, data, 0, data.length);
-            return clazz;
+            byte[] data = os.toByteArray();
+            return defineClass(name, data, 0, data.length);
         } catch (Exception e) {
             throw new ClassNotFoundException(name, e);
         } finally {
-            IOUtil.closeResource(is);
+            closeResource(os);
+            closeResource(is);
         }
     }
 }

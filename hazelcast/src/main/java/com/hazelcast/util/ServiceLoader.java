@@ -20,7 +20,6 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,57 +35,54 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
- * Support class for loading Hazelcast services and hooks based on the Java ServiceLoader specification
+ * Support class for loading Hazelcast services and hooks based on the Java {@link ServiceLoader} specification,
  * but changed in the fact of classloaders to test for given services to work in multi classloader
- * environments like application or OSGi servers
+ * environments like application or OSGi servers.
  */
 public final class ServiceLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
     private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
 
-    // See https://github.com/hazelcast/hazelcast/issues/3922
+    // see https://github.com/hazelcast/hazelcast/issues/3922
     private static final String IGNORED_GLASSFISH_MAGIC_CLASSLOADER =
             "com.sun.enterprise.v3.server.APIClassLoaderServiceImpl$APIClassLoader";
 
     private ServiceLoader() {
     }
 
-    public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader)
-            throws Exception {
-        final Iterator<T> iterator = iterator(clazz, factoryId, classLoader);
+    public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+        Iterator<T> iterator = iterator(clazz, factoryId, classLoader);
         if (iterator.hasNext()) {
             return iterator.next();
         }
         return null;
     }
 
-    public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader)
-            throws Exception {
-        final Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-
+    public static <T> Iterator<T> iterator(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+        Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
         return new NewInstanceIterator<T>(serviceDefinitions, clazz);
     }
 
-    public static <T> Iterator<Class<T>> classIterator(String factoryId, ClassLoader classLoader)
-            throws Exception {
-        final Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
-
+    public static <T> Iterator<Class<T>> classIterator(String factoryId, ClassLoader classLoader) throws Exception {
+        Set<ServiceDefinition> serviceDefinitions = getServiceDefinitions(factoryId, classLoader);
         return new LoadClassIterator<T>(serviceDefinitions);
     }
 
     private static Set<ServiceDefinition> getServiceDefinitions(String factoryId, ClassLoader classLoader) {
-        final List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
+        List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
-        final Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
+        Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
         for (ClassLoader selectedClassLoader : classLoaders) {
             factoryUrls.addAll(collectFactoryUrls(factoryId, selectedClassLoader));
         }
 
-        final Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
+        Set<ServiceDefinition> serviceDefinitions = new HashSet<ServiceDefinition>();
         for (URLDefinition urlDefinition : factoryUrls) {
             serviceDefinitions.addAll(parse(urlDefinition));
         }
@@ -98,9 +94,9 @@ public final class ServiceLoader {
     }
 
     private static Set<URLDefinition> collectFactoryUrls(String factoryId, ClassLoader classLoader) {
-        final String resourceName = "META-INF/services/" + factoryId;
+        String resourceName = "META-INF/services/" + factoryId;
         try {
-            final Enumeration<URL> configs;
+            Enumeration<URL> configs;
             if (classLoader != null) {
                 configs = classLoader.getResources(resourceName);
             } else {
@@ -110,7 +106,7 @@ public final class ServiceLoader {
             Set<URLDefinition> urlDefinitions = new HashSet<URLDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                final URI uri = new URI(url.toExternalForm().replace(" ", "%20"));
+                URI uri = new URI(url.toExternalForm().replace(" ", "%20"));
 
                 ClassLoader highestClassLoader = findHighestReachableClassLoader(url, classLoader, resourceName);
                 if (!highestClassLoader.getClass().getName().equals(IGNORED_GLASSFISH_MAGIC_CLASSLOADER)) {
@@ -127,7 +123,7 @@ public final class ServiceLoader {
 
     private static Set<ServiceDefinition> parse(URLDefinition urlDefinition) {
         try {
-            final Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
+            Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
             BufferedReader r = null;
             try {
                 URL url = urlDefinition.uri.toURL();
@@ -148,7 +144,7 @@ public final class ServiceLoader {
                     names.add(new ServiceDefinition(name, urlDefinition.classLoader));
                 }
             } finally {
-                IOUtil.closeResource(r);
+                closeResource(r);
             }
             return names;
         } catch (Exception e) {
@@ -166,13 +162,12 @@ public final class ServiceLoader {
 
         ClassLoader current = classLoader;
         while (current.getParent() != null) {
-            // If we have a filtering classloader in hierarchy we need to stop!
+            // if we have a filtering classloader in hierarchy, we need to stop!
             if (FILTERING_CLASS_LOADER.equals(current.getClass().getCanonicalName())) {
                 break;
             }
 
             ClassLoader parent = current.getParent();
-
             try {
                 Enumeration<URL> resources = parent.getResources(resourceName);
                 if (resources != null) {
@@ -184,28 +179,28 @@ public final class ServiceLoader {
                     }
                 }
             } catch (IOException ignore) {
-                // We want to ignore failures and keep searching
-                EmptyStatement.ignore(ignore);
+                // we want to ignore failures and keep searching
+                ignore(ignore);
             } catch (URISyntaxException ignore) {
-                // We want to ignore failures and keep searching
-                EmptyStatement.ignore(ignore);
+                // we want to ignore failures and keep searching
+                ignore(ignore);
             }
 
-            // Going on with the search upwards the hierarchy
+            // going on with the search upwards the hierarchy
             current = current.getParent();
         }
         return highestClassLoader;
     }
 
     static List<ClassLoader> selectClassLoaders(ClassLoader classLoader) {
-        // List prevents reordering!
+        // list prevents reordering!
         List<ClassLoader> classLoaders = new ArrayList<ClassLoader>();
 
         if (classLoader != null) {
             classLoaders.add(classLoader);
         }
 
-        // Is TCCL same as given classLoader
+        // check if TCCL is same as given classLoader
         ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         if (tccl != classLoader) {
             classLoaders.add(tccl);
@@ -226,8 +221,8 @@ public final class ServiceLoader {
             }
 
         } catch (ClassNotFoundException ignore) {
-            // Ignore since we does not have HazelcastClient in classpath
-            EmptyStatement.ignore(ignore);
+            // ignore since we does not have HazelcastClient in classpath
+            ignore(ignore);
         }
 
         return classLoaders;
@@ -257,14 +252,12 @@ public final class ServiceLoader {
             }
 
             ServiceDefinition that = (ServiceDefinition) o;
-
             if (!classLoader.equals(that.classLoader)) {
                 return false;
             }
             if (!className.equals(that.className)) {
                 return false;
             }
-
             return true;
         }
 
@@ -278,7 +271,7 @@ public final class ServiceLoader {
 
     /**
      * This class keeps track of available service definition URLs and
-     * the corresponding classloaders
+     * the corresponding classloaders.
      */
     private static final class URLDefinition {
 
@@ -300,36 +293,36 @@ public final class ServiceLoader {
             }
 
             URLDefinition that = (URLDefinition) o;
-
             if (uri != null ? !uri.equals(that.uri) : that.uri != null) {
                 return false;
             }
-
             return true;
         }
 
         @Override
         public int hashCode() {
-            int result = uri != null ? uri.hashCode() : 0;
-            return result;
+            return uri == null ? 0 : uri.hashCode();
         }
     }
 
     private static class NewInstanceIterator<T> implements Iterator<T> {
-        final java.util.Iterator<ServiceDefinition> iterator;
+
+        private final Iterator<ServiceDefinition> iterator;
         private final Class<T> clazz;
 
-        public NewInstanceIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> clazz) {
+        NewInstanceIterator(Set<ServiceDefinition> serviceDefinitions, Class<T> clazz) {
+            this.iterator = serviceDefinitions.iterator();
             this.clazz = clazz;
-            iterator = serviceDefinitions.iterator();
         }
 
+        @Override
         public boolean hasNext() {
             return iterator.hasNext();
         }
 
+        @Override
         public T next() {
-            final ServiceDefinition definition = iterator.next();
+            ServiceDefinition definition = iterator.next();
             try {
                 String className = definition.className;
                 ClassLoader classLoader = definition.classLoader;
@@ -339,24 +332,29 @@ public final class ServiceLoader {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
     }
 
     private static class LoadClassIterator<T> implements Iterator<Class<T>> {
-        final Iterator<ServiceDefinition> iterator;
 
-        public LoadClassIterator(Set<ServiceDefinition> serviceDefinitions) {
+        private final Iterator<ServiceDefinition> iterator;
+
+        LoadClassIterator(Set<ServiceDefinition> serviceDefinitions) {
             iterator = serviceDefinitions.iterator();
         }
 
+        @Override
         public boolean hasNext() {
             return iterator.hasNext();
         }
 
+        @Override
+        @SuppressWarnings("unchecked")
         public Class<T> next() {
-            final ServiceDefinition definition = iterator.next();
+            ServiceDefinition definition = iterator.next();
             try {
                 String className = definition.className;
                 ClassLoader classLoader = definition.classLoader;
@@ -366,6 +364,7 @@ public final class ServiceLoader {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
