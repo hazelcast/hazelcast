@@ -35,7 +35,7 @@ public class ReleaseOperation extends SemaphoreBackupAwareOperation implements N
     @Override
     public void run() throws Exception {
         SemaphoreContainer semaphoreContainer = getSemaphoreContainer();
-        semaphoreContainer.release(permitCount, getCallerUuid());
+        semaphoreContainer.release(getCallerUuid(), permitCount);
         response = true;
     }
 

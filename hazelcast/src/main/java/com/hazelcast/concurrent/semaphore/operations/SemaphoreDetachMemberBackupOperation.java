@@ -20,12 +20,12 @@ import com.hazelcast.concurrent.semaphore.SemaphoreContainer;
 import com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 
-public class SemaphoreDeadMemberBackupOperation extends SemaphoreBackupOperation {
+public class SemaphoreDetachMemberBackupOperation extends SemaphoreBackupOperation {
 
-    public SemaphoreDeadMemberBackupOperation() {
+    public SemaphoreDetachMemberBackupOperation() {
     }
 
-    public SemaphoreDeadMemberBackupOperation(String name, String firstCaller) {
+    public SemaphoreDetachMemberBackupOperation(String name, String firstCaller) {
         super(name, -1, firstCaller);
     }
 
@@ -34,12 +34,12 @@ public class SemaphoreDeadMemberBackupOperation extends SemaphoreBackupOperation
         SemaphoreService service = getService();
         if (service.containsSemaphore(name)) {
             SemaphoreContainer semaphoreContainer = service.getSemaphoreContainer(name);
-            response = semaphoreContainer.memberRemoved(firstCaller);
+            response = semaphoreContainer.detachAll(firstCaller);
         }
     }
 
     @Override
     public int getId() {
-        return SemaphoreDataSerializerHook.DEAD_MEMBER_BACKUP_OPERATION;
+        return SemaphoreDataSerializerHook.DETACH_MEMBER_BACKUP_OPERATION;
     }
 }
