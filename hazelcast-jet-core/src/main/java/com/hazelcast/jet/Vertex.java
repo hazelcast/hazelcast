@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -64,7 +65,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param name the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex(String name, SimpleProcessorSupplier simpleSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull SimpleProcessorSupplier simpleSupplier) {
         checkNotNull(name, "name");
         checkNotNull(simpleSupplier, "supplier");
 
@@ -78,7 +79,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param name the unique name of the vertex
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
      */
-    public Vertex(String name, ProcessorSupplier processorSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull ProcessorSupplier processorSupplier) {
         checkNotNull(name, "name");
         checkNotNull(processorSupplier, "supplier");
 
@@ -93,7 +94,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member
      *
      */
-    public Vertex(String name, ProcessorMetaSupplier metaSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull ProcessorMetaSupplier metaSupplier) {
         checkNotNull(name, "name");
         checkNotNull(metaSupplier, "supplier");
 
@@ -105,6 +106,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * Sets the number of processors corresponding to this vertex that will be
      * created on each member.
      */
+    @Nonnull
     public Vertex localParallelism(int localParallelism) {
         if (localParallelism <= 0) {
             throw new IllegalArgumentException("Parallelism must be greater than 0");
@@ -126,6 +128,7 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Returns the name of this vertex.
      */
+    @Nonnull
     public String getName() {
         return name;
     }
@@ -133,6 +136,7 @@ public class Vertex implements IdentifiedDataSerializable {
     /**
      * Returns this vertex's meta-supplier of processors.
      */
+    @Nonnull
     public ProcessorMetaSupplier getSupplier() {
         return supplier;
     }
@@ -146,17 +150,17 @@ public class Vertex implements IdentifiedDataSerializable {
     // Implementation of IdentifiedDataSerializable
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(@Nonnull ObjectDataOutput out) throws IOException {
+        out.writeInt(localParallelism);
         out.writeUTF(name);
         CustomClassLoadedObject.write(out, supplier);
-        out.writeInt(localParallelism);
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(@Nonnull ObjectDataInput in) throws IOException {
+        localParallelism = in.readInt();
         name = in.readUTF();
         supplier = CustomClassLoadedObject.read(in);
-        localParallelism = in.readInt();
     }
 
     @Override

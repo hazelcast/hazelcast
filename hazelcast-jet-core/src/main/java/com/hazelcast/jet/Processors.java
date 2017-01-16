@@ -58,7 +58,8 @@ public final class Processors {
      * {@code localParallelism * clusterSize}, otherwise some processors will have
      * no partitions assigned to them.
      */
-    public static ProcessorMetaSupplier mapReader(String mapName) {
+    @Nonnull
+    public static ProcessorMetaSupplier mapReader(@Nonnull String mapName) {
         return IMapReader.supplier(mapName);
     }
 
@@ -66,14 +67,16 @@ public final class Processors {
      * Returns a meta-supplier of processors that will fetch entries from a
      * Hazelcast {@code IMap} in a remote cluster.
      */
-    public static ProcessorMetaSupplier mapReader(String mapName, ClientConfig clientConfig) {
+    @Nonnull
+    public static ProcessorMetaSupplier mapReader(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return IMapReader.supplier(mapName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap}.
      */
-    public static ProcessorMetaSupplier mapWriter(String mapName) {
+    @Nonnull
+    public static ProcessorMetaSupplier mapWriter(@Nonnull String mapName) {
         return IMapWriter.supplier(mapName);
     }
 
@@ -81,14 +84,16 @@ public final class Processors {
      * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap} in
      * a remote cluster.
      */
-    public static ProcessorMetaSupplier mapWriter(String mapName, ClientConfig clientConfig) {
+    @Nonnull
+    public static ProcessorMetaSupplier mapWriter(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
         return IMapWriter.supplier(mapName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList.
      */
-    public static ProcessorMetaSupplier listReader(String listName) {
+    @Nonnull
+    public static ProcessorMetaSupplier listReader(@Nonnull String listName) {
         return IListReader.supplier(listName);
     }
 
@@ -96,14 +101,16 @@ public final class Processors {
      * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList
      * in a remote cluster.
      */
-    public static ProcessorMetaSupplier listReader(String listName, ClientConfig clientConfig) {
+    @Nonnull
+    public static ProcessorMetaSupplier listReader(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return IListReader.supplier(listName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that write received items to an IMDG IList.
      */
-    public static ProcessorSupplier listWriter(String listName) {
+    @Nonnull
+    public static ProcessorSupplier listWriter(@Nonnull String listName) {
         return IListWriter.supplier(listName);
     }
 
@@ -111,7 +118,8 @@ public final class Processors {
      * Returns a meta-supplier of processors that write received items to an IMDG IList in
      * a remote cluster.
      */
-    public static ProcessorSupplier listWriter(String listName, ClientConfig clientConfig) {
+    @Nonnull
+    public static ProcessorSupplier listWriter(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
         return IListWriter.supplier(listName, clientConfig);
     }
 

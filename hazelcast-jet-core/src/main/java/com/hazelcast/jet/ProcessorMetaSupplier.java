@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.nio.Address;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 
 /**
@@ -53,7 +54,7 @@ public interface ProcessorMetaSupplier extends Serializable {
      * instance's services and provides the parallelism parameters determined
      * from the cluster size.
      */
-    default void init(Context context) {
+    default void init(@Nonnull Context context) {
     }
 
     /**
@@ -62,13 +63,15 @@ public interface ProcessorMetaSupplier extends Serializable {
      * made on the cluster member that received the job request, after calling
      * {@code init()}.
      */
-    ProcessorSupplier get(Address address);
+    @Nonnull
+    ProcessorSupplier get(@Nonnull Address address);
 
     /**
      * Factory method that wraps the given {@code ProcessorSupplier}
      * and returns it as a constant from each {@link #get(Address)} call.
      */
-    static ProcessorMetaSupplier of(ProcessorSupplier procSupplier) {
+    @Nonnull
+    static ProcessorMetaSupplier of(@Nonnull ProcessorSupplier procSupplier) {
         return address -> procSupplier;
     }
 
@@ -78,7 +81,8 @@ public interface ProcessorMetaSupplier extends Serializable {
      * Specifically, returns a meta-supplier that will always return the
      * result of calling {@link ProcessorSupplier#of(SimpleProcessorSupplier)}.
      */
-    static ProcessorMetaSupplier of(SimpleProcessorSupplier procSupplier) {
+    @Nonnull
+    static ProcessorMetaSupplier of(@Nonnull SimpleProcessorSupplier procSupplier) {
         return address -> ProcessorSupplier.of(procSupplier);
     }
 
@@ -91,6 +95,7 @@ public interface ProcessorMetaSupplier extends Serializable {
         /**
          * Returns the Hazelcast instance.
          */
+        @Nonnull
         JetInstance getJetInstance();
 
         /**

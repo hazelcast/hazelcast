@@ -59,7 +59,7 @@ public abstract class AbstractProcessor implements Processor {
      * inbox and processing them one by one.
      */
     @Override
-    public void process(int ordinal, Inbox inbox) {
+    public void process(int ordinal, @Nonnull Inbox inbox) {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess(ordinal, item)) {
                 return;
@@ -78,7 +78,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         throw new UnsupportedOperationException("Missing implementation");
     }
 
@@ -92,14 +92,14 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Emits the item to the outbox bucket at the supplied ordinal.
      */
-    protected void emit(int ordinal, Object item) {
+    protected void emit(int ordinal, @Nonnull Object item) {
         outbox.add(ordinal, item);
     }
 
     /**
      * Emits the item to all the outbox buckets.
      */
-    protected void emit(Object item) {
+    protected void emit(@Nonnull Object item) {
         outbox.add(item);
     }
 
@@ -116,7 +116,7 @@ public abstract class AbstractProcessor implements Processor {
      * @param traverser traverser over items to emit
      * @return whether the traverser has been exhausted
      */
-    protected boolean emitCooperatively(int ordinal, Traverser<?> traverser) {
+    protected boolean emitCooperatively(int ordinal, @Nonnull Traverser<?> traverser) {
         Object item;
         if (pendingItem != null) {
             item = pendingItem;
@@ -137,14 +137,17 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Convenience for {@link #emitCooperatively(int, Traverser)} which emits to all ordinals.
      */
-    protected boolean emitCooperatively(Traverser<?> traverser) {
+    protected boolean emitCooperatively(@Nonnull Traverser<?> traverser) {
         return emitCooperatively(-1, traverser);
     }
 
     /**
      * Factory of {@link TryProcessor}s.
      */
-    protected <T, R> TryProcessor<T, R> tryProcessor(Function<? super T, ? extends Traverser<? extends R>> mapper) {
+    @Nonnull
+    protected <T, R> TryProcessor<T, R> tryProcessor(
+            @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
+    ) {
         return new TryProcessor<>(mapper);
     }
 
@@ -162,11 +165,11 @@ public abstract class AbstractProcessor implements Processor {
         private Function<? super T, ? extends Traverser<? extends R>> mapper;
         private Traverser<? extends R> outputTraverser;
 
-        TryProcessor(Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        TryProcessor(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
             this.mapper = mapper;
         }
 
-        public boolean tryProcess(T item, int outputOrdinal) {
+        public boolean tryProcess(@Nonnull T item, int outputOrdinal) {
             if (outputTraverser == null) {
                 outputTraverser = mapper.apply(item);
             }
@@ -177,7 +180,7 @@ public abstract class AbstractProcessor implements Processor {
             return false;
         }
 
-        public boolean tryProcess(T item) {
+        public boolean tryProcess(@Nonnull T item) {
             return tryProcess(item, -1);
         }
     }

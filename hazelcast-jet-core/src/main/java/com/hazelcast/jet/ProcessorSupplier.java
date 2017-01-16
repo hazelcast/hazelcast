@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.List;
 import java.util.stream.Stream;
@@ -42,6 +43,7 @@ public interface ProcessorSupplier extends Serializable {
      * @param count the number of processor this method is required to create
      *              and return
      */
+    @Nonnull
     List<Processor> get(int count);
 
     /**
@@ -60,7 +62,8 @@ public interface ProcessorSupplier extends Serializable {
      * Returns a {@code ProcessorSupplier} which will delegate to the given
      * {@code SimpleProcessorSupplier} to create all {@code Processor} instances.
      */
-    static ProcessorSupplier of(SimpleProcessorSupplier processorSupplier) {
+    @Nonnull
+    static ProcessorSupplier of(@Nonnull SimpleProcessorSupplier processorSupplier) {
         return count -> Stream.generate(processorSupplier).limit(count).collect(toList());
     }
 
@@ -72,6 +75,7 @@ public interface ProcessorSupplier extends Serializable {
         /**
          * @return the Jet instance
          */
+        @Nonnull
         JetInstance getJetInstance();
 
         /**

@@ -141,7 +141,7 @@ public final class Traversers {
         private int i;
         private final T[] array;
 
-        ArrayTraverser(T[] array) {
+        ArrayTraverser(@Nonnull T[] array) {
             this.array = array;
         }
 

@@ -42,6 +42,7 @@ public interface Traverser<T> {
      * Adds a mapping layer to this traverser. The returned traverser will emit
      * the results of applying the mapper function to this traverser's items.
      */
+    @Nonnull
     default <R> Traverser<R> map(@Nonnull Function<? super T, ? extends R> mapper) {
         return () -> {
             final T t = next();
@@ -54,6 +55,7 @@ public interface Traverser<T> {
      * emit the same items as this traverser, but only those that pass the given
      * predicate.
      */
+    @Nonnull
     default Traverser<T> filter(@Nonnull Predicate<? super T> pred) {
         return () -> {
             for (T t; (t = next()) != null;) {
@@ -70,6 +72,7 @@ public interface Traverser<T> {
      * will apply the given mapping function to each item retrieved from this
      * traverser, and will emit all the items from the resulting traverser(s).
      */
+    @Nonnull
     default <R> Traverser<R> flatMap(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
         return new FlatMappingTraverser<>(this, mapper);
     }
