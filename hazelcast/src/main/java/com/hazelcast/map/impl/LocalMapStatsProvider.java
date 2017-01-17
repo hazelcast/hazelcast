@@ -165,8 +165,8 @@ public class LocalMapStatsProvider {
         onDemandStats.incrementLockedEntryCount(recordStore.getLockedEntryCount());
         onDemandStats.incrementHits(recordStore.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
-        onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getHeapCost());
-        onDemandStats.incrementHeapCost(recordStore.getHeapCost());
+        onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());
+        onDemandStats.incrementHeapCost(recordStore.getOwnedEntryCost());
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
         onDemandStats.setLastAccessTime(recordStore.getLastAccessTime());
         onDemandStats.setLastUpdateTime(recordStore.getLastUpdateTime());
@@ -193,7 +193,7 @@ public class LocalMapStatsProvider {
                 continue;
             }
             if (isReplicaOnThisNode(replicaAddress)) {
-                backupEntryMemoryCost += recordStore.getHeapCost();
+                backupEntryMemoryCost += recordStore.getOwnedEntryCost();
                 backupEntryCount += recordStore.size();
             }
         }

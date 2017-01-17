@@ -268,7 +268,7 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     boolean forceUnlock(Data dataKey);
 
-    long getHeapCost();
+    long getOwnedEntryCost();
 
     boolean isLoaded();
 

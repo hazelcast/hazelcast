@@ -17,17 +17,20 @@
 package com.hazelcast.map.impl;
 
 /**
- * Size estimator general contract.
+ * Owned entry cost estimator general contract.
  *
- * @param <T> the type of object which's size going to be estimated.
+ * @param <K> the type of key which's size going to be estimated.
+ * @param <V> the type of key which's size going to be estimated.
  */
-public interface SizeEstimator<T> {
+public interface OwnedEntryCostEstimator<K, V> {
 
-    long getSize();
+    long getEstimate();
 
-    void add(long size);
+    void adjustEstimateBy(long adjustment);
 
-    long calculateSize(T object);
+    long calculateCost(V value);
+
+    long calculateEntryCost(K key, V value);
 
     void reset();
 }

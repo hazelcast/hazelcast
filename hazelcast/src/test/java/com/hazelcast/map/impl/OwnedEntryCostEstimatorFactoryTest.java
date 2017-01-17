@@ -26,10 +26,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SizeEstimatorFactoryTest extends HazelcastTestSupport {
+public class OwnedEntryCostEstimatorFactoryTest
+        extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
-        assertUtilityConstructor(SizeEstimatorFactory.class);
+        assertUtilityConstructor(OwnedEntryCostEstimatorFactory.class);
     }
 }

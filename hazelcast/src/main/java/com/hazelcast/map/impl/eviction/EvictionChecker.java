@@ -253,7 +253,7 @@ public class EvictionChecker {
         if (existingRecordStore == null) {
             return 0L;
         }
-        return existingRecordStore.getHeapCost();
+        return existingRecordStore.getOwnedEntryCost();
     }
 
     protected List<Integer> findPartitionIds() {

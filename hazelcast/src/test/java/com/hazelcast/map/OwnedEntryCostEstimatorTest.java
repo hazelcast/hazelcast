@@ -36,7 +36,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SizeEstimatorTest extends HazelcastTestSupport {
+public class OwnedEntryCostEstimatorTest
+        extends HazelcastTestSupport {
 
     protected TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
     // the JVM-independent portion of the cost of Integer key + Long value record is 124 bytes

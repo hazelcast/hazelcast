@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.map.impl.SizeEstimator;
+import com.hazelcast.map.impl.OwnedEntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.AbstractRecord;
@@ -32,7 +32,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.map.impl.SizeEstimatorFactory.createMapSizeEstimator;
+import static com.hazelcast.map.impl.OwnedEntryCostEstimatorFactory.createMapSizeEstimator;
 
 /**
  * Default implementation of {@link Storage} layer used by a {@link RecordStore}
@@ -45,11 +45,11 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     private final StorageSCHM<R> records;
 
     // not final for testing purposes.
-    private SizeEstimator sizeEstimator;
+    private OwnedEntryCostEstimator<Data, Record> ownedEntryCostEstimator;
 
     StorageImpl(RecordFactory<R> recordFactory, InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.recordFactory = recordFactory;
-        this.sizeEstimator = createMapSizeEstimator(inMemoryFormat);
+        this.ownedEntryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.records = new StorageSCHM<R>(serializationService);
     }
 
@@ -57,7 +57,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public void clear(boolean isDuringShutdown) {
         records.clear();
 
-        sizeEstimator.reset();
+        ownedEntryCostEstimator.reset();
     }
 
     @Override
@@ -73,20 +73,20 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         R previousRecord = records.put(key, record);
 
         if (previousRecord == null) {
-            updateSizeEstimator(calculateHeapCost(key));
+            updateCostEstimate(ownedEntryCostEstimator.calculateEntryCost(key, record));
+        } else {
+            updateCostEstimate(-ownedEntryCostEstimator.calculateCost(previousRecord));
+            updateCostEstimate(ownedEntryCostEstimator.calculateCost(record));
         }
-
-        updateSizeEstimator(-calculateHeapCost(previousRecord));
-        updateSizeEstimator(calculateHeapCost(record));
     }
 
     @Override
     public void updateRecordValue(Data key, R record, Object value) {
-        updateSizeEstimator(-calculateHeapCost(record));
+        updateCostEstimate(-ownedEntryCostEstimator.calculateCost(record));
 
         recordFactory.setValue(record, value);
 
-        updateSizeEstimator(calculateHeapCost(record));
+        updateCostEstimate(ownedEntryCostEstimator.calculateCost(record));
     }
 
     @Override
@@ -114,9 +114,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         clear(isDuringShutdown);
     }
 
-    @Override
-    public SizeEstimator getSizeEstimator() {
-        return sizeEstimator;
+    public OwnedEntryCostEstimator getOwnedEntryCostEstimator() {
+        return ownedEntryCostEstimator;
     }
 
     @Override
@@ -133,20 +132,15 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         Data key = record.getKey();
         records.remove(key);
 
-        updateSizeEstimator(-calculateHeapCost(record));
-        updateSizeEstimator(-calculateHeapCost(key));
+        updateCostEstimate(-ownedEntryCostEstimator.calculateEntryCost(key, record));
     }
 
-    protected void updateSizeEstimator(long recordSize) {
-        sizeEstimator.add(recordSize);
+    protected void updateCostEstimate(long entrySize) {
+        ownedEntryCostEstimator.adjustEstimateBy(entrySize);
     }
 
-    protected long calculateHeapCost(Object obj) {
-        return sizeEstimator.calculateSize(obj);
-    }
-
-    public void setSizeEstimator(SizeEstimator sizeEstimator) {
-        this.sizeEstimator = sizeEstimator;
+    public void setOwnedEntryCostEstimator(OwnedEntryCostEstimator ownedEntryCostEstimator) {
+        this.ownedEntryCostEstimator = ownedEntryCostEstimator;
     }
 
     @Override
