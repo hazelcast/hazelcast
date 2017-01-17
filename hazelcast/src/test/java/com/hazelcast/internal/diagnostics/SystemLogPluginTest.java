@@ -97,7 +97,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
         warmUpPartitions(instance);
 
-        waitAllForSafeState();
+        waitAllForSafeState(hz, instance);
 
         assertTrueEventually(new AssertTask() {
             @Override

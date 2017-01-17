@@ -631,10 +631,6 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void waitAllForSafeState() {
-        waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
-    }
-
     public static void waitAllForSafeState(Collection<HazelcastInstance> instances) {
         waitAllForSafeState(instances, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
@@ -656,6 +652,13 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState(HazelcastInstance... nodes) {
+        if (nodes.length == 0) {
+            throw new IllegalArgumentException("waitAllForSafeState(HazelcastInstance... nodes) cannot be called with " +
+                    "an empty array. " +
+                    "It's too easy to mistake it for the old argument-less waitAllForSafeState(). " +
+                    "The old version was removed as it was implemented via Hazelcast.getAllHazelcastInstances() " +
+                    "- this uses a static map internally and it's causing issues when tests are running in parallel.");
+        }
         waitAllForSafeState(asList(nodes));
     }
 
