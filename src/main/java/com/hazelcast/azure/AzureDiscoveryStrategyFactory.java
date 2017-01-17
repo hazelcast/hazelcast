@@ -67,7 +67,7 @@ public class AzureDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
     /**
      * Gets the configuration property definitions
      *
-     * @return Collection<PropertyDefinition> the property defitions for the AzureDiscoveryStrategy
+     * @return {@code Collection<PropertyDefinition>} the property defitions for the AzureDiscoveryStrategy
      */
     public Collection<PropertyDefinition> getConfigurationProperties() {
         return PROPERTY_DEFINITIONS;
