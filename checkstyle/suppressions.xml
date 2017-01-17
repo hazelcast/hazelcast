@@ -308,8 +308,6 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/map/impl/SimpleEntryView"/>
 
     <!-- Adopted public domain code with different style -->
-    <suppress checks="MagicNumber|DeclarationOrder|ConstantName|MultipleVariableDeclarations|NeedBracesCheck|Whitespace"
-              files="com/hazelcast/internal/util/ThreadLocalRandom"/>
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
 
