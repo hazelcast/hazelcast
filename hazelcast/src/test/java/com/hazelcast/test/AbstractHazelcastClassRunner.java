@@ -61,9 +61,10 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
     static {
-        String logging = "hazelcast.logging.type";
-        if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j2");
+        String loggingType = "hazelcast.logging.type";
+        String loggingClass = "hazelcast.logging.class";
+        if (System.getProperty(loggingType) == null && System.getProperty(loggingClass) == null) {
+            System.setProperty(loggingClass, TestLoggerFactory.class.getName());
             System.setProperty("isThreadContextMapInheritable", "true");
         }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
