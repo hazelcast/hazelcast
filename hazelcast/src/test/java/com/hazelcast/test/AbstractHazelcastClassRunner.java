@@ -20,7 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.EmptyStatement;
-import org.apache.log4j.MDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
@@ -63,7 +63,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     static {
         String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
-            System.setProperty(logging, "log4j");
+            System.setProperty(logging, "log4j2");
+            System.setProperty("isThreadContextMapInheritable", "true");
         }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
@@ -128,13 +129,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     static void setThreadLocalTestMethodName(String name) {
-        MDC.put("test-name", name);
+        ThreadContext.put("test-name", name);
         TEST_NAME_THREAD_LOCAL.set(name);
     }
 
     static void removeThreadLocalTestMethodName() {
         TEST_NAME_THREAD_LOCAL.remove();
-        MDC.remove("test-name");
+        ThreadContext.remove("test-name");
     }
 
     @Override

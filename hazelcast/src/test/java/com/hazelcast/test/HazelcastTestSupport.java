@@ -42,9 +42,6 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.test.jitter.JitterRule;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -56,7 +53,6 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -88,8 +84,6 @@ import static org.junit.Assert.fail;
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
-
-    private static Level logLevel;
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -262,46 +256,8 @@ public abstract class HazelcastTestSupport {
     // ########## logging ##########
     // #############################
 
-    public static void setLoggingLog4j() {
-        System.setProperty("hazelcast.logging.type", "log4j");
-    }
-
-    public static void setLogLevel(Level level) {
-        if (isLog4jLoaded() && logLevel == null) {
-            logLevel = setLogLevelOnAllLoggers(level);
-        }
-    }
-
-    public static void resetLogLevel() {
-        if (isLog4jLoaded() && logLevel != null) {
-            setLogLevelOnAllLoggers(logLevel);
-            logLevel = null;
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Level setLogLevelOnAllLoggers(Level level) {
-        Logger rootLogger = Logger.getRootLogger();
-        Level oldLevel = rootLogger.getLevel();
-        rootLogger.setLevel(level);
-
-        Enumeration<Logger> currentLoggers = LogManager.getCurrentLoggers();
-        while (currentLoggers.hasMoreElements()) {
-            currentLoggers.nextElement().setLevel(level);
-        }
-
-        return oldLevel;
-    }
-
-    private static boolean isLog4jLoaded() {
-        setLoggingLog4j();
-        try {
-            Class.forName("org.apache.log4j.Logger");
-            Class.forName("org.apache.log4j.Level");
-            return true;
-        } catch (Throwable ignored) {
-            return false;
-        }
+    public static void setLoggingLog4j2() {
+        System.setProperty("hazelcast.logging.type", "log4j2");
     }
 
     // ###########################

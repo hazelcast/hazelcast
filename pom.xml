@@ -75,7 +75,9 @@
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
         <log4j.version>1.2.17</log4j.version>
-        <log4j2.version>2.0.1</log4j2.version>
+
+        <!--- This is the last log4j2 version working with Java 6 -->
+        <log4j2.version>2.3</log4j2.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
 
         <junit.version>4.12</junit.version>
@@ -1006,9 +1008,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
             <scope>test</scope>
             <optional>true</optional>
         </dependency>
