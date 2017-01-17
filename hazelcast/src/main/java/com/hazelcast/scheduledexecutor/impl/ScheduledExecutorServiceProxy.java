@@ -88,6 +88,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture schedule(Runnable command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
         return schedule(callable, delay, unit);
@@ -97,6 +98,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> schedule(Callable<V> command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -111,6 +113,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getTaskOrKeyPartitionId(command, name);
@@ -126,6 +129,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture<?> scheduleOnMember(Runnable command, Member member, long delay, TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -134,6 +138,7 @@ public class ScheduledExecutorServiceProxy
     public <V> IScheduledFuture<V> scheduleOnMember(Callable<V> command, Member member, long delay, TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         return scheduleOnMembers(command, Collections.singleton(member), delay, unit).get(member);
     }
@@ -143,6 +148,7 @@ public class ScheduledExecutorServiceProxy
                                                            long period, TimeUnit unit) {
         checkNotNull(member, "Member is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         return scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit).get(member);
     }
@@ -151,6 +157,7 @@ public class ScheduledExecutorServiceProxy
     public IScheduledFuture<?> scheduleOnKeyOwner(Runnable command, Object key, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         ScheduledRunnableAdapter<?> callable = createScheduledRunnableAdapter(command);
         return scheduleOnKeyOwner(callable, key, delay, unit);
@@ -161,6 +168,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -176,6 +184,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         int partitionId = getKeyPartitionId(key);
@@ -190,6 +199,7 @@ public class ScheduledExecutorServiceProxy
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembers(Runnable command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -197,6 +207,7 @@ public class ScheduledExecutorServiceProxy
     public <V> Map<Member, IScheduledFuture<V>> scheduleOnAllMembers(Callable<V> command, long delay, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
         return scheduleOnMembers(command, getNodeEngine().getClusterService().getMembers(), delay, unit);
     }
 
@@ -205,6 +216,7 @@ public class ScheduledExecutorServiceProxy
                                                                             TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
        return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(),
                initialDelay, period, unit);
     }
@@ -215,6 +227,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         ScheduledRunnableAdapter callable = createScheduledRunnableAdapter(command);
         return (Map<Member, IScheduledFuture<?>>) scheduleOnMembers(callable, members, delay, unit);
@@ -226,6 +239,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         Map<Member, IScheduledFuture<V>> futures = new HashMap<Member, IScheduledFuture<V>>();
@@ -247,6 +261,7 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
+        attachHazelcastInstance(command);
 
         String name = extractNameOrGenerateOne(command);
         ScheduledRunnableAdapter<?> adapter = createScheduledRunnableAdapter(command);
@@ -398,7 +413,9 @@ public class ScheduledExecutorServiceProxy
         return createFutureProxy(address, taskName);
     }
 
-    private void attachHazelcastInstance(HazelcastInstanceAware future) {
-        future.setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+    private void attachHazelcastInstance(Object object) {
+        if (object instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
     }
 }
