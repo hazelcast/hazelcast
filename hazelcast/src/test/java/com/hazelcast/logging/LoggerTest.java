@@ -1,10 +1,12 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.SaveLoggingPropertiesRule;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -18,14 +20,17 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class LoggerTest {
+public class LoggerTest extends HazelcastTestSupport {
 
     private static final String LOGGING_TYPE_PROPERTY_NAME = "hazelcast.logging.type";
+    private static final String LOGGING_CLASS_PROPERTY_NAME = "hazelcast.logging.class";
     private static final String LOGGING_TYPE_LOG4J = "log4j";
     private static final String LOGGING_TYPE_LOG4J2 = "log4j2";
 
     private static Field LOGGER_FACTORY_FIELD;
-    private static String backupLoggingTypeProperty;
+
+    @Rule
+    public SaveLoggingPropertiesRule saveLoggingPropertiesRule = new SaveLoggingPropertiesRule();
 
     @BeforeClass
     public static void beforeClass() {
@@ -36,12 +41,6 @@ public class LoggerTest {
             throw new IllegalStateException(
                     "Couldn't retrieve \"loggerFactory\" field from " + Logger.class.getName() + " class !", e);
         }
-        backupLoggingTypeProperty = System.getProperty(LOGGING_TYPE_PROPERTY_NAME);
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, backupLoggingTypeProperty);
     }
 
     @Before
@@ -53,6 +52,7 @@ public class LoggerTest {
             throw new IllegalStateException(
                     "Couldn't clear \"loggerFactory\" field from " + Logger.class.getName() + " class !", e);
         }
+        System.clearProperty(LOGGING_CLASS_PROPERTY_NAME);
     }
 
     @Test
