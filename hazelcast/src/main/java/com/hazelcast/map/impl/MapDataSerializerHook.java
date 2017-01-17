@@ -55,8 +55,8 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
-import com.hazelcast.map.impl.operation.LoadStatusOperation;
-import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -165,7 +165,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRIES_WITH_CURSOR = 14;
     public static final int SET = 15;
     public static final int LOAD_MAP = 16;
-    public static final int LOAD_STATUS = 17;
+    public static final int KEY_LOAD_STATUS = 17;
     public static final int LOAD_ALL = 18;
     public static final int ENTRY_BACKUP = 19;
     public static final int ENTRY_OPERATION = 20;
@@ -229,7 +229,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int CONTAINS_VALUE_FACTORY = 78;
     public static final int EVICT_ALL_FACTORY = 79;
     public static final int IS_EMPTY_FACTORY = 80;
-    public static final int LOAD_STATUS_FACTORY = 81;
+    public static final int KEY_LOAD_STATUS_FACTORY = 81;
     public static final int MAP_FLUSH_FACTORY = 82;
     public static final int MAP_GET_ALL_FACTORY = 83;
     public static final int LOAD_ALL_FACTORY = 84;
@@ -379,9 +379,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new LoadMapOperation();
             }
         };
-        constructors[LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[KEY_LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadStatusOperation();
+                return new KeyLoadStatusOperation();
             }
         };
         constructors[LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -684,9 +684,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new IsEmptyOperationFactory();
             }
         };
-        constructors[LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[KEY_LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadStatusOperationFactory();
+                return new KeyLoadStatusOperationFactory();
             }
         };
         constructors[MAP_FLUSH_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

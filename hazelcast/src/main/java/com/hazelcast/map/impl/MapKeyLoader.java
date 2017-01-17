@@ -23,8 +23,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
-import com.hazelcast.map.impl.operation.LoadStatusOperation;
-import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
@@ -353,14 +353,14 @@ public class MapKeyLoader {
         // it happens only if all LoadAllOperation finish before the sendKeyLoadCompleted is started (test case, little data)
         // Fixes https://github.com/hazelcast/hazelcast/issues/5453
         List<Future> futures = new ArrayList<Future>();
-        Operation senderStatus = new LoadStatusOperation(mapName, exception);
+        Operation senderStatus = new KeyLoadStatusOperation(mapName, exception);
         Future senderFuture = opService.createInvocationBuilder(SERVICE_NAME, senderStatus, mapNamePartition)
                 .setReplicaIndex(0).invoke();
         futures.add(senderFuture);
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
-            Operation senderBackupStatus = new LoadStatusOperation(mapName, exception);
+            Operation senderBackupStatus = new KeyLoadStatusOperation(mapName, exception);
             Future senderBackupFuture = opService.createInvocationBuilder(SERVICE_NAME, senderBackupStatus, mapNamePartition)
                     .setReplicaIndex(1).invoke();
             futures.add(senderBackupFuture);
@@ -374,7 +374,7 @@ public class MapKeyLoader {
 
         // INVOKES AND BLOCKS UNTIL FINISHED on ALL PARTITIONS (SENDER AND SENDER BACKUP WILL BE REPEATED)
         // notify all partitions about loading status: finished or exception encountered
-        opService.invokeOnAllPartitions(SERVICE_NAME, new LoadStatusOperationFactory(mapName, exception));
+        opService.invokeOnAllPartitions(SERVICE_NAME, new KeyLoadStatusOperationFactory(mapName, exception));
     }
 
     public void setMaxBatch(int maxBatch) {
