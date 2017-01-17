@@ -60,12 +60,14 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
     private static final boolean THREAD_CONTENTION_INFO_AVAILABLE;
 
+    private static String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
+    private static String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
+
     static {
-        String loggingType = "hazelcast.logging.type";
-        String loggingClass = "hazelcast.logging.class";
-        if (System.getProperty(loggingType) == null && System.getProperty(loggingClass) == null) {
-            System.setProperty(loggingClass, TestLoggerFactory.class.getName());
+        if (shouldForceTestLoggingFactory()) {
+            System.setProperty(LOGGING_CLASS_PROP_NAME, TestLoggerFactory.class.getName());
             System.setProperty("isThreadContextMapInheritable", "true");
+            System.clearProperty(LOGGING_TYPE_PROP_NAME);
         }
         if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
             System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
@@ -110,6 +112,16 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             }
         }
         THREAD_CONTENTION_INFO_AVAILABLE = threadContentionInfoAvailable;
+    }
+
+    private static boolean shouldForceTestLoggingFactory() {
+        if (JenkinsDetector.isOnJenkins()) {
+            return true;
+        }
+        if (System.getProperty(LOGGING_TYPE_PROP_NAME) == null && System.getProperty(LOGGING_CLASS_PROP_NAME) == null) {
+            return true;
+        }
+        return false;
     }
 
     /**
