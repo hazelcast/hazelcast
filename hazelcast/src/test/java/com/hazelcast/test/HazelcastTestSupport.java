@@ -1105,6 +1105,24 @@ public abstract class HazelcastTestSupport {
     }
 
     // ###################################
+    // ########## reflection utils #######
+    // ###################################
+
+    public static Object getFromField(Object target, String fieldName) {
+        try {
+            Field field = target.getClass().getDeclaredField(fieldName);
+            if (!Modifier.isPublic(field.getModifiers())) {
+                field.setAccessible(true);
+            }
+            return field.get(target);
+        } catch (NoSuchFieldException e) {
+            throw new AssertionError(e);
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    // ###################################
     // ########## inner classes ##########
     // ###################################
 
