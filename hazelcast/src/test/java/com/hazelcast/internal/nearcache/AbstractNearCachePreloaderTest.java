@@ -10,10 +10,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import org.apache.log4j.Level;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,17 +43,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     private final File preloadFileInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes.store");
     private final File preloadFileInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat.store");
     private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
-
-    @BeforeClass
-    public static void initLogger() {
-        setLoggingLog4j();
-        setLogLevel(Level.INFO);
-    }
-
-    @AfterClass
-    public static void resetLogger() {
-        resetLogLevel();
-    }
 
     @After
     public void deleteFiles() {

@@ -63,7 +63,6 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         final Config config = new Config();
-        config.setProperty("hazelcast.logging.type", "log4j");
         final HazelcastInstance[] instances = factory
                 .newInstances(config, nodeCount);
 

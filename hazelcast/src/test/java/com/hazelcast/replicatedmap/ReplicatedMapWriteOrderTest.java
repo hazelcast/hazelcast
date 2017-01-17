@@ -76,7 +76,6 @@ public class ReplicatedMapWriteOrderTest extends ReplicatedMapAbstractTest {
 
     @Test
     public void testDataIntegrity() throws InterruptedException {
-        setLoggingLog4j();
         System.out.println("nodeCount = " + nodeCount);
         System.out.println("operations = " + operations);
         System.out.println("keyCount = " + keyCount);

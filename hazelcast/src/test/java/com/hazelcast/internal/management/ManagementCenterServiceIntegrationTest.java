@@ -15,7 +15,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +40,6 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @Before
     public void setUp() throws Exception {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
         String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
         String sourceDir = baseDir + "/../../src/test/webapp";
@@ -56,8 +52,6 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     @After
     public void tearDown() throws Exception {
-        resetLogLevel();
-
         Hazelcast.shutdownAll();
         jettyServer.stop();
     }

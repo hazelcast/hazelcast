@@ -9,9 +9,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,17 +20,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClusterShutdownTest extends HazelcastTestSupport {
-
-    @Before
-    public void setUp() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-    }
-
-    @After
-    public void tearDown() {
-        resetLogLevel();
-    }
 
     @Test
     public void cluster_mustBeShutDown_by_singleMember_when_clusterState_ACTIVE() {

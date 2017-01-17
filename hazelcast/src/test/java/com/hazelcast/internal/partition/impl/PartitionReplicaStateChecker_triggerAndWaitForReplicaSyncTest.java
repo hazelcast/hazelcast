@@ -25,8 +25,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -65,9 +63,6 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
 
     @Before
     public void setUp() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         ILogger logger = getLogger(PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest.class);
         ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
 
@@ -91,11 +86,6 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
         when(partitionService.getMigrationManager()).thenReturn(migrationManager);
 
         replicaStateChecker = new PartitionReplicaStateChecker(node, partitionService);
-    }
-
-    @After
-    public void tearDown() {
-        resetLogLevel();
     }
 
     @Test

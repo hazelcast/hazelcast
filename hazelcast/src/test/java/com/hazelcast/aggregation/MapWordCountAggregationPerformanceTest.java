@@ -76,7 +76,6 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
 
         config.setProperty("hazelcast.query.predicate.parallel.evaluation", "true");
         config.setProperty("hazelcast.aggregation.accumulation.parallel.evaluation", "true");
-        config.setProperty("hazelcast.logging.type", "log4j");
 
         HazelcastInstance[] hazelcastInstances = new HazelcastInstance[memberCount];
         for (int i = 0; i < memberCount; i++) {

@@ -17,7 +17,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,8 +39,6 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
-        setLogLevel(Level.DEBUG);
         logger = Logger.getLogger(getClass());
 
         Config config = new Config();
@@ -62,8 +59,6 @@ public class ClientReliableTopicStressTest extends HazelcastTestSupport {
 
     @After
     public void teardown() {
-        resetLogLevel();
-
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }

@@ -32,8 +32,6 @@ public class StoreLatencyPlugin_MapIntegrationTest extends HazelcastTestSupport 
 
     @Before
     public void setup() throws Exception {
-        setLoggingLog4j();
-
         Config config = new Config()
                 .setProperty("hazelcast.diagnostics.enabled", "true")
                 .setProperty("hazelcast.diagnostics.storeLatency.period.seconds", "1");
