@@ -16,11 +16,25 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
-public class MemcacheUtilsTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class MemcacheUtilsTest extends HazelcastTestSupport {
+
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(MemcacheUtils.class);
+    }
 
     @Test
     public void withDefaultMap() {
@@ -34,5 +48,10 @@ public class MemcacheUtilsTest {
         MapNameAndKeyPair mapNameKeyPair = MemcacheUtils.parseMemcacheKey("map:key");
         assertEquals("hz_memcache_map", mapNameKeyPair.getMapName());
         assertEquals("key", mapNameKeyPair.getKey());
+    }
+
+    @Test(expected = HazelcastException.class)
+    public void testdecodeKey_whenInvalidEncoding_thenThrowException() {
+        MemcacheUtils.decodeKey("key", "");
     }
 }
