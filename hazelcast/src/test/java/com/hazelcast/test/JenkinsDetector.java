@@ -1,4 +1,4 @@
-package com.hazelcast.test.jitter;
+package com.hazelcast.test;
 
 import static java.lang.System.getenv;
 

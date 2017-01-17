@@ -44,7 +44,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.Boolean.getBoolean;
 import static java.lang.Integer.getInteger;
 
 /**
@@ -55,7 +54,7 @@ import static java.lang.Integer.getInteger;
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
     private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
-    private static final boolean THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.threadDumpOnFailure");
+    private static final boolean THREAD_DUMP_ON_FAILURE;
 
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
     private static final boolean THREAD_CPU_TIME_INFO_AVAILABLE;
@@ -74,6 +73,10 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
+
+        final String threadDumpOnFailure = System.getProperty("hazelcast.test.threadDumpOnFailure");
+        THREAD_DUMP_ON_FAILURE = threadDumpOnFailure != null
+                ? Boolean.parseBoolean(threadDumpOnFailure) : JenkinsDetector.isOnJenkins();
 
         // randomize multicast group
         Random rand = new Random();
