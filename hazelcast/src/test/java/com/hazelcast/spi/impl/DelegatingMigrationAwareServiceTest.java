@@ -18,7 +18,13 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static com.hazelcast.spi.impl.DelegatingMigrationAwareService.IN_FLIGHT_MIGRATION_STAMP;
+import static com.hazelcast.spi.impl.DelegatingMigrationAwareService.PRIMARY_REPLICA_INDEX;
+import static com.hazelcast.spi.impl.DelegatingMigrationAwareService.isPrimaryReplicaMigrationEvent;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,8 +36,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class DelegatingMigrationAwareServiceTest {
 
-    public static final int PRIMARY_REPLICA_INDEX = 0;
-
     @Parameterized.Parameter
     public MigrationAwareService wrappedMigrationAwareService;
 
@@ -42,6 +46,7 @@ public class DelegatingMigrationAwareServiceTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     private DelegatingMigrationAwareService delegatingMigrationAwareService;
+    private int initialMigrationStamp;
 
     @Parameterized.Parameters(name = "{0}, replica: {1}")
     public static Collection<Object> parameters() {
@@ -74,6 +79,7 @@ public class DelegatingMigrationAwareServiceTest {
         // affect the counter)
         delegatingMigrationAwareService = new DelegatingMigrationAwareService(wrappedMigrationAwareService);
         delegatingMigrationAwareService.prepareReplicationOperation(null);
+        initialMigrationStamp = delegatingMigrationAwareService.getMigrationStamp();
         // also execute the first part of migration: beforeMigration
         try {
             delegatingMigrationAwareService.beforeMigration(event);
@@ -85,12 +91,14 @@ public class DelegatingMigrationAwareServiceTest {
 
     @Test
     public void beforeMigration() throws Exception {
-        // when: countingMigrationAwareService.beforeMigration was invoked (in setUp method)
-        // then: if event involves primary replica, count is incremented to 1, otherwise it is 0
-        if (involvesPrimaryReplica(event)) {
-            assertEquals(1, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+        // when: delegatingMigrationAwareService.beforeMigration was invoked (in setUp method)
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertEquals(IN_FLIGHT_MIGRATION_STAMP, delegatingMigrationAwareService.getMigrationStamp());
+            assertFalse(delegatingMigrationAwareService.validateMigrationStamp(IN_FLIGHT_MIGRATION_STAMP));
         } else {
-            assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+            assertEquals(initialMigrationStamp, delegatingMigrationAwareService.getMigrationStamp());
+            assertTrue(delegatingMigrationAwareService.validateMigrationStamp(initialMigrationStamp));
         }
     }
 
@@ -103,8 +111,15 @@ public class DelegatingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+
+        int currentMigrationStamp = delegatingMigrationAwareService.getMigrationStamp();
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertNotEquals(initialMigrationStamp, currentMigrationStamp);
+        } else {
+            assertEquals(initialMigrationStamp, currentMigrationStamp);
+        }
+        assertTrue(delegatingMigrationAwareService.validateMigrationStamp(currentMigrationStamp));
     }
 
     @Test
@@ -116,8 +131,15 @@ public class DelegatingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, delegatingMigrationAwareService.getOwnerMigrationsInFlight());
+
+        int currentMigrationStamp = delegatingMigrationAwareService.getMigrationStamp();
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertNotEquals(initialMigrationStamp, currentMigrationStamp);
+        } else {
+            assertEquals(initialMigrationStamp, currentMigrationStamp);
+        }
+        assertTrue(delegatingMigrationAwareService.validateMigrationStamp(currentMigrationStamp));
     }
 
     @Test
@@ -132,7 +154,7 @@ public class DelegatingMigrationAwareServiceTest {
         }
 
         // on second commitMigration, if event involves partition owner assertion error is thrown
-        if (involvesPrimaryReplica(event)) {
+        if (isPrimaryReplicaMigrationEvent(event) ) {
             expectedException.expect(AssertionError.class);
         }
         try {
@@ -154,7 +176,7 @@ public class DelegatingMigrationAwareServiceTest {
         }
 
         // on second rollbackMigration, if event involves partition owner assertion error is thrown
-        if (involvesPrimaryReplica(event)) {
+        if (isPrimaryReplicaMigrationEvent(event) ) {
             expectedException.expect(AssertionError.class);
         }
         try {
@@ -163,10 +185,6 @@ public class DelegatingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-    }
-
-    private boolean involvesPrimaryReplica(PartitionMigrationEvent event) {
-        return (event.getCurrentReplicaIndex() == PRIMARY_REPLICA_INDEX || event.getNewReplicaIndex() == PRIMARY_REPLICA_INDEX);
     }
 
     static class ExceptionThrowingMigrationAwareService implements MigrationAwareService {

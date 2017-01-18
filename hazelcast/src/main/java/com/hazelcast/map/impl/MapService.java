@@ -211,7 +211,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         mapContainer.decreaseInvalidationListenerCount();
     }
 
-    public int getOwnerMigrationsInFlight() {
-        return migrationAwareService.getOwnerMigrationsInFlight();
+    public int getMigrationStamp() {
+        return migrationAwareService.getMigrationStamp();
+    }
+
+    public boolean validateMigrationStamp(int stamp) {
+        return migrationAwareService.validateMigrationStamp(stamp);
     }
 }
