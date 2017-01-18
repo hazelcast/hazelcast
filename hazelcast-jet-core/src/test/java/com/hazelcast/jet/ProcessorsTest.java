@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -38,17 +39,20 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class ProcessorsTest {
     private TestInbox inbox;
     private ArrayDequeOutbox outbox;
     private Queue<Object> bucket;
+    private Context context;
 
     @Before
     public void before() {
         inbox = new TestInbox();
         outbox = new ArrayDequeOutbox(1, new int[]{1});
+        context = mock(Context.class);
         bucket = outbox.queueWithOrdinal(0);
     }
 
@@ -56,7 +60,7 @@ public class ProcessorsTest {
     public void mapProcessor() {
         // Given
         final Processor p = Processors.map(Object::toString).get(1).get(0);
-        p.init(outbox);
+        p.init(outbox, context);
         inbox.add(1);
         inbox.add(2);
 
@@ -84,7 +88,7 @@ public class ProcessorsTest {
     public void filterProcessor() {
         // Given
         final Processor p = Processors.filter(o -> o.equals(1)).get(1).get(0);
-        p.init(outbox);
+        p.init(outbox, context);
         inbox.add(1);
         inbox.add(2);
         inbox.add(1);
@@ -112,7 +116,7 @@ public class ProcessorsTest {
     public void flatMapProcessor() {
         // Given
         final Processor p = Processors.flatMap(o -> traverseIterable(asList(o + "a", o + "b"))).get(1).get(0);
-        p.init(outbox);
+        p.init(outbox, context);
         inbox.add(1);
 
         // When
@@ -265,7 +269,7 @@ public class ProcessorsTest {
 
     private <R> void testGroupAndAccumulate(Processor p, TwinConsumer<R> testComplete) {
         // Given
-        p.init(outbox);
+        p.init(outbox, context);
         inbox.add(1);
         inbox.add(1);
         inbox.add(2);
@@ -292,7 +296,7 @@ public class ProcessorsTest {
 
     private <R> void testAccumulate(Processor p, Consumer<R> testComplete) {
         // Given
-        p.init(outbox);
+        p.init(outbox, context);
         inbox.add(1);
         inbox.add(1);
         inbox.add(2);

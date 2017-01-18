@@ -122,7 +122,7 @@ public class ExecutionService {
             return;
         }
         Arrays.setAll(workers, i -> new CooperativeWorker(workers));
-        Arrays.setAll(threads, i -> createThread(workers[i], "cooperative-executor", i));
+        Arrays.setAll(threads, i -> createThread(workers[i], "cooperative", i));
         Arrays.stream(threads).forEach(Thread::start);
     }
 
@@ -131,7 +131,7 @@ public class ExecutionService {
     }
 
     private String threadNamePrefix() {
-        return "hz." + hzInstanceName + ".jet-engine.";
+        return "hz." + hzInstanceName + ".jet.";
     }
 
     private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture) {
@@ -269,7 +269,7 @@ public class ExecutionService {
 
         @Override
         public Thread newThread(Runnable r) {
-            return createThread(r, "blocking-executor", seq.getAndIncrement());
+            return createThread(r, "blocking", seq.getAndIncrement());
         }
     }
 

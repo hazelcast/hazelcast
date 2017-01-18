@@ -17,7 +17,6 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Outbox;
 
 import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
@@ -37,8 +36,7 @@ public class CollectorAccumulatorP<IN, OUT> extends AbstractProcessor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
+    protected void init(@Nonnull Context context) {
         result = supplier.get();
     }
 

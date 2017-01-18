@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
-import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,6 +38,7 @@ import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 @Category(QuickTest.class)
 public class ProcessorTaskletTest {
@@ -48,12 +49,14 @@ public class ProcessorTaskletTest {
     private List<InboundEdgeStream> instreams;
     private List<OutboundEdgeStream> outstreams;
     private MockProcessor processor;
+    private Context context;
 
 
     @Before
     public void setUp() throws Exception {
         this.mockInput = IntStream.range(0, MOCK_INPUT_LENGTH).boxed().collect(toList());
         this.processor = new MockProcessor();
+        this.context = mock(Context.class);
         this.instreams = new ArrayList<>();
         this.outstreams = new ArrayList<>();
     }
@@ -153,7 +156,7 @@ public class ProcessorTaskletTest {
     }
 
     private Tasklet createTasklet() {
-        final ProcessorTasklet t = new ProcessorTasklet("mock", processor,
+        final ProcessorTasklet t = new ProcessorTasklet("mock", context, processor,
                 instreams, outstreams);
         t.init();
         return t;
@@ -163,8 +166,8 @@ public class ProcessorTaskletTest {
         private ArrayDequeOutbox outbox;
 
         @Override
-        public void init(@Nonnull Outbox outbox) {
-            this.outbox = (ArrayDequeOutbox) outbox;
+        protected void init(@Nonnull Context context) {
+            this.outbox = (ArrayDequeOutbox) getOutbox();
         }
 
         @Override

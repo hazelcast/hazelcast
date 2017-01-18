@@ -22,7 +22,6 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -63,9 +62,8 @@ public final class IMapReader extends AbstractProducer {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
-        iterators = partitions.stream().map(partitionToIterator).collect(toList());
+    protected void init(@Nonnull Context context) {
+        this.iterators = partitions.stream().map(partitionToIterator).collect(toList());
         this.iteratorCursor = new CircularCursor<>(iterators);
     }
 
@@ -124,7 +122,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            List<Member> members = new ArrayList<>(context.getJetInstance().getCluster().getMembers());
+            List<Member> members = new ArrayList<>(context.jetInstance().getCluster().getMembers());
             int memberCount = members.size();
             HazelcastInstance client = newHazelcastClient(serializableClientConfig.asClientConfig());
             try {
@@ -198,7 +196,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            membersToPartitions = context.getJetInstance()
+            membersToPartitions = context.jetInstance()
                     .getHazelcastInstance().getPartitionService()
                     .getPartitions().stream()
                     .collect(groupingBy(p -> p.getOwner().getAddress(), mapping(Partition::getPartitionId, toList())));
@@ -228,7 +226,7 @@ public final class IMapReader extends AbstractProducer {
 
         @Override
         public void init(Context context) {
-            map = (MapProxyImpl) context.getJetInstance().getHazelcastInstance().getMap(mapName);
+            map = (MapProxyImpl) context.jetInstance().getHazelcastInstance().getMap(mapName);
         }
 
         @Override

@@ -111,7 +111,7 @@ public class EdgeConfig implements Serializable {
      * receive window is sized in proportion to the rate of processing at the
      * receiver.
      * <p>
-     * Ack packets are sent in {@link JetConfig#setFlowControlPeriodMs(int)
+     * Ack packets are sent in {@link InstanceConfig#setFlowControlPeriodMs(int)
      * regular intervals} and the <em>receive window multiplier</em> sets the
      * factor of the linear relationship between the amount of data processed
      * within one such interval and the size of the receive window.

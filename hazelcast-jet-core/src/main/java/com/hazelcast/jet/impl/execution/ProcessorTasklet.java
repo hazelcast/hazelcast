@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
+import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.CircularCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -45,6 +46,7 @@ public class ProcessorTasklet implements Tasklet {
     private final Processor processor;
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private final String vertexName;
+    private final Context context;
     private CircularCursor<InboundEdgeStream> instreamCursor;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outstreams;
@@ -53,8 +55,8 @@ public class ProcessorTasklet implements Tasklet {
     private boolean currInstreamExhausted;
     private boolean processorCompleted;
 
-    public ProcessorTasklet(String vertexName, Processor processor, List<InboundEdgeStream> instreams,
-                            List<OutboundEdgeStream> outstreams) {
+    public ProcessorTasklet(String vertexName, Processor.Context context, Processor processor,
+                            List<InboundEdgeStream> instreams, List<OutboundEdgeStream> outstreams) {
         Preconditions.checkNotNull(processor, "processor");
         this.vertexName = vertexName;
         this.processor = processor;
@@ -71,13 +73,14 @@ public class ProcessorTasklet implements Tasklet {
 
         int[] highWaterMarks = Stream.of(this.outstreams).mapToInt(OutboundEdgeStream::getHighWaterMark).toArray();
         this.outbox = new ArrayDequeOutbox(outstreams.size(), highWaterMarks);
+        this.context = context;
         this.instreamCursor = popInstreamGroup();
     }
 
 
     @Override
     public void init() {
-        processor.init(outbox);
+        processor.init(outbox, context);
     }
 
     @Override

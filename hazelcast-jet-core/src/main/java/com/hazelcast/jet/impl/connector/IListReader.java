@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -50,8 +49,7 @@ public final class IListReader extends AbstractProducer {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
+    protected void init(@Nonnull Context context) {
         size = list.size();
         if (fetchSize < size) {
             this.iterator = list.subList(0, fetchSize).iterator();
@@ -129,7 +127,7 @@ public final class IListReader extends AbstractProducer {
         @Override
         public void init(Context context) {
             String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
-            ownerAddress = context.getJetInstance().getHazelcastInstance().getPartitionService()
+            ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
                                   .getPartition(partitionKey).getOwner().getAddress();
         }
 
@@ -169,7 +167,7 @@ public final class IListReader extends AbstractProducer {
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
-                instance = context.getJetInstance().getHazelcastInstance();
+                instance = context.jetInstance().getHazelcastInstance();
             }
             list = instance.getList(name);
         }

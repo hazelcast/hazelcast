@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
@@ -47,8 +46,7 @@ public class SocketTextStreamReader extends AbstractProducer {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
+    protected void init(@Nonnull Context context) {
         try {
             LOGGER.info("Connecting to socket " + hostAndPort());
             Socket socket = new Socket(host, port);

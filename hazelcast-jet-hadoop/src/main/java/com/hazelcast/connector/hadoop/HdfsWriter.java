@@ -18,18 +18,12 @@ package com.hazelcast.connector.hadoop;
 
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.IntStream;
-import javax.annotation.Nonnull;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.JobConf;
@@ -41,6 +35,11 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.TextOutputFormat;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.unchecked;
@@ -64,11 +63,6 @@ public final class HdfsWriter extends AbstractProcessor {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
-    }
-
-    @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
     }
 
     @Override
@@ -119,7 +113,7 @@ public final class HdfsWriter extends AbstractProcessor {
 
         @Override
         public void init(Context context) {
-            address = context.getJetInstance().getCluster().getLocalMember().getAddress();
+            address = context.jetInstance().getCluster().getLocalMember().getAddress();
         }
 
         @Override
@@ -180,7 +174,7 @@ public final class HdfsWriter extends AbstractProcessor {
                                 return null;
                             });
                         }
-                        String uuid = context.getJetInstance().getCluster().getLocalMember().getUuid();
+                        String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
                         TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobId.getId(),
                                 JOB_SETUP, i, 0);
                         conf.set("mapred.task.id", taskAttemptID.toString());

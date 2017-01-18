@@ -17,7 +17,6 @@
 package com.hazelcast.connector.hadoop;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -27,6 +26,13 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.ExceptionUtil;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.InputSplit;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RecordReader;
+import org.apache.hadoop.mapred.TextInputFormat;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,13 +53,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
-import javax.annotation.Nonnull;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.InputSplit;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordReader;
-import org.apache.hadoop.mapred.TextInputFormat;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
@@ -77,11 +76,6 @@ public final class HdfsReader extends AbstractProducer {
 
     private HdfsReader(List<RecordReader> recordReaders) {
         this.recordReaders = recordReaders;
-    }
-
-    @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
     }
 
     @Override
@@ -151,7 +145,7 @@ public final class HdfsReader extends AbstractProducer {
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
 
-                Set<Member> members = context.getJetInstance().getCluster().getMembers();
+                Set<Member> members = context.jetInstance().getCluster().getMembers();
                 assigned = assignSplits(indexedInputSplits, members.toArray(new Member[members.size()]));
                 printAssignments(assigned);
             } catch (IOException e) {

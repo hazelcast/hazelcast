@@ -18,7 +18,6 @@ package com.hazelcast.jet.connector.kafka;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -57,8 +56,7 @@ public class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
-        super.init(outbox);
+    protected void init(@Nonnull Context context) {
         producer = new KafkaProducer<>(properties);
     }
 
@@ -144,7 +142,7 @@ public class KafkaWriter extends AbstractProcessor {
         @Override
         public List<Processor> get(int count) {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
-                    context.getJetInstance().getHazelcastInstance();
+                    context.jetInstance().getHazelcastInstance();
             SerializationService serializationService = hazelcastInstance.node.nodeEngine.getSerializationService();
             return Stream.generate(() -> new KafkaWriter(serializationService, topicId, properties))
                          .limit(count)

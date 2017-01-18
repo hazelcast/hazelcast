@@ -121,7 +121,7 @@ public final class IMapWriter extends AbstractProcessor {
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
             } else {
-                instance = context.getJetInstance().getHazelcastInstance();
+                instance = context.jetInstance().getHazelcastInstance();
             }
             map = instance.getMap(name);
         }

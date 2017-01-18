@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.logging.ILogger;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -50,7 +52,7 @@ public interface Processor {
      * once and strictly before any calls to processing methods ({@link #process(int, Inbox)},
      * {@link #completeEdge(int)}, {@link #complete()}).
      */
-    void init(@Nonnull Outbox outbox);
+    void init(@Nonnull Outbox outbox, @Nonnull Context context);
 
     /**
      * Processes some items in the supplied inbox. Removes the items it's done with.
@@ -96,5 +98,36 @@ public interface Processor {
      */
     default boolean isCooperative() {
         return true;
+    }
+
+
+    /**
+     * Context passed to the processor in the {@link #init(Outbox, Processor.Context) init()} call.
+     */
+    interface Context {
+
+        /**
+         * Returns the current Jet instance
+         */
+        @Nonnull
+        JetInstance jetInstance();
+
+        /**
+         *  Return a logger for the processor
+         */
+        @Nonnull
+        ILogger logger();
+
+        /**
+         * Returns the index of the current processor among all the processors created for this vertex on this node.
+         */
+        int index();
+
+        /***
+         * Returns the name of the vertex associated with this processor
+         */
+        String vertexName();
+
+
     }
 }

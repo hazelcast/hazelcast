@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.logging.ILogger;
+
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
@@ -23,7 +25,7 @@ import java.util.function.Function;
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} with several levels of convenience:
  * <ol><li>
- *     {@link #init(Outbox)} retains the supplied outbox.
+ *     {@link #init(Outbox, Context)} retains the supplied outbox and context.
  * </li><li>
  *     {@link #process(int, Inbox)} delegates to {@link #tryProcess(int, Object)}
  *     with each item received in the inbox.
@@ -48,10 +50,24 @@ public abstract class AbstractProcessor implements Processor {
 
     private Outbox outbox;
     private Object pendingItem;
+    private ILogger logger;
 
     @Override
-    public void init(@Nonnull Outbox outbox) {
+    public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         this.outbox = outbox;
+        this.logger = context.logger();
+        init(context);
+    }
+
+    /**
+     * Method that can be overridden to perform any necessary initialization for the processor.
+     * This method will be called exactly once and strictly before any calls to processing methods
+     * ({@link #process(int, Inbox)}, ({@link #tryProcess(int, Object)}, {@link #completeEdge(int)},
+     * {@link #complete()}). {@link #getOutbox()} and {@link #getLogger()} are initialized before this
+     * method is called.
+     * @param context the {@link Context} associated with this processor
+     */
+    protected void init(@Nonnull Context context) {
     }
 
     /**
@@ -80,6 +96,13 @@ public abstract class AbstractProcessor implements Processor {
      */
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         throw new UnsupportedOperationException("Missing implementation");
+    }
+
+    /**
+     * Returns the logger associated with this processor instance.
+     */
+    protected final ILogger getLogger() {
+        return logger;
     }
 
     /**

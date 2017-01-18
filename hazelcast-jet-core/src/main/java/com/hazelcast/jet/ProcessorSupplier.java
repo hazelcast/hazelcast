@@ -73,10 +73,10 @@ public interface ProcessorSupplier extends Serializable {
     interface Context {
 
         /**
-         * @return the Jet instance
+         * Returns the current Jet instance
          */
         @Nonnull
-        JetInstance getJetInstance();
+        JetInstance jetInstance();
 
         /**
          * Returns the number of processors that the associated {@code ProcessorSupplier}

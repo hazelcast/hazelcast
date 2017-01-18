@@ -437,7 +437,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
 
         @Override
         public void init(Context context) {
-            instance = context.getJetInstance();
+            instance = context.jetInstance();
         }
 
         @Override
