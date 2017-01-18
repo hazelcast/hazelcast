@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Multiple result set for Predicates.
@@ -32,13 +32,13 @@ import java.util.concurrent.ConcurrentMap;
 public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements MultiResultSet {
 
     private Set<Object> index;
-    private final List<ConcurrentMap<Data, QueryableEntry>> resultSets
-            = new ArrayList<ConcurrentMap<Data, QueryableEntry>>();
+    private final List<Map<Data, QueryableEntry>> resultSets
+            = new ArrayList<Map<Data, QueryableEntry>>();
 
     public FastMultiResultSet() {
     }
 
-    public void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet) {
+    public void addResultSet(Map<Data, QueryableEntry> resultSet) {
         resultSets.add(resultSet);
     }
 
@@ -51,14 +51,14 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
             //todo: what is the point of this condition? Is it some kind of optimization?
             if (resultSets.size() > 3) {
                 index = new HashSet<Object>();
-                for (ConcurrentMap<Data, QueryableEntry> result : resultSets) {
+                for (Map<Data, QueryableEntry> result : resultSets) {
                     for (QueryableEntry queryableEntry : result.values()) {
                         index.add(queryableEntry.getKeyData());
                     }
                 }
                 return checkFromIndex(entry);
             } else {
-                for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+                for (Map<Data, QueryableEntry> resultSet : resultSets) {
                     if (resultSet.containsKey(entry.getKeyData())) {
                         return true;
                     }
@@ -129,7 +129,7 @@ public class FastMultiResultSet extends AbstractSet<QueryableEntry> implements M
     @Override
     public int size() {
         int size = 0;
-        for (ConcurrentMap<Data, QueryableEntry> resultSet : resultSets) {
+        for (Map<Data, QueryableEntry> resultSet : resultSets) {
             size += resultSet.size();
         }
         return size;
