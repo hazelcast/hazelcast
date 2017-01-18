@@ -186,7 +186,7 @@ public class ClientScheduledFutureProxy<V>
     @Override
     public V get()
             throws InterruptedException, ExecutionException {
-        return this.get0().join();
+        return this.get0().get();
     }
 
     @Override

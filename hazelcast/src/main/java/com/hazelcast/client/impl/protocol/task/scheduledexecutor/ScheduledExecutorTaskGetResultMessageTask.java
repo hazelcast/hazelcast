@@ -24,6 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
@@ -97,5 +98,19 @@ public class ScheduledExecutorTaskGetResultMessageTask
     @Override
     public Object[] getParameters() {
         return new Object[] { parameters.handlerUrn };
+    }
+
+    /**
+     * Exceptions may be wrapped in ExecutionExceptionDecorator, the wrapped ExecutionException should be sent to
+     * the client.
+     * @param throwable
+     */
+    @Override
+    protected void sendClientMessage(Throwable throwable) {
+        if (throwable instanceof ScheduledTaskResult.ExecutionExceptionDecorator) {
+            super.sendClientMessage(throwable.getCause());
+        } else {
+            super.sendClientMessage(throwable);
+        }
     }
 }

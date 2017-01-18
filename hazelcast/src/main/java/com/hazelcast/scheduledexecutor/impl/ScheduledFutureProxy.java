@@ -157,7 +157,7 @@ public final class ScheduledFutureProxy<V>
     public V get()
             throws InterruptedException, ExecutionException {
         try {
-            return this.get0().join();
+            return this.get0().get();
         } catch (ScheduledTaskResult.ExecutionExceptionDecorator ex) {
             return sneakyThrow(ex.getCause());
         }
