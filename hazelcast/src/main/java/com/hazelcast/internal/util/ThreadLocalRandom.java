@@ -102,6 +102,13 @@ public class ThreadLocalRandom extends Random {
     }
 
     /**
+     * Removes the current thread's {@code ThreadLocalRandom}.
+     */
+    public static void remove() {
+        localRandom.remove();
+    }
+
+    /**
      * Throws {@code UnsupportedOperationException}.  Setting seeds in
      * this generator is not supported.
      *
