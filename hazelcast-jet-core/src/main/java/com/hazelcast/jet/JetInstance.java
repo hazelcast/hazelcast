@@ -24,39 +24,43 @@ import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.IStreamMap;
 
 /**
- * Represents a member of the Jet cluster.
+ * Main entry point for interacting with a Jet cluster. Each instance represents either a member (node) or a client.
  */
 public interface JetInstance {
 
     /**
-     * @return name of the Jet instance
+     * Returns the name of the Jet instance.
      */
     String getName();
 
     /**
-     * @return javadoc pending
+     * Returns the underlying Hazelcast IMDG instance used by Jet. It will either be a member or a client, depending on
+     * which type of JetInstance is used.
      */
     HazelcastInstance getHazelcastInstance();
 
     /**
-     * Javadoc pending
-     *
-     * @return
+     * Returns information about the cluster that this Jet instance is part of.
      */
     Cluster getCluster();
 
     /**
-     * @return javadoc pending
+     * Returns the configuration for this Jet member. This method is not available on client instances.
      */
     JetConfig getConfig();
 
     /**
-     * @return javadoc pending
+     * Creates and returns an executable job based on a given DAG.
+     *
+     * @param dag The DAG that will be used to for the execution of the job
+     * @return a new {@link Job} instance
      */
     Job newJob(DAG dag);
 
     /**
-     * @return javadoc pending
+     * Creates and returns an executable Job based on a given DAG with a job specific configuration.
+     *
+     * @return a new {@link Job} instance
      */
     Job newJob(DAG dag, JobConfig config);
 
@@ -78,7 +82,7 @@ public interface JetInstance {
     <E> IStreamList<E> getList(String name);
 
     /**
-     * Javadoc pending
+     * Shutdowns the current instance.
      */
     void shutdown();
 
