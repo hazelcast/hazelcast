@@ -78,26 +78,32 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
      * Tests {@link com.hazelcast.map.impl.operation.EntryOperation}.
      */
     @Test
-    public void testEntryProcessorWhileTwoNodesAreBouncing() {
-        testEntryProcessorWhileTwoNodesAreBouncing(false);
+    public void testEntryProcessorWhileTwoNodesAreBouncing_withoutPredicate() {
+        testEntryProcessorWhileTwoNodesAreBouncing(false, false);
     }
 
     /**
      * Tests {@link com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation}.
      */
     @Test
-    public void testEntryProcessorWhileTwoNodesAreBouncing_withPredicate() {
-        testEntryProcessorWhileTwoNodesAreBouncing(true);
+    public void testEntryProcessorWhileTwoNodesAreBouncing_withPredicateNoIndex() {
+        testEntryProcessorWhileTwoNodesAreBouncing(true, false);
     }
 
-    private void testEntryProcessorWhileTwoNodesAreBouncing(boolean withPredicate) {
+    @Test
+    public void testEntryProcessorWhileTwoNodesAreBouncing_withPredicateWithIndex() {
+        testEntryProcessorWhileTwoNodesAreBouncing(true, true);
+    }
+
+    private void testEntryProcessorWhileTwoNodesAreBouncing(boolean withPredicate, boolean withIndex) {
         CountDownLatch startLatch = new CountDownLatch(1);
         AtomicBoolean isRunning = new AtomicBoolean(true);
 
         // start up three instances
-        HazelcastInstance instance = newInstance(withPredicate);
-        HazelcastInstance instance2 = newInstance(withPredicate);
-        HazelcastInstance instance3 = newInstance(withPredicate);
+        HazelcastInstance instance = newInstance(withIndex);
+        HazelcastInstance instance2 = newInstance(withIndex);
+        HazelcastInstance instance3 = newInstance(withIndex);
+        assertClusterSizeEventually(3, instance);
 
         final IMap<Integer, ListHolder> map = instance.getMap(MAP_NAME);
         final ListHolder expected = new ListHolder();
@@ -160,24 +166,21 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
         assertOpenEventually(latch);
 
-        // TODO: check why this is failing without predicates
-        if (withPredicate) {
-            for (int index = 0; index < ENTRIES; ++index) {
-                ListHolder holder = map.get(index);
-                assertEquals("The ListHolder should contain ITERATIONS entries", ITERATIONS, holder.size());
-                for (int i = 0; i < ITERATIONS; i++) {
-                    assertEquals(i, holder.get(i));
-                }
+        for (int index = 0; index < ENTRIES; ++index) {
+            ListHolder holder = map.get(index);
+            assertEquals("The ListHolder should contain ITERATIONS entries", ITERATIONS, holder.size());
+            for (int i = 0; i < ITERATIONS; i++) {
+                assertEquals(i, holder.get(i));
             }
         }
     }
 
-    private HazelcastInstance newInstance(boolean withPredicate) {
+    private HazelcastInstance newInstance(boolean withIndex) {
         Config config = getConfig();
 
         MapConfig mapConfig = config.getMapConfig(MAP_NAME);
         mapConfig.setBackupCount(2);
-        if (withPredicate) {
+        if (withIndex) {
             mapConfig.addMapIndexConfig(new MapIndexConfig("__key", true));
         }
 
@@ -275,8 +278,11 @@ public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
         }
 
         public void add(int value) {
-            list.add(value);
-            size++;
+            // EPs should be idempotent if consistency for such type of operations required
+            if (!list.contains(value)) {
+                list.add(value);
+                size++;
+            }
         }
 
         public int get(int index) {
