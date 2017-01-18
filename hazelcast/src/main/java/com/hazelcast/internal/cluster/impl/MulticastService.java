@@ -47,6 +47,7 @@ public final class MulticastService implements Runnable {
     private static final int SOCKET_BUFFER_SIZE = 64 * 1024;
     private static final int SOCKET_TIMEOUT = 1000;
     private static final int SHUTDOWN_TIMEOUT_SECONDS = 5;
+    private static final int JOIN_SERIALIZATION_ERROR_SUPPRESSION_MILLIS = 60000;
 
     private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
     private final Object sendLock = new Object();
@@ -59,7 +60,9 @@ public final class MulticastService implements Runnable {
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
 
+    private long lastLoggedJoinSerializationFailure;
     private volatile boolean running = true;
+
 
     private MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.logger = node.getLogger(MulticastService.class.getName());
@@ -217,7 +220,14 @@ public final class MulticastService implements Runnable {
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException || e instanceof HazelcastSerializationException) {
-                    logger.warning("Received data format is invalid. (An old version of Hazelcast may be running here.)", e);
+                    long now = System.currentTimeMillis();
+                    if (now - lastLoggedJoinSerializationFailure > JOIN_SERIALIZATION_ERROR_SUPPRESSION_MILLIS) {
+                        lastLoggedJoinSerializationFailure = now;
+                        logger.warning("Received a JoinRequest with an incompatible binary-format. "
+                                + "An old version of Hazelcast may be using the same multicast discovery port. "
+                                + "Are you running multiple Hazelcast clusters on this host? "
+                                + "(This message will be suppressed for 60 seconds). ");
+                    }
                 } else {
                     throw e;
                 }
