@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.loader;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IFunction;
@@ -38,6 +38,7 @@ import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.StateMachine;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
@@ -56,9 +57,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.logging.Logger.getLogger;
-import static com.hazelcast.map.impl.MapKeyLoaderUtil.assignRole;
-import static com.hazelcast.map.impl.MapKeyLoaderUtil.toBatches;
-import static com.hazelcast.map.impl.MapKeyLoaderUtil.toPartition;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
@@ -69,7 +67,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 /**
  * Loads keys from a {@link MapLoader} and sends them to all partitions for loading
  */
-public class MapKeyLoader {
+public class KeyLoader {
 
     private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
 
@@ -126,15 +124,15 @@ public class MapKeyLoader {
             .withTransition(State.LOADING, State.LOADED, State.NOT_LOADED)
             .withTransition(State.LOADED, State.LOADING);
 
-    public MapKeyLoader(String mapName, OperationService opService, IPartitionService ps,
-                        ClusterService clusterService, ExecutionService execService, IFunction<Object, Data> serialize) {
+    public KeyLoader(String mapName, OperationService opService, IPartitionService ps,
+                     ClusterService clusterService, ExecutionService execService, IFunction<Object, Data> serialize) {
         this.mapName = mapName;
         this.opService = opService;
         this.partitionService = ps;
         this.clusterService = clusterService;
         this.toData = serialize;
         this.execService = execService;
-        this.logger = getLogger(MapKeyLoader.class);
+        this.logger = getLogger(KeyLoader.class);
     }
 
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
@@ -173,7 +171,7 @@ public class MapKeyLoader {
                 isMapNamePartitionFirstReplica = member.localMember();
             }
         }
-        return assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
+        return KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
     }
 
     /**
@@ -208,7 +206,7 @@ public class MapKeyLoader {
 
             keyLoadFinished = new LoadFinishedFuture();
 
-            // side effect -> just trigger load on SENDER_BACKUP id SENDER died
+            // side effect -> just trigger load on SENDER_BACKUP if SENDER died
             execService.execute(MAP_LOAD_ALL_KEYS_EXECUTOR, new Runnable() {
                 @Override
                 public void run() {
@@ -302,8 +300,8 @@ public class MapKeyLoader {
                 dataKeys = limit(dataKeys, mapMaxSize);
             }
 
-            Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
-            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
+            Iterator<Entry<Integer, Data>> partitionsAndKeys = IterableUtil.map(dataKeys, KeyLoaderUtil.toPartition(partitionService));
+            Iterator<Map<Integer, List<Data>>> batches = KeyLoaderUtil.toBatches(partitionsAndKeys, maxBatch);
 
             List<Future> futures = new ArrayList<Future>();
             while (batches.hasNext()) {

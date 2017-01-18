@@ -31,7 +31,7 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
 
     @Override
     public void run() {
-        recordStore.maybeDoInitialLoad();
+        recordStore.getMapLoaderEngine().maybeDoInitialLoad();
     }
 
     public boolean returnsResponse() {

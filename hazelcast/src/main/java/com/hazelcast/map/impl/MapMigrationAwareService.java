@@ -86,7 +86,7 @@ class MapMigrationAwareService implements MigrationAwareService {
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
             // in case the record store has been created without loading during migration trigger again
             // if loading has been already started this call will do nothing
-            recordStore.startLoading();
+            recordStore.getMapLoaderEngine().startLoading();
         }
         mapServiceContext.reloadOwnedPartitions();
 

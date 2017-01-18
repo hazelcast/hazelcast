@@ -51,7 +51,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     @Override
     public void run() throws Exception {
         keys = selectThisPartitionsKeys();
-        recordStore.loadAllFromStore(keys, replaceExistingValues);
+        recordStore.getMapLoaderEngine().loadAllFromStore(keys, replaceExistingValues);
     }
 
     @Override

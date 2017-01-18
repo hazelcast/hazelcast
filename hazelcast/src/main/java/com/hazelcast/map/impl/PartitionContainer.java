@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.loader.KeyLoader;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
@@ -34,7 +35,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
+import static com.hazelcast.map.impl.loader.KeyLoaderUtil.getMaxSizePerNode;
 
 public class PartitionContainer {
 
@@ -47,7 +48,7 @@ public class PartitionContainer {
         @Override
         public RecordStore createNew(String name) {
             RecordStore recordStore = createRecordStore(name);
-            recordStore.startLoading();
+            recordStore.getMapLoaderEngine().startLoading();
             return recordStore;
         }
     };
@@ -103,7 +104,7 @@ public class PartitionContainer {
         ExecutionService execService = nodeEngine.getExecutionService();
         HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
 
-        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
+        KeyLoader keyLoader = new KeyLoader(name, opService, ps, nodeEngine.getClusterService(),
                 execService, mapContainer.toData());
         keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
         keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));

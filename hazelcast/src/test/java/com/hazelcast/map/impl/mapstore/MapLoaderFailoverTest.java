@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.Future;
 
+import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.LAZY;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 import static org.junit.Assert.assertEquals;
@@ -167,6 +168,42 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         assertEquals(MAP_STORE_ENTRY_COUNT, size);
         assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
         assertEquals(2, mapLoader.getLoadAllKeysInvocations());
+    }
+
+    @Test(timeout = MINUTE)
+    public void testLoadsAll_whenInitialLoaderNodeRemovedWhileLoading_loadAll() throws Exception {
+        PausingMapLoader<Integer, Integer> pausingLoader = new PausingMapLoader<Integer, Integer>(mapLoader, 5000);
+        pausingLoader.disablePausing();
+
+        Config cfg = newConfig("default", EAGER, 1, pausingLoader);
+        HazelcastInstance[] nodes = nodeFactory.newInstances(cfg, 3);
+        HazelcastInstance hz3 = nodes[2];
+
+        String mapName = generateKeyOwnedBy(hz3);
+        final IMap<Object, Object> map = nodes[0].getMap(mapName);
+        // assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
+        System.err.println(map.size());
+
+        // now the loading has been invoked once
+        assertEquals(1, mapLoader.getLoadAllKeysInvocations());
+        pausingLoader.resetPausing();
+
+        Thread loadAll = new Thread() {
+            public void run() {
+                map.loadAll(false);
+            }
+        };
+        loadAll.start();
+        pausingLoader.awaitPause();
+
+        hz3.getLifecycleService().terminate();
+        assertClusterSizeEventually(2, nodes[0]);
+
+        pausingLoader.resume();
+        loadAll.join();
+        assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
+//        assertTrue(mapLoader.getLoadedValueCount() >= MAP_STORE_ENTRY_COUNT);
+        assertEquals(3, mapLoader.getLoadAllKeysInvocations());
     }
 
     private void assertSizeAndLoadCount(IMap<Object, Object> map) {

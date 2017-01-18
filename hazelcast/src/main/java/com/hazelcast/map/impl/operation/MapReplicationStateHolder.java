@@ -98,7 +98,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable {
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapReplicationOperation.getRecordStore(mapName);
                 recordStore.reset();
-                recordStore.setPreMigrationLoadedStatus(loaded.get(mapName));
+                recordStore.getMapLoaderEngine().setPreMigrationLoadedStatus(loaded.get(mapName));
 
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();

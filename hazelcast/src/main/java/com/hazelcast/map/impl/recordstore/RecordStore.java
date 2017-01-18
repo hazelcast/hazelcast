@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.loader.MapLoaderEngine;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
@@ -309,15 +310,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     void doPostEvictionOperations(Record record, boolean backup);
 
-    /**
-     * Loads all given keys from defined map store.
-     *
-     * @param keys keys to be loaded.
-     */
-    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
-
-    void updateLoadStatus(boolean lastBatch, Throwable exception);
-
     MapDataStore<Data, Object> getMapDataStore();
 
     int getPartitionId();
@@ -345,18 +337,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     boolean shouldEvict();
 
-    /**
-     * Loads all keys and values
-     *
-     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     **/
-    void loadAll(boolean replaceExistingValues);
-
-    /**
-     * Performs initial loading from a MapLoader if it has not been done before
-     **/
-    void maybeDoInitialLoad();
-
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
     Record createRecord(Object value, long ttlMillis, long now);
@@ -373,29 +353,10 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     Storage getStorage();
 
     /**
-     * Starts mapLoader
-     */
-    void startLoading();
-
-    /**
-     * Informs this recordStore about the loading status of the recordStore that this store is migrated from.
-     * If the 'predecessor' has been loaded this record store should trigger the load again.
-     * Will be taken into account only if invoked before the startLoading method. Otherwise has no effect.
-     * <p>
-     * This method should be deleted when the map's lifecycle has been cleaned-up. Currently it's impossible to
-     * pass additional state when the record store is created, thus this this state has to be passed in post-creation
-     * setters which is cumbersome and error-prone.
-     */
-    void setPreMigrationLoadedStatus(boolean loaded);
-
-    /**
      * Initialize the recordStore after creation
      */
     void init();
 
-    /**
-     * @return Returns true if key load has finished, false otherwise.
-     **/
-    boolean isKeyLoadFinished();
+    MapLoaderEngine getMapLoaderEngine();
 
 }

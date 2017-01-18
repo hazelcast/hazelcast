@@ -1,4 +1,4 @@
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.loader;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -7,17 +7,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.map.impl.MapKeyLoader.Role;
-import static com.hazelcast.map.impl.MapKeyLoader.Role.NONE;
-import static com.hazelcast.map.impl.MapKeyLoader.Role.RECEIVER;
-import static com.hazelcast.map.impl.MapKeyLoader.Role.SENDER;
-import static com.hazelcast.map.impl.MapKeyLoader.Role.SENDER_BACKUP;
+import static com.hazelcast.map.impl.loader.KeyLoader.Role;
+import static com.hazelcast.map.impl.loader.KeyLoader.Role.NONE;
+import static com.hazelcast.map.impl.loader.KeyLoader.Role.RECEIVER;
+import static com.hazelcast.map.impl.loader.KeyLoader.Role.SENDER;
+import static com.hazelcast.map.impl.loader.KeyLoader.Role.SENDER_BACKUP;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings("ConstantConditions")
-public class MapKeyLoaderUtilTest {
+public class KeyLoaderUtilTest {
 
     @Test
     public void assignRole_SENDER() {
@@ -25,7 +25,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = false;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
 
         assertEquals(SENDER, role);
     }
@@ -36,7 +36,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = true;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
 
         assertEquals(SENDER_BACKUP, role);
     }
@@ -47,7 +47,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = true;
         boolean isMapNamePartitionFirstReplica = false;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, isMapNamePartitionFirstReplica);
 
         assertEquals(NONE, role);
     }
@@ -58,7 +58,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = false;
         boolean insignificant = false;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(RECEIVER, role);
     }
@@ -69,7 +69,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = false;
         boolean insignificant = true;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(RECEIVER, role);
     }
@@ -80,7 +80,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = false;
         boolean insignificant = false;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(NONE, role);
     }
@@ -91,7 +91,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = false;
         boolean insignificant = true;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(NONE, role);
     }
@@ -102,7 +102,7 @@ public class MapKeyLoaderUtilTest {
         boolean isMapNamePartition = false;
         boolean insignificant = true;
 
-        Role role = MapKeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
+        Role role = KeyLoaderUtil.assignRole(isPartitionOwner, isMapNamePartition, insignificant);
 
         assertEquals(NONE, role);
     }

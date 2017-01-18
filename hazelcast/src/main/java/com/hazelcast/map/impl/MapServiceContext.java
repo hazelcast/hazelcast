@@ -22,6 +22,7 @@ import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.loader.KeyLoader;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.query.MapQueryEngine;
@@ -109,7 +110,7 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport, 
      */
     void shutdown();
 
-    RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader);
+    RecordStore createRecordStore(MapContainer mapContainer, int partitionId, KeyLoader keyLoader);
 
     RecordStore getRecordStore(int partitionId, String mapName);
 
