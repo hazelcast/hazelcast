@@ -26,6 +26,7 @@ import com.hazelcast.query.impl.ComparisonType;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -219,29 +220,22 @@ public class PostJoinMapOperationTest extends HazelcastTestSupport {
         waitAllForSafeState(hz1, hz2);
 
         hzFactory.terminate(hz1);
-        waitAllForSafeState(hz1, hz2);
+        waitAllForSafeState(hz2);
 
         // then: once all migrations are committed, the query is executed *with* the index and
         // returns the expected results.
-        IMap<String, Person> mapOnNode2 = hz2.getMap("map");
-        MapService mapService = getNodeEngineImpl(hz2).getService(MapService.SERVICE_NAME);
-        // Ensure MigrationAwareService.commitMigration has completed execution.
-        // There is a slim chance to observe mapService.getMigrationsInFlight()==0 while migration is still in progress,
-        // however for this to happen it would require that before & commit/rollback migration methods are executed in an
-        // interleaved fashion.
-        while (true) {
-            Thread.sleep(100);
-            if (mapService.getOwnerMigrationsInFlight() == 0) {
-                break;
-            }
-        }
-
+        final IMap<String, Person> mapOnNode2 = hz2.getMap("map");
         final AtomicInteger invocationCounter = new AtomicInteger(0);
-        Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
-        assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
-        assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());
 
-        hzFactory.terminate(hz2);
+        // eventually index should be created after join
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Collection<Person> personsWithAgePredicate = mapOnNode2.values(new AgePredicate(invocationCounter));
+                assertEquals("isIndexed should have located an index", 1, invocationCounter.get());
+                assertEquals("index should return 1 match", 1, personsWithAgePredicate.size());
+            }
+        });
     }
 
     @Test
