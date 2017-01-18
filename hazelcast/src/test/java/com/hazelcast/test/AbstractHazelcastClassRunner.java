@@ -20,7 +20,6 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.util.EmptyStatement;
-import org.apache.logging.log4j.ThreadContext;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
@@ -125,13 +124,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     static void setThreadLocalTestMethodName(String name) {
-        ThreadContext.put("test-name", name);
+        TestLoggingUtils.setThreadLocalTestMethodName(name);
         TEST_NAME_THREAD_LOCAL.set(name);
     }
 
     static void removeThreadLocalTestMethodName() {
+        TestLoggingUtils.removeThreadLocalTestMethodName();
         TEST_NAME_THREAD_LOCAL.remove();
-        ThreadContext.remove("test-name");
     }
 
     @Override
