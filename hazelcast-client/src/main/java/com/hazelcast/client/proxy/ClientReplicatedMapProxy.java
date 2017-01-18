@@ -47,7 +47,6 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
@@ -63,6 +62,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -93,7 +93,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     protected void onInitialize() {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
-        targetPartitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+        targetPartitionId = new Random().nextInt(partitionCount);
 
         initNearCache();
     }
