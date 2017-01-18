@@ -26,6 +26,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.loader.KeyLoader;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -666,7 +667,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, MapKeyLoader keyLoader) {
+    public RecordStore createRecordStore(MapContainer mapContainer, int partitionId, KeyLoader keyLoader) {
         ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
         return new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
     }

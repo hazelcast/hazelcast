@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 /**
  * Loader contract for a {@link RecordStore}.
  */
-interface RecordStoreLoader {
+public interface RecordStoreLoader {
 
     RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
         @Override
