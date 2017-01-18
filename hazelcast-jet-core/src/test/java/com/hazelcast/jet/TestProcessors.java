@@ -18,11 +18,13 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.impl.connector.AbstractProducer;
 
+import javax.annotation.Nonnull;
+
 public class TestProcessors {
 
     public static class Identity extends AbstractProcessor {
         @Override
-        protected boolean tryProcess(int ordinal, Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             emit(item);
             return true;
         }

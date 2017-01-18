@@ -24,6 +24,7 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -39,7 +40,7 @@ public final class IListWriter extends AbstractProcessor {
     }
 
     @Override
-    public void process(int ordinal, Inbox inbox) {
+    public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drainTo(list);
     }
 
@@ -79,7 +80,7 @@ public final class IListWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             HazelcastInstance instance;
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
@@ -96,6 +97,7 @@ public final class IListWriter extends AbstractProcessor {
             }
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());

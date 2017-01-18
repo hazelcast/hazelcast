@@ -49,7 +49,7 @@ public final class IMapWriter extends AbstractProcessor {
     }
 
     @Override
-    public void process(int ordinal, Inbox inbox) {
+    public void process(int ordinal, @Nonnull Inbox inbox) {
         inbox.drainTo(buffer.entries);
         flush();
     }
@@ -96,7 +96,7 @@ public final class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(mapName, clientConfig);
         }
     }
@@ -116,7 +116,7 @@ public final class IMapWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             HazelcastInstance instance;
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
@@ -137,6 +137,7 @@ public final class IMapWriter extends AbstractProcessor {
             return clientConfig != null;
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return Stream.generate(() -> new IMapWriter(map)).limit(count).collect(toList());

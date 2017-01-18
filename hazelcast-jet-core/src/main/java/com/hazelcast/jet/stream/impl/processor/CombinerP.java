@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 
+import javax.annotation.Nonnull;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
@@ -33,7 +34,7 @@ public class CombinerP<T, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (result != null) {
             result = combiner.apply(result, (T) item);
         } else {

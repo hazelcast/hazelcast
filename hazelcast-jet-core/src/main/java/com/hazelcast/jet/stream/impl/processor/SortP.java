@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -40,7 +41,7 @@ public class SortP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         sorted.add((T) item);
         return true;
     }

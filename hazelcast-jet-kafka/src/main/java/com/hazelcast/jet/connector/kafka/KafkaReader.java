@@ -157,7 +157,7 @@ public class KafkaReader<K, V> extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             Member[] members = context.jetInstance().getCluster().getMembers().toArray(new Member[0]);
             KafkaConsumer<byte[], byte[]> consumer = new KafkaConsumer<>(properties);
             List<PartitionInfo> partitions = consumer.partitionsFor(topicId);
@@ -171,7 +171,7 @@ public class KafkaReader<K, V> extends AbstractProducer {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(topicId, properties, partitionMap.get(address));
         }
     }
@@ -194,10 +194,11 @@ public class KafkaReader<K, V> extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             this.context = context;
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)

@@ -60,7 +60,7 @@ public class FlowNodeProcessor extends AbstractProcessor {
     }
 
     @Override
-    public void process(int ordinal, Inbox inbox) {
+    public void process(int ordinal, @Nonnull Inbox inbox) {
         try {
             // find the element for this jet ordinal
             Entry<Integer, ProcessorInputSource> entry = graph.getForOrdinal(ordinal);

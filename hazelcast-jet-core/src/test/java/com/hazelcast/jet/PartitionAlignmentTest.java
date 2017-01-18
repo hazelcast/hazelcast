@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -101,7 +102,7 @@ public class PartitionAlignmentTest {
         private final Map<Integer, int[]> counts = new HashMap<>();
 
         @Override
-        protected boolean tryProcess(int ordinal, Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             counts.computeIfAbsent((Integer) item, x -> new int[2])[ordinal]++;
             return true;
         }

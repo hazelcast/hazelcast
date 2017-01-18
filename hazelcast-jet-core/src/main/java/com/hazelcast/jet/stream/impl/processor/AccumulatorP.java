@@ -39,7 +39,7 @@ public class AccumulatorP<IN, OUT> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         result = accumulator.apply(result, (IN) item);
         return true;
     }

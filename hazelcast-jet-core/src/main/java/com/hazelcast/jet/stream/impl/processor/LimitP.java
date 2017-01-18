@@ -18,6 +18,8 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 
+import javax.annotation.Nonnull;
+
 public class LimitP extends AbstractProcessor {
 
     private final long limit;
@@ -28,7 +30,7 @@ public class LimitP extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (index >= limit) {
             return true;
         }

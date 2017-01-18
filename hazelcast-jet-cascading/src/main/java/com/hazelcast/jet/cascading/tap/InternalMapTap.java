@@ -38,6 +38,7 @@ import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.map.impl.MapService;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
@@ -96,7 +97,7 @@ public class InternalMapTap extends InternalJetTap {
         final IMap map = instance.getMap(mapName);
         return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new Outbox() {
             @Override
-            public void add(int ordinal, Object item) {
+            public void add(int ordinal, @Nonnull Object item) {
                 Entry entry = (Entry) item;
                 map.put(entry.getKey(), entry.getValue());
             }

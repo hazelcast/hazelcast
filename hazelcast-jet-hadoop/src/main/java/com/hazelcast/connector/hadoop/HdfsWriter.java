@@ -36,6 +36,7 @@ import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public final class HdfsWriter extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Map.Entry entry = (Map.Entry) item;
         return uncheckCall(() -> {
             recordWriter.write(entry.getKey(), entry.getValue());
@@ -112,12 +113,12 @@ public final class HdfsWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             address = context.jetInstance().getCluster().getLocalMember().getAddress();
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(address.equals(this.address), path);
         }
 
@@ -141,7 +142,7 @@ public final class HdfsWriter extends AbstractProcessor {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             this.context = context;
             conf = new JobConf();
             conf.setOutputFormat(TextOutputFormat.class);
@@ -164,6 +165,7 @@ public final class HdfsWriter extends AbstractProcessor {
             }
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return IntStream.range(0, count)

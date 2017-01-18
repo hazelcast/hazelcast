@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nonnull;
+
 /**
  * Single-threaded object which acts as a data sink for a {@link Processor}.
  * The outbox consists of individual output buckets, one per outbound edge
@@ -33,7 +35,7 @@ public interface Outbox {
     /**
      * Adds the supplied item to all the output buckets.
      */
-    default void add(Object item) {
+    default void add(@Nonnull Object item) {
         add(-1, item);
     }
 
@@ -42,7 +44,7 @@ public interface Outbox {
      * If {@code ordinal == -1}, adds the supplied item to all buckets
      * (behaves the same as {@link #add(Object)}).
      */
-    void add(int ordinal, Object item);
+    void add(int ordinal, @Nonnull Object item);
 
     /**
      * Returns {@code true} if any of this outbox's buckets is above its

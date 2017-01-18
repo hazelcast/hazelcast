@@ -32,6 +32,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -220,7 +221,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             initCalled = true;
             initCount.incrementAndGet();
 
@@ -229,6 +230,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
             }
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());

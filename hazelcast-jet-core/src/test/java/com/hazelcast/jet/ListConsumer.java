@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ class ListConsumer extends AbstractProcessor {
     }
 
     @Override
-    public boolean tryProcess(int ordinal, Object item) {
+    public boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (list.size() == yieldIndex) {
             yieldIndex = -1;
             return false;

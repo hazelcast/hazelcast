@@ -34,6 +34,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
@@ -258,7 +259,7 @@ public class CancellationTest extends JetTestSupport {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             if (address.equals(failOnAddress)) {
                 return ProcessorSupplier.of(() -> new FaultyProcessor(e));
             }

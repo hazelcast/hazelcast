@@ -121,7 +121,7 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             List<Member> members = new ArrayList<>(context.jetInstance().getCluster().getMembers());
             int memberCount = members.size();
             HazelcastInstance client = newHazelcastClient(serializableClientConfig.asClientConfig());
@@ -137,7 +137,7 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             List<Integer> ownedPartitions = memberToPartitions.get(address);
             return new RemoteClusterProcessorSupplier(name, fetchSize, ownedPartitions, serializableClientConfig);
         }
@@ -164,7 +164,7 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             client = newHazelcastClient(serializableClientConfig.asClientConfig());
             map = (ClientMapProxy) client.getMap(mapName);
         }
@@ -174,6 +174,7 @@ public final class IMapReader extends AbstractProducer {
             client.shutdown();
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return getProcessors(count, ownedPartitions, partitionId -> map.iterator(fetchSize, partitionId, true));
@@ -195,7 +196,7 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             membersToPartitions = context.jetInstance()
                     .getHazelcastInstance().getPartitionService()
                     .getPartitions().stream()
@@ -203,7 +204,7 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(name, membersToPartitions.get(address), fetchSize);
         }
     }
@@ -225,10 +226,11 @@ public final class IMapReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             map = (MapProxyImpl) context.jetInstance().getHazelcastInstance().getMap(mapName);
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return getProcessors(count, ownedPartitions, partitionId -> map.iterator(fetchSize, partitionId, true));

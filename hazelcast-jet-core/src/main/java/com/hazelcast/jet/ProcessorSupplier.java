@@ -33,7 +33,7 @@ public interface ProcessorSupplier extends Serializable {
     /**
      * Called on each cluster member after deserialization.
      */
-    default void init(Context context) {
+    default void init(@Nonnull Context context) {
     }
 
     /**

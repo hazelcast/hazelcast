@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
+import javax.annotation.Nonnull;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -34,7 +35,7 @@ public class TransformP extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         processItem(item, 0);
         return true;
     }

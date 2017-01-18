@@ -60,6 +60,7 @@ final class Contexts {
             return index;
         }
 
+        @Nonnull
         @Override
         public String vertexName() {
             return vertexName;
@@ -75,6 +76,7 @@ final class Contexts {
             this.perNodeParallelism = perNodeParallelism;
         }
 
+        @Nonnull
         @Override
         public JetInstance jetInstance() {
             return instance;
@@ -97,6 +99,7 @@ final class Contexts {
             this.localParallelism = localParallelism;
         }
 
+        @Nonnull
         @Override
         public JetInstance jetInstance() {
             return jetInstance;

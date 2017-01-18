@@ -76,7 +76,7 @@ public class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Map.Entry entry = (Map.Entry) item;
         Data key = serializationService.toData(entry.getKey());
         Data value = serializationService.toData(entry.getValue());
@@ -116,7 +116,7 @@ public class KafkaWriter extends AbstractProcessor {
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(topicId, properties);
         }
     }
@@ -135,10 +135,11 @@ public class KafkaWriter extends AbstractProcessor {
             this.properties = properties;
         }
 
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             this.context = context;
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)

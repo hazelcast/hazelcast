@@ -33,6 +33,7 @@ import cascading.pipe.Merge;
 import cascading.tap.Tap;
 import com.hazelcast.jet.Outbox;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Collection;
 import java.util.HashMap;
@@ -186,7 +187,7 @@ class JetStreamGraph extends NodeStreamGraph {
         }
 
         @Override
-        public void add(int ordinal, Object item) {
+        public void add(int ordinal, @Nonnull Object item) {
             if (ordinal != -1) {
                 throw new UnsupportedOperationException();
             }

@@ -112,6 +112,7 @@ public class SocketTextStreamReader extends AbstractProducer {
             this.port = port;
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             assertCountIsOne(count);

@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -130,10 +131,11 @@ public class ForwardingTest extends JetTestSupport {
         List<Processor> processors;
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             processors = Stream.generate(ListConsumer::new).limit(context.localParallelism()).collect(toList());
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             assertEquals(processors.size(), count);

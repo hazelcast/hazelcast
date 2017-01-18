@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.jet.Outbox;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Queue;
@@ -37,7 +38,7 @@ public final class ArrayDequeOutbox implements Outbox {
     }
 
     @Override
-    public void add(int ordinal, Object item) {
+    public void add(int ordinal, @Nonnull Object item) {
         if (ordinal != -1) {
             buckets[ordinal].add(item);
         } else {

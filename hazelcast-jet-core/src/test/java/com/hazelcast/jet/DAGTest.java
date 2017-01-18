@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
+import javax.annotation.Nonnull;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -323,7 +324,7 @@ public class DAGTest {
 
     private static class TestProcessor extends AbstractProcessor {
         @Override
-        public boolean tryProcess(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) {
             return true;
         }
     }

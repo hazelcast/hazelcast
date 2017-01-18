@@ -171,7 +171,7 @@ public class ProcessorTaskletTest {
         }
 
         @Override
-        public void process(int ordinal, Inbox inbox) {
+        public void process(int ordinal, @Nonnull Inbox inbox) {
             for (Object item; (item = inbox.poll()) != null; ) {
                 System.out.println("Processing " + item);
                 for (int i = 0; i < outbox.queueCount(); i++) {

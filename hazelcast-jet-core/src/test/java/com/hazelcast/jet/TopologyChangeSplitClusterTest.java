@@ -33,6 +33,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -129,7 +131,7 @@ public class TopologyChangeSplitClusterTest extends JetSplitBrainTestSupport {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             initCalled = true;
             initCount.incrementAndGet();
 
@@ -138,6 +140,7 @@ public class TopologyChangeSplitClusterTest extends JetSplitBrainTestSupport {
             }
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());

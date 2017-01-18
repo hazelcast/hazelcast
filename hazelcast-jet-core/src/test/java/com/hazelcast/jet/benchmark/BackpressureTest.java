@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 
@@ -148,7 +149,7 @@ public class BackpressureTest extends JetTestSupport {
         }
 
         @Override
-        public boolean tryProcess(int ordinal, Object item) {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) {
             if (isHiccuping()) {
                 return false;
             }

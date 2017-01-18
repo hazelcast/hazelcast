@@ -33,6 +33,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordReader;
 import org.apache.hadoop.mapred.TextInputFormat;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -135,7 +136,7 @@ public final class HdfsReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             configuration = new JobConf();
             configuration.setInputFormat(TextInputFormat.class);
             TextInputFormat.addInputPath(configuration, new Path(path));
@@ -155,7 +156,7 @@ public final class HdfsReader extends AbstractProducer {
 
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             Collection<IndexedInputSplit> splits = assigned.get(address);
             return new Supplier(configuration, splits != null ? splits : emptyList());
         }
@@ -258,6 +259,7 @@ public final class HdfsReader extends AbstractProducer {
             this.assignedSplits = assignedSplits.stream().collect(toList());
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             Map<Integer, List<IndexedInputSplit>> processorToSplits = range(0, assignedSplits.size()).boxed()

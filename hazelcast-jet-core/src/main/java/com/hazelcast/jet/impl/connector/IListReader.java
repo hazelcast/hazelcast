@@ -125,14 +125,14 @@ public final class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
             ownerAddress = context.jetInstance().getHazelcastInstance().getPartitionService()
                                   .getPartition(partitionKey).getOwner().getAddress();
         }
 
         @Override
-        public ProcessorSupplier get(Address address) {
+        public ProcessorSupplier get(@Nonnull Address address) {
             if (address.equals(ownerAddress)) {
                 return new Supplier(name, clientConfig, fetchSize);
             } else {
@@ -162,7 +162,7 @@ public final class IListReader extends AbstractProducer {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             HazelcastInstance instance;
             if (isRemote()) {
                 instance = client = newHazelcastClient(clientConfig.asClientConfig());
@@ -183,6 +183,7 @@ public final class IListReader extends AbstractProducer {
             }
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             assertCountIsOne(count);

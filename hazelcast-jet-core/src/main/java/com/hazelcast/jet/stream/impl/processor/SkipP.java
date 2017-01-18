@@ -18,6 +18,8 @@ package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
 
+import javax.annotation.Nonnull;
+
 public class SkipP extends AbstractProcessor {
 
     private final long skip;
@@ -29,7 +31,7 @@ public class SkipP extends AbstractProcessor {
 
 
     @Override
-    protected boolean tryProcess(int ordinal, Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (index >= skip) {
             emit(item);
         } else {

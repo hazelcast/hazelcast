@@ -200,6 +200,7 @@ public class FileStreamReader extends AbstractProducer {
             this.watchType = watchType;
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             List<Processor> processors = new ArrayList<>();

@@ -126,6 +126,7 @@ public interface Processor {
         /***
          * Returns the name of the vertex associated with this processor
          */
+        @Nonnull
         String vertexName();
 
 

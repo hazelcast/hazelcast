@@ -55,6 +55,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.slf4j.helpers.MessageFormatter;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -436,10 +437,11 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
         }
 
         @Override
-        public void init(Context context) {
+        public void init(@Nonnull Context context) {
             instance = context.jetInstance();
         }
 
+        @Nonnull
         @Override
         public List<Processor> get(int count) {
             return Stream.generate(() -> new FlowNodeProcessor(instance, properties, node, inputMap, outputMap))
