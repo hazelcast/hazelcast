@@ -10,7 +10,10 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -169,16 +172,33 @@ public class NearCacheLiteMemberTest {
 
     public static void testPutAll(HazelcastInstance instance, HazelcastInstance lite, String mapName) {
         IMap<Object, Object> map = instance.getMap(mapName);
+        IMap<Object, Object> liteMap = lite.getMap(mapName);
+        NearCachedMapProxyImpl proxy = (NearCachedMapProxyImpl) liteMap;
+        NearCache liteNearCache = proxy.getNearCache();
+        SerializationService serializationService = ((SerializationServiceSupport) instance).getSerializationService();
+        int count = 100;
+
+        // fill the near cache with the same data as below so we can detect when it is emptied
+        for (int i = 0; i < count; i++) {
+            liteNearCache.put(serializationService.toData(i), i);
+        }
+        final NearCacheStats stats = liteNearCache.getNearCacheStats();
+        assertEquals(100, stats.getOwnedEntryCount());
 
         Map<Object, Object> localMap = new HashMap<Object, Object>();
-        int count = 100;
         for (int i = 0; i < count; i++) {
             localMap.put(i, i);
         }
 
         map.putAll(localMap);
 
-        IMap<Object, Object> liteMap = lite.getMap(mapName);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, stats.getOwnedEntryCount());
+            }
+        });
+
         for (int i = 0; i < count; i++) {
             liteMap.get(i);
         }
