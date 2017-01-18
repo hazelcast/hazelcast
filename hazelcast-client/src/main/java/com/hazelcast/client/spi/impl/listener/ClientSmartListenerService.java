@@ -57,7 +57,6 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     private final Map<ClientRegistrationKey, Map<Member, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Member, ClientEventRegistration>>();
     private final ClientClusterService clusterService;
-    private final int invocationTimeout;
     private volatile LifecycleEvent.LifecycleState lifecycleState;
     private String membershipListenerId;
     private ScheduledFuture<?> connectionOpener;
@@ -66,7 +65,6 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                                       int eventThreadCount, int eventQueueCapacity) {
         super(client, eventThreadCount, eventQueueCapacity);
         clusterService = client.getClientClusterService();
-        invocationTimeout = client.getClientConfig().getNetworkConfig().getConnectionTimeout();
     }
 
     @Override
@@ -136,7 +134,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         Address address = member.getAddress();
         ClientInvocation invocation = new ClientInvocation(client, request, address);
         invocation.setEventHandler(handler);
-        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get(invocationTimeout, TimeUnit.MILLISECONDS));
+        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get());
 
         handler.onListenerRegister();
         long correlationId = request.getCorrelationId();
@@ -183,7 +181,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 // address and member.equals return true but they are actually different instances.
                 if (memberUuids.contains(subscriber.getUuid())) {
                     ClientInvocationFuture invocationFuture = getClientInvocationFuture(registration, subscriber);
-                    invocationFuture.get(invocationTimeout, TimeUnit.MILLISECONDS);
+                    invocationFuture.get();
                 } else {
                     // just send the invocation and do not wait for response and suppress any exceptions
                     try {
