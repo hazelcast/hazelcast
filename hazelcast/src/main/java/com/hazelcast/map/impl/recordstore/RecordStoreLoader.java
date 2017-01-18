@@ -28,7 +28,7 @@ interface RecordStoreLoader {
 
     RecordStoreLoader EMPTY_LOADER = new RecordStoreLoader() {
         @Override
-        public Future loadValues(List<Data> keys) {
+        public Future loadValues(List<Data> keys, boolean replaceExistingValues) {
             return null;
         }
     };
@@ -36,8 +36,9 @@ interface RecordStoreLoader {
     /**
      * Loads all keys from defined map store.
      *
-     * @param keys keys to be loaded.
+     * @param keys                  keys to be loaded.
+     * @param replaceExistingValues replace existing values
      * @return future for checking when loading is complete
      */
-    Future<?> loadValues(List<Data> keys);
+    Future<?> loadValues(List<Data> keys, boolean replaceExistingValues);
 }

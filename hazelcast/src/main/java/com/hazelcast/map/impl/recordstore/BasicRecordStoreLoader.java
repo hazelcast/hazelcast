@@ -53,20 +53,17 @@ import static com.hazelcast.spi.ExecutionService.MAP_LOADER_EXECUTOR;
  */
 class BasicRecordStoreLoader implements RecordStoreLoader {
 
+    private final RecordStore recordStore;
     private final AtomicBoolean loaded;
-
     private final ILogger logger;
-
     private final String name;
-
     private final MapServiceContext mapServiceContext;
-
     private final MapDataStore mapDataStore;
-
     private final int partitionId;
 
     BasicRecordStoreLoader(RecordStore recordStore) {
         final MapContainer mapContainer = recordStore.getMapContainer();
+        this.recordStore = recordStore;
         this.name = mapContainer.getName();
         this.mapServiceContext = mapContainer.getMapServiceContext();
         this.partitionId = recordStore.getPartitionId();
@@ -76,8 +73,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     @Override
-    public Future<?> loadValues(List<Data> keys) {
-        final Callable task = new GivenKeysLoaderTask(keys);
+    public Future<?> loadValues(List<Data> keys, boolean replaceExistingValues) {
+        final Callable task = new GivenKeysLoaderTask(keys, replaceExistingValues);
         return executeTask(MAP_LOADER_EXECUTOR, task);
     }
 
@@ -97,19 +94,25 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     private final class GivenKeysLoaderTask implements Callable<Object> {
 
         private final List<Data> keys;
+        private final boolean replaceExistingValues;
 
-        private GivenKeysLoaderTask(List<Data> keys) {
+        private GivenKeysLoaderTask(List<Data> keys, boolean replaceExistingValues) {
             this.keys = keys;
+            this.replaceExistingValues = replaceExistingValues;
         }
 
         @Override
         public Object call() throws Exception {
-            loadValuesInternal(keys);
+            loadValuesInternal(keys, replaceExistingValues);
             return null;
         }
     }
 
-    private void loadValuesInternal(List<Data> keys) throws Exception {
+    private void loadValuesInternal(List<Data> keys, boolean replaceExistingValues) throws Exception {
+        if (!replaceExistingValues) {
+            removeExistingKeys(keys);
+        }
+
         removeUnloadableKeys(keys);
 
         if (keys.isEmpty()) {
@@ -120,6 +123,20 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         List<Future> futures = doBatchLoad(keys);
         for (Future future : futures) {
             future.get();
+        }
+    }
+
+    private void removeExistingKeys(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        Storage storage = recordStore.getStorage();
+        Iterator<Data> iterator = keys.iterator();
+        while (iterator.hasNext()) {
+            Data key = iterator.next();
+            if (storage.containsKey(key)) {
+                iterator.remove();
+            }
         }
     }
 

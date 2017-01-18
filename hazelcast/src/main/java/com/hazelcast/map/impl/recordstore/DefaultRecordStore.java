@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -139,9 +138,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void loadAllFromStore(List<Data> keys) {
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys);
+            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
             loadingFutures.add(f);
         }
 
@@ -173,8 +172,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
-        keyLoader.onKeyLoad(callback);
+    public boolean isKeyLoadFinished() {
+        return keyLoader.isKeyLoadFinished();
     }
 
     @Override

@@ -17,40 +17,30 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
-import java.io.IOException;
+public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
-public class PartitionCheckIfLoadedOperationFactory extends AbstractMapOperationFactory {
-
-    private String name;
-
-    public PartitionCheckIfLoadedOperationFactory() {
+    public TriggerLoadIfNeededOperation() {
     }
 
-    public PartitionCheckIfLoadedOperationFactory(String name) {
-        this.name = name;
+    public TriggerLoadIfNeededOperation(String name) {
+        super(name);
     }
 
     @Override
-    public Operation createOperation() {
-        return new PartitionCheckIfLoadedOperation(name);
+    public void run() {
+        recordStore.maybeDoInitialLoad();
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+    public boolean returnsResponse() {
+        return false;
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.CHECK_IF_LOADED_FACTORY;
+        return MapDataSerializerHook.TRIGGER_LOAD_IF_NEEDED;
     }
+
 }
