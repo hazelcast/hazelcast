@@ -16,12 +16,12 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.nio.Address;
 
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Util class to generate type 4 (pseudo randomly generated) {@link UUID}.
@@ -32,26 +32,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @SuppressWarnings("unused")
 public final class UuidUtil {
-
-    private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
-    private static final long MOTHER_OF_MAGIC_NUMBERS = 181783497276652981L;
-
-    private static final ThreadLocal<Random> THREAD_LOCAL_UNSECURE_RANDOM = new ThreadLocal<Random>() {
-        @Override
-        protected Random initialValue() {
-            // Using the same way as the OpenJDK version just to
-            // make sure this happens on every JDK implementation
-            // since there are some out there that just use System.currentTimeMillis()
-            return new Random(seedUniquifier() ^ System.nanoTime());
-        }
-    };
-
-    private static final ThreadLocal<SecureRandom> THREAD_LOCAL_SECURE_RANDOM = new ThreadLocal<SecureRandom>() {
-        @Override
-        protected SecureRandom initialValue() {
-            return new SecureRandom();
-        }
-    };
 
     private UuidUtil() {
     }
@@ -116,7 +96,7 @@ public final class UuidUtil {
      * @return A randomly generated {@code UUID}
      */
     public static UUID newUnsecureUUID() {
-        return getUUID(THREAD_LOCAL_UNSECURE_RANDOM.get());
+        return getUUID(ThreadLocalRandomProvider.get());
     }
 
     /**
@@ -127,7 +107,7 @@ public final class UuidUtil {
      * @return A randomly generated {@code UUID}
      */
     public static UUID newSecureUUID() {
-        return getUUID(THREAD_LOCAL_SECURE_RANDOM.get());
+        return getUUID(ThreadLocalRandomProvider.getSecure());
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -154,16 +134,5 @@ public final class UuidUtil {
             leastSigBits = (leastSigBits << 8) | (data[i] & 0xff);
         }
         return new UUID(mostSigBits, leastSigBits);
-    }
-
-    private static long seedUniquifier() {
-        // L'Ecuyer, "Tables of Linear Congruential Generators of Different Sizes and Good Lattice Structure", 1999
-        for (; ; ) {
-            long current = SEED_UNIQUIFIER.get();
-            long next = current * MOTHER_OF_MAGIC_NUMBERS;
-            if (SEED_UNIQUIFIER.compareAndSet(current, next)) {
-                return next;
-            }
-        }
     }
 }
