@@ -252,14 +252,6 @@ public abstract class HazelcastTestSupport {
         System.err.println(sb.toString());
     }
 
-    // #############################
-    // ########## logging ##########
-    // #############################
-
-    public static void setLoggingLog4j2() {
-        System.setProperty("hazelcast.logging.type", "log4j2");
-    }
-
     // ###########################
     // ########## sleep ##########
     // ###########################
