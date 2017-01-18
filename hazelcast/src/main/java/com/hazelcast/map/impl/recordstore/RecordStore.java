@@ -18,11 +18,11 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.loader.MapLoaderEngine;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
@@ -310,15 +310,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     void doPostEvictionOperations(Record record, boolean backup);
 
-    /**
-     * Loads all given keys from defined map store.
-     *
-     * @param keys keys to be loaded.
-     */
-    void loadAllFromStore(List<Data> keys);
-
-    void updateLoadStatus(boolean lastBatch, Throwable exception);
-
     MapDataStore<Data, Object> getMapDataStore();
 
     int getPartitionId();
@@ -345,18 +336,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      * @return <code>true</code> if eviction is allowed on this record-store, otherwise <code>false</code>
      */
     boolean shouldEvict();
-
-    /**
-     * Loads all keys and values
-     *
-     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     **/
-    void loadAll(boolean replaceExistingValues);
-
-    /**
-     * Performs initial loading from a MapLoader if it has not been done before
-     **/
-    void maybeDoInitialLoad();
 
     Storage createStorage(RecordFactory<R> recordFactory, InMemoryFormat memoryFormat);
 
@@ -394,9 +373,6 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     void init();
 
-    /**
-     * Register a callback for when key loading is complete
-     **/
-    void onKeyLoad(ExecutionCallback<Boolean> callback);
+    MapLoaderEngine getMapLoaderEngine();
 
 }

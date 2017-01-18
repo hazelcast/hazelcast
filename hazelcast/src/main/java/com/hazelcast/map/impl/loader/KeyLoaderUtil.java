@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.loader;
 
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
@@ -33,29 +34,29 @@ import java.util.NoSuchElementException;
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
 
 
-public final class MapKeyLoaderUtil {
+public final class KeyLoaderUtil {
 
-    private MapKeyLoaderUtil() {
+    private KeyLoaderUtil() {
     }
 
-    static MapKeyLoader.Role assignRole(boolean isPartitionOwner, boolean isMapNamePartition,
-                                        boolean isMapNamePartitionFirstReplica) {
+    static KeyLoader.Role assignRole(boolean isPartitionOwner, boolean isMapNamePartition,
+                                     boolean isMapNamePartitionFirstReplica) {
         if (isMapNamePartition) {
             if (isPartitionOwner) {
                 // map-name partition owner is the SENDER
-                return MapKeyLoader.Role.SENDER;
+                return KeyLoader.Role.SENDER;
             } else {
                 if (isMapNamePartitionFirstReplica) {
                     // first replica of the map-name partition is the SENDER_BACKUP
-                    return MapKeyLoader.Role.SENDER_BACKUP;
+                    return KeyLoader.Role.SENDER_BACKUP;
                 } else {
                     // other replicas of the map-name partition do not have a role
-                    return MapKeyLoader.Role.NONE;
+                    return KeyLoader.Role.NONE;
                 }
             }
         } else {
             // ordinary partition owners are RECEIVERs, otherwise no role
-            return isPartitionOwner ? MapKeyLoader.Role.RECEIVER : MapKeyLoader.Role.NONE;
+            return isPartitionOwner ? KeyLoader.Role.RECEIVER : KeyLoader.Role.NONE;
         }
     }
 

@@ -20,6 +20,7 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
     private int counter;
     private CountDownLatch resumeLatch = new CountDownLatch(1);
     private CountDownLatch pauseLatch = new CountDownLatch(1);
+    private boolean pausingEnabled = true;
 
     PausingMapLoader(MapLoader<K, V> delegate, int pauseAt) {
         this.delegate = delegate;
@@ -43,7 +44,7 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
         return IterableUtil.map(allKeys, new IFunction<K, K>() {
             @Override
             public K apply(K key) {
-                if (counter++ == pauseAt) {
+                if (pausingEnabled && counter++ == pauseAt) {
                     pause();
                 }
                 return key;
@@ -70,5 +71,15 @@ class PausingMapLoader<K, V> implements MapLoader<K, V> {
 
     public void resume() {
         resumeLatch.countDown();
+    }
+
+    public void disablePausing() {
+        pausingEnabled = false;
+    }
+
+    public void resetPausing() {
+        pausingEnabled = true;
+        resumeLatch = new CountDownLatch(1);
+        pauseLatch = new CountDownLatch(1);
     }
 }

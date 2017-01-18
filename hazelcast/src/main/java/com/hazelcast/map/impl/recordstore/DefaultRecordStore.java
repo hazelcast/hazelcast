@@ -19,17 +19,17 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.MapKeyLoader;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
+import com.hazelcast.map.impl.loader.KeyLoader;
+import com.hazelcast.map.impl.loader.MapLoaderEngine;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
@@ -45,11 +45,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.CollectionUtil;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.FutureUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,8 +56,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.config.NativeMemoryConfig.MemoryAllocatorType.POOLED;
 import static com.hazelcast.core.EntryEventType.ADDED;
@@ -76,130 +71,44 @@ import static java.util.Collections.emptyList;
 public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     protected final ILogger logger;
-    protected final RecordStoreLoader recordStoreLoader;
-    protected final MapKeyLoader keyLoader;
-    // loadingFutures are modified by partition threads and could be accessed by query threads
-    protected final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
-    // record store may be created with or without triggering the load
-    // this flag guards that the loading on create is invoked not more than once should the record store be migrated.
-    private boolean loadedOnCreate;
-    // records if the record store has been loaded just before the migrations starts
-    // if so, the loading should NOT be started after the migration commit
-    private boolean loadedOnPreMigration;
+    protected final MapLoaderEngine mapLoaderEngine;
 
-    public DefaultRecordStore(MapContainer mapContainer, int partitionId,
-                              MapKeyLoader keyLoader, ILogger logger) {
+    public DefaultRecordStore(MapContainer mapContainer, int partitionId, KeyLoader keyLoader, ILogger logger) {
         super(mapContainer, partitionId);
 
         this.logger = logger;
-        this.keyLoader = keyLoader;
-        this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
-        this.loadedOnCreate = false;
+        this.mapLoaderEngine = new MapLoaderEngine(mapContainer.getName(),
+                createRecordStoreLoader(mapContainer.getMapStoreContext()), keyLoader, logger,
+                mapStoreContext, mapServiceContext, partitionId);
     }
 
     public void startLoading() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("StartLoading invoked " + getStateMessage());
-        }
-        if (mapStoreContext.isMapLoader() && !loadedOnCreate) {
-            if (!loadedOnPreMigration) {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Triggering load " + getStateMessage());
-                }
-                loadedOnCreate = true;
-                loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
-            } else {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Promoting to loaded on migration " + getStateMessage());
-                }
-                keyLoader.promoteToLoadedOnMigration();
-            }
-        }
+        mapLoaderEngine.startLoading();
     }
 
     @Override
     public void setPreMigrationLoadedStatus(boolean loaded) {
-        loadedOnPreMigration = loaded;
+        mapLoaderEngine.setPreMigrationLoadedStatus(loaded);
     }
 
     @Override
     public boolean isLoaded() {
-        return FutureUtil.allDone(loadingFutures);
+        return mapLoaderEngine.isLoaded();
     }
 
     @Override
-    public void loadAll(boolean replaceExistingValues) {
-        if (logger.isFinestEnabled()) {
-            logger.finest("loadAll invoked " + getStateMessage());
-        }
-
-        logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
-        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
-        loadingFutures.add(loadingKeysFuture);
+    public void checkIfLoaded() {
+        mapLoaderEngine.checkIfLoaded();
     }
 
-    @Override
-    public void loadAllFromStore(List<Data> keys) {
-        if (!keys.isEmpty()) {
-            Future f = recordStoreLoader.loadValues(keys);
-            loadingFutures.add(f);
-        }
-
-        // We should not track key loading here. IT's not key loading but values loading.
-        // Apart from that it's irrelevant for RECEIVER nodes. SENDER and SENDER_BACKUP will track the key-loading anyway.
-        // Fixes https://github.com/hazelcast/hazelcast/issues/9255
-    }
-
-    @Override
-    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
-        keyLoader.trackLoading(lastBatch, exception);
-
-        if (lastBatch) {
-            logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
-        }
-    }
-
-    @Override
-    public void maybeDoInitialLoad() {
-        if (keyLoader.shouldDoInitialLoad()) {
-            loadAll(false);
-        }
+    public MapLoaderEngine getMapLoaderEngine() {
+        return mapLoaderEngine;
     }
 
     @Override
     public void destroy() {
         clearPartition(false);
         storage.destroy(false);
-    }
-
-    @Override
-    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
-        keyLoader.onKeyLoad(callback);
-    }
-
-    @Override
-    public void checkIfLoaded() {
-        if (loadingFutures.isEmpty()) {
-            return;
-        }
-
-        if (isLoaded()) {
-            List<Future> doneFutures = null;
-            try {
-                doneFutures = FutureUtil.getAllDone(loadingFutures);
-                // check all finished loading futures for exceptions
-                FutureUtil.checkAllDone(doneFutures);
-            } catch (Exception e) {
-                logger.severe("Exception while loading map " + name, e);
-                ExceptionUtil.rethrow(e);
-            } finally {
-                loadingFutures.removeAll(doneFutures);
-            }
-        } else {
-            keyLoader.triggerLoadingWithDelay();
-            throw new RetryableHazelcastException("Map " + getName()
-                    + " is still loading data from external store");
-        }
     }
 
     @Override
@@ -1046,9 +955,4 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
     }
 
-    private String getStateMessage() {
-        return "on partitionId=" + partitionId + " on " + mapServiceContext.getNodeEngine().getThisAddress()
-                + " loadedOnCreate=" + loadedOnCreate + " loadedOnPreMigration=" + loadedOnPreMigration
-                + " isLoaded=" + isLoaded();
-    }
 }

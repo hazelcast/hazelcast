@@ -19,43 +19,45 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
 /**
- * Triggers map loading from a map store
- */
-public class LoadMapOperation extends MapOperation {
+ * Notifies RecordStores about completion of loading
+ **/
+public class KeyLoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
 
-    private boolean replaceExistingValues;
+    private Throwable exception;
 
-    public LoadMapOperation() {
+    public KeyLoadStatusOperation() {
     }
 
-    public LoadMapOperation(String name, boolean replaceExistingValues) {
+    public KeyLoadStatusOperation(String name, Throwable exception) {
         super(name);
-        this.replaceExistingValues = replaceExistingValues;
+        this.exception = exception;
     }
 
     @Override
     public void run() throws Exception {
-        recordStore.getMapLoaderEngine().loadAll(replaceExistingValues);
+        recordStore.getMapLoaderEngine().updateLoadStatus(true, exception);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(replaceExistingValues);
+        out.writeObject(exception);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        replaceExistingValues = in.readBoolean();
+        exception = in.readObject();
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.LOAD_MAP;
+        return MapDataSerializerHook.KEY_LOAD_STATUS;
     }
 }

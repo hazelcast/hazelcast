@@ -44,10 +44,10 @@ import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
+import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
+import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
-import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
-import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -76,7 +76,6 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.MutableLong;
 import com.hazelcast.util.ThreadUtil;
@@ -103,15 +102,11 @@ import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCE
 import static com.hazelcast.map.impl.LocalMapStatsProvider.EMPTY_LOCAL_MAP_STATS;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
-import static java.util.Collections.singleton;
-import static java.util.concurrent.TimeUnit.SECONDS;
-import static java.util.logging.Level.WARNING;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
@@ -122,7 +117,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
     protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
-    private static final int CHECK_IF_LOADED_TIMEOUT_SECONDS = 60;
+    private static final int INITIAL_WAIT_LOAD_SLEEP_MILLIS = 10;
+    private static final int MAXIMAL_WAIT_LOAD_SLEEP_MILLIS = 1000;
 
     /**
      * Defines the batch size for operations of {@link IMap#putAll(Map)} calls.
@@ -569,15 +565,23 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     public void waitUntilLoaded() {
         try {
             int mapNamePartition = partitionService.getPartitionId(name);
-            Operation op = new PartitionCheckIfLoadedOperation(name, false, true);
-            Future loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
-            // wait for keys to be loaded - it's insignificant since it doesn't trigger the keys loading
-            // it's just waiting for them to be loaded. Timeout failure doesn't mean anything negative here.
-            // This call just introduces some ordering of requests.
-            FutureUtil.waitWithDeadline(singleton(loadingFuture), CHECK_IF_LOADED_TIMEOUT_SECONDS, SECONDS,
-                    logAllExceptions(WARNING));
+            // first we have to check if key-load finished - otherwise the loading on other partitions might not have started.
+            // In this case we can't invoke IsPartitionLoadedOperation -> they will return "true", but it won't be correct.
 
-            OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
+            int sleepDurationMillis = INITIAL_WAIT_LOAD_SLEEP_MILLIS;
+            while (true) {
+                Operation op = new IsKeyLoadFinishedOperation(name);
+                Future<Boolean> loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                if (loadingFuture.get()) {
+                    break;
+                }
+                // sleep with some back-off
+                TimeUnit.SECONDS.sleep(sleepDurationMillis);
+                sleepDurationMillis = (sleepDurationMillis * 2 < MAXIMAL_WAIT_LOAD_SLEEP_MILLIS)
+                        ? sleepDurationMillis * 2 : MAXIMAL_WAIT_LOAD_SLEEP_MILLIS;
+            }
+
+            OperationFactory opFactory = new IsPartitionLoadedOperationFactory(name);
             Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
             // wait for all the data to be loaded on all partitions - wait forever
             waitAllTrue(results, opFactory);

@@ -24,24 +24,24 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * Factory for {@link LoadStatusOperation}
+ * Factory for {@link KeyLoadStatusOperation}
  **/
-public class LoadStatusOperationFactory extends AbstractMapOperationFactory {
+public class KeyLoadStatusOperationFactory extends AbstractMapOperationFactory {
 
     private Throwable exception;
     private String name;
 
-    public LoadStatusOperationFactory() {
+    public KeyLoadStatusOperationFactory() {
     }
 
-    public LoadStatusOperationFactory(String name, Throwable exception) {
+    public KeyLoadStatusOperationFactory(String name, Throwable exception) {
         this.name = name;
         this.exception = exception;
     }
 
     @Override
     public Operation createOperation() {
-        return new LoadStatusOperation(name, exception);
+        return new KeyLoadStatusOperation(name, exception);
     }
 
     @Override
@@ -58,6 +58,6 @@ public class LoadStatusOperationFactory extends AbstractMapOperationFactory {
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.LOAD_STATUS_FACTORY;
+        return MapDataSerializerHook.KEY_LOAD_STATUS_FACTORY;
     }
 }

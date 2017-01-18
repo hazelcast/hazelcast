@@ -17,40 +17,37 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ReadonlyOperation;
 
-import java.io.IOException;
+public class IsKeyLoadFinishedOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
-public class PartitionCheckIfLoadedOperationFactory extends AbstractMapOperationFactory {
+    private boolean isFinished;
 
-    private String name;
-
-    public PartitionCheckIfLoadedOperationFactory() {
+    public IsKeyLoadFinishedOperation() {
     }
 
-    public PartitionCheckIfLoadedOperationFactory(String name) {
-        this.name = name;
+    public IsKeyLoadFinishedOperation(String name) {
+        super(name);
     }
 
     @Override
-    public Operation createOperation() {
-        return new PartitionCheckIfLoadedOperation(name);
+    public void run() {
+        isFinished = recordStore.getMapLoaderEngine().isKeyLoadFinished();
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
+    public Object getResponse() {
+        return isFinished;
     }
 
     @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.CHECK_IF_LOADED_FACTORY;
+        return MapDataSerializerHook.IS_KEYLOAD_FINISHED;
     }
 }

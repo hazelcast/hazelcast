@@ -19,45 +19,38 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * Notifies RecordStores about completion of loading
- **/
-public class LoadStatusOperation extends MapOperation implements PartitionAwareOperation, MutatingOperation {
+public class IsPartitionLoadedOperationFactory extends AbstractMapOperationFactory {
 
-    private Throwable exception;
+    private String name;
 
-    public LoadStatusOperation() {
+    public IsPartitionLoadedOperationFactory() {
     }
 
-    public LoadStatusOperation(String name, Throwable exception) {
-        super(name);
-        this.exception = exception;
+    public IsPartitionLoadedOperationFactory(String name) {
+        this.name = name;
     }
 
     @Override
-    public void run() throws Exception {
-        recordStore.updateLoadStatus(true, exception);
+    public Operation createOperation() {
+        return new IsPartitionLoadedOperation(name);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeObject(exception);
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        exception = in.readObject();
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.LOAD_STATUS;
+        return MapDataSerializerHook.IS_PARTITION_LOADED_FACTORY;
     }
 }
