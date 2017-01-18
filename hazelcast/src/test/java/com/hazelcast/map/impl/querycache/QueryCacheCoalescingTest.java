@@ -33,17 +33,6 @@ public class QueryCacheCoalescingTest extends HazelcastTestSupport {
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> TRUE_PREDICATE = TruePredicate.INSTANCE;
 
-    @Before
-    public void setUp() {
-        setLoggingLog4j();
-        setLogLevel(org.apache.log4j.Level.DEBUG);
-    }
-
-    @After
-    public void tearDown() {
-        resetLogLevel();
-    }
-
     @Test
     public void testCoalescingModeWorks() {
         String mapName = randomString();

@@ -30,7 +30,6 @@ public class LongRunningTaskTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
         Config config = new Config().setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
         hz = createHazelcastInstance(config);
     }

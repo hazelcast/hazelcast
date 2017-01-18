@@ -48,7 +48,7 @@ public class MockIOService implements IOService {
     public volatile PacketHandler packetHandler;
 
     public MockIOService(int port) throws Exception {
-        loggingService = new LoggingServiceImpl("somegroup", "log4j", BuildInfoProvider.getBuildInfo());
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
         hazelcastThreadGroup = new HazelcastThreadGroup(
                 "hz",
                 loggingService.getLogger(HazelcastThreadGroup.class),

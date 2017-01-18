@@ -41,7 +41,6 @@ public class TransactionImpl_TwoPhaseIntegrationTest extends HazelcastTestSuppor
 
     @Before
     public void setup() {
-        setLoggingLog4j();
         cluster = createHazelcastInstanceFactory(2).newInstances(getConfig());
         localNodeEngine = getNodeEngineImpl(cluster[0]);
         localTxService = getTransactionManagerService(cluster[0]);

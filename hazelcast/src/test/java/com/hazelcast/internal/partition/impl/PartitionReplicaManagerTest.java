@@ -25,7 +25,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,9 +47,6 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         factory = createHazelcastInstanceFactory(1);
         hazelcastInstance = factory.newHazelcastInstance();
 
@@ -63,8 +59,6 @@ public class PartitionReplicaManagerTest extends HazelcastTestSupport {
 
     @After
     public void tearDown() {
-        resetLogLevel();
-
         factory.terminateAll();
     }
 
