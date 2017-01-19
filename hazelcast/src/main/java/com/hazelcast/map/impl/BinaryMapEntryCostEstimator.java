@@ -61,7 +61,7 @@ class BinaryMapEntryCostEstimator
     }
 
     @Override
-    public long calculateCost(Record value) {
+    public long calculateValueCost(Record value) {
         return value.getCost();
     }
 

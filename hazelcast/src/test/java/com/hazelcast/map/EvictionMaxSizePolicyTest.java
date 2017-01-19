@@ -234,7 +234,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                     }
 
                     @Override
-                    public long calculateCost(Object record) {
+                    public long calculateValueCost(Object record) {
                         if (record == null) {
                             return 0L;
                         }

@@ -53,7 +53,7 @@ public final class OwnedEntryCostEstimatorFactory {
         }
 
         @Override
-        public long calculateCost(Object value) {
+        public long calculateValueCost(Object value) {
             return 0;
         }
 

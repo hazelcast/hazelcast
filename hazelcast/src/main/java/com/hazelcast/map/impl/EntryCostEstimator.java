@@ -24,13 +24,37 @@ package com.hazelcast.map.impl;
  */
 public interface EntryCostEstimator<K, V> {
 
+    /**
+     * Returns the memory cost estimation so far
+     * @return the memory cost estimation so far
+     */
     long getEstimate();
 
+    /**
+     * Adjust the memory cost estimation by the given adjustment.
+     * The adjustmenet can be any negative or positive number.
+     *
+     * @param adjustment The delta by which the estimation will be adjusted
+     */
     void adjustEstimateBy(long adjustment);
 
-    long calculateCost(V value);
+    /**
+     * Calculate the entry's value cost in memory
+     * @param value The entry's value
+     * @return The cost of this value in memory.
+     */
+    long calculateValueCost(V value);
 
+    /**
+     * Calculate the entry's cost in memory
+     * @param key The key of the entry
+     * @param value The value of the entry
+     * @return The memory cost of this key/value pair, plus the entry structure itself.
+     */
     long calculateEntryCost(K key, V value);
 
+    /**
+     * Reset the current estimation to zero.
+     */
     void reset();
 }
