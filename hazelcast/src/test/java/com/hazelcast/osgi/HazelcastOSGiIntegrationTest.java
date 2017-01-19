@@ -44,7 +44,7 @@ public class HazelcastOSGiIntegrationTest {
         oldMavenRepoProperty = System.getProperty(MAVEN_REPOSITORIES_PROP);
         System.setProperty(MAVEN_REPOSITORIES_PROP, MAVEN_REPOSITORIES);
 
-        String url = "reference:file:" + PathUtils.getBaseDir() + "/hazelcast/target/classes";
+        String url = "reference:file:" + PathUtils.getBaseDir() + "/target/classes";
         UrlProvisionOption hzBundle = bundle(url);
         CompositeOption junitBundles = junitBundles();
         return options(hzBundle, junitBundles);
@@ -67,6 +67,9 @@ public class HazelcastOSGiIntegrationTest {
 
     @Test
     public void serviceRetrievedSuccessfully() {
+        // Is this test failing in your IDE?
+        // Some versions of Intellij IDEA use a wrong working directory in multi-module
+        // Maven projects. See this for a fix: https://youtrack.jetbrains.com/issue/IDEA-60965
         HazelcastOSGiService service = getService();
         assertNotNull(service);
     }
