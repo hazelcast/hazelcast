@@ -33,6 +33,11 @@ import static org.junit.Assert.assertNull;
 public class TraversersTest {
 
     @Test
+    public void traverserOver() {
+        validateTraversal(Traverser.over(1, 2));
+    }
+
+    @Test
     public void iterate() {
         validateTraversal(Traversers.iterate(Stream.of(1, 2).iterator()));
     }
