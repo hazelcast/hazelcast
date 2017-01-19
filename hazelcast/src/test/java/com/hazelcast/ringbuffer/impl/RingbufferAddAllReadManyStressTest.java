@@ -8,12 +8,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -70,10 +70,8 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/5498
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
-
         RingbufferConfig ringbufferConfig = new RingbufferConfig("rb")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(20 * 1000 * 1000)
@@ -195,7 +193,20 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
             for (; ; ) {
                 int max = max(1, random.nextInt(MAX_BATCH));
-                ReadResultSet<Long> result = ringbuffer.readManyAsync(seq, 1, max, null).get();
+                ReadResultSet<Long> result = null;
+                while (result == null) {
+                    try {
+                        result = ringbuffer.readManyAsync(seq, 1, max, null).get();
+                    } catch (StaleSequenceException e) {
+                        // this consumer is used in a stress test and can fall behind the producer if it gets delayed
+                        // by any reason. This is ok, just jump to the the middle of the ringbuffer.
+                        System.out.println(getName() + " has fallen behind, catching up...");
+                        final long tail = ringbuffer.tailSequence();
+                        final long head = ringbuffer.headSequence();
+                        seq = tail >= head ? ((tail + head) / 2) : head;
+                    }
+                }
+
                 for (Long item : result) {
                     if (item.equals(Long.MIN_VALUE)) {
                         return;
