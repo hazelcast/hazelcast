@@ -1712,6 +1712,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="capacity" type="xs:unsignedShort" default="100">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of tasks that a scheduler can have at any given point
+                        in time per partition.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>

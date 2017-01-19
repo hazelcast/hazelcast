@@ -16,6 +16,7 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
@@ -39,7 +40,8 @@ public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHol
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
-                    return new ScheduledExecutorMemberOwnedContainer(name, nodeEngine);
+                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine);
                 }
             };
 

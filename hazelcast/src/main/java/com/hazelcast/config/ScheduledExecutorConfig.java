@@ -30,6 +30,11 @@ public class ScheduledExecutorConfig {
     private static final int DEFAULT_POOL_SIZE = 16;
 
     /**
+     * The number of tasks that can co-exist per scheduler per partition
+     */
+    private static final int DEFAULT_CAPACITY = 100;
+
+    /**
      * The number of replicas per task scheduled in each ScheduledExecutor
      */
     private static final int DEFAULT_DURABILITY = 1;
@@ -37,6 +42,8 @@ public class ScheduledExecutorConfig {
     private String name = "default";
 
     private int durability = DEFAULT_DURABILITY;
+
+    private int capacity = DEFAULT_CAPACITY;
 
     private int poolSize = DEFAULT_POOL_SIZE;
 
@@ -49,14 +56,15 @@ public class ScheduledExecutorConfig {
         this.name = name;
     }
 
-    public ScheduledExecutorConfig(String name, int durability, int poolSize) {
+    public ScheduledExecutorConfig(String name, int durability, int capacity, int poolSize) {
         this.name = name;
         this.durability = durability;
         this.poolSize = poolSize;
+        this.capacity = capacity;
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getPoolSize());
+        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize());
     }
 
     public ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly getAsReadOnly() {
@@ -131,12 +139,36 @@ public class ScheduledExecutorConfig {
         return this;
     }
 
+    /**
+     * Gets the capacity of the executor
+     *
+     * @return the capacity of the executor
+     */
+    public int getCapacity() {
+        return capacity;
+    }
+
+    /**
+     * Sets the capacity of the executor
+     * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time per partition.
+     * If this is set to 0 then there is no limit
+     *
+     * @param capacity the capacity of the executor
+     * @return This executor config instance.
+     */
+    public ScheduledExecutorConfig setCapacity(int capacity) {
+        checkNotNegative(capacity, "capacity can't be smaller than 0");
+        this.capacity = capacity;
+        return this;
+    }
+
     @Override
     public String toString() {
         return "ScheduledExecutorConfig{"
                 + "name='" + name + '\''
                 + ", durability=" + durability
                 + ", poolSize-" + poolSize
+                + ", capacity-" + capacity
                 + '}';
     }
 
@@ -158,6 +190,11 @@ public class ScheduledExecutorConfig {
 
         @Override
         public ScheduledExecutorConfig setPoolSize(int poolSize) {
+            throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
+        }
+
+        @Override
+        public ScheduledExecutorConfig setCapacity(int capacity) {
             throw new UnsupportedOperationException("This config is read-only scheduled executor: " + getName());
         }
     }

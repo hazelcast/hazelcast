@@ -51,7 +51,8 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability());
+                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
+                            config.getDurability(), config.getCapacity());
                 }
             };
 
