@@ -21,6 +21,7 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.internal.jmx.ManagementService;
+import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.UuidUtil;
@@ -99,6 +100,7 @@ public class LifecycleServiceImpl implements LifecycleService {
             }
             HazelcastInstanceFactory.remove(instance);
             fireLifecycleEvent(SHUTDOWN);
+            ThreadLocalRandom.remove();
         }
     }
 

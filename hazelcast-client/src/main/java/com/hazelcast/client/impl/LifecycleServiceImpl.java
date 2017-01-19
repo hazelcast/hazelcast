@@ -23,6 +23,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
@@ -142,6 +143,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         fireLifecycleEvent(SHUTDOWN);
 
         shutdownExecutor();
+        ThreadLocalRandom.remove();
     }
 
     @Override
