@@ -16,6 +16,8 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
+import com.hazelcast.config.ScheduledExecutorConfig;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
@@ -30,6 +32,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHolder {
 
+    private final ILogger logger;
+
     private final NodeEngine nodeEngine;
 
     private final ConcurrentMap<String, ScheduledExecutorContainer> containers =
@@ -39,11 +43,18 @@ public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHol
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
-                    return new ScheduledExecutorMemberOwnedContainer(name, nodeEngine);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("[Partition: -1] "
+                                + "Create new scheduled executor container with name: " + name);
+                    }
+
+                    ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
+                    return new ScheduledExecutorMemberOwnedContainer(name, config.getCapacity(), nodeEngine);
                 }
             };
 
     public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
+        this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
     }
 

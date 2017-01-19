@@ -37,6 +37,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -61,24 +62,28 @@ public class ScheduledExecutorContainer {
 
     private final int durability;
 
+    private final int capacity;
+
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
-                                      int durability) {
-        this(name, partitionId, nodeEngine, durability, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
+                                      int durability, int capacity) {
+        this(name, partitionId, nodeEngine, durability, capacity, new ConcurrentHashMap<String, ScheduledTaskDescriptor>());
     }
 
     ScheduledExecutorContainer(String name, int partitionId, NodeEngine nodeEngine,
-                                      int durability, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
+                                      int durability, int capacity, ConcurrentMap<String, ScheduledTaskDescriptor> tasks) {
         this.logger = nodeEngine.getLogger(getClass());
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.executionService = (InternalExecutionService) nodeEngine.getExecutionService();
         this.partitionId = partitionId;
         this.durability = durability;
+        this.capacity = capacity;
         this.tasks = tasks;
     }
 
     public ScheduledFuture schedule(TaskDefinition definition) {
         checkNotDuplicateTask(definition.getName());
+        checkNotAtCapacity();
         return createContextAndSchedule(definition);
     }
 
@@ -285,6 +290,12 @@ public class ScheduledExecutorContainer {
         if (tasks.containsKey(taskName)) {
             throw new DuplicateTaskException("There is already a task "
                     + "with the same name '" + taskName + "' in '" + getName() + "'");
+        }
+    }
+
+    void checkNotAtCapacity() {
+        if (capacity != 0 && tasks.size() >= capacity) {
+            throw new RejectedExecutionException("Maximum capacity of tasks reached.");
         }
     }
 

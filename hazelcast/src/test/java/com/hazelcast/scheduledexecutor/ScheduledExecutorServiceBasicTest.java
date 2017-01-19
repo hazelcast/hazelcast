@@ -56,6 +56,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -92,6 +93,114 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                             .getOrCreateContainer(schedulerName).getDurability());
         assertEquals(1, dses.getPartition(future.getHandler().getPartitionId())
                             .getOrCreateContainer("other").getDurability());
+    }
+
+    @Test
+    public void capacity_whenNoLimit()
+            throws ExecutionException, InterruptedException {
+
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(0);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 101; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    public void capacity_whenDefault()
+            throws ExecutionException, InterruptedException {
+
+        String schedulerName = "foobar";
+
+        HazelcastInstance[] instances = createClusterWithCount(1, null);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 100; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertTrue("Got wrong RejectedExecutionException",
+                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+        }
+    }
+
+    @Test
+    public void capacity_whenPositiveLimit()
+            throws ExecutionException, InterruptedException {
+
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(10);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        String keyOwner = "hitSamePartitionToCheckCapacity";
+
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner, 0, TimeUnit.SECONDS);
+        }
+
+        try {
+            service.scheduleOnKeyOwner(new PlainCallableTask(), keyOwner,0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertTrue("Got wrong RejectedExecutionException",
+                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+        }
+    }
+
+    @Test
+    public void capacity_onMember_whenPositiveLimit()
+            throws ExecutionException, InterruptedException {
+
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(10);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        Member member = instances[0].getCluster().getLocalMember();
+
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+        }
+
+        try {
+            service.scheduleOnMember(new PlainCallableTask(), member,0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertTrue("Got wrong RejectedExecutionException",
+                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+        }
     }
 
     @Test
