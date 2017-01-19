@@ -18,7 +18,6 @@ package com.hazelcast.jet.benchmark;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.internal.util.ThreadLocalRandom;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
@@ -41,6 +40,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
