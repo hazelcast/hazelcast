@@ -641,6 +641,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private void updatePartitionsAndFinalizeMigrations(PartitionRuntimeState partitionState) {
         final Address[][] partitionTable = partitionState.getPartitionTable();
+        updateAllPartitions(partitionTable);
+        partitionStateManager.setVersion(partitionState.getVersion());
+
         Collection<MigrationInfo> completedMigrations = partitionState.getCompletedMigrations();
         for (MigrationInfo completedMigration : completedMigrations) {
 
@@ -649,22 +652,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     : "Invalid migration: " + completedMigration;
 
             if (migrationManager.addCompletedMigration(completedMigration)) {
-                int partitionId = completedMigration.getPartitionId();
-                Address[] replicas = partitionTable[partitionId];
-                // mdogan:
-                // Each partition should be updated right after migration is finalized
-                // at the moment, it doesn't cause any harm to existing services,
-                // because we have a `migrating` flag in partition which is cleared during migration finalization.
-                // But from API point of view, we should provide explicit guarantees.
-                // For the time being, leaving this stuff as is to not to change behaviour.
-
-                partitionStateManager.updateReplicaAddresses(partitionId, replicas);
                 migrationManager.scheduleActiveMigrationFinalization(completedMigration);
             }
         }
 
-        updateAllPartitions(partitionTable);
-        partitionStateManager.setVersion(partitionState.getVersion());
         if (!partitionStateManager.setInitialized()) {
             node.getNodeExtension().onPartitionStateChange();
         }
