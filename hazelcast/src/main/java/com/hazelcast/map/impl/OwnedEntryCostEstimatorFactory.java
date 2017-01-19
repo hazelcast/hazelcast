@@ -28,20 +28,20 @@ public final class OwnedEntryCostEstimatorFactory {
     /**
      * Returns zero for all estimations.
      */
-    private static final OwnedEntryCostEstimator ZERO_SIZE_ESTIMATOR = new ZeroOwnedEntryCostEstimator();
+    private static final EntryCostEstimator ZERO_SIZE_ESTIMATOR = new ZeroEntryCostEstimator();
 
     private OwnedEntryCostEstimatorFactory() {
     }
 
-    public static <K, V> OwnedEntryCostEstimator<K, V> createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
+    public static <K, V> EntryCostEstimator<K, V> createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
         if (BINARY.equals(inMemoryFormat)) {
-            return (OwnedEntryCostEstimator<K, V>) new BinaryMapOwnedEntryCostEstimator();
+            return (EntryCostEstimator<K, V>) new BinaryMapEntryCostEstimator();
         }
         return ZERO_SIZE_ESTIMATOR;
     }
 
-    private static class ZeroOwnedEntryCostEstimator
-            implements OwnedEntryCostEstimator {
+    private static class ZeroEntryCostEstimator
+            implements EntryCostEstimator {
 
         @Override
         public long getEstimate() {

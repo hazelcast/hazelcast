@@ -23,7 +23,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.OwnedEntryCostEstimator;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
@@ -121,7 +121,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
 
     @Override
     public long getOwnedEntryCost() {
-        return storage.getOwnedEntryCostEstimator().getEstimate();
+        return storage.getEntryCostEstimator().getEstimate();
     }
 
     protected long getNow() {
@@ -206,8 +206,8 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return mapServiceContext.toData(value);
     }
 
-    public void setSizeEstimator(OwnedEntryCostEstimator ownedEntryCostEstimator) {
-        this.storage.setOwnedEntryCostEstimator(ownedEntryCostEstimator);
+    public void setSizeEstimator(EntryCostEstimator entryCostEstimator) {
+        this.storage.setEntryCostEstimator(entryCostEstimator);
     }
 
     @Override

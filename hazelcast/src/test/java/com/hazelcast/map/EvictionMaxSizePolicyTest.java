@@ -11,7 +11,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.OwnedEntryCostEstimator;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -219,7 +219,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                 }
                 final RecordStore recordStore = container.getRecordStore(map.getName());
                 final DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-                defaultRecordStore.setSizeEstimator(new OwnedEntryCostEstimator() {
+                defaultRecordStore.setSizeEstimator(new EntryCostEstimator() {
 
                     long size;
 

@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -166,7 +167,9 @@ public class LocalMapStatsProvider {
         onDemandStats.incrementHits(recordStore.getHits());
         onDemandStats.incrementDirtyEntryCount(recordStore.getMapDataStore().notFinishedOperationsCount());
         onDemandStats.incrementOwnedEntryMemoryCost(recordStore.getOwnedEntryCost());
-        onDemandStats.incrementHeapCost(recordStore.getOwnedEntryCost());
+        if (NATIVE  != recordStore.getMapContainer().getMapConfig().getInMemoryFormat()) {
+            onDemandStats.incrementHeapCost(recordStore.getOwnedEntryCost());
+        }
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
         onDemandStats.setLastAccessTime(recordStore.getLastAccessTime());
         onDemandStats.setLastUpdateTime(recordStore.getLastUpdateTime());
@@ -198,7 +201,9 @@ public class LocalMapStatsProvider {
             }
         }
 
-        onDemandStats.incrementHeapCost(backupEntryMemoryCost);
+        if (NATIVE  != recordStore.getMapContainer().getMapConfig().getInMemoryFormat()) {
+            onDemandStats.incrementHeapCost(backupEntryMemoryCost);
+        }
         onDemandStats.incrementBackupEntryMemoryCost(backupEntryMemoryCost);
         onDemandStats.incrementBackupEntryCount(backupEntryCount);
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
@@ -266,7 +271,9 @@ public class LocalMapStatsProvider {
         NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
 
         localMapStats.setNearCacheStats(nearCacheStats);
-        onDemandStats.incrementHeapCost(nearCacheStats.getOwnedEntryMemoryCost());
+        if (NATIVE != nearCache.getInMemoryFormat()) {
+            onDemandStats.incrementHeapCost(nearCacheStats.getOwnedEntryMemoryCost());
+        }
     }
 
     private static class LocalMapOnDemandCalculatedStats {

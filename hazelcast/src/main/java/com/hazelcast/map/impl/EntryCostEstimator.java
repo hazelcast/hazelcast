@@ -22,7 +22,7 @@ package com.hazelcast.map.impl;
  * @param <K> the type of key which's size going to be estimated.
  * @param <V> the type of key which's size going to be estimated.
  */
-public interface OwnedEntryCostEstimator<K, V> {
+public interface EntryCostEstimator<K, V> {
 
     long getEstimate();
 

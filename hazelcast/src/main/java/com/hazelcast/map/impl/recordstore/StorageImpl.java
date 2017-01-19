@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.map.impl.OwnedEntryCostEstimator;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.record.AbstractRecord;
@@ -45,11 +45,11 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     private final StorageSCHM<R> records;
 
     // not final for testing purposes.
-    private OwnedEntryCostEstimator<Data, Record> ownedEntryCostEstimator;
+    private EntryCostEstimator<Data, Record> entryCostEstimator;
 
     StorageImpl(RecordFactory<R> recordFactory, InMemoryFormat inMemoryFormat, SerializationService serializationService) {
         this.recordFactory = recordFactory;
-        this.ownedEntryCostEstimator = createMapSizeEstimator(inMemoryFormat);
+        this.entryCostEstimator = createMapSizeEstimator(inMemoryFormat);
         this.records = new StorageSCHM<R>(serializationService);
     }
 
@@ -57,7 +57,7 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
     public void clear(boolean isDuringShutdown) {
         records.clear();
 
-        ownedEntryCostEstimator.reset();
+        entryCostEstimator.reset();
     }
 
     @Override
@@ -73,20 +73,20 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         R previousRecord = records.put(key, record);
 
         if (previousRecord == null) {
-            updateCostEstimate(ownedEntryCostEstimator.calculateEntryCost(key, record));
+            updateCostEstimate(entryCostEstimator.calculateEntryCost(key, record));
         } else {
-            updateCostEstimate(-ownedEntryCostEstimator.calculateCost(previousRecord));
-            updateCostEstimate(ownedEntryCostEstimator.calculateCost(record));
+            updateCostEstimate(-entryCostEstimator.calculateCost(previousRecord));
+            updateCostEstimate(entryCostEstimator.calculateCost(record));
         }
     }
 
     @Override
     public void updateRecordValue(Data key, R record, Object value) {
-        updateCostEstimate(-ownedEntryCostEstimator.calculateCost(record));
+        updateCostEstimate(-entryCostEstimator.calculateCost(record));
 
         recordFactory.setValue(record, value);
 
-        updateCostEstimate(ownedEntryCostEstimator.calculateCost(record));
+        updateCostEstimate(entryCostEstimator.calculateCost(record));
     }
 
     @Override
@@ -114,8 +114,8 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         clear(isDuringShutdown);
     }
 
-    public OwnedEntryCostEstimator getOwnedEntryCostEstimator() {
-        return ownedEntryCostEstimator;
+    public EntryCostEstimator getEntryCostEstimator() {
+        return entryCostEstimator;
     }
 
     @Override
@@ -132,15 +132,15 @@ public class StorageImpl<R extends Record> implements Storage<Data, R> {
         Data key = record.getKey();
         records.remove(key);
 
-        updateCostEstimate(-ownedEntryCostEstimator.calculateEntryCost(key, record));
+        updateCostEstimate(-entryCostEstimator.calculateEntryCost(key, record));
     }
 
     protected void updateCostEstimate(long entrySize) {
-        ownedEntryCostEstimator.adjustEstimateBy(entrySize);
+        entryCostEstimator.adjustEstimateBy(entrySize);
     }
 
-    public void setOwnedEntryCostEstimator(OwnedEntryCostEstimator ownedEntryCostEstimator) {
-        this.ownedEntryCostEstimator = ownedEntryCostEstimator;
+    public void setEntryCostEstimator(EntryCostEstimator entryCostEstimator) {
+        this.entryCostEstimator = entryCostEstimator;
     }
 
     @Override

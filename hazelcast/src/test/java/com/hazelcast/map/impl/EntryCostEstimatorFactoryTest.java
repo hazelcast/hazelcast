@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class OwnedEntryCostEstimatorFactoryTest
+public class EntryCostEstimatorFactoryTest
         extends HazelcastTestSupport {
 
     @Test

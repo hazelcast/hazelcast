@@ -25,8 +25,8 @@ import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 /**
  * Owned entry cost estimator for maps which have {@link InMemoryFormat#BINARY} memory-format.
  */
-class BinaryMapOwnedEntryCostEstimator
-        implements OwnedEntryCostEstimator<Data, Record> {
+class BinaryMapEntryCostEstimator
+        implements EntryCostEstimator<Data, Record> {
 
     private static final int HASH_ENTRY_HASH_COST_IN_BYTES = REFERENCE_COST_IN_BYTES;
 
@@ -42,7 +42,7 @@ class BinaryMapOwnedEntryCostEstimator
 
     private volatile long estimate;
 
-    BinaryMapOwnedEntryCostEstimator() {
+    BinaryMapEntryCostEstimator() {
     }
 
     @Override
