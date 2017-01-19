@@ -22,6 +22,8 @@ import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
@@ -33,6 +35,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,6 +56,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private final NodeEngine nodeEngine;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
     private volatile int size;
 
     public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
@@ -103,6 +107,9 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public void execute(Runnable command) {
+        if (shutdown.get()) {
+            throw new RejectedExecutionException();
+        }
         if (!taskQ.offer(command)) {
             throw new RejectedExecutionException("Executor[" + name + "] is overloaded!");
         }
@@ -150,28 +157,37 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
 
     @Override
     public void shutdown() {
-        taskQ.clear();
+        shutdown.set(true);
     }
 
     @Override
     public List<Runnable> shutdownNow() {
-        shutdown();
-        return null;
+        if (!shutdown.compareAndSet(false, true)) {
+            return Collections.emptyList();
+        }
+        List<Runnable> tasks = new LinkedList<Runnable>();
+        taskQ.drainTo(tasks);
+        for (Runnable task : tasks) {
+            if (task instanceof RunnableFuture) {
+                ((RunnableFuture) task).cancel(false);
+            }
+        }
+        return tasks;
     }
 
     @Override
     public boolean isShutdown() {
-        return false;
+        return shutdown.get();
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        return shutdown.get() && taskQ.isEmpty();
     }
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override
