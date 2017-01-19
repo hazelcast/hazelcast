@@ -173,6 +173,37 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
+    public void capacity_onMember_whenPositiveLimit()
+            throws ExecutionException, InterruptedException {
+
+        String schedulerName = "foobar";
+
+        ScheduledExecutorConfig sec = new ScheduledExecutorConfig()
+                .setName(schedulerName)
+                .setDurability(1)
+                .setPoolSize(1)
+                .setCapacity(10);
+
+        Config config = new Config().addScheduledExecutorConfig(sec);
+
+        HazelcastInstance[] instances = createClusterWithCount(1, config);
+        IScheduledExecutorService service = instances[0].getScheduledExecutorService(schedulerName);
+        Member member = instances[0].getCluster().getLocalMember();
+
+        for (int i = 0; i < 10; i++) {
+            service.scheduleOnMember(new PlainCallableTask(), member, 0, TimeUnit.SECONDS);
+        }
+
+        try {
+            service.scheduleOnMember(new PlainCallableTask(), member,0, TimeUnit.SECONDS);
+            fail("Should have been rejected.");
+        } catch (RejectedExecutionException ex) {
+            assertTrue("Got wrong RejectedExecutionException",
+                    ex.getMessage().equals("Maximum capacity of tasks reached."));
+        }
+    }
+
+    @Test
     public void handlerTaskAndSchedulerNames_withCallable()
             throws ExecutionException, InterruptedException {
 

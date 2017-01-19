@@ -50,6 +50,7 @@ public class ScheduledExecutorMemberOwnedContainer extends ScheduledExecutorCont
             acquireMemberPartitionLockIfNeeded();
 
             checkNotDuplicateTask(definition.getName());
+            checkNotAtCapacity();
             return createContextAndSchedule(definition);
 
         } finally {
