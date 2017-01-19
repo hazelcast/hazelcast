@@ -49,19 +49,25 @@ public interface Processor {
     /**
      * Initializes this processor with the outbox that the processing methods
      * must use to deposit their output items. This method will be called exactly
-     * once and strictly before any calls to processing methods ({@link #process(int, Inbox)},
-     * {@link #completeEdge(int)}, {@link #complete()}).
+     * once and strictly before any calls to processing methods
+     * ({@link #process(int, Inbox)}, {@link #completeEdge(int)}, {@link #complete()}).
+     * <p>
+     * The default implementation does nothing.
      */
-    void init(@Nonnull Outbox outbox, @Nonnull Context context);
+    default void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+    }
 
     /**
-     * Processes some items in the supplied inbox. Removes the items it's done with.
-     * Does not remove an item until it is done with it.
+     * Processes some items in the supplied inbox. Removes the items it's
+     * done with. Does not remove an item until it is done with it.
+     * <p>
+     * The default implementation does nothing.
      *
      * @param ordinal ordinal of the edge the item comes from
      * @param inbox   the inbox containing the pending items
      */
-    void process(int ordinal, @Nonnull Inbox inbox);
+    default void process(int ordinal, @Nonnull Inbox inbox) {
+    }
 
     /**
      * Called after the edge input with the supplied {@code ordinal} is exhausted. If
