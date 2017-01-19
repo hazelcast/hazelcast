@@ -22,9 +22,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
-import com.hazelcast.util.ExceptionUtil;
-import java.io.IOException;
 import org.apache.hadoop.io.Writable;
+
+import java.io.IOException;
+
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class WritableSerializerHook {
 
@@ -63,7 +65,7 @@ public class WritableSerializerHook {
                         instance.readFields(in);
                         return instance;
                     } catch (Exception e) {
-                        throw ExceptionUtil.rethrow(e);
+                        throw rethrow(e);
                     }
                 }
             };

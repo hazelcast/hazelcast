@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.concurrent.BackoffIdleStrategy;
@@ -168,7 +169,7 @@ public class ExecutionService {
                 }
             } catch (Throwable e) {
                 logger.warning("Exception in " + t, e);
-                tracker.jobFuture.completeExceptionally(e);
+                tracker.jobFuture.completeExceptionally(new JetException("Exception in " + t + ": " + e, e));
             } finally {
                 tracker.jobFuture.taskletDone();
             }
@@ -207,7 +208,7 @@ public class ExecutionService {
                         }
                     } catch (Throwable e) {
                         logger.warning("Exception in " + t.tasklet, e);
-                        t.jobFuture.completeExceptionally(e);
+                        t.jobFuture.completeExceptionally(new JetException("Exception in " + t.tasklet + ": " + e, e));
                     }
                     if (t.jobFuture.isCompletedExceptionally()) {
                         dismissTasklet(t);

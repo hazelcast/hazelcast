@@ -74,7 +74,7 @@ public class KafkaWriterTest extends JetTestSupport {
     public void testWriteToTopic() throws Exception {
         final String topic = randomName();
         final String producerGroup = "test";
-        JetInstance instance = createJetInstance();
+        JetInstance instance = createJetMember();
         InternalSerializationService serializationService = getSerializationService(instance.getHazelcastInstance());
         int messageCount = 20;
         Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));

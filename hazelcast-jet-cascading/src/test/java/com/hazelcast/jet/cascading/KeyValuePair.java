@@ -33,7 +33,7 @@ import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 
 public class KeyValuePair extends Scheme<JetConfig, Iterator<Map.Entry>,

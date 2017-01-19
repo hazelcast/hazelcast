@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.util.Util.sneakyThrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Base class to implement custom processors. Simplifies the contract of

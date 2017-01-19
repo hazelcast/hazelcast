@@ -14,24 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
-
 /**
- * Thrown when a topology change (member addition/removal) happens
- * while executing a job.
+ * Classes in this package are not a part of public API and can change without notice.
  */
-public class TopologyChangedException extends JetException {
-    /**
-     * Creates the exception with a message.
-     */
-    public TopologyChangedException(String message) {
-        super(message);
-    }
-
-    /**
-     * Creates the exception with a message and a cause.
-     */
-    public TopologyChangedException(String message, Throwable cause) {
-        super(message, cause);
-    }
-}
+package com.hazelcast.jet.impl;

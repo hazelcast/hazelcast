@@ -26,7 +26,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.util.ExceptionUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.InputFormat;
 import org.apache.hadoop.mapred.InputSplit;
@@ -57,6 +56,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparingInt;
@@ -105,7 +105,7 @@ public final class HdfsReader extends AbstractProcessor {
             }
             return true;
         } catch (IOException e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -152,7 +152,7 @@ public final class HdfsReader extends AbstractProcessor {
                 assigned = assignSplits(indexedInputSplits, members.toArray(new Member[members.size()]));
                 printAssignments(assigned);
             } catch (IOException e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
 

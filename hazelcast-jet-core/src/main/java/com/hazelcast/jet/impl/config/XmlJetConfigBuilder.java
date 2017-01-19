@@ -28,7 +28,6 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -41,6 +40,7 @@ import java.util.Properties;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getClientConfigStream;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getJetConfigStream;
 import static com.hazelcast.jet.impl.config.XmlJetConfigLocator.getMemberConfigStream;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
 
 /**
@@ -69,7 +69,7 @@ public final class XmlJetConfigBuilder extends AbstractConfigBuilder {
         try {
             parseAndBuildConfig(in);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         } finally {
             IOUtil.closeResource(in);
         }

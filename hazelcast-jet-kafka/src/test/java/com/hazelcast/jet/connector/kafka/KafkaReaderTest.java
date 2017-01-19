@@ -72,7 +72,7 @@ public class KafkaReaderTest extends JetTestSupport {
         final String topic = randomName();
         int messageCount = 20;
         final String consumerGroupId = "test";
-        JetInstance instance = createJetInstance();
+        JetInstance instance = createJetMember();
         DAG dag = new DAG();
         Vertex producer = dag.newVertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
                 .localParallelism(4);

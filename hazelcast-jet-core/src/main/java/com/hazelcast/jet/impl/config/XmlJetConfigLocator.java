@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.config;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastException;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -73,7 +73,7 @@ final class XmlJetConfigLocator {
     /**
      * Constructs a XmlJetConfigLocator.
      *
-     * @throws com.hazelcast.core.HazelcastException if the XML config is not located.
+     * @throws JetException if the XML config is not located.
      */
     private static InputStream getConfigStream(Properties properties, String propertyName,
                                                String xmlName, String defaultXmlName) {
@@ -87,7 +87,7 @@ final class XmlJetConfigLocator {
                     .filter(Objects::nonNull)
                     .findFirst().get();
         } catch (Exception e) {
-            throw new HazelcastException("Failed to initialize Jet configuration", e);
+            throw new JetException("Failed to initialize Jet configuration", e);
         }
     }
 

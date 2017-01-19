@@ -41,7 +41,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
-import static com.hazelcast.jet.impl.util.Util.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)

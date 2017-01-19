@@ -41,18 +41,22 @@ public class JetTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected JetInstance createJetInstance() {
-        return this.createJetInstance(new JetConfig());
+    protected JetInstance createJetClient() {
+        return instanceFactory.newClient();
     }
 
-    protected JetInstance createJetInstance(JetConfig config) {
+    protected JetInstance createJetMember() {
+        return this.createJetMember(new JetConfig());
+    }
+
+    protected JetInstance createJetMember(JetConfig config) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
         }
         return instanceFactory.newMember(config);
     }
 
-    protected JetInstance createJetInstance(JetConfig config, Address[] blockedAddress) {
+    protected JetInstance createJetMember(JetConfig config, Address[] blockedAddress) {
         if (instanceFactory == null) {
             instanceFactory = new JetTestInstanceFactory();
         }

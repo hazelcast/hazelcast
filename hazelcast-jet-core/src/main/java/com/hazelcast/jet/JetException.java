@@ -16,22 +16,26 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.core.HazelcastException;
+
 /**
- * Thrown when a topology change (member addition/removal) happens
- * while executing a job.
+ * Base Jet exception.
  */
-public class TopologyChangedException extends JetException {
-    /**
-     * Creates the exception with a message.
-     */
-    public TopologyChangedException(String message) {
+public class JetException extends HazelcastException {
+
+    public JetException() {
+    }
+
+    public JetException(String message) {
         super(message);
     }
 
-    /**
-     * Creates the exception with a message and a cause.
-     */
-    public TopologyChangedException(String message, Throwable cause) {
+    public JetException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public JetException(Throwable cause) {
+        super(cause);
+    }
+
 }

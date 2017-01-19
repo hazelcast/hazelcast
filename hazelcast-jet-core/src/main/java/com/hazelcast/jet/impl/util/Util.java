@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.util;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
@@ -35,11 +34,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static java.util.stream.Collectors.toList;
 
 public final class Util {
@@ -54,15 +53,6 @@ public final class Util {
             return f.get();
         } catch (InterruptedException | ExecutionException e) {
             throw rethrow(e);
-        }
-    }
-
-    public static RuntimeException unchecked(@Nonnull Throwable e) {
-        Throwable peeled = peel(e);
-        if (peeled instanceof RuntimeException) {
-            return (RuntimeException) peeled;
-        } else {
-            return new HazelcastException(peeled);
         }
     }
 
@@ -84,18 +74,6 @@ public final class Util {
 
     public interface RunnableExc {
         void run() throws Exception;
-    }
-
-    public static Throwable peel(Throwable e) {
-        if (e instanceof CompletionException || e instanceof ExecutionException) {
-            return peel(e.getCause());
-        }
-        return e;
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
-        throw (T) t;
     }
 
     @Nonnull

@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.Util.read;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public final class ResourceIterator implements Iterator<ResourcePart> {
     private final int partSize;

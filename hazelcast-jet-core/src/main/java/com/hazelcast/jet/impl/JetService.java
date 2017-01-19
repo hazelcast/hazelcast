@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
@@ -31,6 +32,7 @@ import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
 import com.hazelcast.jet.impl.execution.ExecutionService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -99,6 +101,9 @@ public class JetService
         networking = new Networking(engine, executionContexts, config.getInstanceConfig().getFlowControlPeriodMs());
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getInstanceConfig().getCooperativeThreadCount());
+
+        ClientEngineImpl clientEngine = engine.getService(ClientEngineImpl.SERVICE_NAME);
+        ExceptionUtil.registerJetExceptions(clientEngine.getClientExceptionFactory());
 
         JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
         logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +

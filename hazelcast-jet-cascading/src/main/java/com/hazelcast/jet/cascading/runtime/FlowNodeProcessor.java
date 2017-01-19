@@ -30,7 +30,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class FlowNodeProcessor implements Processor {
 

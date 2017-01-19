@@ -38,7 +38,7 @@ import static com.hazelcast.jet.impl.util.Util.createObjectDataInput;
 import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
 import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
-import static com.hazelcast.jet.impl.util.Util.sneakyThrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.hazelcast.nio.Packet.FLAG_JET_FLOW_CONTROL;
 import static com.hazelcast.nio.Packet.FLAG_URGENT;

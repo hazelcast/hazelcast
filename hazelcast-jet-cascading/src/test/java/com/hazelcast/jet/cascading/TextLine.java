@@ -32,7 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class TextLine extends Scheme<JetConfig, Iterator<Map.Entry>,
         Outbox, Void, Integer> {

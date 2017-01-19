@@ -13,6 +13,7 @@
     <suppress checks="JavadocMethod" files="([\\/]impl|[\\/]internal)"/>
     <suppress checks="JavadocType" files="([\\/]impl|[\\/]internal)"/>
     <suppress checks="JavadocVariable" files="([\\/]impl|[\\/]internal)"/>
+    <suppress checks="JavadocMethod" files="JetException\.java"/>
 
     <!-- Serializer Hooks -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>

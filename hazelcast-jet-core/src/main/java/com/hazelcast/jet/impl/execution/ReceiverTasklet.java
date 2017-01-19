@@ -31,7 +31,7 @@ import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLongArray;
 
 import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.lang.Math.ceil;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 

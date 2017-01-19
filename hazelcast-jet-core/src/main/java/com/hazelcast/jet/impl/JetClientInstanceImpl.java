@@ -32,6 +32,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.impl.deployment.ResourceIterator;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -56,6 +57,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
         super(hazelcastInstance);
         this.client = hazelcastInstance;
         this.logger = hazelcastInstance.getLoggingService().getLogger(JetInstance.class);
+
+        ExceptionUtil.registerJetExceptions(hazelcastInstance.getClientExceptionFactory());
     }
 
     @Override

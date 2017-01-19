@@ -20,7 +20,6 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -29,6 +28,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.List;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singletonList;
 
 /**
@@ -54,7 +54,7 @@ public class SocketTextStreamReader extends AbstractProcessor {
             LOGGER.info("Connected to socket " + hostAndPort());
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
         } catch (IOException e) {
-            ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

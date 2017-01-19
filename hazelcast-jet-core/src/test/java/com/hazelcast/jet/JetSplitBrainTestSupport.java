@@ -30,6 +30,10 @@ import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.SplitBrainTestSupportTest;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,10 +42,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.annotation.Nonnull;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
@@ -176,7 +176,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     protected JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
         JetInstance[] jetInstances = new JetInstance[clusterSize];
         for (int i = 0; i < clusterSize; i++) {
-            JetInstance hz = createJetInstance(config);
+            JetInstance hz = createJetMember(config);
             jetInstances[i] = hz;
         }
         return jetInstances;
@@ -219,7 +219,7 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         // indicate we need to unblacklist addresses from joiner when split-brain will be healed
         unblacklistHint = true;
         // create a new Hazelcast instance which has blocked addresses blacklisted in its joiner
-        return createJetInstance(config(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
+        return createJetMember(config(), addressesToBlock.toArray(new Address[addressesToBlock.size()]));
     }
 
     private void validateBrainsConfig(int[] clusterTopology) {

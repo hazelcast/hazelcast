@@ -50,8 +50,8 @@ public class HdfsWriterTest extends JetTestSupport {
     public void testWriteFile() throws Exception {
         int messageCount = 20;
         String mapName = randomMapName();
-        JetInstance instance = createJetInstance();
-        createJetInstance();
+        JetInstance instance = createJetMember();
+        createJetMember();
 
         Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
         instance.getMap(mapName).putAll(map);

@@ -24,7 +24,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class JetClassLoader extends ClassLoader {
 

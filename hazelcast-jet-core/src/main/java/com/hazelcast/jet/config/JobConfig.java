@@ -26,7 +26,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**

@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.util.Util.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static org.junit.Assert.assertEquals;
 
 public final class TestUtil {
 
@@ -31,6 +33,28 @@ public final class TestUtil {
             job.execute().get();
         } catch (InterruptedException | ExecutionException e) {
             throw peel(e);
+        }
+    }
+
+    /**
+     * Asserts that {@code caught} exception is equal to {@code expected} or one of its causes.
+     * <p>
+     * <p>Exceptions are considered equal, if their {@code message}s and classes are equal.
+     *
+     * @param expected Expected exception
+     * @param caught   Caught exception
+     */
+    public static void assertExceptionInCauses(final Throwable expected, final Throwable caught) {
+        // peel until expected error is found
+        boolean found = false;
+        Throwable t = caught;
+        while (!found && t != null) {
+            found = Objects.equals(t.getMessage(), expected.getMessage()) && t.getClass() == expected.getClass();
+            t = t.getCause();
+        }
+
+        if (!found) {
+            assertEquals("expected exception not found in causes chain", expected, caught);
         }
     }
 }

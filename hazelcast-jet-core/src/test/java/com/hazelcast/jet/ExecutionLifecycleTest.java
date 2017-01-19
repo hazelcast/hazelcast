@@ -42,11 +42,13 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.Util.peel;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.TestUtil.assertExceptionInCauses;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category(QuickTest.class)
@@ -138,15 +140,19 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     public void when_executionFails_then_completeCalledWithError() throws Throwable {
         // Given
         RuntimeException e = new RuntimeException("mock error");
-        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(() -> new FaultyProducer(e))));
+        String vertexName = "test";
+        DAG dag = new DAG().vertex(new Vertex(vertexName, new MockSupplier(() -> new FaultyProducer(e))));
 
         // When
         try {
             instance.newJob(dag).execute().get();
             fail("Job execution should fail");
         } catch (ExecutionException expected) {
-            Throwable cause = peel(expected);
-            assertEquals(e.getMessage(), cause.getMessage());
+            assertExceptionInCauses(e, expected);
+            String expectedMessage  = "vertex=" + vertexName + "";
+            assertTrue("Error message does not contain vertex name.\nExpected: " + expectedMessage
+                            + "\nActual: " + expected,
+                    expected.getMessage() != null && expected.getMessage().contains(expectedMessage));
         }
 
         // Then
@@ -154,8 +160,8 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
         assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
 
-        for (int i = 0; i < NODE_COUNT; i++) {
-            assertEquals(e.getMessage(), MockSupplier.completeErrors.get(i).getMessage());
+        for (Throwable caught : MockSupplier.completeErrors) {
+            assertExceptionInCauses(e, caught);
         }
     }
 

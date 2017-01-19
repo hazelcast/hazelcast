@@ -37,7 +37,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.hazelcast.jet.impl.util.Util.peel;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static java.util.stream.Collectors.toList;
 

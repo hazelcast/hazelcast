@@ -24,7 +24,7 @@ import com.hazelcast.util.UuidUtil;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.util.Util.unchecked;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public final class StreamUtil {
 
@@ -61,7 +61,7 @@ public final class StreamUtil {
         try {
             job.execute().get();
         } catch (InterruptedException | ExecutionException e) {
-            throw unchecked(e);
+            throw rethrow(e);
         }
         context.getStreamListeners().forEach(Runnable::run);
     }

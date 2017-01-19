@@ -43,8 +43,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
-import static com.hazelcast.jet.impl.util.Util.unchecked;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
@@ -160,7 +160,7 @@ public final class HdfsWriter extends AbstractProcessor {
                 try {
                     outputCommitter.commitJob(jobContext);
                 } catch (IOException e) {
-                    throw unchecked(e);
+                    throw rethrow(e);
                 }
             }
         }

@@ -20,7 +20,6 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
@@ -38,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -94,7 +94,7 @@ public class FileStreamReader extends AbstractProcessor {
             LOGGER.info("Started to watch the directory : " + filePath);
         } catch (IOException e) {
             LOGGER.severe("Error occurred while watching directories, error : " + e.getMessage());
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 

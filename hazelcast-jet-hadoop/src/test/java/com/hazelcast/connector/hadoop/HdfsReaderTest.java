@@ -49,8 +49,8 @@ public class HdfsReaderTest extends JetTestSupport {
     public void testReadFile() throws Exception {
         Path path = writeToFile("hello 1\n", "world 2\n", "hello 3\n", "world 4\n");
 
-        JetInstance instance = createJetInstance();
-        createJetInstance();
+        JetInstance instance = createJetMember();
+        createJetMember();
         DAG dag = new DAG();
         Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString()))
                 .localParallelism(4);

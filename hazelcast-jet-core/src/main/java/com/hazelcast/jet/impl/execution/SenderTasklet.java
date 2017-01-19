@@ -38,7 +38,7 @@ import static com.hazelcast.jet.impl.util.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.Util.createObjectDataOutput;
 import static com.hazelcast.jet.impl.util.Util.getMemberConnection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
-import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class SenderTasklet implements Tasklet {
 
