@@ -821,37 +821,23 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
 
         int expectedTotal = 11;
-        IScheduledFuture lastFuture = null;
+        IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
         for (int i=0; i < expectedTotal; i++) {
-            lastFuture = s.schedule(new PlainCallableTask(), 0, SECONDS);
+            futures[i] = s.schedule(new PlainCallableTask(i), 0, SECONDS);
         }
 
         assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
 
         // Dispose 1 task
-        lastFuture.dispose();
+        futures[0].dispose();
 
         // Recount
-
         assertEquals(expectedTotal - 1, countScheduledTasksOn(s), 0);
-    }
 
-    @Test
-    public void scheduleRandomPartitions_getAllScheduled_durable()
-            throws ExecutionException, InterruptedException {
-
-        HazelcastInstance[] instances = createClusterWithCount(3);
-        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
-        String key = generateKeyOwnedBy(instances[1]);
-
-        int expectedTotal = 11;
-        for (int i=0; i < expectedTotal; i++) {
-            s.scheduleOnKeyOwner(new PlainCallableTask(), key,0, SECONDS);
+        // Verify all tasks
+        for (int i=1; i < expectedTotal; i++) {
+            assertEquals(25.0 + i, futures[i].get());
         }
-
-        instances[1].getLifecycleService().shutdown();
-
-        assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
     }
 
     @Test

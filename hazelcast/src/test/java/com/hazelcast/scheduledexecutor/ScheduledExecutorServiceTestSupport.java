@@ -199,10 +199,19 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     static class PlainCallableTask implements Callable<Double>, Serializable {
 
+        private int delta = 0;
+
+        public PlainCallableTask() {
+        }
+
+        public PlainCallableTask(int delta) {
+            this.delta = delta;
+        }
+
         @Override
         public Double call()
                 throws Exception {
-            return 5 * 5.0;
+            return 5 * 5.0 + delta;
         }
 
     }
