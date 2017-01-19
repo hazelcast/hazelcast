@@ -130,6 +130,8 @@ public class ConfigXmlGenerator {
 
         liteMemberXmlGenerator(xml, config);
 
+        nativeMemoryXmlGenerator(xml, config);
+
         hotRestartXmlGenerator(xml, config);
 
         xml.append("</hazelcast>");
@@ -760,15 +762,33 @@ public class ConfigXmlGenerator {
             return;
         }
         xml.append("<hot-restart-persistence enabled=\"").append(hrCfg.isEnabled()).append("\">");
-        xml.append("<base-dir>").append(hrCfg.getBaseDir().getAbsolutePath()).append("</base-dir>");
-        xml.append("<parallelism>").append(hrCfg.getParallelism()).append("</parallelism>");
-        xml.append("<validation-timeout-seconds>")
-                .append(hrCfg.getValidationTimeoutSeconds())
-                .append("</validation-timeout-seconds>");
-        xml.append("<data-load-timeout-seconds>")
-                .append(hrCfg.getDataLoadTimeoutSeconds())
-                .append("</data-load-timeout-seconds>");
+        appendNode(xml, "base-dir", hrCfg.getBaseDir().getAbsolutePath());
+        appendNode(xml, "parallelism", hrCfg.getParallelism());
+        appendNode(xml, "validation-timeout-seconds", hrCfg.getValidationTimeoutSeconds());
+        appendNode(xml, "data-load-timeout-seconds", hrCfg.getDataLoadTimeoutSeconds());
         xml.append("</hot-restart-persistence>");
+    }
+
+    private void nativeMemoryXmlGenerator(StringBuilder xml, Config config) {
+        NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
+        if (nativeMemoryConfig == null) {
+            xml.append("<native-memory enabled=\"false\" />");
+            return;
+        }
+        xml.append("<native-memory enabled=\"").append(nativeMemoryConfig.isEnabled())
+                .append("\"")
+                .append(" allocator-type=\"").append(nativeMemoryConfig.getAllocatorType())
+                .append("\"")
+                .append(">");
+        xml.append("<size")
+                .append(" unit=\"").append(nativeMemoryConfig.getSize().getUnit()).append("\"")
+                .append(" value=\"").append(nativeMemoryConfig.getSize().getValue()).append("\"")
+                .append("/>");
+
+        appendNode(xml, "min-block-size", nativeMemoryConfig.getMinBlockSize());
+        appendNode(xml, "page-size", nativeMemoryConfig.getPageSize());
+        appendNode(xml, "metadata-space-percentage", nativeMemoryConfig.getMetadataSpacePercentage());
+        xml.append("</native-memory>");
     }
 
     private void liteMemberXmlGenerator(StringBuilder xml, Config config) {
@@ -818,6 +838,14 @@ public class ConfigXmlGenerator {
             if (xmlOutput != null) {
                 closeResource(xmlOutput.getWriter());
             }
+        }
+    }
+
+    private static void appendNode(StringBuilder xml, String name, Object value) {
+        if (value != null) {
+            xml.append('<').append(name).append('>')
+                    .append(value)
+                    .append("</").append(name).append('>');
         }
     }
 
