@@ -21,11 +21,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -47,6 +49,17 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         HazelcastInstance[] instances = factory.newInstances(config, count);
         waitAllForSafeState(instances);
         return instances;
+    }
+
+    public int countScheduledTasksOn(IScheduledExecutorService scheduledExecutorService) {
+        Map<Member, List<IScheduledFuture<Double>>> allScheduled = scheduledExecutorService.getAllScheduledFutures();
+
+        int total = 0;
+        for (Member member : allScheduled.keySet()) {
+            total += allScheduled.get(member).size();
+        }
+
+        return total;
     }
 
     static class StatefulRunnableTask

@@ -64,7 +64,9 @@ public class GetAllScheduledOperation
         for (ScheduledExecutorContainer container : containers) {
             Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
             for (ScheduledTaskDescriptor task : tasks) {
-                handlers.add(container.offprintHandler(task.getDefinition().getName()));
+                if (task.isMasterReplica()) {
+                    handlers.add(container.offprintHandler(task.getDefinition().getName()));
+                }
             }
         }
     }
