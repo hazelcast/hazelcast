@@ -43,6 +43,8 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
 
     protected Object isolatedNode;
 
+    private Method threadLocalRemove;
+
     protected HazelcastInstance startNode() {
         Config config = getConfig();
         return Hazelcast.newHazelcastInstance(config);
@@ -63,6 +65,9 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
             Method setClassLoader = configClazz.getDeclaredMethod("setClassLoader", ClassLoader.class);
             setClassLoader.invoke(config, cl);
 
+            Class<?> threadLocalRandomClazz = cl.loadClass("com.hazelcast.internal.util.ThreadLocalRandom");
+            threadLocalRemove = threadLocalRandomClazz.getDeclaredMethod("remove");
+
             Class<?> hazelcastClazz = cl.loadClass("com.hazelcast.core.Hazelcast");
             Method newHazelcastInstance = hazelcastClazz.getDeclaredMethod("newHazelcastInstance", configClazz);
             isolatedNode = newHazelcastInstance.invoke(hazelcastClazz, config);
@@ -81,9 +86,12 @@ public abstract class AbstractClockTest extends HazelcastTestSupport {
             Class<?> instanceClass = isolatedNode.getClass();
             Method method = instanceClass.getMethod("shutdown");
             method.invoke(isolatedNode);
+            threadLocalRemove.invoke(isolatedNode);
+
             isolatedNode = null;
+            threadLocalRemove = null;
         } catch (Exception e) {
-            throw new RuntimeException("Could not start shutdown Hazelcast instance", e);
+            throw new RuntimeException("Could not invoke shutdown of isolated Hazelcast instance", e);
         }
     }
 
