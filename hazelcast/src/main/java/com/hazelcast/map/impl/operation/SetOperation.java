@@ -46,11 +46,6 @@ public class SetOperation extends BasePutOperation {
     }
 
     @Override
-    public Object getResponse() {
-        return newRecord;
-    }
-
-    @Override
     public int getId() {
         return MapDataSerializerHook.SET;
     }
