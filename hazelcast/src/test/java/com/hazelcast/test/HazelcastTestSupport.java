@@ -16,6 +16,7 @@
 
 package com.hazelcast.test;
 
+import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
@@ -217,6 +218,10 @@ public abstract class HazelcastTestSupport {
     // #####################################
     // ########## generic utility ##########
     // #####################################
+
+    protected void checkThreadLocalsForLeaks() throws Exception {
+        ThreadLocalLeakTestUtils.checkThreadLocalsForLeaks(getClass().getClassLoader());
+    }
 
     public static void ignore(Throwable ignored) {
     }
