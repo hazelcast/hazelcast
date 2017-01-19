@@ -453,10 +453,14 @@ https://hazelcast.org/documentation/.
         The number of executor threads per member for the executor. Its default value is 16.
     * <durability>:
         Durability of the scheduled executor. The default value is 1.
+    * <capacity>:
+        Capacity of the scheduled executor. The default value is 100.
+        This is the maximum number of tasks for a given scheduled executor on a particular partition.
 -->
     <scheduled-executor-service name="default">
         <pool-size>16</pool-size>
         <durability>1</durability>
+        <capacity>100</capacity>
     </scheduled-executor-service>
 
 <!--
