@@ -363,7 +363,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         Set<ClientEndpoint> endpoints = endpointManager.getEndpoints(clientUuid);
         for (ClientEndpoint endpoint : endpoints) {
-            endpointManager.removeEndpoint(endpoint, true, "Resources are being cleaned up for client " + clientUuid);
+            endpoint.getConnection().close("Resources are being cleaned up for client " + clientUuid, null);
         }
 
         NodeEngineImpl nodeEngine = node.getNodeEngine();
@@ -394,32 +394,35 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (connection.isClient() && nodeEngine.isRunning()) {
-                final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
-                if (endpoint == null) {
-                    logger.finest("connectionRemoved: No endpoint for connection:" + connection);
-                    return;
-                }
+            if (!connection.isClient() || !nodeEngine.isRunning()) {
+                return;
+            }
+            final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+            if (endpoint == null) {
+                logger.finest("connectionRemoved: No endpoint for connection:" + connection);
+                return;
+            }
 
-                if (!endpoint.isFirstConnection()) {
-                    logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
-                    return;
-                }
+            endpointManager.removeEndpoint(endpoint, "connection removed");
+            if (!endpoint.isFirstConnection()) {
+                logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
+                return;
+            }
 
-                String localMemberUuid = node.getLocalMember().getUuid();
-                String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
-                if (localMemberUuid.equals(ownerUuid)) {
-                    try {
-                        nodeEngine.getExecutionService().schedule(new Runnable() {
-                            @Override
-                            public void run() {
-                                callDisconnectionOperation(endpoint);
-                            }
-                        }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
-                    } catch (RejectedExecutionException e) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest(e);
+
+            String localMemberUuid = node.getLocalMember().getUuid();
+            String ownerUuid = ownershipMappings.get(endpoint.getUuid());
+            if (localMemberUuid.equals(ownerUuid)) {
+                try {
+                    nodeEngine.getExecutionService().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            callDisconnectionOperation(endpoint);
                         }
+                    }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
+                } catch (RejectedExecutionException e) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(e);
                     }
                 }
             }
@@ -482,11 +485,6 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void run() {
-            endpointManager.removeEndpoints(deadMemberUuid);
-            removeMappings();
-        }
-
-        void removeMappings() {
             Iterator<Map.Entry<String, String>> iterator = ownershipMappings.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<String, String> entry = iterator.next();

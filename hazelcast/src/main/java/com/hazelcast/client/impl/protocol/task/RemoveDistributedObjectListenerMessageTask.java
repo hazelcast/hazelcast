@@ -33,9 +33,7 @@ public class RemoveDistributedObjectListenerMessageTask
 
     @Override
     protected boolean deRegisterListener() {
-        boolean success = clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
-        endpoint.removeDestroyAction(parameters.registrationId);
-        return success;
+        return clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
     }
 
     @Override

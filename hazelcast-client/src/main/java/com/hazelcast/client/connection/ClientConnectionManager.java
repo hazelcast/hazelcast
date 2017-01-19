@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.nio.Address;
@@ -23,6 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * Responsible for managing {@link com.hazelcast.client.connection.nio.ClientConnection} objects.
@@ -90,4 +92,6 @@ public interface ClientConnectionManager extends ConnectionListenable {
     void handleClientMessage(ClientMessage message, Connection connection);
 
     void addConnectionHeartbeatListener(ConnectionHeartbeatListener connectionHeartbeatListener);
+
+    Collection<ClientConnection> getActiveConnections();
 }

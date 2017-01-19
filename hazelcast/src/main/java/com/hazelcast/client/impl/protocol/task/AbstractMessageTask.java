@@ -44,7 +44,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     protected final ClientMessage clientMessage;
 
-    protected volatile Connection connection;
+    protected final Connection connection;
     protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
     protected final InternalSerializationService serializationService;
@@ -52,8 +52,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;
     protected P parameters;
-
-    protected String clientUuid;
     private final Node node;
 
     protected AbstractMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -66,9 +64,6 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         this.clientEngine = node.clientEngine;
         this.endpointManager = clientEngine.getEndpointManager();
         this.endpoint = getEndpoint();
-        if (null != endpoint) {
-            this.clientUuid = endpoint.getUuid();
-        }
     }
 
     @SuppressWarnings("unchecked")
@@ -139,7 +134,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
             exception = new HazelcastInstanceNotActiveException();
         }
         sendClientMessage(exception);
-        endpointManager.removeEndpoint(endpoint, "Authentication failed. " + exception.getMessage());
+        connection.close("Authentication failed. " + exception.getMessage(), null);
     }
 
     private void handleMissingEndpoint() {
@@ -208,27 +203,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
-        final Connection endpointConnection = findSendConnection();
         //TODO framing not implemented yet, should be split into frames before writing to connection
-        endpointConnection.write(resultClientMessage);
-    }
-
-    protected Connection findSendConnection() {
-        if (connection.isAlive()) {
-            return connection;
-        }
-
-        // The connection may have changed for listener tasks, hence try find a connection to the client
-        if (null != clientUuid) {
-            Connection conn = endpointManager.findLiveConnectionFor(clientUuid);
-            if (null != conn) {
-                // update the connection for this task so that the new messages will use this new live connection
-                connection = conn;
-                return conn;
-            }
-        }
-
-        return connection;
+        connection.write(resultClientMessage);
     }
 
     protected void sendClientMessage(Object key, ClientMessage resultClientMessage) {

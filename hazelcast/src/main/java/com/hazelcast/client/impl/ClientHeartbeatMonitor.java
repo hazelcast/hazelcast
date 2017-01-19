@@ -19,8 +19,6 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -42,7 +40,6 @@ public class ClientHeartbeatMonitor implements Runnable {
     private final ClientEndpointManagerImpl clientEndpointManager;
     private final ClientEngine clientEngine;
     private final long heartbeatTimeoutSeconds;
-    private final ILogger logger = Logger.getLogger(ClientHeartbeatMonitor.class);
     private final ExecutionService executionService;
 
     public ClientHeartbeatMonitor(ClientEndpointManagerImpl endpointManager,
@@ -71,7 +68,7 @@ public class ClientHeartbeatMonitor implements Runnable {
 
     @Override
     public void run() {
-        final String memberUuid = clientEngine.getLocalMember().getUuid();
+        String memberUuid = clientEngine.getLocalMember().getUuid();
         for (ClientEndpoint ce : clientEndpointManager.getEndpoints()) {
             ClientEndpointImpl clientEndpoint = (ClientEndpointImpl) ce;
             monitor(memberUuid, clientEndpoint);
@@ -83,21 +80,16 @@ public class ClientHeartbeatMonitor implements Runnable {
             return;
         }
 
-        final Connection connection = clientEndpoint.getConnection();
-        final long lastTimePacketReceived = connection.lastReadTimeMillis();
-        final long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
-        final long currentTimeMillis = Clock.currentTimeMillis();
+        Connection connection = clientEndpoint.getConnection();
+        long lastTimePacketReceived = connection.lastReadTimeMillis();
+        long timeoutInMillis = SECONDS.toMillis(heartbeatTimeoutSeconds);
+        long currentTimeMillis = Clock.currentTimeMillis();
         if (lastTimePacketReceived + timeoutInMillis < currentTimeMillis) {
-            if (memberUuid.equals(clientEndpoint.getPrincipal().getOwnerUuid())) {
+            if (memberUuid.equals(clientEngine.getOwnerUuid(clientEndpoint.getUuid()))) {
                 String message = "Client heartbeat is timed out, closing connection to " + connection
                         + ". Now: " + timeToString(currentTimeMillis)
                         + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
                 connection.close(message, null);
-                if (clientEndpoint.resourcesExist()) {
-                    return;
-                }
-
-                clientEndpointManager.removeEndpoint(clientEndpoint, true, message);
             }
         }
     }

@@ -20,6 +20,7 @@ package com.hazelcast.client.map.impl.nearcache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.NearCachedClientMapProxy;
+import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -28,7 +29,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -45,7 +45,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
+public class ClientNearCacheBatchInvalidationTest extends ClientTestSupport {
 
     protected TestHazelcastFactory factory = new TestHazelcastFactory();
     protected String mapName = randomMapName();
@@ -65,6 +65,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         ClientConfig clientConfig = newClientConfig(mapName);
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, 2);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
@@ -100,10 +101,11 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         ClientConfig clientConfig = newClientConfig(mapName);
 
-        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        makeSureConnectedToServers(client, 2);
 
         int size = 1000;
 
@@ -139,6 +141,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        makeSureConnectedToServers(client, 2);
 
         int size = 1000;
 
@@ -172,6 +175,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> serverMap = server.getMap(mapName);
         IMap<Integer, Integer> clientMap = client.getMap(mapName);
+        makeSureConnectedToServers(client, 2);
 
         int size = 1000;
 
@@ -190,7 +194,7 @@ public class ClientNearCacheBatchInvalidationTest extends HazelcastTestSupport {
         assertNearCacheSizeEventually(clientMap, 0);
     }
 
-    protected ClientConfig newClientConfig(String mapName) {
+    private ClientConfig newClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
         nearCacheConfig.setName(mapName);

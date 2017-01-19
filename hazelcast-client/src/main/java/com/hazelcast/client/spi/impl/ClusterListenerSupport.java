@@ -194,7 +194,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 connection = connectionManager.getOrConnect(address, true);
                 ownerConnectionAddress = connection.getEndPoint();
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
-                client.getListenerService().onClusterConnect((ClientConnection) connection);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {
