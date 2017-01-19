@@ -56,6 +56,8 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
         atomicLong.set(100);
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance();
+            waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
+
             IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
             assertEquals((long) 100 + i, newAtomicLong.get());
             newAtomicLong.incrementAndGet();
@@ -96,6 +98,7 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
                     });
                 }
                 assertOpenEventually(countDownLatch);
+                waitAllForSafeState(nodeFactory.getAllHazelcastInstances());
 
                 // if there is an exception while incrementing in parallel threads, find number of exceptions
                 // and subtract the number from expectedValue.
