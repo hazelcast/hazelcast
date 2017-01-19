@@ -18,14 +18,13 @@ package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
@@ -34,7 +33,6 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -70,13 +68,12 @@ public abstract class AbstractStreamTest extends JetTestSupport {
     // each entry is Object[] with
     // {URI, ClassLoader, expected prefix, expected prefixed cache name, expected distributed object name}
     @Parameters(name = "{index}: mode={0}")
-    public static Iterable<? extends Object> parameters() throws URISyntaxException {
+    public static Iterable<?> parameters() {
         return Arrays.asList(MEMBER_TEST_MODE, CLIENT_TEST_MODE);
     }
 
     @BeforeClass
     public static void setupCluster() throws InterruptedException, ExecutionException {
-        setLogLevel(Level.INFO);
         // configure the engine to have a sane thread count
         int parallelism = Runtime.getRuntime().availableProcessors() / NODE_COUNT / 2;
         JetConfig config = new JetConfig();
@@ -145,7 +142,7 @@ public abstract class AbstractStreamTest extends JetTestSupport {
         return Arrays.asList(array);
     }
 
-    protected <T extends Comparable<T>> void assertNotSorted(T[] array) {
+    protected static <T extends Comparable<T>> void assertNotSorted(T[] array) {
         for (int i = 1; i < array.length; i++) {
             if (array[i - 1].compareTo(array[i]) > 0) {
                 return;

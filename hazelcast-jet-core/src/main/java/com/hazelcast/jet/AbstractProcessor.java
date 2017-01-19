@@ -143,7 +143,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess0(Object item) {
+    protected boolean tryProcess0(@Nonnull Object item) {
         return tryProcess(0, item);
     }
 
@@ -160,7 +160,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess1(Object item) {
+    protected boolean tryProcess1(@Nonnull Object item) {
         return tryProcess(1, item);
     }
 
@@ -177,7 +177,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess2(Object item) {
+    protected boolean tryProcess2(@Nonnull Object item) {
         return tryProcess(2, item);
     }
 
@@ -194,7 +194,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess3(Object item) {
+    protected boolean tryProcess3(@Nonnull Object item) {
         return tryProcess(3, item);
     }
 
@@ -212,7 +212,7 @@ public abstract class AbstractProcessor implements Processor {
      *         {@code false} otherwise.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    protected boolean tryProcess4(Object item) {
+    protected boolean tryProcess4(@Nonnull Object item) {
         return tryProcess(4, item);
     }
 
