@@ -47,8 +47,10 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static java.util.Arrays.asList;
@@ -473,7 +475,7 @@ public class IndexTest {
         index.saveEntryIndex(record50, null);
         assertEquals(new HashSet<QueryableEntry>(asList(record5, record50)), index.getRecords(555L));
 
-        ConcurrentMap<Data, QueryableEntry> records = index.getRecordMap(555L);
+        Map<Data, QueryableEntry> records = getRecordMap(index, 555L);
         assertNotNull(records);
         assertEquals(2, records.size());
         assertEquals(record5, records.get(record5.getKeyData()));
@@ -499,7 +501,7 @@ public class IndexTest {
 
         assertEquals(Collections.<QueryableEntry>singleton(record50), index.getRecords(555L));
 
-        records = index.getRecordMap(555L);
+        records = getRecordMap(index, 555L);
         assertNotNull(records);
         assertEquals(null, records.get(5L));
         assertEquals(record50, records.get(toData(50L)));
@@ -519,7 +521,7 @@ public class IndexTest {
 
         assertEquals(0, index.getRecords(555L).size());
 
-        records = index.getRecordMap(555L);
+        records = getRecordMap(index, 555L);
         assertNull(records);
         assertEquals(0, index.getRecords(555L).size());
         assertEquals(1, index.getSubRecordsBetween(55L, 555L).size());
@@ -531,10 +533,22 @@ public class IndexTest {
 
         assertEquals(0, index.getRecords(66L).size());
 
-        assertNull(index.getRecordMap(66L));
+        assertNull(getRecordMap(index, 66L));
         assertEquals(0, index.getRecords(555L).size());
         assertEquals(0, index.getSubRecordsBetween(55L, 555L).size());
         assertEquals(0, index.getSubRecordsBetween(66L, 555L).size());
         assertEquals(0, index.getSubRecordsBetween(555L, 555L).size());
+    }
+
+    private Map<Data, QueryableEntry> getRecordMap(IndexImpl index, Comparable indexValue) {
+        Set<QueryableEntry> records = index.getRecords(indexValue);
+        if (records.isEmpty()) {
+            return null;
+        }
+        Map<Data, QueryableEntry> recordMap = new HashMap<Data, QueryableEntry>(records.size());
+        for (QueryableEntry entry : records) {
+            recordMap.put(entry.getKeyData(), entry);
+        }
+        return recordMap;
     }
 }
