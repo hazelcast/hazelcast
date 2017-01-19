@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -40,7 +39,6 @@ import java.util.concurrent.Callable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -127,6 +125,6 @@ public class ClientTxnDisconnectionTest {
             public void run() throws Exception {
                 Assert.assertEquals(count, waitNotifyService.getTotalValidWaitingOperationCount());
             }
-        }, 2 * ClientEngineImpl.ENDPOINT_REMOVE_DELAY_SECONDS);
+        });
     }
 }
