@@ -17,10 +17,11 @@
 package com.hazelcast.connector.hadoop;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -69,7 +70,7 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
 /**
  * HDFS reader for Jet, emits records read from HDFS file as Map.Entry
  */
-public final class HdfsReader extends AbstractProducer {
+public final class HdfsReader extends AbstractProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(HdfsReader.class);
 
@@ -271,7 +272,7 @@ public final class HdfsReader extends AbstractProducer {
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
-                            ? new EmptyProducer()
+                            ? new NoopProcessor()
                             : new HdfsReader(splits.stream()
                                                    .map(IndexedInputSplit::getSplit)
                                                    .map(split -> uncheckCall(() ->
@@ -342,8 +343,5 @@ public final class HdfsReader extends AbstractProducer {
             split = ClassLoaderUtil.newInstance(null, in.readUTF());
             split.readFields(in);
         }
-    }
-
-    private static class EmptyProducer extends AbstractProducer {
     }
 }

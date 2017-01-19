@@ -17,9 +17,10 @@
 package com.hazelcast.jet.cascading.runtime;
 
 import cascading.flow.FlowNode;
-import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.cascading.JetFlowProcess;
 import com.hazelcast.jet.config.JetConfig;
 
@@ -31,7 +32,7 @@ import java.util.Set;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
-public class FlowNodeProcessor extends AbstractProcessor {
+public class FlowNodeProcessor implements Processor {
 
     private JetStreamGraph graph;
     private final JetInstance instance;
@@ -50,12 +51,13 @@ public class FlowNodeProcessor extends AbstractProcessor {
         this.outputMap = outputMap;
     }
 
-    protected void init(@Nonnull Context context) {
+    @Override
+    public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         JetConfig jetConfig = new JetConfig().setProperties(properties);
         JetFlowProcess flowProcess = new JetFlowProcess(jetConfig, instance);
         flowProcess.setCurrentSliceNum(System.identityHashCode(this));
 
-        graph = new JetStreamGraph(flowProcess, node, getOutbox(), inputMap, outputMap);
+        graph = new JetStreamGraph(flowProcess, node, outbox, inputMap, outputMap);
         graph.prepare();
     }
 

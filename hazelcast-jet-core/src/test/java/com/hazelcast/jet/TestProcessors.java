@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.connector.AbstractProducer;
-
 import javax.annotation.Nonnull;
 
 public class TestProcessors {
@@ -38,7 +36,7 @@ public class TestProcessors {
     }
 
 
-    public static class FaultyProducer extends AbstractProducer {
+    public static class FaultyProducer implements Processor {
 
         private final RuntimeException e;
 

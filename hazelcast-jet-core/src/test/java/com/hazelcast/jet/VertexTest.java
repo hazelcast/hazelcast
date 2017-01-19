@@ -16,8 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.internal.serialization.impl.ByteArrayObjectDataOutputTest;
-import com.hazelcast.jet.Processors.NoopProducer;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -43,7 +42,7 @@ public class VertexTest {
     @Test
     public void when_constructWithName_then_hasThatName() {
         // When
-        v = new Vertex("v", NoopProducer::new);
+        v = new Vertex("v", NoopProcessor::new);
 
         // Then
         assertEquals("v", v.getName());
@@ -52,7 +51,7 @@ public class VertexTest {
     @Test
     public void when_constructWithSimpleSupplier_then_suppliesCorrectProcessor() {
         // When
-        v = new Vertex("v", NoopProducer::new);
+        v = new Vertex("v", NoopProcessor::new);
 
         // Then
         validateProcessor();
@@ -61,7 +60,7 @@ public class VertexTest {
     @Test
     public void when_constructWithProcessorSupplier_then_suppliesCorrectProcessor() {
         // When
-        v = new Vertex("v", ProcessorSupplier.of(NoopProducer::new));
+        v = new Vertex("v", ProcessorSupplier.of(NoopProcessor::new));
 
         // Then
         validateProcessor();
@@ -70,7 +69,7 @@ public class VertexTest {
     @Test
     public void when_constructWithMetaSupplier_then_suppliesCorrectProcessor() {
         // When
-        v = new Vertex("v", ProcessorMetaSupplier.of(NoopProducer::new));
+        v = new Vertex("v", ProcessorMetaSupplier.of(NoopProcessor::new));
 
         // Then
         validateProcessor();
@@ -79,7 +78,7 @@ public class VertexTest {
     @Test
     public void when_setLocalParallelism_then_hasThatParallelism() {
         // Given
-        v = new Vertex("v", NoopProducer::new);
+        v = new Vertex("v", NoopProcessor::new);
 
         // When
         v.localParallelism(1);
@@ -89,6 +88,6 @@ public class VertexTest {
     }
 
     private void validateProcessor() {
-        assertEquals(NoopProducer.class, v.getSupplier().get(new Address()).get(1).get(0).getClass());
+        assertEquals(NoopProcessor.class, v.getSupplier().get(new Address()).get(1).get(0).getClass());
     }
 }

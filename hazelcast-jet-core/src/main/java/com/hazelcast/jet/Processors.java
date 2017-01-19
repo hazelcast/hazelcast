@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.jet.impl.connector.IListReader;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.IMapReader;
@@ -473,9 +472,9 @@ public final class Processors {
     }
 
     /**
-     * A producer that won't produce any data items.
+     * A processor that does nothing.
      */
-    public static class NoopProducer extends AbstractProducer {
+    public static class NoopProcessor implements Processor {
     }
 
     /**

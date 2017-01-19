@@ -19,10 +19,11 @@ package com.hazelcast.jet.connector.kafka;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -59,7 +60,7 @@ import static java.util.stream.Collectors.toList;
  * @param <K> type of the message key
  * @param <V> type of the message value
  */
-public class KafkaReader<K, V> extends AbstractProducer {
+public class KafkaReader<K, V> extends AbstractProcessor {
     private static final int POLL_TIMEOUT_MS = 100;
     private static final ILogger LOGGER = Logger.getLogger(KafkaReader.class);
     private final SerializationService serializationService;
@@ -214,8 +215,7 @@ public class KafkaReader<K, V> extends AbstractProducer {
                     .values().stream()
                     .map(partitions -> !partitions.isEmpty()
                                     ? new KafkaReader(topicId, properties, partitions, serializationService)
-                                    : new AbstractProducer() {
-                            }
+                                    : new NoopProcessor()
                     )
                     .collect(toList());
         }

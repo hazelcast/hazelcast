@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
@@ -33,7 +34,7 @@ import static java.util.Collections.singletonList;
 /**
  * A producer that reads lines from socket and emits them as string to the next processor
  */
-public class SocketTextStreamReader extends AbstractProducer {
+public class SocketTextStreamReader extends AbstractProcessor {
 
     private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(SocketTextStreamReader.class);
     private final String host;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
@@ -46,7 +47,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 /**
  * A producer reads files from directory and emits them lines by lines to the next processor
  */
-public class FileStreamReader extends AbstractProducer {
+public class FileStreamReader extends AbstractProcessor {
 
     private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(FileStreamReader.class);
     private final String filePath;

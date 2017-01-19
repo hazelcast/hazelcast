@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -80,7 +79,7 @@ public class TimeoutTest extends JetTestSupport {
         executeAndPeel(instance.newJob(dag));
     }
 
-    private static class SlowProcessor extends AbstractProducer {
+    private static class SlowProcessor extends AbstractProcessor {
 
         @Override
         public boolean complete() {

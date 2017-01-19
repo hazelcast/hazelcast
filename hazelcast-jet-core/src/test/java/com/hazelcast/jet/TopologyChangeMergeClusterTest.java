@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -150,7 +149,7 @@ public class TopologyChangeMergeClusterTest extends JetSplitBrainTestSupport {
         }
     }
 
-    private static final class StuckProcessor extends AbstractProducer {
+    private static final class StuckProcessor extends AbstractProcessor {
         static CountDownLatch executionStarted;
         static CountDownLatch proceedLatch;
 

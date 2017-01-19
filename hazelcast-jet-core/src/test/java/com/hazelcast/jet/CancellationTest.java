@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -216,7 +215,7 @@ public class CancellationTest extends JetTestSupport {
         });
     }
 
-    private static class StuckProcessor extends AbstractProducer {
+    private static class StuckProcessor extends AbstractProcessor {
 
         static final AtomicLong callCounter = new AtomicLong();
 

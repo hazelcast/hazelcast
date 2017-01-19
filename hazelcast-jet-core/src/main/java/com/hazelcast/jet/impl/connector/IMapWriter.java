@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -39,7 +38,7 @@ import java.util.stream.Stream;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
 
-public final class IMapWriter extends AbstractProcessor {
+public final class IMapWriter implements Processor {
 
     private final IMap map;
     private final ArrayMap buffer = new ArrayMap();

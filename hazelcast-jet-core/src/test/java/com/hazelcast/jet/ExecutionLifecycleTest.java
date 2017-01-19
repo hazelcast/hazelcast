@@ -19,7 +19,6 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -249,7 +248,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         }
     }
 
-    private static final class StuckProcessor extends AbstractProducer {
+    private static final class StuckProcessor implements Processor {
         static CountDownLatch executionStarted;
         static CountDownLatch proceedLatch;
 

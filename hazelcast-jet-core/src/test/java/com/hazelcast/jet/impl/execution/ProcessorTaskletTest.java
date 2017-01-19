@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Inbox;
+import com.hazelcast.jet.Outbox;
+import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.jet.impl.util.ProgressState;
@@ -162,18 +163,17 @@ public class ProcessorTaskletTest {
         return t;
     }
 
-    private static class MockProcessor extends AbstractProcessor {
+    private static class MockProcessor implements Processor {
         private ArrayDequeOutbox outbox;
 
         @Override
-        protected void init(@Nonnull Context context) {
-            this.outbox = (ArrayDequeOutbox) getOutbox();
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
+            this.outbox = (ArrayDequeOutbox) outbox;
         }
 
         @Override
         public void process(int ordinal, @Nonnull Inbox inbox) {
             for (Object item; (item = inbox.poll()) != null; ) {
-                System.out.println("Processing " + item);
                 for (int i = 0; i < outbox.queueCount(); i++) {
                     outbox.add(i, item);
                 }

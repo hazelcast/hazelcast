@@ -22,9 +22,11 @@ import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.jet.impl.util.CircularCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
@@ -45,7 +47,7 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
-public final class IMapReader extends AbstractProducer {
+public final class IMapReader extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
@@ -248,8 +250,7 @@ public final class IMapReader extends AbstractProducer {
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
                                 ? new IMapReader(partitionToIterator, partitions)
-                                : new AbstractProducer() {
-                        }
+                                : new NoopProcessor()
                 )
                 .collect(toList());
     }

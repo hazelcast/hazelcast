@@ -17,7 +17,6 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -221,7 +220,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
     }
 
-    private static final class StuckProcessor extends AbstractProducer {
+    private static final class StuckProcessor implements Processor {
         static CountDownLatch executionStarted;
         static CountDownLatch proceedLatch;
 

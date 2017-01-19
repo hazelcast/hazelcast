@@ -19,10 +19,11 @@ package com.hazelcast.jet.impl.connector;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProducer;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
@@ -33,7 +34,7 @@ import java.util.List;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.Collections.singletonList;
 
-public final class IListReader extends AbstractProducer {
+public final class IListReader extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
@@ -139,7 +140,7 @@ public final class IListReader extends AbstractProducer {
                 // nothing to read on other nodes
                 return (c) -> {
                     assertCountIsOne(c);
-                    return singletonList(new NoopProducer());
+                    return singletonList(new NoopProcessor());
                 };
             }
         }

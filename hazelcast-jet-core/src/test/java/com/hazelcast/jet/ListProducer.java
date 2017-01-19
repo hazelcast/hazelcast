@@ -16,12 +16,10 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.connector.AbstractProducer;
-
 import java.util.Iterator;
 import java.util.List;
 
-class ListProducer extends AbstractProducer {
+class ListProducer extends AbstractProcessor {
 
     private Iterator<?> iterator;
     private int batchSize;

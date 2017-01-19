@@ -19,16 +19,16 @@ package com.hazelcast.jet.benchmark;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.internal.util.ThreadLocalRandom;
+import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.AbstractProducer;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -95,7 +95,7 @@ public class BackpressureTest extends JetTestSupport {
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
         Vertex generator = dag.newVertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
                 ? ProcessorSupplier.of(GeneratingProducer::new)
-                : ProcessorSupplier.of(Processors.NoopProducer::new)
+                : ProcessorSupplier.of(NoopProcessor::new)
         );
         Vertex hiccuper = dag.newVertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
         Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
@@ -118,7 +118,7 @@ public class BackpressureTest extends JetTestSupport {
         }
     }
 
-    private static class GeneratingProducer extends AbstractProducer {
+    private static class GeneratingProducer extends AbstractProcessor {
 
         private int item;
         private int count;
