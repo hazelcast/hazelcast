@@ -107,6 +107,7 @@ The following are the issues solved for 3.8 release.
 - More granular mutexes should be used when creating and removing a set of closeable cache resources. [6273]
 - Running `PredicateBuilder` queries when nodes join causes timeouts and cluster crash. [6242]
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
+- Fix inconsistent Ringbuffer TTL defaults: when starting a HazelcastInstance without an explicit configuration (`HazelcastInstance hz = Hazelcast.newHazelcastInstance();`), the default Ringbuffer TTL was 30 seconds, instead of correct value 0. This change may break existing applications relying on the default configuration. [9610]
 
 4. Removed/Deprecated Features
 
