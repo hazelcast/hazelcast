@@ -25,10 +25,16 @@ import java.util.function.Function;
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} with several levels of convenience:
  * <ol><li>
- *     {@link #init(Outbox, Context)} retains the supplied outbox and context.
+ *     {@link #init(Outbox, Context)} retains the supplied outbox and the
+ *     logger retrieved from the context.
  * </li><li>
- *     {@link #process(int, Inbox)} delegates to {@link #tryProcess(int, Object)}
- *     with each item received in the inbox.
+ *     {@link #process(int, Inbox) process(n, inbox)} delegates to the
+ *     matching {@code tryProcessN} with each item received in the inbox.
+ * </li><li>
+ *     There is also the catch-all {@link #tryProcess(int, Object)} to which
+ *     the {@code tryProcessN} methods delegate by default. It must be used
+ *     for ordinals greater than 4, but it may also be used whenever the
+ *     processor doesn't care which edge an item originates from.
  * </li><li>
  *     The {@code emit(...)} methods avoid the need to deal with {@code Outbox}
  *     directly.
@@ -86,7 +92,7 @@ public abstract class AbstractProcessor implements Processor {
      */
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
-    public void process(int ordinal, @Nonnull Inbox inbox) {
+    public final void process(int ordinal, @Nonnull Inbox inbox) {
         switch (ordinal) {
             case 0:
                 process0(inbox);
@@ -276,34 +282,54 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Factory of {@link TryProcessor}s.
+     * Factory of {@link TryProcessor}. The TryProcessor will emit items to
+     * the given output ordinal.
+     */
+    @Nonnull
+    protected <T, R> TryProcessor<T, R> tryProcessor(
+            int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
+    ) {
+        return new TryProcessor<>(outputOrdinal, mapper);
+    }
+
+    /**
+     * Factory of {@link TryProcessor}. The TryProcessor will emit items to
+     * all defined output ordinals.
      */
     @Nonnull
     protected <T, R> TryProcessor<T, R> tryProcessor(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return new TryProcessor<>(mapper);
+        return tryProcessor(-1, mapper);
     }
 
     /**
-     * A helper that simplifies the implementation of {@link AbstractProcessor#tryProcess(int, Object)}
-     * for {@code flatMap}-like behavior. The {@code lazyMapper} takes an item
-     * and returns a traverser over all output items that should be emitted. The
-     * {@link #tryProcess(Object, int)} method obtains and passes the traverser
-     * to {@link #emitCooperatively(int, Traverser)}.
+     * A helper that simplifies the implementation of
+     * {@link AbstractProcessor#tryProcess(int, Object)} for {@code flatMap}-like
+     * behavior. The {@code lazyMapper} takes an item and returns a traverser
+     * over all output items that should be emitted. Its {@link #tryProcess(Object)}
+     * method obtains and passes the traverser to
+     * {@link #emitCooperatively(int, Traverser)}. The output ordinal is
+     * specified at construction time.
      *
      * @param <T> type of the input item
      * @param <R> type of the emitted item
      */
     protected final class TryProcessor<T, R> {
+        private final int outputOrdinal;
         private Function<? super T, ? extends Traverser<? extends R>> mapper;
         private Traverser<? extends R> outputTraverser;
 
         TryProcessor(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
+            this(-1, mapper);
+        }
+
+        TryProcessor(int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
+            this.outputOrdinal = outputOrdinal;
             this.mapper = mapper;
         }
 
-        public boolean tryProcess(@Nonnull T item, int outputOrdinal) {
+        public boolean tryProcess(@Nonnull T item) {
             if (outputTraverser == null) {
                 outputTraverser = mapper.apply(item);
             }
@@ -313,11 +339,13 @@ public abstract class AbstractProcessor implements Processor {
             }
             return false;
         }
-
-        public boolean tryProcess(@Nonnull T item) {
-            return tryProcess(item, -1);
-        }
     }
+
+
+    // The processN methods contain repeated looping code in order to give an
+    // easier job to the JIT compiler to optimize each case independently, and
+    // to ensure that ordinal is dispatched on just once per
+    // process(ordinal, inbox) call.
 
     private void process0(@Nonnull Inbox inbox) {
         for (Object item; (item = inbox.peek()) != null; ) {
