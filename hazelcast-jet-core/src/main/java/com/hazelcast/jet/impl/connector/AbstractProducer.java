@@ -18,19 +18,10 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
 
-import javax.annotation.Nonnull;
-
 public abstract class AbstractProducer extends AbstractProcessor {
-
-    @Override
-    public boolean tryProcess(int ordinal, @Nonnull Object item) {
-        throw new UnsupportedOperationException("process");
-    }
 
     @Override
     public boolean completeEdge(int ordinal) {
         throw new UnsupportedOperationException("complete(int)");
     }
-
-
 }

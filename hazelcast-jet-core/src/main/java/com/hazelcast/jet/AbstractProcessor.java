@@ -60,36 +60,68 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Method that can be overridden to perform any necessary initialization for the processor.
-     * This method will be called exactly once and strictly before any calls to processing methods
-     * ({@link #process(int, Inbox)}, ({@link #tryProcess(int, Object)}, {@link #completeEdge(int)},
-     * {@link #complete()}). {@link #getOutbox()} and {@link #getLogger()} are initialized before this
-     * method is called.
-     * @param context the {@link Context} associated with this processor
+     * Method that can be overridden to perform any necessary initialization for
+     * the processor. It is called exactly once and strictly before any of the
+     * processing methods ({@link #process(int, Inbox) process()},
+     * {@link #completeEdge(int) completeEdge()}, {@link #complete() complete()}),
+     * but after the {@link #getOutbox() outbox} and {@link #getLogger() logger}
+     * have been initialized.
+     *
+     * @param context the {@link Context context} associated with this processor
      */
     protected void init(@Nonnull Context context) {
     }
 
     /**
-     * Implements the boilerplate of taking items from the
-     * inbox and processing them one by one.
+     * Returns the logger associated with this processor instance.
+     */
+    protected final ILogger getLogger() {
+        return logger;
+    }
+
+    /**
+     * Implements the boilerplate of dispatching against the ordinal,
+     * taking items from the inbox one by one, and invoking the
+     * processing logic on each.
      */
     @Override
+    @SuppressWarnings("checkstyle:magicnumber")
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        for (Object item; (item = inbox.peek()) != null; ) {
-            if (!tryProcess(ordinal, item)) {
+        switch (ordinal) {
+            case 0:
+                process0(inbox);
                 return;
-            }
-            inbox.remove();
+            case 1:
+                process1(inbox);
+                return;
+            case 2:
+                process2(inbox);
+                return;
+            case 3:
+                process3(inbox);
+                return;
+            case 4:
+                process4(inbox);
+                return;
+            default:
+                processAny(ordinal, inbox);
         }
     }
 
     /**
-     * Tries to process the supplied input item. May choose to process
-     * only partially and return {@code false}, in which case it will be
-     * called again later with the same {@code (ordinal, item)} combination.
+     * Tries to process the supplied input item, which was received over
+     * the supplied ordinal. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the
+     * same {@code (ordinal, item)} combination.
+     * <p>
+     * The default implementation throws an {@code UnsupportedOperationException}.
+     * <p>
+     * <strong>NOTE:</strong> unless the processor doesn't differentiate
+     * between its inbound edges, the first choice should be leaving this method
+     * alone and instead overriding the specific {@code tryProcessN()} methods
+     * for each ordinal the processor expects.
      *
-     * @param ordinal ordinal of the input which the item originates from
+     * @param ordinal ordinal of the edge that delivered the item
      * @param item    item to be processed
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
@@ -99,10 +131,89 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Returns the logger associated with this processor instance.
+     * Tries to process the supplied input item, which was received from the
+     * edge with ordinal 0. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * item.
+     * <p>
+     * The default implementation delegates to
+     * {@link #tryProcess(int, Object) tryProcess(0, item)}.
+     *
+     * @param item    item to be processed
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
      */
-    protected final ILogger getLogger() {
-        return logger;
+    protected boolean tryProcess0(Object item) {
+        return tryProcess(0, item);
+    }
+
+    /**
+     * Tries to process the supplied input item, which was received from the
+     * edge with ordinal 1. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * item.
+     * <p>
+     * The default implementation delegates to
+     * {@link #tryProcess(int, Object) tryProcess(1, item)}.
+     *
+     * @param item    item to be processed
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
+     */
+    protected boolean tryProcess1(Object item) {
+        return tryProcess(1, item);
+    }
+
+    /**
+     * Tries to process the supplied input item, which was received from the
+     * edge with ordinal 2. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * item.
+     * <p>
+     * The default implementation delegates to
+     * {@link #tryProcess(int, Object) tryProcess(2, item)}.
+     *
+     * @param item    item to be processed
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
+     */
+    protected boolean tryProcess2(Object item) {
+        return tryProcess(2, item);
+    }
+
+    /**
+     * Tries to process the supplied input item, which was received from the
+     * edge with ordinal 3. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * item.
+     * <p>
+     * The default implementation delegates to
+     * {@link #tryProcess(int, Object) tryProcess(3, item)}.
+     *
+     * @param item    item to be processed
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
+     */
+    protected boolean tryProcess3(Object item) {
+        return tryProcess(3, item);
+    }
+
+    /**
+     * Tries to process the supplied input item, which was received from the
+     * edge with ordinal 4. May choose to process only partially and return
+     * {@code false}, in which case it will be called again later with the same
+     * item.
+     * <p>
+     * The default implementation delegates to
+     * {@link #tryProcess(int, Object) tryProcess(4, item)}.
+     *
+     * @param item    item to be processed
+     * @return {@code true} if this item has now been processed,
+     *         {@code false} otherwise.
+     */
+    @SuppressWarnings("checkstyle:magicnumber")
+    protected boolean tryProcess4(Object item) {
+        return tryProcess(4, item);
     }
 
     /**
@@ -205,6 +316,60 @@ public abstract class AbstractProcessor implements Processor {
 
         public boolean tryProcess(@Nonnull T item) {
             return tryProcess(item, -1);
+        }
+    }
+
+    private void process0(@Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess0(item)) {
+                return;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void process1(@Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess1(item)) {
+                return;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void process2(@Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess2(item)) {
+                return;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void process3(@Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess3(item)) {
+                return;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void process4(@Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess4(item)) {
+                return;
+            }
+            inbox.remove();
+        }
+    }
+
+    private void processAny(int ordinal, @Nonnull Inbox inbox) {
+        for (Object item; (item = inbox.peek()) != null; ) {
+            if (!tryProcess(ordinal, item)) {
+                return;
+            }
+            inbox.remove();
         }
     }
 }
