@@ -594,19 +594,6 @@ public class ClientExceptionFactory {
                 return new StaleTaskException(message);
             }
         });
-        register(ClientProtocolErrorCodes.CANCELLED_TASK, CancellationException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CancellationException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.REJECTED_TASK, RejectedExecutionException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new RejectedExecutionException(message);
-            }
-        });
-
 
     }
 
@@ -652,7 +639,21 @@ public class ClientExceptionFactory {
         return throwable;
     }
 
-    private void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {
+    public void register(int errorCode, Class clazz, ExceptionFactory exceptionFactory) {
+        Integer currentCode = classToInt.get(clazz);
+
+        if (currentCode != null) {
+            throw new HazelcastException("Class " + clazz.getName() + " already added with code: " + currentCode);
+        }
+
+        if (intToFactory.containsKey(errorCode)) {
+            throw new HazelcastException("Code " + errorCode + " already used");
+        }
+
+        if (!clazz.equals(exceptionFactory.createException("", null).getClass())) {
+            throw new HazelcastException("Exception factory did not produce an instance of expected class");
+        }
+
         classToInt.put(clazz, errorCode);
         intToFactory.put(errorCode, exceptionFactory);
     }
@@ -666,7 +667,7 @@ public class ClientExceptionFactory {
     }
 
 
-    interface ExceptionFactory {
+    public interface ExceptionFactory {
         Throwable createException(String message, Throwable cause);
 
     }

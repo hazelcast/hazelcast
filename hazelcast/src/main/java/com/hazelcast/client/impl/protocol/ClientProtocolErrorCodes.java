@@ -105,8 +105,15 @@ public final class ClientProtocolErrorCodes {
     public static final int STALE_TASK_ID = 80;
     public static final int DUPLICATE_TASK = 81;
     public static final int STALE_TASK = 82;
-    public static final int CANCELLED_TASK = 83;
-    public static final int REJECTED_TASK = 84;
+
+    // These exception codes are reserved to by used by hazelcast-jet project
+    public static final int JET_EXCEPTIONS_RANGE_START = 500;
+    public static final int JET_EXCEPTIONS_RANGE_END = 600;
+
+    /**
+     * These codes onwards are reserved to be used by the end-user
+     */
+    public static final int USER_EXCEPTIONS_RANGE_START = 1000;
 
     private ClientProtocolErrorCodes() {
     }

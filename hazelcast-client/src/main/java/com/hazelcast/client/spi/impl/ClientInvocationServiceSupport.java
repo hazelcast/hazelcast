@@ -16,12 +16,10 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -71,7 +69,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private ConcurrentMap<Long, ClientInvocation> callIdMap = new ConcurrentHashMap<Long, ClientInvocation>();
 
     private ResponseThread responseThread;
-    private ClientExceptionFactory clientExceptionFactory;
 
     private volatile boolean isShutdown;
 
@@ -90,17 +87,11 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         connectionManager = client.getConnectionManager();
         clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         partitionService = client.getClientPartitionService();
-        clientExceptionFactory = initClientExceptionFactory();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
         ClientExecutionService executionService = client.getClientExecutionService();
         executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
-    }
-
-    private ClientExceptionFactory initClientExceptionFactory() {
-        boolean jcacheAvailable = JCacheDetector.isJCacheAvailable(client.getClientConfig().getClassLoader());
-        return new ClientExceptionFactory(jcacheAvailable);
     }
 
     @Override
@@ -343,7 +334,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             }
             callIdSequence.complete();
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
-                Throwable exception = clientExceptionFactory.createException(clientMessage);
+                Throwable exception = client.getClientExceptionFactory().createException(clientMessage);
                 future.notifyException(exception);
             } else {
                 future.notify(clientMessage);
