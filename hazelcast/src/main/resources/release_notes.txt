@@ -40,6 +40,7 @@ This section lists the enhancements performed for Hazelcast 3.8 release.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
+- Tests are needed to prove that removeAll does not deserialize portables. [9474]
 - Client support for distributed scheduled executor service. [9385]
 - When a member without JCache service joins a cluster where JCache service is enabled but not used, the member should not fail. [9301]
 - It would be nice to have names assigned to all threads created by Hazelcast (and not the default ones, e.g., pool-2-thread-1, pool-2-thread-2). [9210]
@@ -66,6 +67,7 @@ The following are the issues solved for 3.8 release.
 
 - Replicated Map configured with `async-fillup` as `false` prevents further members from joining the cluster. Members are stuck in an endless loop. [9592]
 - When an exception is thrown from an `InitializingObject`'s initialize method, it is logged in WARNING level but then swallowed and the proxy object is added to the `ProxyRegistry`. Instead, the exception should result in removing the object from the `ProxyRegistry`, as it is already done for exceptions thrown from `service.createDistributedObject`. [9578]
+- There is a memory leak in `MetaDataGenerator` when (1) near cache invalidations are enabled, (2) map/cache is created and destroyed, and (3) the map name is stays referenced from `MetaDataGenerator`. [9495]
 - JCache client needs access to CacheLoader implementation to work. [9453]
 - The matching wildcard is strict, but no declaration can be found for element hz:hazelcast. [9406]
 - "Connection Reset" warning shows up in the class `CloudyUtility`. [9404]
@@ -90,6 +92,7 @@ The following are the issues solved for 3.8 release.
 - Spring XML configuration: The smart routing attribute defaults to false while the documentation says it defaults to true. [8746]
 - Distributed objects present in the cluster do not show the same values. [8743]
 - In Hazelcast 3.6.3, the error Current thread is not owner of the lock shows up when using Hazelcast client to perform the actions. [8730]
+- There is an unchecked `CancelledKeyException` when client disconnects from the cluster. [8681]
 - Bulk get operation with 100 keys fails. [8535]
 - An `IllegalThreadStateException` may be thrown sometimes on a member of a cluster with two or more members when a Hazelcast client creates a new map with configured indexes. This exception is not thrown when indexes are created programmatically. [8492]
 - Group and password attributes in Hibernate integration module should be validated. [7978]

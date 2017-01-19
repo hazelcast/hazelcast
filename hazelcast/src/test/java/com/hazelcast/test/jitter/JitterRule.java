@@ -1,5 +1,6 @@
 package com.hazelcast.test.jitter;
 
+import com.hazelcast.test.JenkinsDetector;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;

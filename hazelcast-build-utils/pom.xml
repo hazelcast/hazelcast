@@ -32,6 +32,8 @@
     <properties>
         <!-- needed for checkstyle/findbugs -->
         <main.basedir>${project.parent.basedir}</main.basedir>
+
+        <bndlib.version>1.50.0</bndlib.version>
     </properties>
 
     <build>
@@ -127,7 +129,7 @@
         <dependency>
             <groupId>biz.aQute</groupId>
             <artifactId>bndlib</artifactId>
-            <version>1.50.0</version>
+            <version>${bndlib.version}</version>
         </dependency>
     </dependencies>
 </project>

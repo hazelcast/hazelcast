@@ -10,6 +10,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.nio.UnsafeHelper.findUnsafeIfAllowed;
+import static com.hazelcast.nio.UnsafeHelper.isUnalignedAccessAllowed;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -17,8 +18,8 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class UnsafeHelperTest extends HazelcastTestSupport {
 
-    String unsafeMode;
-    String arch;
+    private String unsafeMode;
+    private String arch;
 
     @Before
     public void setUp() throws Exception {
@@ -43,7 +44,7 @@ public class UnsafeHelperTest extends HazelcastTestSupport {
 
     @Test
     public void testFindUnsafeIfAllowed() {
-        if (UnsafeHelper.isUnalignedAccessAllowed()) {
+        if (isUnalignedAccessAllowed()) {
             assertNotNull(findUnsafeIfAllowed());
         } else {
             assertNull(findUnsafeIfAllowed());

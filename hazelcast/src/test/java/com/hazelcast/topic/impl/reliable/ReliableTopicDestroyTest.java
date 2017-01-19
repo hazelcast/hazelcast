@@ -8,8 +8,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,17 +27,9 @@ public class ReliableTopicDestroyTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         HazelcastInstance hz = createHazelcastInstance();
         topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         ringbufferService = getNodeEngineImpl(hz).getService(RingbufferService.SERVICE_NAME);
-    }
-
-    @After
-    public void teardown() {
-        resetLogLevel();
     }
 
     @Test

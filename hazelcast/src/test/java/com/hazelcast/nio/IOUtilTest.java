@@ -670,9 +670,8 @@ public class IOUtilTest extends HazelcastTestSupport {
         try {
             is1 = new FileInputStream(f1);
             is2 = new FileInputStream(f2);
-            // Compare byte-by-byte since InputStream.read(byte[]) possibly doesn't
-            // return the requested number of bytes. This is why this method should
-            // be used for smallFiles
+            // compare byte-by-byte since InputStream.read(byte[]) possibly doesn't return the requested number of bytes
+            // this is why this method should be used for smallFiles
             int data;
             while ((data = is1.read()) != -1) {
                 if (data != is2.read()) {
@@ -695,5 +694,4 @@ public class IOUtilTest extends HazelcastTestSupport {
         }
         return true;
     }
-
 }

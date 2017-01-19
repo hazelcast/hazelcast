@@ -17,13 +17,9 @@
 package com.hazelcast.buildutils;
 
 import aQute.lib.osgi.Instruction;
-import edu.emory.mathcs.backport.java.util.Arrays;
-import edu.emory.mathcs.backport.java.util.Collections;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
-import org.codehaus.plexus.util.IOUtil;
-import org.codehaus.plexus.util.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,13 +35,17 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static org.codehaus.plexus.util.IOUtil.close;
+import static org.codehaus.plexus.util.StringUtils.join;
+
 /**
  * This transformer implementation is used to merge MANIFEST and OSGi
  * bundle metadata in conjunction with the Maven Shade plugin when
- * integrating multiple dependencies into one output JAR
+ * integrating multiple dependencies into one output JAR.
  */
-public class HazelcastManifestTransformer
-        extends ManifestResourceTransformer {
+public class HazelcastManifestTransformer extends ManifestResourceTransformer {
 
     private static final String VERSION_PREFIX = "version=";
     private static final String RESOLUTION_PREFIX = "resolution:=";
@@ -57,6 +57,16 @@ public class HazelcastManifestTransformer
     private static final String IMPORT_PACKAGE = "Import-Package";
     private static final String EXPORT_PACKAGE = "Export-Package";
 
+    // configuration
+    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
+    String mainClass;
+
+    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
+    Map<String, Attributes> manifestEntries;
+
+    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "Filled by Maven")
+    Map<String, String> overrideInstructions;
+
     private final Map<String, PackageDefinition> importedPackages = new HashMap<String, PackageDefinition>();
     private final Map<String, PackageDefinition> exportedPackages = new HashMap<String, PackageDefinition>();
     private final List<InstructionDefinition> importOverrideInstructions = new ArrayList<InstructionDefinition>();
@@ -64,28 +74,13 @@ public class HazelcastManifestTransformer
 
     private Manifest shadedManifest;
 
-    // Configuration
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
-            justification = "Filled by Maven")
-    private Map<String, Attributes> manifestEntries;
-
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
-            justification = "Filled by Maven")
-    private String mainClass;
-
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
-            justification = "Filled by Maven")
-    private Map<String, String> overrideInstructions;
-
     @Override
     public boolean canTransformResource(String resource) {
         return JarFile.MANIFEST_NAME.equalsIgnoreCase(resource);
     }
 
     @Override
-    public void processResource(String resource, InputStream inputStream, List<Relocator> relocators)
-            throws IOException {
-
+    public void processResource(String resource, InputStream inputStream, List<Relocator> relocators) throws IOException {
         Attributes attributes;
         if (shadedManifest == null) {
             shadedManifest = new Manifest(inputStream);
@@ -119,24 +114,23 @@ public class HazelcastManifestTransformer
             }
         }
 
-        IOUtil.close(inputStream);
+        close(inputStream);
     }
 
     private PackageDefinition findStrongerDefinition(PackageDefinition packageDefinition,
                                                      PackageDefinition oldPackageDefinition) {
-
-        // If the override is a remove instruction skip all other tests
+        // if the override is a remove instruction skip all other tests
         if (packageDefinition.removeImport) {
             return packageDefinition;
         }
 
-        // If no old definition or new definition is required import we take the new one
+        // if no old definition or new definition is required import we take the new one
         if (oldPackageDefinition == null
                 || oldPackageDefinition.resolutionOptional && !packageDefinition.resolutionOptional) {
             return packageDefinition;
         }
 
-        // If old definition was required import but new isn't we take the old one
+        // if old definition was required import but new isn't we take the old one
         if (!oldPackageDefinition.resolutionOptional && packageDefinition.resolutionOptional) {
             return oldPackageDefinition;
         }
@@ -154,7 +148,6 @@ public class HazelcastManifestTransformer
 
     private PackageDefinition mergeExportUsesConstraint(PackageDefinition packageDefinition,
                                                         PackageDefinition oldPackageDefinition) {
-
         Set<String> uses = new LinkedHashSet<String>();
         if (oldPackageDefinition != null) {
             uses.addAll(oldPackageDefinition.uses);
@@ -173,9 +166,8 @@ public class HazelcastManifestTransformer
     }
 
     @Override
-    public void modifyOutputStream(JarOutputStream jarOutputStream)
-            throws IOException {
-
+    @SuppressWarnings("Since15")
+    public void modifyOutputStream(JarOutputStream jarOutputStream) throws IOException {
         if (shadedManifest == null) {
             shadedManifest = new Manifest();
         }
@@ -183,8 +175,8 @@ public class HazelcastManifestTransformer
         precompileOverrideInstructions();
 
         Attributes attributes = shadedManifest.getMainAttributes();
-        attributes.putValue(IMPORT_PACKAGE, StringUtils.join(shadeImports().iterator(), ","));
-        attributes.putValue(EXPORT_PACKAGE, StringUtils.join(shadeExports().iterator(), ","));
+        attributes.putValue(IMPORT_PACKAGE, join(shadeImports().iterator(), ","));
+        attributes.putValue(EXPORT_PACKAGE, join(shadeExports().iterator(), ","));
 
         attributes.putValue("Created-By", "HazelcastManifestTransformer through Shade Plugin");
 
@@ -203,8 +195,7 @@ public class HazelcastManifestTransformer
         jarOutputStream.flush();
     }
 
-    @SuppressFBWarnings(value = "NP_UNWRITTEN_FIELD",
-            justification = "Field is set by Maven")
+    @SuppressFBWarnings(value = "NP_UNWRITTEN_FIELD", justification = "Field is set by Maven")
     private void precompileOverrideInstructions() {
         String importPackageInstructions = overrideInstructions.get(IMPORT_PACKAGE);
         if (importPackageInstructions != null) {
@@ -262,7 +253,7 @@ public class HazelcastManifestTransformer
         for (InstructionDefinition instructionDefinition : importOverrideInstructions) {
             Instruction instruction = instructionDefinition.instruction;
             if (instruction.matches(packageDefinition.packageName)) {
-                // Is remove instruction?
+                // is remove instruction?
                 if (instruction.isNegated()) {
                     System.out.println("Instruction '" + instruction + "' -> package '" + packageDefinition.packageName + "'");
                     return null;
@@ -281,14 +272,15 @@ public class HazelcastManifestTransformer
         return packageDefinition;
     }
 
-    private static final class PackageDefinition {
+    static final class PackageDefinition {
+
+        private final boolean removeImport;
         private final String packageName;
         private final boolean resolutionOptional;
         private final String version;
         private final Set<String> uses;
-        private final boolean removeImport;
 
-        private PackageDefinition(String definition) {
+        PackageDefinition(String definition) {
             String[] tokens = definition.split(";");
             this.removeImport = tokens[0].startsWith("!");
             this.packageName = tokens[0];
@@ -297,7 +289,7 @@ public class HazelcastManifestTransformer
             this.uses = findUsesConstraint(tokens);
         }
 
-        private PackageDefinition(String packageName, boolean resolutionOptional, String version, Set<String> uses) {
+        PackageDefinition(String packageName, boolean resolutionOptional, String version, Set<String> uses) {
             this.removeImport = packageName.startsWith("!");
             this.packageName = packageName;
             this.resolutionOptional = resolutionOptional;
@@ -315,7 +307,6 @@ public class HazelcastManifestTransformer
             }
 
             PackageDefinition that = (PackageDefinition) o;
-
             if (packageName != null ? !packageName.equals(that.packageName) : that.packageName != null) {
                 return false;
             }
@@ -330,11 +321,14 @@ public class HazelcastManifestTransformer
 
         @Override
         public String toString() {
-            return "PackageDefinition{" + "packageName='" + packageName + '\'' + ", resolutionOptional=" + resolutionOptional
-                    + ", version='" + version + '\'' + ", uses=" + uses + '}';
+            return "PackageDefinition{"
+                    + "packageName='" + packageName + '\''
+                    + ", resolutionOptional=" + resolutionOptional
+                    + ", version='" + version + '\''
+                    + ", uses=" + uses + '}';
         }
 
-        public String buildDefinition(boolean addResolutionConstraint) {
+        String buildDefinition(boolean addResolutionConstraint) {
             StringBuilder sb = new StringBuilder(packageName);
             if (addResolutionConstraint && resolutionOptional) {
                 sb.append(";").append(RESOLUTION_PREFIX).append("optional");
@@ -343,7 +337,7 @@ public class HazelcastManifestTransformer
                 sb.append(";").append(VERSION_PREFIX).append(version);
             }
             if (uses != null && !uses.isEmpty()) {
-                sb.append(";").append(USES_PREFIX).append('"').append(StringUtils.join(uses.iterator(), ",")).append('"');
+                sb.append(";").append(USES_PREFIX).append('"').append(join(uses.iterator(), ",")).append('"');
             }
             return sb.toString();
         }
@@ -366,30 +360,34 @@ public class HazelcastManifestTransformer
             return false;
         }
 
+        @SuppressWarnings("unchecked")
         private Set<String> findUsesConstraint(String[] tokens) {
             for (String token : tokens) {
                 if (token.startsWith(USES_PREFIX)) {
                     String packages = token.substring(USES_OFFSET, token.length() - 1);
                     String[] sepPackages = packages.split(",");
-                    return new LinkedHashSet<String>(Arrays.asList(sepPackages));
+                    return new LinkedHashSet<String>(asList(sepPackages));
                 }
             }
-            return Collections.emptySet();
+            return emptySet();
         }
     }
 
-    private static final class InstructionDefinition {
+    static final class InstructionDefinition {
+
         private final PackageDefinition packageDefinition;
         private final Instruction instruction;
 
-        private InstructionDefinition(PackageDefinition packageDefinition, Instruction instruction) {
+        InstructionDefinition(PackageDefinition packageDefinition, Instruction instruction) {
             this.packageDefinition = packageDefinition;
             this.instruction = instruction;
         }
 
         @Override
         public String toString() {
-            return "InstructionDefinition{" + "packageDefinition=" + packageDefinition + ", instruction=" + instruction + '}';
+            return "InstructionDefinition{"
+                    + "packageDefinition=" + packageDefinition
+                    + ", instruction=" + instruction + '}';
         }
     }
 }

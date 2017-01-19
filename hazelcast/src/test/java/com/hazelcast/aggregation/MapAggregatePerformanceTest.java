@@ -135,7 +135,6 @@ public class MapAggregatePerformanceTest extends HazelcastTestSupport {
         config.addMapConfig(mapConfig);
 
         config.setProperty("hazelcast.query.predicate.parallel.evaluation", "true");
-        config.setProperty("hazelcast.logging.type", "log4j");
 
         HazelcastInstance instance = factory.newInstances(config)[0];
         return instance.getMap("aggr");

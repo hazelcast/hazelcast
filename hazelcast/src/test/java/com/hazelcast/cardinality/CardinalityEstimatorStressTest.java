@@ -37,16 +37,20 @@ public class CardinalityEstimatorStressTest extends HazelcastTestSupport {
         estimator = createHazelcastInstance().getCardinalityEstimator("StressTest_Estimator");
     }
 
-    @Test(timeout = 4 * 60000)
-    public void addBigRange_checkErrorMargin_completeWithinFourMins() {
+    @Test(timeout = 8 * 60000)
+    public void addBigRange_checkErrorMargin_completeWithinEightMins() {
         // Sparse encoding would have taken much longer to complete, thus
         // timeout helps to make sure the encoding engine used is the correct one.
-        long expected = 10000000;
+        long expected = 10 * 1000 * 1000;
 
         float tolerancePct = .3f;
         long acceptableDelta = (long) ((tolerancePct / 100) * expected);
 
+        int loggingFrequency = 100 * 1000;
         for (int i = 0; i < expected; i++) {
+            if (i % loggingFrequency == 0) {
+                System.out.println("At " + i);
+            }
             estimator.add(i);
         }
 

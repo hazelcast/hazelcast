@@ -24,8 +24,10 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class PacketTransportTest extends HazelcastTestSupport {
 
-    // check if the packet can deal with a buffer that is very small, but the data is very large.
-    // This means that repeated calls to packet.write/packet.read are needed.
+    /**
+     * Checks if the packet can deal with a buffer that is very small, but the data is very large, which
+     * needs repeated calls to {@link Packet#writeTo(ByteBuffer)} and {@link Packet#readFrom(ByteBuffer)}.
+     */
     @Test
     public void largeValue() {
         Packet originalPacket = new Packet(generateRandomString(100000).getBytes());
@@ -75,8 +77,9 @@ public class PacketTransportTest extends HazelcastTestSupport {
         }
     }
 
-    // This test verifies that writing a Packet to a ByteBuffer and then reading it from the ByteBuffer, gives the
-    // same Packet (content).
+    /**
+     * Verifies that writing a Packet to a ByteBuffer and then reading it from the ByteBuffer, gives the same Packet (content).
+     */
     @Test
     public void cloningOfPacket() {
         Packet originalPacket = new Packet("foobarbaz".getBytes());
@@ -94,7 +97,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
         assertPacketEquals(originalPacket, clonedPacket);
     }
 
-    private void assertPacketEquals(Packet originalPacket, Packet clonedPacket) {
+    private static void assertPacketEquals(Packet originalPacket, Packet clonedPacket) {
         assertEquals(originalPacket.getFlags(), clonedPacket.getFlags());
         assertArrayEquals(originalPacket.toByteArray(), clonedPacket.toByteArray());
     }

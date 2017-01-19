@@ -10,7 +10,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,20 +28,12 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
                 .setTimeToLiveSeconds(0));
         HazelcastInstance hz = createHazelcastInstance(config);
         topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
-    }
-
-    @After
-    public void tearDown() {
-        resetLogLevel();
     }
 
     @Test

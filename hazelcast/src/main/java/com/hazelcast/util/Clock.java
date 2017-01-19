@@ -18,6 +18,8 @@ package com.hazelcast.util;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+
 /**
  * Abstracts the system clock to simulate different clocks without changing the actual system time.
  *
@@ -28,7 +30,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
  *
  * <b>WARNING:</b> This class is a singleton.
  * Once the class has been initialized, the clock implementation or offset cannot be changed.
- * To use this class properly in unit or integration tests, please have a look at {@code ClockTest}.
+ * To use this class properly in unit or integration tests, please have a look at {@code ClockIntegrationTest}.
  */
 public final class Clock {
 
@@ -43,16 +45,16 @@ public final class Clock {
     }
 
     static {
-        CLOCK = initClock();
+        CLOCK = createClock();
     }
 
-    private static ClockImpl initClock() {
+    static ClockImpl createClock() {
         String clockImplClassName = System.getProperty(ClockProperties.HAZELCAST_CLOCK_IMPL);
         if (clockImplClassName != null) {
             try {
                 return ClassLoaderUtil.newInstance(null, clockImplClassName);
             } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
 
@@ -62,7 +64,7 @@ public final class Clock {
             try {
                 offset = Long.parseLong(clockOffset);
             } catch (NumberFormatException e) {
-                throw ExceptionUtil.rethrow(e);
+                throw rethrow(e);
             }
         }
         if (offset != 0L) {
@@ -83,7 +85,7 @@ public final class Clock {
     /**
      * Default clock implementation, which is used if no properties are defined. It will return the system time.
      */
-    private static final class SystemClock extends ClockImpl {
+    static final class SystemClock extends ClockImpl {
 
         @Override
         protected long currentTimeMillis() {
@@ -95,11 +97,11 @@ public final class Clock {
      * Clock implementation that returns the system time with a static offset, which is used if
      * {@link ClockProperties#HAZELCAST_CLOCK_OFFSET} is defined.
      */
-    private static final class SystemOffsetClock extends ClockImpl {
+    static final class SystemOffsetClock extends ClockImpl {
 
         private final long offset;
 
-        private SystemOffsetClock(final long offset) {
+        SystemOffsetClock(final long offset) {
             this.offset = offset;
         }
 

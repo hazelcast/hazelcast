@@ -38,7 +38,7 @@
 
     <properties>
         <main.basedir>${project.basedir}</main.basedir>
-        <client.protocol.version>1.4.0-8</client.protocol.version>
+        <client.protocol.version>1.4.0-9</client.protocol.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <jdk.version>1.6</jdk.version>
@@ -74,8 +74,10 @@
         <maven.failsafe.plugin.version>2.17</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.6</maven.cobertura.plugin.version>
 
-        <log4j.version>1.2.12</log4j.version>
-        <log4j2.version>2.0.1</log4j2.version>
+        <log4j.version>1.2.17</log4j.version>
+
+        <!--- This is the last log4j2 version working with Java 6 -->
+        <log4j2.version>2.3</log4j2.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
 
         <junit.version>4.12</junit.version>
@@ -943,6 +945,15 @@
             <name>Maven2 Snapshot Repository</name>
             <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </repository>
+        <repository>
+            <id>backup-repo</id>
+            <url>http://repo2.maven.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>release-repository</id>
+            <name>release repository</name>
+            <url>https://oss.sonatype.org/content/repositories/releases</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -997,9 +1008,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>${log4j.version}</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j2.version}</version>
             <scope>test</scope>
             <optional>true</optional>
         </dependency>

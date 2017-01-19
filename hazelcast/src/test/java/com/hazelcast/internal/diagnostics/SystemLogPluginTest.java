@@ -27,8 +27,6 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
-
         config = new Config();
         config.setProperty(LOG_PARTITIONS.getName(), "true");
 
@@ -97,7 +95,7 @@ public class SystemLogPluginTest extends AbstractDiagnosticsPluginTest {
         HazelcastInstance instance = hzFactory.newHazelcastInstance(config);
         warmUpPartitions(instance);
 
-        waitAllForSafeState();
+        waitAllForSafeState(hz, instance);
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -78,7 +78,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     public void testNoDeadLockDuringJoin() throws Exception {
         // create shared hazelcast config
         final Config config = new XmlConfigBuilder().build();
-        config.setProperty("hazelcast.logging.type", "log4j");
 
         // disable JMX to make sure lazy loading works asynchronously
         config.setProperty("hazelcast.jmx", "false");
@@ -162,7 +161,6 @@ public class MapStoreDataLoadingContinuesWhenNodeJoins extends HazelcastTestSupp
     public void testDataLoadedCorrectly() throws Exception {
         // create shared hazelcast config
         final Config config = new XmlConfigBuilder().build();
-        config.setProperty("hazelcast.logging.type", "log4j");
         // disable JMX to make sure lazy loading works asynchronously
         config.setProperty("hazelcast.jmx", "false");
 

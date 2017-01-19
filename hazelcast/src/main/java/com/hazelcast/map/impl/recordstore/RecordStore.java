@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
@@ -315,7 +314,7 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      *
      * @param keys keys to be loaded.
      */
-    void loadAllFromStore(List<Data> keys);
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
 
     void updateLoadStatus(boolean lastBatch, Throwable exception);
 
@@ -395,8 +394,8 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
     void init();
 
     /**
-     * Register a callback for when key loading is complete
+     * @return Returns true if key load has finished, false otherwise.
      **/
-    void onKeyLoad(ExecutionCallback<Boolean> callback);
+    boolean isKeyLoadFinished();
 
 }

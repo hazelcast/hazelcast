@@ -17,6 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -34,28 +35,27 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ServiceLoaderTest {
+public class ServiceLoaderTest extends HazelcastTestSupport {
 
     @Test
-    public void selectingSimpleSingleClassLoader()
-            throws Exception {
+    public void testConstructor() {
+        assertUtilityConstructor(ServiceLoader.class);
+    }
 
+    @Test
+    public void selectingSimpleSingleClassLoader() {
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(null);
         assertEquals(1, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleGivenClassLoader()
-            throws Exception {
-
+    public void selectingSimpleGivenClassLoader() {
         List<ClassLoader> classLoaders = ServiceLoader.selectClassLoaders(new URLClassLoader(new URL[0]));
         assertEquals(2, classLoaders.size());
     }
 
     @Test
-    public void selectingSimpleDifferentThreadContextClassLoader()
-            throws Exception {
-
+    public void selectingSimpleDifferentThreadContextClassLoader() {
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(new URLClassLoader(new URL[0]));
@@ -65,9 +65,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingTcclAndGivenClassLoader()
-            throws Exception {
-
+    public void selectingTcclAndGivenClassLoader() {
         Thread currentThread = Thread.currentThread();
         ClassLoader tccl = currentThread.getContextClassLoader();
         currentThread.setContextClassLoader(new URLClassLoader(new URL[0]));
@@ -77,9 +75,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void selectingSameTcclAndGivenClassLoader()
-            throws Exception {
-
+    public void selectingSameTcclAndGivenClassLoader() {
         ClassLoader same = new URLClassLoader(new URL[0]);
 
         Thread currentThread = Thread.currentThread();
@@ -91,9 +87,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSingleClassLoader()
-            throws Exception {
-
+    public void loadServicesSingleClassLoader() throws Exception {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
@@ -107,9 +101,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleGivenClassLoader()
-            throws Exception {
-
+    public void loadServicesSimpleGivenClassLoader() throws Exception {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
@@ -125,9 +117,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSimpleDifferentThreadContextClassLoader()
-            throws Exception {
-
+    public void loadServicesSimpleDifferentThreadContextClassLoader() throws Exception {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
@@ -146,9 +136,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesTcclAndGivenClassLoader()
-            throws Exception {
-
+    public void loadServicesTcclAndGivenClassLoader() throws Exception {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
@@ -169,9 +157,7 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesSameTcclAndGivenClassLoader()
-            throws Exception {
-
+    public void loadServicesSameTcclAndGivenClassLoader() throws Exception {
         Class<ServiceLoaderTestInterface> type = ServiceLoaderTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderTestInterface";
 
@@ -192,13 +178,12 @@ public class ServiceLoaderTest {
     }
 
     @Test
-    public void loadServicesWithSpaceInURL()
-            throws Exception {
-
+    public void loadServicesWithSpaceInURL() throws Exception {
         Class<ServiceLoaderSpacesTestInterface> type = ServiceLoaderSpacesTestInterface.class;
         String factoryId = "com.hazelcast.ServiceLoaderSpacesTestInterface";
 
-        ClassLoader given = new URLClassLoader(new URL[]{new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/")});
+        URL url = new URL(ClassLoader.getSystemResource("test with spaces").toExternalForm().replace("%20", " ") + "/");
+        ClassLoader given = new URLClassLoader(new URL[]{url});
 
         Set<ServiceLoaderSpacesTestInterface> implementations = new HashSet<ServiceLoaderSpacesTestInterface>();
         Iterator<ServiceLoaderSpacesTestInterface> iterator = ServiceLoader.iterator(type, factoryId, given);
@@ -212,14 +197,12 @@ public class ServiceLoaderTest {
     public interface ServiceLoaderTestInterface {
     }
 
-    public static class ServiceLoaderTestInterfaceImpl
-            implements ServiceLoaderTestInterface {
+    public static class ServiceLoaderTestInterfaceImpl implements ServiceLoaderTestInterface {
     }
 
     public interface ServiceLoaderSpacesTestInterface {
     }
 
-    public static class ServiceLoaderSpacesTestInterfaceImpl
-            implements ServiceLoaderSpacesTestInterface {
+    public static class ServiceLoaderSpacesTestInterfaceImpl implements ServiceLoaderSpacesTestInterface {
     }
 }

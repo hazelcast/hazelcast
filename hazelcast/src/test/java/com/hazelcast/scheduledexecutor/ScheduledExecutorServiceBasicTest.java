@@ -19,7 +19,6 @@ package com.hazelcast.scheduledexecutor;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.IMap;
@@ -32,17 +31,16 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.partition.IPartitionLostEvent;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.RootCauseMatcher;
 import com.hazelcast.util.executor.ManagedExecutorService;
-import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +51,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
-import static com.hazelcast.util.ExceptionUtil.peel;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -62,16 +60,10 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
+public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceTestSupport {
 
-    protected TestHazelcastInstanceFactory factory;
-
-    @After
-    public void tearDown() {
-        if (factory != null) {
-            factory.shutdownAll();
-        }
-    }
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Test
     public void config()
@@ -88,7 +80,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstance[] instances = createClusterWithCount(1, config);
         IScheduledFuture future = instances[0].getScheduledExecutorService(schedulerName)
-                                              .schedule(new PlainCallableTask(), 0, TimeUnit.SECONDS);
+                                              .schedule(new PlainCallableTask(), 0, SECONDS);
 
         NodeEngineImpl nodeEngine = getNodeEngineImpl(instances[0]);
         ManagedExecutorService mes = (ManagedExecutorService) nodeEngine.getExecutionService()
@@ -191,7 +183,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(schedulerName);
         IScheduledFuture<Double> future = executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         future.get();
 
@@ -215,10 +207,10 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = instances[0].getScheduledExecutorService(schedulerName);
         IScheduledFuture future = executorService.schedule(
-                named(taskName, new ICountdownLatchRunnableTask("latch", instances[0])), delay, TimeUnit.SECONDS);
+                named(taskName, new ICountdownLatchRunnableTask("latch")), delay, SECONDS);
 
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
 
         ScheduledTaskHandler handler = future.getHandler();
         assertEquals(schedulerName, handler.getSchedulerName());
@@ -234,16 +226,16 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         Object key = generateKeyOwnedBy(instances[1]);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                 new PlainCallableTask(), key, (int) delay, TimeUnit.SECONDS);
+                 new PlainCallableTask(), key, (int) delay, SECONDS);
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
 
         assertEquals(1, stats.getTotalRuns());
-        assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));
+        assertNotNull(stats.getLastIdleTime(SECONDS));
+        assertNotNull(stats.getLastRunDuration(SECONDS));
+        assertNotNull(stats.getTotalIdleTime(SECONDS));
+        assertNotNull(stats.getTotalRunTime(SECONDS));
         assertNotNull(stats.getTotalRuns());
     }
 
@@ -255,66 +247,18 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.scheduleOnMember(
-                new PlainCallableTask(), instances[0].getCluster().getLocalMember(), (int) delay, TimeUnit.SECONDS);
+                new PlainCallableTask(), instances[0].getCluster().getLocalMember(), (int) delay, SECONDS);
 
         future.get();
         ScheduledTaskStatistics stats = future.getStats();
 
         assertEquals(1, stats.getTotalRuns());
-        assertNotNull(stats.getLastIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getLastRunDuration(TimeUnit.SECONDS));
-        assertNotNull(stats.getTotalIdleTime(TimeUnit.SECONDS));
-        assertNotNull(stats.getTotalRunTime(TimeUnit.SECONDS));
+        assertNotNull(stats.getLastIdleTime(SECONDS));
+        assertNotNull(stats.getLastRunDuration(SECONDS));
+        assertNotNull(stats.getTotalIdleTime(SECONDS));
+        assertNotNull(stats.getTotalRunTime(SECONDS));
         assertNotNull(stats.getTotalRuns());
     }
-
-    @Test
-    public void stats_manyRepetitionsTask()
-            throws ExecutionException, InterruptedException {
-        HazelcastInstance[] instances = createClusterWithCount(4);
-
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
-        latch.trySetCount(6);
-
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        IScheduledFuture future = executorService.scheduleAtFixedRate(
-                new ICountdownLatchRunnableTask("latch", instances[0]), 0, 10, TimeUnit.SECONDS);
-
-
-        latch.await(120, TimeUnit.SECONDS);
-        sleepSeconds(4); // Wait for run-cycle to finish before cancelling, in order for stats to get updated.
-        future.cancel(false);
-
-        ScheduledTaskStatistics stats = future.getStats();
-        assertEquals(6, stats.getTotalRuns());
-    }
-
-    @Test
-    public void stats_longRunningTask_durable()
-            throws ExecutionException, InterruptedException {
-        HazelcastInstance[] instances = createClusterWithCount(4);
-
-        String key = generateKeyOwnedBy(instances[1]);
-
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
-        latch.trySetCount(6);
-
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ICountdownLatchRunnableTask("latch", instances[0]), key, 0, 10, TimeUnit.SECONDS);
-
-        Thread.sleep(12000);
-
-        instances[1].getLifecycleService().shutdown();
-
-        latch.await(70, TimeUnit.SECONDS);
-        sleepSeconds(4); // Wait for run-cycle to finish before cancelling, in order for stats to get updated.
-        future.cancel(false);
-
-        ScheduledTaskStatistics stats = future.getStats();
-        assertEquals(6, stats.getTotalRuns());
-    }
-
 
     @Test
     public void scheduleAndGet_withCallable()
@@ -326,7 +270,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new PlainCallableTask(), delay, TimeUnit.SECONDS);
+                new PlainCallableTask(), delay, SECONDS);
 
         double result = future.get();
 
@@ -347,7 +291,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                new PlainCallableTask(), key, delay, TimeUnit.SECONDS);
+                new PlainCallableTask(), key, delay, SECONDS);
 
         double resultFromOriginalTask = future.get();
 
@@ -357,28 +301,6 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         assertEquals(expectedResult, resultFromOriginalTask, 0);
         assertEquals(expectedResult, resultFromMigratedTask, 0);
-        assertEquals(true, future.isDone());
-        assertEquals(false, future.isCancelled());
-    }
-
-    @Test
-    public void schedule_withLongSleepingCallable_blockingOnGet()
-            throws ExecutionException, InterruptedException {
-
-        int delay = 0;
-        double expectedResult = 169.4;
-
-        HazelcastInstance[] instances = createClusterWithCount(2);
-        ICountDownLatch runsCountLatch = instances[0].getCountDownLatch("runsCountLatchName");
-        runsCountLatch.trySetCount(1);
-
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        IScheduledFuture<Double> future = executorService.schedule(
-                new ICountdownLatchCallableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
-
-        double result = future.get();
-
-        assertEquals(expectedResult, result, 0);
         assertEquals(true, future.isDone());
         assertEquals(false, future.isCancelled());
     }
@@ -404,7 +326,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         executorService.scheduleOnKeyOwner(
                 new ICountdownLatchMapIncrementCallableTask("map", "runEntryCounterName",
-                        "runsCountLatchName", instances[0]), key, delay, TimeUnit.SECONDS);
+                        "runsCountLatchName"), key, delay, SECONDS);
 
         Thread.sleep(2000);
         instances[0].getLifecycleService().shutdown();
@@ -431,12 +353,12 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new ICountdownLatchCallableTask("runsCountLatchName", 15000, instances[0]), delay, TimeUnit.SECONDS);
+                new ICountdownLatchCallableTask("runsCountLatchName", 15000), delay, SECONDS);
 
         Thread.sleep(4000);
         future.cancel(false);
 
-        runsCountLatch.await(15, TimeUnit.SECONDS);
+        runsCountLatch.await(15, SECONDS);
 
         assertEquals(true, future.isDone());
         assertEquals(true, future.isCancelled());
@@ -452,7 +374,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new PlainCallableTask(), delay, TimeUnit.SECONDS);
+                new PlainCallableTask(), delay, SECONDS);
 
         double result = future.get();
 
@@ -470,10 +392,10 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
     }
 
     @Test(expected = CancellationException.class)
@@ -516,7 +438,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleAtFixedRate(
-                new ICountdownLatchRunnableTask("latch", instances[0]), 1, 1, TimeUnit.SECONDS);
+                new ICountdownLatchRunnableTask("latch"), 1, 1, SECONDS);
 
 
         Thread.sleep(5000);
@@ -542,10 +464,10 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ICountdownLatchRunnableTask("latch", instances[0]), key,0, 1, TimeUnit.SECONDS);
+                new ICountdownLatchRunnableTask("latch"), key,0, 1, SECONDS);
 
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
 
         assertFalse(future.isCancelled());
         assertFalse(future.isDone());
@@ -585,7 +507,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> first = executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         first.dispose();
         first.get();
@@ -598,10 +520,10 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        executorService.schedule(new PlainCallableTask(), delay, TimeUnit.SECONDS);
+        executorService.schedule(new PlainCallableTask(), delay, SECONDS);
         executorService.shutdown();
 
-        executorService.schedule(new PlainCallableTask(), delay, TimeUnit.SECONDS);
+        executorService.schedule(new PlainCallableTask(), delay, SECONDS);
     }
     @Test()
     public void schedule_whenPartitionLost()
@@ -610,7 +532,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, TimeUnit.SECONDS);
+        final IScheduledFuture future = executorService.schedule(new PlainCallableTask(), delay, SECONDS);
         ScheduledTaskHandler handler = future.getHandler();
 
         int partitionOwner = handler.getPartitionId();
@@ -631,7 +553,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(expected = StaleTaskException.class)
+    @Test
     public void schedule_getHandlerDisposeThenRecreateFutureAndGet()
             throws ExecutionException, InterruptedException {
         int delay = 1;
@@ -640,11 +562,13 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> first = executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         ScheduledTaskHandler handler = first.getHandler();
         first.dispose();
 
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(StaleTaskException.class));
         executorService.getScheduledFuture(handler).get();
     }
 
@@ -657,7 +581,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         Callable<Double> task = new PlainPartitionAwareCallableTask();
         IScheduledFuture<Double> first = executorService.schedule(
-                task, delay, TimeUnit.SECONDS);
+                task, delay, SECONDS);
 
 
         ScheduledTaskHandler handler = first.getHandler();
@@ -679,45 +603,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         latch.trySetCount(1);
 
         executorService.schedule(
-                new StatefullRunnableTask("latch", "runC", "loadC", instances[1]), 2, TimeUnit.SECONDS);
+                new StatefulRunnableTask("latch", "runC", "loadC"), 2, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
-    }
-
-    @Test
-    public void schedule_withStatefulRunnable_durable()
-            throws ExecutionException, InterruptedException {
-
-        HazelcastInstance[] instances = createClusterWithCount(4);
-        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
-        int waitStateSyncPeriodToAvoidPassiveState = 2000;
-
-        String key = generateKeyOwnedBy(instances[1]);
-        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
-        IAtomicLong runC = instances[0].getAtomicLong("runC");
-        IAtomicLong loadC = instances[0].getAtomicLong("loadC");
-
-        latch.trySetCount(1);
-
-        IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new StatefullRunnableTask("latch", "runC", "loadC", instances[1]),
-                key, 10, 10, TimeUnit.SECONDS);
-
-        // Wait for task to get scheduled and start
-        latch.await(11, TimeUnit.SECONDS);
-
-        Thread.sleep(waitStateSyncPeriodToAvoidPassiveState);
-
-        instances[1].getLifecycleService().shutdown();
-
-        // Reset latch - task should be running on a replica now
-        latch.trySetCount(7);
-        latch.await(70, TimeUnit.SECONDS);
-        future.cancel(false);
-
-        assertEquals(getPartitionService(instances[0]).getPartitionId(key), future.getHandler().getPartitionId());
-        assertEquals(8, runC.get(), 1);
-        assertEquals(1, loadC.get());
+        latch.await(10, SECONDS);
     }
 
     @Test
@@ -730,10 +618,10 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         ICountDownLatch latch = instances[0].getCountDownLatch("latch");
         latch.trySetCount(3);
 
-        IScheduledFuture future = s.scheduleAtFixedRate(new ICountdownLatchRunnableTask("latch", instances[0]),
-                0, 1, TimeUnit.SECONDS);
+        IScheduledFuture future = s.scheduleAtFixedRate(new ICountdownLatchRunnableTask("latch"),
+                0, 1, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
         future.cancel(false);
 
         assertEquals(0, latch.getCount());
@@ -749,7 +637,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         MemberImpl member = getNodeEngineImpl(instances[0]).getLocalMember();
         IScheduledFuture<Double> future = executorService.scheduleOnMember(new PlainCallableTask(),
-                member, delay, TimeUnit.SECONDS);
+                member, delay, SECONDS);
 
         assertEquals(true, future.getHandler().isAssignedToMember());
         assertEquals(25.0, future.get(), 0);
@@ -766,10 +654,9 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         latch.trySetCount(4);
 
         Map<Member, IScheduledFuture<?>> futures = s
-                .scheduleOnAllMembersAtFixedRate(new ICountdownLatchRunnableTask("latch", instances[0]),
-                        0, 3, TimeUnit.SECONDS);
+                .scheduleOnAllMembersAtFixedRate(new ICountdownLatchRunnableTask("latch"), 0, 3, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
 
         assertEquals(0, latch.getCount());
         assertEquals(4, futures.size());
@@ -787,8 +674,8 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         ICountDownLatch latch = instances[0].getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask("latch", instances[0]),
-                key, 2, TimeUnit.SECONDS).get();
+        s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask("latch"),
+                key, 2, SECONDS).get();
         assertEquals(0, latch.getCount());
 
     }
@@ -805,8 +692,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         ICountDownLatch latch = instances[0].getCountDownLatch("latch");
         latch.trySetCount(1);
 
-        IScheduledFuture future = s.scheduleOnKeyOwner(
-                new ICountdownLatchRunnableTask("latch", instances[0]), key, 2, TimeUnit.SECONDS);
+        IScheduledFuture future = s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask("latch"), key, 2, SECONDS);
 
         instances[1].getLifecycleService().shutdown();
         future.get();
@@ -824,7 +710,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         Callable<Double> task = new PlainPartitionAwareCallableTask();
         IScheduledFuture<Double> first = executorService.scheduleOnKeyOwner(
-                task, key, delay, TimeUnit.SECONDS);
+                task, key, delay, SECONDS);
 
 
         ScheduledTaskHandler handler = first.getHandler();
@@ -847,8 +733,8 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         latch.trySetCount(5);
 
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ICountdownLatchRunnableTask("latch", instances[0]), key,
-                0, 1, TimeUnit.SECONDS);
+                new ICountdownLatchRunnableTask("latch"), key,
+                0, 1, SECONDS);
 
         ScheduledTaskHandler handler = future.getHandler();
         int expectedPartition = instances[0].getPartitionService()
@@ -857,7 +743,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         assertEquals(expectedPartition, handler.getPartitionId());
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
         assertEquals(0, latch.getCount());
     }
 
@@ -869,7 +755,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createClusterWithCount(2);
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> first = executorService.schedule(
-                named(taskName, new PlainCallableTask()), delay, TimeUnit.SECONDS);
+                named(taskName, new PlainCallableTask()), delay, SECONDS);
 
         ScheduledTaskHandler handler = first.getHandler();
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
@@ -883,7 +769,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
 
         HazelcastInstance[] instances = createClusterWithCount(3);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
-        s.scheduleOnAllMembers(new PlainCallableTask(), 0, TimeUnit.SECONDS);
+        s.scheduleOnAllMembers(new PlainCallableTask(), 0, SECONDS);
 
         Set<Member> members = instances[0].getCluster().getMembers();
         Map<Member, List<IScheduledFuture<Double>>> allScheduled = s.getAllScheduledFutures();
@@ -897,8 +783,7 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getErroneous()
-            throws InterruptedException {
+    public void getErroneous() throws InterruptedException, ExecutionException {
         int delay = 2;
         String taskName = "Test";
         String completionLatchName = "completionLatch";
@@ -911,22 +796,16 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         latch.trySetCount(1);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                named(taskName, new ErroneousCallableTask(completionLatchName, instances[1])), key, delay, TimeUnit.SECONDS);
+                named(taskName, new ErroneousCallableTask(completionLatchName)), key, delay, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
-        try {
-            Object result = future.get();
-            fail("Unexpected result " + result);
-        } catch (ExecutionException ex) {
-            assertEquals("Erroneous task", peel(ex).getMessage());
-        } catch (Exception ex) {
-            fail("Wrong exception type " + ex);
-        }
+        latch.await(10, SECONDS);
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
+        Object result = future.get();
     }
 
     @Test
-    public void getErroneous_durable()
-            throws InterruptedException {
+    public void getErroneous_durable() throws InterruptedException, ExecutionException {
         int delay = 2;
         String taskName = "Test";
         String completionLatchName = "completionLatch";
@@ -939,228 +818,14 @@ public class ScheduledExecutorServiceTest extends HazelcastTestSupport {
         latch.trySetCount(1);
 
         IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
-                named(taskName, new ErroneousCallableTask(completionLatchName, instances[1])), key, delay, TimeUnit.SECONDS);
+                named(taskName, new ErroneousCallableTask(completionLatchName)), key, delay, SECONDS);
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(10, SECONDS);
         instances[1].getLifecycleService().shutdown();
         Thread.sleep(2000);
 
-        try {
-            Object result = future.get();
-            fail("Unexpected result " + result);
-        } catch (ExecutionException ex) {
-            assertEquals("Erroneous task", peel(ex).getMessage());
-            assertTrue(future.isDone());
-        } catch (Exception ex) {
-            fail("Wrong exception type " + ex);
-        }
-
+        expected.expect(ExecutionException.class);
+        expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
+        Object result = future.get();
     }
-
-    public IScheduledExecutorService getScheduledExecutor(HazelcastInstance[] instances, String name) {
-        return instances[0].getScheduledExecutorService(name);
-    }
-
-    public HazelcastInstance[] createClusterWithCount(int count) {
-        return createClusterWithCount(count, new Config());
-    }
-
-    public HazelcastInstance[] createClusterWithCount(int count, Config config) {
-        factory = createHazelcastInstanceFactory();
-        HazelcastInstance[] instances = factory.newInstances(config, count);
-        waitAllForSafeState();
-        return instances;
-    }
-
-    static class StatefullRunnableTask
-            implements Runnable, Serializable,
-                       HazelcastInstanceAware, StatefulTask<String, Integer> {
-
-        final String latchName;
-
-        final String runCounterName;
-
-        final String loadCounterName;
-
-        int status = 0;
-
-        transient HazelcastInstance instance;
-
-        StatefullRunnableTask(String runsCountLatchName, String runCounterName, String loadCounterName, HazelcastInstance instance) {
-            this.latchName = runsCountLatchName;
-            this.runCounterName = runCounterName;
-            this.loadCounterName = loadCounterName;
-            this.instance = instance;
-        }
-
-        @Override
-        public void run() {
-            status++;
-            instance.getAtomicLong(runCounterName).set(status);
-            instance.getCountDownLatch(latchName).countDown();
-        }
-
-        @Override
-        public void load(Map<String, Integer> snapshot) {
-            status = snapshot.get("status");
-            instance.getAtomicLong(loadCounterName).incrementAndGet();
-        }
-
-        @Override
-        public void save(Map<String, Integer> snapshot) {
-            snapshot.put("status", status);
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
-    static class ICountdownLatchCallableTask
-            implements Callable<Double>, Serializable, HazelcastInstanceAware {
-
-        final String runLatchName;
-
-        final int sleepPeriod;
-
-        transient HazelcastInstance instance;
-
-        ICountdownLatchCallableTask(String runLatchName,
-                                    int sleepPeriod, HazelcastInstance instance) {
-            this.runLatchName = runLatchName;
-            this.instance = instance;
-            this.sleepPeriod = sleepPeriod;
-        }
-
-        @Override
-        public Double call() {
-            try {
-                Thread.sleep(sleepPeriod);
-            } catch (InterruptedException e) {
-                Thread.interrupted();
-            }
-
-            instance.getCountDownLatch(runLatchName).countDown();
-            return 77 * 2.2;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
-    static class ICountdownLatchMapIncrementCallableTask
-            implements Runnable, Serializable, HazelcastInstanceAware {
-
-        final String runLatchName;
-
-        final String runEntryCounterName;
-
-        final String mapName;
-
-        transient HazelcastInstance instance;
-
-        ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
-                                                String runLatchName, HazelcastInstance instance) {
-            this.mapName = mapName;
-            this.runEntryCounterName = runEntryCounterName;
-            this.runLatchName = runLatchName;
-            this.instance = instance;
-        }
-
-        @Override
-        public void run() {
-            instance.getAtomicLong(runEntryCounterName).incrementAndGet();
-
-            IMap<String, Integer> map = instance.getMap(mapName);
-            for (int i = 0; i < 100000; i++) {
-                if (map.get(String.valueOf(i)) == i) {
-                    map.put(String.valueOf(i), i + 1);
-                }
-            }
-
-            instance.getCountDownLatch(runLatchName).countDown();
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
-    static class ICountdownLatchRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
-
-        final String runsCountlatchName;
-
-        transient HazelcastInstance instance;
-
-        ICountdownLatchRunnableTask(String runsCountlatchName, HazelcastInstance instance) {
-            this.runsCountlatchName = runsCountlatchName;
-            this.instance = instance;
-        }
-
-        @Override
-        public void run() {
-            instance.getCountDownLatch(runsCountlatchName).countDown();
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
-    static class PlainCallableTask implements Callable<Double>, Serializable {
-
-        @Override
-        public Double call()
-                throws Exception {
-            return 5 * 5.0;
-        }
-
-    }
-
-    static class ErroneousCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
-
-        private String completionLatchName;
-
-        private transient HazelcastInstance instance;
-
-        ErroneousCallableTask(String completionLatchName, HazelcastInstance instance) {
-            this.completionLatchName = completionLatchName;
-            this.instance = instance;
-        }
-
-        @Override
-        public Double call()
-                throws Exception {
-            try {
-                throw new IllegalStateException("Erroneous task");
-            } finally {
-                instance.getCountDownLatch(completionLatchName).countDown();
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
-        }
-    }
-
-    static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {
-
-        @Override
-        public Double call()
-                throws Exception {
-            return 5 * 5.0;
-        }
-
-        @Override
-        public String getPartitionKey() {
-            return "TestKey";
-        }
-    }
-
 }
