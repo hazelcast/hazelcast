@@ -128,11 +128,14 @@ public class CachedExecutorServiceDelegateTest {
         int queueSize = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, queueSize);
 
-        startInfinitelyRunningTask(executorService);
-        executeNopTask(executorService);
-
-        assertEquals(1, executorService.getQueueSize());
-        assertEquals(1, executorService.getQueueSize());
+        CountDownLatch finishLatch = startLongRunningTask(executorService);
+        try {
+            executeNopTask(executorService);
+            assertEquals(1, executorService.getQueueSize());
+            assertEquals(1, executorService.getQueueSize());
+        } finally {
+            finishLatch.countDown();
+        }
     }
 
     @Test
@@ -146,10 +149,13 @@ public class CachedExecutorServiceDelegateTest {
         int queueSize = 10;
         ManagedExecutorService executorService = newManagedExecutorService(1, queueSize);
 
-        startInfinitelyRunningTask(executorService);
-        executeNopTask(executorService);
-
-        assertEquals(queueSize - 1, executorService.getRemainingQueueCapacity());
+        CountDownLatch finishLatch = startLongRunningTask(executorService);
+        try {
+            executeNopTask(executorService);
+            assertEquals(queueSize - 1, executorService.getRemainingQueueCapacity());
+        } finally {
+            finishLatch.countDown();
+        }
     }
 
     @Test
@@ -279,22 +285,26 @@ public class CachedExecutorServiceDelegateTest {
     @Test
     public void shutdownNow() throws Exception {
         ManagedExecutorService executorService = newManagedExecutorService();
-        startInfinitelyRunningTask(executorService);
-
-        Future<Object> future = executorService.submit(new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return null;
-            }
-        });
-
-        List<Runnable> tasks = executorService.shutdownNow();
-        assertTrue(executorService.isShutdown());
-
-        assertEquals(1, tasks.size());
+        CountDownLatch finishLatch = startLongRunningTask(executorService);
         try {
-            future.get();
-        } catch (CancellationException expected) {
+
+            Future<Object> future = executorService.submit(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return null;
+                }
+            });
+
+            List<Runnable> tasks = executorService.shutdownNow();
+            assertTrue(executorService.isShutdown());
+
+            assertEquals(1, tasks.size());
+            try {
+                future.get();
+            } catch (CancellationException expected) {
+            }
+        } finally {
+            finishLatch.countDown();
         }
     }
 
@@ -375,17 +385,18 @@ public class CachedExecutorServiceDelegateTest {
         });
     }
 
-    private void startInfinitelyRunningTask(ExecutorService executorService) {
-        final CountDownLatch latch = new CountDownLatch(1);
+    private CountDownLatch startLongRunningTask(ExecutorService executorService) {
+        final CountDownLatch startLatch = new CountDownLatch(1);
+        final CountDownLatch finishLatch = new CountDownLatch(1);
         executorService.execute(new Runnable() {
             @Override
             public void run() {
-                latch.countDown();
-                LockSupport.park();
+                startLatch.countDown();
+                assertOpenEventually(finishLatch);
             }
         });
-
-        assertOpenEventually(latch);
+        assertOpenEventually(startLatch);
+        return finishLatch;
     }
 
     private void executeNopTask(ExecutorService executorService) {
