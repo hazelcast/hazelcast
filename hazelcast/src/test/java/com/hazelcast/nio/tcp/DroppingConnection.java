@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class DroppingConnection implements Connection {
 
-    final Address endpoint;
-    final long timestamp = Clock.currentTimeMillis();
+    private final Address endpoint;
+    private final long timestamp = Clock.currentTimeMillis();
     private final ConnectionManager connectionManager;
-    private AtomicBoolean isClosing = new AtomicBoolean(false);
+    private AtomicBoolean isAlive = new AtomicBoolean(true);
 
     DroppingConnection(Address endpoint, ConnectionManager connectionManager) {
         this.endpoint = endpoint;
@@ -59,7 +59,7 @@ class DroppingConnection implements Connection {
 
     @Override
     public boolean isAlive() {
-        return true;
+        return isAlive.get();
     }
 
     @Override
@@ -74,10 +74,12 @@ class DroppingConnection implements Connection {
 
     @Override
     public void close(String msg, Throwable cause) {
+        if (!isAlive.compareAndSet(true, false)) {
+            return;
+        }
+
         if (connectionManager instanceof MockConnectionManager) {
-            if (isClosing.compareAndSet(false, true)) {
-                ((MockConnectionManager)connectionManager).destroyConnection(this);
-            }
+            ((MockConnectionManager) connectionManager).onClose(this);
         }
     }
 

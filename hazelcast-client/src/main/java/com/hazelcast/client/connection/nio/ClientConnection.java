@@ -19,23 +19,22 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.internal.networking.IOThreadingModel;
+import com.hazelcast.internal.networking.SocketChannelWrapper;
+import com.hazelcast.internal.networking.SocketConnection;
+import com.hazelcast.internal.networking.SocketReader;
+import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.internal.networking.IOThreadingModel;
-import com.hazelcast.internal.networking.SocketChannelWrapper;
-import com.hazelcast.internal.networking.SocketConnection;
-import com.hazelcast.internal.networking.SocketReader;
-import com.hazelcast.internal.networking.SocketWriter;
 import com.hazelcast.util.Clock;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -44,7 +43,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -82,13 +80,6 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
     private volatile String closeReason;
     private int connectedServerVersion = BuildInfo.UNKNOWN_HAZELCAST_VERSION;
     private String connectedServerVersionString;
-
-    /**
-     * The list of members from which the client resources are deleted at the time of connection authentication. The client may
-     * use this list to re-register the client resources such the listeners to these members.
-     */
-    private List<Member> clientUnregisteredMembers;
-
 
     public ClientConnection(HazelcastClientInstanceImpl client,
                             IOThreadingModel ioThreadingModel,
@@ -389,11 +380,4 @@ public class ClientConnection implements SocketConnection, DiscardableMetricsPro
         return connectedServerVersionString;
     }
 
-    public List<Member> getClientUnregisteredMembers() {
-        return clientUnregisteredMembers;
-    }
-
-    public void setClientUnregisteredMembers(List<Member> clientUnregisteredMembers) {
-        this.clientUnregisteredMembers = clientUnregisteredMembers;
-    }
 }

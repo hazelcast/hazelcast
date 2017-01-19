@@ -20,7 +20,6 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -198,7 +197,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 logger.info("Trying to connect to " + address + " as owner member");
                 connection = connectionManager.getOrConnect(address, true);
                 clientMembershipListener.listenMembershipEvents(ownerConnectionAddress);
-                client.getListenerService().onClusterConnect((ClientConnection) connection);
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 return true;
             } catch (Exception e) {

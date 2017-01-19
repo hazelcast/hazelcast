@@ -88,31 +88,34 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
-            if (endpoint.isAlive()) {
-                if (!(event instanceof DataAwareEntryEvent)) {
-                    throw new IllegalArgumentException(
-                            "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
-                }
-                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data keyData = dataAwareEntryEvent.getKeyData();
-                Data newValueData = dataAwareEntryEvent.getNewValueData();
-                Data oldValueData = dataAwareEntryEvent.getOldValueData();
-                Data meringValueData = dataAwareEntryEvent.getMergingValueData();
-                sendClientMessage(keyData, encodeEvent(keyData
-                        , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
-                        event.getMember().getUuid(), 1));
+            if (!endpoint.isAlive()) {
+                return;
             }
+            if (!(event instanceof DataAwareEntryEvent)) {
+                throw new IllegalArgumentException(
+                        "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
+            }
+            DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+            Data keyData = dataAwareEntryEvent.getKeyData();
+            Data newValueData = dataAwareEntryEvent.getNewValueData();
+            Data oldValueData = dataAwareEntryEvent.getOldValueData();
+            Data meringValueData = dataAwareEntryEvent.getMergingValueData();
+            sendClientMessage(keyData, encodeEvent(keyData
+                    , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
+                    event.getMember().getUuid(), 1));
+
         }
 
         @Override
         public void onMapEvent(MapEvent event) {
-            if (endpoint.isAlive()) {
-                final EntryEventType type = event.getEventType();
-                final String uuid = event.getMember().getUuid();
-                int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                sendClientMessage(null, encodeEvent(null,
-                        null, null, null, type.getType(), uuid, numberOfEntriesAffected));
+            if (!endpoint.isAlive()) {
+                return;
             }
+            EntryEventType type = event.getEventType();
+            String uuid = event.getMember().getUuid();
+            int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
+            sendClientMessage(null, encodeEvent(null,
+                    null, null, null, type.getType(), uuid, numberOfEntriesAffected));
         }
     }
 

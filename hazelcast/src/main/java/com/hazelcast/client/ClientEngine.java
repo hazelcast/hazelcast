@@ -78,4 +78,6 @@ public interface ClientEngine {
      * @return Map<ClientType,Integer> .
      */
     Map<ClientType, Integer> getConnectedClientStats();
+
+    String getOwnerUuid(String clientUuid);
 }

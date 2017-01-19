@@ -67,6 +67,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -197,6 +198,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return clientExtension.createSocketInterceptor();
         }
         return null;
+    }
+
+    @Override
+    public Collection<ClientConnection> getActiveConnections() {
+        return activeConnections.values();
     }
 
     @Override
@@ -536,7 +542,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 switch (authenticationStatus) {
                     case AUTHENTICATED:
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                        connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
                         connection.setRemoteEndpoint(result.address);
                         if (asOwner) {
                             if (!(correlationIddOfLastAuthentication.get() == response.getCorrelationId())) {

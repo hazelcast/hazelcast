@@ -420,32 +420,34 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (connection.isClient() && nodeEngine.isRunning()) {
-                final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
-                if (endpoint == null) {
-                    logger.finest("connectionRemoved: No endpoint for connection:" + connection);
-                    return;
-                }
+            if (!connection.isClient() || !nodeEngine.isRunning()) {
+                return;
+            }
+            final ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
+            if (endpoint == null) {
+                logger.finest("connectionRemoved: No endpoint for connection:" + connection);
+                return;
+            }
 
-                if (!endpoint.isFirstConnection()) {
-                    logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
-                    return;
-                }
+            endpointManager.removeEndpoint(endpoint, "connection removed");
+            if (!endpoint.isFirstConnection()) {
+                logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
+                return;
+            }
 
-                String localMemberUuid = node.getThisUuid();
-                String ownerUuid = endpoint.getPrincipal().getOwnerUuid();
-                if (localMemberUuid.equals(ownerUuid)) {
-                    try {
-                        nodeEngine.getExecutionService().schedule(new Runnable() {
-                            @Override
-                            public void run() {
-                                callDisconnectionOperation(endpoint);
-                            }
-                        }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
-                    } catch (RejectedExecutionException e) {
-                        if (logger.isFinestEnabled()) {
-                            logger.finest(e);
+            String localMemberUuid = node.getThisUuid();
+            String ownerUuid = ownershipMappings.get(endpoint.getUuid());
+            if (localMemberUuid.equals(ownerUuid)) {
+                try {
+                    nodeEngine.getExecutionService().schedule(new Runnable() {
+                        @Override
+                        public void run() {
+                            callDisconnectionOperation(endpoint);
                         }
+                    }, endpointRemoveDelaySeconds, TimeUnit.SECONDS);
+                } catch (RejectedExecutionException e) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(e);
                     }
                 }
             }

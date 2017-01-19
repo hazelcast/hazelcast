@@ -16,7 +16,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +38,6 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void testClientListeners_InSplitBrain() throws Throwable {
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
