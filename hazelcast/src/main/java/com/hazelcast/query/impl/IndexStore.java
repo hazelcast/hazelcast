@@ -19,7 +19,6 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * This interface stores indexes of Query.
@@ -35,5 +34,4 @@ public interface IndexStore {
     Set<QueryableEntry> getSubRecords(ComparisonType comparisonType, Comparable searchedValue);
     Set<QueryableEntry> getRecords(Comparable value);
     Set<QueryableEntry> getRecords(Set<Comparable> values);
-    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue);
 }

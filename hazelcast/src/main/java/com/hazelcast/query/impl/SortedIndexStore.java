@@ -64,7 +64,7 @@ public class SortedIndexStore extends BaseIndexStore {
         }
     }
 
-    private void removeMappingForAttribute(Object attribute, Data indexKey) {
+    private void removeMappingForAttribute(Comparable attribute, Data indexKey) {
         ConcurrentMap<Data, QueryableEntry> records = recordMap.get(attribute);
         if (records != null) {
             records.remove(indexKey);
@@ -93,7 +93,7 @@ public class SortedIndexStore extends BaseIndexStore {
             SortedMap<Comparable, ConcurrentMap<Data, QueryableEntry>> subMap =
                     recordMap.subMap(from, true, to, true);
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
-                results.addResultSet(value);
+                copyToMultiResultSet(results, value);
             }
             return results;
         } finally {
@@ -126,7 +126,7 @@ public class SortedIndexStore extends BaseIndexStore {
                     // So remaining records are not equal to searched value
                     for (Map.Entry<Comparable, ConcurrentMap<Data, QueryableEntry>> entry : recordMap.entrySet()) {
                         if (!searchedValue.equals(entry.getKey())) {
-                            results.addResultSet(entry.getValue());
+                            copyToMultiResultSet(results, entry.getValue());
                         }
                     }
                     return results;
@@ -134,23 +134,9 @@ public class SortedIndexStore extends BaseIndexStore {
                     throw new IllegalArgumentException("Unrecognized comparisonType: " + comparisonType);
             }
             for (ConcurrentMap<Data, QueryableEntry> value : subMap.values()) {
-                results.addResultSet(value);
+                copyToMultiResultSet(results, value);
             }
             return results;
-        } finally {
-            releaseReadLock();
-        }
-    }
-
-    @Override
-    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable value) {
-        takeReadLock();
-        try {
-            if (value instanceof IndexImpl.NullObject) {
-                return recordsWithNullValue;
-            } else {
-                return recordMap.get(value);
-            }
         } finally {
             releaseReadLock();
         }
@@ -161,9 +147,9 @@ public class SortedIndexStore extends BaseIndexStore {
         takeReadLock();
         try {
             if (value instanceof IndexImpl.NullObject) {
-                return new SingleResultSet(recordsWithNullValue);
+                return toSingleResultSet(recordsWithNullValue);
             } else {
-                return new SingleResultSet(recordMap.get(value));
+                return toSingleResultSet(recordMap.get(value));
             }
         } finally {
             releaseReadLock();
@@ -183,7 +169,7 @@ public class SortedIndexStore extends BaseIndexStore {
                     records = recordMap.get(value);
                 }
                 if (records != null) {
-                    results.addResultSet(records);
+                    copyToMultiResultSet(results, records);
                 }
             }
             return results;

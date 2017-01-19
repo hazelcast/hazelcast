@@ -21,15 +21,15 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.AbstractSet;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 /**
  * Multiple result set for Predicates.
  */
 public class SingleResultSet extends AbstractSet<QueryableEntry> {
-    private final ConcurrentMap<Data, QueryableEntry> records;
+    private final Map<Data, QueryableEntry> records;
 
-    public SingleResultSet(ConcurrentMap<Data, QueryableEntry> records) {
+    public SingleResultSet(Map<Data, QueryableEntry> records) {
         this.records = records;
     }
 

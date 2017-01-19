@@ -93,7 +93,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
             if (trend == 0) {
                 ConcurrentMap<Data, QueryableEntry> records = recordMap.get(paramFrom);
                 if (records != null) {
-                    results.addResultSet(records);
+                    copyToMultiResultSet(results, records);
                 }
                 return results;
             }
@@ -107,7 +107,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 if (value.compareTo(paramFrom) <= 0 && value.compareTo(paramTo) >= 0) {
                     ConcurrentMap<Data, QueryableEntry> records = recordMapEntry.getValue();
                     if (records != null) {
-                        results.addResultSet(records);
+                        copyToMultiResultSet(results, records);
                     }
                 }
             }
@@ -148,7 +148,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 if (valid) {
                     ConcurrentMap<Data, QueryableEntry> records = recordMapEntry.getValue();
                     if (records != null) {
-                        results.addResultSet(records);
+                        copyToMultiResultSet(results, records);
                     }
                 }
             }
@@ -159,27 +159,13 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable value) {
-        takeReadLock();
-        try {
-            if (value instanceof IndexImpl.NullObject) {
-                return recordsWithNullValue;
-            } else {
-                return recordMap.get(value);
-            }
-        } finally {
-            releaseReadLock();
-        }
-    }
-
-    @Override
     public Set<QueryableEntry> getRecords(Comparable value) {
         takeReadLock();
         try {
             if (value instanceof IndexImpl.NullObject) {
-                return new SingleResultSet(recordsWithNullValue);
+                return toSingleResultSet(recordsWithNullValue);
             } else {
-                return new SingleResultSet(recordMap.get(value));
+                return toSingleResultSet(recordMap.get(value));
             }
         } finally {
             releaseReadLock();
@@ -199,7 +185,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                     records = recordMap.get(value);
                 }
                 if (records != null) {
-                    results.addResultSet(records);
+                    copyToMultiResultSet(results, records);
                 }
             }
             return results;
