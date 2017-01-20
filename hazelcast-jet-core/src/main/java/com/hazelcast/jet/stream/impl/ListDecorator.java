@@ -24,6 +24,7 @@ import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.source.ListSourcePipeline;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -170,17 +171,17 @@ public class ListDecorator<E> implements IStreamList<E> {
         return list.lastIndexOf(o);
     }
 
-    @Override
+    @Override @Nonnull
     public ListIterator<E> listIterator() {
         return list.listIterator();
     }
 
-    @Override
+    @Override @Nonnull
     public ListIterator<E> listIterator(int index) {
         return list.listIterator(index);
     }
 
-    @Override
+    @Override @Nonnull
     public List<E> subList(int fromIndex, int toIndex) {
         return list.subList(fromIndex, toIndex);
     }

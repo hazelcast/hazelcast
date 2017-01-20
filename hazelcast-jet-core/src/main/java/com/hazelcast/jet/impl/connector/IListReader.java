@@ -24,65 +24,37 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import javax.annotation.Nonnull;
-import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
+import static java.util.stream.IntStream.rangeClosed;
 
 public final class IListReader extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
-    private final IList list;
-    private final int fetchSize;
-    private Iterator iterator;
-    private int currentIndex;
-    private int size;
+    private final Traverser<Object> traverser;
 
-    private IListReader(IList list, int fetchSize) {
-        this.list = list;
-        this.fetchSize = fetchSize;
-    }
-
-    @Override
-    protected void init(@Nonnull Context context) {
-        size = list.size();
-        if (fetchSize < size) {
-            this.iterator = list.subList(0, fetchSize).iterator();
-        } else {
-            this.iterator = list.iterator();
-        }
+    IListReader(List<Object> list, int fetchSize) {
+        final int size = list.size();
+        traverser = size <= fetchSize
+                ? traverseIterable(list)
+                : traverseStream(rangeClosed(0, size / fetchSize).mapToObj(chunkIndex -> chunkIndex * fetchSize))
+                    .flatMap(start -> traverseIterable(list.subList(start, min(start + fetchSize, size))));
     }
 
     @Override
     public boolean complete() {
-        while (hasNext()) {
-            if (getOutbox().isHighWater()) {
-                return false;
-            }
-            currentIndex++;
-            emit(iterator.next());
-        }
-        return true;
-    }
-
-    private boolean hasNext() {
-        return iterator.hasNext() || currentIndex < size && advance();
-    }
-
-    private boolean advance() {
-        iterator = list.subList(currentIndex, getNextIndex()).iterator();
-        return iterator.hasNext();
-    }
-
-    private int getNextIndex() {
-        int jump = currentIndex + fetchSize;
-        return jump >= size ? size : jump;
+        return emitCooperatively(traverser);
     }
 
     @Override
