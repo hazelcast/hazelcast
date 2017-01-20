@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
@@ -74,6 +75,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private ClientExceptionFactory clientExceptionFactory;
 
     private volatile boolean isShutdown;
+    private final long invocationTimeoutMillis;
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
         int maxAllowedConcurrentInvocations = client.getProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
@@ -81,8 +83,14 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
+        this.invocationTimeoutMillis = initInvocationTimeoutMillis();
 
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
+    }
+
+    private long initInvocationTimeoutMillis() {
+        long waitTime = client.getProperties().getMillis(INVOCATION_TIMEOUT_SECONDS);
+        return waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
     }
 
     @Override
@@ -260,6 +268,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     @Override
     public void handleClientMessage(ClientMessage message, Connection connection) {
         responseThread.responseQueue.add(new ClientPacket((ClientConnection) connection, message));
+    }
+
+    public long getInvocationTimeoutMillis() {
+        return invocationTimeoutMillis;
     }
 
     private static class ClientPacket {
