@@ -9,21 +9,21 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Exclude implementation packages from JavaDoc checks -->
-    <suppress checks="JavadocPackage" files="(/impl|/internal)"/>
-    <suppress checks="JavadocMethod" files="(/impl|/internal)"/>
-    <suppress checks="JavadocType" files="(/impl|/internal)"/>
-    <suppress checks="JavadocVariable" files="(/impl|/internal)"/>
+    <suppress checks="JavadocPackage" files="([\\/]impl|[\\/]internal)"/>
+    <suppress checks="JavadocMethod" files="([\\/]impl|[\\/]internal)"/>
+    <suppress checks="JavadocType" files="([\\/]impl|[\\/]internal)"/>
+    <suppress checks="JavadocVariable" files="([\\/]impl|[\\/]internal)"/>
 
     <!-- Serializer Hooks -->
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="SerializerHook"/>
 
     <!-- Cascading Javadocs -->
-    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="/jet/cascading/"/>
+    <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/]jet[\\/]cascading[\\/]"/>
 
     <!-- j.u.stream -->
-    <suppress checks="FileLength" files="com/hazelcast/jet/stream/Distributed.java"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]stream[\\/]Distributed.java"/>
 
     <!-- Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"
-              files="com/hazelcast/client/impl/protocol/template/.*Template\.java$"/>
+              files="com[\\/]hazelcast[\\/]client[\\/]impl[\\/]protocol[\\/]template[\\/].*Template\.java$"/>
 </suppressions>
