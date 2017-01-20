@@ -165,13 +165,16 @@ public final class RepairingTask implements Runnable {
             assignAndGetUuids();
         }
 
-        RepairingHandler repairingHandler = new RepairingHandler(name, nearCache, partitionService, localUuid, logger);
-        repairingHandler.initUnknownUuids(partitionUuids);
+        RepairingHandler repairingHandler = handlers.get(name);
+        if (repairingHandler == null) {
+            repairingHandler = new RepairingHandler(name, nearCache, partitionService, localUuid, logger);
+            repairingHandler.initUnknownUuids(partitionUuids);
 
-        StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(repairingHandler, partitionService);
-        nearCache.unwrap(DefaultNearCache.class).getNearCacheRecordStore().setStaleReadDetector(staleReadDetector);
+            StaleReadDetector staleReadDetector = new StaleReadDetectorImpl(repairingHandler, partitionService);
+            nearCache.unwrap(DefaultNearCache.class).getNearCacheRecordStore().setStaleReadDetector(staleReadDetector);
 
-        handlers.put(name, repairingHandler);
+            handlers.put(name, repairingHandler);
+        }
 
         if (started) {
             scheduleNextRun();

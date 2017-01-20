@@ -23,6 +23,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.nearcache.impl.invalidation.BatchNearCacheInvalidation;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidation;
@@ -52,7 +53,7 @@ public class CacheAddInvalidationListenerTask
         final ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(parameters.name);
-        CacheInvalidationEventListener listener = new CacheInvalidationEventListener(endpoint, cacheContext);
+        CacheInvalidationEventListener listener = new CacheInvalidationEventListener(cacheContext);
         String registrationId =
                 cacheService.addInvalidationListener(parameters.name, listener, parameters.localOnly);
         endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
@@ -61,21 +62,21 @@ public class CacheAddInvalidationListenerTask
 
     private final class CacheInvalidationEventListener implements CacheEventListener, NotifiableEventListener<CacheService> {
 
-        private final ClientEndpoint endpoint;
         private final CacheContext cacheContext;
 
         /**
-         * This listener is called by member and in the listener we are sending invalidations to client.
-         * `batchOrderKey` is used by clients'-striped-executor to find a worker for processing invalidation.
-         * By using `batchOrderKey` we are putting all invalidations coming from the same member into the same workers' queue.
-         * So if there is more than one member all members will have their own worker to process invalidations. This provides
-         * more granular processing.
+         * This listener is working on member side and in it we are sending invalidations to client.
+         * After we sent invalidations, client side striped-executor decides invalidation processing thread by looking
+         * `batchOrderKey`. All invalidations sent by the same member should go to the same processing thread on the client.
+         * `batchOrderKey` makes all invalidations coming from the same member to go to the same processing thread.
          */
         private final int batchOrderKey = nodeEngine.getLocalMember().hashCode();
+        private final int firstRepairableNearCachedClientVersion = BuildInfo.calculateVersion("3.8");
+        private final int clientVersion;
 
-        private CacheInvalidationEventListener(ClientEndpoint endpoint, CacheContext cacheContext) {
-            this.endpoint = endpoint;
+        private CacheInvalidationEventListener(CacheContext cacheContext) {
             this.cacheContext = cacheContext;
+            this.clientVersion = endpoint.getClientVersion();
         }
 
         @Override
@@ -97,7 +98,7 @@ public class CacheAddInvalidationListenerTask
                 return;
             }
 
-            if (invalidation instanceof SingleNearCacheInvalidation) {
+            if (invalidation instanceof SingleNearCacheInvalidation && canSendInvalidation(invalidation)) {
                 ClientMessage message = encodeCacheInvalidationEvent(invalidation.getName(), invalidation.getKey(),
                         invalidation.getSourceUuid(), invalidation.getPartitionUuid(), invalidation.getSequence());
 
@@ -118,13 +119,25 @@ public class CacheAddInvalidationListenerTask
             List<Long> sequences = new ArrayList<Long>(size);
 
             for (Invalidation invalidation : invalidations) {
-                keys.add(invalidation.getKey());
-                sourceUuids.add(invalidation.getSourceUuid());
-                partitionUuids.add(invalidation.getPartitionUuid());
-                sequences.add(invalidation.getSequence());
+                if (canSendInvalidation(invalidation)) {
+                    keys.add(invalidation.getKey());
+                    sourceUuids.add(invalidation.getSourceUuid());
+                    partitionUuids.add(invalidation.getPartitionUuid());
+                    sequences.add(invalidation.getSequence());
+                }
             }
 
             return new ExtractedParams(keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private boolean canSendInvalidation(Invalidation invalidation) {
+            if (clientVersion >= firstRepairableNearCachedClientVersion) {
+                // this is a repairable near cache, send all invalidations.
+                return true;
+            }
+
+            // this is a non-repairable near cache, send invalidations only if it is not from the same source
+            return !endpoint.getUuid().equals(invalidation.getSourceUuid());
         }
 
         private final class ExtractedParams {
