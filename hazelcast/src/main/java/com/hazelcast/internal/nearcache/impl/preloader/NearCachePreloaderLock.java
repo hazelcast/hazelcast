@@ -44,32 +44,32 @@ class NearCachePreloaderLock {
         this.lock = acquireLock(lockFile);
     }
 
+    private FileChannel openChannel(File lockFile) {
+        try {
+            return new RandomAccessFile(lockFile, "rw").getChannel();
+        } catch (IOException e) {
+            throw new HazelcastException("Cannot create lock file " + lockFile.getAbsolutePath(), e);
+        }
+    }
+
     private FileLock acquireLock(File lockFile) {
         FileLock fileLock = null;
         try {
             fileLock = channel.tryLock();
-            if (fileLock == null) {
-                throw new HazelcastException("Cannot acquire lock on " + lockFile.getAbsolutePath()
-                        + ". File is already being used by another Hazelcast instance.");
+            if (fileLock != null) {
+                return fileLock;
             }
-            return fileLock;
+            throw new HazelcastException("Cannot acquire lock on " + lockFile.getAbsolutePath()
+                    + ". File is already being used by another Hazelcast instance.");
         } catch (OverlappingFileLockException e) {
             throw new HazelcastException("Cannot acquire lock on " + lockFile.getAbsolutePath()
-                    + ". File is already being used by another Hazelcast instance.", e);
+                    + ". File is already being used by this Hazelcast instance.", e);
         } catch (IOException e) {
             throw new HazelcastException("Unknown failure while acquiring lock on " + lockFile.getAbsolutePath(), e);
         } finally {
             if (fileLock == null) {
                 closeResource(channel);
             }
-        }
-    }
-
-    private FileChannel openChannel(File lockFile) {
-        try {
-            return new RandomAccessFile(lockFile, "rw").getChannel();
-        } catch (IOException e) {
-            throw new HazelcastException("Cannot create lock file " + lockFile.getAbsolutePath(), e);
         }
     }
 
