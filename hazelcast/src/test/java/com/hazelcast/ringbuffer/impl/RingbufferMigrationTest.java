@@ -1,5 +1,7 @@
 package com.hazelcast.ringbuffer.impl;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,22 +29,26 @@ public class RingbufferMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void test() throws Exception {
-        HazelcastInstance hz1 = instanceFactory.newHazelcastInstance();
+        final String ringbufferName = "ringbuffer";
+        final Config config = new Config()
+                .addRingBufferConfig(new RingbufferConfig(ringbufferName).setTimeToLiveSeconds(0));
+        HazelcastInstance hz1 = instanceFactory.newHazelcastInstance(config);
 
         for (int k = 0; k < 10 * CAPACITY; k++) {
-            hz1.getRingbuffer("ringbuffer").add(k);
+            hz1.getRingbuffer(ringbufferName).add(k);
         }
 
-        long oldTailSeq = hz1.getRingbuffer("ringbuffer").tailSequence();
-        long oldHeadSeq = hz1.getRingbuffer("ringbuffer").headSequence();
+        long oldTailSeq = hz1.getRingbuffer(ringbufferName).tailSequence();
+        long oldHeadSeq = hz1.getRingbuffer(ringbufferName).headSequence();
 
-        HazelcastInstance hz2 = instanceFactory.newHazelcastInstance();
-        HazelcastInstance hz3 = instanceFactory.newHazelcastInstance();
+        HazelcastInstance hz2 = instanceFactory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = instanceFactory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz2);
         hz1.shutdown();
+        assertClusterSizeEventually(2, hz2);
 
-        sleepSeconds(5);
-
-        assertEquals(oldTailSeq, hz2.getRingbuffer("ringbuffer").tailSequence());
-        assertEquals(oldHeadSeq, hz2.getRingbuffer("ringbuffer").headSequence());
+        assertEquals(oldTailSeq, hz2.getRingbuffer(ringbufferName).tailSequence());
+        assertEquals(oldHeadSeq, hz2.getRingbuffer(ringbufferName).headSequence());
     }
 }
