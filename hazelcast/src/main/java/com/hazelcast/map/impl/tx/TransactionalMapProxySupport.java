@@ -30,9 +30,9 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
+import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ThreadUtil;
@@ -269,7 +269,7 @@ public abstract class TransactionalMapProxySupport
             Future<VersionedValue> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             versionedValue = future.get();
             if (versionedValue == null) {
-                throw new TransactionException("Transaction couldn't obtain lock for the key: " + toObjectIfNeeded(key));
+                throw new TransactionTimedOutException("Transaction couldn't obtain lock for the key: " + toObjectIfNeeded(key));
             }
             valueMap.put(key, versionedValue);
             return versionedValue;

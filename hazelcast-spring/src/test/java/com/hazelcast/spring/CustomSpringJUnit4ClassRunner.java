@@ -17,6 +17,7 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.TestLoggingUtils;
 import org.junit.runners.model.InitializationError;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -26,6 +27,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
     static {
+        TestLoggingUtils.initializeLogging();
         System.setProperty("java.net.preferIPv4Stack", "true");
         GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
         GroupProperty.PHONE_HOME_ENABLED.setSystemProperty("false");

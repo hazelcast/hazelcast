@@ -47,7 +47,7 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.internal.util.ThreadLocalRandom;
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
@@ -93,7 +93,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     protected void onInitialize() {
         int partitionCount = getContext().getPartitionService().getPartitionCount();
-        targetPartitionId = ThreadLocalRandom.current().nextInt(partitionCount);
+        targetPartitionId = ThreadLocalRandomProvider.get().nextInt(partitionCount);
 
         initNearCache();
     }

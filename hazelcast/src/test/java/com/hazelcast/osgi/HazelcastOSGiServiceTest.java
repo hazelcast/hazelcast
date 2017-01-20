@@ -8,12 +8,8 @@ import com.hazelcast.osgi.impl.HazelcastInternalOSGiService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,9 +29,6 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
-
-    private static String loggingType;
-    private static Level log4jLogLevel;
 
     private TestBundle bundle;
     private TestBundleContext bundleContext;
@@ -80,27 +73,6 @@ public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
                     throw new IllegalStateException("You cannot deregister!");
                 }
             }
-        }
-    }
-
-    @BeforeClass
-    public static void beforeClass() {
-        loggingType = System.getProperty("hazelcast.logging.type");
-        Logger rootLogger = Logger.getRootLogger();
-        if ("log4j".equals(loggingType)) {
-            log4jLogLevel = rootLogger.getLevel();
-        }
-        rootLogger.setLevel(Level.TRACE);
-        System.setProperty("hazelcast.logging.type", "log4j");
-    }
-
-    @AfterClass
-    public static void afterClass() {
-        if (loggingType != null) {
-            System.setProperty("hazelcast.logging.type", loggingType);
-        }
-        if (log4jLogLevel != null) {
-            Logger.getRootLogger().setLevel(log4jLogLevel);
         }
     }
 

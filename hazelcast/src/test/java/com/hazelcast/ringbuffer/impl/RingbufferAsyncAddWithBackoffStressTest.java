@@ -4,11 +4,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,7 +50,6 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         test(ringbufferConfig);
     }
 
-    @Ignore //https://github.com/hazelcast/hazelcast/issues/7193
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
@@ -149,7 +148,21 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
             seq = ringbuffer.headSequence();
 
             for (; ; ) {
-                Long item = ringbuffer.readOne(seq);
+                Long item = null;
+
+                while (item == null) {
+                    try {
+                        item = ringbuffer.readOne(seq);
+                    } catch (StaleSequenceException e) {
+                        // this consumer is used in a stress test and can fall behind the producer if it gets delayed
+                        // by any reason. This is ok, just jump to the the middle of the ringbuffer.
+                        System.out.println(getName() + " has fallen behind, catching up...");
+                        final long tail = ringbuffer.tailSequence();
+                        final long head = ringbuffer.headSequence();
+                        seq = tail >= head ? ((tail + head) / 2) : head;
+                    }
+                }
+
                 if (item.equals(Long.MIN_VALUE)) {
                     break;
                 }

@@ -1050,6 +1050,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 + "    <scheduled-executor-service name=\"foobar\">\n"
                 + "        <durability>4</durability>\n"
                 + "        <pool-size>5</pool-size>\n"
+                + "        <capacity>2</capacity>\n"
                 + "    </scheduled-executor-service>\n"
                 + HAZELCAST_END_TAG;
 
@@ -1059,6 +1060,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertFalse(config.getScheduledExecutorConfigs().isEmpty());
         assertEquals(4, scheduledExecutorConfig.getDurability());
         assertEquals(5, scheduledExecutorConfig.getPoolSize());
+        assertEquals(2, scheduledExecutorConfig.getCapacity());
     }
 
     @Test

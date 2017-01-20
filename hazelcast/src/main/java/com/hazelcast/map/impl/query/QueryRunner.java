@@ -28,7 +28,6 @@ import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.partition.IPartitionService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -47,7 +46,6 @@ public class QueryRunner {
     protected final ILogger logger;
     protected final QueryResultSizeLimiter queryResultSizeLimiter;
     protected final InternalSerializationService serializationService;
-    protected final IPartitionService partitionService;
     protected final QueryOptimizer queryOptimizer;
     protected final OperationService operationService;
     protected final ClusterService clusterService;
@@ -60,7 +58,6 @@ public class QueryRunner {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
         this.queryOptimizer = optimizer;
@@ -75,8 +72,9 @@ public class QueryRunner {
     public Result run(Query query)
             throws ExecutionException, InterruptedException {
 
-        int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
+        int migrationStamp = getMigrationStamp();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
+
         MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
 
         // first we optimize the query
@@ -85,14 +83,14 @@ public class QueryRunner {
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         // This would be the point where a query-plan should be added. It should determine f a full table scan
         // or an index should be used.
-        Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, initialPartitionStateVersion);
+        Collection<QueryableEntry> entries = runUsingIndexSafely(predicate, mapContainer, migrationStamp);
         if (entries == null) {
-            entries = runUsingPartitionScanSafely(query.getMapName(), predicate, initialPartitions, initialPartitionStateVersion);
+            entries = runUsingPartitionScanSafely(query.getMapName(), predicate, initialPartitions, migrationStamp);
         }
 
         updateStatistics(mapContainer);
-        if (hasPartitionVersion(initialPartitionStateVersion, predicate)) {
-            // if results have been returned and partition state version has not changed, set the partition IDs
+        if (entries != null) {
+            // if results have been returned and partition state has not changed, set the partition IDs
             // so that caller is aware of partitions from which results were obtained.
             return populateTheResult(query, entries, initialPartitions);
         } else {
@@ -103,131 +101,82 @@ public class QueryRunner {
         }
     }
 
-    protected Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
+    private Result populateTheResult(Query query, Collection<QueryableEntry> entries, Collection<Integer> initialPartitions) {
         ResultProcessor processor = resultProcessorRegistry.get(query.getResultType());
         return processor.populateResult(query, queryResultSizeLimiter
                 .getNodeResultLimit(initialPartitions.size()), entries, initialPartitions
         );
     }
 
-    protected Collection<QueryableEntry> runUsingIndexSafely(
-            Predicate predicate, MapContainer mapContainer, int initialPartitionStateVersion) {
-        // if a migration is in progress, do not attempt to use an index as they may have not been created yet.
-        // MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
-        // beforeMigration has been executed but commit/rollback is not yet executed).
-        // This is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
-        // see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
-        if (hasOwnerMigrationsInFlight()) {
+    private Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
+            int migrationStamp) {
+
+        // If a migration is in progress or migration ownership changes,
+        // do not attempt to use an index as they may have not been created yet.
+        if (!validateMigrationStamp(migrationStamp)) {
             return null;
         }
 
-        Collection<QueryableEntry> entries = runUsingIndex(predicate, mapContainer);
+        Collection<QueryableEntry> entries = mapContainer.getIndexes().query(predicate);
         if (entries == null) {
             return null;
         }
 
-        // If partition state version has changed in the meanwhile, this means migrations were executed and we may
+        // If a migration is in progress or migration ownership changes,
+        // do not attempt to use an index as they may have not been created yet.
+        // This means migrations were executed and we may
         // return stale data, so we should rather return null and let the query run with a full table scan.
         // Also make sure there are no long migrations in flight which may have started after starting the query
         // but not completed yet.
-        if (isResultSafe(initialPartitionStateVersion)) {
+        if (validateMigrationStamp(migrationStamp)) {
             return entries;
-        } else {
-            return null;
         }
+        return null;
     }
 
-    protected Collection<QueryableEntry> runUsingIndex(Predicate predicate, MapContainer mapContainer) {
-        return mapContainer.getIndexes().query(predicate);
-    }
-
-    protected Collection<QueryableEntry> runUsingPartitionScanSafely(
-            String name, Predicate predicate, Collection<Integer> partitions, int initialPartitionStateVersion)
+    private Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,
+            Collection<Integer> partitions, int migrationStamp)
             throws InterruptedException, ExecutionException {
 
         Collection<QueryableEntry> entries;
-        if (hasOwnerMigrationsInFlight()) {
+        if (!validateMigrationStamp(migrationStamp)) {
             return null;
         }
 
         entries = partitionScanExecutor.execute(name, predicate, partitions);
 
-        // If partition state version has changed in the meanwhile, this means migrations were executed and we may
+        // If a migration is in progress or migration ownership changes, this means migrations were executed and we may
         // return stale data, so we should rather return null.
         // Also make sure there are no long migrations in flight which may have started after starting the query
         // but not completed yet.
-        if (isResultSafe(initialPartitionStateVersion)) {
+        if (validateMigrationStamp(migrationStamp)) {
             return entries;
-        } else {
-            return null;
         }
+        return null;
     }
 
-    public Result runUsingPartitionScanOnSinglePartition(
-            Query query, int partitionId) throws ExecutionException, InterruptedException {
+    Result runUsingPartitionScanOnSinglePartition(Query query, int partitionId) throws ExecutionException, InterruptedException {
         Collection<QueryableEntry> entries = doRunUsingPartitionScanOnSinglePartition(query.getMapName(),
                 query.getPredicate(), partitionId);
         return populateTheResult(query, entries, Collections.singletonList(partitionId));
     }
 
-    protected Collection<QueryableEntry> doRunUsingPartitionScanOnSinglePartition(
-            String mapName, Predicate originalPredicate, int partitionId) throws ExecutionException, InterruptedException {
+    private Collection<QueryableEntry> doRunUsingPartitionScanOnSinglePartition(String mapName,
+            Predicate originalPredicate, int partitionId) throws ExecutionException, InterruptedException {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         Predicate predicate = queryOptimizer.optimize(originalPredicate, mapContainer.getIndexes());
         return partitionScanExecutor.execute(mapName, predicate, Collections.singletonList(partitionId));
     }
 
-    /**
-     * Check whether migrations of owner partition are currently executed.
-     * If a migration is in progress, do not attempt to use an index as they may have not been created yet.
-     * MapService.getMigrationsInFlight() returns the number of currently executing migrations (for which
-     * beforeMigration has been executed but commit/rollback is not yet executed).
-     * This check is a temporary fix for 3.7, the actual issue will be addressed with an additional migration hook in 3.8.
-     * see https://github.com/hazelcast/hazelcast/issues/6471 & https://github.com/hazelcast/hazelcast/issues/8046
-     *
-     * @return {@code true} if owner partition migrations are currently being executed, otherwise false.
-     * @see com.hazelcast.spi.impl.CountingMigrationAwareService
-     */
-    protected boolean hasOwnerMigrationsInFlight() {
-        return mapServiceContext.getService().getOwnerMigrationsInFlight() > 0;
+    private int getMigrationStamp() {
+        return mapServiceContext.getService().getMigrationStamp();
     }
 
-    /**
-     * Check whether partition state version has changed since {@code initialPartitionStateVersion}.
-     *
-     * @param initialPartitionStateVersion the initial partition state version to compare against
-     * @return {@code true} if current partition state version is not equal to {@code initialPartitionStateVersion}
-     */
-    protected boolean hasPartitionStateVersionChanged(int initialPartitionStateVersion) {
-        return initialPartitionStateVersion != partitionService.getPartitionStateVersion();
+    private boolean validateMigrationStamp(int migrationStamp) {
+        return mapServiceContext.getService().validateMigrationStamp(migrationStamp);
     }
 
-    /**
-     * Check whether results obtained since partition state version was at {@code initialPartitionStateVersion} are safe
-     * to be returned to the caller. Effectively this method checks:
-     * <ul>
-     * <li>whether owner migrations are currently in flight; if there are any, then results are considered flawed</li>
-     * <li>whether current partition state version has changed, implying that some migrations were executed in the
-     * meanwhile, so results are again considered flawed</li>
-     * </ul>
-     *
-     * @param initialPartitionStateVersion
-     * @return {@code true} if no owner migrations are currently executing and {@code initialPartitionStateVersion} is
-     * the same as the current partition state version, otherwise {@code false}.
-     */
-    protected boolean isResultSafe(int initialPartitionStateVersion) {
-        return !hasOwnerMigrationsInFlight() && !hasPartitionStateVersionChanged(initialPartitionStateVersion);
-    }
-
-    protected boolean hasPartitionVersion(int expectedVersion, Predicate predicate) {
-        if (hasPartitionStateVersionChanged(expectedVersion)) {
-            logger.info("Partition assignments changed while executing query: " + predicate);
-            return false;
-        }
-        return true;
-    }
-
-    protected void updateStatistics(MapContainer mapContainer) {
+    private void updateStatistics(MapContainer mapContainer) {
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsImpl localStats = localMapStatsProvider.getLocalMapStatsImpl(mapContainer.getName());
             localStats.incrementOtherOperations();

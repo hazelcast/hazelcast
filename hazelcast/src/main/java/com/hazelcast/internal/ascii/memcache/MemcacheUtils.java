@@ -27,17 +27,13 @@ import static com.hazelcast.internal.ascii.memcache.MemcacheCommandProcessor.MAP
 public final class MemcacheUtils {
 
     private MemcacheUtils() {
-
     }
 
     /**
      * Parse Memcache key into (MapName, Key) pair.
-     *
-     * @param key
-     * @return
      */
     public static MapNameAndKeyPair parseMemcacheKey(String key) {
-        key = decodeKey(key);
+        key = decodeKey(key, "UTF-8");
         String mapName = DEFAULT_MAP_NAME;
         int index = key.indexOf(':');
         if (index != -1) {
@@ -47,9 +43,9 @@ public final class MemcacheUtils {
         return new MapNameAndKeyPair(mapName, key);
     }
 
-    private static String decodeKey(String key) {
+    static String decodeKey(String key, String encoding) {
         try {
-            return URLDecoder.decode(key, "UTF-8");
+            return URLDecoder.decode(key, encoding);
         } catch (UnsupportedEncodingException e) {
             throw new HazelcastException(e);
         }

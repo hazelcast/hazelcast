@@ -50,8 +50,14 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
                 @Override
                 public ScheduledExecutorContainer createNew(String name) {
+                    if (logger.isFinestEnabled()) {
+                        logger.finest("[Partition: " + partitionId + "] "
+                                + "Create new scheduled executor container with name: " + name);
+                    }
+
                     ScheduledExecutorConfig config = nodeEngine.getConfig().findScheduledExecutorConfig(name);
-                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine, config.getDurability());
+                    return new ScheduledExecutorContainer(name, partitionId, nodeEngine,
+                            config.getDurability(), config.getCapacity());
                 }
             };
 
@@ -82,6 +88,11 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
         Map<String, Map<String, ScheduledTaskDescriptor>> map =
                 new HashMap<String, Map<String, ScheduledTaskDescriptor>>();
 
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Partition: " + partitionId + "] "
+                    + "Prepare replication(migration: " + migrationMode + ") for index: " + replicaIndex);
+        }
+
         for (ScheduledExecutorContainer container : containers.values()) {
             if (replicaIndex > container.getDurability()) {
                 continue;
@@ -93,6 +104,11 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
     }
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Partition: " + partitionId + "] "
+                    + "Dispose obsolete replicas with thresholdReplicaIndex: " + thresholdReplicaIndex);
+        }
+
         if (thresholdReplicaIndex < 0) {
             for (ScheduledExecutorContainer container : containers.values()) {
                 container.destroy();
@@ -112,6 +128,10 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
     }
 
     void promoteStash() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("[Partition: " + partitionId + "] " + "Promote stashes");
+        }
+
         for (ScheduledExecutorContainer container : containers.values()) {
             container.promoteStash();
         }

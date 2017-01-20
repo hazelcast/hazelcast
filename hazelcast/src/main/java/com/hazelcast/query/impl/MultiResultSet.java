@@ -18,8 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * TODO:
@@ -32,5 +32,5 @@ public interface MultiResultSet extends Set<QueryableEntry> {
      *
      * @param resultSet
      */
-    void addResultSet(ConcurrentMap<Data, QueryableEntry> resultSet);
+    void addResultSet(Map<Data, QueryableEntry> resultSet);
 }

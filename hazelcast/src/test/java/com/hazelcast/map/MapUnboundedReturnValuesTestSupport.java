@@ -19,6 +19,7 @@ import java.util.Set;
 
 import static java.lang.String.format;
 import static java.lang.String.valueOf;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -148,9 +149,13 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         mapConfig.setAsyncBackupCount(0);
         mapConfig.setBackupCount(0);
 
-
-        instance = factory.newInstances(config)[0];
+        HazelcastInstance[] instances = factory.newInstances(config);
+        instance = instances[0];
         logger = instance.getLoggingService().getLogger(getClass());
+
+        HazelcastTestSupport.assertClusterSizeEventually(factory.getCount(), instance);
+        HazelcastTestSupport.assertAllInSafeState(asList(instances));
+
         return instance.getMap(name);
     }
 

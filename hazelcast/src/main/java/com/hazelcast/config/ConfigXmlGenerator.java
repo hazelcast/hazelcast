@@ -217,6 +217,7 @@ public class ConfigXmlGenerator {
             xml.append("<scheduled-executor-service name=\"").append(ex.getName()).append("\">");
             appendNode(xml, "pool-size", ex.getPoolSize());
             appendNode(xml, "durability", ex.getDurability());
+            appendNode(xml, "capacity", ex.getCapacity());
             xml.append("</scheduled-executor-service>");
         }
     }

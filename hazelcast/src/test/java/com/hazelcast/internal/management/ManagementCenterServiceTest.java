@@ -5,9 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -20,16 +18,8 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ManagementCenterServiceTest extends HazelcastTestSupport {
 
-    @Before
-    public void setUp() {
-        setLoggingLog4j();
-        setLogLevel(Level.DEBUG);
-    }
-
     @After
     public void tearDown() {
-        resetLogLevel();
-
         Hazelcast.shutdownAll();
     }
 

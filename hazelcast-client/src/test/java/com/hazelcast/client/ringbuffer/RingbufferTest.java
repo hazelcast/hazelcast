@@ -38,7 +38,6 @@ public class RingbufferTest extends HazelcastTestSupport {
 
     @Before
     public void init() {
-        setLoggingLog4j();
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("rb*").setCapacity(CAPACITY));
 

@@ -8,11 +8,12 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
     private static final int MAX_RUNTIME = 30;
     private static final String MAP_NAME = "test";
     private static final String KEY = "key123";
-    private static final Logger LOGGER = Logger.getLogger(ClientMapNearCacheStaleReadTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientMapNearCacheStaleReadTest.class);
 
     private AtomicInteger valuePut;
     private AtomicBoolean stop;
@@ -117,14 +118,14 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
 
         // fail after stopping hazelcast instance
         if (msg != null) {
-            LOGGER.warn(msg);
+            LOGGER.warning(msg);
             fail(msg);
         }
 
         // fail if strict is required and assertion was violated
         if (strict && assertionViolationCount.get() > 0) {
             msg = "Assertion violated " + assertionViolationCount.get() + " times.";
-            LOGGER.warn(msg);
+            LOGGER.warning(msg);
             fail(msg);
         }
     }
@@ -209,20 +210,20 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
                 int valueMap = parseInt(valueMapStr);
                 if (valueMap != i) {
                     assertionViolationCount.incrementAndGet();
-                    LOGGER.warn("Assertion violated! (valueMap = " + valueMap + ", i = " + i + ")");
+                    LOGGER.warning("Assertion violated! (valueMap = " + valueMap + ", i = " + i + ")");
 
                     // sleep to ensure Near Cache invalidation is really lost
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
-                        LOGGER.warn("Interrupted: " + e.getMessage());
+                        LOGGER.warning("Interrupted: " + e.getMessage());
                     }
 
                     // test again and stop if really lost
                     valueMapStr = map.get(KEY);
                     valueMap = parseInt(valueMapStr);
                     if (valueMap != i) {
-                        LOGGER.warn("Near Cache invalidation lost! (valueMap = " + valueMap + ", i = " + i + ")");
+                        LOGGER.warning("Near Cache invalidation lost! (valueMap = " + valueMap + ", i = " + i + ")");
                         failed.set(true);
                         stop.set(true);
                     }

@@ -23,41 +23,34 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * Factory for {@link LoadStatusOperation}
- **/
-public class LoadStatusOperationFactory extends AbstractMapOperationFactory {
+public class IsPartitionLoadedOperationFactory extends AbstractMapOperationFactory {
 
-    private Throwable exception;
     private String name;
 
-    public LoadStatusOperationFactory() {
+    public IsPartitionLoadedOperationFactory() {
     }
 
-    public LoadStatusOperationFactory(String name, Throwable exception) {
+    public IsPartitionLoadedOperationFactory(String name) {
         this.name = name;
-        this.exception = exception;
     }
 
     @Override
     public Operation createOperation() {
-        return new LoadStatusOperation(name, exception);
+        return new IsPartitionLoadedOperation(name);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeObject(exception);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        exception = in.readObject();
     }
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.LOAD_STATUS_FACTORY;
+        return MapDataSerializerHook.IS_PARTITION_LOADED_FACTORY;
     }
 }

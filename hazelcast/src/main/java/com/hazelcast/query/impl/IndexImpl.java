@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.query.impl.TypeConverters.NULL_CONVERTER;
 
@@ -160,10 +159,6 @@ public class IndexImpl implements Index {
     @Override
     public boolean isOrdered() {
         return ordered;
-    }
-
-    ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
-        return indexStore.getRecordMap(indexValue);
     }
 
     public static final class NullObject implements Comparable, IdentifiedDataSerializable {

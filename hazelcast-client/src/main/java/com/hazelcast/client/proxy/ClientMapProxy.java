@@ -61,6 +61,7 @@ import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
@@ -157,7 +158,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequests.newQueryCacheRequest;
@@ -241,10 +241,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     };
 
     private ClientLockReferenceIdGenerator lockReferenceIdGenerator;
-    private Data entryRemovingProcessor;
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
+    }
+
+    @Override
+    protected void onInitialize() {
+        super.onInitialize();
+
+        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
     }
 
     @Override
@@ -334,7 +340,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     protected void removeAllInternal(Predicate predicate) {
-        ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, entryRemovingProcessor, toData(predicate));
+        ClientMessage request = MapRemoveAllCodec.encodeRequest(name, toData(predicate));
         invoke(request);
     }
 
@@ -1574,14 +1580,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public String toString() {
         return "IMap{" + "name='" + name + '\'' + '}';
-    }
-
-    @Override
-    protected void onInitialize() {
-        super.onInitialize();
-
-        lockReferenceIdGenerator = getClient().getLockReferenceIdGenerator();
-        entryRemovingProcessor = toData(ENTRY_REMOVING_PROCESSOR);
     }
 
     private class ClientMapEventHandler

@@ -755,18 +755,14 @@ public class Node {
         if (joined()) {
             logger.severe("Cannot set new local member when joined.");
             return;
-        } else if (nodeExtension.isStartCompleted()) {
-            logger.severe("Cannot set new local member since start completed.");
-            return;
-        } else if (!nodeExtension.getInternalHotRestartService().isMemberExcluded(getThisAddress(), getThisUuid())) {
-            logger.severe("Cannot set new local member since this member is not excluded.");
-            return;
         }
 
         String newUuid = UuidUtil.createMemberUuid(address);
         logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
         Map<String, Object> memberAttributes = localMember.getAttributes();
         localMember = new MemberImpl(address, version, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
+
+        assert !joined() : "Node should not join concurrently while setting member uuid!";
     }
 
     public Config getConfig() {

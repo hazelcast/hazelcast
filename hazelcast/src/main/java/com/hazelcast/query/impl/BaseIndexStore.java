@@ -19,7 +19,9 @@ package com.hazelcast.query.impl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.getters.MultiResult;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
@@ -27,14 +29,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public abstract class BaseIndexStore implements IndexStore {
 
-    protected static final float LOAD_FACTOR = 0.75F;
+    static final float LOAD_FACTOR = 0.75F;
 
-    protected ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    protected ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    protected ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
+    private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
 
     private boolean multiResultHasToDetectDuplicates;
-
 
     abstract void newIndexInternal(Comparable newValue, QueryableEntry record);
 
@@ -108,11 +109,11 @@ public abstract class BaseIndexStore implements IndexStore {
         writeLock.unlock();
     }
 
-    protected void takeReadLock() {
+    void takeReadLock() {
         readLock.lock();
     }
 
-    protected void releaseReadLock() {
+    void releaseReadLock() {
         readLock.unlock();
     }
 
@@ -132,7 +133,15 @@ public abstract class BaseIndexStore implements IndexStore {
 
     }
 
-    protected MultiResultSet createMultiResultSet() {
+    final MultiResultSet createMultiResultSet() {
         return multiResultHasToDetectDuplicates ? new DuplicateDetectingMultiResult() : new FastMultiResultSet();
+    }
+
+    final void copyToMultiResultSet(MultiResultSet resultSet, Map<Data, QueryableEntry> records) {
+        resultSet.addResultSet(new HashMap<Data, QueryableEntry>(records));
+    }
+
+    final SingleResultSet toSingleResultSet(Map<Data, QueryableEntry> records) {
+        return new SingleResultSet(records != null ? new HashMap<Data, QueryableEntry>(records) : null);
     }
 }

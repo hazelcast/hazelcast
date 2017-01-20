@@ -2,6 +2,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -9,7 +10,6 @@ import com.hazelcast.test.ExceptionThrowingCallable;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -60,15 +60,28 @@ public class OperationServiceImpl_invokeOnTargetTest extends HazelcastTestSuppor
         assertEquals(expected, invocation.join());
     }
 
-    //this test is very slow, so it is marked as a nightly test
     @Test
-    @Category(NightlyTest.class)
     public void whenNonExistingTarget() throws UnknownHostException {
         Address remoteAddress = getAddress(remote);
         remote.shutdown();
 
+        // ensure local instance observes remote shutdown
+        assertClusterSizeEventually(1, local);
+
         String expected = "foobar";
-        DummyOperation operation = new DummyOperation(expected);
+        DummyOperation operation = new DummyOperation(expected) {
+            @Override
+            public ExceptionAction onInvocationException(Throwable throwable) {
+                // Don't retry when TargetNotMemberException is received.
+                // Invocation is registered before checking target. If invocation is retried
+                // when TargetNotMemberException is get, invocation may fail with MemberLeftException too.
+                if (throwable instanceof TargetNotMemberException) {
+                    return ExceptionAction.THROW_EXCEPTION;
+                }
+                return super.onInvocationException(throwable);
+            }
+        };
+
         InternalCompletableFuture<String> invocation = operationService.invokeOnTarget(
                 null, operation, remoteAddress);
 

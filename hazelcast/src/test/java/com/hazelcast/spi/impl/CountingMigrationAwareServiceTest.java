@@ -18,7 +18,13 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.hazelcast.spi.impl.CountingMigrationAwareService.IN_FLIGHT_MIGRATION_STAMP;
+import static com.hazelcast.spi.impl.CountingMigrationAwareService.PRIMARY_REPLICA_INDEX;
+import static com.hazelcast.spi.impl.CountingMigrationAwareService.isPrimaryReplicaMigrationEvent;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,8 +36,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class CountingMigrationAwareServiceTest {
 
-    public static final int PRIMARY_REPLICA_INDEX = 0;
-
     @Parameterized.Parameter
     public MigrationAwareService wrappedMigrationAwareService;
 
@@ -42,6 +46,7 @@ public class CountingMigrationAwareServiceTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     private CountingMigrationAwareService countingMigrationAwareService;
+    private int initialMigrationStamp;
 
     @Parameterized.Parameters(name = "{0}, replica: {1}")
     public static Collection<Object> parameters() {
@@ -73,6 +78,7 @@ public class CountingMigrationAwareServiceTest {
         // setup the counting migration aware service and execute 1 prepareReplicationOperation (which does not
         // affect the counter)
         countingMigrationAwareService = new CountingMigrationAwareService(wrappedMigrationAwareService);
+        initialMigrationStamp = countingMigrationAwareService.getMigrationStamp();
         countingMigrationAwareService.prepareReplicationOperation(null);
         // also execute the first part of migration: beforeMigration
         try {
@@ -86,11 +92,13 @@ public class CountingMigrationAwareServiceTest {
     @Test
     public void beforeMigration() throws Exception {
         // when: countingMigrationAwareService.beforeMigration was invoked (in setUp method)
-        // then: if event involves primary replica, count is incremented to 1, otherwise it is 0
-        if (involvesPrimaryReplica(event)) {
-            assertEquals(1, countingMigrationAwareService.getOwnerMigrationsInFlight());
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertEquals(IN_FLIGHT_MIGRATION_STAMP, countingMigrationAwareService.getMigrationStamp());
+            assertFalse(countingMigrationAwareService.validateMigrationStamp(IN_FLIGHT_MIGRATION_STAMP));
         } else {
-            assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
+            assertEquals(initialMigrationStamp, countingMigrationAwareService.getMigrationStamp());
+            assertTrue(countingMigrationAwareService.validateMigrationStamp(initialMigrationStamp));
         }
     }
 
@@ -103,8 +111,15 @@ public class CountingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
+
+        int currentMigrationStamp = countingMigrationAwareService.getMigrationStamp();
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertNotEquals(initialMigrationStamp, currentMigrationStamp);
+        } else {
+            assertEquals(initialMigrationStamp, currentMigrationStamp);
+        }
+        assertTrue(countingMigrationAwareService.validateMigrationStamp(currentMigrationStamp));
     }
 
     @Test
@@ -116,8 +131,15 @@ public class CountingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-        // then: count should be 0, regardless of replica indices involved in event
-        assertEquals(0, countingMigrationAwareService.getOwnerMigrationsInFlight());
+
+        int currentMigrationStamp = countingMigrationAwareService.getMigrationStamp();
+        // then: if event involves primary replica, stamp should change.
+        if (isPrimaryReplicaMigrationEvent(event) ) {
+            assertNotEquals(initialMigrationStamp, currentMigrationStamp);
+        } else {
+            assertEquals(initialMigrationStamp, currentMigrationStamp);
+        }
+        assertTrue(countingMigrationAwareService.validateMigrationStamp(currentMigrationStamp));
     }
 
     @Test
@@ -132,7 +154,7 @@ public class CountingMigrationAwareServiceTest {
         }
 
         // on second commitMigration, if event involves partition owner assertion error is thrown
-        if (involvesPrimaryReplica(event)) {
+        if (isPrimaryReplicaMigrationEvent(event) ) {
             expectedException.expect(AssertionError.class);
         }
         try {
@@ -154,7 +176,7 @@ public class CountingMigrationAwareServiceTest {
         }
 
         // on second rollbackMigration, if event involves partition owner assertion error is thrown
-        if (involvesPrimaryReplica(event)) {
+        if (isPrimaryReplicaMigrationEvent(event) ) {
             expectedException.expect(AssertionError.class);
         }
         try {
@@ -163,10 +185,6 @@ public class CountingMigrationAwareServiceTest {
         catch (RuntimeException e) {
             // we do not care whether the wrapped service throws an exception
         }
-    }
-
-    private boolean involvesPrimaryReplica(PartitionMigrationEvent event) {
-        return (event.getCurrentReplicaIndex() == PRIMARY_REPLICA_INDEX || event.getNewReplicaIndex() == PRIMARY_REPLICA_INDEX);
     }
 
     static class ExceptionThrowingMigrationAwareService implements MigrationAwareService {

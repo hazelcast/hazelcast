@@ -26,6 +26,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -39,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -47,13 +49,14 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class LocalMapStatsProvider {
 
-    public static final LocalMapStats EMPTY_LOCAL_STATS = new LocalMapStatsImpl();
+    public static final LocalMapStats EMPTY_LOCAL_MAP_STATS = new LocalMapStatsImpl();
 
     private static final int RETRY_COUNT = 3;
     private static final int WAIT_PARTITION_TABLE_UPDATE_MILLIS = 100;
 
     private final ILogger logger;
     private final Address localAddress;
+    private final NodeEngine nodeEngine;
     private final ClusterService clusterService;
     private final MapServiceContext mapServiceContext;
     private final MapNearCacheManager mapNearCacheManager;
@@ -68,7 +71,7 @@ public class LocalMapStatsProvider {
 
     public LocalMapStatsProvider(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        this.nodeEngine = mapServiceContext.getNodeEngine();
         this.logger = nodeEngine.getLogger(getClass());
         this.mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         this.clusterService = nodeEngine.getClusterService();
@@ -114,6 +117,7 @@ public class LocalMapStatsProvider {
             }
         }
 
+
         // reuse same HashMap to return calculated LocalMapStats.
         for (Object object : statsPerMap.entrySet()) {
             Map.Entry entry = (Map.Entry) object;
@@ -126,7 +130,24 @@ public class LocalMapStatsProvider {
             entry.setValue(updatedStats);
         }
 
+        addStatsOfNoDataIncludedMaps(statsPerMap);
+
         return statsPerMap;
+    }
+
+    /**
+     * Some maps may have a proxy but no data has been put yet. Think of one created a proxy but not put any data in it.
+     * By calling this method we are returning an empty stats object for those maps. This is helpful to monitor those kind
+     * of maps.
+     */
+    private void addStatsOfNoDataIncludedMaps(Map statsPerMap) {
+        ProxyService proxyService = nodeEngine.getProxyService();
+        Collection<String> mapNames = proxyService.getDistributedObjectNames(SERVICE_NAME);
+        for (String mapName : mapNames) {
+            if (!statsPerMap.containsKey(mapName)) {
+                statsPerMap.put(mapName, EMPTY_LOCAL_MAP_STATS);
+            }
+        }
     }
 
     private static boolean isStatsCalculationEnabledFor(RecordStore recordStore) {

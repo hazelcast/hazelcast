@@ -31,6 +31,9 @@ import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
+import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
+import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
+import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
 import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
@@ -52,8 +55,8 @@ import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadMapOperation;
-import com.hazelcast.map.impl.operation.LoadStatusOperation;
-import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
+import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -74,8 +77,6 @@ import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateBackupOperation;
 import com.hazelcast.map.impl.operation.MultipleEntryWithPredicateOperation;
 import com.hazelcast.map.impl.operation.NotifyMapFlushOperation;
-import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
-import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryBackupOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperation;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
@@ -100,6 +101,7 @@ import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
+import com.hazelcast.map.impl.operation.TriggerLoadIfNeededOperation;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
 import com.hazelcast.map.impl.operation.WriteBehindStateHolder;
@@ -163,7 +165,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRIES_WITH_CURSOR = 14;
     public static final int SET = 15;
     public static final int LOAD_MAP = 16;
-    public static final int LOAD_STATUS = 17;
+    public static final int KEY_LOAD_STATUS = 17;
     public static final int LOAD_ALL = 18;
     public static final int ENTRY_BACKUP = 19;
     public static final int ENTRY_OPERATION = 20;
@@ -184,7 +186,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int MERGE = 35;
     public static final int NEAR_CACHE_SINGLE_INVALIDATION = 36;
     public static final int NEAR_CACHE_BATCH_INVALIDATION = 37;
-    public static final int CHECK_IF_LOADED = 38;
+    public static final int IS_PARTITION_LOADED = 38;
     public static final int PARTITION_WIDE_ENTRY = 39;
     public static final int PARTITION_WIDE_ENTRY_BACKUP = 40;
     public static final int PARTITION_WIDE_PREDICATE_ENTRY = 41;
@@ -220,14 +222,14 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int TXN_SET = 71;
     public static final int TXN_UNLOCK = 72;
     public static final int TXN_UNLOCK_BACKUP = 73;
-    public static final int CHECK_IF_LOADED_FACTORY = 74;
+    public static final int IS_PARTITION_LOADED_FACTORY = 74;
     public static final int ADD_INDEX_FACTORY = 75;
     public static final int ADD_INTERCEPTOR_FACTORY = 76;
     public static final int CLEAR_FACTORY = 77;
     public static final int CONTAINS_VALUE_FACTORY = 78;
     public static final int EVICT_ALL_FACTORY = 79;
     public static final int IS_EMPTY_FACTORY = 80;
-    public static final int LOAD_STATUS_FACTORY = 81;
+    public static final int KEY_LOAD_STATUS_FACTORY = 81;
     public static final int MAP_FLUSH_FACTORY = 82;
     public static final int MAP_GET_ALL_FACTORY = 83;
     public static final int LOAD_ALL_FACTORY = 84;
@@ -278,8 +280,10 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ACCUMULATOR_CONSUMER = 129;
     public static final int CACHED_QUERY_ENTRY = 130;
     public static final int LAZY_MAP_ENTRY = 131;
+    public static final int TRIGGER_LOAD_IF_NEEDED = 132;
+    public static final int IS_KEYLOAD_FINISHED = 133;
 
-    private static final int LEN = LAZY_MAP_ENTRY + 1;
+    private static final int LEN = IS_KEYLOAD_FINISHED + 1;
 
     @Override
     public int getFactoryId() {
@@ -375,9 +379,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new LoadMapOperation();
             }
         };
-        constructors[LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[KEY_LOAD_STATUS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadStatusOperation();
+                return new KeyLoadStatusOperation();
             }
         };
         constructors[LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -470,9 +474,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new MergeOperation();
             }
         };
-        constructors[CHECK_IF_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[IS_PARTITION_LOADED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionCheckIfLoadedOperation();
+                return new IsPartitionLoadedOperation();
             }
         };
         constructors[PARTITION_WIDE_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -650,9 +654,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new TxnUnlockBackupOperation();
             }
         };
-        constructors[CHECK_IF_LOADED_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[IS_PARTITION_LOADED_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PartitionCheckIfLoadedOperationFactory();
+                return new IsPartitionLoadedOperationFactory();
             }
         };
         constructors[ADD_INDEX_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -680,9 +684,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new IsEmptyOperationFactory();
             }
         };
-        constructors[LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[KEY_LOAD_STATUS_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LoadStatusOperationFactory();
+                return new KeyLoadStatusOperationFactory();
             }
         };
         constructors[MAP_FLUSH_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -933,6 +937,16 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[LAZY_MAP_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new LazyMapEntry();
+            }
+        };
+        constructors[TRIGGER_LOAD_IF_NEEDED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TriggerLoadIfNeededOperation();
+            }
+        };
+        constructors[IS_KEYLOAD_FINISHED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new IsKeyLoadFinishedOperation();
             }
         };
 

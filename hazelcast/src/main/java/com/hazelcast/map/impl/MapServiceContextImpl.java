@@ -398,9 +398,6 @@ class MapServiceContextImpl implements MapServiceContext {
     public void reloadOwnedPartitions() {
         IPartitionService partitionService = nodeEngine.getPartitionService();
         Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-        if (partitions == null) {
-            partitions = Collections.emptySet();
-        }
         ownedPartitions.set(Collections.unmodifiableSet(new LinkedHashSet<Integer>(partitions)));
     }
 

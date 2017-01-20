@@ -9,8 +9,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.apache.log4j.Level;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -28,9 +26,6 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLoggingLog4j();
-        setLogLevel(Level.TRACE);
-
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
@@ -39,11 +34,6 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
         topic = (ReliableTopicProxy<String>) hz.<String>getReliableTopic("foo");
         ringbuffer = topic.ringbuffer;
-    }
-
-    @After
-    public void tearDown() {
-        resetLogLevel();
     }
 
     @Test

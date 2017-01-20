@@ -39,38 +39,58 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.net.HttpURLConnection.HTTP_OK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * This test is intentionally not in the {@link com.hazelcast.test.annotation.ParallelTest} category,
+ * since it starts real HazelcastInstances which have REST enabled.
+ */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-// intentionally not in ParallelTest category,
-// test is starting standalone HazelcastInstances.
 public class RestTest extends HazelcastTestSupport {
 
+    private static AtomicInteger port = new AtomicInteger(5701);
+
     private Config config = new Config();
+
     private HazelcastInstance instance;
+    private HazelcastInstance remoteInstance;
     private HTTPCommunicator communicator;
 
     @Before
     public void setup() {
         config.setProperty(GroupProperty.REST_ENABLED.getName(), "true");
 
-        // Join is disabled intentionally. will start standalone HazelcastInstances.
-        JoinConfig join = config.getNetworkConfig().getJoin();
-        join.getMulticastConfig().setEnabled(false);
-        join.getTcpIpConfig().setEnabled(false);
+        int firstPort = port.getAndIncrement();
+        int secondPort = port.getAndIncrement();
 
+        // we start pairs of HazelcastInstances which form a cluster to have remote invocations for all operations
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getMulticastConfig()
+                .setEnabled(false);
+        join.getTcpIpConfig()
+                .setEnabled(true)
+                .addMember("127.0.0.1:" + firstPort)
+                .addMember("127.0.0.1:" + secondPort);
+
+        config.getNetworkConfig().setPort(firstPort);
         instance = Hazelcast.newHazelcastInstance(config);
+
+        config.getNetworkConfig().setPort(secondPort);
+        remoteInstance = Hazelcast.newHazelcastInstance(config);
+
         communicator = new HTTPCommunicator(instance);
     }
 
     @After
     public void tearDown() {
         instance.getLifecycleService().terminate();
+        remoteInstance.getLifecycleService().terminate();
     }
 
     @Test

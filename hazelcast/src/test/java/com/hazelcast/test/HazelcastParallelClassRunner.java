@@ -149,12 +149,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
         private final Properties globalProperties;
 
-        private final ThreadLocal<Properties> localProperties = new InheritableThreadLocal<Properties>() {
-            @Override
-            protected Properties initialValue() {
-                return init(new Properties());
-            }
-        };
+        private final ThreadLocal<Properties> localProperties = new InheritableThreadLocal<Properties>();
 
         private ThreadLocalProperties(Properties properties) {
             this.globalProperties = properties;
@@ -168,7 +163,12 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
 
         private Properties getThreadLocal() {
-            return localProperties.get();
+            Properties properties = localProperties.get();
+            if (properties == null) {
+                properties = init(new Properties());
+                localProperties.set(properties);
+            }
+            return properties;
         }
 
         @Override

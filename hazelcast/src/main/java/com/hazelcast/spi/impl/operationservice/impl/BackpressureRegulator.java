@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.internal.util.ThreadLocalRandom;
+import com.hazelcast.internal.util.ThreadLocalRandomProvider;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -210,7 +210,7 @@ class BackpressureRegulator {
             return 1;
         }
 
-        Random random = ThreadLocalRandom.current();
+        Random random = ThreadLocalRandomProvider.get();
         int randomSyncWindow = round((1 - RANGE) * syncWindow + random.nextInt(round(2 * RANGE * syncWindow)));
         return max(1, randomSyncWindow);
     }

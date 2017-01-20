@@ -443,19 +443,10 @@ public final class OperationServiceImpl implements InternalOperationService, Met
         slowOperationDetector.start();
     }
 
-    /**
-     * Initializes the invocation context to use most recent uuid of the local member. We have this method because the local
-     * member can change its uuid when the cluster has performed partial start and invocations should be done with the new uuid.
-     */
-    public void initInvocationContext() {
-        ManagedExecutorService asyncExecutor;
-        if (this.invocationContext != null) {
-            asyncExecutor = this.invocationContext.asyncExecutor;
-        } else {
-            asyncExecutor = nodeEngine.getExecutionService().register(
+    private void initInvocationContext() {
+        ManagedExecutorService asyncExecutor = nodeEngine.getExecutionService().register(
                     ExecutionService.ASYNC_EXECUTOR, Runtime.getRuntime().availableProcessors(),
                     ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-        }
 
         this.invocationContext = new Invocation.Context(
                 asyncExecutor,
@@ -466,7 +457,6 @@ public final class OperationServiceImpl implements InternalOperationService, Met
                 nodeEngine.getProperties().getMillis(OPERATION_CALL_TIMEOUT_MILLIS),
                 invocationRegistry,
                 invocationMonitor,
-                node.getThisUuid(),
                 nodeEngine.getLogger(Invocation.class),
                 node,
                 nodeEngine,

@@ -97,17 +97,25 @@
                             <xs:complexType>
                                 <xs:sequence/>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="pool-size" use="optional" type="xs:string">
+                                <xs:attribute name="pool-size" use="optional" type="xs:string" default="16">
                                     <xs:annotation>
                                         <xs:documentation>
                                             The number of executor threads per member for the executor.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="durability" use="optional" type="xs:string">
+                                <xs:attribute name="durability" use="optional" type="xs:string" default="1">
                                     <xs:annotation>
                                         <xs:documentation>
                                             The durability of the scheduled executor.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
+                                <xs:attribute name="capacity" use="optional" type="xs:string" default="100">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            The maximum number of tasks that a scheduler can have at any given point
+                                            in time per partition.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
