@@ -261,7 +261,7 @@
                                             Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will
                                             always
                                             be equal to capacity after the head completed the first loop around the ring. This is
-                                            because no items are getting retired.
+                                            because no items are getting retired. The default value is 10000.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1206,7 +1206,7 @@
                                     <xs:annotation>
                                         <xs:documentation>
                                             The queue-size defines the maximum number of tasks are able to wait to be
-                                            processed. A value of 0 means unbounded queue.
+                                            processed. A value of 0 means number of partitions * 2.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
@@ -1376,7 +1376,8 @@
                             maxOccurs="unbounded">
                     <xs:annotation>
                         <xs:documentation>
-                            DataSerializableFactory class to be registered.
+                            Custom classes implementing com.hazelcast.nio.serialization.DataSerializableFactory to be registered.
+                            These can be used to speed up serialization/deserialization of objects.
                         </xs:documentation>
                     </xs:annotation>
                 </xs:element>

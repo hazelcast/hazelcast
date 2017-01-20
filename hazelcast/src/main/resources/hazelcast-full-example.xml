@@ -1273,7 +1273,7 @@ It has the following sub-elements:
     * <max-thread-size>: 
 	Maximum thread pool size of the JobTracker. Its default value is 0.
     * <queue-size>:
-    	Maximum number of tasks that can wait to be processed. A value of 0 means an unbounded queue. 
+    	Maximum number of tasks that can wait to be processed. A value of 0 means number of partitions * 2.
     	Very low numbers can prevent successful execution since job might not be correctly scheduled or intermediate 
     	chunks might be lost. Its default value is 0.
     * <retry-count>:
@@ -1372,7 +1372,7 @@ It has the following sub-elements:
 
     <ringbuffer name="default">
         <capacity>10000</capacity>
-        <time-to-live-seconds>30</time-to-live-seconds>
+        <time-to-live-seconds>0</time-to-live-seconds>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
         <in-memory-format>BINARY</in-memory-format>

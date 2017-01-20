@@ -1099,7 +1099,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         The maximum size of the queue; the maximum number of tasks that can wait to be processed. A
-                        value of 0 means an unbounded queue.
+                        value of 0 means number of partitions * 2.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1228,7 +1228,7 @@
                     <xs:documentation>
                         Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always
                         be equal to capacity after the head completed the first loop around the ring. This is
-                        because no items are getting retired.
+                        because no items are getting retired. The default value is 10000.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -1489,7 +1489,7 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
-        <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
     <xs:complexType name="aws">
         <xs:all>
@@ -1690,7 +1690,7 @@
         <xs:attribute name="name" type="xs:string" use="optional" default="default">
             <xs:annotation>
                 <xs:documentation>
-                    Name of the executor task.
+                    Name of the durable executor.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1712,7 +1712,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="capacity" type="xs:unsignedShort" default="100">
+            <xs:element name="capacity" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="100">
                 <xs:annotation>
                     <xs:documentation>
                         The maximum number of tasks that a scheduler can have at any given point
@@ -2581,7 +2581,8 @@
                                     maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>
-                                    PortableFactory class to be registered.
+                                    Custom classes implementing com.hazelcast.nio.serialization.DataSerializableFactory to be
+                                    registered. These can be used to speed up serialization/deserialization of objects.
                                 </xs:documentation>
                             </xs:annotation>
                         </xs:element>
