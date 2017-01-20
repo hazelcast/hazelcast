@@ -21,7 +21,7 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.SimpleProcessorSupplier;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AccumulatorP;

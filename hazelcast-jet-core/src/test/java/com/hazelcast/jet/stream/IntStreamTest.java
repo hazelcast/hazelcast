@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.Distributed;
 import org.junit.Before;
 import org.junit.Test;
 

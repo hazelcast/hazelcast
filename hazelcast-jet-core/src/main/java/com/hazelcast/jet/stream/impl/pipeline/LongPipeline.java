@@ -17,7 +17,7 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;

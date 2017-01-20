@@ -17,6 +17,7 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IList;
+import com.hazelcast.jet.Distributed;
 import org.junit.Test;
 
 import java.util.Comparator;
@@ -600,7 +601,7 @@ public class CollectorsTest extends AbstractStreamTest {
         fillMap(map);
 
         int sum = map.stream().collect(
-                Distributed.Collector.of(
+                DistributedCollector.of(
                         () -> new Integer[]{0},
                         (r, v) -> r[0] += v.getValue(),
                         (l, r) -> {
@@ -634,7 +635,7 @@ public class CollectorsTest extends AbstractStreamTest {
         fillList(list);
 
         Integer[] collected = list.stream().collect(
-                Distributed.Collector.of(
+                DistributedCollector.of(
                         () -> new Integer[]{0},
                         (r, v) -> r[0] += v,
                         (l, r) -> {

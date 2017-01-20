@@ -20,7 +20,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorP;
@@ -43,7 +44,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
     private final Collector<? super T, A, D> collector;
 
     public HazelcastGroupingMapCollector(Distributed.Function<? super T, ? extends K> classifier,
-                                         Distributed.Collector<? super T, A, D> collector) {
+                                         DistributedCollector<? super T, A, D> collector) {
         this(uniqueMapName(), classifier, collector);
     }
 

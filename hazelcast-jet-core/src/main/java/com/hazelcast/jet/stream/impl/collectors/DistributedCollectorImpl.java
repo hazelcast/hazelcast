@@ -21,7 +21,8 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.SimpleProcessorSupplier;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.CollectorAccumulatorP;
@@ -39,7 +40,7 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class DistributedCollectorImpl<T, A, R> implements Distributed.Collector<T, A, R> {
+public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T, A, R> {
 
     private final Distributed.Supplier<A> supplier;
     private final Distributed.BiConsumer<A, T> accumulator;

@@ -16,11 +16,12 @@
 
 package com.hazelcast.jet.stream.impl.collectors;
 
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.DistributedCollector;
 
 import java.util.Set;
 
-public abstract class AbstractCollector<T, A, R> implements Distributed.Collector<T, A, R> {
+public abstract class AbstractCollector<T, A, R> implements DistributedCollector<T, A, R> {
     @Override
     public Distributed.Supplier<A> supplier() {
         throw new UnsupportedOperationException();

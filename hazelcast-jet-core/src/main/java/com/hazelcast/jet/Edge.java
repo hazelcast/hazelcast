@@ -19,7 +19,6 @@ package com.hazelcast.jet;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
-import com.hazelcast.jet.stream.Distributed;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;

@@ -17,7 +17,8 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
@@ -203,7 +204,7 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     @Override
-    public <R, A> R collect(Distributed.Collector<? super E_OUT, A, R> collector) {
+    public <R, A> R collect(DistributedCollector<? super E_OUT, A, R> collector) {
         return collector.collect(context, this);
     }
 

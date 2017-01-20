@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.stream.Distributed;
-
 import java.io.Serializable;
 
 /**

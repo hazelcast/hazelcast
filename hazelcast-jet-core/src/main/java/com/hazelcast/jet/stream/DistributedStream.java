@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.Distributed;
+
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -457,7 +459,7 @@ public interface DistributedStream<T> extends Stream<T> {
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      */
-    <R, A> R collect(Distributed.Collector<? super T, A, R> collector);
+    <R, A> R collect(DistributedCollector<? super T, A, R> collector);
 
     /**
      * Returns the minimum element of this stream according to the provided
@@ -664,7 +666,7 @@ public interface DistributedStream<T> extends Stream<T> {
 
     @Override
     default <R, A> R collect(Collector<? super T, A, R> collector) {
-        return (R) collect((Distributed.Collector) collector);
+        return (R) collect((DistributedCollector) collector);
     }
 
     @Override

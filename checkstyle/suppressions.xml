@@ -21,7 +21,7 @@
     <suppress checks="Javadoc(Package|Type|Method|Variable)" files="[\\/]jet[\\/]cascading[\\/]"/>
 
     <!-- j.u.stream -->
-    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]stream[\\/]Distributed.java"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]Distributed.java"/>
 
     <!-- Client Protocol Templates -->
     <suppress checks="LineLength|MethodName|MethodCount|ParameterNumber|WhitespaceAround"

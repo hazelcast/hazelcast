@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.stream.impl.distributed;
 
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
 
 /**
  *

@@ -20,7 +20,7 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.Distributed;
+import com.hazelcast.jet.Distributed;
 
 import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;

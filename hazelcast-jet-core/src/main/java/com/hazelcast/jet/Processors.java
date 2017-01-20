@@ -22,7 +22,6 @@ import com.hazelcast.jet.impl.connector.IListReader;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
-import com.hazelcast.jet.stream.Distributed;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;

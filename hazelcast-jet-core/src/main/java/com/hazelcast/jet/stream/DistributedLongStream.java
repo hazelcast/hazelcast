@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
+import com.hazelcast.jet.Distributed;
+
 import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.LongBinaryOperator;

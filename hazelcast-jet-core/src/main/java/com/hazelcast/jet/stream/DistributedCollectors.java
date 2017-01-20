@@ -17,6 +17,8 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Distributed.Optional;
 import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.collectors.DistributedStringJoiner;
 import com.hazelcast.jet.stream.impl.collectors.HazelcastGroupingMapCollector;
@@ -43,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.LongSummaryStatistics;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
@@ -50,7 +53,7 @@ import java.util.stream.Collector;
 /**
  * Distributed implementations of {@link java.util.stream.Collectors}
  * <p>
- * Implementations of {@link Distributed.Collector} that implement various useful reduction
+ * Implementations of {@link DistributedCollector} that implement various useful reduction
  * operations, such as accumulating elements into collections, summarizing
  * elements according to various criteria, etc.
  */
@@ -85,7 +88,7 @@ public abstract class DistributedCollectors {
      * {@code Collection}, in encounter order
      */
     public static <T, C extends Collection<T>>
-    Distributed.Collector<T, ?, C> toCollection(Distributed.Supplier<C> collectionFactory) {
+    DistributedCollector<T, ?, C> toCollection(Distributed.Supplier<C> collectionFactory) {
         return new DistributedCollectorImpl<>(collectionFactory, Collection::add,
                 (r1, r2) -> {
                     r1.addAll(r2);
@@ -104,7 +107,7 @@ public abstract class DistributedCollectors {
      * @return a {@code Distributed.Collector} which collects all the input elements into a
      * {@code List}, in encounter order
      */
-    public static <T> Distributed.Collector<T, ?, List<T>> toList() {
+    public static <T> DistributedCollector<T, ?, List<T>> toList() {
         return new DistributedCollectorImpl<>(ArrayList::new, List::add,
                 (left, right) -> {
                     left.addAll(right);
@@ -128,7 +131,7 @@ public abstract class DistributedCollectors {
      * {@code Set}
      */
     public static <T>
-    Distributed.Collector<T, ?, Set<T>> toSet() {
+    DistributedCollector<T, ?, Set<T>> toSet() {
         return new DistributedCollectorImpl<>((Distributed.Supplier<Set<T>>) HashSet::new, Set<T>::add,
                 (left, right) -> {
                     left.addAll(right);
@@ -144,7 +147,7 @@ public abstract class DistributedCollectors {
      * @return a {@code Distributed.Collector} that concatenates the input elements into a
      * {@code String}, in encounter order
      */
-    public static Distributed.Collector<CharSequence, ?, String> joining() {
+    public static DistributedCollector<CharSequence, ?, String> joining() {
         return new DistributedCollectorImpl<>(
                 StringBuilder::new, StringBuilder::append,
                 (r1, r2) -> {
@@ -162,7 +165,7 @@ public abstract class DistributedCollectors {
      * @return A {@code Distributed.Collector} which concatenates CharSequence elements,
      * separated by the specified delimiter, in encounter order
      */
-    public static Distributed.Collector<CharSequence, ?, String> joining(CharSequence delimiter) {
+    public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter) {
         return joining(delimiter, "", "");
     }
 
@@ -179,9 +182,9 @@ public abstract class DistributedCollectors {
      * @return A {@code Distributed.Collector} which concatenates CharSequence elements,
      * separated by the specified delimiter, in encounter order
      */
-    public static Distributed.Collector<CharSequence, ?, String> joining(CharSequence delimiter,
-                                                                         CharSequence prefix,
-                                                                         CharSequence suffix) {
+    public static DistributedCollector<CharSequence, ?, String> joining(CharSequence delimiter,
+                                                                        CharSequence prefix,
+                                                                        CharSequence suffix) {
         return new DistributedCollectorImpl<>(
                 () -> new DistributedStringJoiner(delimiter, prefix, suffix),
                 DistributedStringJoiner::add, DistributedStringJoiner::merge,
@@ -203,8 +206,8 @@ public abstract class DistributedCollectors {
      * elements and provides the mapped results to the downstream collector
      */
     public static <T, U, A, R>
-    Distributed.Collector<T, ?, R> mapping(Distributed.Function<? super T, ? extends U> mapper,
-                                           Distributed.Collector<? super U, A, R> downstream) {
+    DistributedCollector<T, ?, R> mapping(Distributed.Function<? super T, ? extends U> mapper,
+                                          DistributedCollector<? super U, A, R> downstream) {
         Distributed.BiConsumer<A, ? super U> downstreamAccumulator = downstream.accumulator();
         return new DistributedCollectorImpl<>(downstream.supplier(),
                 (r, t) -> downstreamAccumulator.accept(r, mapper.apply(t)),
@@ -230,8 +233,8 @@ public abstract class DistributedCollectors {
      * @return a collector which performs the action of the downstream collector,
      * followed by an additional finishing step
      */
-    public static <T, A, R, RR> Distributed.Collector<T, A, RR> collectingAndThen(Distributed.Collector<T, A, R> downstream,
-                                                                                  Distributed.Function<R, RR> finisher) {
+    public static <T, A, R, RR> DistributedCollector<T, A, RR> collectingAndThen(DistributedCollector<T, A, R> downstream,
+                                                                                 Distributed.Function<R, RR> finisher) {
         Set<Collector.Characteristics> characteristics = downstream.characteristics();
         if (characteristics.contains(Collector.Characteristics.IDENTITY_FINISH)) {
             if (characteristics.size() == 1) {
@@ -261,7 +264,7 @@ public abstract class DistributedCollectors {
      *     reducing(0L, e -> 1L, Long::sum)
      * }</pre>
      */
-    public static <T> Distributed.Collector<T, ?, Long> counting() {
+    public static <T> DistributedCollector<T, ?, Long> counting() {
         return reducing(0L, e -> 1L, Long::sum);
     }
 
@@ -277,7 +280,7 @@ public abstract class DistributedCollectors {
      *     reducing(Distributed.BinaryOperator.minBy(comparator))
      * }</pre>
      */
-    public static <T> Distributed.Collector<T, ?, Distributed.Optional<T>>
+    public static <T> DistributedCollector<T, ?, Optional<T>>
     minBy(Distributed.Comparator<? super T> comparator) {
         return reducing(Distributed.BinaryOperator.minBy(comparator));
     }
@@ -294,7 +297,7 @@ public abstract class DistributedCollectors {
      *     reducing(Distributed.BinaryOperator.maxBy(comparator))
      * }</pre>
      */
-    public static <T> Distributed.Collector<T, ?, Distributed.Optional<T>>
+    public static <T> DistributedCollector<T, ?, Optional<T>>
     maxBy(Distributed.Comparator<? super T> comparator) {
         return reducing(Distributed.BinaryOperator.maxBy(comparator));
     }
@@ -308,7 +311,7 @@ public abstract class DistributedCollectors {
      * @param mapper a function extracting the property to be summed
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
-    public static <T> Distributed.Collector<T, ?, Integer>
+    public static <T> DistributedCollector<T, ?, Integer>
     summingInt(Distributed.ToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new int[1],
@@ -331,7 +334,7 @@ public abstract class DistributedCollectors {
      * @param mapper a function extracting the property to be summed
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
-    public static <T> Distributed.Collector<T, ?, Long>
+    public static <T> DistributedCollector<T, ?, Long>
     summingLong(Distributed.ToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[1],
@@ -361,7 +364,7 @@ public abstract class DistributedCollectors {
      * @param mapper a function extracting the property to be summed
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
-    public static <T> Distributed.Collector<T, ?, Double>
+    public static <T> DistributedCollector<T, ?, Double>
     summingDouble(Distributed.ToDoubleFunction<? super T> mapper) {
         /*
          * In the arrays allocated for the collect operation, index 0
@@ -395,7 +398,7 @@ public abstract class DistributedCollectors {
      * @param mapper a function extracting the property to be summed
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
-    public static <T> Distributed.Collector<T, ?, Double>
+    public static <T> DistributedCollector<T, ?, Double>
     averagingInt(Distributed.ToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[2],
@@ -420,7 +423,7 @@ public abstract class DistributedCollectors {
      * @param mapper a function extracting the property to be summed
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
-    public static <T> Distributed.Collector<T, ?, Double>
+    public static <T> DistributedCollector<T, ?, Double>
     averagingLong(Distributed.ToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 () -> new long[2],
@@ -453,7 +456,7 @@ public abstract class DistributedCollectors {
      * @return a {@code Distributed.Collector} that produces the sum of a derived property
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    public static <T> Distributed.Collector<T, ?, Double>
+    public static <T> DistributedCollector<T, ?, Double>
     averagingDouble(Distributed.ToDoubleFunction<? super T> mapper) {
         /*
          * In the arrays allocated for the collect operation, index 0
@@ -492,7 +495,7 @@ public abstract class DistributedCollectors {
      * @see #reducing(Distributed.BinaryOperator)
      * @see #reducing(Object, Distributed.Function, Distributed.BinaryOperator)
      */
-    public static <T> Distributed.Collector<T, ?, T> reducing(T identity, Distributed.BinaryOperator<T> op) {
+    public static <T> DistributedCollector<T, ?, T> reducing(T identity, Distributed.BinaryOperator<T> op) {
         return new DistributedCollectorImpl<>(
                 boxSupplier(identity),
                 (a, t) -> a[0] = op.apply(a[0], t),
@@ -520,7 +523,7 @@ public abstract class DistributedCollectors {
      * @see #reducing(Object, Distributed.BinaryOperator)
      * @see #reducing(Object, Distributed.Function, Distributed.BinaryOperator)
      */
-    public static <T> Distributed.Collector<T, ?, Distributed.Optional<T>>
+    public static <T> DistributedCollector<T, ?, Optional<T>>
     reducing(Distributed.BinaryOperator<T> op) {
         class OptionalBox implements Distributed.Consumer<T> {
             T value;
@@ -571,9 +574,9 @@ public abstract class DistributedCollectors {
      * @see #reducing(Object, Distributed.BinaryOperator)
      * @see #reducing(Distributed.BinaryOperator)
      */
-    public static <T, U> Distributed.Collector<T, ?, U> reducing(U identity,
-                                                                 Distributed.Function<? super T, ? extends U> mapper,
-                                                                 Distributed.BinaryOperator<U> op) {
+    public static <T, U> DistributedCollector<T, ?, U> reducing(U identity,
+                                                                Distributed.Function<? super T, ? extends U> mapper,
+                                                                Distributed.BinaryOperator<U> op) {
         return new DistributedCollectorImpl<>(
                 boxSupplier(identity),
                 (a, t) -> a[0] = op.apply(a[0], mapper.apply(t)),
@@ -603,10 +606,10 @@ public abstract class DistributedCollectors {
      * @param <K>        the type of the keys
      * @param classifier the classifier function mapping input elements to keys
      * @return a {@code Distributed.Collector} implementing the group-by operation
-     * @see #groupingBy(Distributed.Function, Distributed.Collector)
-     * @see #groupingBy(Distributed.Function, Distributed.Supplier, Distributed.Collector)
+     * @see #groupingBy(Distributed.Function, DistributedCollector)
+     * @see #groupingBy(Distributed.Function, Distributed.Supplier, DistributedCollector)
      */
-    public static <T, K> Distributed.Collector<T, ?, Map<K, List<T>>>
+    public static <T, K> DistributedCollector<T, ?, Map<K, List<T>>>
     groupingBy(Distributed.Function<? super T, ? extends K> classifier) {
         return groupingBy(classifier, toList());
     }
@@ -641,11 +644,11 @@ public abstract class DistributedCollectors {
      * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
      * @return a {@code Distributed.Collector} implementing the cascaded group-by operation
      * @see #groupingBy(Distributed.Function)
-     * @see #groupingBy(Distributed.Function, Distributed.Supplier, Distributed.Collector)
+     * @see #groupingBy(Distributed.Function, Distributed.Supplier, DistributedCollector)
      */
     public static <T, K, A, D>
-    Distributed.Collector<T, ?, Map<K, D>> groupingBy(Distributed.Function<? super T, ? extends K> classifier,
-                                                      Distributed.Collector<? super T, A, D> downstream) {
+    DistributedCollector<T, ?, Map<K, D>> groupingBy(Distributed.Function<? super T, ? extends K> classifier,
+                                                     DistributedCollector<? super T, A, D> downstream) {
         return groupingBy(classifier, HashMap::new, downstream);
     }
 
@@ -680,13 +683,13 @@ public abstract class DistributedCollectors {
      * @param mapFactory a function which, when called, produces a new empty
      *                   {@code Map} of the desired type
      * @return a {@code Distributed.Collector} implementing the cascaded group-by operation
-     * @see #groupingBy(Distributed.Function, Distributed.Collector)
+     * @see #groupingBy(Distributed.Function, DistributedCollector)
      * @see #groupingBy(Distributed.Function)
      */
     public static <T, K, D, A, M extends Map<K, D>>
-    Distributed.Collector<T, ?, M> groupingBy(Distributed.Function<? super T, ? extends K> classifier,
-                                              Distributed.Supplier<M> mapFactory,
-                                              Distributed.Collector<? super T, A, D> downstream) {
+    DistributedCollector<T, ?, M> groupingBy(Distributed.Function<? super T, ? extends K> classifier,
+                                             Distributed.Supplier<M> mapFactory,
+                                             DistributedCollector<? super T, A, D> downstream) {
         Distributed.Supplier<A> downstreamSupplier = downstream.supplier();
         Distributed.BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
         Distributed.BiConsumer<Map<K, A>, T> accumulator = (m, t) -> {
@@ -726,7 +729,7 @@ public abstract class DistributedCollectors {
      * @param <T>       the type of the input elements
      * @param predicate a predicate used for classifying input elements
      * @return a {@code Distributed.Collector} implementing the partitioning operation
-     * @see #partitioningBy(Distributed.Predicate, Distributed.Collector)
+     * @see #partitioningBy(Distributed.Predicate, DistributedCollector)
      */
     public static <T>
     Collector<T, ?, Map<Boolean, List<T>>> partitioningBy(Distributed.Predicate<? super T> predicate) {
@@ -755,7 +758,7 @@ public abstract class DistributedCollectors {
      */
     public static <T, D, A>
     Collector<T, ?, Map<Boolean, D>> partitioningBy(Distributed.Predicate<? super T> predicate,
-                                                    Distributed.Collector<? super T, A, D> downstream) {
+                                                    DistributedCollector<? super T, A, D> downstream) {
         Distributed.BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
         Distributed.BiConsumer<Partition<A>, T> accumulator = (result, t) ->
                 downstreamAccumulator.accept(predicate.test(t) ? result.forTrue : result.forFalse, t);
@@ -801,8 +804,8 @@ public abstract class DistributedCollectors {
      * Distributed.Supplier)
      */
     public static <T, K, U>
-    Distributed.Collector<T, ?, Map<K, U>> toMap(Distributed.Function<? super T, ? extends K> keyMapper,
-                                                 Distributed.Function<? super T, ? extends U> valueMapper) {
+    DistributedCollector<T, ?, Map<K, U>> toMap(Distributed.Function<? super T, ? extends K> keyMapper,
+                                                Distributed.Function<? super T, ? extends U> valueMapper) {
         return toMap(keyMapper, valueMapper, throwingMerger(), HashMap::new);
     }
 
@@ -872,10 +875,10 @@ public abstract class DistributedCollectors {
      * @see #toMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
      */
     public static <T, K, U, M extends Map<K, U>>
-    Distributed.Collector<T, ?, M> toMap(Distributed.Function<? super T, ? extends K> keyMapper,
-                                         Distributed.Function<? super T, ? extends U> valueMapper,
-                                         Distributed.BinaryOperator<U> mergeFunction,
-                                         Distributed.Supplier<M> mapSupplier) {
+    DistributedCollector<T, ?, M> toMap(Distributed.Function<? super T, ? extends K> keyMapper,
+                                        Distributed.Function<? super T, ? extends U> valueMapper,
+                                        Distributed.BinaryOperator<U> mergeFunction,
+                                        Distributed.Supplier<M> mapSupplier) {
         Distributed.BiConsumer<M, T> accumulator
                 = (map, element) -> map.merge(keyMapper.apply(element),
                 valueMapper.apply(element), mergeFunction);
@@ -896,7 +899,7 @@ public abstract class DistributedCollectors {
      * @see #summarizingLong(Distributed.ToLongFunction)
      */
     public static <T>
-    Distributed.Collector<T, ?, IntSummaryStatistics>
+    DistributedCollector<T, ?, IntSummaryStatistics>
     summarizingInt(Distributed.ToIntFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 DistributedIntSummaryStatistics::new,
@@ -919,7 +922,7 @@ public abstract class DistributedCollectors {
      * @see #summarizingInt(Distributed.ToIntFunction)
      */
     public static <T>
-    Distributed.Collector<T, ?, LongSummaryStatistics>
+    DistributedCollector<T, ?, LongSummaryStatistics>
     summarizingLong(Distributed.ToLongFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 DistributedLongSummaryStatistics::new,
@@ -942,7 +945,7 @@ public abstract class DistributedCollectors {
      * @see #summarizingInt(Distributed.ToIntFunction)
      */
     public static <T>
-    Distributed.Collector<T, ?, DoubleSummaryStatistics>
+    DistributedCollector<T, ?, DoubleSummaryStatistics>
     summarizingDouble(Distributed.ToDoubleFunction<? super T> mapper) {
         return new DistributedCollectorImpl<>(
                 DistributedDoubleSummaryStatistics::new,
@@ -978,7 +981,7 @@ public abstract class DistributedCollectors {
      * the input elements
      * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
      */
-    public static <T, K, U> Distributed.Collector<T, ?, IStreamMap<K, U>>
+    public static <T, K, U> DistributedCollector<T, ?, IStreamMap<K, U>>
     toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
            Distributed.Function<? super T, ? extends U> valueMapper) {
         return new HazelcastMapCollector<>(keyMapper, valueMapper);
@@ -1005,7 +1008,7 @@ public abstract class DistributedCollectors {
      * @see #toIMap(Distributed.Function, Distributed.Function)
      * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
      */
-    public static <K, U> Distributed.Collector<Map.Entry<K, U>, ?, IStreamMap<K, U>> toIMap() {
+    public static <K, U> DistributedCollector<Entry<K, U>, ?, IStreamMap<K, U>> toIMap() {
         return toIMap(Map.Entry::getKey, Map.Entry::getValue);
     }
 
@@ -1037,7 +1040,7 @@ public abstract class DistributedCollectors {
      * using the merge function
      * @see #toIMap(Distributed.Function, Distributed.Function)
      */
-    public static <T, K, U> Distributed.Collector<T, ?, IStreamMap<K, U>>
+    public static <T, K, U> DistributedCollector<T, ?, IStreamMap<K, U>>
     toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
            Distributed.Function<? super T, ? extends U> valueMapper,
            Distributed.BinaryOperator<U> mergeFunction) {
@@ -1054,7 +1057,7 @@ public abstract class DistributedCollectors {
      * @return a {@code Distributed.Collector} which collects all the input elements into a
      * Hazelcast {@code IList}, in encounter order
      */
-    public static <T> Distributed.Collector<T, ?, IStreamList<T>> toIList() {
+    public static <T> DistributedCollector<T, ?, IStreamList<T>> toIList() {
         return new HazelcastListCollector<>();
     }
 
@@ -1077,9 +1080,9 @@ public abstract class DistributedCollectors {
      * @param <K>        the type of the keys
      * @param classifier the classifier function mapping input elements to keys
      * @return a {@code Distributed.Collector} implementing the group-by operation
-     * @see #groupingByToIMap(Distributed.Function, Distributed.Collector)
+     * @see #groupingByToIMap(Distributed.Function, DistributedCollector)
      */
-    public static <T, K> Distributed.Collector<T, ?, IMap<K, List<T>>>
+    public static <T, K> DistributedCollector<T, ?, IMap<K, List<T>>>
     groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier) {
         return groupingByToIMap(classifier, toList());
     }
@@ -1113,8 +1116,8 @@ public abstract class DistributedCollectors {
      * @see #groupingByToIMap(Distributed.Function)
      */
     public static <T, K, A, D>
-    Distributed.Collector<T, ?, IMap<K, D>> groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier,
-                                                             Distributed.Collector<? super T, A, D> downstream) {
+    DistributedCollector<T, ?, IMap<K, D>> groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier,
+                                                            DistributedCollector<? super T, A, D> downstream) {
         return new HazelcastGroupingMapCollector<>(classifier, downstream);
     }
 
