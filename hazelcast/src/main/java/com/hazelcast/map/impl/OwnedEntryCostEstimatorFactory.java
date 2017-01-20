@@ -21,39 +21,45 @@ import com.hazelcast.config.InMemoryFormat;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 
 /**
- * Static factory methods for various size estimators.
+ * Static factory methods for various entry cost estimators.
  */
-public final class SizeEstimatorFactory {
+public final class OwnedEntryCostEstimatorFactory {
 
     /**
      * Returns zero for all estimations.
      */
-    private static final SizeEstimator ZERO_SIZE_ESTIMATOR = new ZeroSizeEstimator();
+    private static final EntryCostEstimator ZERO_SIZE_ESTIMATOR = new ZeroEntryCostEstimator();
 
-    private SizeEstimatorFactory() {
+    private OwnedEntryCostEstimatorFactory() {
     }
 
-    public static SizeEstimator createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
+    public static <K, V> EntryCostEstimator<K, V> createMapSizeEstimator(InMemoryFormat inMemoryFormat) {
         if (BINARY.equals(inMemoryFormat)) {
-            return new BinaryMapSizeEstimator();
+            return (EntryCostEstimator<K, V>) new BinaryMapEntryCostEstimator();
         }
         return ZERO_SIZE_ESTIMATOR;
     }
 
-    private static class ZeroSizeEstimator implements SizeEstimator {
+    private static class ZeroEntryCostEstimator
+            implements EntryCostEstimator {
 
         @Override
-        public long getSize() {
-            return 0L;
+        public long getEstimate() {
+            return 0;
         }
 
         @Override
-        public void add(long size) {
+        public void adjustEstimateBy(long adjustment) {
         }
 
         @Override
-        public long calculateSize(Object object) {
-            return 0L;
+        public long calculateValueCost(Object value) {
+            return 0;
+        }
+
+        @Override
+        public long calculateEntryCost(Object key, Object value) {
+            return 0;
         }
 
         @Override

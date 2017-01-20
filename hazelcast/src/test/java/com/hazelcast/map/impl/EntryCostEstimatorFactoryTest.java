@@ -16,18 +16,21 @@
 
 package com.hazelcast.map.impl;
 
-/**
- * Size estimator general contract.
- *
- * @param <T> the type of object which's size going to be estimated.
- */
-public interface SizeEstimator<T> {
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    long getSize();
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class EntryCostEstimatorFactoryTest
+        extends HazelcastTestSupport {
 
-    void add(long size);
-
-    long calculateSize(T object);
-
-    void reset();
+    @Test
+    public void testConstructor() {
+        assertUtilityConstructor(OwnedEntryCostEstimatorFactory.class);
+    }
 }

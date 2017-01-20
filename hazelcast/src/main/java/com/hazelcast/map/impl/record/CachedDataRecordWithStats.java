@@ -20,12 +20,16 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.util.JVMUtil.REFERENCE_COST_IN_BYTES;
+
 /**
  * CachedDataRecordWithStats.
  */
 class CachedDataRecordWithStats extends DataRecordWithStats {
     private static final AtomicReferenceFieldUpdater<CachedDataRecordWithStats, Object> CACHED_VALUE =
             AtomicReferenceFieldUpdater.newUpdater(CachedDataRecordWithStats.class, Object.class, "cachedValue");
+
+    private static final int CACHED_VALUE_REF_COST_IN_BYTES = REFERENCE_COST_IN_BYTES;
 
     private transient volatile Object cachedValue;
 
@@ -54,6 +58,11 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
     }
 
     @Override
+    public long getCost() {
+        return super.getCost() + CACHED_VALUE_REF_COST_IN_BYTES;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -79,4 +88,5 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
         result = 31 * result + (cachedValue != null ? cachedValue.hashCode() : 0);
         return result;
     }
+
 }

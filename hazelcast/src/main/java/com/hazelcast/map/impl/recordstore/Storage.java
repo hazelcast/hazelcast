@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
-import com.hazelcast.map.impl.SizeEstimator;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -60,9 +60,9 @@ public interface Storage<K, R> {
 
     void destroy(boolean isDuringShutdown);
 
-    SizeEstimator getSizeEstimator();
+    EntryCostEstimator getEntryCostEstimator();
 
-    void setSizeEstimator(SizeEstimator sizeEstimator);
+    void setEntryCostEstimator(EntryCostEstimator entryCostEstimator);
 
     void disposeDeferredBlocks();
 

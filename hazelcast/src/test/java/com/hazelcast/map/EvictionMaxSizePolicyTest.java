@@ -11,7 +11,7 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.SizeEstimator;
+import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.eviction.EvictionChecker;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.eviction.EvictorImpl;
@@ -219,26 +219,34 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
                 }
                 final RecordStore recordStore = container.getRecordStore(map.getName());
                 final DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-                defaultRecordStore.setSizeEstimator(new SizeEstimator() {
+                defaultRecordStore.setSizeEstimator(new EntryCostEstimator() {
 
                     long size;
 
                     @Override
-                    public long getSize() {
+                    public long getEstimate() {
                         return size;
                     }
 
                     @Override
-                    public void add(long size) {
+                    public void adjustEstimateBy(long size) {
                         this.size += size;
                     }
 
                     @Override
-                    public long calculateSize(Object record) {
+                    public long calculateValueCost(Object record) {
                         if (record == null) {
                             return 0L;
                         }
                         return oneEntryHeapCostInBytes;
+                    }
+
+                    @Override
+                    public long calculateEntryCost(Object key, Object record) {
+                        if (record == null) {
+                            return 0L;
+                        }
+                        return 2 * oneEntryHeapCostInBytes;
                     }
 
                     @Override
