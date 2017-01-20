@@ -29,13 +29,11 @@ public class VertexTest {
     private Vertex v;
 
     @Test
-    public void when_emptyConstructor_then_initialValues() {
+    public void when_constructed_then_hasDefaultParallelism() {
         // When
-        v = new Vertex();
+        v = new Vertex("v", NoopProcessor::new);
 
         // Then
-        assertNull(v.getSupplier());
-        assertNull(v.getName());
         assertEquals(-1, v.getLocalParallelism());
     }
 

@@ -80,7 +80,7 @@ public class PartitionAlignmentTest {
         final Vertex consumer = dag.newVertex("consumer", listWriter("numbers")).localParallelism(1);
 
         dag.edge(between(distributedProducer, processor).partitionedByCustom(partitioner).distributed())
-           .edge(from(localProducer, 0).to(processor, 1).partitionedByCustom(partitioner))
+           .edge(from(localProducer).to(processor, 1).partitionedByCustom(partitioner))
            .edge(between(processor, consumer));
 
         executeAndPeel(instance.newJob(dag));
@@ -109,8 +109,7 @@ public class PartitionAlignmentTest {
 
         @Override
         public boolean complete() {
-            counts.entrySet().stream()
-                  .forEach(e -> emit(describe(e.getKey(), e.getValue())));
+            counts.entrySet().forEach(e -> emit(describe(e.getKey(), e.getValue())));
             return true;
         }
     }
