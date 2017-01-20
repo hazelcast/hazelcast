@@ -67,13 +67,6 @@ public class ScheduledExecutorConfig {
         this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize());
     }
 
-    public ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     /**
      * Gets the name of the executor task.
      *
@@ -170,6 +163,13 @@ public class ScheduledExecutorConfig {
                 + ", poolSize-" + poolSize
                 + ", capacity-" + capacity
                 + '}';
+    }
+
+    ScheduledExecutorConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     private static class ScheduledExecutorConfigReadOnly extends ScheduledExecutorConfig {

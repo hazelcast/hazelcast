@@ -38,6 +38,12 @@ public class CacheSimpleEntryListenerConfig {
     public CacheSimpleEntryListenerConfig() {
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);

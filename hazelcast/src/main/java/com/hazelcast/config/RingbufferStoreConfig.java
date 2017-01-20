@@ -111,19 +111,25 @@ public class RingbufferStoreConfig {
         return this;
     }
 
-    public RingbufferStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new RingbufferStoreConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String toString() {
         return "RingbufferStoreConfig{"
                 + "enabled=" + enabled
                 + ", className='" + className + '\''
                 + ", properties=" + properties
                 + '}';
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
+    public RingbufferStoreConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new RingbufferStoreConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

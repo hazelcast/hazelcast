@@ -168,6 +168,12 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public EvictionConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new EvictionConfigReadOnly(this);

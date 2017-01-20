@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -226,9 +226,10 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
     }
 
     /**
-     * Gets immutable version of this cache configuration.
+     * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this cache configuration.
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
         return new CacheConfigReadOnly<K, V>(this);

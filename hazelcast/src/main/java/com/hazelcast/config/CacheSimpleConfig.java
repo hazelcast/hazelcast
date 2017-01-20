@@ -143,9 +143,10 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets the immutable version of this simple cache config.
+     * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this simple cache config.
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
      */
     public CacheSimpleConfig getAsReadOnly() {
         if (readOnly == null) {

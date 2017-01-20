@@ -91,13 +91,6 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
         this.filename = checkNotNull(filename, "filename cannot be null!");
     }
 
-    NearCachePreloaderConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new NearCachePreloaderConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public boolean isEnabled() {
         return enabled;
     }
@@ -160,6 +153,13 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
                 + ", storeInitialDelaySeconds=" + storeInitialDelaySeconds
                 + ", storeIntervalSeconds=" + storeIntervalSeconds
                 + '}';
+    }
+
+    NearCachePreloaderConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new NearCachePreloaderConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

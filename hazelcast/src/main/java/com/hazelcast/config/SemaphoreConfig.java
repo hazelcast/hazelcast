@@ -61,6 +61,12 @@ public class SemaphoreConfig {
         this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public SemaphoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new SemaphoreConfigReadOnly(this);
