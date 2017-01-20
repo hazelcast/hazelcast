@@ -250,7 +250,7 @@ public class ScheduledExecutorContainer {
                     doSchedule(descriptor);
                 }
 
-                descriptor.setMasterReplica(true);
+                descriptor.setTaskOwner(true);
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -346,7 +346,7 @@ public class ScheduledExecutorContainer {
                 throw new IllegalArgumentException();
         }
 
-        descriptor.setMasterReplica(true);
+        descriptor.setTaskOwner(true);
         descriptor.setScheduledFuture(future);
     }
 
