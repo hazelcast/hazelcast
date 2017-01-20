@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.execution;
 
 import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.impl.execution.init.EdgeDef;
-import com.hazelcast.jet.impl.util.CircularCursor;
+import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -107,11 +107,11 @@ public interface OutboundCollector {
 
     class RoundRobin extends Composite {
 
-        private final CircularCursor<OutboundCollector> cursor;
+        private final CircularListCursor<OutboundCollector> cursor;
 
         RoundRobin(OutboundCollector[] collectors) {
             super(collectors);
-            this.cursor = new CircularCursor<>(Arrays.asList(collectors));
+            this.cursor = new CircularListCursor<>(Arrays.asList(collectors));
         }
 
         @Override

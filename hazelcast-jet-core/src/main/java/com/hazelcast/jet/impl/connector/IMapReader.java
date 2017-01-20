@@ -27,7 +27,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
-import com.hazelcast.jet.impl.util.CircularCursor;
+import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 
@@ -55,7 +55,7 @@ public final class IMapReader extends AbstractProcessor {
     private final List<Integer> partitions;
 
     private List<Iterator> iterators;
-    private CircularCursor<Iterator> iteratorCursor;
+    private CircularListCursor<Iterator> iteratorCursor;
 
     private IMapReader(Function<Integer, Iterator<Map.Entry>> partitionToIterator, List<Integer> partitions) {
         this.partitionToIterator = partitionToIterator;
@@ -66,7 +66,7 @@ public final class IMapReader extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         this.iterators = partitions.stream().map(partitionToIterator).collect(toList());
-        this.iteratorCursor = new CircularCursor<>(iterators);
+        this.iteratorCursor = new CircularListCursor<>(iterators);
     }
 
     @Override

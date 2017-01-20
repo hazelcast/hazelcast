@@ -20,7 +20,7 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processor.Context;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
-import com.hazelcast.jet.impl.util.CircularCursor;
+import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.util.Preconditions;
@@ -47,7 +47,7 @@ public class ProcessorTasklet implements Tasklet {
     private final Queue<ArrayList<InboundEdgeStream>> instreamGroupQueue;
     private final String vertexName;
     private final Context context;
-    private CircularCursor<InboundEdgeStream> instreamCursor;
+    private CircularListCursor<InboundEdgeStream> instreamCursor;
     private final ArrayDequeOutbox outbox;
     private final OutboundEdgeStream[] outstreams;
 
@@ -106,8 +106,8 @@ public class ProcessorTasklet implements Tasklet {
         return progTracker.toProgressState();
     }
 
-    private CircularCursor<InboundEdgeStream> popInstreamGroup() {
-        return Optional.ofNullable(instreamGroupQueue.poll()).map(CircularCursor::new).orElse(null);
+    private CircularListCursor<InboundEdgeStream> popInstreamGroup() {
+        return Optional.ofNullable(instreamGroupQueue.poll()).map(CircularListCursor::new).orElse(null);
     }
 
     private void tryFillInbox() {
