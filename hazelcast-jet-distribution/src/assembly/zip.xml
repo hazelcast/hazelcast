@@ -50,6 +50,10 @@
             <outputDirectory>bin</outputDirectory>
         </file>
         <file>
+            <source>${resource.dir}/hazelcast-jet-full-example.xml</source>
+            <outputDirectory>bin</outputDirectory>
+        </file>
+        <file>
             <source>${resource.dir}/hazelcast-jet-member-default.xml</source>
             <destName>hazelcast.xml</destName>
             <outputDirectory>bin</outputDirectory>
