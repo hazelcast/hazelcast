@@ -160,7 +160,7 @@ public class DistributedScheduledExecutorService
         int partitionId = event.getPartitionId();
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             discardStash(event.getPartitionId(), event.getCurrentReplicaIndex());
-        } else {
+        } else if (event.getCurrentReplicaIndex() == 0) {
             ScheduledExecutorPartition partition = partitions[partitionId];
             partition.promoteStash();
         }
