@@ -27,6 +27,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -51,38 +53,28 @@ public final class IMapReader extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
-    private final Function<Integer, Iterator<Map.Entry>> partitionToIterator;
-    private final List<Integer> partitions;
+    private final Traverser<Entry> outputTraverser;
 
-    private List<Iterator> iterators;
-    private CircularListCursor<Iterator> iteratorCursor;
-
-    private IMapReader(Function<Integer, Iterator<Map.Entry>> partitionToIterator, List<Integer> partitions) {
-        this.partitionToIterator = partitionToIterator;
-        this.partitions = partitions;
-        this.iterators = new ArrayList<>();
-    }
-
-    @Override
-    protected void init(@Nonnull Context context) {
-        this.iterators = partitions.stream().map(partitionToIterator).collect(toList());
-        this.iteratorCursor = new CircularListCursor<>(iterators);
+    IMapReader(Function<Integer, Iterator<Entry>> partitionToIterator, List<Integer> partitions) {
+        final CircularListCursor<Iterator> iteratorCursor = new CircularListCursor<>(
+                partitions.stream().map(partitionToIterator).collect(toList())
+        );
+        this.outputTraverser = () -> {
+            do {
+                final Iterator<Entry> currIterator = iteratorCursor.value();
+                if (currIterator.hasNext()) {
+                    iteratorCursor.advance();
+                    return currIterator.next();
+                }
+                iteratorCursor.remove();
+            } while (iteratorCursor.advance());
+            return null;
+        };
     }
 
     @Override
     public boolean complete() {
-        do {
-            final Iterator<Map.Entry> currIterator = iteratorCursor.value();
-            if (!currIterator.hasNext()) {
-                iteratorCursor.remove();
-                continue;
-            }
-            emit(currIterator.next());
-            if (getOutbox().isHighWater()) {
-                return false;
-            }
-        } while (iteratorCursor.advance());
-        return true;
+        return emitCooperatively(outputTraverser);
     }
 
     @Override
@@ -239,10 +231,10 @@ public final class IMapReader extends AbstractProcessor {
     }
 
     static List<Processor> getProcessors(int count, List<Integer> ownedPartitions,
-                                         Function<Integer, Iterator<Map.Entry>> partitionToIterator) {
+                                         Function<Integer, Iterator<Entry>> partitionToIterator) {
         Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size()).boxed()
                 .map(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
-                .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+                .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, toList())));
         range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
         return processorToPartitions
                 .values().stream()
