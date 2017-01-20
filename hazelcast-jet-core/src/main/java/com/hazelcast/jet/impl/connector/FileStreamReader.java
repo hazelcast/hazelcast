@@ -102,7 +102,7 @@ public class FileStreamReader extends AbstractProcessor {
     public boolean complete() {
         try {
             while (true) {
-                WatchKey key;
+                final WatchKey key;
                 try {
                     key = watcher.take();
                 } catch (InterruptedException x) {
@@ -110,10 +110,10 @@ public class FileStreamReader extends AbstractProcessor {
                 }
 
                 for (WatchEvent<?> event : key.pollEvents()) {
-                    WatchEvent.Kind<?> kind = event.kind();
-                    WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                    Path file = ev.context();
-                    Path resolved = path.resolve(file);
+                    final WatchEvent.Kind<?> kind = event.kind();
+                    final WatchEvent<Path> ev = (WatchEvent<Path>) event;
+                    final Path file = ev.context();
+                    final Path resolved = path.resolve(file);
                     if (kind == OVERFLOW) {
                         continue;
                     }
@@ -123,29 +123,32 @@ public class FileStreamReader extends AbstractProcessor {
                         return true;
                     }
 
-                    int filenameHash = resolved.toFile().getPath().hashCode();
+                    final int filenameHash = resolved.toFile().getPath().hashCode();
                     if (((filenameHash & Integer.MAX_VALUE) % parallelism) != id) {
                         continue;
                     }
 
                     if (kind == ENTRY_CREATE) {
-                        LOGGER.info("New file (" + resolved + ") added");
+                        LOGGER.info("Detected new file: " + resolved);
                         readFile(resolved, 0L);
                         return !key.reset();
-                    } else if (kind == ENTRY_MODIFY) {
-                        LOGGER.info("The file (" + resolved + ") updated");
-                        if (watchType == WatchType.NEW) {
-                            continue;
-                        } else if (watchType == WatchType.REPROCESS) {
-                            LOGGER.info("Re-processing the file (" + resolved + ")");
+                    }
+                    if (kind != ENTRY_MODIFY) {
+                        continue;
+                    }
+                    LOGGER.info("Detected file change: " + resolved);
+                    switch (watchType) {
+                        case REPROCESS:
+                            LOGGER.info("Re-processing the file (" + resolved + ')');
                             fileOffsets.put(resolved.toString(), 0L);
                             readFile(resolved, 0L);
                             return !key.reset();
-                        } else if (watchType == WatchType.APPENDED_ONLY) {
-                            LOGGER.info("Processing only the appended content on the file (" + resolved + ")");
+                        case APPENDED_ONLY:
+                            LOGGER.info("Processing only the appended content on the file (" + resolved + ')');
                             readFile(resolved, fileOffsets.computeIfAbsent(resolved.toString(), s -> 0L));
                             return !key.reset();
-                        }
+                        case NEW:
+                        default:
                     }
                 }
                 boolean valid = key.reset();
