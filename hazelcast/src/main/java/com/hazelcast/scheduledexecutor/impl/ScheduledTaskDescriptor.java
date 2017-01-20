@@ -40,6 +40,15 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     private ScheduledFuture<?> future;
 
     /**
+     * Only accessed through a member lock or partition threads
+     * Used to identify which replica of the task is the owner, to only return that instance
+     * when {@link com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperation} operation is triggered.
+     * This flag is set to true only on initial scheduling of a task, and on after a promotion (stashed or migration),
+     * in the latter case the other replicas get disposed.
+     */
+    private transient boolean isTaskOwner;
+
+    /**
      * SPMC (see. Member owned tasks)
      */
     private volatile ScheduledTaskStatisticsImpl stats;
@@ -76,6 +85,14 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
 
     public TaskDefinition getDefinition() {
         return definition;
+    }
+
+    public boolean isTaskOwner() {
+        return isTaskOwner;
+    }
+
+    void setTaskOwner(boolean taskOwner) {
+        this.isTaskOwner = taskOwner;
     }
 
     ScheduledTaskStatisticsImpl getStatsSnapshot() {
@@ -194,6 +211,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
                 + "future=" + future + ", "
                 + "stats=" + stats + ", "
                 + "state=" + state + ", "
+                + "isTaskOwner=" + isTaskOwner + ", "
                 + "result=" + resultRef.get()
                 + '}';
     }

@@ -142,4 +142,51 @@ public class ScheduledExecutorServiceSlowTest
         assertEquals(6, stats.getTotalRuns());
     }
 
+    @Test
+    public void scheduleRandomPartitions_getAllScheduled_durable()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(3);
+        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        String key = generateKeyOwnedBy(instances[1]);
+
+        int expectedTotal = 11;
+        IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
+        for (int i=0; i < expectedTotal; i++) {
+            futures[i] = s.schedule(new PlainCallableTask(i), 0, SECONDS);
+        }
+
+        instances[1].getLifecycleService().shutdown();
+
+        assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
+
+        // Verify all tasks
+        for (int i=0; i < expectedTotal; i++) {
+            assertEquals(25.0 + i, futures[i].get());
+        }
+    }
+
+    @Test
+    public void scheduleRandomPartitions_periodicTask_getAllScheduled_durable()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(3);
+        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+        String key = generateKeyOwnedBy(instances[1]);
+        String runsCounterName = "runs";
+
+        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+        runsLatch.trySetCount(2);
+
+        int expectedTotal = 11;
+        for (int i=0; i < expectedTotal; i++) {
+            s.scheduleOnKeyOwnerAtFixedRate(new ICountdownLatchRunnableTask(runsCounterName), key, 0, 2, SECONDS);
+        }
+
+        runsLatch.await(10, SECONDS);
+        instances[1].getLifecycleService().shutdown();
+
+        assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
+    }
+
 }

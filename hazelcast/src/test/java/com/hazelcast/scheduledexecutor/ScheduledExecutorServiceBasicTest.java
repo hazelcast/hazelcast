@@ -795,7 +795,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test
-    public void getAllScheduled()
+    public void scheduleOnAllMembers_getAllScheduled()
             throws ExecutionException, InterruptedException {
 
         HazelcastInstance[] instances = createClusterWithCount(3);
@@ -810,6 +810,33 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         for (Member member : members) {
             assertEquals(1, allScheduled.get(member).size());
             assertEquals(25.0, allScheduled.get(member).get(0).get(), 0);
+        }
+    }
+
+    @Test
+    public void scheduleRandomPartitions_getAllScheduled()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService s = getScheduledExecutor(instances, "s");
+
+        int expectedTotal = 11;
+        IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
+        for (int i=0; i < expectedTotal; i++) {
+            futures[i] = s.schedule(new PlainCallableTask(i), 0, SECONDS);
+        }
+
+        assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
+
+        // Dispose 1 task
+        futures[0].dispose();
+
+        // Recount
+        assertEquals(expectedTotal - 1, countScheduledTasksOn(s), 0);
+
+        // Verify all tasks
+        for (int i=1; i < expectedTotal; i++) {
+            assertEquals(25.0 + i, futures[i].get());
         }
     }
 
