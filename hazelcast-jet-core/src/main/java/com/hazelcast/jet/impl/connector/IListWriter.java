@@ -32,9 +32,9 @@ import static java.util.stream.Collectors.toList;
 
 public final class IListWriter implements Processor {
 
-    private IList list;
+    private List list;
 
-    private IListWriter(IList list) {
+    IListWriter(List list) {
         this.list = list;
     }
 
