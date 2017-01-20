@@ -2,4 +2,4 @@
 
 SETLOCAL
 
-taskkill /F /FI "WINDOWTITLE eq hazelcast"
+taskkill /F /FI "WINDOWTITLE eq hazelcast-jet"

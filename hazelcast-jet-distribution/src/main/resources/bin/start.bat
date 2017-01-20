@@ -23,15 +23,15 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 	set JAVA_OPTS=%JAVA_OPTS% -Xmx%MAX_HEAP_SIZE%
 )
 
-set CLASSPATH=%~dp0..\lib\hazelcast-jet-${project.version}.jar:..\lib\hazelcast-${hazelcast.version}.jar
+set CLASSPATH=%~dp0..\lib\hazelcast-jet-${project.version}.jar;..\lib\hazelcast-${hazelcast.version}.jar
 
 ECHO ########################################
 ECHO # RUN_JAVA=%RUN_JAVA%
 ECHO # JAVA_OPTS=%JAVA_OPTS%
-ECHO # starting now...."
+ECHO # starting now....
 ECHO ########################################
 
-start "hazelcast" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.core.server.StartServer"
+start "hazelcast-jet" "%RUN_JAVA%" %JAVA_OPTS% -cp "%CLASSPATH%" "com.hazelcast.jet.server.StartServer"
 goto endofscript
 
 :error
