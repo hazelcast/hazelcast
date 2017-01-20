@@ -76,7 +76,7 @@
             <id>test</id>
             <activation>
                 <file>
-                    <exists>${project.basedir}/src/test/resources/sample-pojo-1.0-person.jar</exists>
+                    <exists>${basedir}/src/test/resources/sample-pojo-1.0-person.jar</exists>
                 </file>
             </activation>
             <dependencies>
@@ -85,7 +85,7 @@
                     <artifactId>com.sample</artifactId>
                     <version>1.0</version>
                     <scope>system</scope>
-                    <systemPath>${project.basedir}/src/test/resources/sample-pojo-1.0-person.jar</systemPath>
+                    <systemPath>${basedir}/src/test/resources/sample-pojo-1.0-person.jar</systemPath>
                 </dependency>
             </dependencies>
         </profile>
