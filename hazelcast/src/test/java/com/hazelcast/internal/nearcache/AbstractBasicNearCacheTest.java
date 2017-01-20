@@ -15,6 +15,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.EvictionPolicy.NONE;
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.assertNearCacheStats;
@@ -371,7 +372,7 @@ public abstract class AbstractBasicNearCacheTest<NK, NV> extends HazelcastTestSu
             // the heap costs are just calculated if there is local data which is not in OBJECT in-memory-format
             assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
                     context.stats.getOwnedEntryMemoryCost() > 0);
-            if (context.nearCacheAdapter.getLocalMapStats() != null) {
+            if (context.nearCacheAdapter.getLocalMapStats() != null && nearCacheConfig.getInMemoryFormat() == BINARY) {
                 assertTrue("The Near Cache is filled, there should be some heap costs",
                         context.nearCacheAdapter.getLocalMapStats().getHeapCost() > 0);
             }
