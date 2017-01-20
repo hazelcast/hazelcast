@@ -138,7 +138,7 @@ public final class IMapReader extends AbstractProcessor {
             }
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             List<Integer> ownedPartitions = memberToPartitions.get(address);
             return new RemoteClusterProcessorSupplier(name, fetchSize, ownedPartitions, serializableClientConfig);
@@ -176,8 +176,7 @@ public final class IMapReader extends AbstractProcessor {
             client.shutdown();
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return getProcessors(count, ownedPartitions, partitionId -> map.iterator(fetchSize, partitionId, true));
         }
@@ -205,7 +204,7 @@ public final class IMapReader extends AbstractProcessor {
                     .collect(groupingBy(p -> p.getOwner().getAddress(), mapping(Partition::getPartitionId, toList())));
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(name, membersToPartitions.get(address), fetchSize);
         }
@@ -232,8 +231,7 @@ public final class IMapReader extends AbstractProcessor {
             map = (MapProxyImpl) context.jetInstance().getHazelcastInstance().getMap(mapName);
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return getProcessors(count, ownedPartitions, partitionId -> map.iterator(fetchSize, partitionId, true));
         }

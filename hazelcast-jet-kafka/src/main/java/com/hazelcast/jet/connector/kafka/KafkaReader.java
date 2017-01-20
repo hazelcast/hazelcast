@@ -171,7 +171,7 @@ public class KafkaReader<K, V> extends AbstractProcessor {
             consumer.close();
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(topicId, properties, partitionMap.get(address));
         }
@@ -199,8 +199,7 @@ public class KafkaReader<K, V> extends AbstractProcessor {
             this.context = context;
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
                     context.jetInstance().getHazelcastInstance();

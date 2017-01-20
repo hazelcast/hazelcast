@@ -257,7 +257,7 @@ public class CancellationTest extends JetTestSupport {
             this.failOnAddress = failOnAddress;
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             if (address.equals(failOnAddress)) {
                 return ProcessorSupplier.of(() -> new FaultyProcessor(e));

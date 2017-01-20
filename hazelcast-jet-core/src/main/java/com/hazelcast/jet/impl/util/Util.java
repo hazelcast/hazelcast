@@ -28,6 +28,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import javax.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +49,7 @@ public final class Util {
     private Util() {
     }
 
-    public static <T> T uncheckedGet(Future<T> f) {
+    public static <T> T uncheckedGet(@Nonnull Future<T> f) {
         try {
             return f.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -56,7 +57,7 @@ public final class Util {
         }
     }
 
-    public static RuntimeException unchecked(Throwable e) {
+    public static RuntimeException unchecked(@Nonnull Throwable e) {
         Throwable peeled = peel(e);
         if (peeled instanceof RuntimeException) {
             return (RuntimeException) peeled;
@@ -65,7 +66,7 @@ public final class Util {
         }
     }
 
-    public static <T> T uncheckCall(Callable<T> callable) {
+    public static <T> T uncheckCall(@Nonnull Callable<T> callable) {
         try {
             return callable.call();
         } catch (Exception e) {
@@ -73,7 +74,7 @@ public final class Util {
         }
     }
 
-    public static void uncheckRun(RunnableExc r) {
+    public static void uncheckRun(@Nonnull RunnableExc r) {
         try {
             r.run();
         } catch (Exception e) {
@@ -93,11 +94,12 @@ public final class Util {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T extends Throwable> RuntimeException sneakyThrow(Throwable t) throws T {
+    public static <T extends Throwable> RuntimeException sneakyThrow(@Nonnull Throwable t) throws T {
         throw (T) t;
     }
 
-    public static List<Address> getRemoteMembers(NodeEngine engine) {
+    @Nonnull
+    public static List<Address> getRemoteMembers(@Nonnull NodeEngine engine) {
         final Member localMember = engine.getLocalMember();
         return engine.getClusterService().getMembers().stream()
                      .filter(m -> !m.equals(localMember))
@@ -105,21 +107,24 @@ public final class Util {
                      .collect(toList());
     }
 
-    public static Connection getMemberConnection(NodeEngine engine, Address memberAddr) {
+    public static Connection getMemberConnection(@Nonnull NodeEngine engine, @Nonnull Address memberAddr) {
         return ((NodeEngineImpl) engine).getNode().getConnectionManager().getConnection(memberAddr);
     }
 
-    public static BufferObjectDataOutput createObjectDataOutput(NodeEngine engine) {
+    @Nonnull
+    public static BufferObjectDataOutput createObjectDataOutput(@Nonnull NodeEngine engine) {
         return ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataOutput(BUFFER_SIZE);
     }
 
-    public static BufferObjectDataInput createObjectDataInput(NodeEngine engine, byte[] buf) {
+    @Nonnull
+    public static BufferObjectDataInput createObjectDataInput(@Nonnull NodeEngine engine, @Nonnull byte[] buf) {
         return ((InternalSerializationService) engine.getSerializationService())
                 .createObjectDataInput(buf);
     }
 
-    public static byte[] read(InputStream in, int count) throws IOException {
+    @Nonnull
+    public static byte[] read(@Nonnull InputStream in, int count) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[count];
             out.write(b, 0, in.read(b));
@@ -127,7 +132,8 @@ public final class Util {
         }
     }
 
-    public static byte[] read(InputStream in) throws IOException {
+    @Nonnull
+    public static byte[] read(@Nonnull InputStream in) throws IOException {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             byte[] b = new byte[BUFFER_SIZE];
             for (int len; (len = in.read(b)) != -1; ) {
@@ -137,14 +143,15 @@ public final class Util {
         }
     }
 
-    public static void writeList(ObjectDataOutput output, List list) throws IOException {
+    public static void writeList(@Nonnull ObjectDataOutput output, @Nonnull List list) throws IOException {
         output.writeInt(list.size());
         for (Object o : list) {
             output.writeObject(o);
         }
     }
 
-    public static <E> List<E> readList(ObjectDataInput output) throws IOException {
+    @Nonnull
+    public static <E> List<E> readList(@Nonnull ObjectDataInput output) throws IOException {
         int length = output.readInt();
         List<E> list = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {

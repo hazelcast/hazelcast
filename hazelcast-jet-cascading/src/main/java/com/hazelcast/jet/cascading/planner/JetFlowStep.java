@@ -441,8 +441,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
             instance = context.jetInstance();
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return Stream.generate(() -> new FlowNodeProcessor(instance, properties, node, inputMap, outputMap))
                          .limit(count).collect(toList());

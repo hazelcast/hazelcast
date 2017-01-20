@@ -156,7 +156,7 @@ public final class HdfsReader extends AbstractProcessor {
         }
 
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             Collection<IndexedInputSplit> splits = assigned.get(address);
             return new Supplier(configuration, splits != null ? splits : emptyList());
@@ -260,8 +260,7 @@ public final class HdfsReader extends AbstractProcessor {
             this.assignedSplits = assignedSplits.stream().collect(toList());
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             Map<Integer, List<IndexedInputSplit>> processorToSplits = range(0, assignedSplits.size()).boxed()
                     .map(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))

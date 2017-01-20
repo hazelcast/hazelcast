@@ -115,7 +115,7 @@ public class KafkaWriter extends AbstractProcessor {
             this.properties = properties;
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(topicId, properties);
         }
@@ -135,12 +135,12 @@ public class KafkaWriter extends AbstractProcessor {
             this.properties = properties;
         }
 
+        @Override
         public void init(@Nonnull Context context) {
             this.context = context;
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
                     context.jetInstance().getHazelcastInstance();

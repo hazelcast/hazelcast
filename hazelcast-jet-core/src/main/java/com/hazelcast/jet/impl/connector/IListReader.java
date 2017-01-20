@@ -132,7 +132,7 @@ public final class IListReader extends AbstractProcessor {
                                   .getPartition(partitionKey).getOwner().getAddress();
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             if (address.equals(ownerAddress)) {
                 return new Supplier(name, clientConfig, fetchSize);
@@ -184,8 +184,7 @@ public final class IListReader extends AbstractProcessor {
             }
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             assertCountIsOne(count);
             return singletonList(new IListReader(list, fetchSize));

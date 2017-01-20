@@ -94,7 +94,7 @@ public final class IMapWriter implements Processor {
             this.clientConfig = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(mapName, clientConfig);
         }
@@ -136,8 +136,7 @@ public final class IMapWriter implements Processor {
             return clientConfig != null;
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return Stream.generate(() -> new IMapWriter(map)).limit(count).collect(toList());
         }
@@ -152,8 +151,7 @@ public final class IMapWriter implements Processor {
             entries = new ArrayList<>();
         }
 
-        @Override
-        @Nonnull
+        @Override @Nonnull
         public Set<Entry> entrySet() {
             return set;
         }
@@ -163,8 +161,7 @@ public final class IMapWriter implements Processor {
         }
 
         private class ArraySet extends AbstractSet<Map.Entry> {
-            @Override
-            @Nonnull
+            @Override @Nonnull
             public Iterator<Entry> iterator() {
                 return entries.iterator();
             }

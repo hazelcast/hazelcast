@@ -117,7 +117,7 @@ public final class HdfsWriter extends AbstractProcessor {
             address = context.jetInstance().getCluster().getLocalMember().getAddress();
         }
 
-        @Override
+        @Override @Nonnull
         public ProcessorSupplier get(@Nonnull Address address) {
             return new Supplier(address.equals(this.address), path);
         }
@@ -165,8 +165,7 @@ public final class HdfsWriter extends AbstractProcessor {
             }
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return IntStream.range(0, count)
                     .mapToObj(i -> {
@@ -190,7 +189,5 @@ public final class HdfsWriter extends AbstractProcessor {
                     })
                     .collect(toList());
         }
-
     }
-
 }
