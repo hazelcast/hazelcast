@@ -19,11 +19,13 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.JetBuildInfo;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.TopologyChangedException;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.deployment.JetClassLoader;
 import com.hazelcast.jet.impl.deployment.ResourceStore;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -58,7 +60,7 @@ public class JetService
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
-    final ILogger logger;
+    private final ILogger logger;
     private final ClientInvocationRegistry clientInvocationRegistry;
     private final LiveOperationRegistry liveOperationRegistry;
 
@@ -97,6 +99,17 @@ public class JetService
         networking = new Networking(engine, executionContexts, config.getInstanceConfig().getFlowControlPeriodMs());
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
                 config.getInstanceConfig().getCooperativeThreadCount());
+
+        JetBuildInfo jetBuildInfo = BuildInfoProvider.getBuildInfo().getJetBuildInfo();
+        logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +
+                jetBuildInfo.getRevision() + ") ");
+
+        logger.info("\n\to   o o---o o---o o---o o     o---o o---o o---o o-o-o        o o---o o-o-o\n" +
+                "\t|   | |   |    /  |     |     |     |   | |       |          | |       |  \n" +
+                "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |  \n" +
+                "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |  \n" +
+                "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o   ");
+        logger.info("Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.");
     }
 
     @Override
