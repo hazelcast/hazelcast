@@ -32,10 +32,10 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class GroupingAccumulatorP<T, K, V, A, R> extends AbstractProcessor {
 
-    private Map<K, A> groups = new HashMap<>();
-    private Function<? super T, ? extends K> classifier;
-    private Collector<V, A, R> collector;
-    private Traverser<Entry<K, A>> resultTraverser;
+    private final Map<K, A> groups = new HashMap<>();
+    private final Function<? super T, ? extends K> classifier;
+    private final Collector<V, A, R> collector;
+    private final Traverser<Entry<K, A>> resultTraverser;
 
     public GroupingAccumulatorP(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
         this.classifier = classifier;
@@ -56,13 +56,6 @@ public class GroupingAccumulatorP<T, K, V, A, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(resultTraverser);
-        if (done) {
-            groups = null;
-            classifier = null;
-            collector = null;
-            resultTraverser = null;
-        }
-        return done;
+        return emitCooperatively(resultTraverser);
     }
 }

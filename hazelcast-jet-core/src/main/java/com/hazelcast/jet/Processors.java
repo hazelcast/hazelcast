@@ -483,13 +483,13 @@ public final class Processors {
      * @param <T> received item type
      * @param <R> emitted item type
      */
-    public static class TransformP<T, R> extends AbstractProcessor {
-        private TryProcessor<T, R> tryProcessor;
+    private static class TransformP<T, R> extends AbstractProcessor {
+        private final TryProcessor<T, R> tryProcessor;
 
         /**
          * Constructs a processor with the given mapping function.
          */
-        public TransformP(@Nonnull  Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        TransformP(@Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
             this.tryProcessor = tryProcessor(mapper);
         }
 
@@ -497,19 +497,13 @@ public final class Processors {
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryProcessor.tryProcess((T) item);
         }
-
-        @Override
-        public boolean complete() {
-            tryProcessor = null;
-            return true;
-        }
     }
 
     private abstract static class ReducingProcessorBase<T, K, A, R> extends AbstractProcessor {
-        Function<? super T, ? extends K> keyExtractor;
-        Supplier<? extends A> supplier;
-        Map<K, A> groups = new HashMap<>();
-        Traverser<R> resultTraverser;
+        final Function<? super T, ? extends K> keyExtractor;
+        final Supplier<? extends A> supplier;
+        final Map<K, A> groups = new HashMap<>();
+        final Traverser<R> resultTraverser;
 
         ReducingProcessorBase(@Nonnull Function<? super T, ? extends K> keyExtractor,
                               @Nonnull Supplier<? extends A> supplier,
@@ -525,23 +519,12 @@ public final class Processors {
 
         @Override
         public boolean complete() {
-            final boolean done = emitCooperatively(resultTraverser);
-            if (done) {
-                keyExtractor = null;
-                supplier = null;
-                groups = null;
-                resultTraverser = null;
-                cleanUp();
-            }
-            return done;
-        }
-
-        void cleanUp() {
+            return emitCooperatively(resultTraverser);
         }
     }
 
     private static class GroupAndAccumulateP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
-        private BiFunction<? super A, ? super T, ? extends A> accumulator;
+        private final BiFunction<? super A, ? super T, ? extends A> accumulator;
 
         GroupAndAccumulateP(@Nonnull Function<? super T, ? extends K> keyExtractor,
                             @Nonnull Supplier<? extends A> supplier,
@@ -559,15 +542,10 @@ public final class Processors {
                     (x, a) -> accumulator.apply(a != null ? a : supplier.get(), (T) item));
             return true;
         }
-
-        @Override
-        void cleanUp() {
-            accumulator = null;
-        }
     }
 
     private static class GroupAndCollectP<T, K, A, R> extends ReducingProcessorBase<T, K, A, R> {
-        private BiConsumer<? super A, ? super T> collector;
+        private final BiConsumer<? super A, ? super T> collector;
 
         GroupAndCollectP(@Nonnull Function<? super T, ? extends K> keyExtractor,
                          @Nonnull Supplier<? extends A> supplier,
@@ -583,11 +561,6 @@ public final class Processors {
             final A acc = groups.computeIfAbsent(keyExtractor.apply((T) item), k -> supplier.get());
             collector.accept(acc, (T) item);
             return true;
-        }
-
-        @Override
-        void cleanUp() {
-            collector = null;
         }
     }
 
@@ -608,14 +581,14 @@ public final class Processors {
      * @param <T> type of received item
      * @param <K> type of grouping key
      */
-    public static class CountDistinctP<T, K> extends AbstractProcessor {
-        private Distributed.Function<T, K> extractKey;
-        private Set<K> seenItems = new HashSet<>();
+    private static class CountDistinctP<T, K> extends AbstractProcessor {
+        private final Distributed.Function<T, K> extractKey;
+        private final Set<K> seenItems = new HashSet<>();
 
         /**
          * Constructs the processor with the given key extractor function.
          */
-        public CountDistinctP(@Nonnull Distributed.Function<T, K> extractKey) {
+        CountDistinctP(@Nonnull Distributed.Function<T, K> extractKey) {
             this.extractKey = extractKey;
         }
 
@@ -629,8 +602,6 @@ public final class Processors {
         @Override
         public boolean complete() {
             emit((long) seenItems.size());
-            extractKey = null;
-            seenItems = null;
             return true;
         }
     }

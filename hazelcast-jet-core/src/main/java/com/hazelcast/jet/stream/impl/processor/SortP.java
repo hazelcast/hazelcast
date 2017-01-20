@@ -29,8 +29,8 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 
 public class SortP<T> extends AbstractProcessor {
 
-    private List<T> sorted;
-    private Traverser<T> resultTraverser;
+    private final List<T> sorted;
+    private final Traverser<T> resultTraverser;
 
     public SortP(Comparator<T> comparator) {
         this.sorted = new ArrayList<>();
@@ -48,11 +48,6 @@ public class SortP<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(resultTraverser);
-        if (done) {
-            sorted = null;
-            resultTraverser = null;
-        }
-        return done;
+        return emitCooperatively(resultTraverser);
     }
 }

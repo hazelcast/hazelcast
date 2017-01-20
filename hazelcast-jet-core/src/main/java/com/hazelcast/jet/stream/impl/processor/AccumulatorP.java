@@ -23,8 +23,8 @@ import java.util.function.BiFunction;
 
 public class AccumulatorP<IN, OUT> extends AbstractProcessor {
 
-    private BiFunction<OUT, IN, OUT> accumulator;
-    private OUT identity;
+    private final BiFunction<OUT, IN, OUT> accumulator;
+    private final OUT identity;
     private OUT result;
 
 
@@ -47,9 +47,6 @@ public class AccumulatorP<IN, OUT> extends AbstractProcessor {
     @Override
     public boolean complete() {
         emit(result);
-        accumulator = null;
-        identity = null;
-        result = null;
         return true;
     }
 }

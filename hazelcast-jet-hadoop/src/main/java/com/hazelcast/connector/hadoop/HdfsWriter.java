@@ -55,9 +55,9 @@ public final class HdfsWriter extends AbstractProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(HdfsWriter.class);
 
-    private RecordWriter recordWriter;
-    private TaskAttemptContextImpl taskAttemptContext;
-    private OutputCommitter outputCommitter;
+    private final RecordWriter recordWriter;
+    private final TaskAttemptContextImpl taskAttemptContext;
+    private final OutputCommitter outputCommitter;
 
     private HdfsWriter(RecordWriter recordWriter, TaskAttemptContextImpl taskAttemptContext,
                        OutputCommitter outputCommitter) {
@@ -183,7 +183,7 @@ public final class HdfsWriter extends AbstractProcessor {
 
                         TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(conf, taskAttemptID);
                         RecordWriter recordWriter = uncheckCall(() -> conf.getOutputFormat().getRecordWriter(null,
-                                conf, uuid + "-" + valueOf(i), Reporter.NULL));
+                                conf, uuid + '-' + valueOf(i), Reporter.NULL));
                         return new HdfsWriter(recordWriter, taskAttemptContext, outputCommitter);
 
                     })

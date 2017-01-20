@@ -24,8 +24,8 @@ import java.util.function.Function;
 
 public class CombinerP<T, R> extends AbstractProcessor {
 
-    private BinaryOperator<T> combiner;
-    private Function<T, R> finisher;
+    private final BinaryOperator<T> combiner;
+    private final Function<T, R> finisher;
     private T result;
 
     public CombinerP(BinaryOperator<T> combiner, Function<T, R> finisher) {
@@ -48,9 +48,6 @@ public class CombinerP<T, R> extends AbstractProcessor {
         if (result != null) {
             emit(finisher.apply(result));
         }
-        combiner = null;
-        finisher = null;
-        result = null;
         return true;
     }
 }

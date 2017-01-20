@@ -31,9 +31,9 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
 
-    private Map<K, A> groups = new HashMap<>();
-    private Collector<V, A, R> collector;
-    private Traverser<Entry<K, R>> resultTraverser;
+    private final Map<K, A> groups = new HashMap<>();
+    private final Collector<V, A, R> collector;
+    private final Traverser<Entry<K, R>> resultTraverser;
 
     public GroupingCombinerP(Collector<V, A, R> collector) {
         this.collector = collector;
@@ -53,13 +53,7 @@ public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(resultTraverser);
-        if (done) {
-            groups = null;
-            collector = null;
-            resultTraverser = null;
-        }
-        return done;
+        return emitCooperatively(resultTraverser);
     }
 
 }

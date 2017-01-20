@@ -74,7 +74,7 @@ public final class HdfsReader extends AbstractProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(HdfsReader.class);
 
-    private List<RecordReader> recordReaders;
+    private final List<RecordReader> recordReaders;
 
     private HdfsReader(List<RecordReader> recordReaders) {
         this.recordReaders = recordReaders;

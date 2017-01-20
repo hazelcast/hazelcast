@@ -24,7 +24,7 @@ import java.util.function.Function;
 
 public class CollectorCombinerP<T> extends AbstractProcessor {
 
-    private BiConsumer<T, T> combiner;
+    private final BiConsumer<T, T> combiner;
     private T result;
 
     public CollectorCombinerP(BiConsumer<T, T> combiner, Function ignored) {
@@ -46,8 +46,6 @@ public class CollectorCombinerP<T> extends AbstractProcessor {
         if (result != null) {
             emit(result);
         }
-        combiner = null;
-        result = null;
         return true;
     }
 }

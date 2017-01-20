@@ -28,8 +28,8 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 
 public class DistinctP<T> extends AbstractProcessor {
 
-    private Set<T> distinctItems = new HashSet<>();
-    private Traverser<T> resultTraverser = lazy(() -> traverseIterable(distinctItems));
+    private final Set<T> distinctItems = new HashSet<>();
+    private final Traverser<T> resultTraverser = lazy(() -> traverseIterable(distinctItems));
 
     public DistinctP() {
     }
@@ -42,11 +42,6 @@ public class DistinctP<T> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(resultTraverser);
-        if (done) {
-            distinctItems = null;
-            resultTraverser = null;
-        }
-        return done;
+        return emitCooperatively(resultTraverser);
     }
 }

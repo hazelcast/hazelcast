@@ -317,7 +317,7 @@ public abstract class AbstractProcessor implements Processor {
      */
     protected final class TryProcessor<T, R> {
         private final int outputOrdinal;
-        private Function<? super T, ? extends Traverser<? extends R>> mapper;
+        private final Function<? super T, ? extends Traverser<? extends R>> mapper;
         private Traverser<? extends R> outputTraverser;
 
         TryProcessor(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {

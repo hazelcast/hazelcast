@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 public class TransformP extends AbstractProcessor {
 
-    private TransformOperation[] operations;
+    private final TransformOperation[] operations;
 
     public TransformP(List<TransformOperation> operations) {
         this.operations = operations.toArray(new TransformOperation[operations.size()]);
@@ -65,11 +65,5 @@ public class TransformP extends AbstractProcessor {
             }
         }
         emit(item);
-    }
-
-    @Override
-    public boolean complete() {
-        operations = null;
-        return true;
     }
 }

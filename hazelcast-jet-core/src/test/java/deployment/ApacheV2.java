@@ -34,7 +34,7 @@ public class ApacheV2 extends AbstractProcessor {
     public boolean complete() {
         ClassLoader cl = getClass().getClassLoader();
         URL resource = cl.getResource("apachev2");
-        BufferedReader reader = null;
+        BufferedReader reader;
         try {
             reader = Files.newBufferedReader(Paths.get(resource.toURI()));
             String firstLine = reader.readLine();

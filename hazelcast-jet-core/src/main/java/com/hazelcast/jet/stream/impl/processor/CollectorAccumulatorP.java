@@ -24,8 +24,8 @@ import java.util.function.Supplier;
 
 public class CollectorAccumulatorP<IN, OUT> extends AbstractProcessor {
 
-    private BiConsumer<OUT, IN> accumulator;
-    private Supplier<OUT> supplier;
+    private final BiConsumer<OUT, IN> accumulator;
+    private final Supplier<OUT> supplier;
     private OUT result;
 
 
@@ -49,9 +49,6 @@ public class CollectorAccumulatorP<IN, OUT> extends AbstractProcessor {
     @Override
     public boolean complete() {
         emit(result);
-        accumulator = null;
-        supplier = null;
-        result = null;
         return true;
     }
 }

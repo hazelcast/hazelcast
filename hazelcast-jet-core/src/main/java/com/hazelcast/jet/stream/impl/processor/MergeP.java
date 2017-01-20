@@ -32,11 +32,11 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class MergeP<T, K, V> extends AbstractProcessor {
 
-    private Function<? super T, ? extends K> keyMapper;
-    private Function<? super T, ? extends V> valueMapper;
-    private BinaryOperator<V> merger;
-    private Map<K, V> merged = new HashMap<>();
-    private Traverser<Entry<K, V>> resultTraverser;
+    private final Function<? super T, ? extends K> keyMapper;
+    private final Function<? super T, ? extends V> valueMapper;
+    private final BinaryOperator<V> merger;
+    private final Map<K, V> merged = new HashMap<>();
+    private final Traverser<Entry<K, V>> resultTraverser;
 
     public MergeP(Function<? super T, ? extends K> keyMapper,
                   Function<? super T, ? extends V> valueMapper,
@@ -70,15 +70,7 @@ public class MergeP<T, K, V> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        final boolean done = emitCooperatively(resultTraverser);
-        if (done) {
-            keyMapper = null;
-            valueMapper = null;
-            merger = null;
-            merged = null;
-            resultTraverser = null;
-        }
-        return done;
+        return emitCooperatively(resultTraverser);
     }
 
 }
