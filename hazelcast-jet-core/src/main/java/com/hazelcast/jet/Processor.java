@@ -41,7 +41,7 @@ import javax.annotation.Nonnull;
  * tells the state of an individual output bucket.
  * <p>
  * If this processor declares itself as "cooperative" ({@link #isCooperative()} returns
- * {@code true}), it should also limit the amount of time it spends per call because it
+ * {@code true}, the default), it should also limit the amount of time it spends per call because it
  * will participate in a cooperative multithreading scheme.
  */
 public interface Processor {

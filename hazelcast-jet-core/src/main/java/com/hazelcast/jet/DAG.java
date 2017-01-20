@@ -50,14 +50,14 @@ import static java.util.stream.Collectors.toMap;
  * {@link Edge edge} represents the path along which the data travels to
  * the next vertex.
  * <p>
- * The work of a single vertex is parallelized and distributed, so that on
- * each member there are several instances of the {@link Processor} type
+ * The work of a single vertex is parallelized and distributed, so that there are
+ * several instances of the {@link Processor} type on each member
  * corresponding to it. Whenever possible, each instance should be
  * tasked with only a slice of the total data and a partitioning strategy
  * can be employed to ensure that the data sent to each vertex is collated
  * by a partitioning key.
  * <p>
- * There are three basic kind of vertex:
+ * There are three basic kinds of vertices:
  * <ol><li>
  *     <em>source</em> with just outbound edges;
  * </li><li>

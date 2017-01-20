@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
- * Utility class with several {@code Traverser}s useful in {@link Processor}
+ * Utility class with several {@link Traverser}s useful in {@link Processor}
  * implementations.
  */
 public final class Traversers {
