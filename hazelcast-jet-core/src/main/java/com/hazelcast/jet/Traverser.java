@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 @FunctionalInterface
 public interface Traverser<T> {
     /**
-     * @return the next item in the sequence, or {@code null} if the sequence is
+     * Returns the next item in the sequence, or {@code null} if the sequence is
      * already exhausted
      */
     T next();
