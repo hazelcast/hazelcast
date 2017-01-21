@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
@@ -84,7 +84,7 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         rows.add(row);
     }
 
-    public void add(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+    public void add(QueryableEntry entry, Projection projection, InternalSerializationService serializationService) {
         if (++resultSize > resultLimit) {
             throw new QueryResultSizeExceededException();
         }
@@ -109,8 +109,9 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
         rows.add(new QueryResultRow(key, value));
     }
 
-    private Data getValueData(QueryableEntry entry, Projection projection, SerializationService serializationService) {
+    private Data getValueData(QueryableEntry entry, Projection projection, InternalSerializationService serializationService) {
         if (projection != null) {
+            entry.inflate(serializationService);
             return serializationService.toData(projection.transform(entry));
         } else {
             return entry.getValueData();

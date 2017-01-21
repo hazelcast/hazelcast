@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.impl.query;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.QueryableEntry;
-import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
 
@@ -26,9 +26,9 @@ import java.util.Collection;
  */
 public class QueryResultProcessor implements ResultProcessor<QueryResult> {
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
-    public QueryResultProcessor(SerializationService serializationService) {
+    public QueryResultProcessor(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

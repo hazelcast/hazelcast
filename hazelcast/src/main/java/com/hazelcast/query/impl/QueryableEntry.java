@@ -207,4 +207,7 @@ public abstract class QueryableEntry<K, V> implements Extractable, Map.Entry<K, 
         return ReflectionHelper.getAttributeType(firstNonNullResult.getClass());
     }
 
+    public void inflate(InternalSerializationService serializationService) {
+    }
+
 }
