@@ -233,7 +233,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         private static final Pattern PATTERN = Pattern.compile("\\w+");
 
-        private final TryProcessor<Entry<Integer, String>, Entry<String, Long>> p = tryProcessor(entry -> {
+        private final FlatMapper<Entry<Integer, String>, Entry<String, Long>> p = flatMapper(entry -> {
             String text = entry.getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             return () -> m.find() ? new SimpleImmutableEntry<>(m.group(), 1L) : null;

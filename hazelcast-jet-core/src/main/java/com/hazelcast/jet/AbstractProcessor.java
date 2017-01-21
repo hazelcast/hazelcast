@@ -45,11 +45,11 @@ import java.util.function.Function;
  *     class contains traversers tailored to simplify the implementation of
  *     {@code complete()}.
  * </li><li>
- *     The {@link TryProcessor TryProcessor} class additionally simplifies the
+ *     The {@link FlatMapper TryProcessor} class additionally simplifies the
  *     usage of {@code emitCooperatively()} inside {@code tryProcess()}, in a
  *     scenario where an input item results in a collection of output items.
  *     {@code TryProcessor} is obtained from its factory method
- *     {@link #tryProcessor(Function)}.
+ *     {@link #flatMapper(Function)}.
  * </li></ol>
  */
 public abstract class AbstractProcessor implements Processor {
@@ -282,53 +282,56 @@ public abstract class AbstractProcessor implements Processor {
     }
 
     /**
-     * Factory of {@link TryProcessor}. The TryProcessor will emit items to
+     * Factory of {@link FlatMapper}. The {@code FlatMapper} will emit items to
      * the given output ordinal.
      */
     @Nonnull
-    protected <T, R> TryProcessor<T, R> tryProcessor(
+    protected <T, R> FlatMapper<T, R> flatMapper(
             int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return new TryProcessor<>(outputOrdinal, mapper);
+        return new FlatMapper<>(outputOrdinal, mapper);
     }
 
     /**
-     * Factory of {@link TryProcessor}. The TryProcessor will emit items to
+     * Factory of {@link FlatMapper}. The {@code FlatMapper} will emit items to
      * all defined output ordinals.
      */
     @Nonnull
-    protected <T, R> TryProcessor<T, R> tryProcessor(
+    protected <T, R> FlatMapper<T, R> flatMapper(
             @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper
     ) {
-        return tryProcessor(-1, mapper);
+        return flatMapper(-1, mapper);
     }
 
     /**
      * A helper that simplifies the implementation of
      * {@link AbstractProcessor#tryProcess(int, Object)} for {@code flatMap}-like
-     * behavior. The {@code lazyMapper} takes an item and returns a traverser
-     * over all output items that should be emitted. Its {@link #tryProcess(Object)}
-     * method obtains and passes the traverser to
-     * {@link #emitCooperatively(int, Traverser)}. The output ordinal is
-     * specified at construction time.
+     * behavior. User supplies a {@code mapper} which takes an item and
+     * returns a traverser over all output items that should be emitted. The
+     * {@link #tryProcess(Object)} method obtains and passes the traverser to
+     * {@link #emitCooperatively(int, Traverser)}.
      *
      * @param <T> type of the input item
      * @param <R> type of the emitted item
      */
-    protected final class TryProcessor<T, R> {
+    protected final class FlatMapper<T, R> {
         private final int outputOrdinal;
         private final Function<? super T, ? extends Traverser<? extends R>> mapper;
         private Traverser<? extends R> outputTraverser;
 
-        TryProcessor(@Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
-            this(-1, mapper);
-        }
-
-        TryProcessor(int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
+        FlatMapper(int outputOrdinal, @Nonnull Function<? super T, ? extends Traverser<? extends R>> mapper) {
             this.outputOrdinal = outputOrdinal;
             this.mapper = mapper;
         }
 
+        /**
+         * Method designed to be called from one of {@code AbstractProcessor#tryProcessX()}
+         * methods. The calling method must return this method's return
+         * value.
+         *
+         * @param item the item to process
+         * @return what the calling {@code tryProcessX()} method should return
+         */
         public boolean tryProcess(@Nonnull T item) {
             if (outputTraverser == null) {
                 outputTraverser = mapper.apply(item);

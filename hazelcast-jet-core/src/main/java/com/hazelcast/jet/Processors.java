@@ -484,18 +484,18 @@ public final class Processors {
      * @param <R> emitted item type
      */
     private static class TransformP<T, R> extends AbstractProcessor {
-        private final TryProcessor<T, R> tryProcessor;
+        private final FlatMapper<T, R> flatMapper;
 
         /**
          * Constructs a processor with the given mapping function.
          */
         TransformP(@Nonnull Distributed.Function<? super T, ? extends Traverser<? extends R>> mapper) {
-            this.tryProcessor = tryProcessor(mapper);
+            this.flatMapper = flatMapper(mapper);
         }
 
         @Override
         protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-            return tryProcessor.tryProcess((T) item);
+            return flatMapper.tryProcess((T) item);
         }
     }
 

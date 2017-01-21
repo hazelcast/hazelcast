@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.AbstractProcessor.TryProcessor;
+import com.hazelcast.jet.AbstractProcessor.FlatMapper;
 import com.hazelcast.jet.impl.util.ArrayDequeOutbox;
 import com.hazelcast.logging.ILogger;
 import org.junit.Before;
@@ -166,10 +166,10 @@ public class AbstractProcessorTest {
     public void test() {
         final Object item1 = 1;
         final Object item2 = 2;
-        final TryProcessor<String, Object> tryProcessor = p.tryProcessor(x -> Traverser.over(item1, item2));
+        final FlatMapper<String, Object> flatMapper = p.flatMapper(x -> Traverser.over(item1, item2));
 
         // When
-        boolean done = tryProcessor.tryProcess(MOCK_ITEM);
+        boolean done = flatMapper.tryProcess(MOCK_ITEM);
 
         // Then
         assertFalse(done);
@@ -179,7 +179,7 @@ public class AbstractProcessorTest {
         }
 
         // When
-        done = tryProcessor.tryProcess(MOCK_ITEM);
+        done = flatMapper.tryProcess(MOCK_ITEM);
 
         // Then
         assertTrue(done);
