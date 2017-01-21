@@ -52,6 +52,10 @@ public final class Distributed {
     @FunctionalInterface
     public interface BiConsumer<T, U> extends java.util.function.BiConsumer<T, U>, Serializable {
 
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        void accept(T t, U u);
+
         /**
          * Returns a composed {@code BiConsumer} that performs, in sequence, this
          * operation followed by the {@code after} operation. If performing either
@@ -88,6 +92,10 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface BiFunction<T, U, R> extends java.util.function.BiFunction<T, U, R>, Serializable {
+
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        R apply(T t, U u);
 
         /**
          * Returns a composed function that first applies this function to
@@ -296,6 +304,11 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface Consumer<T> extends java.util.function.Consumer<T>, Serializable {
+
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        void accept(T t);
+
         /**
          * Returns a composed {@code Consumer} that performs, in sequence, this
          * operation followed by the {@code after} operation. If performing either
@@ -524,6 +537,11 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface Function<T, R> extends java.util.function.Function<T, R>, Serializable {
+
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        R apply(T t);
+
         /**
          * Returns a composed function that first applies the {@code before}
          * function to its input, and then applies this function to the result.
@@ -954,6 +972,9 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface Supplier<T> extends java.util.function.Supplier<T>, Serializable {
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        T get();
     }
 
     /**
