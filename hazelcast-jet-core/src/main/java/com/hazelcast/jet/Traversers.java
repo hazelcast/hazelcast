@@ -105,7 +105,7 @@ public final class Traversers {
     }
 
     private static final class LazyTraverser<T> implements Traverser<T> {
-        private final Supplier<Traverser<T>> supplierOfTraverser;
+        private Supplier<Traverser<T>> supplierOfTraverser;
         private Traverser<T> traverser;
 
         private LazyTraverser(@Nonnull Supplier<Traverser<T>> supplierOfTraverser) {
@@ -114,8 +114,15 @@ public final class Traversers {
 
         @Override
         public T next() {
-            final Traverser<T> tr = traverser != null ? traverser : (traverser = supplierOfTraverser.get());
-            return tr.next();
+            final Traverser<T> trav = this.traverser;
+            if (trav != null) {
+                return trav.next();
+            }
+            try {
+                return (traverser = supplierOfTraverser.get()).next();
+            } finally {
+                supplierOfTraverser = null;
+            }
         }
     }
 
