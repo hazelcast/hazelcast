@@ -26,16 +26,18 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ResourceConfig;
 import com.hazelcast.jet.impl.deployment.ResourceIterator;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.function.Supplier;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -90,10 +92,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             long executionId = getIdGenerator().newId();
             deployResources(executionId);
             Data dagData = client.getSerializationService().toData(dag);
-            int partitionId = client.getPartitionService().getPartition(executionId).getPartitionId();
+            Address executionAddress = client.getPartitionService().getPartition(executionId).getOwner().getAddress();
             ClientInvocation invocation = new ClientInvocation(client,
-                    JetExecuteJobCodec.encodeRequest(executionId, dagData), partitionId);
-            return new ExecutionFuture(invocation.invoke(), executionId, partitionId);
+                    JetExecuteJobCodec.encodeRequest(executionId, dagData), executionAddress);
+            return new ExecutionFuture(invocation.invoke(), executionId, executionAddress);
         }
 
         private void deployResources(long executionId) {
@@ -128,12 +130,12 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
 
         private final ClientInvocationFuture future;
         private final long executionId;
-        private final int partitionId;
+        private final Address executionAddress;
 
-        protected ExecutionFuture(ClientInvocationFuture future, long executionId, int partitionId) {
+        protected ExecutionFuture(ClientInvocationFuture future, long executionId, Address executionAddress) {
             this.future = future;
             this.executionId = executionId;
-            this.partitionId = partitionId;
+            this.executionAddress = executionAddress;
         }
 
         @Override
@@ -142,7 +144,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance {
             if (!cancelled) {
                 return false;
             }
-            new ClientInvocation(client, JetCancelJobCodec.encodeRequest(executionId), partitionId)
+            new ClientInvocation(client, JetCancelJobCodec.encodeRequest(executionId), executionAddress)
                     .invoke().andThen(new ExecutionCallback<ClientMessage>() {
                 @Override
                 public void onResponse(ClientMessage clientMessage) {
