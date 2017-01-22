@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.cardinality.CardinalityEstimator;
 import com.hazelcast.cardinality.impl.CardinalityEstimatorService;
 import com.hazelcast.client.ClientExtension;
@@ -29,6 +29,7 @@ import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.proxy.ClientClusterProxy;
@@ -107,6 +108,7 @@ import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
+import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -188,6 +190,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientICacheManager hazelcastCacheManager;
 
     private final ClientLockReferenceIdGenerator lockReferenceIdGenerator;
+    private final ClientExceptionFactory clientExceptionFactory;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -232,6 +235,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         lockReferenceIdGenerator = new ClientLockReferenceIdGenerator();
         nearCacheManager = clientExtension.createNearCacheManager();
+        clientExceptionFactory = initClientExceptionFactory();
     }
 
     private Diagnostics initDiagnostics(ClientConfig config) {
@@ -738,5 +742,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ClientLockReferenceIdGenerator getLockReferenceIdGenerator() {
         return lockReferenceIdGenerator;
+    }
+
+    private ClientExceptionFactory initClientExceptionFactory() {
+        boolean jCacheAvailable = JCacheDetector.isJCacheAvailable(getClientConfig().getClassLoader());
+        return new ClientExceptionFactory(jCacheAvailable);
+    }
+
+    public ClientExceptionFactory getClientExceptionFactory() {
+        return clientExceptionFactory;
     }
 }
