@@ -233,7 +233,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                         try {
                             connectToCluster();
                         } catch (Exception e) {
-                            logger.warning("Could not re-connect to cluster shutting down the client", e);
+                            logger.warning("Could not re-connect to cluster shutting down the client" + e.getMessage());
                             new Thread(new Runnable() {
                                 @Override
                                 public void run() {
