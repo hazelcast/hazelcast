@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
@@ -42,10 +43,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.BitSetUtils.hasAtLeastOneBitSet;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMessageTask<P> {
 
@@ -98,7 +101,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
             List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
             List<Future> missingFutures = new ArrayList<Future>(missingList.size());
             createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
-            collectResultsFromMissingPartitions(result, missingFutures);
+            collectResultsFromMissingPartitions(finishedPartitions, result, missingFutures);
         }
     }
 
@@ -106,10 +109,22 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         List<Future> futures = new ArrayList<Future>(members.size());
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Member member : members) {
-            Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                    new QueryOperation(getDistributedObjectName(), predicate, getIterationType()),
-                    member.getAddress()).invoke();
-            futures.add(future);
+            try {
+                Future future = operationService.createInvocationBuilder(SERVICE_NAME,
+                        new QueryOperation(getDistributedObjectName(), predicate, getIterationType()), member.getAddress())
+                        .invoke();
+                futures.add(future);
+            } catch (Throwable t) {
+                if (t.getCause() instanceof QueryResultSizeExceededException) {
+                    rethrow(t);
+                } else {
+                    // log failure to invoke query on member at fine level
+                    // the missing partition IDs will be queried anyway, so it's not a terminal failure
+                    if (logger.isFineEnabled()) {
+                        logger.log(Level.FINE, "Query invocation failed on member " + member, t);
+                    }
+                }
+            }
         }
         return futures;
     }
@@ -119,16 +134,28 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
             throws InterruptedException, ExecutionException {
         BitSet finishedPartitions = new BitSet(partitionCount);
         for (Future future : futures) {
-            QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult != null) {
-                Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                if (partitionIds != null && !hasAtLeastOneBitSet(finishedPartitions, partitionIds)) {
-                    //Collect results only if there is no overlap with already collected partitions.
-                    //If there is an overlap it means there was a partition migration while QueryOperation(s) were
-                    //running. In this case we discard all results from this member and will target the missing
-                    //partition separately later.
-                    BitSetUtils.setBits(finishedPartitions, partitionIds);
-                    result.addAll(queryResult.getRows());
+            try {
+                QueryResult queryResult = (QueryResult) future.get();
+                if (queryResult != null) {
+                    Collection<Integer> partitionIds = queryResult.getPartitionIds();
+                    if (partitionIds != null && !hasAtLeastOneBitSet(finishedPartitions, partitionIds)) {
+                        // Collect results only if there is no overlap with already collected partitions.
+                        // If there is an overlap it means there was a partition migration while QueryOperation(s) were
+                        // running. In this case we discard all results from this member and will target the missing
+                        // partition separately later.
+                        BitSetUtils.setBits(finishedPartitions, partitionIds);
+                        result.addAll(queryResult.getRows());
+                    }
+                }
+            } catch (Throwable t) {
+                if (t.getCause() instanceof QueryResultSizeExceededException) {
+                    rethrow(t);
+                } else {
+                    // log failure to invoke query on member at fine level
+                    // the missing partition IDs will be queried anyway, so it's not a terminal failure
+                    if (logger.isFineEnabled()) {
+                        logger.log(Level.FINE, "Query on member failed with exception", t);
+                    }
                 }
             }
         }
@@ -167,11 +194,16 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
     }
 
-    private void collectResultsFromMissingPartitions(Collection<QueryResultRow> result, List<Future> futures)
+    private void collectResultsFromMissingPartitions(BitSet finishedPartitions, Collection<QueryResultRow> result,
+                                                     List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getRows());
+            if (queryResult.getPartitionIds() != null && queryResult.getPartitionIds().size() > 0
+                    && !hasAtLeastOneBitSet(finishedPartitions, queryResult.getPartitionIds())) {
+                result.addAll(queryResult.getRows());
+                BitSetUtils.setBits(finishedPartitions, queryResult.getPartitionIds());
+            }
         }
     }
 }
