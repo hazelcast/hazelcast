@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -243,7 +244,18 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
             public boolean run() throws Exception {
                 callBeforeStoreListeners(batchMap.values());
                 final Map map = convertToObject(batchMap);
-                final boolean result = operationType.processBatch(map, mapStore);
+                boolean result;
+                try {
+                    result = operationType.processBatch(map, mapStore);
+                } catch (Exception ex) {
+                    Iterator<Object> keys = batchMap.keySet().iterator();
+                    for (Object key = null; keys.hasNext(); key = keys.next()) {
+                        if (!map.containsKey(key)) {
+                            keys.remove();
+                        }
+                    }
+                    throw ex;
+                }
                 callAfterStoreListeners(batchMap.values());
                 return result;
             }
