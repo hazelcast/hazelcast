@@ -104,8 +104,9 @@ public class JetService
         logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +
                 jetBuildInfo.getRevision() + ") ");
 
-        logger.info("\n\to   o o---o o---o o---o o     o---o o---o o---o o-o-o        o o---o o-o-o\n" +
-                "\t|   | |   |    /  |     |     |     |   | |       |          | |       |  \n" +
+        logger.info("\n" +
+                "\to   o   o   o---o o---o o     o---o   o   o---o o-o-o        o o---o o-o-o\n" +
+                "\t|   |  / \\     /  |     |     |      / \\  |       |          | |       |  \n" +
                 "\to---o o---o   o   o-o   |     o     o---o o---o   |          | o-o     |  \n" +
                 "\t|   | |   |  /    |     |     |     |   |     |   |      \\   | |       |  \n" +
                 "\to   o o   o o---o o---o o---o o---o o   o o---o   o       o--o o---o   o   ");
