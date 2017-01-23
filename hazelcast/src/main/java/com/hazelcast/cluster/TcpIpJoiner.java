@@ -21,6 +21,7 @@ import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -46,12 +47,17 @@ import static com.hazelcast.util.AddressUtil.AddressHolder;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
-    private static final int MAX_PORT_TRIES = 3;
-
+    private final int maxPortTryCount;
     private volatile boolean claimingMaster = false;
 
     public TcpIpJoiner(Node node) {
         super(node);
+        int tryCount = node.groupProperties.TCP_JOIN_PORT_TRY_COUNT.getInteger();
+        if (tryCount <= 0) {
+            throw new IllegalArgumentException(GroupProperties.PROP_TCP_JOIN_PORT_TRY_COUNT
+                    + " should be greater than zero! Current value: " + tryCount);
+        }
+        maxPortTryCount = tryCount;
     }
 
     private void joinViaTargetMember(AtomicBoolean joined, Address targetAddress, long maxJoinMillis) {
@@ -328,7 +334,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             try {
                 final AddressHolder addressHolder = AddressUtil.getAddressHolder(possibleMember);
                 final boolean portIsDefined = addressHolder.port != -1 || !networkConfig.isPortAutoIncrement();
-                final int count = portIsDefined ? 1 : MAX_PORT_TRIES;
+                final int count = portIsDefined ? 1 : maxPortTryCount;
                 final int port = addressHolder.port != -1 ? addressHolder.port : networkConfig.getPort();
                 AddressMatcher addressMatcher = null;
                 try {
