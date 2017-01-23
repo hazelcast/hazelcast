@@ -65,6 +65,10 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 The following are the issues solved for 3.8 release.
 
+- The hazelcast-all.jar, which is the one included in Hazelcast Docker, downloaded from Maven repo, contains an outdated version of hazelcast-aws library. [9698]
+- When scheduling on random partitions and trying to get all the scheduled tasks from the service, the number of tasks is wrong. The returned figure seems to match "num_of_tasks * backup_count". [9694]
+- When a scheduled Callable/Runnable throws an exception, invoking future.get() on the client side does not throw the expected ExecutionException. [9685]
+- IScheduledExecutorService does not use HazelcastInstanceAware on local operations. [9675]
 - Replicated Map configured with `async-fillup` as `false` prevents further members from joining the cluster. Members are stuck in an endless loop. [9592]
 - When an exception is thrown from an `InitializingObject`'s initialize method, it is logged in WARNING level but then swallowed and the proxy object is added to the `ProxyRegistry`. Instead, the exception should result in removing the object from the `ProxyRegistry`, as it is already done for exceptions thrown from `service.createDistributedObject`. [9578]
 - There is a memory leak in `MetaDataGenerator` when (1) near cache invalidations are enabled, (2) map/cache is created and destroyed, and (3) the map name is stays referenced from `MetaDataGenerator`. [9495]
@@ -84,6 +88,7 @@ The following are the issues solved for 3.8 release.
 - When retrieving data from Java Hazelcast instance, `HazelcastSerializationException` is thrown from the .NET client. [8985]
 - Callback for time to live (for map eviction) is invoked with a significant delay. [8894]
 - "Warning 2" in IMap::tryRemove method's code comments is not correct. This method returns only a boolean. [8884]
+- There are too many log messages when members of a cluster are not joined to another cluster (multicast) having a different group name in Hazelcast 3.6 and 3.7, which is already expected. [8867]
 - When clients lose connection to the members in the cluster, even after the clients are reconnected to the cluster, the Entry/Message Listeners are never fired again. [8847]
 - Nested queries on VersionedPortables with different versions cannot be performed. Hazelcast throws IllegalArgumentException. [8846]
 - Fixed max-size value behavior for Near Cache configuration. If you set 0 for the max-size, now, it is valued as Integer.MAX_VALUE as expected and documented. [8826]
@@ -106,6 +111,7 @@ The following are the issues solved for 3.8 release.
 - Hazelcast 3.5 throws InvalidConfigurationException. [6523]
 - More granular mutexes should be used when creating and removing a set of closeable cache resources. [6273]
 - Running `PredicateBuilder` queries when nodes join causes timeouts and cluster crash. [6242]
+- The configuration schemas Hazelcast Spring XSD and Hazelcast default configuration XSD are out of sync. They must have the same elements. [5034]
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
 - Fix inconsistent Ringbuffer TTL defaults: when starting a HazelcastInstance without an explicit configuration (`HazelcastInstance hz = Hazelcast.newHazelcastInstance();`), the default Ringbuffer TTL was 30 seconds, instead of correct value 0. This change may break existing applications relying on the default configuration. [9610]
 
