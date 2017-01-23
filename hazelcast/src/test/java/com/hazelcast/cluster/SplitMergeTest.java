@@ -73,6 +73,30 @@ public class SplitMergeTest extends HazelcastTestSupport {
         assertNotNull(getClusterService(h2).getMember(currentUuid_H2));
     }
 
+    @Test
+    public void test_allPartitionsAssigned_afterMerge() {
+        final HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
+        final HazelcastInstance h2 = factory.newHazelcastInstance(newConfig());
+        final HazelcastInstance h3 = factory.newHazelcastInstance(newConfig());
+        warmUpPartitions(h1, h2, h3);
+
+        // create split
+        closeConnectionBetween(h1, h3);
+        closeConnectionBetween(h2, h3);
+        assertClusterSizeEventually(2, h1);
+        assertClusterSizeEventually(2, h2);
+        assertClusterSizeEventually(1, h3);
+
+        // merge back
+        mergeBack(h3, getAddress(h1));
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        // all partitions are assigned and all migrations & promotions are completed
+        waitAllForSafeState(h1, h2, h3);
+    }
+
     private void mergeBack(HazelcastInstance hz, Address to) {
         getNode(hz).getClusterService().merge(to);
     }

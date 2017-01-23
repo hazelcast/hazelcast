@@ -25,6 +25,7 @@ import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
@@ -70,7 +71,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     @Override
     public void beforeRun() throws Exception {
-        super.beforeRun();
+        if (beforeStateCompleted) {
+            return;
+        }
 
         NodeEngine nodeEngine = getNodeEngine();
         final Member localMember = nodeEngine.getLocalMember();
@@ -78,6 +81,13 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             throw new IllegalStateException("This " + localMember
                     + " is promotion commit destination but most probably it's restarted "
                     + "and not the expected target.");
+        }
+
+        Address masterAddress = nodeEngine.getMasterAddress();
+        Address callerAddress = getCallerAddress();
+        if (!callerAddress.equals(masterAddress)) {
+            throw new IllegalStateException("Caller is not master node! Caller: " + callerAddress
+                + ", Master: " + masterAddress);
         }
     }
 
@@ -90,8 +100,6 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     @Override
     public void afterRun() throws Exception {
-        super.afterRun();
-
         if (!beforeStateCompleted) {
             // Triggering before-promotion tasks in afterRun() after response phase is done,
             // to avoid inadvertently reading `beforeStateCompleted` as true when asked to send a response.
@@ -203,6 +211,12 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onInvocationException(throwable);
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        // promotion failed, should return failure result
+        beforeStateCompleted = true;
     }
 
     @Override

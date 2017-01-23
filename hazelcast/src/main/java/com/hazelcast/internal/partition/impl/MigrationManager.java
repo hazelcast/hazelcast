@@ -406,6 +406,10 @@ public class MigrationManager {
             logger.fine("Node is not joined, will not trigger ControlTask");
             return;
         }
+        if (!node.isMaster()) {
+            logger.fine("Node is not master, will not trigger ControlTask");
+            return;
+        }
 
         migrationQueue.add(new ControlTask());
         if (logger.isFinestEnabled()) {
