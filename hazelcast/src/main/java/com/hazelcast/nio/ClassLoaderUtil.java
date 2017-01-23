@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.internal.distributedclassloading.impl.ClassSource;
+import com.hazelcast.internal.usercodedeployment.impl.ClassSource;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 

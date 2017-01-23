@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.internal.distributedclassloading.impl.ClassloadingMutexProvider;
+import com.hazelcast.internal.usercodedeployment.impl.ClassloadingMutexProvider;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.io.ByteArrayOutputStream;

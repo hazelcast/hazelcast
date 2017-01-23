@@ -24,8 +24,8 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.distributedclassloading.DistributedClassloadingService;
-import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
+import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentService;
+import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -121,7 +121,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
     private final Diagnostics diagnostics;
-    private final DistributedClassloadingService distributedClassloadingService;
+    private final UserCodeDeploymentService userCodeDeploymentService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(final Node node) {
@@ -136,10 +136,10 @@ public class NodeEngineImpl implements NodeEngine {
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
         this.operationParker = new OperationParkerImpl(this);
-        this.distributedClassloadingService = new DistributedClassloadingService();
+        this.userCodeDeploymentService = new UserCodeDeploymentService();
         ClassLoader configClassLoader = node.getConfigClassLoader();
-        if (configClassLoader instanceof DistributedClassLoader) {
-            ((DistributedClassLoader) configClassLoader).setDistributedClassloadingService(distributedClassloadingService);
+        if (configClassLoader instanceof UserCodeDeploymentClassLoader) {
+            ((UserCodeDeploymentClassLoader) configClassLoader).setUserCodeDeploymentService(userCodeDeploymentService);
         }
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
@@ -156,7 +156,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
-        serviceManager.registerService(DistributedClassloadingService.SERVICE_NAME, distributedClassloadingService);
+        serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
     }
 
     private PacketHandler newJetPacketHandler() {

@@ -20,12 +20,12 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-import com.hazelcast.config.DistributedClassloadingConfig.ClassCacheMode;
-import com.hazelcast.config.DistributedClassloadingConfig.ProviderMode;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.config.UserCodeDeploymentConfig.ClassCacheMode;
+import com.hazelcast.config.UserCodeDeploymentConfig.ProviderMode;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -62,7 +62,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.CARDINALITY_ESTIMATOR;
-import static com.hazelcast.config.XmlElements.DISTRIBUTED_CLASSLOADING;
+import static com.hazelcast.config.XmlElements.USER_CODE_DEPLOYMENT;
 import static com.hazelcast.config.XmlElements.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
 import static com.hazelcast.config.XmlElements.GROUP;
@@ -367,8 +367,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleLiteMember(node);
         } else if (HOT_RESTART_PERSISTENCE.isEqual(nodeName)) {
             handleHotRestartPersistence(node);
-        } else if (DISTRIBUTED_CLASSLOADING.isEqual(nodeName)) {
-            handleDistributedClassLoading(node);
+        } else if (USER_CODE_DEPLOYMENT.isEqual(nodeName)) {
+            handleUserCodeDeployment(node);
         } else if (CARDINALITY_ESTIMATOR.isEqual(nodeName)) {
             handleCardinalityEstimator(node);
         } else {
@@ -385,8 +385,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         config.setInstanceName(instanceName);
     }
 
-    private void handleDistributedClassLoading(Node dcRoot) {
-        DistributedClassloadingConfig dcConfig = new DistributedClassloadingConfig();
+    private void handleUserCodeDeployment(Node dcRoot) {
+        UserCodeDeploymentConfig dcConfig = new UserCodeDeploymentConfig();
         Node attrEnabled = dcRoot.getAttributes().getNamedItem("enabled");
         boolean enabled = getBooleanValue(getTextContent(attrEnabled));
         dcConfig.setEnabled(enabled);
@@ -418,7 +418,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 dcConfig.setProviderFilter(value);
             }
         }
-        config.setDistributedClassloadingConfig(dcConfig);
+        config.setUserCodeDeploymentConfig(dcConfig);
     }
 
     private void handleHotRestartPersistence(Node hrRoot) {

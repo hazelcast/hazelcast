@@ -23,7 +23,7 @@ import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
-import com.hazelcast.config.DistributedClassloadingConfig;
+import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -44,7 +44,7 @@ import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.MulticastJoiner;
 import com.hazelcast.internal.cluster.impl.MulticastService;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
-import com.hazelcast.internal.distributedclassloading.DistributedClassLoader;
+import com.hazelcast.internal.usercodedeployment.UserCodeDeploymentClassLoader;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.InternalMigrationListener;
@@ -222,15 +222,15 @@ public class Node {
     }
 
     private ClassLoader getConfigClassloader(Config config) {
-        DistributedClassloadingConfig distributedClassloadingConfig = config.getDistributedClassloadingConfig();
+        UserCodeDeploymentConfig userCodeDeploymentConfig = config.getUserCodeDeploymentConfig();
         ClassLoader classLoader;
-        if (distributedClassloadingConfig.isEnabled()) {
+        if (userCodeDeploymentConfig.isEnabled()) {
             ClassLoader parent = config.getClassLoader();
             final ClassLoader theParent = parent == null ? Node.class.getClassLoader() : parent;
-            classLoader = doPrivileged(new PrivilegedAction<DistributedClassLoader>() {
+            classLoader = doPrivileged(new PrivilegedAction<UserCodeDeploymentClassLoader>() {
                 @Override
-                public DistributedClassLoader run() {
-                    return new DistributedClassLoader(theParent);
+                public UserCodeDeploymentClassLoader run() {
+                    return new UserCodeDeploymentClassLoader(theParent);
                 }
             });
         } else {

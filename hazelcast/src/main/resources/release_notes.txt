@@ -99,7 +99,7 @@ The following are the issues solved for 3.8 release.
 - There appears to be an inconsistency where JCache uses the EvictionConfig object, but IMap directly uses properties of the NearCacheConfig. [7788]
 - Topic listeners are lost after merging from a split-brain scenario. [7742]
 - Member attributes go missing after merging from a split-brain scenario. [7697]
-- There should be a distributed class loading feature to perform distributed loading of classes so that jobs like MapReduce and Aggregate can be done more effectively. [7394]
+- There should be a User Code Deployment feature to perform distributed loading of classes so that jobs like MapReduce and Aggregate can be done more effectively. [7394]
 - MapLoader misses state updates on second load on the receiver members. [7364]
 - If the system retries an operation because a member is leaving the cluster, the invocation can be retried due to the response but also due to the "member-left" event. In most cases this should not lead to a problem, but the invocation may be executed twice. This can be a problem and can lead to a permanent inconsistent system. [7270]
 - Using Lock and Map, the heap memory on Hazelcast server keeps increasing. All the created Locks and Maps are destroyed by the method `destroy()`, but the memory cannot be destroyed by the garbage collector even via FGC. When an application runs for some time, Hazelcast server goes down. [7246]
