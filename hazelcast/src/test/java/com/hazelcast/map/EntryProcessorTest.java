@@ -1376,6 +1376,31 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertSizeEventually(0, map);
     }
 
+    /**
+     * In this test, map is cleared via entry processor. Entries to be cleared is found by a predicate.
+     * That predicate uses indexes on a value attribute to find eligible entries.
+     */
+    @Test
+    public void entry_processor_with_predicate_clears_map_when_value_attributes_are_indexed() {
+        Config config = getConfig();
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        HazelcastInstance node = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<Integer, SampleObjects.ObjectWithInteger> map = node.getMap("test");
+        map.addIndex("attribute", true);
+
+        for (int i = 0; i < 1000; i++) {
+            map.put(i, new SampleObjects.ObjectWithInteger(i));
+        }
+
+        map.executeOnEntries(new DeleteEntryProcessor(), new SqlPredicate("attribute >=0"));
+
+        assertSizeEventually(0, map);
+    }
+
     @Test
     public void test_executeOnEntriesWithPredicate_usesIndexes_whenIndexesAvailable() {
         HazelcastInstance node = createHazelcastInstance(getConfig());
