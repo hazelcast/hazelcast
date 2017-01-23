@@ -23,6 +23,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
+import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -110,7 +111,8 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
 
     private void loadValuesInternal(List<Data> keys, boolean replaceExistingValues) throws Exception {
         if (!replaceExistingValues) {
-            removeExistingKeys(keys);
+            Future removeKeysFuture = removeExistingKeys(keys);
+            removeKeysFuture.get();
         }
 
         removeUnloadableKeys(keys);
@@ -126,18 +128,10 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         }
     }
 
-    private void removeExistingKeys(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        Storage storage = recordStore.getStorage();
-        Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            Data key = iterator.next();
-            if (storage.containsKey(key)) {
-                iterator.remove();
-            }
-        }
+    private Future removeExistingKeys(List<Data> keys) {
+        OperationService operationService = mapServiceContext.getNodeEngine().getOperationService();
+        final Operation operation = new RemoveFromLoadAllOperation(name, keys);
+        return operationService.invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
     }
 
     private List<Future> doBatchLoad(List<Data> keys) {

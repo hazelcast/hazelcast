@@ -31,9 +31,6 @@ import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddIndexOperationFactory;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
-import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
-import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
-import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.ClearBackupOperation;
 import com.hazelcast.map.impl.operation.ClearNearCacheOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
@@ -53,10 +50,13 @@ import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.map.impl.operation.GetEntryViewOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
-import com.hazelcast.map.impl.operation.LoadAllOperation;
-import com.hazelcast.map.impl.operation.LoadMapOperation;
+import com.hazelcast.map.impl.operation.IsKeyLoadFinishedOperation;
+import com.hazelcast.map.impl.operation.IsPartitionLoadedOperation;
+import com.hazelcast.map.impl.operation.IsPartitionLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperation;
 import com.hazelcast.map.impl.operation.KeyLoadStatusOperationFactory;
+import com.hazelcast.map.impl.operation.LoadAllOperation;
+import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFetchEntriesOperation;
 import com.hazelcast.map.impl.operation.MapFetchKeysOperation;
 import com.hazelcast.map.impl.operation.MapFlushBackupOperation;
@@ -94,6 +94,7 @@ import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.PutTransientOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
+import com.hazelcast.map.impl.operation.RemoveFromLoadAllOperation;
 import com.hazelcast.map.impl.operation.RemoveIfSameOperation;
 import com.hazelcast.map.impl.operation.RemoveInterceptorOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
@@ -282,8 +283,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int LAZY_MAP_ENTRY = 131;
     public static final int TRIGGER_LOAD_IF_NEEDED = 132;
     public static final int IS_KEYLOAD_FINISHED = 133;
+    public static final int REMOVE_FROM_LOAD_ALL = 134;
 
-    private static final int LEN = IS_KEYLOAD_FINISHED + 1;
+    private static final int LEN = REMOVE_FROM_LOAD_ALL + 1;
 
     @Override
     public int getFactoryId() {
@@ -947,6 +949,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[IS_KEYLOAD_FINISHED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new IsKeyLoadFinishedOperation();
+            }
+        };
+        constructors[REMOVE_FROM_LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveFromLoadAllOperation();
             }
         };
 
