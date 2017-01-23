@@ -62,6 +62,12 @@ public class GroupProperties {
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
+    /**
+     * The number of incremental ports, starting with port number defined in network configuration,
+     * that will be used to connect to a host which is defined without a port in TCP-IP member list
+     * while a node is searching for a cluster.
+     */
+    public static final String PROP_TCP_JOIN_PORT_TRY_COUNT = "hazelcast.tcp.join.port.try.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
@@ -165,6 +171,8 @@ public class GroupProperties {
 
     public final GroupProperty PARTITION_COUNT;
 
+    public final GroupProperty TCP_JOIN_PORT_TRY_COUNT;
+
     public final GroupProperty LOGGING_TYPE;
 
     public final GroupProperty ENABLE_JMX;
@@ -249,6 +257,7 @@ public class GroupProperties {
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
+        TCP_JOIN_PORT_TRY_COUNT = new GroupProperty(config, PROP_TCP_JOIN_PORT_TRY_COUNT, "3");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
