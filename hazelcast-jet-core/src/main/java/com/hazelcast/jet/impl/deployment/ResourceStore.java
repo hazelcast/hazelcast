@@ -101,8 +101,8 @@ public class ResourceStore {
     private Path createStorageDirectory(String storagePath) {
         try {
             Path path = Paths.get(storagePath, "resources");
-            if (!path.toFile().exists() && !path.toFile().mkdirs()) {
-                throw new IOException("Could not create requested storage path " + storagePath);
+            if (!path.toFile().mkdirs() && !path.toFile().exists()) {
+                throw new IOException("Could not create requested storage path " + path);
             }
             return path;
         } catch (IOException e) {
