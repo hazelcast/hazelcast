@@ -575,6 +575,7 @@ public class Node {
 
     /**
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
+     * Assigns a new UUID to local member.
      * After this method is called,
      * a new join process can be triggered by calling {@link #join()}.
      * <p/>
@@ -585,6 +586,7 @@ public class Node {
         setMasterAddress(null);
         joined.set(false);
         joiner.reset();
+        setNewLocalMember();
     }
 
     public ILogger getLogger(String name) {
@@ -751,7 +753,7 @@ public class Node {
         return localMember.getUuid();
     }
 
-    public void setNewLocalMember() {
+    private void setNewLocalMember() {
         if (joined()) {
             logger.severe("Cannot set new local member when joined.");
             return;

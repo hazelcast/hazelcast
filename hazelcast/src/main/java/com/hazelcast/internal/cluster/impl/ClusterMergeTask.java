@@ -107,8 +107,6 @@ class ClusterMergeTask implements Runnable {
     }
 
     private void rejoin() {
-        // set new member uuid
-        node.setNewLocalMember();
         // start connection-manager to setup and accept new connections
         node.connectionManager.start();
         // re-join to the target cluster
