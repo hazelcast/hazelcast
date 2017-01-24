@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -110,7 +111,7 @@ public class EdgeTest {
         final Edge e = Edge.from(a);
 
         // When
-        e.partitioned();
+        e.partitioned(wholeItem());
         final Partitioner partitioner = e.getPartitioner();
         assertNotNull(partitioner);
         partitioner.init(Integer.class::cast);
@@ -127,7 +128,7 @@ public class EdgeTest {
         final int partitioningKey = 42;
 
         // When
-        e.partitionedByKey(o -> partitioningKey);
+        e.partitioned(o -> partitioningKey);
         final Partitioner partitioner = e.getPartitioner();
         assertNotNull(partitioner);
         partitioner.init(Integer.class::cast);
@@ -144,7 +145,7 @@ public class EdgeTest {
         final int partitionId = 42;
 
         // When
-        e.partitionedByCustom((o, x) -> partitionId);
+        e.partitioned(wholeItem(), (o, x) -> partitionId);
         final Partitioner partitioner = e.getPartitioner();
         assertNotNull(partitioner);
 

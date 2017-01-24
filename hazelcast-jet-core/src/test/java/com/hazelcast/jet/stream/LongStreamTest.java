@@ -49,7 +49,7 @@ public class LongStreamTest extends AbstractStreamTest {
         stream = map.stream().mapToLong(Map.Entry::getValue);
     }
 
-    private long fillMapLongs(IStreamMap<String, Long> map) {
+    private static long fillMapLongs(IStreamMap<String, Long> map) {
         for (int i = 0; i < COUNT; i++) {
             map.put("key-" + i, (long) i);
         }

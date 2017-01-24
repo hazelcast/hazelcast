@@ -43,6 +43,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -101,8 +102,7 @@ public class BackpressureTest extends JetTestSupport {
         Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 
         dag.edge(between(generator, hiccuper)
-                .distributed()
-                .partitionedByCustom((x, y) -> ptionOwnedByMember2))
+                .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
            .edge(between(hiccuper, consumer));
 
         uncheckedGet(jet1.newJob(dag).execute());

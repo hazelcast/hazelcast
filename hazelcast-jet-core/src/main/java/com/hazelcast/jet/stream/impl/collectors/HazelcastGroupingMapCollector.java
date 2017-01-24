@@ -18,20 +18,21 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Processors;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorP;
 import com.hazelcast.jet.stream.impl.processor.GroupingCombinerP;
 
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.entryKey;
+import static com.hazelcast.jet.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.Processors.mapWriter;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
@@ -48,8 +49,9 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         this(uniqueMapName(), classifier, collector);
     }
 
-    public HazelcastGroupingMapCollector(String mapName, Function<? super T, ? extends K> classifier,
-                                         Collector<? super T, A, D> collector) {
+    public HazelcastGroupingMapCollector(
+            String mapName, Function<? super T, ? extends K> classifier, Collector<? super T, A, D> collector
+    ) {
         this.mapName = mapName;
         this.classifier = classifier;
         this.collector = collector;
@@ -65,10 +67,10 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 () -> new GroupingAccumulatorP<>(classifier, collector));
         Vertex combiner = dag.newVertex(uniqueVertexName("grouping-combiner"),
                 () -> new GroupingCombinerP<>(collector));
-        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.mapWriter(mapName));
+        Vertex writer = dag.newVertex(writerVertexName(mapName), mapWriter(mapName));
 
-        dag.edge(between(previous, merger).partitionedByKey(item -> classifier.apply((T) item)))
-           .edge(between(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
+        dag.edge(between(previous, merger).partitioned(classifier::apply, HASH_CODE))
+           .edge(between(merger, combiner).distributed().partitioned(entryKey()))
            .edge(between(combiner, writer));
         executeJob(context, dag);
         return target;

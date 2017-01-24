@@ -20,7 +20,11 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.processor.DistinctP;
 
+import javax.annotation.Nonnull;
+
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
+import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
@@ -31,20 +35,26 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        if (upstream.isOrdered()) {
-            Vertex previous = upstream.buildDAG(dag);
-            Vertex distinct = dag.newVertex(uniqueVertexName("distinct"), DistinctP::new).localParallelism(1);
-            dag.edge(between(previous, distinct));
+        return upstream.isOrdered() ? orderedGraph(dag) : unorderedGraph(dag);
+    }
 
-            return distinct;
-        }
+    @Nonnull
+    private Vertex orderedGraph(DAG dag) {
+        Vertex previous = upstream.buildDAG(dag);
+        Vertex distinct = dag.newVertex(uniqueVertexName("distinct"), DistinctP::new).localParallelism(1);
+        dag.edge(between(previous, distinct));
 
+        return distinct;
+    }
+
+    @Nonnull
+    private Vertex unorderedGraph(DAG dag) {
         Vertex previous = upstream.buildDAG(dag);
         Vertex distinct = dag.newVertex(uniqueVertexName("distinct-local"), DistinctP::new);
         Vertex combiner = dag.newVertex(uniqueVertexName("distinct-global"), DistinctP::new);
 
-        dag.edge(between(previous, distinct).partitioned())
-           .edge(between(distinct, combiner).partitioned().distributed());
+        dag.edge(between(previous, distinct).partitioned(wholeItem(), HASH_CODE))
+           .edge(between(distinct, combiner).partitioned(wholeItem()).distributed());
 
         return combiner;
     }

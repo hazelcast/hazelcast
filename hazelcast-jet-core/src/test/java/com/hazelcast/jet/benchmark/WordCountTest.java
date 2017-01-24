@@ -23,11 +23,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Partitioner;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.logging.ILogger;
@@ -53,6 +52,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.entryKey;
+import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
@@ -117,6 +118,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Test
     public void testJet() {
         DAG dag = new DAG();
+
         Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"));
         Vertex generator = dag.newVertex("generator", Generator::new);
         Vertex accumulator = dag.newVertex("accumulator", Combiner::new);
@@ -124,11 +126,10 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 
         dag.edge(between(producer, generator))
-           .edge(between(generator, accumulator)
-                   .partitionedByCustom(Partitioner.fromInt(item -> ((Entry) item).getKey().hashCode())))
+           .edge(between(generator, accumulator).partitioned(entryKey(), HASH_CODE))
            .edge(between(accumulator, combiner)
                    .distributed()
-                   .partitionedByKey(item -> ((Entry) item).getKey()))
+                   .partitioned(entryKey()))
            .edge(between(combiner, consumer));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));

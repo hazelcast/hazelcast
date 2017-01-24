@@ -27,35 +27,96 @@ import java.io.Serializable;
  * Jet's partitioning piggybacks on Hazelcast partitioning. Standard Hazelcast
  * protocols are used to distribute partition ownership over the members of the
  * cluster. However, if a DAG edge is configured as non-distributed, then on each
- * member there will be some destination processor responsible for any given partition.
+ * member there will be some destination processor responsible for any given
+ * partition.
+ *
+ * @param <T> type of item the partitioner accepts
  */
 @FunctionalInterface
-public interface Partitioner extends Serializable {
+public interface Partitioner<T> extends Serializable {
+
+    /**
+     * Partitioner which calls {@link Object#hashCode()} and coerces it with the
+     * modulo operation into the allowed range of partition IDs. The primary
+     * reason to prefer this over the default is performance and it's a safe
+     * choice on local edges.
+     * <p>
+     * <strong>WARNING:</strong> this is a dangerous strategy to use on
+     * distributed edges. Care must be taken to ensure that the produced
+     * hashcode remains stable across serialization-deserialization cycles as
+     * well as across all JVM processes. Consider a {@code hashCode()} method
+     * that is correct with respect to its contract, but not with respect to
+     * the stricter contract given above. Take the following scenario:
+     * <ol><li>
+     *     there are two Jet cluster members;
+     * </li><li>
+     *     there is a DAG vertex;
+     * </li><li>
+     *     on each member there is a processor for this vertex;
+     * </li><li>
+     *     each processor emits an item;
+     * </li><li>
+     *     these two items have equal partitioning keys;
+     * </li><li>
+     *     nevertheless, on each member they get a different hashcode;
+     * </li><li>
+     *     they are routed to different processors, thus failing on the promise
+     *     that all items with the same partition key go to the same processor.
+     * </li></ol>
+     */
+    Partitioner<Object> HASH_CODE = (item, partitionCount) -> Math.abs(item.hashCode() % partitionCount);
 
     /**
      * Callback that injects the Hazelcast's default partitioning strategy into
-     * this partitioner so it can be consulted by the {@link #getPartition(Object, int)} method.
+     * this partitioner so it can be consulted by the
+     * {@link #getPartition(Object, int)} method.
      * <p>
-     * The creation of instances of the {@code Partitioner} type is done in user's code,
-     * but the Hazelcast partitioning strategy only becomes available after the partitioner
-     * is deserialized on each target member. This method solves the lifecycle mismatch.
+     * The creation of instances of the {@code Partitioner} type is done in
+     * user's code, but the Hazelcast partitioning strategy only becomes
+     * available after the partitioner is deserialized on each target member.
+     * This method solves the lifecycle mismatch.
      */
-    default void init(DefaultPartitionStrategy lookup) {
+    default void init(DefaultPartitionStrategy strat) {
     }
 
     /**
-     * @param item the item for which to determine the partition ID
-     * @param partitionCount the total number of partitions as configured for the underlying Hazelcast instance
-     * @return the partition ID of the given item
+     * Returns the partition ID of the given item.
+     *
+     * @param partitionCount the total number of partitions in use by the underlying Hazelcast instance
      */
-    int getPartition(Object item, int partitionCount);
+    int getPartition(T item, int partitionCount);
 
     /**
-     * Takes a hashing function that maps the object to an {@code int} and
-     * returns a partitioner that transforms the unconstrained {@code int}
-     * value to a legal partition ID.
+     * Returns a partitioner which applies the default Hazelcast partitioning.
+     * It will serialize the item using Hazelcast Serialization, then apply
+     * Hazelcast's {@code MurmurHash}-based algorithm to retrieve the partition
+     * ID. This is quite a bit of work, but has stable results across all JVM
+     * processes, making it a safe default.
      */
-    static Partitioner fromInt(Distributed.ToIntFunction<Object> hasher) {
-        return (item, partitionCount) -> Math.abs(hasher.applyAsInt(item) % partitionCount);
+    static Partitioner<Object> defaultPartitioner() {
+        return new Default();
+    }
+
+    /**
+     * Partitioner which applies the default Hazelcast partitioning strategy.
+     * Instances should be retrieved from {@link #defaultPartitioner()}.
+     */
+    final class Default implements Partitioner<Object> {
+        private static final long serialVersionUID = 1L;
+
+        transient DefaultPartitionStrategy defaultPartitioning;
+
+        Default() {
+        }
+
+        @Override
+        public void init(DefaultPartitionStrategy defaultPartitioning) {
+            this.defaultPartitioning = defaultPartitioning;
+        }
+
+        @Override
+        public int getPartition(Object item, int partitionCount) {
+            return defaultPartitioning.getPartition(item);
+        }
     }
 }

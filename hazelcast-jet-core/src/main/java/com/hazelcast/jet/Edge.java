@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.SerializationConstants;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.config.EdgeConfig;
+import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,6 +27,9 @@ import com.hazelcast.util.UuidUtil;
 
 import java.io.IOException;
 import java.io.Serializable;
+
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
+import static com.hazelcast.jet.Partitioner.defaultPartitioner;
 
 /**
  * Represents an edge between two {@link Vertex vertices} in a {@link DAG}.
@@ -58,7 +62,7 @@ public class Edge implements IdentifiedDataSerializable {
     private int priority;
     private boolean isBuffered;
     private boolean isDistributed;
-    private Partitioner partitioner;
+    private Partitioner<?> partitioner;
     private ForwardingPattern forwardingPattern = ForwardingPattern.VARIABLE_UNICAST;
 
     private EdgeConfig config;
@@ -216,34 +220,24 @@ public class Edge implements IdentifiedDataSerializable {
     }
 
     /**
-     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
-     * pattern and applies the default Hazelcast partitioning strategy.
-     */
-    public Edge partitioned() {
-        this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Default();
-        return this;
-    }
-
-    /**
-     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
-     * pattern and applies the default Hazelcast partitioning strategy. The strategy
-     * is not applied directly to the item, but to the result of the supplied
+     * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED}
+     * forwarding pattern and applies the
+     * {@link Partitioner#defaultPartitioner() default} Hazelcast partitioning
+     * strategy. The strategy is applied to the result of the
      * {@code keyExtractor} function.
      */
-    public <T, R> Edge partitionedByKey(Distributed.Function<T, R> keyExtractor) {
-        this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = new Keyed<>(keyExtractor);
-        return this;
+    public <T> Edge partitioned(Distributed.Function<T, ?> keyExtractor) {
+        return partitioned(keyExtractor, defaultPartitioner());
     }
 
     /**
      * Activates the {@link ForwardingPattern#PARTITIONED PARTITIONED} forwarding
-     * pattern and applies the provided custom partitioning strategy.
+     * pattern and applies the provided partitioning strategy. The strategy
+     * is applied to the result of the {@code keyExtractor} function.
      */
-    public Edge partitionedByCustom(Partitioner partitioner) {
+    public <T, K> Edge partitioned(Distributed.Function<T, K> keyExtractor, Partitioner<? super K> partitioner) {
         this.forwardingPattern = ForwardingPattern.PARTITIONED;
-        this.partitioner = partitioner;
+        this.partitioner = new KeyPartitioner<>(keyExtractor, partitioner);
         return this;
     }
 
@@ -253,7 +247,7 @@ public class Edge implements IdentifiedDataSerializable {
      * partition ID. Therefore all items will be directed to the same processor.
      */
     public Edge allToOne() {
-        return partitionedByCustom(new Single());
+        return partitioned(wholeItem(), new Single());
     }
 
     /**
@@ -269,7 +263,7 @@ public class Edge implements IdentifiedDataSerializable {
      * Returns the instance encapsulating the partitioning strategy in effect
      * on this edge.
      */
-    public Partitioner getPartitioner() {
+    public Partitioner<?> getPartitioner() {
         return partitioner;
     }
 
@@ -409,36 +403,7 @@ public class Edge implements IdentifiedDataSerializable {
         BROADCAST
     }
 
-    private static class Default implements Partitioner {
-        private static final long serialVersionUID = 1L;
-
-        protected transient DefaultPartitionStrategy defaultPartitioning;
-
-        @Override
-        public void init(DefaultPartitionStrategy defaultPartitioning) {
-            this.defaultPartitioning = defaultPartitioning;
-        }
-
-        @Override
-        public int getPartition(Object item, int partitionCount) {
-            return defaultPartitioning.getPartition(item);
-        }
-    }
-
-    private static class Keyed<T, R> extends Default {
-        private Distributed.Function<T, R> keyExtractor;
-
-        Keyed(Distributed.Function<T, R> keyExtractor) {
-            this.keyExtractor = keyExtractor;
-        }
-
-        @Override
-        public int getPartition(Object item, int partitionCount) {
-            return defaultPartitioning.getPartition(keyExtractor.apply((T) item));
-        }
-    }
-
-    private static class Single implements Partitioner {
+    private static class Single implements Partitioner<Object> {
 
         private static final long serialVersionUID = 1L;
 
@@ -450,13 +415,36 @@ public class Edge implements IdentifiedDataSerializable {
         }
 
         @Override
-        public void init(DefaultPartitionStrategy service) {
-            partition = service.getPartition(key);
+        public void init(DefaultPartitionStrategy strat) {
+            partition = strat.getPartition(key);
         }
 
         @Override
         public int getPartition(Object item, int partitionCount) {
             return partition;
+        }
+    }
+
+    private static final class KeyPartitioner<T, K> implements Partitioner<T> {
+
+        private static final long serialVersionUID = 1L;
+
+        private final Function<T, K> keyExtractor;
+        private final Partitioner<? super K> partitioner;
+
+        KeyPartitioner(Function<T, K> keyExtractor, Partitioner<? super K> partitioner) {
+            this.keyExtractor = keyExtractor;
+            this.partitioner = partitioner;
+        }
+
+        @Override
+        public void init(DefaultPartitionStrategy strat) {
+            partitioner.init(strat);
+        }
+
+        @Override
+        public int getPartition(T item, int partitionCount) {
+            return partitioner.getPartition(keyExtractor.apply(item), partitionCount);
         }
     }
 }

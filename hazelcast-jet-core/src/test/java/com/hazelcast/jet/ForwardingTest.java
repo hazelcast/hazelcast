@@ -32,6 +32,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -111,9 +112,8 @@ public class ForwardingTest extends JetTestSupport {
 
         dag.vertex(producer)
            .vertex(consumer)
-           .edge(between(producer, consumer).partitionedByCustom(
-                   (item, numPartitions) -> (int) item % numPartitions
-           ));
+           .edge(between(producer, consumer)
+                   .partitioned(wholeItem(), (Integer item, int numPartitions) -> item % numPartitions));
 
         execute(dag);
 

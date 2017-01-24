@@ -24,11 +24,12 @@ import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.MergeP;
 
-import java.util.Map;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.KeyExtractors.entryKey;
+import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
@@ -38,14 +39,20 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
 
     private final BinaryOperator<V> mergeFunction;
 
-    public HazelcastMergingMapCollector(Function<? super T, ? extends K> keyMapper,
-                                        Function<? super T, ? extends V> valueMapper,
-                                        BinaryOperator<V> mergeFunction) {
+    public HazelcastMergingMapCollector(
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper,
+            BinaryOperator<V> mergeFunction
+    ) {
         this(uniqueMapName(), keyMapper, valueMapper, mergeFunction);
     }
 
-    public HazelcastMergingMapCollector(String mapName, Function<? super T, ? extends K> keyMapper,
-                                        Function<? super T, ? extends V> valueMapper, BinaryOperator<V> mergeFunction) {
+    public HazelcastMergingMapCollector(
+            String mapName,
+            Function<? super T, ? extends K> keyMapper,
+            Function<? super T, ? extends V> valueMapper,
+            BinaryOperator<V> mergeFunction
+    ) {
         super(mapName, keyMapper, valueMapper);
         this.mergeFunction = mergeFunction;
     }
@@ -57,15 +64,13 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         Vertex previous = upstream.buildDAG(dag);
 
         Vertex merger = dag.newVertex(uniqueVertexName("merging-accumulator"),
-                () -> new MergeP<>(keyMapper,
-                        valueMapper, mergeFunction));
+                () -> new MergeP<>(keyMapper, valueMapper, mergeFunction));
         Vertex combiner = dag.newVertex(uniqueVertexName("merging-combiner"),
-                () -> new MergeP<T, K, V>(null, null,
-                        mergeFunction));
+                () -> new MergeP<T, K, V>(null, null, mergeFunction));
         Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.mapWriter(mapName));
 
-        dag.edge(between(previous, merger).partitionedByKey(item -> keyMapper.apply((T) item)))
-           .edge(between(merger, combiner).distributed().partitionedByKey(item -> ((Map.Entry) item).getKey()))
+        dag.edge(between(previous, merger).partitioned(keyMapper::apply, HASH_CODE))
+           .edge(between(merger, combiner).distributed().partitioned(entryKey()))
            .edge(between(combiner, writer));
         executeJob(context, dag);
         return target;

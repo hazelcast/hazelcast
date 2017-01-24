@@ -69,6 +69,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Edge.from;
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static java.util.stream.Collectors.toList;
 
 public class JetFlowStep extends BaseFlowStep<JetConfig> {
@@ -190,7 +191,8 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
                             dag.vertex(v.vertex);
                             return v;
                         });
-                        Edge edge = from(tapVertex.vertex, tapVertex.currOutput++).to(vertex, annotatedVertex.currInput);
+                        Edge edge = from(tapVertex.vertex, tapVertex.currOutput++)
+                                    .to(vertex, annotatedVertex.currInput);
                         if (isAccumulated) {
                             edge = edge.broadcast().distributed().priority(-1);
                         }
@@ -235,7 +237,7 @@ public class JetFlowStep extends BaseFlowStep<JetConfig> {
 
             Edge edge = Edge.from(sourceVertex.vertex, sourceVertex.currOutput)
                             .to(targetVertex.vertex, targetVertex.currInput)
-                            .partitionedByCustom(getPartitioner(processEdge, targetNode, element))
+                            .partitioned(wholeItem(), getPartitioner(processEdge, targetNode, element))
                             .distributed();
             if (isAccumulated) {
                 edge = edge.broadcast().priority(-1);
