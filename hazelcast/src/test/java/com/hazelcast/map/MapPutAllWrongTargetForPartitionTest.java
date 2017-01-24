@@ -22,13 +22,13 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutAllPartitionAwareOperationFactory;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareOperationFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,8 +40,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -99,25 +97,13 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
      * <p/>
      * After the operation is invoked we assert that each member owns one entry of the map and that all backups have been written.
      */
-    private void testPutAllPerMemberOperation(int entriesPerPartition) throws Exception {
-        int expectedEntryCount = INSTANCE_COUNT * entriesPerPartition;
-        String mapName = randomMapName();
+    private void testPutAllPerMemberOperation(final int entriesPerPartition) throws Exception {
+        final int expectedEntryCount = INSTANCE_COUNT * entriesPerPartition;
+        final String mapName = randomMapName();
 
         HazelcastInstance hz = instances[0];
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         SerializationService serializationService = nodeEngine.getSerializationService();
-
-        // assert that each member has a single partition
-        Map<Address, List<Integer>> memberPartitionsMap = nodeEngine.getPartitionService().getMemberPartitionsMap();
-        Collection<List<Integer>> memberPartitions = memberPartitionsMap.values();
-        assertEquals(format("Expected %d members in the cluster", INSTANCE_COUNT), INSTANCE_COUNT, memberPartitions.size());
-        for (List<Integer> partitions : memberPartitions) {
-            assertEquals("Expected a single partition per cluster member", 1, partitions.size());
-        }
-
-        // assert that the map is empty
-        IMap<String, String> map = hz.getMap(mapName);
-        assertEquals("Expected an empty map", 0, map.size());
 
         // create a PutAllPerMemberOperation with entries for all partitions
         PartitionAwareOperationFactory factory = createPutAllOperationFactory(entriesPerPartition, mapName, hz,
@@ -128,20 +114,27 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         operationService.invokeOnPartitions(MapService.SERVICE_NAME, factory, factory.getPartitions());
 
         // assert that all entries have been written
+        IMap<String, String> map = hz.getMap(mapName);
         assertEquals(format("Expected %d entries in the map", expectedEntryCount), expectedEntryCount, map.size());
         for (Map.Entry<String, String> entry : map.entrySet()) {
             assertEquals("Expected that key and value are the same", entry.getKey(), entry.getValue());
         }
 
         // assert that each member owns entriesPerPartition entries of the map and that all backups have been written
-        int totalBackups = 0;
-        for (int i = 0; i < INSTANCE_COUNT; i++) {
-            map = instances[i].getMap(mapName);
-            assertEquals(format("Each member should own %d entries of the map", entriesPerPartition),
-                    entriesPerPartition, map.getLocalMapStats().getOwnedEntryCount());
-            totalBackups += map.getLocalMapStats().getBackupEntryCount();
-        }
-        assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount), expectedEntryCount, totalBackups);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int totalBackups = 0;
+                for (int i = 0; i < INSTANCE_COUNT; i++) {
+                    IMap map = instances[i].getMap(mapName);
+                    assertEquals(format("Each member should own %d entries of the map", entriesPerPartition),
+                            entriesPerPartition, map.getLocalMapStats().getOwnedEntryCount());
+                    totalBackups += map.getLocalMapStats().getBackupEntryCount();
+                }
+                assertEquals(format("Expected to find %d backups in the cluster", expectedEntryCount),
+                        expectedEntryCount, totalBackups);
+            }
+        });
     }
 
     private PartitionAwareOperationFactory createPutAllOperationFactory(int entriesPerPartition, String mapName,
