@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -173,4 +174,50 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
             throw new OutOfMemoryError("Error for testing map-store when OOM exception raised");
         }
     }
+
+    @Test
+    public void testPartialStoreOperationDone_afterTemporaryMapStoreFailure() throws Exception {
+        final SequentialMapStore<Integer, Integer> mapStore = new SequentialMapStore<Integer, Integer>();
+        final IMap<Integer, Integer> map = TestMapUsingMapStoreBuilder.<Integer, Integer>create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withPartitionCount(1)
+                .build();
+
+        map.put(1, 2);
+        map.put(2, 3);
+        map.put(3, 4);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(3, mapStore.storeCount());
+            }
+        });
+    }
+
+    /**
+     * This map-store stores only one entry at storeAll call, then throws an exception;
+     * Used to test partial failure processing.
+     */
+    static class SequentialMapStore<K, V> extends MapStoreAdapter<K, V> {
+
+        private int cnt = 0;
+
+        @Override
+        public void storeAll(Map<K, V> entries) {
+            entries.remove(entries.keySet().iterator().next());
+            cnt++;
+            if (entries.size() > 0) {
+                throw new TemporaryMapStoreException();
+            }
+        }
+
+        public int storeCount() {
+            return cnt;
+        }
+    }
+
 }
