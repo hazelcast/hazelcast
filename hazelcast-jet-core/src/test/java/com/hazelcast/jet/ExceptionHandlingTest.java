@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
@@ -52,17 +54,15 @@ public class ExceptionHandlingTest extends JetTestSupport {
     }
 
     @Test
-    @Repeat(1000)
     public void when_exceptionInProcessorSupplier_then_failJob() throws Throwable {
         instance = factory.newMember();
 
         // Given
-        DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         final SimpleProcessorSupplier sup = () -> {
             throw e;
         };
-        dag.newVertex("faulty", sup);
+        DAG dag = new DAG().vertex(new Vertex("faulty", sup));
 
         // Then
         expectedException.expect(e.getClass());
@@ -77,11 +77,10 @@ public class ExceptionHandlingTest extends JetTestSupport {
         instance = factory.newMember();
 
         // Given
-        DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        dag.newVertex("faulty", (ProcessorMetaSupplier) address -> {
+        DAG dag = new DAG().vertex(new Vertex("faulty", (ProcessorMetaSupplier) address -> {
             throw e;
-        });
+        }));
 
         // Then
         expectedException.expect(e.getClass());
@@ -97,19 +96,16 @@ public class ExceptionHandlingTest extends JetTestSupport {
         instance = factory.newMember();
 
         // Given
-        DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
         final int localPort = instance.getCluster().getLocalMember().getAddress().getPort();
-        dag.newVertex("faulty", (ProcessorMetaSupplier) address -> {
-            if (address.getPort() == localPort) {
-                return ProcessorSupplier.of(() -> new AbstractProcessor() {
-                });
-            } else {
-                return ProcessorSupplier.of(() -> {
-                    throw e;
-                });
-            }
-        });
+
+        DAG dag = new DAG().vertex(new Vertex("faulty",
+                ProcessorMetaSupplier.of(
+                        (Address address) -> ProcessorSupplier.of(
+                                address.getPort() == localPort ? NoopProcessor::new : () -> {
+                                    throw e;
+                                })
+                )));
 
         // Then
         expectedException.expect(e.getClass());

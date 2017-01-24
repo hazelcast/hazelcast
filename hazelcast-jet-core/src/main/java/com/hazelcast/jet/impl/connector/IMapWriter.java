@@ -23,7 +23,6 @@ import com.hazelcast.jet.Inbox;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap;
@@ -71,33 +70,12 @@ public final class IMapWriter implements Processor {
     }
 
     public static ProcessorMetaSupplier supplier(String mapName) {
-        return new MetaSupplier(mapName);
+        return ProcessorMetaSupplier.of(new Supplier(mapName));
     }
 
     public static ProcessorMetaSupplier supplier(String mapName, ClientConfig clientConfig) {
-        return new MetaSupplier(mapName, clientConfig);
-    }
-
-    private static class MetaSupplier implements ProcessorMetaSupplier {
-
-        static final long serialVersionUID = 1L;
-
-        private final String mapName;
-        private SerializableClientConfig clientConfig;
-
-        MetaSupplier(String mapName) {
-            this(mapName, null);
-        }
-
-        MetaSupplier(String mapName, ClientConfig clientConfig) {
-            this.mapName = mapName;
-            this.clientConfig = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
-        }
-
-        @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            return new Supplier(mapName, clientConfig);
-        }
+        SerializableClientConfig config = clientConfig != null ? new SerializableClientConfig(clientConfig) : null;
+        return ProcessorMetaSupplier.of(new Supplier(mapName, config));
     }
 
     private static class Supplier implements ProcessorSupplier {
@@ -105,13 +83,18 @@ public final class IMapWriter implements Processor {
         static final long serialVersionUID = 1L;
 
         private final String name;
-        private SerializableClientConfig clientConfig;
+        private final SerializableClientConfig clientConfig;
+
         private transient IMap map;
         private transient HazelcastInstance client;
 
         Supplier(String name, SerializableClientConfig clientConfig) {
             this.name = name;
             this.clientConfig = clientConfig;
+        }
+
+        Supplier(String name) {
+            this(name, null);
         }
 
         @Override

@@ -29,6 +29,7 @@ import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapWriter;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -94,10 +95,11 @@ public class BackpressureTest extends JetTestSupport {
                     .map(Partition::getPartitionId)
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
-        Vertex generator = dag.newVertex("generator", (ProcessorMetaSupplier) address -> address.getPort() == member1Port
-                ? ProcessorSupplier.of(GeneratingProducer::new)
-                : ProcessorSupplier.of(NoopProcessor::new)
-        );
+        Vertex generator = dag.newVertex("generator", ProcessorMetaSupplier.of(
+                (Address address) -> address.getPort() == member1Port
+                        ? ProcessorSupplier.of(GeneratingProducer::new)
+                        : ProcessorSupplier.of(NoopProcessor::new)
+        ));
         Vertex hiccuper = dag.newVertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
         Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 

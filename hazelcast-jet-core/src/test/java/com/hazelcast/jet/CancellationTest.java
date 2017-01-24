@@ -35,9 +35,11 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 
 import static com.hazelcast.jet.impl.util.Util.peel;
 import static org.junit.Assert.assertTrue;
@@ -252,17 +254,15 @@ public class CancellationTest extends JetTestSupport {
         private transient Address failOnAddress;
         private RuntimeException e;
 
-        public SingleNodeFaultSupplier(Address failOnAddress, RuntimeException e) {
+        SingleNodeFaultSupplier(Address failOnAddress, RuntimeException e) {
             this.e = e;
             this.failOnAddress = failOnAddress;
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            if (address.equals(failOnAddress)) {
-                return ProcessorSupplier.of(() -> new FaultyProcessor(e));
-            }
-            return ProcessorSupplier.of(StuckProcessor::new);
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address ->
+                    ProcessorSupplier.of(address.equals(failOnAddress) ? () -> new FaultyProcessor(e) : StuckProcessor::new);
         }
 
         @Override

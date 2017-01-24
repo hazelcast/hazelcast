@@ -22,7 +22,12 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static org.junit.Assert.*;
+import java.net.UnknownHostException;
+import java.util.List;
+import java.util.function.Function;
+
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
 public class VertexTest {
@@ -47,7 +52,7 @@ public class VertexTest {
     }
 
     @Test
-    public void when_constructWithSimpleSupplier_then_suppliesCorrectProcessor() {
+    public void when_constructWithSimpleSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
         v = new Vertex("v", NoopProcessor::new);
 
@@ -56,7 +61,7 @@ public class VertexTest {
     }
 
     @Test
-    public void when_constructWithProcessorSupplier_then_suppliesCorrectProcessor() {
+    public void when_constructWithProcessorSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
         v = new Vertex("v", ProcessorSupplier.of(NoopProcessor::new));
 
@@ -65,7 +70,7 @@ public class VertexTest {
     }
 
     @Test
-    public void when_constructWithMetaSupplier_then_suppliesCorrectProcessor() {
+    public void when_constructWithMetaSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
         v = new Vertex("v", ProcessorMetaSupplier.of(NoopProcessor::new));
 
@@ -85,7 +90,12 @@ public class VertexTest {
         assertEquals(1, v.getLocalParallelism());
     }
 
-    private void validateProcessor() {
-        assertEquals(NoopProcessor.class, v.getSupplier().get(new Address()).get(1).get(0).getClass());
+    private void validateProcessor() throws UnknownHostException {
+        Address address = new Address("localhost", 5701);
+        Function<Address, ProcessorSupplier> fn = v.getSupplier().get(singletonList(address));
+        ProcessorSupplier supplier = fn.apply(address);
+        List<Processor> processors = supplier.get(1);
+        assertEquals(NoopProcessor.class, processors.get(0).getClass());
+
     }
 }

@@ -40,6 +40,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -118,10 +119,9 @@ public final class HdfsWriter extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            return new Supplier(address.equals(this.address), path);
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> new Supplier(address.equals(this.address), path);
         }
-
     }
 
     private static class Supplier implements ProcessorSupplier {

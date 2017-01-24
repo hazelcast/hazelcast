@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Factory of {@link ProcessorSupplier} instances. The starting point of
@@ -58,21 +60,26 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Called to create a {@link ProcessorSupplier} which will be sent to the
-     * cluster member with the supplied address. All calls of this method are
-     * made on the cluster member that received the job request, after calling
-     * {@code init()}.
+     * Called to create a mapping from member {@link Address} to the
+     * {@link ProcessorSupplier} that will be sent to that member. Jet calls
+     * this method with a list of all cluster members' addresses and the
+     * returned function must be a mapping that returns a non-null value for
+     * each given address.
+     * <p>
+     * The method will be called once per job execution on the job's
+     * <em>coordinator</em> member. {@code init()} will have already
+     * been called.
      */
     @Nonnull
-    ProcessorSupplier get(@Nonnull Address address);
+    java.util.function.Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses);
 
     /**
      * Factory method that wraps the given {@code ProcessorSupplier}
-     * and returns it as a constant from each {@link #get(Address)} call.
+     * and returns the same instance for each given {@code Address}.
      */
     @Nonnull
     static ProcessorMetaSupplier of(@Nonnull ProcessorSupplier procSupplier) {
-        return address -> procSupplier;
+        return of((Address x) -> procSupplier);
     }
 
     /**
@@ -83,7 +90,15 @@ public interface ProcessorMetaSupplier extends Serializable {
      */
     @Nonnull
     static ProcessorMetaSupplier of(@Nonnull SimpleProcessorSupplier procSupplier) {
-        return address -> ProcessorSupplier.of(procSupplier);
+        return ProcessorMetaSupplier.of(ProcessorSupplier.of(procSupplier));
+    }
+
+    /**
+     * Factory method that creates a {@link ProcessorMetaSupplier} based on a mapping to
+     * {@link ProcessorSupplier} for each given address
+     */
+    static ProcessorMetaSupplier of(Function<Address, ProcessorSupplier> addressToSupplier) {
+        return x -> addressToSupplier;
     }
 
     /**

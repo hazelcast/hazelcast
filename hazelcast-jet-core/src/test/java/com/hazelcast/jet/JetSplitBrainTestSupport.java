@@ -32,10 +32,18 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.annotation.Nonnull;
+
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -54,11 +62,14 @@ import org.junit.Test;
  */
 public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
+    static final int PARALLELISM = 4;
+    static final int NODE_COUNT = 4;
 
     private static final int[] DEFAULT_BRAINS = new int[]{1, 2};
     private static final int DEFAULT_ITERATION_COUNT = 1;
     private JetInstance[] instances;
     private int[] brains;
+
     /**
      * If new nodes have been created during split brain via {@link #createHazelcastInstanceInBrain(int)}, then their joiners
      * are initialized with the other brain's addresses being blacklisted.
@@ -66,11 +77,8 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     private boolean unblacklistHint = false;
 
     private static final SplitBrainAction BLOCK_COMMUNICATION = JetSplitBrainTestSupport::blockCommunicationBetween;
-
     private static final SplitBrainAction UNBLOCK_COMMUNICATION = JetSplitBrainTestSupport::unblockCommunicationBetween;
-
     private static final SplitBrainAction CLOSE_CONNECTION = (h1, h2) -> closeConnectionBetween(h1.getHazelcastInstance(), h2.getHazelcastInstance());
-
     private static final SplitBrainAction UNBLACKLIST_MEMBERS = JetSplitBrainTestSupport::unblacklistJoinerBetween;
 
     @Before
@@ -84,13 +92,19 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         instances = startInitialCluster(config, clusterSize);
     }
 
+    @Test
+    public void testSplitBrain() throws Exception {
+        for (int i = 0; i < iterations(); i++) {
+            doIteration();
+        }
+    }
+
     /**
      * Override this for custom Hazelcast configuration
-     *
-     * @return
      */
     protected JetConfig config() {
         final JetConfig jetConfig = new JetConfig();
+        jetConfig.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         jetConfig.getHazelcastConfig().setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "5");
         return jetConfig;
@@ -98,8 +112,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
     /**
      * Override this to create a custom brain sizes
-     *
-     * @return
      */
     protected int[] brains() {
         return DEFAULT_BRAINS;
@@ -109,8 +121,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
     /**
      * Override this to create the split-brain situation multiple-times. The test will use
      * the same members for all iterations.
-     *
-     * @return
      */
     protected int iterations() {
         return DEFAULT_ITERATION_COUNT;
@@ -162,11 +172,13 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         return true;
     }
 
-    @Test
-    public void testSplitBrain() throws Exception {
-        for (int i = 0; i < iterations(); i++) {
-            doIteration();
+    protected JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
+        JetInstance[] jetInstances = new JetInstance[clusterSize];
+        for (int i = 0; i < clusterSize; i++) {
+            JetInstance hz = createJetInstance(config);
+            jetInstances[i] = hz;
         }
+        return jetInstances;
     }
 
     private void doIteration() throws Exception {
@@ -180,14 +192,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         onAfterSplitBrainHealed(instances);
     }
 
-    protected JetInstance[] startInitialCluster(JetConfig config, int clusterSize) {
-        JetInstance[] jetInstances = new JetInstance[clusterSize];
-        for (int i = 0; i < clusterSize; i++) {
-            JetInstance hz = createJetInstance(config);
-            jetInstances[i] = hz;
-        }
-        return jetInstances;
-    }
 
     /**
      * Starts a new {@code JetInstance} which is only able to communicate with members on one of the two brains.
@@ -375,6 +379,71 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
         public JetInstance[] getSecondHalf() {
             return secondHalf;
+        }
+    }
+
+    protected static class MockSupplier implements ProcessorSupplier {
+
+        static AtomicInteger initCount = new AtomicInteger();
+        static AtomicInteger completeCount = new AtomicInteger();
+        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
+
+        private final RuntimeException initError;
+        private final SimpleProcessorSupplier supplier;
+
+        private boolean initCalled;
+
+        MockSupplier(SimpleProcessorSupplier supplier) {
+            this(null, supplier);
+        }
+
+        MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
+            this.initError = initError;
+            this.supplier = supplier;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            initCalled = true;
+            initCount.incrementAndGet();
+
+            if (initError != null) {
+                throw initError;
+            }
+        }
+
+        @Override @Nonnull
+        public List<Processor> get(int count) {
+            return Stream.generate(supplier).limit(count).collect(toList());
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            completeErrors.add(error);
+            completeCount.incrementAndGet();
+            if (!initCalled) {
+                throw new IllegalStateException("Complete called without calling init()");
+            }
+            if (initCount.get() != NODE_COUNT) {
+                throw new IllegalStateException("Complete called without init being called on all the nodes");
+            }
+        }
+    }
+
+    protected static final class StuckProcessor extends AbstractProcessor {
+        static CountDownLatch executionStarted;
+        static CountDownLatch proceedLatch;
+
+        @Override
+        public boolean complete() {
+            executionStarted.countDown();
+            try {
+                proceedLatch.await();
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                throw rethrow(e);
+            }
+            return false;
         }
     }
 }

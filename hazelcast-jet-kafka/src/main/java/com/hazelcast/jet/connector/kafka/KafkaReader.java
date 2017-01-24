@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyList;
@@ -60,7 +61,7 @@ import static java.util.stream.Collectors.toList;
  * @param <K> type of the message key
  * @param <V> type of the message value
  */
-public class KafkaReader<K, V> extends AbstractProcessor {
+public final class KafkaReader<K, V> extends AbstractProcessor {
     private static final int POLL_TIMEOUT_MS = 100;
     private static final ILogger LOGGER = Logger.getLogger(KafkaReader.class);
     private final SerializationService serializationService;
@@ -70,7 +71,7 @@ public class KafkaReader<K, V> extends AbstractProcessor {
     private KafkaConsumer<byte[], byte[]> consumer;
     private long[] partitionOffsets;
 
-    protected KafkaReader(String topic, Properties properties, List<Integer> partitions,
+    private KafkaReader(String topic, Properties properties, List<Integer> partitions,
                           SerializationService serializationService) {
         this.topic = topic;
         this.properties = properties;
@@ -139,7 +140,6 @@ public class KafkaReader<K, V> extends AbstractProcessor {
      */
     public static ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
                                                  String brokerConnectionString) {
-
         return new MetaSupplier(topicId, getProperties(zkAddress, groupId, brokerConnectionString));
     }
 
@@ -172,8 +172,8 @@ public class KafkaReader<K, V> extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            return new Supplier(topicId, properties, partitionMap.get(address));
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> new Supplier(topicId, properties, partitionMap.get(address));
         }
     }
 

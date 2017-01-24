@@ -54,6 +54,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -157,9 +158,9 @@ public final class HdfsReader extends AbstractProcessor {
 
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            Collection<IndexedInputSplit> splits = assigned.get(address);
-            return new Supplier(configuration, splits != null ? splits : emptyList());
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address ->
+                    new Supplier(configuration, assigned.get(address) != null ? assigned.get(address) : emptyList());
         }
 
         private static void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {

@@ -118,10 +118,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     e -> vertexIdMap.get(e.getSourceName()), isJobDistributed);
             final List<EdgeDef> outbound = toEdgeDefs(dag.getOutboundEdges(vertex.getName()), defaultEdgeConfig,
                     e -> vertexIdMap.get(e.getDestName()), isJobDistributed);
-            final ProcessorMetaSupplier supplier = vertex.getSupplier();
-            supplier.init(new MetaSupplierCtx(instance, totalParallelism, localParallelism));
+            final ProcessorMetaSupplier metaSupplier = vertex.getSupplier();
+            metaSupplier.init(new MetaSupplierCtx(instance, totalParallelism, localParallelism));
+
+            List<Address> addresses = plans.keySet().stream().map(Member::getAddress).collect(toList());
+            Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
-                final ProcessorSupplier processorSupplier = supplier.get(e.getKey().getAddress());
+                final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
                 final VertexDef vertexDef = new VertexDef(vertexId, vertex.getName(), processorSupplier, localParallelism);
                 vertexDef.addInboundEdges(inbound);
                 vertexDef.addOutboundEdges(outbound);

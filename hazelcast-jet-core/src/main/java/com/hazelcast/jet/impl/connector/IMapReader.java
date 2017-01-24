@@ -20,7 +20,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.proxy.ClientMapProxy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
@@ -33,7 +32,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -83,11 +81,11 @@ public final class IMapReader extends AbstractProcessor {
     }
 
     public static ProcessorMetaSupplier supplier(String mapName) {
-        return new MetaSupplier(mapName, DEFAULT_FETCH_SIZE);
+        return new LocalClusterMetaSupplier(mapName, DEFAULT_FETCH_SIZE);
     }
 
     public static ProcessorMetaSupplier supplier(String mapName, int fetchSize) {
-        return new MetaSupplier(mapName, fetchSize);
+        return new LocalClusterMetaSupplier(mapName, fetchSize);
     }
 
     public static ProcessorMetaSupplier supplier(String mapName, int fetchSize, ClientConfig clientConfig) {
@@ -104,36 +102,37 @@ public final class IMapReader extends AbstractProcessor {
 
         private final String name;
         private final int fetchSize;
-        private final SerializableClientConfig serializableClientConfig;
-        private transient Map<Address, List<Integer>> memberToPartitions;
+        private final SerializableClientConfig serializableConfig;
 
+        private transient int remotePartitionCount;
 
         RemoteClusterMetaSupplier(String name, int fetchSize, ClientConfig clientConfig) {
             this.name = name;
             this.fetchSize = fetchSize;
-            this.serializableClientConfig = new SerializableClientConfig(clientConfig);
+            this.serializableConfig = new SerializableClientConfig(clientConfig);
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            List<Member> members = new ArrayList<>(context.jetInstance().getCluster().getMembers());
-            int memberCount = members.size();
-            HazelcastInstance client = newHazelcastClient(serializableClientConfig.asClientConfig());
+            HazelcastInstance client = newHazelcastClient(serializableConfig.asClientConfig());
             try {
                 HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
-                int partitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
-                memberToPartitions = IntStream.range(0, partitionCount).boxed().collect(
-                        groupingBy(partition -> members.get(partition % memberCount).getAddress())
-                );
+                remotePartitionCount = clientProxy.client.getClientPartitionService().getPartitionCount();
             } finally {
                 client.shutdown();
             }
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            List<Integer> ownedPartitions = memberToPartitions.get(address);
-            return new RemoteClusterProcessorSupplier(name, fetchSize, ownedPartitions, serializableClientConfig);
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            // assign each remote partition to a member
+            Map<Address, List<Integer>> membersToPartitions =
+                    IntStream.range(0, remotePartitionCount)
+                             .boxed()
+                             .collect(groupingBy(partition -> addresses.get(partition % addresses.size())));
+
+            return address -> new RemoteClusterProcessorSupplier(name, fetchSize, membersToPartitions.get(address),
+                    serializableConfig);
         }
     }
 
@@ -174,35 +173,35 @@ public final class IMapReader extends AbstractProcessor {
         }
     }
 
-    private static class MetaSupplier implements ProcessorMetaSupplier {
+    private static class LocalClusterMetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String name;
         private final int fetchSize;
 
-        private transient Map<Address, List<Integer>> membersToPartitions;
+        private transient Map<Address, List<Integer>> addrToPartitions;
 
-        MetaSupplier(String name, int fetchSize) {
+        LocalClusterMetaSupplier(String name, int fetchSize) {
             this.name = name;
             this.fetchSize = fetchSize;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            membersToPartitions = context.jetInstance()
-                    .getHazelcastInstance().getPartitionService()
-                    .getPartitions().stream()
-                    .collect(groupingBy(p -> p.getOwner().getAddress(), mapping(Partition::getPartitionId, toList())));
+            addrToPartitions = context.jetInstance().getHazelcastInstance().getPartitionService().getPartitions()
+                                      .stream()
+                                      .collect(groupingBy(p -> p.getOwner().getAddress(),
+                                              mapping(Partition::getPartitionId, toList())));
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            return new Supplier(name, membersToPartitions.get(address), fetchSize);
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresseses) {
+           return address -> new LocalClusterProcessorSupplier(name, addrToPartitions.get(address), fetchSize);
         }
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class LocalClusterProcessorSupplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
@@ -212,7 +211,7 @@ public final class IMapReader extends AbstractProcessor {
 
         private transient MapProxyImpl map;
 
-        Supplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
+        LocalClusterProcessorSupplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
             this.mapName = mapName;
             this.ownedPartitions = ownedPartitions;
             this.fetchSize = fetchSize;
@@ -225,22 +224,24 @@ public final class IMapReader extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return getProcessors(count, ownedPartitions, partitionId -> map.iterator(fetchSize, partitionId, true));
+            return getProcessors(count, ownedPartitions,
+                    partitionId -> map.iterator(fetchSize, partitionId, true));
         }
 
     }
 
     static List<Processor> getProcessors(int count, List<Integer> ownedPartitions,
                                          Function<Integer, Iterator<Entry>> partitionToIterator) {
-        Map<Integer, List<Integer>> processorToPartitions = range(0, ownedPartitions.size()).boxed()
-                .map(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
-                .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, toList())));
+        Map<Integer, List<Integer>> processorToPartitions =
+                range(0, ownedPartitions.size())
+                        .mapToObj(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
+                        .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, toList())));
         range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
         return processorToPartitions
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
-                                ? new IMapReader(partitionToIterator, partitions)
-                                : new NoopProcessor()
+                        ? new IMapReader(partitionToIterator, partitions)
+                        : new NoopProcessor()
                 )
                 .collect(toList());
     }

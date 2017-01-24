@@ -68,6 +68,7 @@ public class TopologyChangeTest extends JetTestSupport {
 
         factory = new JetTestInstanceFactory();
         JetConfig config = new JetConfig();
+        config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
         instances = factory.newMembers(config, NODE_COUNT);
@@ -81,9 +82,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_addNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
-        DAG dag = new DAG();
-        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .localParallelism(PARALLELISM);
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
         // When
         try {
@@ -112,9 +111,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_removeNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
-        DAG dag = new DAG();
-        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .localParallelism(PARALLELISM);
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
         // When
         try {
@@ -144,9 +141,7 @@ public class TopologyChangeTest extends JetTestSupport {
     @Test
     public void when_removeCallingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
-        DAG dag = new DAG();
-        Vertex test = dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .localParallelism(PARALLELISM);
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
         // When
         try {
@@ -182,11 +177,11 @@ public class TopologyChangeTest extends JetTestSupport {
 
         private boolean initCalled;
 
-        public MockSupplier(SimpleProcessorSupplier supplier) {
+        MockSupplier(SimpleProcessorSupplier supplier) {
             this(null, supplier);
         }
 
-        public MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
+        MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
             this.initError = initError;
             this.supplier = supplier;
         }
@@ -201,8 +196,7 @@ public class TopologyChangeTest extends JetTestSupport {
             }
         }
 
-        @Nonnull
-        @Override
+        @Override  @Nonnull
         public List<Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());
         }

@@ -78,7 +78,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         JetConfig config = new JetConfig();
         config.getHazelcastConfig().getProperties().put(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(),
                 Integer.toString(TIMEOUT_MILLIS));
-
+        config.getInstanceConfig().setCooperativeThreadCount(LOCAL_PARALLELISM);
         instance = factory.newMember(config);
         factory.newMember(config);
 
@@ -92,9 +92,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Test
     public void when_procSupplierInit_then_completeCalled() throws Throwable {
         // Given
-        DAG dag = new DAG();
-        Vertex test = new Vertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(Identity::new));
-        dag.vertex(test);
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(Identity::new)));
 
         // When
         instance.newJob(dag).execute().get();
@@ -113,8 +111,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     public void when_procSupplierFailsOnInit_then_completeCalledWithError() throws Throwable {
         // Given
         RuntimeException e = new RuntimeException("mock error");
-        DAG dag = new DAG();
-        dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(e, Identity::new));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(e, Identity::new)));
 
         // When
         try {
@@ -140,8 +137,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     public void when_executionFails_then_completeCalledWithError() throws Throwable {
         // Given
         RuntimeException e = new RuntimeException("mock error");
-        DAG dag = new DAG();
-        dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(() -> new FaultyProducer(e)));
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(() -> new FaultyProducer(e))));
 
         // When
         try {
@@ -165,9 +161,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
     @Test
     public void when_executionCancelled_then_completeCalledAfterExecutionDone() throws Throwable {
         // Given
-        DAG dag = new DAG();
-        dag.newVertex("test", (ProcessorMetaSupplier) address -> new MockSupplier(StuckProcessor::new))
-                .localParallelism(LOCAL_PARALLELISM);
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
         // When
         try {

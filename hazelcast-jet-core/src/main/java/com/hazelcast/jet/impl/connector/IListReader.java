@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -105,16 +106,17 @@ public final class IListReader extends AbstractProcessor {
         }
 
         @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            if (address.equals(ownerAddress)) {
-                return new Supplier(name, clientConfig, fetchSize);
-            } else {
-                // nothing to read on other nodes
-                return (c) -> {
+        public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
+            return address -> {
+                if (address.equals(ownerAddress)) {
+                    return new Supplier(name, clientConfig, fetchSize);
+                }
+                // return empty producer on all other nodes
+                return c -> {
                     assertCountIsOne(c);
                     return singletonList(new NoopProcessor());
                 };
-            }
+            };
         }
     }
 

@@ -23,7 +23,6 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -41,7 +40,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Kafka Producer for Jet
  */
-public class KafkaWriter extends AbstractProcessor {
+public final class KafkaWriter extends AbstractProcessor {
 
     private static final ILogger LOGGER = Logger.getLogger(KafkaWriter.class);
     private final SerializationService serializationService;
@@ -49,7 +48,7 @@ public class KafkaWriter extends AbstractProcessor {
     private final String topic;
     private KafkaProducer<byte[], byte[]> producer;
 
-    protected KafkaWriter(SerializationService serializationService, String topic, Properties properties) {
+    private KafkaWriter(SerializationService serializationService, String topic, Properties properties) {
         this.topic = topic;
         this.serializationService = serializationService;
         this.properties = properties;
@@ -101,26 +100,9 @@ public class KafkaWriter extends AbstractProcessor {
      */
     public static ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
                                                  String brokerConnectionString) {
-        return new MetaSupplier(topicId, getProperties(zkAddress, groupId, brokerConnectionString));
+        Properties properties = getProperties(zkAddress, groupId, brokerConnectionString);
+        return ProcessorMetaSupplier.of(new Supplier(topicId, properties));
     }
-
-    private static class MetaSupplier implements ProcessorMetaSupplier {
-
-        static final long serialVersionUID = 1L;
-        private final String topicId;
-        private final Properties properties;
-
-        MetaSupplier(String topicId, Properties properties) {
-            this.topicId = topicId;
-            this.properties = properties;
-        }
-
-        @Override @Nonnull
-        public ProcessorSupplier get(@Nonnull Address address) {
-            return new Supplier(topicId, properties);
-        }
-    }
-
 
     private static class Supplier implements ProcessorSupplier {
 
