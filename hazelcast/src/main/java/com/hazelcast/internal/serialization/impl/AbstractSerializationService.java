@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.internal.distributedclassloading.impl.ClassLocator;
+import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;

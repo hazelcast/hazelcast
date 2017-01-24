@@ -64,7 +64,7 @@
                 <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="hot-restart-persistence" type="hot-restart-persistence" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="distributed-classloading" type="distributed-classloading" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="user-code-deployment" type="user-code-deployment" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="cardinality-estimator" type="cardinality-estimator" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -2931,12 +2931,12 @@
         </xs:attribute>
     </xs:complexType>
 
-    <xs:complexType name="distributed-classloading">
+    <xs:complexType name="user-code-deployment">
         <xs:all>
             <xs:element name="class-cache-mode" default="ETERNAL">
                 <xs:annotation>
                     <xs:documentation>
-                        Controls caching of classes loaded from remote members.
+                        Controls caching of user classes loaded from remote members.
 
                         OFF: Never caches loaded classes. This is suitable for loading runnables, callables,
                         entry processors, etc.
@@ -2984,8 +2984,9 @@
                     <xs:documentation>
                         Command separated list of prefixes of classes which will be loaded remotely.
 
-                        Use this to enable distributed loading of selected classes only and disable remote loading for all
-                        other classes. This gives you a nice control over classloading.
+                        Use this to enable loading of explcitly selected user classes only and
+                        disable remote loading for all other classes. This gives you a fine-grained control
+                        over classloading.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -3010,7 +3011,7 @@
         <xs:attribute name="enabled" type="xs:boolean" use="required">
             <xs:annotation>
                 <xs:documentation>
-                    True to enable distributed classloading on this member, false otherwise.
+                    True to enable User Code Deployment on this member, false otherwise.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

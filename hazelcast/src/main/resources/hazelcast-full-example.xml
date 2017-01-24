@@ -1719,7 +1719,7 @@ It has the following sub-elements:
 <!--    
     ===== HAZELCAST USER CODE DEPLOYMENT CONFIGURATION =====
     
-    Configuration element's name is <distributed-classloading>. It has the required attribute "enabled" to 
+    Configuration element's name is <user-code-deployment>. It has the required attribute "enabled" to
     specify whether this feature will be enabled on your cluster.
     It has the following sub-elements:
     * <class-cache-mode>:
@@ -1749,11 +1749,12 @@ It has the following sub-elements:
         locally. The value is in the format "HAS_ATTRIBUTE:foo". When it is set as "HAS_ATTRIBUTE:foo", the class 
         loading request will only be sent to the members which have "foo" as a member attribute.
 -->
-    <distributed-classloading enabled="true">
+    <user-code-deployment enabled="true">
         <class-cache-mode>ETERNAL</class-cache-mode>
         <provider-mode>LOCAL_CLASSES_ONLY</provider-mode>
         <blacklist-prefixes>com.foo</blacklist-prefixes>
         <whitelist-prefixes>com.bar.MyClass</whitelist-prefixes>
-        <provider-filter>HAS_ATTRIBUTE:lite<provider-filter>
-    </distributed-classloading>
+        <provider-filter>HAS_ATTRIBUTE:lite</provider-filter>
+    </user-code-deployment>
 
+</hazelcast>

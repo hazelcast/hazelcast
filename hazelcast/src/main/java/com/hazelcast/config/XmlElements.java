@@ -52,7 +52,7 @@ enum XmlElements {
     QUORUM("quorum", true),
     LITE_MEMBER("lite-member", false),
     HOT_RESTART_PERSISTENCE("hot-restart-persistence", false),
-    DISTRIBUTED_CLASSLOADING("distributed-classloading", false),
+    USER_CODE_DEPLOYMENT("user-code-deployment", false),
     CARDINALITY_ESTIMATOR("cardinality-estimator", false),
     ;
 

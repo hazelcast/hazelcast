@@ -1353,21 +1353,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDistributedClassloading() {
+    public void testUserCodeDeployment() {
         String xml = HAZELCAST_START_TAG
-                + "<distributed-classloading enabled=\"true\">"
+                + "<user-code-deployment enabled=\"true\">"
                     + "<class-cache-mode>OFF</class-cache-mode>"
                     + "<provider-mode>LOCAL_CLASSES_ONLY</provider-mode>"
                     + "<blacklist-prefixes>com.blacklisted,com.other.blacklisted</blacklist-prefixes>"
                     + "<whitelist-prefixes>com.whitelisted,com.other.whitelisted</whitelist-prefixes>"
                     + "<provider-filter>HAS_ATTRIBUTE:foo</provider-filter>"
-                + "</distributed-classloading>"
+                + "</user-code-deployment>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
-        DistributedClassloadingConfig dcConfig = config.getDistributedClassloadingConfig();
+        UserCodeDeploymentConfig dcConfig = config.getUserCodeDeploymentConfig();
         assertTrue(dcConfig.isEnabled());
-        assertEquals(DistributedClassloadingConfig.ClassCacheMode.OFF, dcConfig.getClassCacheMode());
-        assertEquals(DistributedClassloadingConfig.ProviderMode.LOCAL_CLASSES_ONLY, dcConfig.getProviderMode());
+        assertEquals(UserCodeDeploymentConfig.ClassCacheMode.OFF, dcConfig.getClassCacheMode());
+        assertEquals(UserCodeDeploymentConfig.ProviderMode.LOCAL_CLASSES_ONLY, dcConfig.getProviderMode());
         assertEquals("com.blacklisted,com.other.blacklisted", dcConfig.getBlacklistedPrefixes());
         assertEquals("com.whitelisted,com.other.whitelisted", dcConfig.getWhitelistedPrefixes());
         assertEquals("HAS_ATTRIBUTE:foo", dcConfig.getProviderFilter());

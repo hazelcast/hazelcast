@@ -131,7 +131,7 @@ public class Config {
 
     private HotRestartPersistenceConfig hotRestartPersistenceConfig = new HotRestartPersistenceConfig();
 
-    private DistributedClassloadingConfig distributedClassloadingConfig = new DistributedClassloadingConfig();
+    private UserCodeDeploymentConfig userCodeDeploymentConfig = new UserCodeDeploymentConfig();
 
     private String licenseKey;
 
@@ -1325,24 +1325,24 @@ public class Config {
     }
 
     /**
-     * Get current configuration of distributed classloading.
+     * Get current configuration of User Code Deployment.
      *
      * @since 3.8
      *
      */
-    public DistributedClassloadingConfig getDistributedClassloadingConfig() {
-        return distributedClassloadingConfig;
+    public UserCodeDeploymentConfig getUserCodeDeploymentConfig() {
+        return userCodeDeploymentConfig;
     }
 
     /**
-     * Set distributed classloading configuration
+     * Set User Code Deployment configuration
      *
-     * @param distributedClassloadingConfig
+     * @param userCodeDeploymentConfig
      * @since 3.8
-     * @return distributed classloading configuration
+     * @return User Code Deployment configuration
      */
-    public Config setDistributedClassloadingConfig(DistributedClassloadingConfig distributedClassloadingConfig) {
-        this.distributedClassloadingConfig = distributedClassloadingConfig;
+    public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
+        this.userCodeDeploymentConfig = userCodeDeploymentConfig;
         return this;
     }
 
