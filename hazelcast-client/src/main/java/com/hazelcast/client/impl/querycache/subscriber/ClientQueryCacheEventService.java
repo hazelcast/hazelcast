@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
@@ -42,8 +42,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
@@ -143,12 +143,12 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
         return new ListenerMessageCodec() {
             @Override
             public ClientMessage encodeAddRequest(boolean localOnly) {
-                return EnterpriseMapAddListenerCodec.encodeRequest(listenerName, localOnly);
+                return ContinuousQueryAddListenerCodec.encodeRequest(listenerName, localOnly);
             }
 
             @Override
             public String decodeAddResponse(ClientMessage clientMessage) {
-                return EnterpriseMapAddListenerCodec.decodeResponse(clientMessage).response;
+                return ContinuousQueryAddListenerCodec.decodeResponse(clientMessage).response;
             }
 
             @Override
@@ -193,7 +193,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
     /**
      * Query cache event handler.
      */
-    private final class QueryCacheHandler extends EnterpriseMapAddListenerCodec.AbstractEventHandler
+    private final class QueryCacheHandler extends ContinuousQueryAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
         private final ListenerAdapter adapter;
 

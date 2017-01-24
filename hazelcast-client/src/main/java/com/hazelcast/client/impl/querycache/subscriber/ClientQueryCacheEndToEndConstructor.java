@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.querycache.subscriber;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapMadePublishableCodec;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapPublisherCreateCodec;
-import com.hazelcast.client.impl.protocol.codec.EnterpriseMapPublisherCreateWithValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
@@ -58,7 +58,7 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
 
     private void createPublishAccumulatorWithIncludeValue(AccumulatorInfo info) {
         Data data = context.getSerializationService().toData(info.getPredicate());
-        ClientMessage request = EnterpriseMapPublisherCreateWithValueCodec.encodeRequest(info.getMapName(),
+        ClientMessage request = ContinuousQueryPublisherCreateWithValueCodec.encodeRequest(info.getMapName(),
                 info.getCacheName(), data,
                 info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
                 info.isPopulate(), info.isCoalesce());
@@ -68,14 +68,14 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
 
         Collection<Map.Entry<Data, Data>> result
-                = EnterpriseMapPublisherCreateWithValueCodec.decodeResponse(response).response;
+                = ContinuousQueryPublisherCreateWithValueCodec.decodeResponse(response).response;
 
         populateWithValues(queryCache, result);
     }
 
     private void createPublishAccumulatorWithoutIncludeValue(AccumulatorInfo info) {
         Data data = context.getSerializationService().toData(info.getPredicate());
-        ClientMessage request = EnterpriseMapPublisherCreateCodec.encodeRequest(info.getMapName(),
+        ClientMessage request = ContinuousQueryPublisherCreateCodec.encodeRequest(info.getMapName(),
                 info.getCacheName(), data,
                 info.getBatchSize(), info.getBufferSize(), info.getDelaySeconds(),
                 info.isPopulate(), info.isCoalesce());
@@ -84,13 +84,13 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
         InvokerWrapper invokerWrapper = context.getInvokerWrapper();
         ClientMessage response = (ClientMessage) invokerWrapper.invoke(request);
 
-        Collection<Data> result = EnterpriseMapPublisherCreateCodec.decodeResponse(response).response;
+        Collection<Data> result = ContinuousQueryPublisherCreateCodec.decodeResponse(response).response;
 
         populateWithoutValues(queryCache, result);
     }
 
     private void madePublishable(String mapName, String cacheName) throws Exception {
-        ClientMessage request = EnterpriseMapMadePublishableCodec.encodeRequest(mapName, cacheName);
+        ClientMessage request = ContinuousQueryMadePublishableCodec.encodeRequest(mapName, cacheName);
         context.getInvokerWrapper().invokeOnAllPartitions(request);
     }
 
