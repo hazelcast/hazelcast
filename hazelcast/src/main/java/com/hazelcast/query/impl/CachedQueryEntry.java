@@ -17,20 +17,14 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.query.impl.getters.Extractors;
-
-import java.io.IOException;
 
 /**
  * Entry of the Query.
  */
-public class CachedQueryEntry extends QueryableEntry implements IdentifiedDataSerializable {
+public class CachedQueryEntry extends QueryableEntry {
 
     protected Data keyData;
     protected Object keyObject;
@@ -142,28 +136,6 @@ public class CachedQueryEntry extends QueryableEntry implements IdentifiedDataSe
     @Override
     public int hashCode() {
         return keyData.hashCode();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return MapDataSerializerHook.CACHED_QUERY_ENTRY;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeData(keyData);
-        out.writeData(valueData);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        keyData = in.readData();
-        valueData = in.readData();
     }
 
 }

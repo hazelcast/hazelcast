@@ -81,17 +81,29 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     @Override
     public Result execute(Query query, Target target) {
-        IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
-        Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
+        Query adjustedQuery = adjustQuery(query);
         if (target.isTargetAllNodes()) {
             return runQueryOnAllPartitions(adjustedQuery);
         } else if (target.isTargetLocalNode()) {
             return runQueryOnLocalPartitions(adjustedQuery);
         } else if (target.isTargetPartitionOwner()) {
-            // we do not adjust the query here
+            // we do not adjust the query here - it's a single partition operation only
             return runQueryOnGivenPartition(query, target);
         }
         throw new IllegalArgumentException("Illegal target " + query);
+    }
+
+    private Query adjustQuery(Query query) {
+        IterationType retrievalIterationType = getRetrievalIterationType(query.getPredicate(), query.getIterationType());
+        Query adjustedQuery = Query.of(query).iterationType(retrievalIterationType).build();
+        if (adjustedQuery.getPredicate() instanceof PagingPredicate) {
+            ((PagingPredicate) adjustedQuery.getPredicate()).setIterationType(query.getIterationType());
+        } else {
+            if (adjustedQuery.getPredicate() == TruePredicate.INSTANCE) {
+                queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(adjustedQuery.getMapName());
+            }
+        }
+        return adjustedQuery;
     }
 
     // query thread first, fallback to partition thread
@@ -129,11 +141,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     private Result doRunQueryOnQueryThreads(Query query, Collection<Integer> partitionIds, Target target) {
-        if (query.getPredicate() instanceof PagingPredicate) {
-            ((PagingPredicate) query.getPredicate()).setIterationType(query.getIterationType());
-        } else {
-            checkQueryResultLimiter(query.getMapName(), query.getPredicate());
-        }
         Result result = resultProcessorRegistry.get(query.getResultType()).populateResult(query,
                 queryResultSizeLimiter.getNodeResultLimit(partitionIds.size()));
         dispatchQueryOnQueryThreads(query, target, partitionIds, result);
@@ -205,12 +212,6 @@ public class MapQueryEngineImpl implements MapQueryEngine {
 
     private boolean isResultFromAnyPartitionMissing(Collection<Integer> partitionIds) {
         return !partitionIds.isEmpty();
-    }
-
-    private void checkQueryResultLimiter(String mapName, Predicate predicate) {
-        if (predicate == TruePredicate.INSTANCE) {
-            queryResultSizeLimiter.precheckMaxResultLimitOnLocalPartitions(mapName);
-        }
     }
 
     private static Set<Integer> createSetWithPopulatedPartitionIds(int partitionCount) {

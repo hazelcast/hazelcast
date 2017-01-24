@@ -62,7 +62,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void runFullQuery() throws ExecutionException, InterruptedException {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
-        QueryResult result = (QueryResult) queryRunner.run(query);
+        QueryResult result = (QueryResult) queryRunner.runIndexOrPartitionScanQueryOnOwnedPartitions(query);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
@@ -72,7 +72,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
     public void runPartitionScanQueryOnSinglePartition() throws ExecutionException, InterruptedException {
         Predicate predicate = Predicates.equal("this", value);
         Query query = Query.of().mapName(map.getName()).predicate(predicate).iterationType(IterationType.ENTRY).build();
-        QueryResult result = (QueryResult) queryRunner.runUsingPartitionScanOnSinglePartition(query, partitionId);
+        QueryResult result = (QueryResult) queryRunner.runPartitionScanQueryOnGivenOwnedPartition(query, partitionId);
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
