@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.protocol;
+package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
-import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.UndefinedErrorCodeException;
 import com.hazelcast.client.impl.protocol.exception.MaxMessageSizeExceeded;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
@@ -90,7 +89,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeoutException;
 
-import static junit.framework.Assert.assertNull;
 import static junit.framework.TestCase.assertEquals;
 
 @RunWith(Parameterized.class)
@@ -100,36 +98,65 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public Throwable throwable;
-    ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
+    private ClientExceptionFactory exceptionFactory = new ClientExceptionFactory(true);
 
     @Test
     public void testException() {
         ClientMessage exceptionMessage = exceptionFactory.createExceptionMessage(throwable);
         ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
         Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
-        assertEquals(throwable.getClass(), resurrectedThrowable.getClass());
-        assertStackTraceArrayEquals(throwable.getStackTrace(), resurrectedThrowable.getStackTrace());
-        Throwable cause = throwable.getCause();
-        if (cause == null) {
-            assertNull(resurrectedThrowable.getCause());
-        } else {
-            assertEquals(cause.getClass(), resurrectedThrowable.getCause().getClass());
-        }
+
+        if (!exceptionEquals(throwable, resurrectedThrowable))
+            assertEquals(throwable, resurrectedThrowable);
     }
 
-    private void assertStackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
+    private boolean exceptionEquals(Throwable expected, Throwable actual) {
+        if (expected == null && actual == null)
+            return true;
+
+        if (expected == null || actual == null)
+            return false;
+
+        if (exceptionFactory.isKnownClass(expected.getClass())) {
+            if (!expected.getClass().equals(actual.getClass()))
+                return false;
+
+            // We compare the message only for known exceptions.
+            // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
+            if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage()))
+                return false;
+        } else {
+            if (!UndefinedErrorCodeException.class.equals(actual.getClass())
+                    || !expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName()))
+                return false;
+        }
+
+        if (!stackTraceArrayEquals(expected.getStackTrace(), actual.getStackTrace()))
+            return false;
+
+        // recursion to cause
+        return exceptionEquals(expected.getCause(), actual.getCause());
+    }
+
+    // null-safe equals from Java 1.7
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
+    }
+
+    private boolean stackTraceArrayEquals(StackTraceElement[] stackTrace1, StackTraceElement[] stackTrace2) {
         assertEquals(stackTrace1.length, stackTrace2.length);
         for (int i = 0; i < stackTrace1.length; i++) {
             StackTraceElement stackTraceElement1 = stackTrace1[i];
             StackTraceElement stackTraceElement2 = stackTrace2[i];
             //Not using stackTraceElement.equals
             //because in IBM JDK stacktraceElements with null method name are not equal
-            assertEquals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName());
-            assertEquals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName());
-            assertEquals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName());
-            assertEquals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
+            if (!equals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName())
+                || !equals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName())
+                    || !equals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName())
+                    || !equals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber()))
+                return false;
         }
-
+        return true;
     }
 
     @Parameterized.Parameters(name = "Throwable:{0}")
@@ -214,7 +241,18 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 new Object[]{new AssertionError(randomString())},
                 new Object[]{new OutOfMemoryError(randomString())},
                 new Object[]{new StackOverflowError(randomString())},
-                new Object[]{new NativeOutOfMemoryError(randomString())});
+                new Object[]{new NativeOutOfMemoryError(randomString())},
+                // wildly chained causes
+                new Object[]{new RuntimeException("re1", new RuntimeException(new IOException("ioe")))},
+                // exception without message and cause
+                new Object[]{new RuntimeException()},
+                // exception without message and with cause without message
+                new Object[]{new RuntimeException(new RuntimeException("blabla"))},
+                // exception with message and cause without message
+                new Object[]{new RuntimeException("blabla", new NullPointerException())},
+                // custom exception in causes
+                new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())}
+        );
 
     }
 
