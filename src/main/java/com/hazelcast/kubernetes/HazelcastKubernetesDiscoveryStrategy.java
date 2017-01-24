@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2015, Christoph Engelbert (aka noctarius) and
- * contributors. All rights reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.noctarius.hazelcast.kubernetes;
+package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
@@ -28,15 +27,15 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
+import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {

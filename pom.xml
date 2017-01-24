@@ -15,12 +15,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.noctarius.discovery</groupId>
-  <artifactId>hazelcast-kubernetes-discovery</artifactId>
+  <groupId>com.hazelcast</groupId>
+  <artifactId>hazelcast-kubernetes</artifactId>
   <version>0.9.4-SNAPSHOT</version>
   <name>Kubernetes Discovery Plugin for Hazelcast</name>
   <description>Kubernetes Service Discovery for Hazelcast Discovery SPI</description>
-  <url>http://github.com/noctarius/hazelcast-kubernetes-discovery</url>
+  <url>http://github.com/hazelcast/hazelcast-kubernetes</url>
   <inceptionYear>2015</inceptionYear>
   <packaging>bundle</packaging>
 
@@ -48,9 +48,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git://github.com/noctarius/hazelcast-kubernetes-discovery.git</connection>
-    <developerConnection>scm:git:git@github.com:noctarius/hazelcast-kubernetes-discovery.git</developerConnection>
-    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/</url>
+    <connection>scm:git:git://github.com/hazelcast/hazelcast-kubernetes.git</connection>
+    <developerConnection>scm:git:git@github.com:hazelcast/hazelcast-kubernetes.git</developerConnection>
+    <url>https://github.com/hazelcast/hazelcast-kubernetes/</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -72,12 +72,12 @@
 
   <issueManagement>
     <system>github</system>
-    <url>https://github.com/noctarius/hazelcast-kubernetes-discovery/issues</url>
+    <url>https://github.com/hazelcast/hazelcast-kubernetes/issues</url>
   </issueManagement>
 
   <ciManagement>
     <system>Jenkins</system>
-    <url>https://noctarius.ci.cloudbees.com/job/hazelcast-kubernetes-discovery</url>
+    <url>https://hazelcast-l337.ci.cloudbees.com/job/Kubernetes-pr-builder/</url>
   </ciManagement>
 
   <dependencies>
@@ -108,7 +108,7 @@
         <configuration>
           <instructions>
             <Export-Package>
-              com.noctarius.hazelcast.kubernetes.*
+              com.hazelcast.kubernetes.*
             </Export-Package>
             <Import-Package>
               com.hazelcast.config,com.hazelcast.config.properties,
@@ -176,10 +176,10 @@
             <configuration>
               <show>public</show>
               <sourceFileExcludes>
-                <exclude>com/noctarius/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
+                <exclude>com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
               </sourceFileExcludes>
               <sourceFileIncludes>
-                <include>com/noctarius/hazelcast/kubernetes/*.java</include>
+                <include>com/hazelcast/kubernetes/*.java</include>
               </sourceFileIncludes>
               <detectJavaApiLink>true</detectJavaApiLink>
               <links>
@@ -200,7 +200,7 @@
           <checkinComment>Publishing javadoc for ${project.artifactId}:${project.version}</checkinComment>
           <content>${project.build.directory}/apidocs</content>
           <skipDeletedFiles>true</skipDeletedFiles>
-          <pubScmUrl>scm:git:git@github.com:noctarius/hazelcast-kubernetes-discovery.git</pubScmUrl>
+          <pubScmUrl>scm:git:git@github.com:hazelcast/hazelcast-kubernetes.git</pubScmUrl>
           <scmBranch>gh-pages</scmBranch>
         </configuration>
       </plugin>
@@ -215,10 +215,10 @@
         <configuration>
           <show>public</show>
           <sourceFileExcludes>
-            <exclude>com/noctarius/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
+            <exclude>com/hazelcast/kubernetes/HazelcastKubernetesDiscoveryStrategyFactory.java</exclude>
           </sourceFileExcludes>
           <sourceFileIncludes>
-            <include>com/noctarius/hazelcast/kubernetes/*.java</include>
+            <include>com/hazelcast/kubernetes/*.java</include>
           </sourceFileIncludes>
           <detectJavaApiLink>true</detectJavaApiLink>
           <links>
