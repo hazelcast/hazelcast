@@ -260,9 +260,6 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 return result;
             }
 
-            /**
-             * Call when store failed.
-             */
             @Override
             public List<DelayedEntry> failureList() {
                 failedDelayedEntries = new ArrayList<DelayedEntry>(batchMap.values().size());
