@@ -21,7 +21,6 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -30,13 +29,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
 
 /**
  * Handles the routing of a request from a Hazelcast client.
@@ -54,7 +50,7 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationFuture clientInvocationFuture;
     private final ILogger logger;
     private final LifecycleService lifecycleService;
-    private final ClientInvocationService invocationService;
+    private final ClientInvocationServiceSupport invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
 
@@ -68,23 +64,20 @@ public class ClientInvocation implements Runnable {
     private EventHandler handler;
 
     protected ClientInvocation(HazelcastClientInstanceImpl client,
-                               ClientMessage clientMessage, int partitionId, Address address,
+                               ClientMessage clientMessage,
+                               int partitionId,
+                               Address address,
                                Connection connection) {
         this.lifecycleService = client.getLifecycleService();
-        this.invocationService = client.getInvocationService();
+        this.invocationService = (ClientInvocationServiceSupport) client.getInvocationService();
         this.executionService = client.getClientExecutionService();
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
-
-        HazelcastProperties hazelcastProperties = client.getProperties();
-        long waitTime = hazelcastProperties.getMillis(INVOCATION_TIMEOUT_SECONDS);
-        long waitTimeResolved = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
-        retryTimeoutPointInMillis = System.currentTimeMillis() + waitTimeResolved;
-
-        logger = ((ClientInvocationServiceSupport) invocationService).invocationLogger;
-        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
+        this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
+        this.logger = invocationService.invocationLogger;
+        this.clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -126,7 +119,6 @@ public class ClientInvocation implements Runnable {
             notifyException(e);
         }
         return clientInvocationFuture;
-
     }
 
     public ClientInvocationFuture invokeUrgent() {
