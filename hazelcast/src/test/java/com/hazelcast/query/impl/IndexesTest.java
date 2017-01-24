@@ -41,7 +41,7 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class IndexesTest {
 
-    final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
@@ -49,22 +49,20 @@ public class IndexesTest {
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
-        for (int i = 0; i < 20000; i++) {
+        for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.saveEntryIndex(new QueryEntry(serializationService, toData(i), employee, Extractors.empty()), null);
         }
-        int count = 1000;
+        int count = 10;
         Set<String> ages = new HashSet<String>(count);
         for (int i = 0; i < count; i++) {
             ages.add(String.valueOf(i));
         }
         EntryObject entryObject = new PredicateBuilder().getEntryObject();
-        PredicateBuilder predicate = entryObject.get("name").equal("140Name")
+        PredicateBuilder predicate = entryObject.get("name").equal("0Name")
                 .and(entryObject.get("age").in(ages.toArray(new String[count])));
-        for (int i = 0; i < 10000; i++) {
-            Set<QueryableEntry> results = indexes.query(predicate);
-            assertEquals(1, results.size());
-        }
+        Set<QueryableEntry> results = indexes.query(predicate);
+        assertEquals(1, results.size());
     }
 
     @Test
