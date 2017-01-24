@@ -48,6 +48,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -55,6 +56,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -304,6 +306,43 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(publicAddress, translator.translate(privateAddress));
     }
 
+    @Test      
+    public void test_enabled_whenDiscoveryConfigIsEmpty() {
+        ClientConfig config = new ClientConfig();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setConnectionAttemptLimit(1);
+        networkConfig.setConnectionAttemptPeriod(1);
+        
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } catch (IllegalStateException expected) {
+            // no server available
+        }
+    }
+
+    @Test
+    public void test_enabled_whenDiscoveryStrategiesAreEmpty() {
+        ClientConfig config = new ClientConfig();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
+            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
+                return Mockito.mock(DiscoveryService.class);
+            }
+        };
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setConnectionAttemptLimit(1);
+        networkConfig.setConnectionAttemptPeriod(1);
+        networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        try {
+            HazelcastClient.newHazelcastClient(config);
+        } catch (IllegalStateException expected) {
+            // no server available
+        }
+    }
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
         return new DiscoveryServiceSettings().setConfigClassLoader(ClientDiscoverySpiTest.class.getClassLoader())
