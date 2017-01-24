@@ -10,14 +10,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.SplitBrainTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -30,45 +27,59 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class IndexSplitBrainTest extends HazelcastTestSupport {
+public class IndexSplitBrainTest extends SplitBrainTestSupport {
 
-    private TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-    
-    @Test
-    public void testIndexDoesNotReturnStaleResultsAfterSplit() {
-        String mapName = randomMapName();
-        Config config = newConfig(mapName);
+    private String mapName;
+    private String key;
+    private ValueObject value;
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+    @Override
+    protected void onBeforeSetup() {
+        mapName = randomMapName();
+    }
 
-        warmUpPartitions(h1, h2);
-        String key = generateKeyOwnedBy(h1);
+    @Override
+    protected int[] brains() {
+        return new int[] {1,1};
+    }
 
-        final ValueObject value = new ValueObject(key);
+    @Override
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances)
+            throws Exception {
+        warmUpPartitions(instances);
+        key = generateKeyOwnedBy(instances[0]);
+        value = new ValueObject(key);
 
-        final IMap<String, ValueObject> map1 = h1.getMap(mapName);
-        final IMap<String, ValueObject> map2 = h2.getMap(mapName);
+        final IMap<String, ValueObject> map1 = instances[0].getMap(mapName);
+        final IMap<String, ValueObject> map2 = instances[1].getMap(mapName);
 
         map1.put(key, value);
         assertNotNull("Entry should exist in map2 before split", map2.get(key));
+    }
 
-        // create split 
-        closeConnectionBetween(h1, h2);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
+    @Override
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
+            throws Exception {
+        final IMap<String, ValueObject> map1 = firstBrain[0].getMap(mapName);
+        final IMap<String, ValueObject> map2 = secondBrain[0].getMap(mapName);
         map1.remove(key);
         assertNotNull("Entry should exist in map2 during split", map2.get(key));
+    }
 
-        // merge back
-        getNode(h2).getClusterService().merge(getAddress(h1));
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
+    @Override
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances)
+            throws Exception {
+        final IMap<String, ValueObject> map1 = instances[0].getMap(mapName);
+        final IMap<String, ValueObject> map2 = instances[1].getMap(mapName);
 
-        assertNotNull("Entry should exist in map1 after merge", map1.get(key));
+        assertTrueEventually(new AssertTask() {
+             @Override
+             public void run()
+                     throws Exception {
+                 assertNotNull("Entry should exist in map1 after merge", map1.get(key));
+             }
+        }, 15);
         map1.remove(key);
-
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -82,15 +93,11 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
         }, 5);
     }
 
-    private Config newConfig(String mapName) {
-        Config config = new Config();
-
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "600");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "600");
-
+    @Override
+    protected Config config() {
+        Config config = super.config();
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.addMapIndexConfig(new MapIndexConfig("id", false));
-
         return config;
     }
 
