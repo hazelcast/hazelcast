@@ -16,12 +16,14 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.nio.Address;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -173,14 +175,17 @@ public class MapLoaderTest extends HazelcastTestSupport {
     }
 
     // ignored due to: https://github.com/hazelcast/hazelcast/issues/5035
-    @Ignore
+
     @Test
+    @Repeat(1000)
     public void testMapLoaderLoadUpdatingIndex() throws Exception {
         final int nodeCount = 3;
         String mapName = randomString();
         SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
 
         Config config = createMapConfig(mapName, loader);
+        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "1");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "1");
 
         NodeBuilder nodeBuilder = new NodeBuilder(nodeCount, config).build();
         HazelcastInstance node = nodeBuilder.getRandomNode();
