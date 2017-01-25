@@ -240,7 +240,7 @@ class TestClientRegistry {
 
                 @Override
                 public String toString() {
-                    return "Runnable message " + clientMessage;
+                    return "Runnable message " + clientMessage + ", " + MockedClientConnection.this;
                 }
             });
         }
@@ -254,7 +254,7 @@ class TestClientRegistry {
             executor.executeOutgoing(new Runnable() {
                 @Override
                 public String toString() {
-                    return "Runnable message " + frame;
+                    return "Runnable message " + frame + ", " + MockedClientConnection.this;
                 }
 
                 @Override
@@ -329,7 +329,7 @@ class TestClientRegistry {
 
                 @Override
                 public String toString() {
-                    return "Client Closed EOF";
+                    return "Client Closed EOF. " + MockedClientConnection.this;
                 }
             }));
             executor.shutdownIncoming();
@@ -340,7 +340,7 @@ class TestClientRegistry {
             executor.executeIncoming(new Runnable() {
                 @Override
                 public String toString() {
-                    return "Server Closed EOF";
+                    return "Server Closed EOF. " + MockedClientConnection.this;
                 }
 
                 @Override
@@ -351,6 +351,13 @@ class TestClientRegistry {
             executor.shutdownOutgoing();
         }
 
+        @Override
+        public String toString() {
+            return "MockedClientConnection{"
+                    + ", localAddress=" + localAddress
+                    + ", super=" + super.toString()
+                    + '}';
+        }
     }
 
     private class MockedNodeConnection extends MockConnection {
