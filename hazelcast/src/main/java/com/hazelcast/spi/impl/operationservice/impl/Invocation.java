@@ -595,7 +595,7 @@ public abstract class Invocation implements OperationResponseHandler {
                 ? op.getInvocationTime() + callTimeoutMillis + heartbeatTimeoutMillis
                 : lastHeartbeatMillis + heartbeatTimeoutMillis;
 
-        if (heartbeatExpirationTimeMillis > Clock.currentTimeMillis()) {
+        if (heartbeatExpirationTimeMillis > context.clusterService.getClusterTime()) {
             return NO_TIMEOUT__HEARTBEAT_TIMEOUT_NOT_EXPIRED;
         }
 

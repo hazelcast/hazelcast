@@ -36,7 +36,6 @@ import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -403,7 +402,7 @@ class InvocationMonitor implements PacketHandler, MetricsProvider {
         @Override
         public void run0() {
             heartbeatPacketsReceived.inc();
-            long timeMillis = Clock.currentTimeMillis();
+            long timeMillis = nodeEngine.getClusterService().getClusterTime();
 
             updateMemberHeartbeat(timeMillis);
 
