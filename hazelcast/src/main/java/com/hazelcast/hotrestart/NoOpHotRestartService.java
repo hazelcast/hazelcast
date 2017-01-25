@@ -21,6 +21,7 @@ package com.hazelcast.hotrestart;
  * not available or not enabled.
  */
 public class NoOpHotRestartService implements HotRestartService {
+    private static final BackupTaskStatus NO_TASK_BACKUP_STATUS = new BackupTaskStatus(BackupTaskState.NO_TASK, 0, 0);
 
     @Override
     public void backup() {
@@ -32,7 +33,7 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public BackupTaskStatus getBackupTaskStatus() {
-        return new BackupTaskStatus(BackupTaskState.NOT_STARTED, 0, 0);
+        return NO_TASK_BACKUP_STATUS;
     }
 
     @Override
@@ -41,5 +42,10 @@ public class NoOpHotRestartService implements HotRestartService {
 
     @Override
     public void interruptBackupTask() {
+    }
+
+    @Override
+    public boolean isHotBackupEnabled() {
+        return false;
     }
 }
