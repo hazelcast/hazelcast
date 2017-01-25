@@ -59,7 +59,7 @@ public class QueryDuringMigrationsStressTest extends HazelcastTestSupport {
     protected static final ILogger LOGGER = Logger.getLogger(QueryDuringMigrationsStressTest.class);
 
     private static final long TEST_DURATION_SECONDS = MINUTES.toSeconds(3);
-    private static final String TEST_MAP_NAME = "employees";
+    protected static final String TEST_MAP_NAME = "employees";
     private static final int CLUSTER_SIZE = 6;
 
     protected TestHazelcastInstanceFactory factory = createFactory();
