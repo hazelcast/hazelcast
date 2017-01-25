@@ -23,7 +23,8 @@ public class NoopHotRestartServicesTest {
         service.getBackupTaskStatus();
         service.interruptBackupTask();
         service.interruptLocalBackupTask();
-        assertEquals(new BackupTaskStatus(BackupTaskState.NOT_STARTED, 0, 0), service.getBackupTaskStatus());
+        assertFalse(service.isHotBackupEnabled());
+        assertEquals(new BackupTaskStatus(BackupTaskState.NO_TASK, 0, 0), service.getBackupTaskStatus());
     }
 
     @Test

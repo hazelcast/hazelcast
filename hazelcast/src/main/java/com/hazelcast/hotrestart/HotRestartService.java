@@ -60,4 +60,11 @@ public interface HotRestartService {
      * directories will be left as-is.
      */
     void interruptBackupTask();
+
+    /**
+     * Returns if hot backup is enabled.
+     *
+     * @return {@code true} if hot backup is enabled, {@code false} otherwise
+     */
+    boolean isHotBackupEnabled();
 }
