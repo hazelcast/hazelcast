@@ -28,6 +28,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.logging.Logger;
@@ -231,20 +232,15 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
 
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final AtomicLong stateChangeCount = new AtomicLong();
 
         final CountDownLatch disconnectedLatch = new CountDownLatch(1);
-        final CountDownLatch connectedLatch = new CountDownLatch(1);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+
+        LifecycleService lifecycleService = client.getLifecycleService();
+        lifecycleService.addLifecycleListener(new LifecycleListener() {
             @Override
             public void stateChanged(LifecycleEvent event) {
-                stateChangeCount.incrementAndGet();
-                Logger.getLogger(this.getClass()).info("state event : " + event);
                 if (LifecycleEvent.LifecycleState.CLIENT_DISCONNECTED == event.getState()) {
                     disconnectedLatch.countDown();
-                }
-                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
-                    connectedLatch.countDown();
                 }
             }
         });
@@ -252,6 +248,20 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         blockMessagesFromInstance(hazelcastInstance, client);
         //Wait for client to disconnect because of hearBeat problem.
         assertOpenEventually(disconnectedLatch);
+
+        final CountDownLatch connectedLatch = new CountDownLatch(1);
+        final AtomicLong stateChangeCount = new AtomicLong();
+        lifecycleService.addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                stateChangeCount.incrementAndGet();
+                Logger.getLogger(this.getClass()).info("state event : " + event);
+                if (LifecycleEvent.LifecycleState.CLIENT_CONNECTED == event.getState()) {
+                    connectedLatch.countDown();
+                }
+            }
+        });
+
         unblockMessagesFromInstance(hazelcastInstance, client);
         //Wait for client to connect back after heartbeat issue is resolved
         assertOpenEventually(connectedLatch);
@@ -261,7 +271,7 @@ public class ClientHeartbeatTest extends ClientTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(2, stateChangeCount.get());
+                assertEquals(1, stateChangeCount.get());
             }
         }, delaySeconds * 2);
     }
