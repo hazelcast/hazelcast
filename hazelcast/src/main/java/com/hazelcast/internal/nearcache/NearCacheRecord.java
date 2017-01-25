@@ -34,6 +34,10 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
 
     int TIME_NOT_SET = -1;
 
+    int UPDATE_STARTED = 0;
+    int REMOVE_REQUESTED = 1;
+    int READ_PERMITTED = 2;
+
     /**
      * Sets the value of this {@link NearCacheRecord}.
      *
@@ -103,4 +107,7 @@ public interface NearCacheRecord<V> extends Expirable, Evictable<V> {
      */
     boolean hasSameUuid(UUID uuid);
 
+    int getRecordState();
+
+    boolean casRecordState(int expect, int update);
 }

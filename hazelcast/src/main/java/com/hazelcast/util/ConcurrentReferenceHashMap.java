@@ -22,6 +22,7 @@ package com.hazelcast.util;
  * http://creativecommons.org/licenses/publicdomain
  */
 
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -46,6 +47,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * An advanced hash table supporting configurable garbage collection semantics
@@ -176,7 +179,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Behavior-changing configuration options for the map
-      */
+     */
     public static enum Option {
         /**
          * Indicates that referential-equality (== instead of .equals()) should
@@ -677,35 +680,66 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         boolean replace(K key, int hash, V oldValue, V newValue) {
             lock();
             try {
-                removeStale();
-                HashEntry<K, V> e = getFirst(hash);
-                while (e != null && (e.hash != hash || !keyEq(key, e.key()))) {
-                    e = e.next;
-                }
-                boolean replaced = false;
-                if (e != null && oldValue.equals(e.value())) {
-                    replaced = true;
-                    e.setValue(newValue, valueType, refQueue);
-                }
-                return replaced;
+                return replaceInternal2(key, hash, oldValue, newValue);
             } finally {
                 unlock();
             }
         }
 
+        private boolean replaceInternal2(K key, int hash, V oldValue, V newValue) {
+            removeStale();
+            HashEntry<K, V> e = getFirst(hash);
+            while (e != null && (e.hash != hash || !keyEq(key, e.key()))) {
+                e = e.next;
+            }
+            boolean replaced = false;
+            if (e != null && oldValue.equals(e.value())) {
+                replaced = true;
+                e.setValue(newValue, valueType, refQueue);
+            }
+            return replaced;
+        }
+
         V replace(K key, int hash, V newValue) {
             lock();
             try {
-                removeStale();
-                HashEntry<K, V> e = getFirst(hash);
-                while (e != null && (e.hash != hash || !keyEq(key, e.key()))) {
-                    e = e.next;
+                return replaceInternal(key, hash, newValue);
+            } finally {
+                unlock();
+            }
+        }
+
+        private V replaceInternal(K key, int hash, V newValue) {
+            removeStale();
+            HashEntry<K, V> e = getFirst(hash);
+            while (e != null && (e.hash != hash || !keyEq(key, e.key()))) {
+                e = e.next;
+            }
+            V oldValue = null;
+            if (e != null) {
+                oldValue = e.value();
+                e.setValue(newValue, valueType, refQueue);
+            }
+            return oldValue;
+        }
+
+        V applyIfPresent(K key, int hash, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+            lock();
+            try {
+                V oldValue = get(key, hash);
+                if (oldValue == null) {
+                    return null;
                 }
-                V oldValue = null;
-                if (e != null) {
-                    oldValue = e.value();
-                    e.setValue(newValue, valueType, refQueue);
+
+                V newValue = remappingFunction.apply(key, oldValue);
+                if (newValue != null) {
+                    if (replaceInternal2(key, hash, oldValue, newValue)) {
+                        return newValue;
+                    }
+                } else {
+                    removeInternal(key, hash, oldValue, false);
                 }
+
                 return oldValue;
             } finally {
                 unlock();
@@ -760,7 +794,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
-        V getValue(K key , V value, IFunction<? super K, ? extends V> function) {
+        V getValue(K key, V value, IFunction<? super K, ? extends V> function) {
             return value != null ? value : function.apply(key);
         }
 
@@ -838,47 +872,51 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         V remove(Object key, int hash, Object value, boolean refRemove) {
             lock();
             try {
-                if (!refRemove) {
-                    removeStale();
-                }
-                int c = count - 1;
-                HashEntry<K, V>[] tab = table;
-                int index = hash & (tab.length - 1);
-                HashEntry<K, V> first = tab[index];
-                HashEntry<K, V> e = first;
-                // a ref remove operation compares the Reference instance
-                while (e != null && key != e.keyRef && (refRemove || hash != e.hash || !keyEq(key, e.key()))) {
-                    e = e.next;
-                }
-
-                V oldValue = null;
-                if (e != null) {
-                    V v = e.value();
-                    if (value == null || value.equals(v)) {
-                        oldValue = v;
-                        // All entries following removed node can stay
-                        // in list, but all preceding ones need to be
-                        // cloned.
-                        ++modCount;
-                        HashEntry<K, V> newFirst = e.next;
-                        for (HashEntry<K, V> p = first; p != e; p = p.next) {
-                            K pKey = p.key();
-                            // Skip GC'd keys
-                            if (pKey == null) {
-                                c--;
-                                continue;
-                            }
-                            newFirst = newHashEntry(pKey, p.hash, newFirst, p.value());
-                        }
-                        tab[index] = newFirst;
-                        // write-volatile
-                        count = c;
-                    }
-                }
-                return oldValue;
+                return removeInternal(key, hash, value, refRemove);
             } finally {
                 unlock();
             }
+        }
+
+        private V removeInternal(Object key, int hash, Object value, boolean refRemove) {
+            if (!refRemove) {
+                removeStale();
+            }
+            int c = count - 1;
+            HashEntry<K, V>[] tab = table;
+            int index = hash & (tab.length - 1);
+            HashEntry<K, V> first = tab[index];
+            HashEntry<K, V> e = first;
+            // a ref remove operation compares the Reference instance
+            while (e != null && key != e.keyRef && (refRemove || hash != e.hash || !keyEq(key, e.key()))) {
+                e = e.next;
+            }
+
+            V oldValue = null;
+            if (e != null) {
+                V v = e.value();
+                if (value == null || value.equals(v)) {
+                    oldValue = v;
+                    // All entries following removed node can stay
+                    // in list, but all preceding ones need to be
+                    // cloned.
+                    ++modCount;
+                    HashEntry<K, V> newFirst = e.next;
+                    for (HashEntry<K, V> p = first; p != e; p = p.next) {
+                        K pKey = p.key();
+                        // Skip GC'd keys
+                        if (pKey == null) {
+                            c--;
+                            continue;
+                        }
+                        newFirst = newHashEntry(pKey, p.hash, newFirst, p.value());
+                    }
+                    tab[index] = newFirst;
+                    // write-volatile
+                    count = c;
+                }
+            }
+            return oldValue;
         }
 
         final void removeStale() {
@@ -1089,7 +1127,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      */
     public ConcurrentReferenceHashMap(Map<? extends K, ? extends V> m) {
         this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
-                        DEFAULT_INITIAL_CAPACITY),
+                DEFAULT_INITIAL_CAPACITY),
                 DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL
         );
         putAll(m);
@@ -1315,7 +1353,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             throw new NullPointerException();
         }
         int hash = hashOf(key);
-        return segmentFor(hash).put(key, hash, value, null , false);
+        return segmentFor(hash).put(key, hash, value, null, false);
     }
 
     /**
@@ -1330,7 +1368,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
             throw new NullPointerException();
         }
         int hash = hashOf(key);
-        return segmentFor(hash).put(key, hash, value, null , true);
+        return segmentFor(hash).put(key, hash, value, null, true);
     }
 
     /***
@@ -1362,13 +1400,22 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      */
     @Override
     public V applyIfAbsent(K key, IFunction<? super K, ? extends V> mappingFunction) {
-        if (mappingFunction == null) {
-            throw new NullPointerException();
-        }
+        checkNotNull(key);
+        checkNotNull(mappingFunction);
+
         int hash = hashOf(key);
         Segment<K, V> segment = segmentFor(hash);
         V v = segment.get(key, hash);
         return v == null ? segment.put(key, hash, null, mappingFunction, true) : v;
+    }
+
+    @Override
+    public V applyIfPresent(K key, IBiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        checkNotNull(key);
+        checkNotNull(remappingFunction);
+
+        int hash = hashOf(key);
+        return segmentFor(hash).applyIfPresent(key, hash, remappingFunction);
     }
 
     /**

@@ -284,7 +284,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        return getInternal(keyData);
+        return toObject(getInternal(keyData));
     }
 
     protected V getInternal(Data keyData) {

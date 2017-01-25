@@ -77,7 +77,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys() {
-        storeAndLoad(2342, false);
+        storeAndLoad(1, false);
     }
 
     @Test(timeout = TEST_TIMEOUT)

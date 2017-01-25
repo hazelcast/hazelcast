@@ -124,7 +124,9 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     public boolean remove(K key) {
         checkNotNull(key, "key cannot be null on remove!");
 
-        return nearCacheRecordStore.remove(key);
+        nearCacheRecordStore.remove(key);
+
+        return true;
     }
 
     @Override
@@ -196,6 +198,28 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         }
 
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
+    }
+
+    @Override
+    public boolean tryReserveForUpdate(K key) {
+        nearCacheRecordStore.doEvictionIfRequired();
+
+        return nearCacheRecordStore.tryReserveForUpdate(key);
+    }
+
+    @Override
+    public V publishReserved(K key) {
+        return nearCacheRecordStore.publishReserved(key);
+    }
+
+    @Override
+    public void requestRemoveForReserved(K key) {
+        nearCacheRecordStore.requestRemoveForReserved(key);
+    }
+
+    @Override
+    public void updateReserved(K key, V value) {
+        nearCacheRecordStore.updateReserved(key, value);
     }
 
     public NearCacheRecordStore<K, V> getNearCacheRecordStore() {

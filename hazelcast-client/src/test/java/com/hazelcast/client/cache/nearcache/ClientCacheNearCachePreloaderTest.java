@@ -54,9 +54,9 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
         // FIXME: the Near Cache pre-loader doesn't work with enabled invalidations due to a known getAll() issue!
         return Arrays.asList(new Object[][]{
                 {InMemoryFormat.BINARY, false},
-                //{InMemoryFormat.BINARY, true},
+                {InMemoryFormat.BINARY, true},
                 {InMemoryFormat.OBJECT, false},
-                //{InMemoryFormat.OBJECT, true},
+                {InMemoryFormat.OBJECT, true},
         });
     }
 

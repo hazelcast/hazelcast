@@ -11,7 +11,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -36,7 +36,7 @@ import static org.junit.Assert.fail;
  * <p>
  * Thansk Lukas Blunschi for this test (https://github.com/lukasblu).
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
 
@@ -81,15 +81,22 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
 
     @Test
     public void testNoLostInvalidationsEventually() throws Exception {
-        testNoLostInvalidations(false);
+        testNoLostInvalidationsStrict(false);
     }
 
-    private void testNoLostInvalidations(boolean strict) throws Exception {
+    @Test
+    public void testNoLostInvalidationsStrict() throws Exception {
+        testNoLostInvalidationsStrict(true);
+    }
+
+    private void testNoLostInvalidationsStrict(boolean strict) throws Exception {
         // run test
         runTestInternal();
 
-        // test eventually consistent
-        sleepSeconds(5);
+        if (!strict) {
+            // test eventually consistent
+            sleepSeconds(2);
+        }
         int valuePutLast = valuePut.get();
         String valueMapStr = map.get(KEY);
         int valueMap = parseInt(valueMapStr);

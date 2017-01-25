@@ -21,6 +21,7 @@ import com.hazelcast.internal.nearcache.NearCacheRecord;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
+
 /**
  * Abstract implementation of {@link NearCacheRecord} with value and
  * expiration time as internal state.
@@ -31,15 +32,18 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT =
             AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
+    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
+            AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
 
-    protected V value;
     protected long creationTime = TIME_NOT_SET;
     protected long sequence;
     protected UUID uuid;
 
     protected volatile long expirationTime = TIME_NOT_SET;
+    protected volatile V value;
     protected volatile long accessTime = TIME_NOT_SET;
     protected volatile int accessHit;
+    protected volatile int recordState = UPDATE_STARTED;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
         this.value = value;
@@ -146,5 +150,26 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
         } else {
             return false;
         }
+    }
+
+    public int getRecordState() {
+        return recordState;
+    }
+
+    @Override
+    public boolean casRecordState(int expect, int update) {
+        return RECORD_STATE.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    public String toString() {
+        return "creationTime=" + creationTime
+                + ", sequence=" + sequence
+                + ", uuid=" + uuid
+                + ", expirationTime=" + expirationTime
+                + ", accessTime=" + accessTime
+                + ", accessHit=" + accessHit
+                + ", recordState=" + recordState
+                + ", value=" + value;
     }
 }

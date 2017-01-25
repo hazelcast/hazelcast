@@ -42,7 +42,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -104,7 +104,7 @@ public abstract class TransactionalMapProxySupport
         if (nearCacheEnabled) {
             Object cached = mapNearCacheManager.getFromNearCache(name, key);
             if (cached != null) {
-                if (cached.equals(NULL_OBJECT)) {
+                if (cached.equals(CACHED_AS_NULL)) {
                     cached = null;
                 }
                 return cached;

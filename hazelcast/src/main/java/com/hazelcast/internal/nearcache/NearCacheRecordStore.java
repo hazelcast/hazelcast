@@ -123,4 +123,12 @@ public interface NearCacheRecordStore<K, V> extends InitializingObject {
      * @see StaleReadDetector
      */
     StaleReadDetector getStaleReadDetector();
+
+    boolean tryReserveForUpdate(K key);
+
+    V publishReserved(K key);
+
+    void requestRemoveForReserved(K key);
+
+    void updateReserved(K key, V value);
 }

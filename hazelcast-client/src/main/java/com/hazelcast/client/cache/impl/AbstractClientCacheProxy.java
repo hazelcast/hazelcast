@@ -32,7 +32,6 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -41,8 +40,6 @@ import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -52,8 +49,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.MapUtil.createHashMap;
+import static java.util.Collections.emptyMap;
 
 /**
  * Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
@@ -81,12 +82,21 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         super(cacheConfig);
     }
 
-    protected Object getFromNearCache(Data keyData, boolean async) {
-        Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && NearCache.NULL_OBJECT != cached) {
-            return !async ? cached : createCompletedFuture(cached);
+    protected Object getCachedValue(Data keyData, boolean async) {
+        if (nearCache == null) {
+            return NOT_CACHED;
         }
-        return null;
+
+        Object cached = nearCache.get(keyData);
+        if (cached == null) {
+            return NOT_CACHED;
+        }
+
+        if (cached == CACHED_AS_NULL) {
+            cached = null;
+        }
+
+        return !async ? cached : createCompletedFuture(cached);
     }
 
     protected Object getInternal(K key, ExpiryPolicy expiryPolicy, boolean async) {
@@ -94,12 +104,12 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ensureOpen();
         validateNotNull(key);
         final Data keyData = toData(key);
-        Object cached = getFromNearCache(keyData, async);
-        if (cached != null) {
+        Object cached = getCachedValue(keyData, async);
+        if (cached != NOT_CACHED) {
             return cached;
         }
 
-        final boolean marked = keyStateMarker.markIfUnmarked(keyData);
+        final boolean reserved = tryReserveForUpdate(keyData);
         final Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         ClientInvocationFuture future;
@@ -109,7 +119,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             future = clientInvocation.invoke();
         } catch (Exception e) {
-            resetToUnmarkedState(keyData);
+            releaseReserved(keyData, reserved);
             throw rethrow(e);
         }
 
@@ -120,31 +130,31 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             if (nearCache != null) {
                 delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
                     public void onResponse(Data valueData) {
-                        storeInNearCache(keyData, valueData, null, marked);
+                        storeInNearCache(keyData, valueData, null, reserved, false);
                         if (statisticsEnabled) {
                             handleStatisticsOnGet(start, valueData);
                         }
                     }
 
                     public void onFailure(Throwable t) {
-                        resetToUnmarkedState(keyData);
+                        releaseReserved(keyData, reserved);
                     }
                 });
             }
             return delegatingFuture;
         } else {
             try {
-                Object value = toObject(delegatingFuture.get());
+                V value = toObject(delegatingFuture.get());
                 if (nearCache != null) {
-                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), (V) value, marked);
+                    storeInNearCache(keyData, (Data) delegatingFuture.getResponse(), value, reserved, false);
                 }
                 if (statisticsEnabled) {
                     handleStatisticsOnGet(start, value);
                 }
                 return value;
             } catch (Throwable e) {
-                resetToUnmarkedState(keyData);
-                throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+                releaseReserved(keyData, reserved);
+                throw rethrowAllowedTypeFirst(e, CacheException.class);
             }
         }
     }
@@ -253,25 +263,30 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         final long start = System.nanoTime();
         ensureOpen();
         validateNotNull(keys);
+
         if (keys.isEmpty()) {
-            return Collections.EMPTY_MAP;
+            return emptyMap();
         }
+
         final Set<Data> keySet = new HashSet<Data>(keys.size());
         for (K key : keys) {
             final Data k = toData(key);
             keySet.add(k);
         }
-        Map<K, V> result = getAllFromNearCache(keySet);
+
+        Map<K, V> result = createHashMap(keys.size());
+        populateResultFromNearCache(keySet, result);
+
         if (keySet.isEmpty()) {
             return result;
         }
 
         List<Map.Entry<Data, Data>> entries;
-        Map<Data, Boolean> markers = createHashMap(keySet.size());
+        Map<Data, Boolean> reservedKeys = createHashMap(keySet.size());
         try {
 
             for (Data key : keySet) {
-                markers.put(key, keyStateMarker.markIfUnmarked(key));
+                reservedKeys.put(key, tryReserveForUpdate(key));
             }
 
             Data expiryPolicyData = toData(expiryPolicy);
@@ -284,10 +299,15 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 K key = toObject(keyData);
                 V value = toObject(valueData);
                 result.put(key, value);
-                storeInNearCache(keyData, valueData, value, markers.remove(keyData));
+
+                boolean reserved = reservedKeys.get(keyData);
+                if (reserved) {
+                    storeInNearCache(keyData, valueData, value, reserved, false);
+                    reservedKeys.remove(keyData);
+                }
             }
         } finally {
-            unmarkRemainingMarkedKeys(markers);
+            releaseReservedKeys(reservedKeys);
         }
 
         if (statisticsEnabled) {
@@ -297,29 +317,21 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         return result;
     }
 
-    private void unmarkRemainingMarkedKeys(Map<Data, Boolean> markers) {
-        for (Map.Entry<Data, Boolean> entry : markers.entrySet()) {
-            Boolean marked = entry.getValue();
-            if (marked) {
-                keyStateMarker.unmarkForcibly(entry.getKey());
-            }
-        }
-    }
+    private void populateResultFromNearCache(Set<Data> keySet, Map<K, V> result) {
+        if (nearCache == null) {
+            return;
 
-    private Map<K, V> getAllFromNearCache(Set<Data> keySet) {
-        Map<K, V> result = new HashMap<K, V>();
-        if (nearCache != null) {
-            final Iterator<Data> iterator = keySet.iterator();
-            while (iterator.hasNext()) {
-                Data key = iterator.next();
-                Object cached = nearCache.get(key);
-                if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
-                    result.put((K) toObject(key), (V) cached);
-                    iterator.remove();
-                }
+        }
+        Iterator<Data> iterator = keySet.iterator();
+
+        while (iterator.hasNext()) {
+            Data key = iterator.next();
+            Object cached = getCachedValue(key, false);
+            if (cached != NOT_CACHED) {
+                result.put((K) toObject(key), (V) cached);
+                iterator.remove();
             }
         }
-        return result;
     }
 
     @Override
@@ -335,24 +347,20 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     @Override
     public void putAll(Map<? extends K, ? extends V> map, ExpiryPolicy expiryPolicy) {
         final long start = System.nanoTime();
-
         ensureOpen();
         validateNotNull(map);
 
-        ClientPartitionService partitionService = clientContext.getPartitionService();
-        int partitionCount = partitionService.getPartitionCount();
-        Map<Data, Boolean> markers = createHashMap(map.size());
         try {
+            ClientPartitionService partitionService = clientContext.getPartitionService();
+            int partitionCount = partitionService.getPartitionCount();
             // First we fill entry set per partition
             List<Map.Entry<Data, Data>>[] entriesPerPartition =
                     groupDataToPartitions(map, partitionService, partitionCount);
 
             // Then we invoke the operations and sync on completion of these operations
-            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start, markers);
+            putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy, start);
         } catch (Exception e) {
-            throw rethrow(e);
-        } finally {
-            unmarkRemainingMarkedKeys(markers);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -396,7 +404,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     }
 
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        ExpiryPolicy expiryPolicy, long start, Map<Data, Boolean> markers)
+                                                        ExpiryPolicy expiryPolicy, long start)
             throws ExecutionException, InterruptedException {
         Data expiryPolicyData = toData(expiryPolicy);
         List<FutureEntriesTuple> futureEntriesTuples = new ArrayList<FutureEntriesTuple>(entriesPerPartition.length);
@@ -405,11 +413,6 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
 
             if (entries != null) {
-                for (Map.Entry<Data, Data> entry : entries) {
-                    Data key = entry.getKey();
-                    markers.put(key, !cacheOnUpdate || keyStateMarker.markIfUnmarked(key));
-                }
-
                 int completionId = nextCompletionId();
                 // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
                 ClientMessage request = CachePutAllCodec.encodeRequest(nameWithPrefix, entries, expiryPolicyData, completionId);
@@ -418,11 +421,10 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
         }
 
-        waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start, markers);
+        waitResponseFromAllPartitionsForPutAll(futureEntriesTuples, start);
     }
 
-    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long start,
-                                                        Map<Data, Boolean> markers) {
+    private void waitResponseFromAllPartitionsForPutAll(List<FutureEntriesTuple> futureEntriesTuples, long start) {
         Throwable error = null;
         for (FutureEntriesTuple tuple : futureEntriesTuples) {
             Future future = tuple.future;
@@ -430,7 +432,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             try {
                 future.get();
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries, markers);
+                    handleNearCacheOnPutAll(entries);
                 }
                 // Note that we count the batch put only if there is no exception while putting to target partition.
                 // In case of error, some of the entries might have been put and others might fail.
@@ -440,7 +442,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                 }
             } catch (Throwable t) {
                 if (nearCache != null) {
-                    handleNearCacheOnPutAll(entries, markers);
+                    handleNearCacheOnPutAll(entries);
                 }
                 logger.finest("Error occurred while putting entries as batch!", t);
                 if (error == null) {
@@ -472,18 +474,22 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         }
     }
 
-    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries, Map<Data, Boolean> markers) {
-        if (nearCache != null) {
-            if (cacheOnUpdate) {
-                for (Map.Entry<Data, Data> entry : entries) {
-                    Data key = entry.getKey();
-                    storeInNearCache(key, entry.getValue(), null, markers.get(key));
-                }
-            } else {
-                for (Map.Entry<Data, Data> entry : entries) {
-                    invalidateNearCache(entry.getKey());
-                }
+    private void handleNearCacheOnPutAll(List<Map.Entry<Data, Data>> entries) {
+        if (nearCache == null) {
+            return;
+        }
+
+        // update keys
+        if (cacheOnUpdate) {
+            for (Map.Entry<Data, Data> entry : entries) {
+                storeInNearCache(entry.getKey(), entry.getValue(), null, false, cacheOnUpdate);
             }
+            return;
+        }
+
+        // invalidate keys
+        for (Map.Entry<Data, Data> entry : entries) {
+            invalidateNearCache(entry.getKey());
         }
     }
 
@@ -503,7 +509,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
             return replaced;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -518,7 +524,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
             return replaced;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -533,7 +539,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             }
             return oldValue;
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -545,7 +551,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
             ClientMessage resultMessage = invoke(request);
             return CacheSizeCodec.decodeResponse(resultMessage).response;
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+            throw rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
 

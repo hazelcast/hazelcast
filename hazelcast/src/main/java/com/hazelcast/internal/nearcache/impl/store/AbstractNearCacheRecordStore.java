@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
@@ -36,11 +37,18 @@ import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Set;
+
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.REMOVE_REQUESTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
+import static com.hazelcast.internal.nearcache.impl.record.PlaceHolderNearCacheRecord.REMOVE_REQUESTED_PLACEHOLDER;
+import static com.hazelcast.internal.nearcache.impl.record.PlaceHolderNearCacheRecord.UPDATE_STARTED_PLACEHOLDER;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
@@ -55,8 +63,48 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
     protected static final int REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
+    protected static final int MILLI_SECONDS_IN_A_SECOND = 1000;
 
-    private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
+    protected final IBiFunction<K, R, R> makeRemovableOrRemove = new IBiFunction<K, R, R>() {
+        @Override
+        public R apply(K key, R existingRecord) {
+            switch (existingRecord.getRecordState()) {
+                case READ_PERMITTED:
+                    nearCacheStats.decrementOwnedEntryCount();
+                    nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, existingRecord));
+                    // returning null removes record.
+                    return null;
+                case UPDATE_STARTED:
+                case REMOVE_REQUESTED:
+                    return (R) REMOVE_REQUESTED_PLACEHOLDER;
+                default:
+                    throw new IllegalArgumentException("Unexpected reservation state " + existingRecord.getRecordState());
+            }
+        }
+    };
+
+    protected final IBiFunction<K, R, R> makeReadableOrRemove = new IBiFunction<K, R, R>() {
+        @Override
+        public R apply(K key, R existingRecord) {
+            if (existingRecord.getRecordState() == READ_PERMITTED) {
+                // return if already readable or an update is in progress
+                return existingRecord;
+            }
+
+            if (existingRecord == UPDATE_STARTED_PLACEHOLDER || existingRecord == REMOVE_REQUESTED_PLACEHOLDER) {
+                // returning null removes record.
+                return null;
+            }
+
+            // make previously added record readable.
+            if (existingRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED)) {
+                return existingRecord;
+            }
+
+            throw new IllegalArgumentException("Unhandled case found for the record=" + existingRecord);
+        }
+    };
+
 
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
@@ -119,16 +167,22 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract long getKeyStorageMemoryCost(K key);
 
-    protected abstract long getRecordStorageMemoryCost(R record);
+    protected abstract long getRecordStorageMemoryCost(NearCacheRecord record);
 
     protected abstract R valueToRecord(V value);
 
     protected abstract V recordToValue(R record);
 
+    protected abstract R putRecordIfAbsent(K key, R record);
+
     // public for tests.
     public abstract R getRecord(K key);
 
     protected abstract R putRecord(K key, R record);
+
+    protected abstract R applyIfPresent(K key, IBiFunction<K, R, R> mappingFunction);
+
+    protected abstract boolean replaceRecord(K key, R expect, R update);
 
     protected abstract void putToRecord(R record, V value);
 
@@ -273,19 +327,24 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R record = null;
         V value = null;
         try {
+
             record = getRecord(key);
             if (record != null) {
+                if (record.getRecordState() != READ_PERMITTED) {
+                    return null;
+                }
 
                 if (staleReadDetector.isStaleRead(key, record)) {
-                    remove(key);
+                    requestRemoveForReserved(key);
                     return null;
                 }
 
                 if (isRecordExpired(record)) {
-                    remove(key);
+                    requestRemoveForReserved(key);
                     onExpire(key, record);
                     return null;
                 }
+
                 onRecordAccess(record);
                 nearCacheStats.incrementHits();
                 value = recordToValue(record);
@@ -302,9 +361,52 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     @Override
+    public void updateReserved(K key, V value) {
+        R record = null;
+        R oldRecord = null;
+        try {
+            record = valueToRecord(value);
+            onRecordCreate(key, record);
+            boolean replaced = replaceRecord(key, (R) UPDATE_STARTED_PLACEHOLDER, record);
+            if (!replaced) {
+                return;
+            }
+            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+            nearCacheStats.incrementOwnedEntryCount();
+            onPut(key, value, record, oldRecord);
+        } catch (Throwable error) {
+            onPutError(key, value, record, oldRecord, error);
+            throw ExceptionUtil.rethrow(error);
+        }
+    }
+
+    @Override
+    public boolean tryReserveForUpdate(K key) {
+        checkAvailable();
+        // if there is no eviction configured we return if the Near Cache is full and it's a new key
+        // (we have to check the key, otherwise we might lose updates on existing keys)
+        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+            return false;
+        }
+
+        return putRecordIfAbsent(key, (R) UPDATE_STARTED_PLACEHOLDER) == null;
+    }
+
+    @Override
+    public V publishReserved(K key) {
+        R record = applyIfPresent(key, makeReadableOrRemove);
+        return record == null ? null : (V) record.getValue();
+
+    }
+
+    @Override
+    public void requestRemoveForReserved(K key) {
+        applyIfPresent(key, makeRemovableOrRemove);
+    }
+
+    @Override
     public void put(K key, V value) {
         checkAvailable();
-
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
         if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
@@ -315,6 +417,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         R oldRecord = null;
         try {
             record = valueToRecord(value);
+            // permit read of record when putting directly.
+            record.casRecordState(UPDATE_STARTED, READ_PERMITTED);
+
             onRecordCreate(key, record);
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
@@ -351,7 +456,10 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     }
 
     protected void clearRecords() {
-        records.clear();
+        Set<KS> kss = records.keySet();
+        for (KS key : kss) {
+            requestRemoveForReserved((K) key);
+        }
     }
 
     @Override
