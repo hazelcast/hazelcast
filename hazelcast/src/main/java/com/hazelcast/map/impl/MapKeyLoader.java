@@ -92,6 +92,8 @@ public class MapKeyLoader {
     private LoadFinishedFuture keyLoadFinished = new LoadFinishedFuture(true);
     private MapOperationProvider operationProvider;
 
+    private volatile boolean destroyed;
+
     /**
      * Role of this MapKeyLoader
      **/
@@ -138,7 +140,7 @@ public class MapKeyLoader {
     }
 
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
-
+        assertNotDestroyed();
         this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
         Role newRole = calculateRole();
@@ -180,7 +182,7 @@ public class MapKeyLoader {
      * Sends keys to all partitions in batches.
      */
     public Future<?> sendKeys(final MapStoreContext mapStoreContext, final boolean replaceExistingValues) {
-
+        assertNotDestroyed();
         if (keyLoadFinished.isDone()) {
 
             keyLoadFinished = new LoadFinishedFuture();
@@ -203,6 +205,7 @@ public class MapKeyLoader {
      * Check if loaded on SENDER partition. Triggers key loading if it hadn't started
      */
     public Future triggerLoading() {
+        assertNotDestroyed();
 
         if (keyLoadFinished.isDone()) {
 
@@ -223,7 +226,7 @@ public class MapKeyLoader {
     }
 
     public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
-
+        assertNotDestroyed();
         role.nextOrStay(Role.SENDER);
 
         if (state.is(State.LOADING)) {
@@ -251,6 +254,7 @@ public class MapKeyLoader {
      * Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times.
      **/
     public void triggerLoadingWithDelay() {
+        assertNotDestroyed();
         if (delayedTrigger == null) {
             Runnable runnable = new Runnable() {
                 @Override
@@ -267,7 +271,7 @@ public class MapKeyLoader {
 
     // If this gets invoked on SENDER BACKUP it means the SENDER died and SENDER BACKUP takes over.
     public boolean shouldDoInitialLoad() {
-
+        assertNotDestroyed();
         if (role.is(Role.SENDER_BACKUP)) {
             // was backup. become primary sender
             role.next(Role.SENDER);
@@ -306,7 +310,7 @@ public class MapKeyLoader {
             Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
 
             List<Future> futures = new ArrayList<Future>();
-            while (batches.hasNext()) {
+            while (batches.hasNext() && !isDestroyed()) {
                 Map<Integer, List<Data>> batch = batches.next();
                 futures.addAll(sendBatch(batch, replaceExistingValues));
             }
@@ -333,6 +337,9 @@ public class MapKeyLoader {
         Set<Entry<Integer, List<Data>>> entries = batch.entrySet();
         List<Future> futures = new ArrayList<Future>(entries.size());
         for (Entry<Integer, List<Data>> e : entries) {
+            if (isDestroyed()) {
+                break;
+            }
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
 
@@ -345,6 +352,9 @@ public class MapKeyLoader {
     }
 
     private void sendKeyLoadCompleted(int clusterSize, Throwable exception) throws Exception {
+        if (isDestroyed()) {
+            return;
+        }
         // Notify SENDER first - reason why this is so important:
         // Someone may do map.get(other_nodes_key) and when it finishes do map.loadAll
         // The problem is that map.get may finish earlier than then overall loading on the SENDER due to the fact
@@ -377,6 +387,15 @@ public class MapKeyLoader {
         opService.invokeOnAllPartitions(SERVICE_NAME, new KeyLoadStatusOperationFactory(mapName, exception));
     }
 
+    /**
+     * Destroys the loader and gracefully cancels the background tasks.
+     * Does not wait for the tasks to finish.
+     */
+    public void destroy() {
+        destroyed = true;
+        keyLoadFinished = new LoadFinishedFuture(true);
+    }
+
     public void setMaxBatch(int maxBatch) {
         this.maxBatch = maxBatch;
     }
@@ -401,6 +420,16 @@ public class MapKeyLoader {
         // The state machine cannot skip states so we need to promote to loaded step by step
         state.next(State.LOADING);
         state.next(State.LOADED);
+    }
+
+    private boolean isDestroyed() {
+        return destroyed;
+    }
+
+    private void assertNotDestroyed() {
+        if (isDestroyed()) {
+            throw new IllegalStateException("The keyLoader has been destroyed()");
+        }
     }
 
     private String getStateMessage() {
