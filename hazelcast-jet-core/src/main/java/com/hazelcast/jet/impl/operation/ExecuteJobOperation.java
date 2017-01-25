@@ -22,7 +22,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -38,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.impl.util.Util.peel;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static java.util.stream.Collectors.toList;
 
@@ -76,7 +76,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                 // ExecuteOperation should only be run if InitOperation succeeded
                 init.thenCompose(x -> executionInvocationFuture = invokeOnCluster(executionPlanMap,
                         plan -> new ExecuteOperation(executionId), executionDone, true, DEFAULT_TRY_COUNT))
-                    .handle((v, e) -> Util.peel(e));
+                    .handle((v, e) -> e != null ? peel(e) : null);
 
         // CompleteOperation is fired regardless of success of previous operations
         // It must be fired _after_ all Execute operation are done, or in case of failure during Init phase,
@@ -86,14 +86,17 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                                  .thenCombine(execution, (r, e) -> e)
                                  .thenCompose(e -> invokeOnCluster(executionPlanMap, plan ->
                                          new CompleteOperation(executionId, e), 3))
-                                 .handle((v, e) -> Util.peel(e));
+                                 .handle((v, e) -> e != null ? peel(e) : null);
 
         // Exception from ExecuteOperation should have precedence
-        execution.thenAcceptBoth(completion, (e1, e2) -> {
-            long elapsed = System.currentTimeMillis() - start;
-            getLogger().info("Execution of job " + executionId + " completed in " + elapsed + "ms.");
-            doSendResponse(e1 == null ? e2 : e1);
-        });
+        execution
+                .thenCombine(completion, (e1, e2) -> e1 == null ? e2 : e1)
+                .exceptionally(Function.identity())
+                .thenAccept(e -> {
+                    long elapsed = System.currentTimeMillis() - start;
+                    getLogger().info("Execution of job " + executionId + " completed in " + elapsed + "ms.");
+                    doSendResponse(e);
+                });
         if (cachedExceptionResult != null) {
             executionInvocationFuture.completeExceptionally(cachedExceptionResult);
         }
@@ -186,6 +189,11 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
         return compositeFuture;
     }
 
+    /**
+     * Returns a new {@link CompletableFuture}, that will complete normally, when {@code stage} completes exceptionally,
+     * with the Throwable as a value.
+     * <p>However, if {@code stage} completes normally, the returned stage will never complete.
+     */
     private static <T> CompletableFuture<Throwable> onException(CompletableFuture<T> stage) {
         CompletableFuture<Throwable> f = new CompletableFuture<>();
         stage.whenComplete((r, e) -> {
