@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -77,17 +78,21 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     private Deque<Vertex> topologicalVertexStack = new ArrayDeque<>();
 
     /**
-     * Creates a vertex from a {@code SimpleProcessorSupplier} and adds it to this DAG.
+     * Creates a vertex from a {@code Supplier<Processor>} and adds it to this DAG.
+     *
+     * @see Vertex#Vertex(String, Supplier)
      *
      * @param name the unique name of the vertex
      * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex newVertex(String name, SimpleProcessorSupplier simpleSupplier) {
+    public Vertex newVertex(String name, Supplier<Processor> simpleSupplier) {
         return addVertex(new Vertex(name, simpleSupplier));
     }
 
     /**
      * Creates a vertex from a {@code ProcessorSupplier} and adds it to this DAG.
+     *
+     * @see Vertex#Vertex(String, ProcessorSupplier)
      *
      * @param name the unique name of the vertex
      * @param processorSupplier the supplier of {@code Processor} instances which will be used on all members
@@ -98,6 +103,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     /**
      * Creates a vertex from a {@code ProcessorMetaSupplier} and adds it to this DAG.
+     *
+     * @see Vertex#Vertex(String, ProcessorMetaSupplier)
      *
      * @param name the unique name of the vertex
      * @param metaSupplier the meta-supplier of {@code ProcessorSupplier}s for each member

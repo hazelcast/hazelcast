@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.nio.Address;
@@ -59,7 +60,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
 
         // Given
         RuntimeException e = new RuntimeException("mock error");
-        final SimpleProcessorSupplier sup = () -> {
+        final Supplier<Processor> sup = () -> {
             throw e;
         };
         DAG dag = new DAG().vertex(new Vertex("faulty", sup));

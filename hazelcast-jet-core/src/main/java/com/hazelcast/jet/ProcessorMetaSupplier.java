@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
@@ -83,13 +84,13 @@ public interface ProcessorMetaSupplier extends Serializable {
     }
 
     /**
-     * Factory method that wraps the given {@code SimpleProcessorSupplier}
+     * Factory method that wraps the given {@code Supplier<Processor>}
      * and uses it as the supplier of all {@code Processor} instances.
      * Specifically, returns a meta-supplier that will always return the
-     * result of calling {@link ProcessorSupplier#of(SimpleProcessorSupplier)}.
+     * result of calling {@link ProcessorSupplier#of(Supplier<Processor>)}.
      */
     @Nonnull
-    static ProcessorMetaSupplier of(@Nonnull SimpleProcessorSupplier procSupplier) {
+    static ProcessorMetaSupplier of(@Nonnull Supplier<Processor> procSupplier) {
         return ProcessorMetaSupplier.of(ProcessorSupplier.of(procSupplier));
     }
 

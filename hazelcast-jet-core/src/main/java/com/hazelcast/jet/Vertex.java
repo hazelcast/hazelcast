@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.impl.SerializationConstants;
 import com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject;
 import com.hazelcast.nio.ObjectDataInput;
@@ -60,16 +61,23 @@ public class Vertex implements IdentifiedDataSerializable {
     }
 
     /**
-     * Creates a vertex from a {@code SimpleProcessorSupplier}.
+     * Creates a vertex from a {@code Supplier<Processor>}.
+     *
+     * This is useful for vertices where all the {@code Processor} instances
+     * will be instantiated the same way.
+     *
+     *  <strong>NOTE:</strong> this constructor should not be abused with a stateful
+     * implementation which produces a different processor each time. In such a
+     * case the full {@code ProcessorSupplier} type should be implemented.
      *
      * @param name the unique name of the vertex
-     * @param simpleSupplier the simple, parameterless supplier of {@code Processor} instances
+     * @param processorSupplier the simple, parameterless supplier of {@code Processor} instances
      */
-    public Vertex(@Nonnull String name, @Nonnull SimpleProcessorSupplier simpleSupplier) {
+    public Vertex(@Nonnull String name, @Nonnull Supplier<Processor> processorSupplier) {
         checkNotNull(name, "name");
-        checkNotNull(simpleSupplier, "supplier");
+        checkNotNull(processorSupplier, "supplier");
 
-        this.supplier = ProcessorMetaSupplier.of(simpleSupplier);
+        this.supplier = ProcessorMetaSupplier.of(processorSupplier);
         this.name = name;
     }
 

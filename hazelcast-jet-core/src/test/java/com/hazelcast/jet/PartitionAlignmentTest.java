@@ -17,6 +17,7 @@
 package com.hazelcast.jet;
 
 
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -70,7 +71,7 @@ public class PartitionAlignmentTest {
     public void when_localAndDistributedEdges_thenPartitionsAligned() throws Throwable {
         final int localProcessorCount = PARTITION_COUNT / 4;
         final List<Integer> items = range(0, ITEM_COUNT).boxed().collect(toList());
-        final SimpleProcessorSupplier supplierOfListProducer = () -> new ListProducer(items, items.size());
+        final Supplier<Processor> supplierOfListProducer = () -> new ListProducer(items, items.size());
         final Partitioner partitioner = (item, partitionCount) -> (int) item % partitionCount;
 
         final DAG dag = new DAG();

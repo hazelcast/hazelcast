@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet;
 
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.TestProcessors.FaultyProducer;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.config.JetConfig;
@@ -200,15 +201,15 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
 
         private final RuntimeException initError;
-        private final SimpleProcessorSupplier supplier;
+        private final Supplier<Processor> supplier;
 
         private boolean initCalled;
 
-        public MockSupplier(SimpleProcessorSupplier supplier) {
+        MockSupplier(Supplier<Processor> supplier) {
             this(null, supplier);
         }
 
-        public MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
+        MockSupplier(RuntimeException initError, Supplier<Processor> supplier) {
             this.initError = initError;
             this.supplier = supplier;
         }

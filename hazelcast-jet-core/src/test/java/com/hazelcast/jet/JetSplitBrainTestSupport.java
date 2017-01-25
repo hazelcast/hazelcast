@@ -23,6 +23,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
+import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
@@ -389,15 +390,15 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
         static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
 
         private final RuntimeException initError;
-        private final SimpleProcessorSupplier supplier;
+        private final Supplier<Processor> supplier;
 
         private boolean initCalled;
 
-        MockSupplier(SimpleProcessorSupplier supplier) {
+        MockSupplier(Supplier<Processor> supplier) {
             this(null, supplier);
         }
 
-        MockSupplier(RuntimeException initError, SimpleProcessorSupplier supplier) {
+        MockSupplier(RuntimeException initError, Supplier<Processor> supplier) {
             this.initError = initError;
             this.supplier = supplier;
         }
