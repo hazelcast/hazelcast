@@ -171,7 +171,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private void tryFlushOutbox() {
         nextOutstream:
-        for (int i = 0; i < outbox.queueCount(); i++) {
+        for (int i = 0; i < outbox.bucketCount(); i++) {
             final Queue q = outbox.queueWithOrdinal(i);
             for (Object item; (item = q.peek()) != null; ) {
                 final ProgressState state =

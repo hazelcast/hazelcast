@@ -38,6 +38,11 @@ public final class ArrayDequeOutbox implements Outbox {
     }
 
     @Override
+    public int bucketCount() {
+        return buckets.length;
+    }
+
+    @Override
     public void add(int ordinal, @Nonnull Object item) {
         if (ordinal != -1) {
             buckets[ordinal].add(item);
@@ -63,10 +68,6 @@ public final class ArrayDequeOutbox implements Outbox {
 
 
     // Private API that exposes the ArrayDeques to the ProcessorTasklet
-
-    public int queueCount() {
-        return buckets.length;
-    }
 
     public Queue<Object> queueWithOrdinal(int ordinal) {
         return buckets[ordinal];

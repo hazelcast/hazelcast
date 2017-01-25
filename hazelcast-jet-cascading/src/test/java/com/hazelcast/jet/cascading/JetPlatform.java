@@ -32,10 +32,10 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.cascading.runtime.TupleSerializer;
 import com.hazelcast.jet.cascading.tap.InternalMapTap;
+import com.hazelcast.jet.config.JetConfig;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -156,8 +156,8 @@ public class JetPlatform extends TestPlatform {
     public Tap getDelimitedFile(Fields fields, boolean hasHeader, String delimiter,
                                 String quote, Class[] types, String filename, SinkMode mode) {
 
-        return new InternalMapTap(filename, new TextDelimited(fields,
-                new DelimitedParser(delimiter, quote, types)), mode);
+        return new InternalMapTap(filename,
+                new TextDelimited(fields, new DelimitedParser(delimiter, quote, types)), mode);
     }
 
     @Override

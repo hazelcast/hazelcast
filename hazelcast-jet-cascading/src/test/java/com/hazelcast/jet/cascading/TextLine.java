@@ -24,18 +24,17 @@ import cascading.tap.Tap;
 import cascading.tuple.Fields;
 import cascading.tuple.TupleEntry;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-public class TextLine extends Scheme<JetConfig, Iterator<Map.Entry>,
-        Outbox, Void, Integer> {
+public class TextLine extends Scheme<JetConfig, Iterator<Entry>, Consumer<Entry>, Void, Integer> {
 
     public static final Fields DEFAULT_SOURCE_FIELDS = new Fields("num", "line").applyTypes(Long.TYPE, String.class);
 
@@ -52,38 +51,17 @@ public class TextLine extends Scheme<JetConfig, Iterator<Map.Entry>,
 
     public TextLine(Fields sourceFields, Fields sinkFields) {
         super(sourceFields, sinkFields);
-
-        //TODO: verify fields
     }
 
     @Override
-    public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                               Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
-                               JetConfig conf) {
-
-    }
-
-    @Override
-    public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
-                             JetConfig conf) {
-
-    }
-
-    @Override
-    public void sourcePrepare(FlowProcess<? extends JetConfig> flowProcess,
-                              SourceCall<Void, Iterator<Map.Entry>> sourceCall)
-            throws IOException {
-    }
-
-    @Override
-    public boolean source(FlowProcess<? extends JetConfig> flowProcess, SourceCall<Void,
-            Iterator<Map.Entry>> sourceCall) throws IOException {
-        Iterator<Map.Entry> iterator = sourceCall.getInput();
+    public boolean source(
+            FlowProcess<? extends JetConfig> flowProcess, SourceCall<Void, Iterator<Entry>> sourceCall
+    ) throws IOException {
+        Iterator<Entry> iterator = sourceCall.getInput();
         if (!iterator.hasNext()) {
             return false;
         }
-        Map.Entry entry = iterator.next();
+        Entry entry = iterator.next();
         if (getSourceFields().size() == 1) {
             sourceCall.getIncomingEntry().setObject(0, entry.getValue());
         } else {
@@ -94,20 +72,37 @@ public class TextLine extends Scheme<JetConfig, Iterator<Map.Entry>,
     }
 
     @Override
-    public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess,
-                            SinkCall<Integer, Outbox> sinkCall) throws IOException {
-    }
-
-    @Override
-    public void sink(FlowProcess<? extends
-            JetConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall) throws IOException {
-        Outbox outbox = sinkCall.getOutput();
+    public void sink(FlowProcess<? extends JetConfig> flowProcess, SinkCall<Integer, Consumer<Entry>> sinkCall)
+    throws IOException {
+        Consumer<Entry> output = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         try {
-            outbox.add(new AbstractMap.SimpleImmutableEntry<>(COUNTER.getAndIncrement(), outgoing.getTuple().toString()));
+            output.accept(new SimpleImmutableEntry<>(COUNTER.getAndIncrement(), outgoing.getTuple().toString()));
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
+    @Override
+    public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
+                               Tap<JetConfig, Iterator<Entry>, Consumer<Entry>> tap, JetConfig conf) {
+    }
+
+    @Override
+    public void sinkConfInit(
+            FlowProcess<? extends JetConfig> flowProcess,
+            Tap<JetConfig, Iterator<Entry>, Consumer<Entry>> tap,
+            JetConfig conf
+    ) {
+    }
+
+    @Override
+    public void sourcePrepare(FlowProcess<? extends JetConfig> flowProcess,
+                              SourceCall<Void, Iterator<Entry>> sourceCall) {
+    }
+
+    @Override
+    public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess,
+                            SinkCall<Integer, Consumer<Entry>> sinkCall) {
+    }
 }

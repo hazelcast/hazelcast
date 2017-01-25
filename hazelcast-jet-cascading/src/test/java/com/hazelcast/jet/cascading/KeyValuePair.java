@@ -26,18 +26,18 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.io.ValueTuple;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 
-public class KeyValuePair extends Scheme<JetConfig, Iterator<Map.Entry>,
-        Outbox, Void, Integer> {
+public class KeyValuePair extends Scheme<JetConfig, Iterator<Map.Entry>, Consumer<Entry>, Void, Integer> {
 
     public static final Fields DEFAULT_FIELDS = new Fields("key", "value");
 
@@ -59,14 +59,14 @@ public class KeyValuePair extends Scheme<JetConfig, Iterator<Map.Entry>,
 
     @Override
     public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                               Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                               Tap<JetConfig, Iterator<Map.Entry>, Consumer<Entry>> tap,
                                JetConfig conf) {
 
     }
 
     @Override
     public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                             Tap<JetConfig, Iterator<Map.Entry>, Consumer<Entry>> tap,
                              JetConfig conf) {
 
     }
@@ -104,15 +104,15 @@ public class KeyValuePair extends Scheme<JetConfig, Iterator<Map.Entry>,
 
     @Override
     public void sink(FlowProcess<? extends
-            JetConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall) throws IOException {
-        Outbox outbox = sinkCall.getOutput();
+            JetConfig> flowProcess, SinkCall<Integer, Consumer<Entry>> sinkCall) throws IOException {
+        Consumer<Entry> consumer = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         try {
             Tuple tuple = outgoing.getTuple();
             if (getSinkFields().size() == 2) {
-                outbox.add(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), tuple.getObject(1)));
+                consumer.accept(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), tuple.getObject(1)));
             } else if (getSinkFields().size() == 1) {
-                outbox.add(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), ValueTuple.NULL));
+                consumer.accept(new AbstractMap.SimpleImmutableEntry<>(tuple.getObject(0), ValueTuple.NULL));
             }
         } catch (Exception e) {
             throw rethrow(e);

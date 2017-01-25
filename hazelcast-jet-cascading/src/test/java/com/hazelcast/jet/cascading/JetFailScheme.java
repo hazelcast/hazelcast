@@ -27,12 +27,13 @@ import cascading.tap.TapException;
 import cascading.tuple.Fields;
 import cascading.tuple.Tuple;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  *
@@ -58,8 +59,8 @@ public class JetFailScheme extends TextLine {
     }
 
     @Override
-    public void sink(FlowProcess<? extends JetConfig> flowProcess, SinkCall<Integer, Outbox> sinkCall)
-            throws IOException {
+    public void sink(FlowProcess<? extends JetConfig> flowProcess, SinkCall<Integer, Consumer<Entry>> sinkCall
+    ) throws IOException {
         if (sinkFired.compareAndSet(false, true)) {
             throw new TapException("fail", new Tuple("bad data"));
         }

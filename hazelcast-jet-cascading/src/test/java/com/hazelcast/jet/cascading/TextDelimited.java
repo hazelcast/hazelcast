@@ -27,16 +27,16 @@ import cascading.tuple.Tuple;
 import cascading.tuple.TupleEntry;
 import cascading.tuple.util.TupleViews;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.Outbox;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.Consumer;
 
-public class TextDelimited extends Scheme<JetConfig, Iterator<Map.Entry>,
-        Outbox, Void, StringBuilder> {
+public class TextDelimited extends Scheme<JetConfig, Iterator<Map.Entry>, Consumer<Entry>, Void, StringBuilder> {
 
     private static final Random RANDOM = new Random();
     private static final long HEADER = 0L;
@@ -84,14 +84,14 @@ public class TextDelimited extends Scheme<JetConfig, Iterator<Map.Entry>,
 
     @Override
     public void sourceConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                               Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                               Tap<JetConfig, Iterator<Map.Entry>, Consumer<Entry>> tap,
                                JetConfig conf) {
 
     }
 
     @Override
     public void sinkConfInit(FlowProcess<? extends JetConfig> flowProcess,
-                             Tap<JetConfig, Iterator<Map.Entry>, Outbox> tap,
+                             Tap<JetConfig, Iterator<Map.Entry>, Consumer<Entry>> tap,
                              JetConfig conf) {
     }
 
@@ -130,23 +130,23 @@ public class TextDelimited extends Scheme<JetConfig, Iterator<Map.Entry>,
 
     @Override
     public void sinkPrepare(FlowProcess<? extends JetConfig> flowProcess, SinkCall<StringBuilder,
-            Outbox> sinkCall) throws IOException {
+            Consumer<Entry>> sinkCall) throws IOException {
         sinkCall.setContext(new StringBuilder());
     }
 
     @Override
     public void sink(FlowProcess<? extends
-            JetConfig> flowProcess, SinkCall<StringBuilder, Outbox> sinkCall) throws IOException {
-        Outbox outbox = sinkCall.getOutput();
+            JetConfig> flowProcess, SinkCall<StringBuilder, Consumer<Entry>> sinkCall) throws IOException {
+        Consumer<Entry> consumer = sinkCall.getOutput();
         TupleEntry outgoing = sinkCall.getOutgoingEntry();
         Iterable<String> strings = outgoing.asIterableOf(String.class);
         StringBuilder stringBuilder = sinkCall.getContext();
         delimitedParser.joinLine(strings, stringBuilder);
-        outbox.add(new AbstractMap.SimpleImmutableEntry<>(nextId(), stringBuilder.toString()));
+        consumer.accept(new AbstractMap.SimpleImmutableEntry<>(nextId(), stringBuilder.toString()));
         stringBuilder.setLength(0);
     }
 
-    protected long nextId() {
+    protected static long nextId() {
         return Math.abs(RANDOM.nextLong());
     }
 

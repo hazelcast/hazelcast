@@ -33,6 +33,11 @@ import javax.annotation.Nonnull;
 public interface Outbox {
 
     /**
+     * Returns the number of buckets in this outbox.
+     */
+    int bucketCount();
+
+    /**
      * Adds the supplied item to all the output buckets.
      */
     default void add(@Nonnull Object item) {

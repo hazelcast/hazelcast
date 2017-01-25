@@ -31,6 +31,8 @@ import com.hazelcast.jet.cascading.tap.InternalJetTap;
 import com.hazelcast.jet.cascading.tap.SettableTupleEntryCollector;
 import com.hazelcast.jet.Outbox;
 import java.io.IOException;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 
 public class JetSinkStage extends SinkStage {
 
@@ -50,7 +52,7 @@ public class JetSinkStage extends SinkStage {
                 Fields fields = getIncomingScopes().get(0).getIncomingTapFields();
                 collector.setFields(fields);
             }
-            collector.setOutput(outbox);
+            collector.setOutput((Consumer<Entry>) outbox::add);
         } catch (IOException exception) {
             throw new DuctException("failed opening sink", exception);
         }
@@ -86,9 +88,8 @@ public class JetSinkStage extends SinkStage {
 
     private SettableTupleEntryCollector getCollector(Tap sink) throws IOException {
         if (sink instanceof InternalJetTap) {
-            return (SettableTupleEntryCollector) sink.openForWrite(flowProcess, outbox);
+            return (SettableTupleEntryCollector) ((InternalJetTap) sink).openForWrite(flowProcess, outbox::add);
         } else if (sink instanceof MultiSinkTap) {
-            // TODO: just use the collector for the first sink for now - they will all be using the same consumer
             Tap tap = (Tap) ((MultiSinkTap) sink).getChildTaps().next();
             return getCollector(tap);
         }

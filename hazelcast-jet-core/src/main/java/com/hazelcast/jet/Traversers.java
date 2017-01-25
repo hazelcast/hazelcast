@@ -108,7 +108,7 @@ public final class Traversers {
         private Supplier<Traverser<T>> supplierOfTraverser;
         private Traverser<T> traverser;
 
-        private LazyTraverser(@Nonnull Supplier<Traverser<T>> supplierOfTraverser) {
+        LazyTraverser(@Nonnull Supplier<Traverser<T>> supplierOfTraverser) {
             this.supplierOfTraverser = supplierOfTraverser;
         }
 

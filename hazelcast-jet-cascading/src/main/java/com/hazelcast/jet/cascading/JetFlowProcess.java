@@ -123,9 +123,9 @@ public class JetFlowProcess extends FlowProcess<JetConfig> {
     }
 
     @Override
-    public TupleEntryCollector openTrapForWrite(Tap trap) throws IOException {
+    public TupleEntryCollector openTrapForWrite(Tap tap) throws IOException {
         // do not honor sinkmode as this may be opened across tasks
-        return trap.openForWrite(this, null);
+        return tap.openForWrite(this, null);
     }
 
     @Override

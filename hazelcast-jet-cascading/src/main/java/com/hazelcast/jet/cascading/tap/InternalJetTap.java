@@ -20,19 +20,18 @@ import cascading.scheme.Scheme;
 import cascading.tap.SinkMode;
 import cascading.tap.Tap;
 import cascading.util.CloseableIterator;
-import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.ProcessorMetaSupplier;
+import com.hazelcast.jet.config.JetConfig;
 
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.Consumer;
 
-public abstract class InternalJetTap extends Tap<JetConfig, Iterator<Map.Entry>, Outbox> {
+public abstract class InternalJetTap extends Tap<JetConfig, Iterator<Entry>, Consumer<Entry>> {
 
-    protected InternalJetTap(Scheme<JetConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
-                             SinkMode sinkMode) {
+    protected InternalJetTap(Scheme<JetConfig, Iterator<Entry>, Consumer<Entry>, ?, ?> scheme, SinkMode sinkMode) {
         super(scheme, sinkMode);
     }
 

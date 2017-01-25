@@ -187,6 +187,11 @@ class JetStreamGraph extends NodeStreamGraph {
         }
 
         @Override
+        public int bucketCount() {
+            return ordinals.length;
+        }
+
+        @Override
         public void add(int ordinal, @Nonnull Object item) {
             if (ordinal != -1) {
                 throw new UnsupportedOperationException();
@@ -208,7 +213,5 @@ class JetStreamGraph extends NodeStreamGraph {
             }
             return false;
         }
-
-
     }
 }

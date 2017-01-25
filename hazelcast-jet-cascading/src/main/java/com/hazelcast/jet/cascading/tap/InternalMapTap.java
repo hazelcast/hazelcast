@@ -30,15 +30,13 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.Jet;
-import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.JetInstance;
-import com.hazelcast.jet.Outbox;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.cascading.JetFlowProcess;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.impl.MapService;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
@@ -48,6 +46,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -58,12 +57,12 @@ public class InternalMapTap extends InternalJetTap {
 
     private final String mapName;
 
-    public InternalMapTap(String mapName, Scheme<JetConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme) {
+    public InternalMapTap(String mapName, Scheme<JetConfig, Iterator<Entry>, Consumer<Entry>, ?, ?> scheme) {
         this(mapName, scheme, SinkMode.KEEP);
     }
 
     public InternalMapTap(String mapName,
-                          Scheme<JetConfig, Iterator<Map.Entry>, Outbox, ?, ?> scheme,
+                          Scheme<JetConfig, Iterator<Entry>, Consumer<Entry>, ?, ?> scheme,
                           SinkMode sinkMode) {
         super(scheme, sinkMode);
         this.mapName = mapName;
@@ -71,9 +70,9 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     @SuppressWarnings("unchecked")
-    public TupleEntryIterator openForRead(FlowProcess<? extends JetConfig> flowProcess,
-                                          Iterator<Map.Entry> input) throws IOException {
-
+    public TupleEntryIterator openForRead(
+            FlowProcess<? extends JetConfig> flowProcess, Iterator<Entry> input
+    ) throws IOException {
         if (input == null) {
             JetInstance instance = ((JetFlowProcess) flowProcess).getJetInstance();
             IMap map = findIMap(instance.getHazelcastInstance());
@@ -87,26 +86,16 @@ public class InternalMapTap extends InternalJetTap {
     }
 
     @Override
-    public TupleEntryCollector openForWrite(FlowProcess<? extends JetConfig> flowProcess,
-                                            Outbox outbox) throws IOException {
-        if (outbox != null) {
-            return new SettableTupleEntryCollector<>(flowProcess, getScheme(), outbox);
+    public TupleEntryCollector openForWrite(
+            FlowProcess<? extends JetConfig> flowProcess, Consumer<Entry> output
+    ) throws IOException {
+        if (output != null) {
+            return new SettableTupleEntryCollector<>(flowProcess, getScheme(), output);
         }
-
         JetInstance instance = ((JetFlowProcess) flowProcess).getJetInstance();
         final IMap map = instance.getMap(mapName);
-        return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), new Outbox() {
-            @Override
-            public void add(int ordinal, @Nonnull Object item) {
-                Entry entry = (Entry) item;
-                map.put(entry.getKey(), entry.getValue());
-            }
-
-            @Override
-            public boolean isHighWater(int ordinal) {
-                return false;
-            }
-        });
+        output = e -> map.put(e.getKey(), e.getValue());
+        return new TupleEntrySchemeCollector<>(flowProcess, getScheme(), output);
     }
 
     @Override
@@ -128,13 +117,11 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     public boolean resourceExists(JetConfig conf) throws IOException {
-        //TODO: config should be refactored
         HazelcastInstance client = getHazelcastInstance();
         return findIMap(client) != null;
     }
 
     protected HazelcastInstance getHazelcastInstance() {
-        //TODO: used for speeding up tests, should be fixed after config refactor
         synchronized (CLIENT_LOCK) {
             if (client == null) {
                 client = Jet.newJetClient().getHazelcastInstance();
