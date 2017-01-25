@@ -272,10 +272,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(new DiscoveryAddressProvider(discoveryService, loggingService));
         }
 
-        if (properties.getBoolean(ClientProperty.DISCOVERY_SPI_ENABLED)) {
-            discoveryService.start();
-        }
-
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
                 addressProviders.add(new AwsAddressProvider(awsConfig, loggingService));
@@ -295,21 +291,25 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             return null;
         }
 
+        ILogger logger = loggingService.getLogger(DiscoveryService.class);
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig().getAsReadOnly();
         if (discoveryConfig == null || !discoveryConfig.isEnabled()) {
+            logger.warning("Discovery SPI is enabled but no DiscoveryStrategy is configured. "
+                    + "Please define a DiscoveryStrategy to use Discovery SPI.");
             return null;
         }
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
         }
-        ILogger logger = loggingService.getLogger(DiscoveryService.class);
 
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(config.getClassLoader())
                 .setLogger(logger).setDiscoveryMode(DiscoveryMode.Client).setDiscoveryConfig(discoveryConfig);
 
-        return factory.newDiscoveryService(settings);
+        DiscoveryService discoveryService = factory.newDiscoveryService(settings);
+        discoveryService.start();
+        return discoveryService;
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {
