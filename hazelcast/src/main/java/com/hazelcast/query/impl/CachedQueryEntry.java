@@ -166,4 +166,14 @@ public class CachedQueryEntry extends QueryableEntry implements IdentifiedDataSe
         valueData = in.readData();
     }
 
+    @Override
+    public void inflate(InternalSerializationService serializationService) {
+        // In case of migrations the CachedQueryEntry may be serialized.
+        // In this case the serializationService and extractors will be null.
+        // Extractors are not needed after deserialization since the filtering happened on the node where
+        // the QueryEntry was populated. But the serializationService may still be needed
+        // when e.g. valueObject is fetched by Projections.
+        this.serializationService = serializationService;
+    }
+
 }

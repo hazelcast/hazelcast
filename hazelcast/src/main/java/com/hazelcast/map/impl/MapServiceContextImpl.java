@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -208,7 +209,7 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     private QueryResultProcessor createQueryResultProcessor(SerializationService ss) {
-        return new QueryResultProcessor(ss);
+        return new QueryResultProcessor((InternalSerializationService) ss);
     }
 
     private AggregationResultProcessor createAggregationResultProcessor(SerializationService ss) {
