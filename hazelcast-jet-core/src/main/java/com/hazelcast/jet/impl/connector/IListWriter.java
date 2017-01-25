@@ -24,6 +24,7 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -32,7 +33,8 @@ import static java.util.stream.Collectors.toList;
 
 public final class IListWriter implements Processor {
 
-    private List list;
+    private final List list;
+    private final ArrayList<Object> buffer = new ArrayList<>();
 
     IListWriter(List list) {
         this.list = list;
@@ -40,7 +42,9 @@ public final class IListWriter implements Processor {
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        inbox.drainTo(list);
+        inbox.drainTo(buffer);
+        list.addAll(buffer);
+        buffer.clear();
     }
 
     @Override
