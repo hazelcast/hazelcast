@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.properties.PropertyDefinition;
@@ -35,13 +36,13 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
     private static final Collection<PropertyDefinition> PROPERTY_DEFINITIONS;
 
     static {
-        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList( //
-                KubernetesProperties.SERVICE_DNS, //
-                KubernetesProperties.SERVICE_NAME, //
-                KubernetesProperties.NAMESPACE, //
-                KubernetesProperties.SERVICE_LABEL_NAME, //
-                KubernetesProperties.SERVICE_LABEL_VALUE, //
-                KubernetesProperties.KUBERNETES_MASTER_URL, //
+        PROPERTY_DEFINITIONS = Collections.unmodifiableCollection(Arrays.asList(
+                KubernetesProperties.SERVICE_DNS,
+                KubernetesProperties.SERVICE_NAME,
+                KubernetesProperties.NAMESPACE,
+                KubernetesProperties.SERVICE_LABEL_NAME,
+                KubernetesProperties.SERVICE_LABEL_VALUE,
+                KubernetesProperties.KUBERNETES_MASTER_URL,
                 KubernetesProperties.KUBERNETES_API_TOKEN));
     }
 

@@ -140,7 +140,7 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
       <!-- activate the Kubernetes plugin -->
       <discovery-strategies>
         <discovery-strategy enabled="true"
-            class="HazelcastKubernetesDiscoveryStrategy">
+            class="com.hazelcast.HazelcastKubernetesDiscoveryStrategy">
 
           <properties>
             <!-- configure discovery service API lookup -->
