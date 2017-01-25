@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 
 import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 
 /**
  * Default implementation of {@link StaleReadDetector}
@@ -26,14 +27,20 @@ public class StaleReadDetectorImpl implements StaleReadDetector {
 
     private final RepairingHandler repairingHandler;
     private final MinimalPartitionService partitionService;
+    private final KeyStateMarker keyStateMarker;
 
     public StaleReadDetectorImpl(RepairingHandler repairingHandler, MinimalPartitionService partitionService) {
         this.repairingHandler = repairingHandler;
         this.partitionService = partitionService;
+        this.keyStateMarker = repairingHandler.getKeyStateMarker();
     }
 
     @Override
     public boolean isStaleRead(Object key, NearCacheRecord record) {
+        if (!keyStateMarker.isUnmarked(key)) {
+            return true;
+        }
+
         MetaDataContainer latestMetaData = repairingHandler.getMetaDataContainer(getPartition(key));
 
         if (!record.hasSameUuid(latestMetaData.getUuid())) {

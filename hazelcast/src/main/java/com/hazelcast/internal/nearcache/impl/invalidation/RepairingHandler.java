@@ -18,6 +18,8 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
+import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -227,5 +229,9 @@ public final class RepairingHandler {
                 + "name='" + name + '\''
                 + ", localUuid='" + localUuid + '\''
                 + '}';
+    }
+
+    public KeyStateMarker getKeyStateMarker() {
+        return ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
     }
 }
