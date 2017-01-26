@@ -86,7 +86,7 @@ public class FileStreamReader extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Context context) throws Exception {
         try {
             watcher = FileSystems.getDefault().newWatchService();
             path = Paths.get(filePath);

@@ -325,7 +325,7 @@ public class DAGTest {
 
     private static class TestProcessor extends AbstractProcessor {
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             return true;
         }
     }

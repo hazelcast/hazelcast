@@ -494,7 +494,7 @@ public final class Processors {
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             return flatMapper.tryProcess((T) item);
         }
     }
@@ -536,7 +536,7 @@ public final class Processors {
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             groups.compute(
                     keyExtractor.apply((T) item),
                     (x, a) -> accumulator.apply(a != null ? a : supplier.get(), (T) item));
@@ -557,7 +557,7 @@ public final class Processors {
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             final A acc = groups.computeIfAbsent(keyExtractor.apply((T) item), k -> supplier.get());
             collector.accept(acc, (T) item);
             return true;
@@ -593,7 +593,7 @@ public final class Processors {
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             assert ordinal == 0;
             seenItems.add(extractKey.apply((T) item));
             return true;

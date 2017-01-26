@@ -241,7 +241,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         });
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             return p.tryProcess((Entry<Integer, String>) item);
         }
     }
@@ -251,7 +251,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Traverser<Entry<String, Long>> resultTraverser = lazy(() -> traverseIterable(counts.entrySet()));
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             Map.Entry<String, Long> entry = (Map.Entry<String, Long>) item;
             counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
             return true;
@@ -270,7 +270,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
@@ -295,7 +295,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             Map<String, Long> counts = ((Entry<String, Map<String, Long>>) item).getValue();
             for (Entry<String, Long> entry : counts.entrySet()) {
                 accumulate(entry.getKey(), entry.getValue());

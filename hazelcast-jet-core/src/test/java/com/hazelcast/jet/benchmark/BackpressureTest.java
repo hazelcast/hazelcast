@@ -151,7 +151,7 @@ public class BackpressureTest extends JetTestSupport {
         }
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             if (isHiccuping()) {
                 return false;
             }

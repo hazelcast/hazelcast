@@ -41,7 +41,7 @@ public class SortP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         sorted.add((T) item);
         return true;
     }

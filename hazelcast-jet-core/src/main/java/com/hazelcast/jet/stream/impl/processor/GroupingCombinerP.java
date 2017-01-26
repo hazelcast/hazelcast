@@ -44,7 +44,7 @@ public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         Map.Entry<K, A> entry = (Map.Entry) item;
         A value = groups.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
         collector.combiner().apply(value, entry.getValue());

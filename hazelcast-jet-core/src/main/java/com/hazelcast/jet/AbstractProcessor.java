@@ -21,6 +21,8 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nonnull;
 import java.util.function.Function;
 
+import static com.hazelcast.jet.impl.util.Util.sneakyThrow;
+
 /**
  * Base class to implement custom processors. Simplifies the contract of
  * {@code Processor} with several levels of convenience:
@@ -62,7 +64,11 @@ public abstract class AbstractProcessor implements Processor {
     public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         this.outbox = outbox;
         this.logger = context.logger();
-        init(context);
+        try {
+            init(context);
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
     }
 
     /**
@@ -75,7 +81,7 @@ public abstract class AbstractProcessor implements Processor {
      *
      * @param context the {@link Context context} associated with this processor
      */
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Context context) throws Exception {
     }
 
     /**
@@ -93,24 +99,28 @@ public abstract class AbstractProcessor implements Processor {
     @Override
     @SuppressWarnings("checkstyle:magicnumber")
     public final void process(int ordinal, @Nonnull Inbox inbox) {
-        switch (ordinal) {
-            case 0:
-                process0(inbox);
-                return;
-            case 1:
-                process1(inbox);
-                return;
-            case 2:
-                process2(inbox);
-                return;
-            case 3:
-                process3(inbox);
-                return;
-            case 4:
-                process4(inbox);
-                return;
-            default:
-                processAny(ordinal, inbox);
+        try {
+            switch (ordinal) {
+                case 0:
+                    process0(inbox);
+                    return;
+                case 1:
+                    process1(inbox);
+                    return;
+                case 2:
+                    process2(inbox);
+                    return;
+                case 3:
+                    process3(inbox);
+                    return;
+                case 4:
+                    process4(inbox);
+                    return;
+                default:
+                    processAny(ordinal, inbox);
+            }
+        } catch (Exception e) {
+            throw sneakyThrow(e);
         }
     }
 
@@ -132,7 +142,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         throw new UnsupportedOperationException("Missing implementation");
     }
 
@@ -149,7 +159,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess0(@Nonnull Object item) {
+    protected boolean tryProcess0(@Nonnull Object item) throws Exception {
         return tryProcess(0, item);
     }
 
@@ -166,7 +176,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess1(@Nonnull Object item) {
+    protected boolean tryProcess1(@Nonnull Object item) throws Exception {
         return tryProcess(1, item);
     }
 
@@ -183,7 +193,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess2(@Nonnull Object item) {
+    protected boolean tryProcess2(@Nonnull Object item) throws Exception {
         return tryProcess(2, item);
     }
 
@@ -200,7 +210,7 @@ public abstract class AbstractProcessor implements Processor {
      * @return {@code true} if this item has now been processed,
      *         {@code false} otherwise.
      */
-    protected boolean tryProcess3(@Nonnull Object item) {
+    protected boolean tryProcess3(@Nonnull Object item) throws Exception {
         return tryProcess(3, item);
     }
 
@@ -218,7 +228,7 @@ public abstract class AbstractProcessor implements Processor {
      *         {@code false} otherwise.
      */
     @SuppressWarnings("checkstyle:magicnumber")
-    protected boolean tryProcess4(@Nonnull Object item) {
+    protected boolean tryProcess4(@Nonnull Object item) throws Exception {
         return tryProcess(4, item);
     }
 
@@ -350,7 +360,7 @@ public abstract class AbstractProcessor implements Processor {
     // to ensure that ordinal is dispatched on just once per
     // process(ordinal, inbox) call.
 
-    private void process0(@Nonnull Inbox inbox) {
+    private void process0(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess0(item)) {
                 return;
@@ -359,7 +369,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    private void process1(@Nonnull Inbox inbox) {
+    private void process1(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess1(item)) {
                 return;
@@ -368,7 +378,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    private void process2(@Nonnull Inbox inbox) {
+    private void process2(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess2(item)) {
                 return;
@@ -377,7 +387,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    private void process3(@Nonnull Inbox inbox) {
+    private void process3(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess3(item)) {
                 return;
@@ -386,7 +396,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    private void process4(@Nonnull Inbox inbox) {
+    private void process4(@Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess4(item)) {
                 return;
@@ -395,7 +405,7 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
-    private void processAny(int ordinal, @Nonnull Inbox inbox) {
+    private void processAny(int ordinal, @Nonnull Inbox inbox) throws Exception {
         for (Object item; (item = inbox.peek()) != null; ) {
             if (!tryProcess(ordinal, item)) {
                 return;

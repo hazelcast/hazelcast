@@ -35,7 +35,7 @@ public class DistinctP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         distinctItems.add((T) item);
         return true;
     }

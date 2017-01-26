@@ -47,7 +47,7 @@ public class SocketTextStreamReader extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Context context) throws Exception {
         try {
             LOGGER.info("Connecting to socket " + hostAndPort());
             Socket socket = new Socket(host, port);

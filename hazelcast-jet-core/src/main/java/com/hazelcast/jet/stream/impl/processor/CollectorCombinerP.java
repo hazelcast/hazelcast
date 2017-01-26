@@ -32,7 +32,7 @@ public class CollectorCombinerP<T> extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         if (result != null) {
             combiner.accept(result, (T) item);
         } else {

@@ -55,7 +55,7 @@ public final class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Context context) throws Exception {
         producer = new KafkaProducer<>(properties);
     }
 
@@ -75,7 +75,7 @@ public final class KafkaWriter extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         Map.Entry entry = (Map.Entry) item;
         Data key = serializationService.toData(entry.getKey());
         Data value = serializationService.toData(entry.getValue());
@@ -86,6 +86,7 @@ public final class KafkaWriter extends AbstractProcessor {
     @Override
     public boolean complete() {
         producer.flush();
+        producer.close();
         return true;
     }
 

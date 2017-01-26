@@ -26,12 +26,12 @@ class ListConsumer extends AbstractProcessor {
     private boolean isComplete;
     private int yieldIndex = -1;
 
-    public ListConsumer() {
+    ListConsumer() {
         list = new ArrayList<>();
     }
 
     @Override
-    public boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         if (list.size() == yieldIndex) {
             yieldIndex = -1;
             return false;

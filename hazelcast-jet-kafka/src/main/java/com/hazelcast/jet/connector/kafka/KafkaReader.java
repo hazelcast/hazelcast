@@ -83,7 +83,7 @@ public final class KafkaReader<K, V> extends AbstractProcessor {
     }
 
     @Override
-    protected void init(@Nonnull Context context) {
+    protected void init(@Nonnull Context context) throws Exception {
         consumer = new KafkaConsumer<>(properties);
         consumer.assign(partitions.stream().map(i -> new TopicPartition(topic, i)).collect(toList()));
     }

@@ -194,42 +194,42 @@ public class AbstractProcessorTest {
         Object[] tryProcessNItem = new Object[6];
 
         @Override
-        protected void init(@Nonnull Context context) {
+        protected void init(@Nonnull Context context) throws Exception {
             initCalled = true;
         }
 
         @Override
-        protected boolean tryProcess0(@Nonnull Object MOCK_ITEM) {
+        protected boolean tryProcess0(@Nonnull Object MOCK_ITEM) throws Exception {
             tryProcessNItem[0] = MOCK_ITEM;
             return true;
         }
 
         @Override
-        protected boolean tryProcess1(@Nonnull Object MOCK_ITEM) {
+        protected boolean tryProcess1(@Nonnull Object MOCK_ITEM) throws Exception {
             tryProcessNItem[1] = MOCK_ITEM;
             return true;
         }
 
         @Override
-        protected boolean tryProcess2(@Nonnull Object MOCK_ITEM) {
+        protected boolean tryProcess2(@Nonnull Object MOCK_ITEM) throws Exception {
             tryProcessNItem[2] = MOCK_ITEM;
             return true;
         }
 
         @Override
-        protected boolean tryProcess3(@Nonnull Object MOCK_ITEM) {
+        protected boolean tryProcess3(@Nonnull Object MOCK_ITEM) throws Exception {
             tryProcessNItem[3] = MOCK_ITEM;
             return true;
         }
 
         @Override
-        protected boolean tryProcess4(@Nonnull Object MOCK_ITEM) {
+        protected boolean tryProcess4(@Nonnull Object MOCK_ITEM) throws Exception {
             tryProcessNItem[4] = MOCK_ITEM;
             return true;
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
             assertEquals(5, ordinal);
             tryProcessNItem[5] = item;
             return true;

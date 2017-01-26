@@ -30,7 +30,7 @@ public class LimitP extends AbstractProcessor {
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         if (index >= limit) {
             return true;
         }
