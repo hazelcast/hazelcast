@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -172,16 +171,13 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }, 10);
     }
 
-    // ignored due to: https://github.com/hazelcast/hazelcast/issues/5035
-    @Ignore
     @Test
-    public void testMapLoaderLoadUpdatingIndex() throws Exception {
+    public void testMapLoaderLoadUpdatingIndex_noPreload() throws Exception {
         final int nodeCount = 3;
         String mapName = randomString();
         SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
 
         Config config = createMapConfig(mapName, loader);
-
         NodeBuilder nodeBuilder = new NodeBuilder(nodeCount, config).build();
         HazelcastInstance node = nodeBuilder.getRandomNode();
 
@@ -190,14 +186,23 @@ public class MapLoaderTest extends HazelcastTestSupport {
             map.put(i, new SampleIndexableObject("My-" + i, i));
         }
 
-        final SqlPredicate predicate = new SqlPredicate("name='My-5'");
+        SqlPredicate predicate = new SqlPredicate("name='My-5'");
         assertPredicateResultCorrect(map, predicate);
+    }
 
-        map.destroy();
+    @Test
+    public void testMapLoaderLoadUpdatingIndex_withPreload() throws Exception {
+        final int nodeCount = 3;
+        String mapName = randomString();
+        SampleIndexableObjectMapLoader loader = new SampleIndexableObjectMapLoader();
         loader.preloadValues = true;
 
-        node = nodeBuilder.getRandomNode();
-        map = node.getMap(mapName);
+        Config config = createMapConfig(mapName, loader);
+        NodeBuilder nodeBuilder = new NodeBuilder(nodeCount, config).build();
+        HazelcastInstance node = nodeBuilder.getRandomNode();
+
+        IMap<Integer, SampleIndexableObject> map = node.getMap(mapName);
+        SqlPredicate predicate = new SqlPredicate("name='My-5'");
 
         assertLoadAllKeysCount(loader, 1);
         assertPredicateResultCorrect(map, predicate);
