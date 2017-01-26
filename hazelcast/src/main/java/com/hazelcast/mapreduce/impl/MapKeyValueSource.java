@@ -33,6 +33,7 @@ import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -80,8 +81,8 @@ public class MapKeyValueSource<K, V>
         if (partitionOwner == null) {
             return false;
         }
-        RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, mapName);
-        iterator = recordStore.iterator();
+        RecordStore recordStore = mapService.getMapServiceContext().getExistingRecordStore(partitionId, mapName);
+        iterator = recordStore != null ? recordStore.iterator() : Collections.emptyList().iterator();
         return true;
     }
 

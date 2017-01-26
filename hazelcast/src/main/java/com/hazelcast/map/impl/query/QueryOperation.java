@@ -35,11 +35,13 @@ public class QueryOperation extends MapOperation implements ReadonlyOperation {
     private Result result;
 
     public QueryOperation() {
+        this.createRecordStoreOnDemand = false;
     }
 
     public QueryOperation(Query query) {
         super(query.getMapName());
         this.query = query;
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override

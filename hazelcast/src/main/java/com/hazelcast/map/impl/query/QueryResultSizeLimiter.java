@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
@@ -144,7 +145,8 @@ public class QueryResultSizeLimiter {
         int localSize = 0;
         int partitionsChecked = 0;
         for (int partitionId : localPartitions) {
-            localSize += mapServiceContext.getRecordStore(partitionId, mapName).size();
+            RecordStore recordStore = mapServiceContext.getExistingRecordStore(partitionId, mapName);
+            localSize += recordStore != null ? recordStore.size() : 0;
             if (++partitionsChecked == partitionsToCheck) {
                 break;
             }

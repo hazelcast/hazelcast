@@ -40,11 +40,13 @@ public class DestroyQueryCacheOperation extends MapOperation {
     private transient boolean result;
 
     public DestroyQueryCacheOperation() {
+        this.createRecordStoreOnDemand = false;
     }
 
     public DestroyQueryCacheOperation(String mapName, String cacheName) {
         super(mapName);
         this.cacheName = cacheName;
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override
