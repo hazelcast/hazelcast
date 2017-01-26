@@ -251,7 +251,10 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
                 // exception with message and cause without message
                 new Object[]{new RuntimeException("blabla", new NullPointerException())},
                 // custom exception in causes
-                new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())}
+                new Object[]{new RuntimeException("blabla", new DummyUncheckedHazelcastTestException())},
+                new Object[]{new RuntimeException("fun", new RuntimeException("codec \n is \n not \n pwned"))},
+                new Object[]{new RuntimeException("fun",
+                        new RuntimeException("!@#$%^&*()'][/.,l;§!|`]:\\ľščťž /sᵻˈrɪlɪk/ Áзбука 中华民族 \n \r \t \r\n"))}
         );
 
     }

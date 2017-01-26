@@ -114,7 +114,7 @@ public class ClientExceptionFactory {
      * (reluctantly, as to find the first one), and optional semicolon and the rest of message.
      */
     private static final Pattern CAUSED_BY_STACKTRACE_PARSER = Pattern.compile(Pattern.quote(CAUSED_BY_STACKTRACE_MARKER)
-            + " \\((-?[0-9]+)\\) (.+?)(: (.*))? ------");
+            + " \\((-?[0-9]+)\\) (.+?)(: (.*))? ------", Pattern.DOTALL);
     private static final int CAUSED_BY_STACKTRACE_PARSER_ERROR_CODE_GROUP = 1;
     private static final int CAUSED_BY_STACKTRACE_PARSER_CLASS_NAME_GROUP = 2;
     private static final int CAUSED_BY_STACKTRACE_PARSER_MESSAGE_GROUP = 4;
