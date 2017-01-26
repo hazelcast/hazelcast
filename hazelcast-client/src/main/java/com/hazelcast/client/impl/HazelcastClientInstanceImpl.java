@@ -294,11 +294,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         ILogger logger = loggingService.getLogger(DiscoveryService.class);
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
         DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig().getAsReadOnly();
-        if (discoveryConfig == null || !discoveryConfig.isEnabled()) {
-            logger.warning("Discovery SPI is enabled but no DiscoveryStrategy is configured. "
-                    + "Please define a DiscoveryStrategy to use Discovery SPI.");
-            return null;
-        }
+
         DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
