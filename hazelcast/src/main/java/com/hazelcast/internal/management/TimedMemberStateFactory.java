@@ -26,6 +26,7 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -172,17 +173,19 @@ public class TimedMemberStateFactory {
 
         createNodeState(memberState);
         createHotRestartState(memberState);
-        createClusterHotRestarStatus(memberState);
+        createClusterHotRestartStatus(memberState);
         createWanSyncState(memberState);
     }
 
     private void createHotRestartState(MemberStateImpl memberState) {
-        final HotRestartStateImpl state = new HotRestartStateImpl(
-                instance.node.getNodeExtension().getHotRestartService().getBackupTaskStatus());
+        final HotRestartService hotRestartService = instance.node.getNodeExtension().getHotRestartService();
+        boolean hotBackupEnabled = hotRestartService.isHotBackupEnabled();
+        final HotRestartStateImpl state = new HotRestartStateImpl(hotRestartService.getBackupTaskStatus(), hotBackupEnabled);
+
         memberState.setHotRestartState(state);
     }
 
-    private void createClusterHotRestarStatus(MemberStateImpl memberState) {
+    private void createClusterHotRestartStatus(MemberStateImpl memberState) {
         final ClusterHotRestartStatusDTO state =
                 instance.node.getNodeExtension().getInternalHotRestartService().getCurrentClusterHotRestartStatus();
         memberState.setClusterHotRestartStatus(state);

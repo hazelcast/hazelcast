@@ -25,4 +25,6 @@ public interface HotRestartState extends JsonSerializable {
      * Returns the local hot restart backup task status (not the cluster backup status).
      */
     BackupTaskStatus getBackupTaskStatus();
+
+    boolean isHotBackupEnabled();
 }

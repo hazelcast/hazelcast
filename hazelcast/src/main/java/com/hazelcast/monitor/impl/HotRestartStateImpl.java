@@ -28,16 +28,24 @@ public class HotRestartStateImpl implements HotRestartState {
 
     private BackupTaskStatus backupTaskStatus;
 
+    private boolean isHotBackupEnabled;
+
     public HotRestartStateImpl() {
     }
 
-    public HotRestartStateImpl(BackupTaskStatus backupTaskStatus) {
+    public HotRestartStateImpl(BackupTaskStatus backupTaskStatus, boolean isHotBackupEnabled) {
         this.backupTaskStatus = backupTaskStatus;
+        this.isHotBackupEnabled = isHotBackupEnabled;
     }
 
     @Override
     public BackupTaskStatus getBackupTaskStatus() {
         return backupTaskStatus;
+    }
+
+    @Override
+    public boolean isHotBackupEnabled() {
+        return this.isHotBackupEnabled;
     }
 
     @Override
@@ -47,6 +55,7 @@ public class HotRestartStateImpl implements HotRestartState {
             root.add("backupTaskState", backupTaskStatus.getState().name());
             root.add("backupTaskCompleted", backupTaskStatus.getCompleted());
             root.add("backupTaskTotal", backupTaskStatus.getTotal());
+            root.add("isHotBackupEnabled", isHotBackupEnabled);
         }
         return root;
     }
@@ -58,10 +67,13 @@ public class HotRestartStateImpl implements HotRestartState {
         final int jsonBackupTaskTotal = JsonUtil.getInt(json, "backupTaskTotal", 0);
         backupTaskStatus = jsonBackupTaskState != null ? new BackupTaskStatus(BackupTaskState.valueOf(jsonBackupTaskState),
                 jsonBackupTaskCompleted, jsonBackupTaskTotal) : null;
+        isHotBackupEnabled = JsonUtil.getBoolean(json, "isHotBackupEnabled", false);
     }
 
     @Override
     public String toString() {
-        return "HotRestartStateImpl{backupTaskStatus=" + backupTaskStatus + '}';
+        return "HotRestartStateImpl{backupTaskStatus=" + backupTaskStatus
+                + ", isHotBackupEnabled" + isHotBackupEnabled
+                + '}';
     }
 }

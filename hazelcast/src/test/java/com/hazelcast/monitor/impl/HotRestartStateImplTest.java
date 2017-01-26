@@ -19,11 +19,12 @@ public class HotRestartStateImplTest {
     @Test
     public void testSerializationAndDeserizalization() throws Exception {
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
-        final HotRestartState state = new HotRestartStateImpl(backupTaskStatus);
+        final HotRestartState state = new HotRestartStateImpl(backupTaskStatus,false);
         final HotRestartStateImpl deserialized = new HotRestartStateImpl();
         deserialized.fromJson(state.toJson());
 
         assertEquals(backupTaskStatus, deserialized.getBackupTaskStatus());
+        assertEquals(false, deserialized.isHotBackupEnabled());
     }
 
 }

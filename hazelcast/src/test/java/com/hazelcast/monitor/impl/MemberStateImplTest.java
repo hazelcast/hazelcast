@@ -71,7 +71,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);
-        final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus);
+        final HotRestartStateImpl hotRestartState = new HotRestartStateImpl(backupTaskStatus, false);
         final WanSyncState wanSyncState = new WanSyncStateImpl(WanSyncStatus.IN_PROGRESS, 86, "atob", "B");
 
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
