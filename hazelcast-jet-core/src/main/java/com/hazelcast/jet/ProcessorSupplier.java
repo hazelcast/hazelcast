@@ -20,7 +20,7 @@ import com.hazelcast.jet.Distributed.Supplier;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
-import java.util.List;
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -46,7 +46,7 @@ public interface ProcessorSupplier extends Serializable {
      *              and return
      */
     @Nonnull
-    List<Processor> get(int count);
+    Collection<? extends Processor> get(int count);
 
     /**
      * Called after execution is finished on all the nodes, whether successfully

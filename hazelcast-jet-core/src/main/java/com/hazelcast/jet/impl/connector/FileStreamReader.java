@@ -204,8 +204,7 @@ public class FileStreamReader extends AbstractProcessor {
             this.watchType = watchType;
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             List<Processor> processors = new ArrayList<>();
             for (int i = 0; i < count; i++) {

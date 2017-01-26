@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -94,8 +95,8 @@ public class VertexTest {
         Address address = new Address("localhost", 5701);
         Function<Address, ProcessorSupplier> fn = v.getSupplier().get(singletonList(address));
         ProcessorSupplier supplier = fn.apply(address);
-        List<Processor> processors = supplier.get(1);
-        assertEquals(NoopProcessor.class, processors.get(0).getClass());
+        Collection<? extends Processor> processors = supplier.get(1);
+        assertEquals(NoopProcessor.class, processors.iterator().next().getClass());
 
     }
 }

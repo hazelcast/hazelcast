@@ -59,7 +59,7 @@ public class ProcessorsTest {
     @Test
     public void mapProcessor() {
         // Given
-        final Processor p = Processors.map(Object::toString).get(1).get(0);
+        final Processor p = processorFrom(Processors.map(Object::toString));
         p.init(outbox, context);
         inbox.add(1);
         inbox.add(2);
@@ -87,7 +87,7 @@ public class ProcessorsTest {
     @Test
     public void filterProcessor() {
         // Given
-        final Processor p = Processors.filter(o -> o.equals(1)).get(1).get(0);
+        final Processor p = processorFrom(Processors.filter(o -> o.equals(1)));
         p.init(outbox, context);
         inbox.add(1);
         inbox.add(2);
@@ -115,7 +115,7 @@ public class ProcessorsTest {
     @Test
     public void flatMapProcessor() {
         // Given
-        final Processor p = Processors.flatMap(o -> traverseIterable(asList(o + "a", o + "b"))).get(1).get(0);
+        final Processor p = processorFrom(Processors.flatMap(o -> traverseIterable(asList(o + "a", o + "b"))));
         p.init(outbox, context);
         inbox.add(1);
 
@@ -141,99 +141,99 @@ public class ProcessorsTest {
 
     @Test
     public void groupAndAccumulateFullSignature() {
-        final Processor p = Processors.<Integer, String, List<Integer>, String>groupAndAccumulate(
+        final Processor p = processorFrom(Processors.<Integer, String, List<Integer>, String>groupAndAccumulate(
                 Object::toString,
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; },
                 (i, list) -> i + ':' + list
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_stringResultTester());
     }
 
     @Test
     public void groupAndCollectFullSignature() {
-        final Processor p = Processors.<Integer, String, List<Integer>, String>groupAndCollect(
+        final Processor p = processorFrom(Processors.<Integer, String, List<Integer>, String>groupAndCollect(
                 Object::toString,
                 ArrayList::new,
                 List::add,
                 (i, list) -> i + ':' + list
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_stringResultTester());
     }
 
     @Test
     public void groupAndAccumulateNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>> groupAndAccumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndAccumulate(
                 Object::toString,
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; }
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_stringEntryResultTester());
     }
 
     @Test
     public void groupAndCollectNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>> groupAndCollect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndCollect(
                 Object::toString,
                 ArrayList::new,
                 List::add
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_stringEntryResultTester());
     }
 
     @Test
     public void groupAndAccumulateNoExtractorNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>> groupAndAccumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndAccumulate(
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; }
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_intEntryResultTester());
     }
 
     @Test
     public void groupAndCollectNoExtractorNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>> groupAndCollect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>> groupAndCollect(
                 ArrayList::new,
                 List::add
-        ).get(1).get(0);
+        ));
         testGroupAndAccumulate(p, ga_intEntryResultTester());
     }
 
     @Test
     public void accumulateFullSignature() {
-        final Processor p = Processors.<Integer, List<Integer>, String>accumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>, String>accumulate(
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; },
                 Object::toString
-        ).get(1).get(0);
+        ));
         testAccumulate(p, a_stringResultTester());
     }
 
     @Test
     public void collectFullSignature() {
-        final Processor p = Processors.<Integer, List<Integer>, String>collect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>, String>collect(
                 ArrayList::new,
                 List::add,
                 Object::toString
-        ).get(1).get(0);
+        ));
         testAccumulate(p, a_stringResultTester());
     }
 
     @Test
     public void accumulateNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>>accumulate(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>accumulate(
                 ArrayList::new,
                 (list, i) -> { list.add(i); return list; }
-        ).get(1).get(0);
+        ));
         testAccumulate(p, a_listResultTester());
     }
 
     @Test
     public void collectNoFinisher() {
-        final Processor p = Processors.<Integer, List<Integer>>collect(
+        final Processor p = processorFrom(Processors.<Integer, List<Integer>>collect(
                 ArrayList::new,
                 List::add
-        ).get(1).get(0);
+        ));
         testAccumulate(p, a_listResultTester());
     }
 
@@ -313,6 +313,11 @@ public class ProcessorsTest {
         // Finally
         testComplete.accept(result);
     }
+
+    private static Processor processorFrom(ProcessorSupplier supplier) {
+        return supplier.get(1).iterator().next();
+    }
+
 
     private static class TestInbox extends ArrayDeque<Object> implements Inbox {
     }

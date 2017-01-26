@@ -224,8 +224,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
             }
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return Stream.generate(supplier).limit(count).collect(toList());
         }

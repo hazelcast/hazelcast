@@ -135,14 +135,13 @@ public class ForwardingTest extends JetTestSupport {
             processors = Stream.generate(ListConsumer::new).limit(context.localParallelism()).collect(toList());
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             assertEquals(processors.size(), count);
             return processors;
         }
 
-        public List<Object> getListAt(int i) {
+        List<Object> getListAt(int i) {
             return ((ListConsumer) processors.get(i)).getList();
         }
     }

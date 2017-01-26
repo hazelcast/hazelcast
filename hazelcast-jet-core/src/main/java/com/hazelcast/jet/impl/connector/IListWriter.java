@@ -100,8 +100,7 @@ public final class IListWriter implements Processor {
             }
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());
         }

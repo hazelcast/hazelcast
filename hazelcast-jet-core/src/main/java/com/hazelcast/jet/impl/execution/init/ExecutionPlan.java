@@ -242,8 +242,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 .forEach(p -> p.init(partitionService::getPartitionId));
     }
 
-    private static List<Processor> createProcessors(VertexDef vertexDef, int parallelism) {
-        final List<Processor> processors = vertexDef.processorSupplier().get(parallelism);
+    private static Collection<? extends Processor> createProcessors(VertexDef vertexDef, int parallelism) {
+        final Collection<? extends Processor> processors = vertexDef.processorSupplier().get(parallelism);
         if (processors.size() != parallelism) {
             throw new HazelcastException("ProcessorSupplier failed to return the requested number of processors." +
                     " Requested: " + parallelism + ", returned: " + processors.size());

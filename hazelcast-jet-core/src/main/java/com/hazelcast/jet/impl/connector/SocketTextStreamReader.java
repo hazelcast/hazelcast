@@ -113,8 +113,7 @@ public class SocketTextStreamReader extends AbstractProcessor {
             this.port = port;
         }
 
-        @Nonnull
-        @Override
+        @Override @Nonnull
         public List<Processor> get(int count) {
             assertCountIsOne(count);
             return singletonList(new SocketTextStreamReader(host, port));
