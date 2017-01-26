@@ -69,7 +69,7 @@ public class QueryRunner {
     }
 
     // full query = index query (if possible), then partition-scan query
-    public Result run(Query query)
+    public Result runIndexOrPartitionScanQueryOnOwnedPartitions(Query query)
             throws ExecutionException, InterruptedException {
 
         int migrationStamp = getMigrationStamp();
@@ -109,7 +109,7 @@ public class QueryRunner {
     }
 
     private Collection<QueryableEntry> runUsingIndexSafely(Predicate predicate, MapContainer mapContainer,
-            int migrationStamp) {
+                                                           int migrationStamp) {
 
         // If a migration is in progress or migration ownership changes,
         // do not attempt to use an index as they may have not been created yet.
@@ -134,8 +134,8 @@ public class QueryRunner {
         return null;
     }
 
-    private Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,
-            Collection<Integer> partitions, int migrationStamp)
+    protected Collection<QueryableEntry> runUsingPartitionScanSafely(String name, Predicate predicate,
+                                                                     Collection<Integer> partitions, int migrationStamp)
             throws InterruptedException, ExecutionException {
 
         Collection<QueryableEntry> entries;
@@ -155,17 +155,13 @@ public class QueryRunner {
         return null;
     }
 
-    Result runUsingPartitionScanOnSinglePartition(Query query, int partitionId) throws ExecutionException, InterruptedException {
-        Collection<QueryableEntry> entries = doRunUsingPartitionScanOnSinglePartition(query.getMapName(),
-                query.getPredicate(), partitionId);
+    Result runPartitionScanQueryOnGivenOwnedPartition(Query query, int partitionId)
+            throws ExecutionException, InterruptedException {
+        MapContainer mapContainer = mapServiceContext.getMapContainer(query.getMapName());
+        Predicate predicate = queryOptimizer.optimize(query.getPredicate(), mapContainer.getIndexes());
+        Collection<QueryableEntry> entries = partitionScanExecutor.execute(query.getMapName(), predicate,
+                Collections.singletonList(partitionId));
         return populateTheResult(query, entries, Collections.singletonList(partitionId));
-    }
-
-    private Collection<QueryableEntry> doRunUsingPartitionScanOnSinglePartition(String mapName,
-            Predicate originalPredicate, int partitionId) throws ExecutionException, InterruptedException {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        Predicate predicate = queryOptimizer.optimize(originalPredicate, mapContainer.getIndexes());
-        return partitionScanExecutor.execute(mapName, predicate, Collections.singletonList(partitionId));
     }
 
     private int getMigrationStamp() {
