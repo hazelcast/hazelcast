@@ -19,8 +19,11 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -36,6 +39,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -52,8 +57,11 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
@@ -77,10 +85,13 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
+import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper.asInvalidationAware;
 import static com.hazelcast.map.impl.nearcache.KeyStateMarker.TRUE_MARKER;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static java.lang.String.format;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -148,7 +159,6 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     };
 
     protected HazelcastClientCacheManager cacheManager;
-    protected RepairingHandler repairingHandler;
     protected NearCacheManager nearCacheManager;
     // Object => Data or <V>
     protected NearCache<Object, Object> nearCache;
@@ -912,8 +922,94 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 clientContext.getExecutionService().getAsyncExecutor());
     }
 
-    private final class NearCacheRepairingHandlerAdapter extends CacheAddInvalidationListenerCodec.AbstractEventHandler
+
+    /**
+     * Needed to deal with client compatibility issues.
+     * Eventual consistency for near cache can be used with server versions >= 3.8.
+     * Other connected server versions must use {@link LegacyNearCacheEventHandler}
+     */
+    private final class ConnectedMemberVersionAwareNearCacheEventHandler
+            extends CacheAddInvalidationListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
+
+        // Eventually consistent near cache can only be used with server versions >= 3.8.
+        private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
+        private final RepairableNearCacheEventHandler consistencyHandler = new RepairableNearCacheEventHandler();
+        private final LegacyNearCacheEventHandler legacyHandler
+                = new LegacyNearCacheEventHandler(getContext().getClusterService().getLocalClient().getUuid());
+        private final ILogger logger = getContext().getLoggingService().getLogger(getClass());
+
+        private CacheAddInvalidationListenerCodec.AbstractEventHandler eventHandler;
+
+        @Override
+        public void beforeListenerRegister() {
+            legacyHandler.beforeListenerRegister();
+            consistencyHandler.beforeListenerRegister();
+        }
+
+        @Override
+        public void onListenerRegister() {
+            int connectedServerVersion = getConnectedServerVersion();
+            eventHandler = (CacheAddInvalidationListenerCodec.AbstractEventHandler) getEventHandlerFor(connectedServerVersion);
+            ((EventHandler) eventHandler).onListenerRegister();
+        }
+
+        @Override
+        public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+            eventHandler.handle(name, key, sourceUuid, partitionUuid, sequence);
+        }
+
+        @Override
+        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
+                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+            eventHandler.handle(name, keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private EventHandler<ClientMessage> getEventHandlerFor(int connectedServerVersion) {
+            if (connectedServerVersion < minConsistentNearCacheSupportingServerVersion) {
+                return legacyHandler;
+            }
+
+            return consistencyHandler;
+        }
+
+        private int getConnectedServerVersion() {
+            ClientContext clientContext = getContext();
+            ClientClusterService clusterService = clientContext.getClusterService();
+            Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+
+            HazelcastClientInstanceImpl client = getClient();
+            ClientConnectionManager connectionManager = client.getConnectionManager();
+            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+            if (connection == null) {
+                logger.warning(format("No owner connection is available, "
+                        + "near cached %s cache will be started in legacy mode", nameWithPrefix));
+                return UNKNOWN_HAZELCAST_VERSION;
+            }
+
+            return ((ClientConnection) connection).getConnectedServerVersion();
+        }
+    }
+
+    /**
+     * This event handler can only be used with server versions >= 3.8 and supports near cache eventual consistency improvements.
+     * For repairing functionality please see {@link RepairingHandler}
+     */
+    private final class RepairableNearCacheEventHandler extends CacheAddInvalidationListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
+
+        private RepairingHandler repairingHandler;
+
+        @Override
+        public void beforeListenerRegister() {
+            nearCache.clear();
+            getRepairingTask().deregisterHandler(nameWithPrefix);
+        }
+
+        @Override
+        public void onListenerRegister() {
+            nearCache.clear();
+            repairingHandler = getRepairingTask().registerAndGetHandler(nameWithPrefix, nearCache);
+        }
 
         @Override
         public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
@@ -926,6 +1022,55 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
         }
 
+        private RepairingTask getRepairingTask() {
+            ClientContext clientContext = getContext();
+            return clientContext.getRepairingTask(CacheService.SERVICE_NAME);
+        }
+    }
+
+    private final class LegacyNearCacheEventHandler extends CacheAddInvalidationListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private String clientUuid;
+
+        private LegacyNearCacheEventHandler(String clientUuid) {
+            assert clientUuid != null;
+
+            this.clientUuid = clientUuid;
+        }
+
+        @Override
+        public void handle(String name, Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+            if (clientUuid.equals(sourceUuid)) {
+                return;
+            }
+            if (key != null) {
+                nearCache.remove(key);
+            } else {
+                nearCache.clear();
+            }
+        }
+
+        @Override
+        public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids,
+                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+            if (sourceUuids != null && !sourceUuids.isEmpty()) {
+                Iterator<Data> keysIt = keys.iterator();
+                Iterator<String> sourceUuidsIt = sourceUuids.iterator();
+                while (keysIt.hasNext() && sourceUuidsIt.hasNext()) {
+                    Data key = keysIt.next();
+                    String sourceUuid = sourceUuidsIt.next();
+                    if (!clientUuid.equals(sourceUuid)) {
+                        nearCache.remove(key);
+                    }
+                }
+            } else {
+                for (Data key : keys) {
+                    nearCache.remove(key);
+                }
+            }
+        }
+
         @Override
         public void beforeListenerRegister() {
         }
@@ -934,8 +1079,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         public void onListenerRegister() {
             nearCache.clear();
         }
-
     }
+
 
     private void registerInvalidationListener() {
         if (nearCache == null || !nearCache.isInvalidatedOnChange()) {
@@ -946,13 +1091,15 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         nearCache = asInvalidationAware(nearCache, partitionCount);
         keyStateMarker = ((InvalidationAwareWrapper) nearCache).getKeyStateMarker();
 
-        RepairingTask repairingTask = clientContext.getRepairingTask(SERVICE_NAME);
-        repairingHandler = repairingTask.registerAndGetHandler(nameWithPrefix, nearCache);
-        EventHandler handler = new NearCacheRepairingHandlerAdapter();
         ListenerMessageCodec listenerCodec = createInvalidationListenerCodec();
         ClientListenerService listenerService = clientContext.getListenerService();
 
-        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, handler);
+        EventHandler eventHandler = createInvalidationEventHandler();
+        nearCacheMembershipRegistrationId = listenerService.registerListener(listenerCodec, eventHandler);
+    }
+
+    private EventHandler createInvalidationEventHandler() {
+        return new ConnectedMemberVersionAwareNearCacheEventHandler();
     }
 
     private ListenerMessageCodec createInvalidationListenerCodec() {

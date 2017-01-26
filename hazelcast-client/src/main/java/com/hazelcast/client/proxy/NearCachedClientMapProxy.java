@@ -16,11 +16,15 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.nio.ClientConnection;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
@@ -32,6 +36,7 @@ import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
+import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
@@ -39,6 +44,8 @@ import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.CollectionUtil;
@@ -54,10 +61,13 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
+import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
+import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper.asInvalidationAware;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.lang.String.format;
 import static java.util.Collections.EMPTY_MAP;
 import static java.util.Collections.emptyMap;
 
@@ -71,7 +81,6 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     private boolean invalidateOnChange;
     private NearCache<Object, Object> nearCache;
-    private RepairingHandler repairingHandler;
     private KeyStateMarker keyStateMarker = KeyStateMarker.TRUE_MARKER;
 
     private volatile String invalidationListenerId;
@@ -95,8 +104,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             nearCache = asInvalidationAware(nearCache, partitionCount);
             keyStateMarker = getKeyStateMarker();
 
-            repairingHandler = context.getRepairingTask(SERVICE_NAME).registerAndGetHandler(name, nearCache);
-            addNearCacheInvalidationListener(new ClientMapAddNearCacheEventHandler());
+            addNearCacheInvalidationListener(new ConnectedMemberVersionAwareNearCacheEventHandler());
         }
     }
 
@@ -513,17 +521,91 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         deregisterListener(invalidationListenerId);
     }
 
-    private final class ClientMapAddNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    /**
+     * Needed to deal with client compatibility issues.
+     * Eventual consistency for near cache can be used with server versions >= 3.8.
+     * Other connected server versions must use {@link LegacyNearCacheEventHandler}
+     */
+    private final class ConnectedMemberVersionAwareNearCacheEventHandler
+            extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
+
+        // Eventually consistent near cache can only be used with server versions >= 3.8.
+        private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
+        private final RepairableNearCacheEventHandler consistencyHandler = new RepairableNearCacheEventHandler();
+        private final LegacyNearCacheEventHandler legacyHandler = new LegacyNearCacheEventHandler();
+        private final ILogger logger = getClientContext().getLoggingService().getLogger(getClass());
+
+        private MapAddNearCacheEntryListenerCodec.AbstractEventHandler eventHandler;
+
+        @Override
+        public void beforeListenerRegister() {
+            legacyHandler.beforeListenerRegister();
+            consistencyHandler.beforeListenerRegister();
+        }
+
+        @Override
+        public void onListenerRegister() {
+            int connectedServerVersion = getConnectedServerVersion();
+            eventHandler = (MapAddNearCacheEntryListenerCodec.AbstractEventHandler) getEventHandlerFor(connectedServerVersion);
+            ((EventHandler) eventHandler).onListenerRegister();
+        }
+
+        @Override
+        public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+            eventHandler.handle(key, sourceUuid, partitionUuid, sequence);
+        }
+
+        @Override
+        public void handle(Collection<Data> keys, Collection<String> sourceUuids,
+                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+            eventHandler.handle(keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private EventHandler<ClientMessage> getEventHandlerFor(int connectedServerVersion) {
+            if (connectedServerVersion < minConsistentNearCacheSupportingServerVersion) {
+                return legacyHandler;
+            }
+
+            return consistencyHandler;
+        }
+
+        private int getConnectedServerVersion() {
+            ClientContext clientContext = getClientContext();
+            ClientClusterService clusterService = clientContext.getClusterService();
+            Address ownerConnectionAddress = clusterService.getOwnerConnectionAddress();
+
+            HazelcastClientInstanceImpl client = getClient();
+            ClientConnectionManager connectionManager = client.getConnectionManager();
+            Connection connection = connectionManager.getConnection(ownerConnectionAddress);
+            if (connection == null) {
+                logger.warning(format("No owner connection is available, "
+                        + "near cached %s map will be started in legacy mode", name));
+                return UNKNOWN_HAZELCAST_VERSION;
+            }
+
+            return ((ClientConnection) connection).getConnectedServerVersion();
+        }
+    }
+
+    /**
+     * This event handler can only be used with server versions >= 3.8 and supports near cache eventual consistency improvements.
+     * For repairing functionality please see {@link RepairingHandler}
+     */
+    private final class RepairableNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
+
+        private RepairingHandler repairingHandler;
 
         @Override
         public void beforeListenerRegister() {
             nearCache.clear();
+            getRepairingTask().deregisterHandler(name);
         }
 
         @Override
         public void onListenerRegister() {
             nearCache.clear();
+            repairingHandler = getRepairingTask().registerAndGetHandler(name, nearCache);
         }
 
         @Override
@@ -535,6 +617,55 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         public void handle(Collection<Data> keys, Collection<String> sourceUuids,
                            Collection<UUID> partitionUuids, Collection<Long> sequences) {
             repairingHandler.handle(keys, sourceUuids, partitionUuids, sequences);
+        }
+
+        private RepairingTask getRepairingTask() {
+            ClientContext clientContext = getClientContext();
+            return clientContext.getRepairingTask(SERVICE_NAME);
+        }
+    }
+
+    /**
+     * This event handler is here to be used with server versions < 3.8.
+     * <p>
+     * If server version is < 3.8 and client version is >= 3.8, this event handler must be used to
+     * listen near cache invalidations. Because new improvements for near cache eventual consistency cannot work
+     * with server versions < 3.8.
+     */
+    private final class LegacyNearCacheEventHandler extends MapAddNearCacheEntryListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        protected LegacyNearCacheEventHandler() {
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+            nearCache.clear();
+        }
+
+        @Override
+        public void onListenerRegister() {
+            nearCache.clear();
+        }
+
+
+        @Override
+        public void handle(Data key, String sourceUuid, UUID partitionUuid, long sequence) {
+            // null key means near cache has to remove all entries in it.
+            // see MapAddNearCacheEntryListenerMessageTask.
+            if (key == null) {
+                nearCache.clear();
+            } else {
+                nearCache.remove(key);
+            }
+        }
+
+        @Override
+        public void handle(Collection<Data> keys, Collection<String> sourceUuids,
+                           Collection<UUID> partitionUuids, Collection<Long> sequences) {
+            for (Data key : keys) {
+                nearCache.remove(key);
+            }
         }
     }
 
