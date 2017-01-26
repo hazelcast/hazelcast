@@ -24,19 +24,19 @@ public class NearCachePreloaderConfigTest {
         config = new NearCachePreloaderConfig("myStorage.store");
 
         assertTrue(config.isEnabled());
-        assertEquals("myStorage.store", config.getFilename());
+        assertEquals("myStorage.store", config.getDirectory());
     }
 
     @Test
     public void testFileName() {
-        config.setFilename("myStorage.store");
+        config.setDirectory("myStorage.store");
 
-        assertEquals("myStorage.store", config.getFilename());
+        assertEquals("myStorage.store", config.getDirectory());
     }
 
     @Test(expected = NullPointerException.class)
     public void testFileName_withNull() {
-        config.setFilename(null);
+        config.setDirectory(null);
     }
 
     @Test
@@ -72,7 +72,7 @@ public class NearCachePreloaderConfigTest {
     @Test
     public void testSerialization() {
         config.setEnabled(true);
-        config.setFilename("foobar");
+        config.setDirectory("foobar");
         config.setStoreInitialDelaySeconds(23);
         config.setStoreIntervalSeconds(42);
 
@@ -81,7 +81,7 @@ public class NearCachePreloaderConfigTest {
         NearCachePreloaderConfig deserialized = serializationService.toObject(serialized);
 
         assertEquals(config.isEnabled(), deserialized.isEnabled());
-        assertEquals(config.getFilename(), deserialized.getFilename());
+        assertEquals(config.getDirectory(), deserialized.getDirectory());
         assertEquals(config.getStoreInitialDelaySeconds(), deserialized.getStoreInitialDelaySeconds());
         assertEquals(config.getStoreIntervalSeconds(), deserialized.getStoreIntervalSeconds());
         assertEquals(config.toString(), deserialized.toString());

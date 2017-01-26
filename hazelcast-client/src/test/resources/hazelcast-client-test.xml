@@ -28,7 +28,7 @@
         <in-memory-format>OBJECT</in-memory-format>
         <cache-local-entries>true</cache-local-entries>
         <eviction size="100" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
-        <preloader enabled="true" filename="myNearCache.store"
+        <preloader enabled="true" directory="myNearCache.store"
                    store-initial-delay-seconds="2342" store-interval-seconds="4223"/>
     </near-cache>
 

@@ -45,6 +45,7 @@ import static com.hazelcast.util.EmptyStatement.ignore;
 import static java.lang.String.format;
 
 @PrivateApi
+@SuppressWarnings("checkstyle:methodcount")
 public final class IOUtil {
 
     public static final byte PRIMITIVE_TYPE_BOOLEAN = 1;
@@ -377,6 +378,33 @@ public final class IOUtil {
 
     public static String toFileName(String name) {
         return name.replaceAll("[:\\\\/*\"?|<>',]", "_");
+    }
+
+    /**
+     * Concatenates path parts to a single path using the {@link File#separator} where it applies.
+     * There is no validation done on the newly formed path.
+     *
+     * @param parts The path parts that together should form a path
+     * @return The path formed using the parts
+     * @throws IllegalArgumentException if the parts param is null or empty
+     */
+    public static String getPath(String... parts) {
+        if (parts == null || parts.length == 0) {
+            throw new IllegalArgumentException("Parts is null or empty.");
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            builder.append(part);
+
+            boolean hasMore = i < parts.length - 1;
+            if (!part.endsWith(File.separator) && hasMore) {
+                builder.append(File.separator);
+            }
+        }
+
+        return builder.toString();
     }
 
     public static File getFileFromResources(String resourceFileName) {

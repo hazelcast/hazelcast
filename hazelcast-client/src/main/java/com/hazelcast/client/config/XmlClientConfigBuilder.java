@@ -315,7 +315,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             preloaderConfig.setEnabled(getBooleanValue(enabled));
         }
         if (filename != null) {
-            preloaderConfig.setFilename(filename);
+            preloaderConfig.setDirectory(filename);
         }
         if (storeInitialDelaySeconds != null) {
             preloaderConfig.setStoreInitialDelaySeconds(getIntegerValue("storage-initial-delay-seconds",

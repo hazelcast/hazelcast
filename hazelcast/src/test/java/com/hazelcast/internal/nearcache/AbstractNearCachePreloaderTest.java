@@ -6,18 +6,24 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
+import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
@@ -25,6 +31,7 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
 
@@ -34,19 +41,22 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected static final int KEY_COUNT = 10023;
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
     protected static final File DEFAULT_STORE_FILE = new File("nearCache-defaultNearCache.store").getAbsoluteFile();
+    protected static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
 
     private static final int TEST_TIMEOUT = 120000;
 
-    private final File preloadFile10kInt = getFileFromResources("nearcache-10k-int.store");
-    private final File preloadFile10kString = getFileFromResources("nearcache-10k-string.store");
-    private final File preloadFileEmpty = getFileFromResources("nearcache-empty.store");
-    private final File preloadFileInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes.store");
-    private final File preloadFileInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat.store");
-    private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
+    private final File preloadDir10kInt = getFileFromResources("nearcache-10k-int");
+    private final File preloadDir10kString = getFileFromResources("nearcache-10k-string");
+    private final File preloadDirEmpty = getFileFromResources("nearcache-empty");
+    private final File preloadDirInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes");
+    private final File preloadDirInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat");
+    private final File preloadDirNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat");
 
     @After
+    @Before
     public void deleteFiles() {
         deleteQuietly(DEFAULT_STORE_FILE);
+        deleteQuietly(DEFAULT_STORE_LOCK_FILE);
     }
 
     /**
@@ -73,6 +83,17 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
      * @return a {@link NearCacheTestContext} with only a client used by the Near Cache tests
      */
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
+
+    /**
+     * Creates a storage (Map or Cache, HD or Heap) from the given context and the given name.
+     *
+     * @param context NearCacheTestContext used to retrieve the Member instance in order to create the storage
+     * @param name The name of the storage
+     * @param <K> Key type of the created {@link DataStructureAdapter}
+     * @param <V> Value type of the created {@link DataStructureAdapter}
+     * @return a {@link DataStructureAdapter} as created from the given context and per implementation of this class
+     */
+    protected abstract <K, V> DataStructureAdapter<K, V> createNewClientStore(NearCacheTestContext context, String name);
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
@@ -110,14 +131,14 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
-    public void testCreateStoreFile_withInvalidFileName() {
-        String filename = "/dev/null/invalid.store";
+    public void testCreateStoreFile_withInvalidDirectory() {
+        String directory = "/dev/null/";
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(1)
                 .setStoreIntervalSeconds(1)
-                .setFilename(filename);
+                .setDirectory(directory);
 
-        expectedException.expectMessage("Cannot create lock file " + filename);
+        expectedException.expectMessage("Cannot create lock file " + directory + DEFAULT_STORE_FILE.getName());
         expectedException.expect(HazelcastException.class);
 
         createContext(true);
@@ -176,36 +197,78 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test
     public void testPreloadNearCache_withIntegerKeys() {
-        preloadNearCache(preloadFile10kInt, 10000, false);
+        preloadNearCache(preloadDir10kInt, 10000, false);
     }
 
     @Test
     public void testPreloadNearCache_withStringKeys() {
-        preloadNearCache(preloadFile10kString, 10000, true);
+        preloadNearCache(preloadDir10kString, 10000, true);
     }
 
     @Test
     public void testPreloadNearCache_withEmptyFile() {
-        preloadNearCache(preloadFileEmpty, 0, false);
+        preloadNearCache(preloadDirEmpty, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidMagicBytes() {
-        preloadNearCache(preloadFileInvalidMagicBytes, 0, false);
+        preloadNearCache(preloadDirInvalidMagicBytes, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidFileFormat() {
-        preloadNearCache(preloadFileInvalidFileFormat, 0, false);
+        preloadNearCache(preloadDirInvalidFileFormat, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withNegativeFileFormat() {
-        preloadNearCache(preloadFileNegativeFileFormat, 0, false);
+        preloadNearCache(preloadDirNegativeFileFormat, 0, false);
     }
 
-    private void preloadNearCache(File preloaderFile, int keyCount, boolean useStringKey) {
-        nearCacheConfig.getPreloaderConfig().setFilename(preloaderFile.getAbsolutePath());
+    @Test
+    public void testPreloadNearCacheLock_withSharedMapConfig_concurrently()
+        throws InterruptedException {
+
+        // Ignore other memory formats, this test is not affected by that option.
+        assumeTrue(BINARY.equals(nearCacheConfig.getInMemoryFormat()));
+
+        nearCacheConfig.getPreloaderConfig().setDirectory("");
+
+        final NearCacheTestContext ctx = createContext(true);
+
+        int nThreads = 10;
+        ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(nThreads);
+        final CountDownLatch startLatch = new CountDownLatch(nThreads);
+        final CountDownLatch finishLatch = new CountDownLatch(nThreads);
+
+        for (int i = 0; i < nThreads; i++) {
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    startLatch.countDown();
+                    try {
+                        startLatch.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+
+                    DataStructureAdapter store = createNewClientStore(ctx, DEFAULT_NEAR_CACHE_NAME + Thread.currentThread());
+                    for (int i = 0; i < 100; i++) {
+                        store.put("Test_" + Thread.currentThread() + "_" + i, "Value_" + Thread.currentThread() + "_" + i);
+                    }
+
+                    finishLatch.countDown();
+                }
+            });
+        }
+
+        finishLatch.await();
+        pool.shutdownNow();
+    }
+
+    private void preloadNearCache(File preloaderDir, int keyCount, boolean useStringKey) {
+        nearCacheConfig.getPreloaderConfig()
+                       .setDirectory(preloaderDir.getAbsolutePath());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
@@ -223,7 +286,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean invalidationOnChange, int maxSize,
-                                                 String preloaderFileName) {
+                                                 String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
@@ -235,7 +298,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         nearCacheConfig.getPreloaderConfig()
                 .setEnabled(true)
-                .setFilename(preloaderFileName);
+                .setDirectory(preloaderDir);
 
         return nearCacheConfig;
     }

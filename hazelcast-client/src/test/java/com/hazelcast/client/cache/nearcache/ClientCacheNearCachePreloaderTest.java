@@ -12,6 +12,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -28,6 +29,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,12 +64,17 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(inMemoryFormat, invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getPath());
+        nearCacheConfig = getNearCacheConfig(inMemoryFormat, invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getParent());
     }
 
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
+    }
+
+    @Override
+    protected <K, V> DataStructureAdapter<K, V> createNewClientStore(NearCacheTestContext context, String name) {
+        return new ICacheDataStructureAdapter<K, V>((Cache<K, V>) context.nearCacheInstance.getCacheManager().getCache(name));
     }
 
     @Override

@@ -6,6 +6,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCachePreloaderTest;
 import com.hazelcast.internal.nearcache.NearCache;
@@ -51,12 +52,17 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(inMemoryFormat, invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getPath());
+        nearCacheConfig = getNearCacheConfig(inMemoryFormat, invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getParent());
     }
 
     @After
     public void tearDown() {
         hazelcastFactory.shutdownAll();
+    }
+
+    @Override
+    protected <K, V> DataStructureAdapter<K, V> createNewClientStore(NearCacheTestContext context, String name) {
+        return new IMapDataStructureAdapter<K, V>((IMap<K, V>) context.nearCacheInstance.getMap(name));
     }
 
     @Override
