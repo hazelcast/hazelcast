@@ -73,7 +73,7 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
 
     @Test
     public void testDeserializationCountWith_ObjectNearCache_cacheLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE);
         prepareCache(nearCacheConfig);
 
         String key = randomString();
@@ -97,7 +97,7 @@ public class ClientCacheSerializationCountTest extends HazelcastTestSupport {
 
     @Test
     public void testDeserializationCountWith_BinaryNearCache_cacheLocalUpdatePolicy() {
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE);
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE);
         prepareCache(nearCacheConfig);
 
         String key = randomString();

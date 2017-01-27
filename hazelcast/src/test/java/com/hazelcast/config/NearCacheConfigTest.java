@@ -204,7 +204,7 @@ public class NearCacheConfigTest {
         config.setInMemoryFormat(InMemoryFormat.NATIVE);
         config.setTimeToLiveSeconds(23);
         config.setMaxIdleSeconds(42);
-        config.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
+        config.setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         Data serialized = serializationService.toData(config);

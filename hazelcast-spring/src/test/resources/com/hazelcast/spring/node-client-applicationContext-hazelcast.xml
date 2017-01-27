@@ -152,7 +152,7 @@
                        max-idle-seconds="70"
                        eviction-policy="LRU"
                        max-size="4000"
-                       invalidate-on-change="true"/>
+                       invalidate-on-change="true" local-update-policy="CACHE_ON_UPDATE"/>
 
 
     </hz:client>

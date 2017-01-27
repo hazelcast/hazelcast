@@ -32,7 +32,9 @@ import static com.hazelcast.config.EvictionPolicy.RANDOM;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.MapConfig.DEFAULT_EVICTION_PERCENTAGE;
 import static com.hazelcast.config.MapConfig.DEFAULT_MIN_EVICTION_CHECK_MILLIS;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static java.lang.String.format;
 
 /**
  * Validates a Hazelcast configuration in a specific context like OS vs. EE or client vs. member nodes.
@@ -58,10 +60,12 @@ public final class ConfigValidator {
     /**
      * Checks preconditions to create a map proxy with Near Cache.
      *
+     * @param mapName         name of the map that near cache will be created for
      * @param nearCacheConfig the {@link NearCacheConfig}
      * @param isClient        {@code true} if the config is for a Hazelcast client, {@code false} otherwise
      */
-    public static void checkNearCacheConfig(NearCacheConfig nearCacheConfig, boolean isClient) {
+    public static void checkNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig, boolean isClient) {
+        checkLocalUpdatePolicy(mapName, nearCacheConfig);
         checkNotNative(nearCacheConfig.getInMemoryFormat());
         checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
 
@@ -70,6 +74,20 @@ public final class ConfigValidator {
                     "The Near Cache option `cache-local-entries` is not supported in client configurations!");
         }
         checkPreloaderConfig(nearCacheConfig, isClient);
+    }
+
+    /**
+     * Checks IMaps' supported near cache local update policy configuration.
+     *
+     * @param mapName         name of the map that near cache will be created for
+     * @param nearCacheConfig the nearCacheConfig to be checked
+     */
+    public static void checkLocalUpdatePolicy(String mapName, NearCacheConfig nearCacheConfig) {
+        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
+        if (localUpdatePolicy != INVALIDATE) {
+            throw new IllegalArgumentException(format("Wrong `local-update-policy` option is selected for `%s` map near cache."
+                    + " Only `%s` option is supported but found `%s`", mapName, INVALIDATE, localUpdatePolicy));
+        }
     }
 
     /**

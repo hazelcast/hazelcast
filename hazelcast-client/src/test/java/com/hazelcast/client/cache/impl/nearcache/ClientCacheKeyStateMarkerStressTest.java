@@ -51,7 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
@@ -69,7 +69,7 @@ public class ClientCacheKeyStateMarkerStressTest extends HazelcastTestSupport {
     @Parameterized.Parameters(name = "localUpdatePolicy:{0}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
-                {CACHE},
+                {CACHE_ON_UPDATE},
                 {INVALIDATE},
         });
     }
