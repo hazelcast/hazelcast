@@ -47,6 +47,12 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         className = config.getClassName();
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     @Override
     public CachePartitionLostListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {

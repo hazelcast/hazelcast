@@ -34,6 +34,12 @@ public class ListConfig extends CollectionConfig<ListConfig> {
         super(config);
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     @Override
     public ListConfig getAsReadOnly() {
         if (readOnly == null) {

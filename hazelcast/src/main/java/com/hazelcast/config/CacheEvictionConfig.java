@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -65,6 +65,12 @@ public class CacheEvictionConfig extends EvictionConfig {
         super(config);
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     @Override
     public CacheEvictionConfig getAsReadOnly() {
         if (readOnly == null) {

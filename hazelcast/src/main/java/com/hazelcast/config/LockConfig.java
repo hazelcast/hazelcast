@@ -106,9 +106,10 @@ public class LockConfig {
     }
 
     /**
-     * Creates a readonly copy of this {@link LockConfig}.
+     * Gets immutable version of this configuration.
      *
-     * @return the readonly copy.
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
      */
     public LockConfig getAsReadOnly() {
         return new LockConfigReadonly(this);

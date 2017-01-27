@@ -72,6 +72,12 @@ public class EntryListenerConfig extends ListenerConfig {
         className = config.getClassName();
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     @Override
     public EntryListenerConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {

@@ -59,6 +59,12 @@ public class MapIndexConfig {
         ordered = config.isOrdered();
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public MapIndexConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapIndexConfigReadOnly(this);

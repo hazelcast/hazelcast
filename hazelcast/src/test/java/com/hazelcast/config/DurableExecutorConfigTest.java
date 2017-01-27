@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.durableexecutor.impl.operations;
+package com.hazelcast.config;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

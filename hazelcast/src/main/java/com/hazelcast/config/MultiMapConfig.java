@@ -67,13 +67,14 @@ public class MultiMapConfig {
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
-//        this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
+        //this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
     }
 
     /**
-     * Gets the immutable version of this MultiMap config.
+     * Gets immutable version of this configuration.
      *
-     * @return Immutable version of this MultiMap config.
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
      */
     public MultiMapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
@@ -227,8 +228,8 @@ public class MultiMapConfig {
      * @param backupCount the number of synchronous backups to set for this MultiMap
      * @return the current MultiMapConfig
      * @throws IllegalArgumentException if backupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setAsyncBackupCount(int)
      */
     public MultiMapConfig setBackupCount(int backupCount) {
@@ -251,8 +252,8 @@ public class MultiMapConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated MultiMapConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */

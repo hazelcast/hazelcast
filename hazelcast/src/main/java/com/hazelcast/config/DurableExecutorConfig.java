@@ -71,13 +71,6 @@ public class DurableExecutorConfig {
         this(config.getName(), config.getPoolSize(), config.getDurability(), config.getCapacity());
     }
 
-    public DurableExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new DurableExecutorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     /**
      * Gets the name of the executor task.
      *
@@ -171,9 +164,16 @@ public class DurableExecutorConfig {
                 + '}';
     }
 
+    DurableExecutorConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new DurableExecutorConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
     private static class DurableExecutorConfigReadOnly extends DurableExecutorConfig {
 
-        public DurableExecutorConfigReadOnly(DurableExecutorConfig config) {
+        DurableExecutorConfigReadOnly(DurableExecutorConfig config) {
             super(config);
         }
 

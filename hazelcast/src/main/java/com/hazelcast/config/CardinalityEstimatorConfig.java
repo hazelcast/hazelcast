@@ -60,13 +60,6 @@ public class CardinalityEstimatorConfig {
         this(config.getName(), config.getBackupCount(), config.getAsyncBackupCount());
     }
 
-    public CardinalityEstimatorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CardinalityEstimatorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     /**
      * Gets the name of the cardinality estimator.
      *
@@ -153,8 +146,14 @@ public class CardinalityEstimatorConfig {
                 + asyncBackupCount + ", readOnly=" + readOnly + '}';
     }
 
-    private static class CardinalityEstimatorConfigReadOnly
-            extends CardinalityEstimatorConfig {
+    CardinalityEstimatorConfigReadOnly getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new CardinalityEstimatorConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class CardinalityEstimatorConfigReadOnly extends CardinalityEstimatorConfig {
 
         CardinalityEstimatorConfigReadOnly(CardinalityEstimatorConfig config) {
             super(config);

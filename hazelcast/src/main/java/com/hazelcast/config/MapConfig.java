@@ -196,6 +196,12 @@ public class MapConfig {
         this.hotRestartConfig = new HotRestartConfig(config.hotRestartConfig);
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public MapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MapConfigReadOnly(this);

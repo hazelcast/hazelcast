@@ -218,15 +218,6 @@ public class RingbufferConfig {
     }
 
     /**
-     * Creates a readonly copy of this RingbufferConfig.
-     *
-     * @return the readonly copy.
-     */
-    public RingbufferConfig getAsReadOnly() {
-        return new RingbufferConfigReadonly(this);
-    }
-
-    /**
      * Gets the time to live in seconds.
      *
      * @return the time to live in seconds. Returns 0 the time to live if the items don't expire.
@@ -321,6 +312,16 @@ public class RingbufferConfig {
     public RingbufferConfig setRingbufferStoreConfig(RingbufferStoreConfig ringbufferStoreConfig) {
         this.ringbufferStoreConfig = ringbufferStoreConfig;
         return this;
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
+    public RingbufferConfig getAsReadOnly() {
+        return new RingbufferConfigReadonly(this);
     }
 
     /**

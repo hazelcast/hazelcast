@@ -67,6 +67,12 @@ public class TopicConfig {
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
     public TopicConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new TopicConfigReadOnly(this);

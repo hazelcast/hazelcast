@@ -262,15 +262,6 @@ public class ReliableTopicConfig {
         return this;
     }
 
-    /**
-     * Returns a readonly version of the ReliableTopicConfig.
-     *
-     * @return a readonly version of this reliable topic config.
-     */
-    public ReliableTopicConfig getAsReadOnly() {
-        return new ReliableTopicConfigReadOnly(this);
-    }
-
     @Override
     public String toString() {
         return "ReliableTopicConfig{"
@@ -281,6 +272,16 @@ public class ReliableTopicConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", listenerConfigs=" + listenerConfigs
                 + '}';
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     */
+    public ReliableTopicConfig getAsReadOnly() {
+        return new ReliableTopicConfigReadOnly(this);
     }
 
     static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
