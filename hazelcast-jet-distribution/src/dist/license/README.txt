@@ -1,0 +1,1 @@
+All artifacts in this distribution are released under Apache v2 License. See apache-v2-license.txt.
