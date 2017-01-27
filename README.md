@@ -1,12 +1,25 @@
 ## Hazelcast Jet
 
-[Hazelcast Jet](http://jet.hazelcast.org) is a distributed data processing engine built on top of Hazelcast.
+[Hazelcast Jet](http://jet.hazelcast.org) is a distributed computing platform built for high-performance stream processing and fast batch processing. It embeds Hazelcast In Memory Data Grid (IMDG) to provide a lightweight package of a processor and a scalable in-memory storage.
+
+Visit [jet.hazelcast.org](http://jet.hazelcast.org) to learn more about the architecture and use-cases.
 
 ### Features:
 
 * Low latency and distributed general data processing framework with high throughput.
 * Highly parallel and distributed stream and batch processing of data.
 * Distributed java.util.stream API support for Hazelcast data structures such as IMap and IList.
+* Connectors allowing high-velocity ingestion of data from Apache Kafka, HDFS, Hazelcast IMDG, sockets and local data files (such as logs or CSVs)
+* API for custom connectors
+* Distributed implementations of java.util.{Queue, Set, List, Map} data structures highly optimized to be used for the processing
+* Dynamic node discovery for both on-premise and cloud deployments.
+* Virtualization support and resource management via Docker, YARN and Mesos
+
+
+### Getting Started
+
+See [Getting Started Guide](http://jet.hazelcast.org/getting-started/)
+
 
 ### Code Samples
 
@@ -16,11 +29,9 @@ See [Hazelcast Jet Code Samples](https://github.com/hazelcast/hazelcast-jet-code
 
 See documentation at [jet.hazelcast.org](http://jet.hazelcast.org/)
 
-### Requirements
-
-Jet 0.1 is compatible with Hazelcast 3.7.x, and will work with both clients and members.
-
 ### Releases
+
+Download from [jet.hazelcast.org](http://jet.hazelcast.org/download/)
 
 Use Maven snippet:
 ```xml
@@ -92,7 +103,7 @@ For an enhancement or larger feature, create a GitHub issue first to discuss.
 
 Please join the mail group if you are interested in using or developing Hazelcast.
 
-[http://groups.google.com/group/hazelcast](http://groups.google.com/group/hazelcast)
+[http://groups.google.com/group/hazelcast-jet](http://groups.google.com/group/hazelcast-jet)
 
 #### License
 
