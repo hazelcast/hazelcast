@@ -19,7 +19,6 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientInvocationRegistry {
@@ -38,7 +37,10 @@ public class ClientInvocationRegistry {
     }
 
     public void cancel(long executionId) {
-        Optional.of(clientInvocations.get(executionId)).ifPresent(f -> f.cancel(true));
+        ICompletableFuture<Object> f = clientInvocations.get(executionId);
+        if (f != null) {
+            f.cancel(true);
+        }
     }
 
 }
