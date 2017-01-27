@@ -31,6 +31,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.Clock;
@@ -43,7 +44,7 @@ import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
-abstract class AbstractMultipleEntryOperation extends MapOperation implements MutatingOperation {
+abstract class AbstractMultipleEntryOperation extends MapOperation implements MutatingOperation, PartitionAwareOperation {
 
     protected MapEntries responses;
     protected EntryProcessor entryProcessor;
