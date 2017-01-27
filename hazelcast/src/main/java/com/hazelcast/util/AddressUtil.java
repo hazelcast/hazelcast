@@ -636,8 +636,12 @@ public final class AddressUtil {
      */
     public static class InvalidAddressException extends IllegalArgumentException {
 
-        public InvalidAddressException(final String s) {
-            super("Illegal IP address format: " + s);
+        public InvalidAddressException(final String message) {
+            this(message, true);
+        }
+
+        public InvalidAddressException(final String message, boolean prependText) {
+            super((prependText ? "Illegal IP address format: " : "") + message);
         }
     }
 }
