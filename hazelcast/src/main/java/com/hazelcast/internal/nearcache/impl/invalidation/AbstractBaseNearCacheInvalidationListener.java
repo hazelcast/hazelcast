@@ -90,14 +90,14 @@ public abstract class AbstractBaseNearCacheInvalidationListener {
         return new ExtractedParams(keys, sourceUuids, partitionUuids, sequences);
     }
 
-    private final class ExtractedParams {
+    private static final class ExtractedParams {
+
         private final List<Data> keys;
         private final List<String> sourceUuids;
         private final List<UUID> partitionUuids;
         private final List<Long> sequences;
 
-        public ExtractedParams(List<Data> keys, List<String> sourceUuids,
-                               List<UUID> partitionUuids, List<Long> sequences) {
+        ExtractedParams(List<Data> keys, List<String> sourceUuids, List<UUID> partitionUuids, List<Long> sequences) {
             this.keys = keys;
             this.sourceUuids = sourceUuids;
             this.partitionUuids = partitionUuids;
