@@ -49,19 +49,20 @@ public class LoggingServiceImpl implements LoggingService {
     private final String versionMessage;
 
     private volatile MemberImpl thisMember = new MemberImpl();
-    private volatile String thisAddressString = "[LOCAL]";
+    private volatile String thisAddressString = "[LOCAL] ";
     private volatile Level minLevel = Level.OFF;
 
     public LoggingServiceImpl(String groupName, String loggingType, BuildInfo buildInfo) {
         this.loggerFactory = Logger.newLoggerFactory(loggingType);
         JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
         versionMessage = "[" + groupName + "]" + (jetBuildInfo != null ? " [" + jetBuildInfo.getVersion() + "]" : "")
-                + " [" + buildInfo.getVersion() + "]";
+                + " [" + buildInfo.getVersion() + "] ";
     }
 
     public void setThisMember(MemberImpl thisMember) {
         this.thisMember = thisMember;
-        this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
+        this.thisAddressString = "[" + thisMember.getAddress().getHost() + "]:"
+                + thisMember.getAddress().getPort() + " ";
     }
 
     @Override
