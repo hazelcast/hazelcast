@@ -63,7 +63,14 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
         for (Member member : members) {
             Operation operation = new MapGetInvalidationMetaDataOperation(names);
             Address address = member.getAddress();
-            futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
+            try {
+                futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
+            } catch (Exception e) {
+                if (logger.isLoggable(WARNING)) {
+                    logger.log(WARNING, "Cant fetch invalidation meta-data from address + " + address
+                            + " + [" + e.getMessage() + "]");
+                }
+            }
         }
         return futures;
     }
