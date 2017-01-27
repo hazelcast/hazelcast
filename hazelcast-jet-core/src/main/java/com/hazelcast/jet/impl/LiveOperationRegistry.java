@@ -37,7 +37,13 @@ public class LiveOperationRegistry {
     }
 
     public void deregister(AsyncExecutionOperation operation) {
-        if (liveOperations.get(operation.getCallerAddress()).remove(operation.getCallId()) == null) {
+        Map<Long, AsyncExecutionOperation> operations = liveOperations.get(operation.getCallerAddress());
+
+        if (operations == null) {
+            throw new IllegalStateException("Missing address during de-registration of operation=" + operation);
+        }
+
+        if (operations.remove(operation.getCallId()) == null) {
             throw new IllegalStateException("Missing operation during de-registration of operation=" + operation);
         }
     }
@@ -49,7 +55,7 @@ public class LiveOperationRegistry {
     }
 
     boolean cancel(Address caller, long callId) {
-        Optional<AsyncExecutionOperation> operation = Optional.of(liveOperations.get(caller)).map(m -> m.get(callId));
+        Optional<AsyncExecutionOperation> operation = Optional.ofNullable(liveOperations.get(caller)).map(m -> m.get(callId));
         operation.ifPresent(AsyncExecutionOperation::cancel);
         return operation.isPresent();
     }
