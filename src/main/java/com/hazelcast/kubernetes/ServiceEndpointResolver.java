@@ -16,6 +16,16 @@
 
 package com.hazelcast.kubernetes;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -31,16 +41,6 @@ import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 class ServiceEndpointResolver
         extends HazelcastKubernetesDiscoveryStrategy.EndpointResolver {
@@ -75,17 +75,13 @@ class ServiceEndpointResolver
     }
 
     List<DiscoveryNode> resolve() {
-        List<DiscoveryNode> result = Collections.emptyList();
         if (serviceName != null && !serviceName.isEmpty()) {
-            result = getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
+            return getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
+        } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
+            return getDiscoveryNodes(client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
+        } else {
+            return getNodesByNamespace();
         }
-
-        if (result.isEmpty() && serviceLabel != null && !serviceLabel.isEmpty()) {
-            result = getDiscoveryNodes(
-                    client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
-        }
-
-        return result.isEmpty() ? getNodesByNamespace() : result;
     }
 
     private List<DiscoveryNode> getNodesByNamespace() {
