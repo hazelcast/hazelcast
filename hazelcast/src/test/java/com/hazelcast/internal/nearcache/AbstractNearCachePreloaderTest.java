@@ -89,17 +89,30 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
-    public void testStoreAndLoad_withIntegerKeys() {
-        storeAndLoad(2342, false);
+    public void testStoreAndLoad_withIntegerKeys_withInMemoryFormatBinary() {
+        storeAndLoad(2342, false, InMemoryFormat.BINARY);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
-    public void testStoreAndLoad_withStringKeys() {
-        storeAndLoad(4223, true);
+    public void testStoreAndLoad_withIntegerKeys_withInMemoryFormatObject() {
+        storeAndLoad(2342, false, InMemoryFormat.OBJECT);
     }
 
-    private void storeAndLoad(int keyCount, boolean useStringKey) {
+    @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
+    public void testStoreAndLoad_withStringKeys_withInMemoryFormatBinary() {
+        storeAndLoad(4223, true, InMemoryFormat.BINARY);
+    }
+
+    @Test(timeout = TEST_TIMEOUT)
+    @Category(SlowTest.class)
+    public void testStoreAndLoad_withStringKeys_withInMemoryFormatObject() {
+        storeAndLoad(4223, true, InMemoryFormat.OBJECT);
+    }
+
+    private void storeAndLoad(int keyCount, boolean useStringKey, InMemoryFormat inMemoryFormat) {
+        nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(3)
                 .setStoreIntervalSeconds(1);
@@ -236,14 +249,13 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         assertNearCacheSizeEventually(clientContext, keyCount);
     }
 
-    protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean invalidationOnChange, int maxSize,
-                                                 String preloaderDir) {
+    protected NearCacheConfig getNearCacheConfig(boolean invalidationOnChange, int maxSize, String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
                 .setEvictionPolicy(EvictionPolicy.LRU);
 
-        NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat)
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY)
                 .setInvalidateOnChange(invalidationOnChange)
                 .setEvictionConfig(evictionConfig);
 

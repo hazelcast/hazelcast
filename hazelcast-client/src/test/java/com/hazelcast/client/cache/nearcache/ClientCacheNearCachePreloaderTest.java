@@ -9,7 +9,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
@@ -49,27 +48,22 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     private static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
 
     @Parameter
-    public InMemoryFormat inMemoryFormat;
-
-    @Parameter(value = 1)
     public boolean invalidationOnChange;
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "format:{0} invalidationOnChange:{1}")
+    @Parameters(name = "invalidationOnChange:{0}")
     public static Collection<Object[]> parameters() {
         // FIXME: the Near Cache pre-loader doesn't work with enabled invalidations due to a known getAll() issue!
         return Arrays.asList(new Object[][]{
-                {InMemoryFormat.BINARY, false},
-                //{InMemoryFormat.BINARY, true},
-                {InMemoryFormat.OBJECT, false},
-                //{InMemoryFormat.OBJECT, true},
+                {false},
+                //{true},
         });
     }
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(inMemoryFormat, invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getParent());
+        nearCacheConfig = getNearCacheConfig(invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getParent());
     }
 
     @After
