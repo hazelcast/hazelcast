@@ -129,6 +129,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     @Override
     public void cancel() {
         if (executionInvocationFuture != null) {
+            getLogger().info("Cancelling job " + executionId);
             executionInvocationFuture.cancel(true);
         }
     }

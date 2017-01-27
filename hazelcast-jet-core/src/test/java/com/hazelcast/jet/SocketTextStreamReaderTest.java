@@ -19,22 +19,25 @@ package com.hazelcast.jet;
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.impl.connector.IListWriter;
 import com.hazelcast.jet.impl.connector.SocketTextStreamReader;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
@@ -42,6 +45,9 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
 
     private JetTestInstanceFactory factory;
     private JetInstance instance;
+
+    private final static String HOST = "localhost";
+    private final static int PORT = 8888;
 
     @Before
     public void setupEngine() {
@@ -56,39 +62,58 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
 
 
     @Test
-    public void testSocketReader() {
+    public void when_dataWrittenToSocket_then_dataReadFromReader() throws Exception {
+        // Given
+        ServerSocket socket = new ServerSocket(PORT);
+        new Thread(() -> uncheckRun(() -> {
+            Socket accept = socket.accept();
+            PrintWriter writer = new PrintWriter(accept.getOutputStream());
+            writer.write("hello \n");
+            writer.write("world \n");
+            writer.write("jet \n");
+            writer.flush();
+            accept.close();
+            socket.close();
+        })).start();
+
         DAG dag = new DAG();
-        final String host = "localhost";
-        final int port = 8888;
-        Runnable server = () -> {
-            try {
-                ServerSocket socket = new ServerSocket(port);
-                Socket accept = socket.accept();
-                PrintWriter writer = new PrintWriter(accept.getOutputStream());
-                writer.write("hello \n");
-                writer.write("world \n");
-                writer.write("jet \n");
-                writer.flush();
-                accept.close();
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        };
-        new Thread(server).start();
-        Vertex producer = dag.newVertex("producer", SocketTextStreamReader.supplier(host, port)).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1);
         Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
-        instance.newJob(dag).execute();
+        // When
+        instance.newJob(dag).execute().get();
 
         IList<Object> list = instance.getList("consumer");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3, list.size());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(3, list.size()));
     }
 
+    @Test
+    @Ignore // This test currently fails, since BufferedReader can't be interrupted
+    public void when_jobCancelled_then_readerClosed() throws Exception {
+        ServerSocket socket = new ServerSocket(PORT);
+        Socket[] accept = new Socket[1];
+        CountDownLatch acceptionLatch = new CountDownLatch(1);
+        new Thread(() -> uncheckRun(() -> {
+            accept[0] = socket.accept();
+            acceptionLatch.countDown();
+            PrintWriter writer = new PrintWriter(accept[0].getOutputStream());
+            writer.write("hello \n");
+            writer.write("world \n");
+            writer.write("jet \n");
+            writer.flush();
+        })).start();
+
+        DAG dag = new DAG().vertex(
+                new Vertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1)
+        );
+
+        Future<Void> job = instance.newJob(dag).execute();
+        acceptionLatch.await();
+        job.cancel(true);
+
+        assertTrueEventually(() -> {
+            assertTrue("Socket not closed", accept[0].isClosed());
+        });
+    }
 }
