@@ -1,6 +1,7 @@
 package com.hazelcast.client.impl.protocol;
 
 import com.hazelcast.client.impl.protocol.task.MessageTask;
+import com.hazelcast.client.impl.protocol.task.cache.Pre38CacheAddInvalidationListenerTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorAddMessageTask;
 import com.hazelcast.client.impl.protocol.task.cardinality.CardinalityEstimatorEstimateMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorDisposeResultMessageTask;
@@ -10,6 +11,7 @@ import com.hazelcast.client.impl.protocol.task.map.MapAggregateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAggregateWithPredicateMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapProjectionWithPredicateMessageTask;
+import com.hazelcast.client.impl.protocol.task.map.Pre38MapAddNearCacheEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorGetAllScheduledMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToAddressMessageTask;
@@ -248,7 +250,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         };
         factories[com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.cache.CacheAddInvalidationListenerTask(clientMessage, node, connection);
+                return new Pre38CacheAddInvalidationListenerTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.cache.CacheAddNearCacheInvalidationListenerTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.CachePutAllCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
@@ -1302,7 +1309,12 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         };
         factories[com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new com.hazelcast.client.impl.protocol.task.map.MapAddNearCacheEntryListenerMessageTask(clientMessage, node, connection);
+                return new Pre38MapAddNearCacheEntryListenerMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.map.MapAddNearCacheInvalidationListenerMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
