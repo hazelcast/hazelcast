@@ -111,7 +111,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         storeAndLoad(4223, true, InMemoryFormat.OBJECT);
     }
 
-    private void storeAndLoad(int keyCount, boolean useStringKey, InMemoryFormat inMemoryFormat) {
+    protected void storeAndLoad(int keyCount, boolean useStringKey, InMemoryFormat inMemoryFormat) {
         nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(3)
