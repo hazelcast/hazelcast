@@ -28,6 +28,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -66,11 +67,22 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
         Collection<Member> members = clusterService.getMembers(DATA_MEMBER_SELECTOR);
         List<InternalCompletableFuture> futures = new ArrayList<InternalCompletableFuture>(members.size());
 
+
         for (Member member : members) {
-            ClientMessage message = encodeRequest(names, member.getAddress());
-            ClientInvocation invocation = new ClientInvocation(clientImpl, message, member.getAddress());
-            futures.add(invocation.invoke());
+            Address address = member.getAddress();
+            ClientMessage message = encodeRequest(names, address);
+            ClientInvocation invocation = new ClientInvocation(clientImpl, message, address);
+            try {
+                futures.add(invocation.invoke());
+            } catch (Exception e) {
+                if (logger.isLoggable(WARNING)) {
+                    logger.log(WARNING, "Cant fetch invalidation meta-data from address + " + address
+                            + " + [" + e.getMessage() + "]");
+                }
+            }
         }
+
+
         return futures;
     }
 
