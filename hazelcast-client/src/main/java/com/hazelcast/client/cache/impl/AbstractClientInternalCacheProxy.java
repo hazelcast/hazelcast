@@ -52,6 +52,7 @@ import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper;
 import com.hazelcast.map.impl.nearcache.KeyStateMarker;
 import com.hazelcast.nio.serialization.Data;
@@ -77,10 +78,13 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.map.impl.nearcache.InvalidationAwareWrapper.asInvalidationAware;
 import static com.hazelcast.map.impl.nearcache.KeyStateMarker.TRUE_MARKER;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static java.lang.String.format;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -200,14 +204,26 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    private void initNearCache() {
+    void initNearCache() {
         NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
         if (nearCacheConfig != null) {
-            cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
+            cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, logger);
             ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
             registerInvalidationListener();
         }
+    }
+
+    static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig, String cacheName, ILogger logger) {
+        NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = nearCacheConfig.getLocalUpdatePolicy();
+        if (localUpdatePolicy == CACHE) {
+            logger.warning(format("Deprecated local update policy is found for cache `%s`."
+                            + " The policy `%s` is subject to remove in further releases. Instead you can use `%s`",
+                    cacheName, CACHE, CACHE_ON_UPDATE));
+            return true;
+        }
+
+        return localUpdatePolicy == CACHE_ON_UPDATE;
     }
 
     @Override

@@ -2504,6 +2504,7 @@
                         <xs:restriction base="xs:string"/>
                     </xs:simpleType>
                 </xs:attribute>
+                <xs:attribute name="local-update-policy" type="local-update-policy-enum" use="optional" default="INVALIDATE"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -2688,6 +2689,13 @@
 
     <xs:simpleType name="in-memory-format">
         <xs:union memberTypes="in-memory-format-enum non-space-string"/>
+    </xs:simpleType>
+
+    <xs:simpleType name="local-update-policy-enum">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="INVALIDATE"/>
+            <xs:enumeration value="CACHE_ON_UPDATE"/>
+        </xs:restriction>
     </xs:simpleType>
 
     <xs:simpleType name="topic-overload-policy-enum">

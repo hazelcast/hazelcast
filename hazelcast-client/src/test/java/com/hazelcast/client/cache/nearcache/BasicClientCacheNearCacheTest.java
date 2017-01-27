@@ -60,9 +60,9 @@ public class BasicClientCacheNearCacheTest extends AbstractBasicNearCacheTest<Da
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{
                 {InMemoryFormat.BINARY, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE},
+                {InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE},
                 {InMemoryFormat.OBJECT, LocalUpdatePolicy.INVALIDATE},
-                {InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE},
+                {InMemoryFormat.OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE},
         });
     }
 

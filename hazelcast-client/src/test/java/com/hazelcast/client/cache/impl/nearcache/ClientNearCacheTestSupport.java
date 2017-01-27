@@ -167,7 +167,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected void putToCacheAndThenGetFromClientNearCacheInternal(InMemoryFormat inMemoryFormat, boolean putIfAbsent) {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
-        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE);
+        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE_ON_UPDATE);
         NearCacheTestContext nearCacheTestContext = createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig,
                 putIfAbsent);
 
@@ -188,7 +188,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected void putAsyncToCacheAndThenGetFromClientNearCacheImmediately(InMemoryFormat inMemoryFormat) throws Exception {
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
-        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE);
+        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE_ON_UPDATE);
         NearCacheTestContext nearCacheTestContext = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 
         for (int i = 0; i < 10 * DEFAULT_RECORD_COUNT; i++) {
@@ -269,7 +269,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(inMemoryFormat);
         nearCacheConfig.setInvalidateOnChange(true);
-        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE);
+        nearCacheConfig.setLocalUpdatePolicy(LocalUpdatePolicy.CACHE_ON_UPDATE);
         final NearCacheTestContext nearCacheTestContext1 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
         final NearCacheTestContext nearCacheTestContext2 = createNearCacheTest(DEFAULT_CACHE_NAME, nearCacheConfig);
 

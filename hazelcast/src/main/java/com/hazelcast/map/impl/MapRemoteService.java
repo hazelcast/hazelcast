@@ -47,7 +47,7 @@ class MapRemoteService implements RemoteService {
         checkMapConfig(mapConfig);
 
         if (mapConfig.isNearCacheEnabled()) {
-            checkNearCacheConfig(mapConfig.getNearCacheConfig(), false);
+            checkNearCacheConfig(name, mapConfig.getNearCacheConfig(), false);
 
             return new NearCachedMapProxyImpl(name, mapServiceContext.getService(), nodeEngine, mapConfig);
         } else {

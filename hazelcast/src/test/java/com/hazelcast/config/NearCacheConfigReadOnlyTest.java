@@ -78,7 +78,7 @@ public class NearCacheConfigReadOnlyTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void setLocalUpdatePolicyOnReadOnlyNearCacheConfigShouldFail() {
-        getReadOnlyConfig().setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE);
+        getReadOnlyConfig().setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE);
     }
 
     @Test(expected = UnsupportedOperationException.class)

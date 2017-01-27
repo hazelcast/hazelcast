@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.impl;
 
-import com.hazelcast.internal.nearcache.NearCacheManager;
-import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
 import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
@@ -29,6 +27,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.nearcache.NearCacheManager;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCacheManager;
+import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -38,7 +39,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.internal.networking.SocketChannelWrapperFactory;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -124,7 +124,7 @@ public class DefaultClientExtension implements ClientExtension {
             public ClientProxy create(String id) {
                 NearCacheConfig nearCacheConfig = client.getClientConfig().getNearCacheConfig(id);
                 if (nearCacheConfig != null) {
-                    checkNearCacheConfig(nearCacheConfig, true);
+                    checkNearCacheConfig(id, nearCacheConfig, true);
                     return new NearCachedClientMapProxy(MapService.SERVICE_NAME, id);
                 } else {
                     return new ClientMapProxy(MapService.SERVICE_NAME, id);

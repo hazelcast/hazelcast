@@ -70,7 +70,7 @@ public class ClientCacheClearTest extends CacheClearTest {
                 .setCacheLocalEntries(false)
                 .setEvictionConfig(new EvictionConfig(10000, MaxSizePolicy.ENTRY_COUNT, EvictionPolicy.LFU))
                 .setInvalidateOnChange(true)
-                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE)
+                .setLocalUpdatePolicy(NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE)
                 .setMaxIdleSeconds(600)
                 .setTimeToLiveSeconds(60);
 

@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -219,6 +220,7 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, nearCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(4000, nearCacheConfig.getEvictionConfig().getSize());
         assertEquals(true, nearCacheConfig.isInvalidateOnChange());
+        assertEquals(CACHE_ON_UPDATE, nearCacheConfig.getLocalUpdatePolicy());
     }
 
     @Test

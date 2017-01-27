@@ -65,35 +65,35 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     public static final String DEFAULT_EVICTION_POLICY = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
 
     /**
-     * Local Update Policy enum.
+     * Used to decide how to reflect local updates to near cache.
      */
     public enum LocalUpdatePolicy {
         /**
-         * INVALIDATE POLICY
+         * Local put and local remove immediately invalidates near cache
          */
         INVALIDATE,
 
         /**
-         * CACHE ON UPDATE POLICY
+         * Local put immediately adds new value to near cache. Local remove works as in INVALIDATE mode
          */
+        CACHE_ON_UPDATE,
+
+        /**
+         * Subject to remove in further releases. Instead of this use {@link LocalUpdatePolicy#CACHE_ON_UPDATE}
+         */
+        @Deprecated
         CACHE
     }
 
-    private String name = "default";
-
+    private boolean cacheLocalEntries;
+    private boolean invalidateOnChange = true;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
-
     private int maxSize = EvictionConfig.DEFAULT_MAX_ENTRY_COUNT_FOR_ON_HEAP_MAP;
+    private String name = "default";
     private String evictionPolicy = EvictionConfig.DEFAULT_EVICTION_POLICY.name();
-
     private InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
-
     private LocalUpdatePolicy localUpdatePolicy = LocalUpdatePolicy.INVALIDATE;
-
-    private boolean invalidateOnChange = true;
-    private boolean cacheLocalEntries;
-
     private NearCacheConfigReadOnly readOnly;
 
     /**
@@ -105,7 +105,6 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * </ul>
      */
     private EvictionConfig evictionConfig = new EvictionConfig();
-
     private NearCachePreloaderConfig preloaderConfig = new NearCachePreloaderConfig();
 
     public NearCacheConfig() {
