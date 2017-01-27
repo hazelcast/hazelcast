@@ -111,6 +111,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         storeAndLoad(4223, true, InMemoryFormat.OBJECT);
     }
 
+    @SuppressWarnings("WeakerAccess")
     protected void storeAndLoad(int keyCount, boolean useStringKey, InMemoryFormat inMemoryFormat) {
         nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         nearCacheConfig.getPreloaderConfig()
