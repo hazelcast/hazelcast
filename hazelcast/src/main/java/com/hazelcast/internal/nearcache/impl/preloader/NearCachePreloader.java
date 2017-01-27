@@ -42,6 +42,7 @@ import static com.hazelcast.nio.Bits.readIntB;
 import static com.hazelcast.nio.Bits.writeIntB;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
+import static com.hazelcast.nio.IOUtil.getPath;
 import static com.hazelcast.nio.IOUtil.readFullyOrNothing;
 import static com.hazelcast.nio.IOUtil.rename;
 import static com.hazelcast.nio.IOUtil.toFileName;
@@ -104,7 +105,7 @@ public class NearCachePreloader<K> {
         this.nearCacheStats = nearCacheStats;
         this.serializationService = serializationService;
 
-        String filename = getFileName(preloaderConfig.getFilename(), nearCacheName);
+        String filename = getFileName(preloaderConfig.getDirectory(), nearCacheName);
         this.lock = new NearCachePreloaderLock(logger, filename + ".lock");
         this.storeFile = new File(filename);
         this.tmpStoreFile = new File(filename + "~");
@@ -286,11 +287,13 @@ public class NearCachePreloader<K> {
         buf.clear();
     }
 
-    private static String getFileName(String configFileName, String nearCacheName) {
-        if (!isNullOrEmpty(configFileName)) {
-            return configFileName;
+    private static String getFileName(String directory, String nearCacheName) {
+        String filename = toFileName("nearCache-" + nearCacheName + ".store");
+        if (isNullOrEmpty(directory)) {
+            return filename;
         }
-        return "nearcache-" + toFileName(nearCacheName) + ".store";
+
+        return getPath(directory, filename);
     }
 
     private static long getElapsedMillis(long startedNanos) {

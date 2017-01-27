@@ -48,7 +48,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
     public static final int DEFAULT_STORE_INTERVAL_SECONDS = 600;
 
     private boolean enabled;
-    private String filename = "";
+    private String directory = "";
     private int storeInitialDelaySeconds = DEFAULT_STORE_INITIAL_DELAY_SECONDS;
     private int storeIntervalSeconds = DEFAULT_STORE_INTERVAL_SECONDS;
 
@@ -65,10 +65,10 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
-        this(nearCachePreloaderConfig.enabled, nearCachePreloaderConfig.filename);
+        this(nearCachePreloaderConfig.enabled, nearCachePreloaderConfig.directory);
     }
 
-    public NearCachePreloaderConfig(String filename) {
+    public NearCachePreloaderConfig(String directory) {
         /**
          * ===== NOTE =====
          *
@@ -76,10 +76,10 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
          * they cause an "UnsupportedOperationException". Just set directly if the value is valid.
          */
 
-        this(true, filename);
+        this(true, directory);
     }
 
-    public NearCachePreloaderConfig(boolean enabled, String filename) {
+    public NearCachePreloaderConfig(boolean enabled, String directory) {
         /**
          * ===== NOTE =====
          *
@@ -88,7 +88,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
          */
 
         this.enabled = enabled;
-        this.filename = checkNotNull(filename, "filename cannot be null!");
+        this.directory = checkNotNull(directory, "directory cannot be null!");
     }
 
     NearCachePreloaderConfig getAsReadOnly() {
@@ -107,13 +107,13 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
         return this;
     }
 
-    public NearCachePreloaderConfig setFilename(String filename) {
-        this.filename = checkNotNull(filename, "filename cannot be null!");
+    public NearCachePreloaderConfig setDirectory(String directory) {
+        this.directory = checkNotNull(directory, "directory cannot be null!");
         return this;
     }
 
-    public String getFilename() {
-        return filename;
+    public String getDirectory() {
+        return directory;
     }
 
     public int getStoreInitialDelaySeconds() {
@@ -139,7 +139,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
-        out.writeUTF(filename);
+        out.writeUTF(directory);
         out.writeInt(storeInitialDelaySeconds);
         out.writeInt(storeIntervalSeconds);
     }
@@ -147,7 +147,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         enabled = in.readBoolean();
-        filename = in.readUTF();
+        directory = in.readUTF();
         storeInitialDelaySeconds = in.readInt();
         storeIntervalSeconds = in.readInt();
     }
@@ -156,7 +156,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
     public String toString() {
         return "NearCachePreloaderConfig{"
                 + "enabled=" + enabled
-                + ", filename=" + filename
+                + ", directory=" + directory
                 + ", storeInitialDelaySeconds=" + storeInitialDelaySeconds
                 + ", storeIntervalSeconds=" + storeIntervalSeconds
                 + '}';
@@ -180,7 +180,7 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
         }
 
         @Override
-        public NearCachePreloaderConfig setFilename(String filename) {
+        public NearCachePreloaderConfig setDirectory(String directory) {
             throw new UnsupportedOperationException();
         }
 

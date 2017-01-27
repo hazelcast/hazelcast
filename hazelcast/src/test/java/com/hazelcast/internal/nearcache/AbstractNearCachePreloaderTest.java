@@ -11,6 +11,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,20 +34,21 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected static final int KEY_COUNT = 10023;
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
-    protected static final File DEFAULT_STORE_FILE = new File("nearCache-defaultNearCache.store").getAbsoluteFile();
 
     private static final int TEST_TIMEOUT = 120000;
 
-    private final File preloadFile10kInt = getFileFromResources("nearcache-10k-int.store");
-    private final File preloadFile10kString = getFileFromResources("nearcache-10k-string.store");
-    private final File preloadFileEmpty = getFileFromResources("nearcache-empty.store");
-    private final File preloadFileInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes.store");
-    private final File preloadFileInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat.store");
-    private final File preloadFileNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat.store");
+    private final File preloadDir10kInt = getFileFromResources("nearcache-10k-int");
+    private final File preloadDir10kString = getFileFromResources("nearcache-10k-string");
+    private final File preloadDirEmpty = getFileFromResources("nearcache-empty");
+    private final File preloadDirInvalidMagicBytes = getFileFromResources("nearcache-invalid-magicbytes");
+    private final File preloadDirInvalidFileFormat = getFileFromResources("nearcache-invalid-fileformat");
+    private final File preloadDirNegativeFileFormat = getFileFromResources("nearcache-negative-fileformat");
 
     @After
+    @Before
     public void deleteFiles() {
-        deleteQuietly(DEFAULT_STORE_FILE);
+        deleteQuietly(getDefaultStoreFile());
+        deleteQuietly(getDefaultStoreLockFile());
     }
 
     /**
@@ -74,6 +76,18 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
      */
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
 
+    /**
+     * Returns the default store file used for the current implementation (Map or Cache)
+     * @return the default store file
+     */
+    protected abstract File getDefaultStoreFile();
+
+    /**
+     * Returns the default store lock file used for the current implementation (Map or Cache)
+     * @return the default store lock file
+     */
+    protected abstract File getDefaultStoreLockFile();
+
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys() {
@@ -95,7 +109,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 1);
-        assertLastNearCachePersistence(context, keyCount);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
 
         // shutdown the first client
         context.nearCacheInstance.shutdown();
@@ -110,14 +124,14 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
-    public void testCreateStoreFile_withInvalidFileName() {
-        String filename = "/dev/null/invalid.store";
+    public void testCreateStoreFile_withInvalidDirectory() {
+        String directory = "/dev/null/";
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(1)
                 .setStoreIntervalSeconds(1)
-                .setFilename(filename);
+                .setDirectory(directory);
 
-        expectedException.expectMessage("Cannot create lock file " + filename);
+        expectedException.expectMessage("Cannot create lock file " + directory + getDefaultStoreFile().getName());
         expectedException.expect(HazelcastException.class);
 
         createContext(true);
@@ -150,7 +164,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, keyCount);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
     }
 
     @Test(timeout = TEST_TIMEOUT)
@@ -166,46 +180,47 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         // assure that the pre-loader is working on the first client
         populateNearCache(context, KEY_COUNT, false);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, KEY_COUNT);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), KEY_COUNT);
 
         // the second client cannot acquire the lock, so it fails with an exception
-        expectedException.expectMessage("Cannot acquire lock on " + DEFAULT_STORE_FILE);
+        expectedException.expectMessage("Cannot acquire lock on " + getDefaultStoreFile());
         expectedException.expect(HazelcastException.class);
         createClientContext();
     }
 
     @Test
     public void testPreloadNearCache_withIntegerKeys() {
-        preloadNearCache(preloadFile10kInt, 10000, false);
+        preloadNearCache(preloadDir10kInt, 10000, false);
     }
 
     @Test
     public void testPreloadNearCache_withStringKeys() {
-        preloadNearCache(preloadFile10kString, 10000, true);
+        preloadNearCache(preloadDir10kString, 10000, true);
     }
 
     @Test
     public void testPreloadNearCache_withEmptyFile() {
-        preloadNearCache(preloadFileEmpty, 0, false);
+        preloadNearCache(preloadDirEmpty, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidMagicBytes() {
-        preloadNearCache(preloadFileInvalidMagicBytes, 0, false);
+        preloadNearCache(preloadDirInvalidMagicBytes, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withInvalidFileFormat() {
-        preloadNearCache(preloadFileInvalidFileFormat, 0, false);
+        preloadNearCache(preloadDirInvalidFileFormat, 0, false);
     }
 
     @Test
     public void testPreloadNearCache_withNegativeFileFormat() {
-        preloadNearCache(preloadFileNegativeFileFormat, 0, false);
+        preloadNearCache(preloadDirNegativeFileFormat, 0, false);
     }
 
-    private void preloadNearCache(File preloaderFile, int keyCount, boolean useStringKey) {
-        nearCacheConfig.getPreloaderConfig().setFilename(preloaderFile.getAbsolutePath());
+    private void preloadNearCache(File preloaderDir, int keyCount, boolean useStringKey) {
+        nearCacheConfig.getPreloaderConfig()
+                       .setDirectory(preloaderDir.getAbsolutePath());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
@@ -223,7 +238,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     protected NearCacheConfig getNearCacheConfig(InMemoryFormat inMemoryFormat, boolean invalidationOnChange, int maxSize,
-                                                 String preloaderFileName) {
+                                                 String preloaderDir) {
         EvictionConfig evictionConfig = new EvictionConfig()
                 .setMaximumSizePolicy(MaxSizePolicy.ENTRY_COUNT)
                 .setSize(maxSize)
@@ -235,7 +250,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         nearCacheConfig.getPreloaderConfig()
                 .setEnabled(true)
-                .setFilename(preloaderFileName);
+                .setDirectory(preloaderDir);
 
         return nearCacheConfig;
     }
@@ -265,15 +280,15 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         });
     }
 
-    private static void assertLastNearCachePersistence(NearCacheTestContext context, int keyCount) {
+    private static void assertLastNearCachePersistence(NearCacheTestContext context, File defaultStoreFile, int keyCount) {
         NearCacheStats nearCacheStats = context.nearCache.getNearCacheStats();
         assertEquals(keyCount, nearCacheStats.getLastPersistenceKeyCount());
         if (keyCount > 0) {
             assertTrue(nearCacheStats.getLastPersistenceWrittenBytes() > 0);
-            assertTrue(DEFAULT_STORE_FILE.exists());
+            assertTrue(defaultStoreFile.exists());
         } else {
             assertEquals(0, nearCacheStats.getLastPersistenceWrittenBytes());
-            assertFalse(DEFAULT_STORE_FILE.exists());
+            assertFalse(defaultStoreFile.exists());
         }
         assertTrue(nearCacheStats.getLastPersistenceFailure().isEmpty());
     }

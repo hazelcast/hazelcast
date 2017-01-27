@@ -481,7 +481,8 @@ public class NearCacheConfig implements DataSerializable, Serializable {
     @Override
     public String toString() {
         return "NearCacheConfig{"
-                + "timeToLiveSeconds=" + timeToLiveSeconds
+                + "name=" + name
+                + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", maxSize=" + maxSize
                 + ", evictionPolicy='" + evictionPolicy + '\''
                 + ", maxIdleSeconds=" + maxIdleSeconds

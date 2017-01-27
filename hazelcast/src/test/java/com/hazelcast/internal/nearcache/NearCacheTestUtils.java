@@ -35,14 +35,13 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setName(AbstractBasicNearCacheTest.DEFAULT_NEAR_CACHE_NAME)
+                .setName(AbstractBasicNearCacheTest.DEFAULT_NEAR_CACHE_NAME + "*")
                 .setInMemoryFormat(inMemoryFormat)
                 .setInvalidateOnChange(false);
 
         if (inMemoryFormat == InMemoryFormat.NATIVE) {
             setEvictionConfig(nearCacheConfig, LRU, USED_NATIVE_MEMORY_PERCENTAGE, 90);
         }
-
         return nearCacheConfig;
     }
 
