@@ -66,7 +66,11 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
 
         for (MapContainer mapContainer : mapContainers.values()) {
             for (int i = 0; i < partitionCount; i++) {
-                RecordStore recordStore = mapServiceContext.getPartitionContainer(i).getRecordStore(mapContainer.getName());
+                RecordStore recordStore = mapServiceContext.getPartitionContainer(i)
+                        .getExistingRecordStore(mapContainer.getName());
+                if (recordStore == null) {
+                    continue;
+                }
                 // add your owned entries to the map so they will be merged
                 if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
                     Collection<Record> records = recordMap.get(mapContainer);

@@ -23,7 +23,6 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -95,29 +94,24 @@ public class PartitionContainer {
     }
 
     private RecordStore createRecordStore(String name) {
-        if (Thread.currentThread() instanceof PartitionOperationThread) {
-            MapServiceContext serviceContext = mapService.getMapServiceContext();
-            MapContainer mapContainer = serviceContext.getMapContainer(name);
-            MapConfig mapConfig = mapContainer.getMapConfig();
-            NodeEngine nodeEngine = serviceContext.getNodeEngine();
-            IPartitionService ps = nodeEngine.getPartitionService();
-            OperationService opService = nodeEngine.getOperationService();
-            ExecutionService execService = nodeEngine.getExecutionService();
-            HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
+        MapServiceContext serviceContext = mapService.getMapServiceContext();
+        MapContainer mapContainer = serviceContext.getMapContainer(name);
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        NodeEngine nodeEngine = serviceContext.getNodeEngine();
+        IPartitionService ps = nodeEngine.getPartitionService();
+        OperationService opService = nodeEngine.getOperationService();
+        ExecutionService execService = nodeEngine.getExecutionService();
+        HazelcastProperties hazelcastProperties = nodeEngine.getProperties();
 
-            MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
-                    execService, mapContainer.toData());
-            keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
-            keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
-            keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
-            keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
-            RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
-            recordStore.init();
-            return recordStore;
-        } else {
-            // avoid creating record-store on non-partition thread
-            return null;
-        }
+        MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, nodeEngine.getClusterService(),
+                execService, mapContainer.toData());
+        keyLoader.setMaxBatch(hazelcastProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
+        keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+        keyLoader.setHasBackup(mapConfig.getTotalBackupCount() > 0);
+        keyLoader.setMapOperationProvider(serviceContext.getMapOperationProvider(name));
+        RecordStore recordStore = serviceContext.createRecordStore(mapContainer, partitionId, keyLoader);
+        recordStore.init();
+        return recordStore;
     }
 
     public ConcurrentMap<String, RecordStore> getMaps() {

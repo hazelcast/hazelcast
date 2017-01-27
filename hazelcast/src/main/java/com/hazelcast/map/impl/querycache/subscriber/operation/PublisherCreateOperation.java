@@ -71,11 +71,13 @@ public class PublisherCreateOperation extends MapOperation {
     private transient QueryResult queryResult;
 
     public PublisherCreateOperation() {
+        this.createRecordStoreOnDemand = false;
     }
 
     public PublisherCreateOperation(AccumulatorInfo info) {
         super(info.getMapName());
         this.info = info;
+        this.createRecordStoreOnDemand = false;
     }
 
     @Override
@@ -85,7 +87,7 @@ public class PublisherCreateOperation extends MapOperation {
             info.setPublishable(false);
         }
         init();
-        if (populate) {
+        if (populate && recordStore != null) {
             this.queryResult = createSnapshot();
         } else {
             this.queryResult = null;
