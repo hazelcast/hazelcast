@@ -1,11 +1,13 @@
 package com.hazelcast.client.cache.nearcache;
 
+import com.hazelcast.cache.CacheUtil;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCacheManager;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientICacheManager;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
@@ -31,17 +33,25 @@ import org.junit.runners.Parameterized.Parameters;
 
 import javax.cache.Cache;
 import javax.cache.spi.CachingProvider;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
+import static com.hazelcast.nio.IOUtil.toFileName;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
 public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloaderTest<Data, String> {
+
+
+
+    private static final String CACHE_FILE_NAME = toFileName(CacheUtil.getDistributedObjectName("defaultNearCache"));
+    private static final File DEFAULT_STORE_FILE = new File("nearCache-" + CACHE_FILE_NAME + ".store").getAbsoluteFile();
+    private static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
 
     @Parameter
     public InMemoryFormat inMemoryFormat;
@@ -73,8 +83,13 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
     }
 
     @Override
-    protected <K, V> DataStructureAdapter<K, V> createNewClientStore(NearCacheTestContext context, String name) {
-        return new ICacheDataStructureAdapter<K, V>((Cache<K, V>) context.nearCacheInstance.getCacheManager().getCache(name));
+    protected File getDefaultStoreFile() {
+        return DEFAULT_STORE_FILE;
+    }
+
+    @Override
+    protected File getDefaultStoreLockFile() {
+        return DEFAULT_STORE_LOCK_FILE;
     }
 
     @Override

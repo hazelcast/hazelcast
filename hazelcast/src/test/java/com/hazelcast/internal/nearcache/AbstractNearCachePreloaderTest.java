@@ -6,7 +6,6 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -19,11 +18,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 
 import java.io.File;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
-import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static com.hazelcast.nio.IOUtil.deleteQuietly;
 import static com.hazelcast.nio.IOUtil.getFileFromResources;
@@ -31,7 +26,6 @@ import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
 
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
 
@@ -40,8 +34,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     protected static final int KEY_COUNT = 10023;
     protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
-    protected static final File DEFAULT_STORE_FILE = new File("nearCache-defaultNearCache.store").getAbsoluteFile();
-    protected static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
 
     private static final int TEST_TIMEOUT = 120000;
 
@@ -55,8 +47,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @After
     @Before
     public void deleteFiles() {
-        deleteQuietly(DEFAULT_STORE_FILE);
-        deleteQuietly(DEFAULT_STORE_LOCK_FILE);
+        deleteQuietly(getDefaultStoreFile());
+        deleteQuietly(getDefaultStoreLockFile());
     }
 
     /**
@@ -85,15 +77,16 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     protected abstract <K, V> NearCacheTestContext<K, V, NK, NV> createClientContext();
 
     /**
-     * Creates a storage (Map or Cache, HD or Heap) from the given context and the given name.
-     *
-     * @param context NearCacheTestContext used to retrieve the Member instance in order to create the storage
-     * @param name The name of the storage
-     * @param <K> Key type of the created {@link DataStructureAdapter}
-     * @param <V> Value type of the created {@link DataStructureAdapter}
-     * @return a {@link DataStructureAdapter} as created from the given context and per implementation of this class
+     * Returns the default store file used for the current implementation (Map or Cache)
+     * @return the default store file
      */
-    protected abstract <K, V> DataStructureAdapter<K, V> createNewClientStore(NearCacheTestContext context, String name);
+    protected abstract File getDefaultStoreFile();
+
+    /**
+     * Returns the default store lock file used for the current implementation (Map or Cache)
+     * @return the default store lock file
+     */
+    protected abstract File getDefaultStoreLockFile();
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
@@ -116,7 +109,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 1);
-        assertLastNearCachePersistence(context, keyCount);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
 
         // shutdown the first client
         context.nearCacheInstance.shutdown();
@@ -138,7 +131,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreIntervalSeconds(1)
                 .setDirectory(directory);
 
-        expectedException.expectMessage("Cannot create lock file " + directory + DEFAULT_STORE_FILE.getName());
+        expectedException.expectMessage("Cannot create lock file " + directory + getDefaultStoreFile().getName());
         expectedException.expect(HazelcastException.class);
 
         createContext(true);
@@ -171,7 +164,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         populateNearCache(context, keyCount, useStringKey);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, keyCount);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
     }
 
     @Test(timeout = TEST_TIMEOUT)
@@ -187,10 +180,10 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         // assure that the pre-loader is working on the first client
         populateNearCache(context, KEY_COUNT, false);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, KEY_COUNT);
+        assertLastNearCachePersistence(context, getDefaultStoreFile(), KEY_COUNT);
 
         // the second client cannot acquire the lock, so it fails with an exception
-        expectedException.expectMessage("Cannot acquire lock on " + DEFAULT_STORE_FILE);
+        expectedException.expectMessage("Cannot acquire lock on " + getDefaultStoreFile());
         expectedException.expect(HazelcastException.class);
         createClientContext();
     }
@@ -223,47 +216,6 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Test
     public void testPreloadNearCache_withNegativeFileFormat() {
         preloadNearCache(preloadDirNegativeFileFormat, 0, false);
-    }
-
-    @Test
-    public void testPreloadNearCacheLock_withSharedMapConfig_concurrently()
-        throws InterruptedException {
-
-        // Ignore other memory formats, this test is not affected by that option.
-        assumeTrue(BINARY.equals(nearCacheConfig.getInMemoryFormat()));
-
-        nearCacheConfig.getPreloaderConfig().setDirectory("");
-
-        final NearCacheTestContext ctx = createContext(true);
-
-        int nThreads = 10;
-        ThreadPoolExecutor pool = (ThreadPoolExecutor) Executors.newFixedThreadPool(nThreads);
-        final CountDownLatch startLatch = new CountDownLatch(nThreads);
-        final CountDownLatch finishLatch = new CountDownLatch(nThreads);
-
-        for (int i = 0; i < nThreads; i++) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    startLatch.countDown();
-                    try {
-                        startLatch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                    }
-
-                    DataStructureAdapter store = createNewClientStore(ctx, DEFAULT_NEAR_CACHE_NAME + Thread.currentThread());
-                    for (int i = 0; i < 100; i++) {
-                        store.put("Test_" + Thread.currentThread() + "_" + i, "Value_" + Thread.currentThread() + "_" + i);
-                    }
-
-                    finishLatch.countDown();
-                }
-            });
-        }
-
-        finishLatch.await();
-        pool.shutdownNow();
     }
 
     private void preloadNearCache(File preloaderDir, int keyCount, boolean useStringKey) {
@@ -328,15 +280,15 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         });
     }
 
-    private static void assertLastNearCachePersistence(NearCacheTestContext context, int keyCount) {
+    private static void assertLastNearCachePersistence(NearCacheTestContext context, File defaultStoreFile, int keyCount) {
         NearCacheStats nearCacheStats = context.nearCache.getNearCacheStats();
         assertEquals(keyCount, nearCacheStats.getLastPersistenceKeyCount());
         if (keyCount > 0) {
             assertTrue(nearCacheStats.getLastPersistenceWrittenBytes() > 0);
-            assertTrue(DEFAULT_STORE_FILE.exists());
+            assertTrue(defaultStoreFile.exists());
         } else {
             assertEquals(0, nearCacheStats.getLastPersistenceWrittenBytes());
-            assertFalse(DEFAULT_STORE_FILE.exists());
+            assertFalse(defaultStoreFile.exists());
         }
         assertTrue(nearCacheStats.getLastPersistenceFailure().isEmpty());
     }
