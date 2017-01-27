@@ -115,6 +115,12 @@ The following are the issues solved for 3.8 release.
 - The method setEvictionPolicy for near cache configuration wants a string argument whereas the same for map configuration wants an enum value. [2010]
 - Fix inconsistent Ringbuffer TTL defaults: when starting a HazelcastInstance without an explicit configuration (`HazelcastInstance hz = Hazelcast.newHazelcastInstance();`), the default Ringbuffer TTL was 30 seconds, instead of correct value 0. This change may break existing applications relying on the default configuration. [9610]
 
-4. Removed/Deprecated Features
+4. Known Issues
+
+Following is a known issue for 3.8-RC1:
+
+- Client fails to start when it has a near cache preloader configured and when wildcards are used for configuration: Near cache preloader configuration has a file where near cache keys are persisted. When you use wildcards in a configuration, e.g., `NearCache*`, then multiple near caches will attempt to use the same file.
+
+5. Removed/Deprecated Features
 
 - Aggregators feature is deprecated. Instead, Fast-Aggregations feature should be used.
