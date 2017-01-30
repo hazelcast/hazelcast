@@ -79,9 +79,8 @@ class ServiceEndpointResolver
             return getSimpleDiscoveryNodes(client.endpoints().inNamespace(namespace).withName(serviceName).get());
         } else if (serviceLabel != null && !serviceLabel.isEmpty()) {
             return getDiscoveryNodes(client.endpoints().inNamespace(namespace).withLabel(serviceLabel, serviceLabelValue).list());
-        } else {
-            return getNodesByNamespace();
         }
+        return getNodesByNamespace();
     }
 
     private List<DiscoveryNode> getNodesByNamespace() {
