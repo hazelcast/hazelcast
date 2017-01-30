@@ -57,4 +57,7 @@ public final class TestUtil {
             assertEquals("expected exception not found in causes chain", expected, caught);
         }
     }
+
+    public static final class DummyUncheckedTestException extends RuntimeException {
+    }
 }
