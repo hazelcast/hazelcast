@@ -84,7 +84,6 @@
         <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
 
         <log4j.version>1.2.12</log4j.version>
-
         <junit.version>4.12</junit.version>
         <hamcrest.version>1.3</hamcrest.version>
         <mockito.version>1.10.19</mockito.version>
@@ -265,7 +264,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven.surefire.plugin.version}</version>
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
@@ -365,6 +363,9 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                    <configuration>
+                        <failIfNoTests>false</failIfNoTests>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -387,11 +388,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${maven.surefire.plugin.version}</version>
-                        <configuration combine.self="override">
+                        <configuration>
                             <forkCount>1</forkCount>
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                            <testFailureIgnore>true</testFailureIgnore>
+                            <excludedGroups></excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -414,13 +413,19 @@
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
                         <version>${maven.jacoco.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>prepare-agent</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration combine.self="override">
-                            <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <configuration>
                             <testFailureIgnore>true</testFailureIgnore>
                         </configuration>
                     </plugin>
