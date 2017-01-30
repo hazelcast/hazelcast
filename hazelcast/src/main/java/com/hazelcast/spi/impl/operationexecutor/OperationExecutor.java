@@ -154,6 +154,14 @@ public interface OperationExecutor extends PacketHandler {
     boolean isOperationThread();
 
     /**
+     * Returns the id of the partitionThread assigned to handle partition with given partitionId
+     *
+     * @param partitionId given partitionId
+     * @return id of the partitionThread assigned to handle partition with given partitionId
+     */
+    int getPartitionThreadId(int partitionId);
+
+    /**
      * Interrupts the partition threads.
      */
     void interruptPartitionThreads();
