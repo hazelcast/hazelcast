@@ -19,25 +19,13 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
-public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHolder {
+public class ScheduledExecutorMemberBin extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 
     private final NodeEngine nodeEngine;
-
-    private final ConcurrentMap<String, ScheduledExecutorContainer> containers =
-            new ConcurrentHashMap<String, ScheduledExecutorContainer>();
 
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
@@ -54,25 +42,14 @@ public class ScheduledExecutorMemberBin implements ScheduledExecutorContainerHol
             };
 
     public ScheduledExecutorMemberBin(NodeEngine nodeEngine) {
+        super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.nodeEngine = nodeEngine;
     }
 
-    public ScheduledExecutorContainer getOrCreateContainer(String name) {
-        checkNotNull(name, "Name can't be null");
-
-        return getOrPutIfAbsent(containers, name, containerConstructorFunction);
-    }
-
-    public Collection<ScheduledExecutorContainer> getContainers() {
-        return Collections.unmodifiableCollection(containers.values());
-    }
-
-    public void destroy() {
-        for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownScheduledDurableExecutor(container.getName());
-        }
+    @Override
+    public ConstructorFunction<String, ScheduledExecutorContainer> getContainerConstructorFunction() {
+        return containerConstructorFunction;
     }
 
 }

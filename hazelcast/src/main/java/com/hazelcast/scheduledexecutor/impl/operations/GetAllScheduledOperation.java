@@ -60,13 +60,15 @@ public class GetAllScheduledOperation
     private void populateScheduledForHolder(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
                                             int holderId) {
         ScheduledExecutorContainerHolder partition = service.getPartitionOrMemberBin(holderId);
-        Collection<ScheduledExecutorContainer> containers = partition.getContainers();
-        for (ScheduledExecutorContainer container : containers) {
-            Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
-            for (ScheduledTaskDescriptor task : tasks) {
-                if (task.isTaskOwner()) {
-                    handlers.add(container.offprintHandler(task.getDefinition().getName()));
-                }
+        ScheduledExecutorContainer container = partition.getContainer(schedulerName);
+        if (container == null || service.isShutdown(schedulerName)) {
+            return;
+        }
+
+        Collection<ScheduledTaskDescriptor> tasks = container.getTasks();
+        for (ScheduledTaskDescriptor task : tasks) {
+            if (task.isTaskOwner()) {
+                handlers.add(container.offprintHandler(task.getDefinition().getName()));
             }
         }
     }

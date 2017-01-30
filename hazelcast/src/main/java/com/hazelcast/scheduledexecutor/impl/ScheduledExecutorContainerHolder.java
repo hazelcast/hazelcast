@@ -16,12 +16,14 @@
 
 package com.hazelcast.scheduledexecutor.impl;
 
-import java.util.Collection;
-
 public interface ScheduledExecutorContainerHolder {
+
+    ScheduledExecutorContainer getContainer(String name);
 
     ScheduledExecutorContainer getOrCreateContainer(String name);
 
-    Collection<ScheduledExecutorContainer> getContainers();
+    void destroy();
+
+    void destroyContainer(String name);
 
 }
