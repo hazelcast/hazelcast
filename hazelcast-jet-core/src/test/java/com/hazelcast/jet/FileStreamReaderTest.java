@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.core.IList;
 import com.hazelcast.jet.impl.connector.FileStreamReader;
+import com.hazelcast.jet.impl.connector.FileStreamReader.WatchType;
 import com.hazelcast.jet.impl.connector.IListWriter;
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
@@ -43,142 +43,104 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 public class FileStreamReaderTest extends JetTestSupport {
 
-    private JetTestInstanceFactory factory;
     private JetInstance instance;
+    private File directory;
+    private IStreamList<String> list;
 
     @Before
-    public void setup() {
-        factory = new JetTestInstanceFactory();
-        instance = factory.newMember();
-    }
-
-    @After
-    public void tearDown() {
-        factory.shutdownAll();
+    public void setup() throws IOException {
+        instance = createJetMember();
+        directory = createTempDirectory();
+        list = instance.getList("writer");
     }
 
     @Test
-    public void testFileStreamReader_new() throws IOException, InterruptedException {
-        File directory = createTempFileDirectory();
-        DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
-                FileStreamReader.WatchType.NEW))
-                .localParallelism(4);
+    public void when_watchType_new() throws IOException, InterruptedException {
+        DAG dag = buildDag(WatchType.NEW);
 
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
+        File file = createNewFile();
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        Future<Void> jobFuture = instance.newJob(dag).execute();
 
-        instance.newJob(dag).execute();
-        sleepAtLeastSeconds(10);
+        sleepAtLeastSeconds(2);
+        appendToFile(file, "hello", "world");
+        assertTrueEventually(() -> assertEquals(2, list.size()));
 
-        File file = new File(directory, randomName());
-        writeNewLine(file, "hello", "world");
-        IList<Object> list = instance.getList("consumer");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(2, list.size());
-            }
-        });
+        assertTrue(file.delete());
+        assertTrue(directory.delete());
+        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
     }
 
     @Test
-    public void testFileStreamReader_reprocess() throws IOException, InterruptedException {
-        File directory = createTempFileDirectory();
-        File file = new File(directory, randomName());
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertTrue(file.createNewFile());
-            }
-        });
-        DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
-                FileStreamReader.WatchType.REPROCESS))
-                .localParallelism(4);
+    public void when_watchType_reProcess() throws IOException, InterruptedException {
+        DAG dag = buildDag(WatchType.REPROCESS);
 
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
+        File file = createNewFile();
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        Future<Void> jobFuture = instance.newJob(dag).execute();
 
-        instance.newJob(dag).execute();
-        sleepAtLeastSeconds(10);
+        sleepAtLeastSeconds(2);
+        appendToFile(file, "hello", "world");
+        assertTrueEventually(() -> assertEquals(2, list.size()));
 
-        writeNewLine(file, "hello", "world");
-        IList<Object> list = instance.getList("consumer");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(2, list.size());
+        sleepAtLeastSeconds(2);
+        appendToFile(file, "jet");
+        assertTrueEventually(() -> assertEquals(5, list.size()));
 
-            }
-        });
-        writeNewLine(file, "jet");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(5, list.size());
-            }
-        });
+        assertTrue(file.delete());
+        assertTrue(directory.delete());
+        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
     }
 
     @Test
-    public void testFileStreamReader_appendOnly() throws IOException, InterruptedException {
-        File directory = createTempFileDirectory();
-        File file = new File(directory, randomName());
-        writeNewLine(file, "init");
-        DAG dag = new DAG();
-        Vertex producer = new Vertex("producer", FileStreamReader.supplier(directory.getPath(),
-                FileStreamReader.WatchType.APPENDED_ONLY))
-                .localParallelism(4);
+    public void when_watchType_appendedOnly() throws IOException, InterruptedException {
+        DAG dag = buildDag(WatchType.APPENDED_ONLY);
+        File file = createNewFile();
 
-        Vertex consumer = new Vertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
+        appendToFile(file, "init");
 
-        dag.vertex(producer)
-           .vertex(consumer)
-           .edge(between(producer, consumer));
+        Future<Void> jobFuture = instance.newJob(dag).execute();
 
-        instance.newJob(dag).execute();
-        sleepAtLeastSeconds(10);
+        sleepAtLeastSeconds(2);
 
-        writeNewLine(file, "hello", "world");
-        IList<Object> list = instance.getList("consumer");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(3, list.size());
-            }
-        });
-        writeNewLine(file, "append", "only");
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(5, list.size());
-            }
-        });
+        appendToFile(file, "hello", "world");
+        assertTrueEventually(() -> assertEquals(3, list.size()));
+
+        sleepAtLeastSeconds(2);
+
+        appendToFile(file, "append", "only");
+        assertTrueEventually(() -> assertEquals(5, list.size()));
+
+        assertTrue(file.delete());
+        assertTrue(directory.delete());
+        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
     }
 
-    private static void writeNewLine(File file, String... payloads) throws IOException {
-        FileOutputStream outputStream = new FileOutputStream(file, true);
-        PrintWriter writer = new PrintWriter(outputStream);
-        for (String payload : payloads) {
-            writer.write(payload + "\n");
+    private DAG buildDag(WatchType type) {
+        DAG dag = new DAG();
+        Vertex reader = dag.newVertex("reader", FileStreamReader.supplier(directory.getPath(), type))
+                           .localParallelism(1);
+        Vertex writer = dag.newVertex("writer", IListWriter.supplier(list.getName())).localParallelism(1);
+        dag.edge(between(reader, writer));
+        return dag;
+    }
+
+    private File createNewFile() {
+        File file = new File(directory, randomName());
+        assertTrueEventually(() -> assertTrue(file.createNewFile()));
+        return file;
+    }
+
+    private static void appendToFile(File file, String... lines) throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
+            for (String payload : lines) {
+                writer.write(payload + "\n");
+            }
         }
-        writer.flush();
-        writer.close();
-        outputStream.close();
     }
 
-    private File createTempFileDirectory() throws IOException {
-        Path directory = Files.createTempDirectory(randomName());
+    private File createTempDirectory() throws IOException {
+        Path directory = Files.createTempDirectory("file-stream-reader");
         File file = directory.toFile();
         file.deleteOnExit();
         return file;

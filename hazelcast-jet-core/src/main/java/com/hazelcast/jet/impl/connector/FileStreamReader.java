@@ -17,12 +17,11 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.logging.ILogger;
 
 import javax.annotation.Nonnull;
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,6 +29,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.ArrayList;
@@ -37,145 +37,134 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
-import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 /**
- * A producer reads files from directory and emits them lines by lines to the next processor
+ * A source that reads files from directory and emits them lines by line.
+ *
+ * This source is mainly aimed for testing a simple streaming setup that reads from files.
+ *
+ * <p>
+ * {@link WatchType} parameter controls how new and modifies files are
+ * handled by the {@code Processor}.
  */
-public class FileStreamReader extends AbstractProcessor {
+public class FileStreamReader extends AbstractProcessor implements Closeable {
 
-    private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(FileStreamReader.class);
-    private final String filePath;
     private final WatchType watchType;
     private final int parallelism;
     private final int id;
+    private final Path path;
+
+    private final Map<String, Long> fileOffsets = new HashMap<>();
+
     private WatchService watcher;
-    private Path path;
 
     public enum WatchType {
 
         /**
-         * Process only new files.
+         * Process only new files. Modified files will not be re-read.
          */
         NEW,
 
         /**
-         * Re-process files from beginning when a modification occurs on them.
+         * Re-read files from beginning when a modification occurs on them. The whole
+         * fill will be emitted every time there is a modification.
          */
         REPROCESS,
 
         /**
-         * Process only appended content to the files.
+         * Read only appended content to the files. Only the new content since the
+         * last read will be emitted.
          */
         APPENDED_ONLY
     }
 
-    private Map<String, Long> fileOffsets = new HashMap<>();
 
-
-    protected FileStreamReader(String filePath, WatchType watchType, int parallelism, int id) {
-        this.filePath = filePath;
+    FileStreamReader(String folder, WatchType watchType, int parallelism, int id) {
         this.watchType = watchType;
         this.parallelism = parallelism;
         this.id = id;
+        this.path = Paths.get(folder);
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        try {
-            watcher = FileSystems.getDefault().newWatchService();
-            path = Paths.get(filePath);
-            path.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
-            LOGGER.info("Started to watch the directory : " + filePath);
-        } catch (IOException e) {
-            LOGGER.severe("Error occurred while watching directories, error : " + e.getMessage());
-            throw rethrow(e);
-        }
+        watcher = FileSystems.getDefault().newWatchService();
+        path.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
+        getLogger().info("Started to watch the directory: " + path);
     }
 
     @Override
     public boolean complete() {
         try {
-            while (true) {
-                final WatchKey key;
-                try {
-                    key = watcher.take();
-                } catch (InterruptedException x) {
-                    return true;
-                }
-
-                for (WatchEvent<?> event : key.pollEvents()) {
-                    final WatchEvent.Kind<?> kind = event.kind();
-                    final WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                    final Path file = ev.context();
-                    final Path resolved = path.resolve(file);
-                    if (kind == OVERFLOW) {
-                        continue;
-                    }
-                    if (kind == ENTRY_DELETE) {
-                        LOGGER.info("Directory (" + filePath + ") deleted, stopped watching");
-                        watcher.close();
-                        return true;
-                    }
-
-                    final int filenameHash = resolved.toFile().getPath().hashCode();
-                    if (((filenameHash & Integer.MAX_VALUE) % parallelism) != id) {
-                        continue;
-                    }
-
-                    if (kind == ENTRY_CREATE) {
-                        LOGGER.info("Detected new file: " + resolved);
-                        readFile(resolved, 0L);
-                        return !key.reset();
-                    }
-                    if (kind != ENTRY_MODIFY) {
-                        continue;
-                    }
-                    LOGGER.info("Detected file change: " + resolved);
-                    switch (watchType) {
-                        case REPROCESS:
-                            LOGGER.info("Re-processing the file (" + resolved + ')');
-                            fileOffsets.put(resolved.toString(), 0L);
-                            readFile(resolved, 0L);
-                            return !key.reset();
-                        case APPENDED_ONLY:
-                            LOGGER.info("Processing only the appended content on the file (" + resolved + ')');
-                            readFile(resolved, fileOffsets.computeIfAbsent(resolved.toString(), s -> 0L));
-                            return !key.reset();
-                        case NEW:
-                        default:
-                    }
-                }
-                boolean valid = key.reset();
-                if (!valid) {
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            LOGGER.severe("Error occurred while watching directories, error : " + e.getMessage());
+            return tryComplete();
+        } catch (InterruptedException ignored) {
             return true;
+        } catch (IOException e) {
+            throw sneakyThrow(e);
         }
-        return true;
     }
 
-    private void readFile(Path file, long offset) throws IOException {
-        FileInputStream fis = new FileInputStream(file.toFile());
-        fis.getChannel().position(offset);
-        String line;
-        long position;
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(fis, "UTF-8"))) {
-            while ((line = reader.readLine()) != null) {
-                LOGGER.finest("line = " + line);
-                emit(line);
+    private boolean tryComplete() throws InterruptedException, IOException {
+        WatchKey key = watcher.take();
+        for (WatchEvent<?> event : key.pollEvents()) {
+            final WatchEvent.Kind<?> kind = event.kind();
+            final Path filePath = path.resolve(((WatchEvent<Path>) event).context());
+
+            if (kind == ENTRY_DELETE && filePath.equals(path)) {
+                getLogger().info("Directory " + path + " deleted, stopped watching");
+                return true;
             }
-            position = fis.getChannel().position();
+
+            if (shouldProcessEvent(filePath)) {
+                processEvent(kind, filePath);
+            }
         }
-        fileOffsets.put(file.toString(), position);
+        if (!key.reset()) {
+            getLogger().info("Watch key is invalid. Stopping watcher.");
+            return true;
+        }
+        return false;
+    }
+
+    private void processEvent(Kind<?> kind, Path file) throws IOException {
+        if (kind == ENTRY_DELETE) {
+            getLogger().info("Deteceted deleted file: " + file);
+            fileOffsets.remove(file.toString());
+        } else if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
+            getLogger().info("Detected modified file: " + file);
+            long previousOffset = watchType == WatchType.REPROCESS ?
+                    0L : fileOffsets.computeIfAbsent(file.toString(), s -> 0L);
+
+            long newOffset = processFile(file, previousOffset);
+
+            if (watchType == WatchType.APPENDED_ONLY) {
+                fileOffsets.put(file.toString(), newOffset);
+            }
+        }
+    }
+
+    private boolean shouldProcessEvent(Path file) {
+        int hashCode = file.toFile().getPath().hashCode();
+        return ((hashCode & Integer.MAX_VALUE) % parallelism) == id;
+    }
+
+    private long processFile(Path file, long offset) throws IOException {
+        try (FileInputStream fis = new FileInputStream(file.toFile())) {
+            fis.getChannel().position(offset);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(fis, "UTF-8"))) {
+                for (String line; (line = reader.readLine()) != null; ) {
+                    getLogger().finest("line = " + line);
+                    emit(line);
+                }
+                return fis.getChannel().position();
+            }
+        }
     }
 
     @Override
@@ -183,34 +172,49 @@ public class FileStreamReader extends AbstractProcessor {
         return false;
     }
 
+    @Override
+    public void close() throws IOException {
+        if (watcher != null) {
+            getLogger().info("Closing watcher");
+            watcher.close();
+        }
+    }
+
     /**
      * Creates a supplier for {@link FileStreamReader}
      *
-     * @param filePath
-     * @param watchType
+     * @param folderPath the folder to watch
+     * @param watchType  the
      */
-    public static ProcessorSupplier supplier(String filePath, WatchType watchType) {
-        return new Supplier(filePath, watchType);
+    public static ProcessorSupplier supplier(String folderPath, WatchType watchType) {
+        return new Supplier(folderPath, watchType);
     }
 
     private static class Supplier implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
-        private final String filePath;
+        private final String folderPath;
         private final WatchType watchType;
 
-        Supplier(String filePath, WatchType watchType) {
-            this.filePath = filePath;
+        private transient ArrayList<FileStreamReader> readers;
+
+        Supplier(String folderPath, WatchType watchType) {
+            this.folderPath = folderPath;
             this.watchType = watchType;
         }
 
         @Override @Nonnull
-        public List<Processor> get(int count) {
-            List<Processor> processors = new ArrayList<>();
+        public List<FileStreamReader> get(int count) {
+            readers = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                processors.add(new FileStreamReader(filePath, watchType, count, i));
+                readers.add(new FileStreamReader(folderPath, watchType, count, i));
             }
-            return processors;
+            return readers;
+        }
+
+        @Override
+        public void complete(Throwable error) {
+            readers.forEach(r -> uncheckRun(r::close));
         }
     }
 
