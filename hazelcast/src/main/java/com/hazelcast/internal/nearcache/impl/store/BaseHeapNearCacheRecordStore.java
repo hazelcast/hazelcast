@@ -76,6 +76,9 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     protected R putRecord(K key, R record) {
         R oldRecord = records.put(key, record);
         nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, record));
+        if (oldRecord != null) {
+            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, oldRecord));
+        }
         return oldRecord;
     }
 
