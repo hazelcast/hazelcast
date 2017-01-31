@@ -1,0 +1,1 @@
+Visit https://hazelcast.org/plugins/ for the list of officially supported plugins.
