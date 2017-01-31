@@ -65,10 +65,12 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 The following are the issues solved for 3.8 release.
 
+- If `hazelcast.discovery.enabled` on the client side: If neither `DiscoveryServiceProvider` nor `DiscoveryStrategyConfig` is specified, an NPE is thrown. A more helpful exception should be provided. [9722]
 - The hazelcast-all.jar, which is the one included in Hazelcast Docker, downloaded from Maven repo, contains an outdated version of hazelcast-aws library. [9698]
 - When scheduling on random partitions and trying to get all the scheduled tasks from the service, the number of tasks is wrong. The returned figure seems to match "num_of_tasks * backup_count". [9694]
 - When a scheduled Callable/Runnable throws an exception, invoking future.get() on the client side does not throw the expected ExecutionException. [9685]
 - IScheduledExecutorService does not use HazelcastInstanceAware on local operations. [9675]
+- Near cache compatibility with 3.7 clients is broken for TTL expirations. [9674]
 - Replicated Map configured with `async-fillup` as `false` prevents further members from joining the cluster. Members are stuck in an endless loop. [9592]
 - When an exception is thrown from an `InitializingObject`'s initialize method, it is logged in WARNING level but then swallowed and the proxy object is added to the `ProxyRegistry`. Instead, the exception should result in removing the object from the `ProxyRegistry`, as it is already done for exceptions thrown from `service.createDistributedObject`. [9578]
 - There is a memory leak in `MetaDataGenerator` when (1) near cache invalidations are enabled, (2) map/cache is created and destroyed, and (3) the map name is stays referenced from `MetaDataGenerator`. [9495]
