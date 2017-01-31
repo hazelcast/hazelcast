@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
+import static java.lang.String.format;
 
 /**
  * Runs the test methods in parallel with multiple threads.
@@ -138,13 +139,14 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 HazelcastParallelClassRunner.super.runChild(method, notifier);
                 numThreads.decrementAndGet();
                 float took = (float) (System.currentTimeMillis() - start) / 1000;
-                System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
+                System.out.println(format("Finished Running Test: %s in %.3f seconds.", testName, took));
             } finally {
                 removeThreadLocalTestMethodName();
             }
         }
     }
 
+    @SuppressWarnings({"deprecation", "NullableProblems"})
     private static class ThreadLocalProperties extends Properties {
 
         private final Properties globalProperties;
