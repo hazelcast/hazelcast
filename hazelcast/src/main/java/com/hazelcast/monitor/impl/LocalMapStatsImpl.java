@@ -390,7 +390,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", lockedEntryCount=" + lockedEntryCount
                 + ", dirtyEntryCount=" + dirtyEntryCount
                 + ", heapCost=" + heapCost
-                + ", nearCacheStats=" + nearCacheStats
+                + ", nearCacheStats=" + (nearCacheStats != null ? nearCacheStats : "")
                 + '}';
     }
 }
