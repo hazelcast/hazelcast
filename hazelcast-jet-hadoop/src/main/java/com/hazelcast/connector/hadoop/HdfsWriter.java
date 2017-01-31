@@ -21,8 +21,6 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.FileOutputCommitter;
@@ -37,24 +35,21 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import org.apache.hadoop.mapred.TextOutputFormat;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.valueOf;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 
 /**
  * HDFS writer for Jet, consumes Map.Entry objects and writes them to the output file in HDFS.
  */
 public final class HdfsWriter extends AbstractProcessor {
-
-    private static final ILogger LOGGER = Logger.getLogger(HdfsWriter.class);
 
     private final RecordWriter recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
@@ -70,10 +65,8 @@ public final class HdfsWriter extends AbstractProcessor {
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         Map.Entry entry = (Map.Entry) item;
-        return uncheckCall(() -> {
-            recordWriter.write(entry.getKey(), entry.getValue());
-            return true;
-        });
+        recordWriter.write(entry.getKey(), entry.getValue());
+        return true;
     }
 
     @Override
@@ -130,6 +123,7 @@ public final class HdfsWriter extends AbstractProcessor {
 
         private final boolean commitJob;
         private final String path;
+
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobConf conf;
@@ -157,37 +151,31 @@ public final class HdfsWriter extends AbstractProcessor {
         @Override
         public void complete(Throwable error) {
             if (commitJob) {
-                try {
-                    outputCommitter.commitJob(jobContext);
-                } catch (IOException e) {
-                    throw rethrow(e);
-                }
+                uncheckRun(() -> outputCommitter.commitJob(jobContext));
             }
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return IntStream.range(0, count)
-                    .mapToObj(i -> {
-                        if (i == 0) {
-                            uncheckCall(() -> {
-                                outputCommitter.setupJob(jobContext);
-                                return null;
-                            });
-                        }
-                        String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
-                        TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobId.getId(),
-                                JOB_SETUP, i, 0);
-                        conf.set("mapred.task.id", taskAttemptID.toString());
-                        conf.setInt("mapred.task.partition", i);
+            return range(0, count).mapToObj(i -> {
+                if (i == 0) {
+                    uncheckCall(() -> {
+                        outputCommitter.setupJob(jobContext);
+                        return null;
+                    });
+                }
+                String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
+                TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobId.getId(),
+                        JOB_SETUP, i, 0);
+                conf.set("mapred.task.id", taskAttemptID.toString());
+                conf.setInt("mapred.task.partition", i);
 
-                        TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(conf, taskAttemptID);
-                        RecordWriter recordWriter = uncheckCall(() -> conf.getOutputFormat().getRecordWriter(null,
-                                conf, uuid + '-' + valueOf(i), Reporter.NULL));
-                        return new HdfsWriter(recordWriter, taskAttemptContext, outputCommitter);
+                TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(conf, taskAttemptID);
+                RecordWriter recordWriter = uncheckCall(() -> conf.getOutputFormat().getRecordWriter(null,
+                        conf, uuid + '-' + valueOf(i), Reporter.NULL));
+                return new HdfsWriter(recordWriter, taskAttemptContext, outputCommitter);
 
-                    })
-                    .collect(toList());
+            }).collect(toList());
         }
     }
 }

@@ -83,30 +83,27 @@ public final class HdfsReader extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        try {
-            Iterator<RecordReader> iterator = recordReaders.iterator();
-            while (iterator.hasNext()) {
-                RecordReader recordReader = iterator.next();
-                boolean read;
-                do {
-                    Object key = recordReader.createKey();
-                    Object value = recordReader.createValue();
-                    read = recordReader.next(key, value);
-                    if (read) {
-                        emit(new SimpleImmutableEntry<>(key, value));
-                        if (getOutbox().isHighWater()) {
-                            return false;
-                        }
-                    }
+        return uncheckCall(this::tryComplete);
+    }
 
-                } while (read);
-                recordReader.close();
-                iterator.remove();
+    private boolean tryComplete() throws IOException {
+        Iterator<RecordReader> iterator = recordReaders.iterator();
+        while (iterator.hasNext()) {
+            RecordReader recordReader = iterator.next();
+            for (boolean read = true; read; ) {
+                Object key = recordReader.createKey();
+                Object value = recordReader.createValue();
+                if (read = recordReader.next(key, value)) {
+                    emit(new SimpleImmutableEntry<>(key, value));
+                    if (getOutbox().isHighWater()) {
+                        return false;
+                    }
+                }
             }
-            return true;
-        } catch (IOException e) {
-            throw rethrow(e);
+            recordReader.close();
+            iterator.remove();
         }
+        return true;
     }
 
     @Override
@@ -303,7 +300,7 @@ public final class HdfsReader extends AbstractProcessor {
             this.split = split;
         }
 
-        public InputSplit getSplit() {
+        InputSplit getSplit() {
             return split;
         }
 
