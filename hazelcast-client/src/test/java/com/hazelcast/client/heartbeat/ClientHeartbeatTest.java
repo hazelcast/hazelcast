@@ -19,8 +19,14 @@ package com.hazelcast.client.heartbeat;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
+import com.hazelcast.client.spi.ClientListenerService;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClusterListenerSupport;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
+import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
@@ -50,6 +56,7 @@ import org.junit.runner.RunWith;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.hamcrest.Matchers.containsString;
@@ -331,5 +338,92 @@ public class ClientHeartbeatTest extends ClientTestSupport {
                 assertEquals(1, stateChangeCount.get());
             }
         }, delaySeconds * 2);
+    }
+
+    @Test
+    public void testAddingListenerToNewConnectionFailedBecauseOfHeartbeat() throws Exception {
+        hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_TIMEOUT.getName(), "4000");
+        clientConfig.setProperty(ClientProperty.HEARTBEAT_INTERVAL.getName(), "1000");
+
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final ClientListenerService clientListenerService = clientInstanceImpl.getListenerService();
+        final CountDownLatch blockIncoming = new CountDownLatch(1);
+        final CountDownLatch heartbeatStopped = new CountDownLatch(1);
+        final CountDownLatch onListenerRegister = new CountDownLatch(2);
+        clientInstanceImpl.getConnectionManager().addConnectionHeartbeatListener(new ConnectionHeartbeatListener() {
+            @Override
+            public void heartbeatResumed(Connection connection) {
+
+            }
+
+            @Override
+            public void heartbeatStopped(Connection connection) {
+                heartbeatStopped.countDown();
+            }
+        });
+
+        clientListenerService.registerListener(createPartitionLostListenerCodec(), new EventHandler() {
+            AtomicInteger count = new AtomicInteger(0);
+
+            @Override
+            public void handle(Object event) {
+
+            }
+
+            @Override
+            public void beforeListenerRegister() {
+                if (count.incrementAndGet() == 2) {
+                    try {
+                        blockIncoming.await();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onListenerRegister() {
+                onListenerRegister.countDown();
+            }
+
+        });
+
+        HazelcastInstance hazelcastInstance2 = hazelcastFactory.newHazelcastInstance();
+
+        blockMessagesFromInstance(hazelcastInstance2, client);
+        assertOpenEventually(heartbeatStopped);
+        blockIncoming.countDown();
+
+        unblockMessagesFromInstance(hazelcastInstance2, client);
+        assertOpenEventually(onListenerRegister);
+    }
+
+    private ListenerMessageCodec createPartitionLostListenerCodec() {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return ClientAddPartitionLostListenerCodec.encodeRequest(localOnly);
+            }
+
+            @Override
+            public String decodeAddResponse(ClientMessage clientMessage) {
+                return ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(String realRegistrationId) {
+                return ClientRemovePartitionLostListenerCodec.encodeRequest(realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return ClientRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
     }
 }

@@ -23,6 +23,8 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -31,8 +33,10 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -40,11 +44,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-public class ClientSmartListenerService extends ClientListenerServiceImpl implements ConnectionListener {
+public class ClientSmartListenerService extends ClientListenerServiceImpl
+        implements ConnectionListener, ConnectionHeartbeatListener {
 
     private final Map<ClientRegistrationKey, Map<Connection, ClientEventRegistration>> registrations
             = new ConcurrentHashMap<ClientRegistrationKey, Map<Connection, ClientEventRegistration>>();
     private final ClientConnectionManager clientConnectionManager;
+    private final Map<Connection, Collection<ClientRegistrationKey>> failedRegistrations
+            = new ConcurrentHashMap<Connection, Collection<ClientRegistrationKey>>();
 
     public ClientSmartListenerService(HazelcastClientInstanceImpl client,
                                       int eventThreadCount, int eventQueueCapacity) {
@@ -81,6 +88,9 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     }
 
     private void invoke(ClientRegistrationKey registrationKey, Connection connection) throws Exception {
+        //This method should only be called from registrationExecutor
+        assert (Thread.currentThread().getName().contains("eventRegistration"));
+
         Map<Connection, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
         if (registrationMap.containsKey(connection)) {
             return;
@@ -93,8 +103,16 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
 
         ClientInvocation invocation = new ClientInvocation(client, request, connection);
         invocation.setEventHandler(handler);
-        String serverRegistrationId = codec.decodeAddResponse(invocation.invoke().get());
+        ClientInvocationFuture future = invocation.invokeUrgent();
 
+        ClientMessage clientMessage;
+        try {
+            clientMessage = future.get();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e, Exception.class);
+        }
+
+        String serverRegistrationId = codec.decodeAddResponse(clientMessage);
         handler.onListenerRegister();
         long correlationId = request.getCorrelationId();
         ClientEventRegistration registration
@@ -147,6 +165,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
     @Override
     public void start() {
         clientConnectionManager.addConnectionListener(this);
+        clientConnectionManager.addConnectionHeartbeatListener(this);
         final ClientClusterService clientClusterService = client.getClientClusterService();
         registrationExecutor.scheduleWithFixedDelay(new Runnable() {
             @Override
@@ -165,12 +184,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
             @Override
             public void run() {
                 for (ClientRegistrationKey registrationKey : registrations.keySet()) {
-                    try {
-                        invoke(registrationKey, connection);
-                    } catch (Exception e) {
-                        logger.warning("Listener " + registrationKey + " can not be added to new connection: "
-                                + connection, e);
-                    }
+                    invokeFromInternalThread(registrationKey, connection);
                 }
             }
         });
@@ -181,6 +195,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
+                failedRegistrations.remove(connection);
                 for (Map<Connection, ClientEventRegistration> registrationMap : registrations.values()) {
                     ClientEventRegistration registration = registrationMap.remove(connection);
                     if (registration != null) {
@@ -189,6 +204,43 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl implem
                 }
             }
         });
+    }
+
+    @Override
+    public void heartbeatResumed(final Connection connection) {
+        registrationExecutor.submit(new Runnable() {
+            @Override
+            public void run() {
+                Collection<ClientRegistrationKey> registrationKeys = failedRegistrations.get(connection);
+                for (ClientRegistrationKey registrationKey : registrationKeys) {
+                    invokeFromInternalThread(registrationKey, connection);
+                }
+            }
+        });
+    }
+
+    private void invokeFromInternalThread(ClientRegistrationKey registrationKey, Connection connection) {
+        //This method should only be called from registrationExecutor
+        assert (Thread.currentThread().getName().contains("eventRegistration"));
+
+        try {
+            invoke(registrationKey, connection);
+        } catch (IOException e) {
+            Collection<ClientRegistrationKey> failedRegsToConnection = failedRegistrations.get(connection);
+            if (failedRegsToConnection == null) {
+                failedRegsToConnection = Collections.newSetFromMap(new HashMap<ClientRegistrationKey, Boolean>());
+                failedRegistrations.put(connection, failedRegsToConnection);
+            }
+            failedRegsToConnection.add(registrationKey);
+        } catch (Exception e) {
+            logger.warning("Listener " + registrationKey + " can not be added to a new connection: "
+                    + connection + ", reason : " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void heartbeatStopped(Connection connection) {
+        //no op
     }
 
     //For Testing
