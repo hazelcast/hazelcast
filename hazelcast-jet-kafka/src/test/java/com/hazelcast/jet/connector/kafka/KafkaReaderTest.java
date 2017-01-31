@@ -20,8 +20,8 @@ package com.hazelcast.jet.connector.kafka;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
 import com.hazelcast.core.IList;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -74,19 +74,24 @@ public class KafkaReaderTest extends JetTestSupport {
         final String consumerGroupId = "test";
         JetInstance instance = createJetMember();
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString))
-                .localParallelism(4);
+        Function<byte[], String> deserializeString = String::new;
+
+        Vertex producer = dag.newVertex("producer",
+                KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString,
+                        deserializeString, deserializeString))
+                             .localParallelism(4);
 
         Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
+                             .localParallelism(1);
 
         dag.edge(between(producer, consumer));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);
-        List<Integer> numbers = IntStream.range(0, messageCount).boxed().collect(toList());
-        send(getSerializationService(instance.getHazelcastInstance()), topic, numbers);
+        List<String> numbers = IntStream.range(0, messageCount).mapToObj(Integer::toString).collect(toList());
+        send(topic, numbers);
         IList<Object> list = instance.getList("consumer");
+
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -96,10 +101,10 @@ public class KafkaReaderTest extends JetTestSupport {
         });
     }
 
-    public void send(InternalSerializationService ss, String topic, List values) {
+    public void send(String topic, List<String> values) {
         KafkaProducer<byte[], byte[]> byteProducer = kafkaRule.helper().createByteProducer();
-        for (Object value : values) {
-            byteProducer.send(new ProducerRecord<>(topic, ss.toBytes(value)));
+        for (String value : values) {
+            byteProducer.send(new ProducerRecord<>(topic, value.getBytes()));
         }
     }
 }

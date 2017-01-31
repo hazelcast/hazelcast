@@ -16,15 +16,12 @@
 
 package com.hazelcast.jet.connector.kafka;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Distributed.Function;
+import com.hazelcast.jet.Distributed.Optional;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.serialization.SerializationService;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -38,25 +35,45 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Kafka Producer for Jet
+ * Kafka Writer for Jet
+ *
+ * @param <K>                    type of keys written
+ * @param <V>                    type of values written
  */
-public final class KafkaWriter extends AbstractProcessor {
+public final class KafkaWriter<K, V> extends AbstractProcessor {
 
-    private static final ILogger LOGGER = Logger.getLogger(KafkaWriter.class);
-    private final SerializationService serializationService;
-    private final Properties properties;
+    private final Function<K, byte[]> serializeKey;
+    private final Function<V, byte[]> serializeValue;
     private final String topic;
-    private KafkaProducer<byte[], byte[]> producer;
+    private final KafkaProducer<byte[], byte[]> producer;
 
-    private KafkaWriter(SerializationService serializationService, String topic, Properties properties) {
+    KafkaWriter(String topic, KafkaProducer producer,
+                Function<K, byte[]> serializeKey, Function<V, byte[]> serializeValue) {
+
         this.topic = topic;
-        this.serializationService = serializationService;
-        this.properties = properties;
+        this.producer = producer;
+        this.serializeKey = serializeKey;
+        this.serializeValue = serializeValue;
     }
 
     @Override
-    protected void init(@Nonnull Context context) throws Exception {
-        producer = new KafkaProducer<>(properties);
+    public boolean isCooperative() {
+        return false;
+    }
+
+    @Override
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        Map.Entry<K, V> entry = (Map.Entry<K, V>) item;
+        byte[] key = Optional.ofNullable(entry.getKey()).map(serializeKey).orElse(null);
+        byte[] value = serializeValue.apply(entry.getValue());
+        producer.send(new ProducerRecord<>(topic, null, key, value));
+        return true;
+    }
+
+    @Override
+    public boolean complete() {
+        producer.flush();
+        return true;
     }
 
     private static Properties getProperties(String zkAddress, String groupId, String brokerConnectionString) {
@@ -69,68 +86,59 @@ public final class KafkaWriter extends AbstractProcessor {
         return props;
     }
 
-    @Override
-    public boolean isCooperative() {
-        return false;
-    }
-
-    @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        Map.Entry entry = (Map.Entry) item;
-        Data key = serializationService.toData(entry.getKey());
-        Data value = serializationService.toData(entry.getValue());
-        producer.send(new ProducerRecord<>(topic, null, key.toByteArray(), value.toByteArray()));
-        return true;
-    }
-
-    @Override
-    public boolean complete() {
-        producer.flush();
-        producer.close();
-        return true;
-    }
-
     /**
      * Creates supplier for producing messages to kafka topics.
      *
+     * @param <K>                    type of keys written
+     * @param <V>                    type of values written
      * @param zkAddress              zookeeper address
      * @param groupId                kafka consumer group name
      * @param topicId                kafka topic name
      * @param brokerConnectionString kafka broker address
+     * @param serializeKey           function for serializing keys
+     * @param serializeValue         function for serializing values
      * @return {@link ProcessorMetaSupplier} supplier
      */
-    public static ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
-                                                 String brokerConnectionString) {
+    public static <K, V> ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
+                                                        String brokerConnectionString, Function<K, byte[]> serializeKey,
+                                                        Function<V, byte[]> serializeValue) {
         Properties properties = getProperties(zkAddress, groupId, brokerConnectionString);
-        return ProcessorMetaSupplier.of(new Supplier(topicId, properties));
+        return ProcessorMetaSupplier.of(new Supplier<>(topicId, properties, serializeKey, serializeValue));
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class Supplier<K, V> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String topicId;
         private final Properties properties;
-        private transient Context context;
+        private final Function<K, byte[]> serializeKey;
+        private final Function<V, byte[]> serializeValue;
 
-        Supplier(String topicId, Properties properties) {
+        private transient KafkaProducer producer;
+
+        Supplier(String topicId, Properties properties,
+                 Function<K, byte[]> serializeKey, Function<V, byte[]> serializeValue) {
             this.topicId = topicId;
             this.properties = properties;
+            this.serializeKey = serializeKey;
+            this.serializeValue = serializeValue;
         }
 
         @Override
         public void init(@Nonnull Context context) {
-            this.context = context;
+            producer = new KafkaProducer<>(properties);
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)
-                    context.jetInstance().getHazelcastInstance();
-            SerializationService serializationService = hazelcastInstance.node.nodeEngine.getSerializationService();
-            return Stream.generate(() -> new KafkaWriter(serializationService, topicId, properties))
+            return Stream.generate(() -> new KafkaWriter<>(topicId, producer, serializeKey, serializeValue))
                          .limit(count)
                          .collect(toList());
+        }
+
+        @Override public void complete(Throwable error) {
+            producer.close();
         }
     }
 }

@@ -20,9 +20,8 @@ package com.hazelcast.jet.connector.kafka;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import com.github.charithe.kafka.KafkaJunitRule;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
@@ -31,8 +30,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -45,9 +42,9 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
+import static java.util.stream.IntStream.range;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,13 +57,12 @@ public class KafkaWriterTest extends JetTestSupport {
                 put("session.timeout.ms", "5000");
             }}));
     private static String zkConnStr;
-    private static int brokerPort;
     private static String brokerConnectionString;
 
     @BeforeClass
     public static void setUp() throws Exception {
         zkConnStr = kafkaRule.helper().zookeeperConnectionString();
-        brokerPort = kafkaRule.helper().kafkaPort();
+        int brokerPort = kafkaRule.helper().kafkaPort();
         brokerConnectionString = "localhost:" + brokerPort;
     }
 
@@ -75,16 +71,21 @@ public class KafkaWriterTest extends JetTestSupport {
         final String topic = randomName();
         final String producerGroup = "test";
         JetInstance instance = createJetMember();
-        InternalSerializationService serializationService = getSerializationService(instance.getHazelcastInstance());
+
         int messageCount = 20;
-        Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
+        Map<String, String> map = range(0, messageCount)
+                .mapToObj(Integer::toString)
+                .collect(Collectors.toMap(m -> m, m -> m));
+
         instance.getMap("producer").putAll(map);
         DAG dag = new DAG();
         Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer"))
-                .localParallelism(1);
+                             .localParallelism(1);
 
-        Vertex consumer = dag.newVertex("consumer", KafkaWriter.supplier(zkConnStr, producerGroup, topic, brokerConnectionString))
-                .localParallelism(4);
+        Function<String, byte[]> serializer = String::getBytes;
+        Vertex consumer = dag.newVertex("consumer", KafkaWriter.supplier(zkConnStr,
+                producerGroup, topic, brokerConnectionString, serializer, serializer))
+                             .localParallelism(4);
 
         dag.edge(between(producer, consumer));
 
@@ -97,15 +98,7 @@ public class KafkaWriterTest extends JetTestSupport {
         ListenableFuture<List<ConsumerRecord<byte[], byte[]>>> f = kafkaRule.helper().consume(topic, byteConsumer, messageCount);
         List<ConsumerRecord<byte[], byte[]>> consumerRecords = f.get();
         for (ConsumerRecord<byte[], byte[]> record : consumerRecords) {
-            Object value = serializationService.toObject(new HeapData(record.value()));
-            Assert.assertTrue(map.containsValue(value));
-        }
-    }
-
-    public void send(InternalSerializationService ss, String topic, Object... values) {
-        KafkaProducer<byte[], byte[]> byteProducer = kafkaRule.helper().createByteProducer();
-        for (Object value : values) {
-            byteProducer.send(new ProducerRecord<>(topic, ss.toBytes(value)));
+            Assert.assertTrue(map.containsValue(new String(record.value())));
         }
     }
 }
