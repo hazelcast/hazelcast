@@ -66,12 +66,19 @@ public class ExecutionService {
     /**
      * @return instance of {@code java.util.concurrent.CompletableFuture}
      */
-    public CompletionStage<Void> execute(List<? extends Tasklet> tasklets, Consumer<CompletionStage<Void>> doneCallback) {
+    public CompletionStage<Void> execute(
+            List<? extends Tasklet> tasklets, @Nonnull Consumer<CompletionStage<Void>> doneCallback) {
         ensureStillRunning();
         final JobFuture jobFuture = new JobFuture(tasklets.size(), doneCallback);
-        final Map<Boolean, List<Tasklet>> byCooperation = tasklets.stream().collect(partitioningBy(Tasklet::isCooperative));
-        submitCooperativeTasklets(jobFuture, byCooperation.get(true));
-        submitBlockingTasklets(jobFuture, byCooperation.get(false));
+        try {
+            final Map<Boolean, List<Tasklet>> byCooperation =
+                    tasklets.stream().collect(partitioningBy(Tasklet::isCooperative));
+            submitCooperativeTasklets(jobFuture, byCooperation.get(true));
+            submitBlockingTasklets(jobFuture, byCooperation.get(false));
+        } catch (Throwable t) {
+            jobFuture.completeExceptionally(t);
+            doneCallback.accept(jobFuture);
+        }
         return jobFuture;
     }
 
@@ -109,9 +116,8 @@ public class ExecutionService {
         Arrays.setAll(trackersByThread, i -> new ArrayList());
         int i = 0;
         for (Tasklet t : tasklets) {
-            if (initPropagatingFailure(t, jobFuture)) {
-                trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture));
-            }
+            t.init();
+            trackersByThread[i++ % trackersByThread.length].add(new TaskletTracker(t, jobFuture));
         }
         for (i = 0; i < trackersByThread.length; i++) {
             workers[i].trackers.addAll(trackersByThread[i]);
@@ -134,16 +140,6 @@ public class ExecutionService {
 
     private String threadNamePrefix() {
         return "hz." + hzInstanceName + ".jet.";
-    }
-
-    private static boolean initPropagatingFailure(Tasklet t, JobFuture jobFuture) {
-        try {
-            t.init();
-            return true;
-        } catch (Throwable e) {
-            jobFuture.completeExceptionally(e);
-            return false;
-        }
     }
 
     private final class BlockingWorker implements Runnable {
