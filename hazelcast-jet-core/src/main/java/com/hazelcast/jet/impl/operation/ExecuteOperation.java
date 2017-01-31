@@ -52,7 +52,7 @@ class ExecuteOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         JetService service = getService();
-        getLogger().fine("Start execution of plan for job " + executionId + ".");
+        getLogger().fine("Start execution of plan for job " + executionId);
         executionFuture = service.getExecutionContext(executionId)
                                  .execute(f -> f.handle((r, error) -> error != null ? error : null)
                                                 .thenAccept((value) -> {

@@ -82,10 +82,6 @@ public class ExecutionService {
         return jobFuture;
     }
 
-    public CompletionStage<Void> execute(List<? extends Tasklet> tasklets) {
-        return execute(tasklets, null);
-    }
-
     public void shutdown() {
         blockingTaskletExecutor.shutdown();
         synchronized (this) {
@@ -277,7 +273,7 @@ public class ExecutionService {
         private final Consumer<CompletionStage<Void>> doneCallback;
         private List<Future> blockingFutures;
 
-        private JobFuture(int taskletCount, Consumer<CompletionStage<Void>> doneCallback) {
+        JobFuture(int taskletCount, Consumer<CompletionStage<Void>> doneCallback) {
             this.doneCallback = doneCallback;
             this.completionLatch = new AtomicInteger(taskletCount);
         }

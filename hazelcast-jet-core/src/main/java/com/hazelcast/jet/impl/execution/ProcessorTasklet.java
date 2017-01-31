@@ -25,6 +25,7 @@ import com.hazelcast.jet.impl.util.ProgressState;
 import com.hazelcast.jet.impl.util.ProgressTracker;
 import com.hazelcast.util.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,7 +89,7 @@ public class ProcessorTasklet implements Tasklet {
         return processor.isCooperative();
     }
 
-    @Override
+    @Override @Nonnull
     public ProgressState call() {
         progTracker.reset();
         tryFillInbox();

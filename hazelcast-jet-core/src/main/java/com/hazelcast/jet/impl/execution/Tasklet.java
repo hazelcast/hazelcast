@@ -27,8 +27,7 @@ public interface Tasklet extends Callable<ProgressState> {
 
     }
 
-    @Override
-    @Nonnull
+    @Override @Nonnull
     ProgressState call();
 
     default boolean isCooperative() {
