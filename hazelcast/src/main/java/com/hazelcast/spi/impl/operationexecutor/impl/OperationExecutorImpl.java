@@ -163,13 +163,17 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
         for (int partitionId = 0; partitionId < partitionOperationRunners.length; partitionId++) {
-            int threadId = partitionId % threadCount;
+            int threadId = getPartitionThreadId(partitionId, threadCount);
             Thread thread = threads[threadId];
             OperationRunner runner = partitionOperationRunners[partitionId];
             runner.setCurrentThread(thread);
         }
 
         return threads;
+    }
+
+    private static int getPartitionThreadId(int partitionId, int partitionThreadCount) {
+        return partitionId % partitionThreadCount;
     }
 
     private GenericOperationThread[] initGenericThreads(HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
@@ -314,6 +318,11 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
     @Override
     public boolean isOperationThread() {
         return Thread.currentThread() instanceof OperationThread;
+    }
+
+    @Override
+    public int getPartitionThreadId(int partitionId) {
+        return getPartitionThreadId(partitionId, partitionThreads.length);
     }
 
     @Override
