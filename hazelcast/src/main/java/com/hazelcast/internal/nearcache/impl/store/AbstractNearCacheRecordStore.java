@@ -319,9 +319,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             oldRecord = putRecord(key, record);
             if (oldRecord == null) {
                 nearCacheStats.incrementOwnedEntryCount();
-            } else {
-                long oldRecordMemoryCost = getTotalStorageMemoryCost(key, oldRecord);
-                nearCacheStats.decrementOwnedEntryMemoryCost(oldRecordMemoryCost);
             }
             onPut(key, value, record, oldRecord);
         } catch (Throwable error) {
