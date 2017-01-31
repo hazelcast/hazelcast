@@ -35,17 +35,30 @@ public class TestProcessors {
         }
     }
 
-
-    public static class FaultyProducer implements Processor {
+    public static class ProcessorThatFailsInComplete implements Processor {
 
         private final RuntimeException e;
 
-        public FaultyProducer(RuntimeException e) {
+        public ProcessorThatFailsInComplete(@Nonnull RuntimeException e) {
             this.e = e;
         }
 
         @Override
         public boolean complete() {
+            throw e;
+        }
+    }
+
+    public static class ProcessorThatFailsInInit implements Processor {
+
+        private final RuntimeException e;
+
+        public ProcessorThatFailsInInit(@Nonnull RuntimeException e) {
+            this.e = e;
+        }
+
+        @Override
+        public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
             throw e;
         }
     }

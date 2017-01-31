@@ -18,11 +18,11 @@ package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
-import com.hazelcast.jet.TestProcessors.FaultyProducer;
+import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
+import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInInit;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -123,7 +123,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        Vertex faulty = dag.newVertex("faulty", () -> new FaultyProducer(e));
+        Vertex faulty = dag.newVertex("faulty", () -> new ProcessorThatFailsInComplete(e));
         Vertex consumer = dag.newVertex("consumer", TestProcessors.Identity::new);
         dag.edge(between(faulty, consumer));
 
@@ -142,9 +142,26 @@ public class ExceptionHandlingTest extends JetTestSupport {
         // Given
         DAG dag = new DAG();
         RuntimeException e = new RuntimeException("mock error");
-        Vertex faulty = dag.newVertex("faulty", () -> new FaultyProducer(e));
+        Vertex faulty = dag.newVertex("faulty", () -> new ProcessorThatFailsInComplete(e));
         Vertex consumer = dag.newVertex("consumer", TestProcessors.BlockingIdentity::new);
         dag.edge(between(faulty, consumer));
+
+        // Then
+        expectedException.expect(e.getClass());
+        expectedException.expectMessage(e.getMessage());
+
+        // When
+        executeAndPeel(instance.newJob(dag));
+    }
+
+    @Test
+    public void when_exceptionInProcessorInit_then_failJob() throws Throwable {
+        instance = factory.newMember();
+
+        // Given
+        DAG dag = new DAG();
+        RuntimeException e = new RuntimeException("mock error");
+        dag.newVertex("faulty", () -> new ProcessorThatFailsInInit(e));
 
         // Then
         expectedException.expect(e.getClass());

@@ -31,12 +31,15 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -55,6 +58,8 @@ import static org.mockito.Mockito.mock;
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
 public class ExecutionServiceTest extends JetTestSupport {
+
+    private final Consumer<CompletionStage<Void>> doneCallback = x -> {};
 
     @Rule
     public final ExpectedException exceptionRule = ExpectedException.none();
@@ -78,7 +83,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().blocking();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
 
         // Then
         t.assertDone();
@@ -90,7 +95,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
 
         // Then
         t.assertDone();
@@ -102,7 +107,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().initFails();
 
         // When
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
 
         // Then
         t.assertDone();
@@ -114,7 +119,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().blocking().initFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
     }
 
     @Test(expected = CompletionException.class)
@@ -123,7 +128,7 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
     }
 
     @Test(expected = CompletionException.class)
@@ -132,21 +137,21 @@ public class ExecutionServiceTest extends JetTestSupport {
         final MockTasklet t = new MockTasklet().blocking().callFails();
 
         // When - Then
-        es.execute(singletonList(t)).toCompletableFuture().join();
+        es.execute(singletonList(t), doneCallback).toCompletableFuture().join();
     }
 
     @Test
     public void when_shutdown_then_submitFails() {
         // Given
-        es.execute(singletonList(new MockTasklet()));
-        es.execute(singletonList(new MockTasklet()));
+        es.execute(singletonList(new MockTasklet()), doneCallback);
+        es.execute(singletonList(new MockTasklet()), doneCallback);
 
         // When
         es.shutdown();
 
         // Then
         exceptionRule.expect(IllegalStateException.class);
-        es.execute(singletonList(new MockTasklet()));
+        es.execute(singletonList(new MockTasklet()), doneCallback);
     }
 
     @Test
@@ -157,7 +162,7 @@ public class ExecutionServiceTest extends JetTestSupport {
                 new MockTasklet().callsBeforeDone(10));
 
         // When
-        es.execute(tasklets).toCompletableFuture().join();
+        es.execute(tasklets, doneCallback).toCompletableFuture().join();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);
@@ -171,7 +176,7 @@ public class ExecutionServiceTest extends JetTestSupport {
                       .limit(100).collect(toList());
 
         // When
-        es.execute(tasklets).toCompletableFuture().join();
+        es.execute(tasklets, doneCallback).toCompletableFuture().join();
 
         // Then
         tasklets.forEach(MockTasklet::assertDone);
@@ -185,7 +190,7 @@ public class ExecutionServiceTest extends JetTestSupport {
                       .limit(100).collect(toList());
 
         // When
-        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        CompletableFuture<Void> future = es.execute(tasklets, doneCallback).toCompletableFuture();
         future.cancel(true);
 
         // Then
@@ -203,7 +208,7 @@ public class ExecutionServiceTest extends JetTestSupport {
                       .limit(100).collect(toList());
 
         // When
-        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        CompletableFuture<Void> future = es.execute(tasklets, doneCallback).toCompletableFuture();
         future.cancel(true);
 
         // Then
@@ -221,7 +226,7 @@ public class ExecutionServiceTest extends JetTestSupport {
                       .limit(100).collect(toList());
 
         // When
-        CompletableFuture<Void> future = es.execute(tasklets).toCompletableFuture();
+        CompletableFuture<Void> future = es.execute(tasklets, doneCallback).toCompletableFuture();
         future.cancel(true);
 
         // Then
@@ -276,6 +281,7 @@ public class ExecutionServiceTest extends JetTestSupport {
             return !isBlocking;
         }
 
+        @Nonnull
         @Override
         public ProgressState call() {
             if (callFails) {

@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Supplier;
-import com.hazelcast.jet.TestProcessors.FaultyProducer;
+import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.TestProcessors.Identity;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -141,7 +141,7 @@ public class ExecutionLifecycleTest extends JetTestSupport {
         // Given
         RuntimeException e = new RuntimeException("mock error");
         String vertexName = "test";
-        DAG dag = new DAG().vertex(new Vertex(vertexName, new MockSupplier(() -> new FaultyProducer(e))));
+        DAG dag = new DAG().vertex(new Vertex(vertexName, new MockSupplier(() -> new ProcessorThatFailsInComplete(e))));
 
         // When
         try {
