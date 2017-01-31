@@ -21,12 +21,12 @@ import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.function.Consumer;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.impl.util.Util.getRemoteMembers;
 import static java.util.Collections.emptyList;
