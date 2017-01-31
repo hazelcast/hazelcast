@@ -51,6 +51,7 @@ import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
 import com.hazelcast.map.impl.operation.ClearOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
+import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
@@ -78,6 +79,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.partition.IPartition;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -494,10 +496,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Iterable<Entry<Integer, List<Data>>> entries = partitionIdToKeys.entrySet();
 
         for (Entry<Integer, List<Data>> entry : entries) {
-            Integer partitionId = entry.getKey();
+            final Integer partitionId = entry.getKey();
             List<Data> correspondingKeys = entry.getValue();
             Operation operation = createLoadAllOperation(correspondingKeys, replaceExistingValues);
-            operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            InternalCompletableFuture<Object> future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+            future.andThen(new SimpleExecutionCallback<Object>() {
+                @Override
+                public void notify(Object response) {
+                    operationService.invokeOnPartition(SERVICE_NAME, new LoadStatusOperation(name, null), partitionId);
+                }
+            });
         }
 
         try {

@@ -16,16 +16,20 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.operations.OperationFactoryWrapper;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
 import java.util.Arrays;
@@ -47,7 +51,23 @@ public class MapLoadGivenKeysMessageTask
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
+    protected final void processMessage() throws Exception {
+        ClientEndpoint endpoint = getEndpoint();
+        OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
+        final InternalOperationService operationService = nodeEngine.getOperationService();
+        Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+
+        //we have to notify all RecordStores there are no more keys to be loaded
+        String mapName = parameters.name;
+        LoadStatusOperationFactory statusOperationFactory = new LoadStatusOperationFactory(mapName, null);
+        operationFactory = new OperationFactoryWrapper(statusOperationFactory, endpoint.getUuid());
+        operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
+
+        sendResponse(reduce(map));
+    }
+
+    @Override
+    protected final Object reduce(Map<Integer, Object> map) {
         return MapLoadGivenKeysCodec.encodeResponse();
     }
 
