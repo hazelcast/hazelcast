@@ -173,19 +173,19 @@ public interface Cluster {
     /**
      * The cluster version indicates the operating version of the cluster. It is separate from each node's codebase version,
      * as it may be acceptable for a node to operate at a different compatibility version than its codebase version. This method
-     * may return {@code null} if invoked after the ClusterService is constructed and before the node forms a cluster, either
+     * may return Version.UNKNOWN if invoked after the ClusterService is constructed and before the node forms a cluster, either
      * by joining existing members or becoming master of its standalone cluster if it is the first node on the cluster.
      * Importantly, this is the time during which a lifecycle event with state
      * {@link com.hazelcast.core.LifecycleEvent.LifecycleState#STARTING} is triggered.
      *
-     * For example, consider a cluster comprised of nodes running on {@code hazelcast-3.8.jar}. Each node's codebase version
+     * For example, consider a cluster comprised of nodes running on {@code hazelcast-3.8.0.jar}. Each node's codebase version
      * is 3.8.0 and on startup the cluster version is 3.8. After a while, another node joins, running on
-     * {@code hazelcast-3.9.jar}; this node's codebase version is 3.9.0. If deemed compatible, it is allowed to join the cluster.
+     * {@code hazelcast-3.9.0jar}; this node's codebase version is 3.9.0. If deemed compatible, it is allowed to join the cluster.
      * At this point, the cluster version is still 3.8 and the 3.9.0 member should be able to adapt its behaviour to be compatible
      * with the other 3.8.0 members. Once all 3.8.0 members have been shutdown and replaced by other members on codebase
      * version 3.9.0, still the cluster version will be 3.8. At this point, it is possible to update the cluster version to
      * 3.9, since all cluster members will be compatible with the new cluster version. Once cluster version
-     * is updated to 3.9.0, further communication among members will take place in 3.9 and all new features and functionality
+     * is updated to 3.9, further communication among members will take place in 3.9 and all new features and functionality
      * of version 3.9 will be available.
      *
      * @return the version at which this cluster operates.

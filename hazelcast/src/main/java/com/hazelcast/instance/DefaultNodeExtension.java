@@ -307,7 +307,7 @@ public class DefaultNodeExtension implements NodeExtension {
     // otherwise, if overridden with GroupProperty#INIT_CLUSTER_VERSION, use this one
     // otherwise, if not overridden, use current node's codebase version
     private Version getClusterOrNodeVersion() {
-        if (node.getClusterService() != null && node.getClusterService().getClusterVersion() != null) {
+        if (node.getClusterService() != null && !node.getClusterService().getClusterVersion().isUnknown()) {
             return node.getClusterService().getClusterVersion();
         } else {
             String overriddenClusterVersion = node.getProperties().getString(GroupProperty.INIT_CLUSTER_VERSION);
