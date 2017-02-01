@@ -86,6 +86,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     // dest vertex id --> dest ordinal --> dest addr --> sender tasklet
     private final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = new HashMap<>();
 
+    private Address[] partitionOwners;
+
     private List<VertexDef> vertices = new ArrayList<>();
     private final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
     private final Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap = new HashMap<>();
@@ -98,15 +100,26 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ExecutionPlan() {
     }
 
+    public ExecutionPlan(Address[] partitionOwners) {
+        this.partitionOwners = partitionOwners;
+    }
+
     public static Map<Member, ExecutionPlan> createExecutionPlans(
             NodeEngine nodeEngine, DAG dag, int defaultParallelism
     ) {
         JetInstance instance = getJetInstance(nodeEngine);
+
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Address[] partitionOwners = new Address[partitionService.getPartitionCount()];
+        for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
+            partitionOwners[partitionId] = partitionService.getPartitionOwnerOrWait(partitionId);
+        }
+
         final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
-        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan()));
+        final Map<Member, ExecutionPlan> plans = members.stream().collect(toMap(m -> m, m -> new ExecutionPlan(partitionOwners)));
         final Map<String, Integer> vertexIdMap = assignVertexIds(dag);
         for (Entry<String, Integer> entry : vertexIdMap.entrySet()) {
             final Vertex vertex = dag.getVertex(entry.getKey());
@@ -144,7 +157,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         initProcSuppliers();
         initDag();
 
-        this.ptionArrgmt = new PartitionArrangement(nodeEngine);
+        this.ptionArrgmt = new PartitionArrangement(partitionOwners, nodeEngine.getThisAddress());
         JetInstance instance = getJetInstance(nodeEngine);
         for (VertexDef srcVertex : vertices) {
             int processorIdx = -1;
@@ -195,11 +208,20 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         writeList(out, vertices);
+        out.writeInt(partitionOwners.length);
+        for (Address address : partitionOwners) {
+            out.writeObject(address);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         vertices = readList(in);
+        int len = in.readInt();
+        partitionOwners = new Address[len];
+        for (int i = 0; i < len; i++) {
+            partitionOwners[i] = in.readObject();
+        }
     }
 
     // End implementation of IdentifiedDataSerializable

@@ -17,11 +17,8 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.execution.init.MemoizingSupplier.memoize;
@@ -38,11 +35,15 @@ class PartitionArrangement {
     final Supplier<Map<Address, int[]>> remotePartitionAssignment;
     private final Supplier<int[]> localPartitions;
     private final Supplier<int[]> allPartitions;
+    private final Address[] partitions;
+    private final Address thisAddress;
 
-    PartitionArrangement(NodeEngine nodeEngine) {
-        localPartitions = memoize(() -> arrangeLocalPartitions(nodeEngine));
-        allPartitions = memoize(() -> arrangeAllPartitions(nodeEngine, localPartitions.get()));
-        remotePartitionAssignment = memoize(() -> remotePartitionAssignment(nodeEngine));
+    PartitionArrangement(Address[] partitions, Address thisAddress) {
+        this.partitions = partitions;
+        this.thisAddress = thisAddress;
+        localPartitions = memoize(() -> arrangeLocalPartitions());
+        allPartitions = memoize(() -> arrangeAllPartitions(localPartitions.get()));
+        remotePartitionAssignment = memoize(() -> remotePartitionAssignment());
     }
 
     /**
@@ -74,13 +75,20 @@ class PartitionArrangement {
         return ptionsPerProcessor;
     }
 
-    private static int[] arrangeLocalPartitions(NodeEngine nodeEngine) {
-        return nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress())
-                         .stream().mapToInt(x -> x).sorted().toArray();
+    private int[] arrangeLocalPartitions() {
+
+        final List<Integer> localPartitionIds = new ArrayList<>();
+        for (int partitionId = 0; partitionId < partitions.length; partitionId++) {
+            if (thisAddress.equals(partitions[partitionId])) {
+                localPartitionIds.add(partitionId);
+            }
+        }
+
+        return localPartitionIds.stream().mapToInt(Integer::intValue).toArray();
     }
 
-    private static int[] arrangeAllPartitions(NodeEngine nodeEngine, int[] localPartitions) {
-        final int totalPartitionCount = nodeEngine.getPartitionService().getPartitionCount();
+    private int[] arrangeAllPartitions(int[] localPartitions) {
+        final int totalPartitionCount = partitions.length;
         final int[] allPartitions = Arrays.copyOf(localPartitions, totalPartitionCount);
         int i = localPartitions.length;
         for (int ption = 0; ption < totalPartitionCount; ption++) {
@@ -99,13 +107,11 @@ class PartitionArrangement {
         return ptionsPerProcessor;
     }
 
-    private static Map<Address, int[]> remotePartitionAssignment(NodeEngine nodeEngine) {
-        final Address localAddress = nodeEngine.getThisAddress();
-        final Map<Address, List<Integer>> partitionOwnerMap =
-                nodeEngine.getPartitionService().getMemberPartitionsMap();
+    private Map<Address, int[]> remotePartitionAssignment() {
+        final Map<Address, List<Integer>> partitionOwnerMap = new HashMap<>();
         final Map<Address, List<Integer>> addrToPartitions = partitionOwnerMap
                 .entrySet().stream()
-                .filter(e -> !e.getKey().equals(localAddress))
+                .filter(e -> !e.getKey().equals(thisAddress))
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
         return addrToPartitions.entrySet().stream().collect(toMap(
                 Map.Entry::getKey, e -> e.getValue().stream().mapToInt(x -> x).toArray()));
