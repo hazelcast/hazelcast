@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
@@ -269,6 +270,44 @@ public class QuorumTest extends HazelcastTestSupport {
             fourNode.put(generateKeyOwnedBy(hz), "bar");
             fail();
         } catch (Exception ignored) {
+        }
+    }
+
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/9792
+     */
+    @Test
+    public void oneQuorumShouldNotAffectQuorumAwareOperationsOnDataStructuresWithoutQuorumConfiguration() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return members.size() == 3;
+                    }
+                });
+
+        MapConfig mapConfig = new MapConfig("quorumMap")
+                .setQuorumName(quorumName);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .addMapConfig(mapConfig);
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> quorumMap = hz.getMap("quorumMap");
+        quorumMap.put(generateKeyOwnedBy(hz), "bar");
+
+        ILock lock = hz.getLock("noQuorumLock");
+        try {
+            lock.lock();
+        } finally {
+            lock.unlock();
         }
     }
 

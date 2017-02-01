@@ -59,11 +59,13 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService, QuorumAwareService {
 
+    private static final Object NULL_OBJECT = new Object();
+
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
     private final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
             = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
-    private final ConcurrentMap<String, String> quorumConfigCache = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, Object> quorumConfigCache = new ConcurrentHashMap<String, Object>();
     private final ContextMutexFactory quorumConfigCacheMutexFactory = new ContextMutexFactory();
     private final long maxLeaseTimeInMillis;
 
@@ -331,13 +333,15 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     @Override
     public String getQuorumName(final String name) {
         // we use caching here because lock operations are often and we should avoid lock config lookup
-        return getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
-                new ConstructorFunction<String, String>() {
+        Object quorumName = getOrPutSynchronized(quorumConfigCache, name, quorumConfigCacheMutexFactory,
+                new ConstructorFunction<String, Object>() {
                     @Override
-                    public String createNew(String arg) {
-                        final LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
-                        return lockConfig.getQuorumName();
+                    public Object createNew(String arg) {
+                        LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
+                        String quorumName = lockConfig.getQuorumName();
+                        return quorumName == null ? NULL_OBJECT : quorumName;
                     }
                 });
+        return quorumName == NULL_OBJECT ? null : (String) quorumName;
     }
 }
