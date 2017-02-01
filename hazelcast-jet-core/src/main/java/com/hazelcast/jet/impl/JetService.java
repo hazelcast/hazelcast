@@ -18,8 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.JetBuildInfo;
@@ -41,6 +39,9 @@ import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.LiveOperations;
 import com.hazelcast.spi.LiveOperationsTracker;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MemberAttributeServiceEvent;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -48,17 +49,14 @@ import com.hazelcast.spi.impl.PacketHandler;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 public class JetService
         implements ManagedService, ConfigurableService<JetConfig>, PacketHandler, LiveOperationsTracker,
-        CanCancelOperations {
+        CanCancelOperations, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
 
@@ -96,7 +94,6 @@ public class JetService
 
     @Override
     public void init(NodeEngine engine, Properties properties) {
-        engine.getPartitionService().addMigrationListener(new CancelJobsMigrationListener());
         jetInstance = new JetInstanceImpl((HazelcastInstanceImpl) engine.getHazelcastInstance(), config);
         networking = new Networking(engine, executionContexts, config.getInstanceConfig().getFlowControlPeriodMs());
         executionService = new ExecutionService(nodeEngine.getHazelcastInstance(),
@@ -208,38 +205,30 @@ public class JetService
         networking.handle(packet);
     }
 
-
-    private class CancelJobsMigrationListener implements MigrationListener {
-
-        @Override
-        public void migrationStarted(MigrationEvent migrationEvent) {
-            Set<Address> addresses = nodeEngine.getClusterService().getMembers().stream()
-                                               .map(Member::getAddress)
-                                               .collect(Collectors.toSet());
-            // complete the processors, whose caller is dead, with TopologyChangedException
-            liveOperationRegistry.liveOperations
-                    .entrySet().stream()
-                    .filter(e -> !addresses.contains(e.getKey()))
-                    .flatMap(e -> e.getValue().values().stream())
-                    .forEach(op ->
-                            Optional.ofNullable(executionContexts.get(op.getExecutionId()))
-                                    .map(ExecutionContext::getExecutionCompletionStage)
-                                    .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
-                                            completeExecution(op.getExecutionId(),
-                                                    new TopologyChangedException("Topology has been changed")))));
-            // send exception result to all operations
-            liveOperationRegistry.liveOperations
-                    .values().stream().map(Map::values).flatMap(Collection::stream)
-                    .forEach(op -> op.completeExceptionally(new TopologyChangedException("Topology has been changed")));
-        }
-
-        @Override
-        public void migrationCompleted(MigrationEvent migrationEvent) {
-        }
-
-        @Override
-        public void migrationFailed(MigrationEvent migrationEvent) {
-        }
+    @Override
+    public void memberAdded(MembershipServiceEvent event) {
+        // nop
     }
 
+    @Override
+    public void memberRemoved(MembershipServiceEvent event) {
+        Address address = event.getMember().getAddress();
+
+        // complete the processors, whose caller is dead, with TopologyChangedException
+        liveOperationRegistry.liveOperations
+                .entrySet().stream()
+                .filter(e -> address.equals(e.getKey()))
+                .flatMap(e -> e.getValue().values().stream())
+                .forEach(op ->
+                        Optional.ofNullable(executionContexts.get(op.getExecutionId()))
+                                .map(ExecutionContext::getExecutionCompletionStage)
+                                .ifPresent(stage -> stage.whenComplete((aVoid, throwable) ->
+                                        completeExecution(op.getExecutionId(),
+                                                new TopologyChangedException("Topology has been changed")))));
+    }
+
+    @Override
+    public void memberAttributeChanged(MemberAttributeServiceEvent event) {
+        // nop
+    }
 }

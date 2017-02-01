@@ -19,7 +19,9 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.impl.JetService;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
 import com.hazelcast.nio.ObjectDataInput;
@@ -85,7 +87,7 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                 CompletableFuture.anyOf(initFailed, executionDone)
                                  .thenCombine(execution, (r, e) -> e)
                                  .thenCompose(e -> invokeOnCluster(executionPlanMap, plan ->
-                                         new CompleteOperation(executionId, e), 3))
+                                         new CompleteOperation(executionId, topologyChangeOrIdentity(e)), 3))
                                  .handle((v, e) -> e != null ? peel(e) : null);
 
         // Exception from ExecuteOperation should have precedence
@@ -95,11 +97,18 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                 .thenAccept(e -> {
                     long elapsed = System.currentTimeMillis() - start;
                     getLogger().info("Execution of job " + executionId + " completed in " + elapsed + "ms.");
-                    doSendResponse(e);
+                    doSendResponse(topologyChangeOrIdentity(e));
                 });
         if (cachedExceptionResult != null) {
             executionInvocationFuture.completeExceptionally(cachedExceptionResult);
         }
+    }
+
+    private Throwable topologyChangeOrIdentity(Throwable e) {
+        if (e instanceof MemberLeftException) {
+            return new TopologyChangedException("Topology has been changed", e);
+        }
+        return e;
     }
 
     private <E> CompletableFuture<Object> invokeOnCluster(Map<Member, E> memberMap, Function<E, Operation> func,

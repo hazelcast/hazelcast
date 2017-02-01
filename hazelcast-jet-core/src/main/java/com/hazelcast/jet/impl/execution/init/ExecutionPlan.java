@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.internal.util.concurrent.QueuedPipe;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.TopologyChangedException;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -60,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +90,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private final Map<Integer, Map<Integer, Map<Address, SenderTasklet>>> senderMap = new HashMap<>();
 
     private Address[] partitionOwners;
-
     private List<VertexDef> vertices = new ArrayList<>();
     private final Map<String, ConcurrentConveyor<Object>[]> localConveyorMap = new HashMap<>();
     private final Map<String, Map<Address, ConcurrentConveyor<Object>>> edgeSenderConveyorMap = new HashMap<>();
@@ -100,7 +102,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ExecutionPlan() {
     }
 
-    public ExecutionPlan(Address[] partitionOwners) {
+    private ExecutionPlan(Address[] partitionOwners) {
         this.partitionOwners = partitionOwners;
     }
 
@@ -109,13 +111,11 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ) {
         JetInstance instance = getJetInstance(nodeEngine);
 
-        IPartitionService partitionService = nodeEngine.getPartitionService();
-        Address[] partitionOwners = new Address[partitionService.getPartitionCount()];
-        for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            partitionOwners[partitionId] = partitionService.getPartitionOwnerOrWait(partitionId);
-        }
+        final Collection<Member> members = new HashSet<>(nodeEngine.getClusterService().getSize());
+        final Address[] partitionOwners = new Address[nodeEngine.getPartitionService().getPartitionCount()];
+        initPartitionOwnersAndMembers(nodeEngine, members, partitionOwners);
 
-        final List<Member> members = new ArrayList<>(nodeEngine.getClusterService().getMembers());
+        final List<Address> addresses = members.stream().map(Member::getAddress).collect(toList());
         final int clusterSize = members.size();
         final boolean isJobDistributed = clusterSize > 1;
         final EdgeConfig defaultEdgeConfig = instance.getConfig().getDefaultEdgeConfig();
@@ -134,7 +134,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             final ProcessorMetaSupplier metaSupplier = vertex.getSupplier();
             metaSupplier.init(new MetaSupplierCtx(instance, totalParallelism, localParallelism));
 
-            List<Address> addresses = plans.keySet().stream().map(Member::getAddress).collect(toList());
             Function<Address, ProcessorSupplier> procSupplierFn = metaSupplier.get(addresses);
             for (Entry<Member, ExecutionPlan> e : plans.entrySet()) {
                 final ProcessorSupplier processorSupplier = procSupplierFn.apply(e.getKey().getAddress());
@@ -145,6 +144,26 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             }
         }
         return plans;
+    }
+
+    private static void initPartitionOwnersAndMembers(NodeEngine nodeEngine, Collection<Member> members,
+            Address[] partitionOwners) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        for (int partitionId = 0; partitionId < partitionOwners.length; partitionId++) {
+            Address address = partitionService.getPartitionOwnerOrWait(partitionId);
+
+            Member member;
+            if ((member = clusterService.getMember(address)) == null) {
+                // Address in partition table doesn't exist in member list,
+                // it has just left the cluster.
+                throw new TopologyChangedException("Topology changed! " + address + " is not member anymore!");
+            }
+
+            // add member to known members
+            members.add(member);
+            partitionOwners[partitionId] = address;
+        }
     }
 
     private static JetInstance getJetInstance(NodeEngine nodeEngine) {

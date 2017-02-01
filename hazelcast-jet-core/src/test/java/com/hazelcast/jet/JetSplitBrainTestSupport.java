@@ -23,7 +23,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
@@ -33,18 +32,11 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -380,71 +372,6 @@ public abstract class JetSplitBrainTestSupport extends JetTestSupport {
 
         public JetInstance[] getSecondHalf() {
             return secondHalf;
-        }
-    }
-
-    protected static class MockSupplier implements ProcessorSupplier {
-
-        static AtomicInteger initCount = new AtomicInteger();
-        static AtomicInteger completeCount = new AtomicInteger();
-        static List<Throwable> completeErrors = new CopyOnWriteArrayList<>();
-
-        private final RuntimeException initError;
-        private final Supplier<Processor> supplier;
-
-        private boolean initCalled;
-
-        MockSupplier(Supplier<Processor> supplier) {
-            this(null, supplier);
-        }
-
-        MockSupplier(RuntimeException initError, Supplier<Processor> supplier) {
-            this.initError = initError;
-            this.supplier = supplier;
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
-            initCalled = true;
-            initCount.incrementAndGet();
-
-            if (initError != null) {
-                throw initError;
-            }
-        }
-
-        @Override @Nonnull
-        public List<Processor> get(int count) {
-            return Stream.generate(supplier).limit(count).collect(toList());
-        }
-
-        @Override
-        public void complete(Throwable error) {
-            completeErrors.add(error);
-            completeCount.incrementAndGet();
-            if (!initCalled) {
-                throw new IllegalStateException("Complete called without calling init()");
-            }
-            if (initCount.get() != NODE_COUNT) {
-                throw new IllegalStateException("Complete called without init being called on all the nodes");
-            }
-        }
-    }
-
-    protected static final class StuckProcessor extends AbstractProcessor {
-        static CountDownLatch executionStarted;
-        static CountDownLatch proceedLatch;
-
-        @Override
-        public boolean complete() {
-            executionStarted.countDown();
-            try {
-                proceedLatch.await();
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                throw rethrow(e);
-            }
-            return false;
         }
     }
 }

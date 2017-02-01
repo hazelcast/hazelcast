@@ -40,7 +40,9 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.stream.Collectors.toList;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 @Category(QuickTest.class)
@@ -81,36 +83,50 @@ public class TopologyChangeTest extends JetTestSupport {
     }
 
     @Test
-    public void when_addNodeDuringExecution_then_completeCalledWithError() throws Throwable {
+    public void when_addNodeDuringExecution_then_completeSuccessfully() throws Throwable {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
         // When
-        try {
-            Future<Void> future = instances[0].newJob(dag).execute();
-            StuckProcessor.executionStarted.await();
-            factory.newMember();
-            StuckProcessor.proceedLatch.countDown();
-            future.get();
-            fail("Job execution should fail");
-        } catch (ExecutionException exception) {
-            assertInstanceOf(TopologyChangedException.class, exception.getCause());
-        }
+        Future<Void> future = instances[0].newJob(dag).execute();
+        StuckProcessor.executionStarted.await();
+        factory.newMember();
+        StuckProcessor.proceedLatch.countDown();
+        future.get();
 
         // Then
         assertEquals(NODE_COUNT, MockSupplier.initCount.get());
 
         assertTrueEventually(() -> {
             assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-            assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-            for (int i = 0; i < NODE_COUNT; i++) {
-                assertInstanceOf(TopologyChangedException.class, MockSupplier.completeErrors.get(i));
-            }
+            assertThat(MockSupplier.completeErrors, empty());
         });
     }
 
     @Test
-    public void when_removeNodeDuringExecution_then_completeCalledWithError() throws Throwable {
+    public void when_addAndRemoveNodeDuringExecution_then_completeSuccessfully() throws Throwable {
+        // Given
+        DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
+
+        // When
+        Future<Void> future = instances[0].newJob(dag).execute();
+        StuckProcessor.executionStarted.await();
+        JetInstance instance = factory.newMember();
+        instance.shutdown();
+        StuckProcessor.proceedLatch.countDown();
+        future.get();
+
+        // Then
+        assertEquals(NODE_COUNT, MockSupplier.initCount.get());
+
+        assertTrueEventually(() -> {
+            assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+            assertThat(MockSupplier.completeErrors, empty());
+        });
+    }
+
+    @Test
+    public void when_removeExistingNodeDuringExecution_then_completeCalledWithError() throws Throwable {
         // Given
         DAG dag = new DAG().vertex(new Vertex("test", new MockSupplier(StuckProcessor::new)));
 
@@ -167,7 +183,7 @@ public class TopologyChangeTest extends JetTestSupport {
         });
     }
 
-    private static class MockSupplier implements ProcessorSupplier {
+    static class MockSupplier implements ProcessorSupplier {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger completeCount = new AtomicInteger();
@@ -204,7 +220,9 @@ public class TopologyChangeTest extends JetTestSupport {
 
         @Override
         public void complete(Throwable error) {
-            completeErrors.add(error);
+            if (error != null) {
+                completeErrors.add(error);
+            }
             completeCount.incrementAndGet();
             if (!initCalled) {
                 throw new IllegalStateException("Complete called without calling init()");
@@ -215,7 +233,7 @@ public class TopologyChangeTest extends JetTestSupport {
         }
     }
 
-    private static final class StuckProcessor implements Processor {
+    static final class StuckProcessor implements Processor {
         static CountDownLatch executionStarted;
         static CountDownLatch proceedLatch;
 
@@ -228,7 +246,7 @@ public class TopologyChangeTest extends JetTestSupport {
             } catch (InterruptedException e) {
                 throw rethrow(e);
             }
-            return false;
+            return true;
         }
     }
 }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.jet.TopologyChangeTest.MockSupplier;
+import com.hazelcast.jet.TopologyChangeTest.StuckProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -75,14 +76,11 @@ public class TopologyChangeSplitClusterTest extends JetSplitBrainTestSupport {
         // Then
         assertEquals(NODE_COUNT, MockSupplier.initCount.get());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
-                assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
-                for (int i = 0; i < NODE_COUNT; i++) {
-                    assertInstanceOf(TopologyChangedException.class, MockSupplier.completeErrors.get(i));
-                }
+        assertTrueEventually(() -> {
+            assertEquals(NODE_COUNT, MockSupplier.completeCount.get());
+            assertEquals(NODE_COUNT, MockSupplier.completeErrors.size());
+            for (int i = 0; i < NODE_COUNT; i++) {
+                assertInstanceOf(TopologyChangedException.class, MockSupplier.completeErrors.get(i));
             }
         });
     }

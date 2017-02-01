@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.Address;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -213,7 +214,7 @@ public final class ReadIMapP extends AbstractProcessor {
 
         LocalClusterProcessorSupplier(String mapName, List<Integer> ownedPartitions, int fetchSize) {
             this.mapName = mapName;
-            this.ownedPartitions = ownedPartitions;
+            this.ownedPartitions = ownedPartitions != null ? ownedPartitions : Collections.emptyList();
             this.fetchSize = fetchSize;
         }
 

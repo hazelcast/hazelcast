@@ -16,7 +16,8 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.test.AssertTask;
+import com.hazelcast.jet.TopologyChangeTest.MockSupplier;
+import com.hazelcast.jet.TopologyChangeTest.StuckProcessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Rule;
@@ -27,8 +28,9 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertThat;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
@@ -65,25 +67,15 @@ public class TopologyChangeMergeClusterTest extends JetSplitBrainTestSupport {
     @Override
     protected void onAfterSplitBrainHealed(JetInstance[] instances) throws Exception {
         // When
-        try {
-            StuckProcessor.proceedLatch.countDown();
-            future.get();
-            fail("Job execution should fail");
-        } catch (Exception ignored) {
-        }
+        StuckProcessor.proceedLatch.countDown();
+        future.get();
 
         // Then
         assertEquals(NODE_COUNT / 2, MockSupplier.initCount.get());
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(NODE_COUNT / 2, MockSupplier.completeCount.get());
-                assertEquals(NODE_COUNT / 2, MockSupplier.completeErrors.size());
-                for (int i = 0; i < NODE_COUNT / 2; i++) {
-                    assertInstanceOf(TopologyChangedException.class, MockSupplier.completeErrors.get(i));
-                }
-            }
+        assertTrueEventually(() -> {
+            assertEquals(NODE_COUNT / 2, MockSupplier.completeCount.get());
+            assertThat(MockSupplier.completeErrors, empty());
         });
     }
 }
