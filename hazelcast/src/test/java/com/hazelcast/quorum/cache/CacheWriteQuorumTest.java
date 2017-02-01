@@ -39,7 +39,6 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,7 +68,7 @@ public class CacheWriteQuorumTest {
     private ICache<Integer, String> cache5;
 
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(CACHE_NAME_PREFIX + "*");
         cacheConfig.setQuorumName(QUORUM_ID);
@@ -90,8 +89,8 @@ public class CacheWriteQuorumTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        final String cacheName = CACHE_NAME_PREFIX + randomString();
+    public void setUp() {
+        String cacheName = CACHE_NAME_PREFIX + randomString();
         cache1 = (ICache<Integer, String>) cachingProvider1.getCacheManager().<Integer, String>getCache(cacheName);
         cache2 = (ICache<Integer, String>) cachingProvider2.getCacheManager().<Integer, String>getCache(cacheName);
         cache3 = (ICache<Integer, String>) cachingProvider3.getCacheManager().<Integer, String>getCache(cacheName);
@@ -100,17 +99,17 @@ public class CacheWriteQuorumTest {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testPutOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testPutOperationSuccessfulWhenQuorumSizeMet() {
         cache1.put(1, "");
     }
 
     @Test(expected = QuorumException.class)
-    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.put(1, "");
     }
 

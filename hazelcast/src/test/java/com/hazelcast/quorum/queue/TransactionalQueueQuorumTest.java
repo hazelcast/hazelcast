@@ -32,7 +32,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -43,6 +42,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
+
     @Parameterized.Parameter(0)
     public TransactionOptions options;
 
@@ -55,7 +55,7 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         q4.add("foo");
         addQueueData(q4);
@@ -63,44 +63,42 @@ public class TransactionalQueueQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
-
     @Test(expected = TransactionException.class)
     public void testTxPollThrowsExceptionWhenQuorumSizeNotMet() {
-        final TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
-        final TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
+        TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.poll();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
     public void testTxTakeThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
-        final TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
-        final TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
+        TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.take();
         transactionContext.commitTransaction();
     }
 
-
     @Test(expected = TransactionException.class)
     public void testTxPeekThrowsExceptionWhenQuorumSizeNotMet() {
-        final TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
-        final TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
+        TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.peek();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
     public void testTxOfferThrowsExceptionWhenQuorumSizeNotMet() {
-        final TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
-        final TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
+        TransactionalQueue<Object> q = transactionContext.getQueue(QUEUE_NAME);
         q.offer("");
         transactionContext.commitTransaction();
     }

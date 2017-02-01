@@ -13,25 +13,26 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 
 public abstract class AbstractQueueQuorumTest {
 
+    protected static final String QUEUE_NAME_PREFIX = "quorum";
+    protected static final String QUORUM_ID = "threeNodeQuorumRule";
+
     protected static final int QUEUE_DATA_COUNT = 50;
+    protected static final String QUEUE_NAME = QUEUE_NAME_PREFIX + randomString();
+
     protected static PartitionedCluster cluster;
     protected static IQueue<Object> q1;
     protected static IQueue<Object> q2;
     protected static IQueue<Object> q3;
     protected static IQueue<Object> q4;
     protected static IQueue<Object> q5;
-    private static final String QUEUE_NAME_PREFIX = "quorum";
-    protected static final String QUEUE_NAME = QUEUE_NAME_PREFIX + randomString();
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
 
-
-    protected static void initializeFiveMemberCluster(QuorumType type, int quorumSize) throws InterruptedException {
-        final QuorumConfig quorumConfig = new QuorumConfig()
+    protected static void initializeFiveMemberCluster(QuorumType type, int quorumSize) {
+        QuorumConfig quorumConfig = new QuorumConfig()
                 .setName(QUORUM_ID)
                 .setType(type)
                 .setEnabled(true)
                 .setSize(quorumSize);
-        final QueueConfig qConfig = new QueueConfig(QUEUE_NAME_PREFIX + "*")
+        QueueConfig qConfig = new QueueConfig(QUEUE_NAME_PREFIX + "*")
                 .setBackupCount(4)
                 .setQuorumName(QUORUM_ID);
         cluster = new PartitionedCluster(new TestHazelcastInstanceFactory());

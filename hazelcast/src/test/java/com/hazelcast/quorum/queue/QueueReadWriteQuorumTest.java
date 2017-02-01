@@ -27,22 +27,19 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueReadWriteQuorumTest extends AbstractQueueQuorumTest {
+
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.READ_WRITE, 3);
         addQueueData(q4);
         cluster.splitFiveMembersThreeAndTwo();
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -52,12 +49,12 @@ public class QueueReadWriteQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testOfferOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testOfferOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.offer("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testAddOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testAddOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.add("foo");
     }
 
@@ -67,27 +64,27 @@ public class QueueReadWriteQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testRemoveOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testRemoveOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.remove();
     }
 
     @Test(expected = QuorumException.class)
-    public void testPollOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPollOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.poll();
     }
 
     @Test(expected = QuorumException.class)
-    public void testElementOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testElementOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.element();
     }
 
     @Test(expected = QuorumException.class)
-    public void testPeekOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPeekOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.peek();
     }
 
     @Test
-    public void testGetLocalQueueStatsOperationSuccessfulWhenQuorumSizeNotMet() throws Exception {
+    public void testGetLocalQueueStatsOperationSuccessfulWhenQuorumSizeNotMet() {
         q4.getLocalQueueStats();
     }
 }

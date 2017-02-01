@@ -12,30 +12,32 @@ import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 
 public abstract class AbstractLockQuorumTest {
-    protected static PartitionedCluster cluster;
-    private static ILock l1;
-    private static ILock l2;
-    private static ILock l3;
-    static ILock l4;
-    static ILock l5;
+
     private static final String LOCK_NAME_PREFIX = "lock";
-    protected static final String LOCK_NAME = LOCK_NAME_PREFIX + randomString();
+    private static final String LOCK_NAME = LOCK_NAME_PREFIX + randomString();
     private static final String QUORUM_ID = "threeNodeQuorumRule";
 
+    protected static PartitionedCluster cluster;
 
-    protected static void initializeFiveMemberCluster(QuorumType type, int quorumSize) throws InterruptedException {
-        final QuorumConfig quorumConfig = new QuorumConfig()
+    static ILock l1;
+    static ILock l2;
+    static ILock l3;
+    static ILock l4;
+    static ILock l5;
+
+    static void initializeFiveMemberCluster(QuorumType type, int quorumSize) {
+        QuorumConfig quorumConfig = new QuorumConfig()
                 .setName(QUORUM_ID)
                 .setType(type)
                 .setEnabled(true)
                 .setSize(quorumSize);
-        final LockConfig lockConfig = new LockConfig(LOCK_NAME_PREFIX + "*").setQuorumName(QUORUM_ID);
+        LockConfig lockConfig = new LockConfig(LOCK_NAME_PREFIX + "*").setQuorumName(QUORUM_ID);
         cluster = new PartitionedCluster(new TestHazelcastInstanceFactory());
         cluster.createFiveMemberCluster(lockConfig, quorumConfig);
 
@@ -46,12 +48,12 @@ public abstract class AbstractLockQuorumTest {
         l5 = getLock(cluster.h5);
     }
 
-    protected static <E> ILock getLock(HazelcastInstance instance) {
+    protected static ILock getLock(HazelcastInstance instance) {
         return instance.getLock(LOCK_NAME);
     }
 
     @Test
-    public void testOperationsSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testOperationsSuccessfulWhenQuorumSizeMet() {
         l1.lock();
         l2.getRemainingLeaseTime();
         l1.unlock();
@@ -71,12 +73,12 @@ public abstract class AbstractLockQuorumTest {
         testCondition(l1);
     }
 
-    void testCondition(ILock lock) throws InterruptedException {
-        final CountDownLatch signalArrived = new CountDownLatch(1);
-        final ICondition cond = lock.newCondition("condition");
+    void testCondition(ILock lock) {
+        CountDownLatch signalArrived = new CountDownLatch(1);
+        ICondition cond = lock.newCondition("condition");
         await(lock, cond, signalArrived);
 
-        TimeUnit.SECONDS.sleep(1);
+        sleepSeconds(1);
         lock.lock();
         cond.signal();
         lock.unlock();

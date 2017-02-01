@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,6 +44,9 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 @Category({QuickTest.class, ParallelTest.class})
 public class MapReadQuorumTest {
 
+    private static final String MAP_NAME_PREFIX = "quorum";
+    private static final String QUORUM_ID = "threeNodeQuorumRule";
+
     static PartitionedCluster cluster;
     static IMap<Object, Object> map1;
     static IMap<Object, Object> map2;
@@ -52,11 +54,8 @@ public class MapReadQuorumTest {
     static IMap<Object, Object> map4;
     static IMap<Object, Object> map5;
 
-    private static final String MAP_NAME_PREFIX = "quorum";
-    private static final String QUORUM_ID = "threeNodeQuorumRule";
-
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setType(QuorumType.READ);
@@ -68,7 +67,7 @@ public class MapReadQuorumTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         String mapName = randomMapName(MAP_NAME_PREFIX);
         map1 = cluster.h1.getMap(mapName);
         map2 = cluster.h2.getMap(mapName);
@@ -78,18 +77,17 @@ public class MapReadQuorumTest {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
-
     @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
         map1.get("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.get("foo");
     }
 
@@ -106,88 +104,87 @@ public class MapReadQuorumTest {
     }
 
     @Test
-    public void testGetAllOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetAllOperationSuccessfulWhenQuorumSizeMet() {
         HashSet<Object> keys = new HashSet<Object>();
         keys.add("foo");
         map1.getAll(keys);
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetAllOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetAllOperationThrowsExceptionWhenQuorumSizeNotMet() {
         HashSet<Object> keys = new HashSet<Object>();
         keys.add("foo");
         map4.getAll(keys);
     }
 
     @Test
-    public void testGetEntryViewOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetEntryViewOperationSuccessfulWhenQuorumSizeMet() {
         map1.getEntryView("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetEntryViewOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetEntryViewOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.getEntryView("foo");
     }
 
 
     @Test
-    public void testContainsKeyOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testContainsKeyOperationSuccessfulWhenQuorumSizeMet() {
         map1.containsKey("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testContainsKeyOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testContainsKeyOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.containsKey("foo");
     }
 
     @Test
-    public void testContainsValueOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testContainsValueOperationSuccessfulWhenQuorumSizeMet() {
         map1.containsValue("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testContainsValueOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testContainsValueOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.containsValue("foo");
     }
 
     @Test
-    public void testKeySetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testKeySetOperationSuccessfulWhenQuorumSizeMet() {
         map1.keySet();
     }
 
     @Test(expected = QuorumException.class)
-    public void testKeySetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testKeySetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.keySet();
     }
 
     @Test
-    public void testLocalKeySetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testLocalKeySetOperationSuccessfulWhenQuorumSizeMet() {
         map1.localKeySet();
     }
 
     @Test(expected = QuorumException.class)
-    public void testLocalKeySetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testLocalKeySetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.localKeySet();
     }
 
     @Test
-    public void testValuesOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testValuesOperationSuccessfulWhenQuorumSizeMet() {
         map1.values();
     }
 
     @Test(expected = QuorumException.class)
-    public void testValuesOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testValuesOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.values();
     }
 
     @Test
-    public void testEntrySetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testEntrySetOperationSuccessfulWhenQuorumSizeMet() {
         map1.entrySet();
     }
 
     @Test(expected = QuorumException.class)
-    public void testEntrySetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testEntrySetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         map4.entrySet();
     }
-
 }

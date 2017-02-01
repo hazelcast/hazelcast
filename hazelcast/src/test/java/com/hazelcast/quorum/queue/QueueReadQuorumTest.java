@@ -27,27 +27,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueReadQuorumTest extends AbstractQueueQuorumTest {
+
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.READ, 3);
         addQueueData(q4);
         cluster.splitFiveMembersThreeAndTwo();
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testMutatingOperationsSuccessfullWhenQuorumSizeNotMet() throws Exception {
+    public void testMutatingOperationsSuccessfulWhenQuorumSizeNotMet() throws Exception {
         q4.put("foo");
         q4.offer("foo");
         q4.add("foo");
@@ -57,17 +54,17 @@ public class QueueReadQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testElementOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testElementOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.element();
     }
 
     @Test(expected = QuorumException.class)
-    public void testPeekOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPeekOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.peek();
     }
 
     @Test
-    public void testGetLocalQueueStatsOperationSuccessfulWhenQuorumSizeNotMet() throws Exception {
+    public void testGetLocalQueueStatsOperationSuccessfulWhenQuorumSizeNotMet() {
         q4.getLocalQueueStats();
     }
 }

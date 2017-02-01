@@ -42,35 +42,39 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class PartitionedCluster {
-    private static final String SUCCESSFUL_SPLIT_TEST_QUORUM_NAME = "SUCCESSFULL_SPLIT_TEST_QUORUM";
-    protected TestHazelcastInstanceFactory factory;
+
+    private static final String SUCCESSFUL_SPLIT_TEST_QUORUM_NAME = "SUCCESSFUL_SPLIT_TEST_QUORUM";
+
     public HazelcastInstance h1;
     public HazelcastInstance h2;
     public HazelcastInstance h3;
     public HazelcastInstance h4;
     public HazelcastInstance h5;
 
+    protected TestHazelcastInstanceFactory factory;
+
     public PartitionedCluster(TestHazelcastInstanceFactory factory) {
         this.factory = factory;
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws InterruptedException {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws Exception {
         createFiveMemberCluster(mapConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) throws InterruptedException {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig)
+            throws Exception {
         createFiveMemberCluster(cacheSimpleConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) throws InterruptedException {
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(QueueConfig qConfig, QuorumConfig quorumConfig) throws Exception {
         createFiveMemberCluster(qConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
     private PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
-        final Config config = createClusterConfig()
+         Config config = createClusterConfig()
                 .addMapConfig(mapConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -78,7 +82,7 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-        final Config config = createClusterConfig()
+         Config config = createClusterConfig()
                 .addCacheConfig(cacheSimpleConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -86,16 +90,15 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster createFiveMemberCluster(QueueConfig queueConfig, QuorumConfig quorumConfig) {
-        final Config config = createClusterConfig()
+         Config config = createClusterConfig()
                 .addQueueConfig(queueConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
         return this;
     }
 
-
     public PartitionedCluster createFiveMemberCluster(LockConfig lockConfig, QuorumConfig quorumConfig) {
-        final Config config = createClusterConfig()
+         Config config = createClusterConfig()
                 .addLockConfig(lockConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -111,7 +114,7 @@ public class PartitionedCluster {
         return config;
     }
 
-    public PartitionedCluster splitFiveMembersThreeAndTwo() throws InterruptedException {
+    public PartitionedCluster splitFiveMembersThreeAndTwo() throws Exception {
         final CountDownLatch splitLatch = new CountDownLatch(6);
         h4.getCluster().addMembershipListener(new MembershipAdapter() {
             @Override
@@ -210,5 +213,4 @@ public class PartitionedCluster {
     private static FirewallingMockConnectionManager getConnectionManager(Node node) {
         return (FirewallingMockConnectionManager) node.getConnectionManager();
     }
-
 }

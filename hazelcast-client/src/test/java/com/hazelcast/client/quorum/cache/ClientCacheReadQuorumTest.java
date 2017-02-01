@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -46,10 +45,10 @@ import static com.hazelcast.client.quorum.QuorumTestUtil.getClientConfig;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
 
-    static PartitionedCluster cluster;
-
     private static final String CACHE_NAME_PREFIX = "cacheQuorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
+
+    static PartitionedCluster cluster;
 
     private static HazelcastClientCachingProvider cachingProvider1;
     private static HazelcastClientCachingProvider cachingProvider2;
@@ -70,8 +69,7 @@ public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
     private static TestHazelcastFactory factory;
 
     @BeforeClass
-    public static void initialize()
-            throws Exception {
+    public static void initialize() throws Exception {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setType(QuorumType.READ);
@@ -89,14 +87,6 @@ public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
         verifyClients();
     }
 
-    private static void verifyClients() {
-        assertClusterSizeEventually(3, c1);
-        assertClusterSizeEventually(3, c2);
-        assertClusterSizeEventually(3, c3);
-        assertClusterSizeEventually(2, c4);
-        assertClusterSizeEventually(2, c5);
-    }
-
     private static void initializeClients() {
         c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
         c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
@@ -112,7 +102,7 @@ public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
         cachingProvider4 = HazelcastClientCachingProvider.createCachingProvider(c4);
         cachingProvider5 = HazelcastClientCachingProvider.createCachingProvider(c5);
 
-        final String cacheName = CACHE_NAME_PREFIX + randomString();
+        String cacheName = CACHE_NAME_PREFIX + randomString();
         cache1 = (ICache) cachingProvider1.getCacheManager().getCache(cacheName);
         cache2 = (ICache) cachingProvider2.getCacheManager().getCache(cacheName);
         cache3 = (ICache) cachingProvider3.getCacheManager().getCache(cacheName);
@@ -120,18 +110,26 @@ public class ClientCacheReadQuorumTest extends HazelcastTestSupport {
         cache5 = (ICache) cachingProvider5.getCacheManager().getCache(cacheName);
     }
 
+    private static void verifyClients() {
+        assertClusterSizeEventually(3, c1);
+        assertClusterSizeEventually(3, c2);
+        assertClusterSizeEventually(3, c3);
+        assertClusterSizeEventually(2, c4);
+        assertClusterSizeEventually(2, c5);
+    }
+
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         factory.terminateAll();
     }
 
     @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
         cache1.get(1);
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.get(1);
     }
 

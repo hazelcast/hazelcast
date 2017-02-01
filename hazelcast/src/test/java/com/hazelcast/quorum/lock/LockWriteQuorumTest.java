@@ -27,24 +27,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class LockWriteQuorumTest extends AbstractLockQuorumTest {
+
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.WRITE, 3);
         cluster.splitFiveMembersThreeAndTwo();
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testReadOnlyOkWhenQuorumSizeNotMet() throws Exception {
+    public void testReadOnlyOkWhenQuorumSizeNotMet() {
         l4.getRemainingLeaseTime();
         l4.isLocked();
         l4.isLockedByCurrentThread();
@@ -52,22 +51,22 @@ public class LockWriteQuorumTest extends AbstractLockQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testTryLockFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testTryLockFailsWhenQuorumSizeNotMet() {
         l4.tryLock();
     }
 
     @Test(expected = QuorumException.class)
-    public void testLockFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testLockFailsWhenQuorumSizeNotMet() {
         l4.lock();
     }
 
     @Test(expected = QuorumException.class)
-    public void testForceUnlockFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testForceUnlockFailsWhenQuorumSizeNotMet() {
         l5.forceUnlock();
     }
 
     @Test(expected = QuorumException.class)
-    public void testUnlockFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testUnlockFailsWhenQuorumSizeNotMet() {
         l4.unlock();
     }
 
@@ -77,7 +76,7 @@ public class LockWriteQuorumTest extends AbstractLockQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testSignalFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testSignalFailsWhenQuorumSizeNotMet() {
         l4.newCondition("condition").signal();
     }
 }

@@ -35,7 +35,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -56,6 +55,7 @@ public class CacheReadQuorumTest {
     private static HazelcastServerCachingProvider cachingProvider3;
     private static HazelcastServerCachingProvider cachingProvider4;
     private static HazelcastServerCachingProvider cachingProvider5;
+
     private ICache<Integer, String> cache1;
     private ICache<Integer, String> cache2;
     private ICache<Integer, String> cache3;
@@ -63,7 +63,7 @@ public class CacheReadQuorumTest {
     private ICache<Integer, String> cache5;
 
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
         cacheConfig.setName(CACHE_NAME_PREFIX + "*");
         cacheConfig.setQuorumName(QUORUM_ID);
@@ -84,8 +84,8 @@ public class CacheReadQuorumTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        final String cacheName = CACHE_NAME_PREFIX + randomString();
+    public void setUp() {
+        String cacheName = CACHE_NAME_PREFIX + randomString();
         cache1 = (ICache<Integer, String>) cachingProvider1.getCacheManager().<Integer, String>getCache(cacheName);
         cache2 = (ICache<Integer, String>) cachingProvider2.getCacheManager().<Integer, String>getCache(cacheName);
         cache3 = (ICache<Integer, String>) cachingProvider3.getCacheManager().<Integer, String>getCache(cacheName);
@@ -94,17 +94,17 @@ public class CacheReadQuorumTest {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
         cache1.get(1);
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.get(1);
     }
 

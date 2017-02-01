@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 public class QuorumListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() throws Exception {
+    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -74,7 +74,7 @@ public class QuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumFailureEventFiredWhenNodeCountDropsBelowThreshold() throws Exception {
+    public void testQuorumFailureEventFiredWhenNodeCountDropsBelowThreshold() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -92,15 +92,15 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance();
-        HazelcastInstance instance3 = factory.newHazelcastInstance();
-        instance3.shutdown();
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        hz.shutdown();
         assertOpenEventually(countDownLatch, 15);
     }
 
     @Test
-    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() throws Exception {
+    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() {
         final CountDownLatch belowLatch = new CountDownLatch(1);
         final CountDownLatch aboveLatch = new CountDownLatch(1);
         Config config = new Config();
@@ -121,15 +121,15 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         assertOpenEventually(belowLatch, 15);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         assertOpenEventually(aboveLatch);
     }
 
     @Test
-    public void testDifferentQuorumsGetCorrectEvents() throws Exception {
+    public void testDifferentQuorumsGetCorrectEvents() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final CountDownLatch quorumFailureLatch = new CountDownLatch(2);
         String fourNodeQuorumName = "fourNode";
@@ -162,15 +162,14 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.addMapConfig(threeNodeMapConfig);
         config.addQuorumConfig(threeNodeQuorumConfig);
 
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
 
         assertOpenEventually(quorumFailureLatch);
-
     }
 
     @Test
-    public void testCustomResolverFiresQuorumFailureEvent() throws Exception {
+    public void testCustomResolverFiresQuorumFailureEvent() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -198,14 +197,13 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.addQuorumConfig(quorumConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
-        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         factory.newHazelcastInstance();
         assertOpenEventually(countDownLatch, 15);
-
     }
 
     @Test
-    public void testQuorumEventProvidesCorrectMemberListSize() throws Exception {
+    public void testQuorumEventProvidesCorrectMemberListSize() {
         final CountDownLatch belowLatch = new CountDownLatch(2);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -226,8 +224,8 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         config.getMapConfig(mapName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         assertOpenEventually(belowLatch);
     }
 }

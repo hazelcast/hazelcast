@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
 public class CacheQuorumListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() throws Exception {
+    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -81,7 +81,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() throws Exception {
+    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() {
         final CountDownLatch belowLatch = new CountDownLatch(1);
         final CountDownLatch aboveLatch = new CountDownLatch(1);
         Config config = new Config();
@@ -121,7 +121,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDifferentQuorumsGetCorrectEvents() throws Exception {
+    public void testDifferentQuorumsGetCorrectEvents() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final CountDownLatch quorumFailureLatch = new CountDownLatch(2);
         String fourNodeQuorumName = "fourNode";
@@ -178,7 +178,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCustomResolverFiresQuorumFailureEvent() throws Exception {
+    public void testCustomResolverFiresQuorumFailureEvent() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
@@ -219,7 +219,7 @@ public class CacheQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumEventProvidesCorrectMemberListSize() throws Exception {
+    public void testQuorumEventProvidesCorrectMemberListSize() {
         final CountDownLatch belowLatch = new CountDownLatch(1);
         Config config = new Config();
         QuorumListenerConfig listenerConfig = new QuorumListenerConfig();

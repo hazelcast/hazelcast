@@ -39,7 +39,6 @@ import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
 import javax.cache.processor.MutableEntry;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,13 +50,12 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCacheReadWriteQuorumTest
-        extends HazelcastTestSupport {
-
-    static PartitionedCluster cluster;
+public class ClientCacheReadWriteQuorumTest extends HazelcastTestSupport {
 
     private static final String CACHE_NAME_PREFIX = "cacheQuorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
+
+    static PartitionedCluster cluster;
 
     private static HazelcastClientCachingProvider cachingProvider1;
     private static HazelcastClientCachingProvider cachingProvider2;
@@ -78,8 +76,7 @@ public class ClientCacheReadWriteQuorumTest
     private static TestHazelcastFactory factory;
 
     @BeforeClass
-    public static void initialize()
-            throws Exception {
+    public static void initialize() throws Exception {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setType(QuorumType.READ_WRITE);
@@ -97,14 +94,6 @@ public class ClientCacheReadWriteQuorumTest
         verifyClients();
     }
 
-    private static void verifyClients() {
-        assertClusterSizeEventually(3, c1);
-        assertClusterSizeEventually(3, c2);
-        assertClusterSizeEventually(3, c3);
-        assertClusterSizeEventually(2, c4);
-        assertClusterSizeEventually(2, c5);
-    }
-
     private static void initializeClients() {
         c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
         c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
@@ -120,7 +109,7 @@ public class ClientCacheReadWriteQuorumTest
         cachingProvider4 = HazelcastClientCachingProvider.createCachingProvider(c4);
         cachingProvider5 = HazelcastClientCachingProvider.createCachingProvider(c5);
 
-        final String cacheName = CACHE_NAME_PREFIX + randomString();
+        String cacheName = CACHE_NAME_PREFIX + randomString();
         cache1 = (ICache) cachingProvider1.getCacheManager().getCache(cacheName);
         cache2 = (ICache) cachingProvider2.getCacheManager().getCache(cacheName);
         cache3 = (ICache) cachingProvider3.getCacheManager().getCache(cacheName);
@@ -128,28 +117,36 @@ public class ClientCacheReadWriteQuorumTest
         cache5 = (ICache) cachingProvider5.getCacheManager().getCache(cacheName);
     }
 
+    private static void verifyClients() {
+        assertClusterSizeEventually(3, c1);
+        assertClusterSizeEventually(3, c2);
+        assertClusterSizeEventually(3, c3);
+        assertClusterSizeEventually(2, c4);
+        assertClusterSizeEventually(2, c5);
+    }
+
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         factory.terminateAll();
     }
 
     @Test
-    public void testGetOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testGetOperationSuccessfulWhenQuorumSizeMet() {
         cache1.get(1);
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testGetOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.get(1);
     }
 
     @Test
-    public void testPutOperationSuccessfulWhenQuorumSizeMet() throws Exception {
+    public void testPutOperationSuccessfulWhenQuorumSizeMet() {
         cache1.put(1, "");
     }
 
     @Test(expected = QuorumException.class)
-    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPutOperationThrowsExceptionWhenQuorumSizeNotMet() {
         cache4.put(1, "");
     }
 
@@ -401,8 +398,7 @@ public class ClientCacheReadWriteQuorumTest
         cache4.invokeAll(hashSet, new SimpleEntryProcessor()).get(123).get();
     }
 
-    public static class SimpleEntryProcessor
-            implements EntryProcessor<Integer, String, Void>, Serializable {
+    public static class SimpleEntryProcessor implements EntryProcessor<Integer, String, Void>, Serializable {
 
         private static final long serialVersionUID = -396575576353368113L;
 

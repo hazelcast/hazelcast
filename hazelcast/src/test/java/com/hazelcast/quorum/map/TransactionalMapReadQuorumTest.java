@@ -37,7 +37,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -50,9 +49,10 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @Category({QuickTest.class, ParallelTest.class})
 public class TransactionalMapReadQuorumTest {
 
-    static PartitionedCluster cluster;
     private static final String MAP_NAME_PREFIX = "quorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
+
+    static PartitionedCluster cluster;
 
     @Parameterized.Parameter(0)
     public TransactionOptions options;
@@ -68,13 +68,13 @@ public class TransactionalMapReadQuorumTest {
         twoPhaseOption.setTransactionType(TWO_PHASE);
 
         return Arrays.asList(
-                new Object[]{twoPhaseOption}, //
-                new Object[]{onePhaseOption} //
+                new Object[]{twoPhaseOption},
+                new Object[]{onePhaseOption}
         );
     }
 
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
@@ -87,10 +87,9 @@ public class TransactionalMapReadQuorumTest {
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
-
 
     @Test(expected = TransactionException.class)
     public void testTxGetThrowsExceptionWhenQuorumSizeNotMet() {
@@ -100,7 +99,6 @@ public class TransactionalMapReadQuorumTest {
         map.get("foo");
         transactionContext.commitTransaction();
     }
-
 
     @Test(expected = TransactionException.class)
     public void testTxSizeThrowsExceptionWhenQuorumSizeNotMet() {
@@ -119,7 +117,6 @@ public class TransactionalMapReadQuorumTest {
         map.containsKey("foo");
         transactionContext.commitTransaction();
     }
-
 
     @Test(expected = TransactionException.class)
     public void testTxIsEmptyThrowsExceptionWhenQuorumSizeNotMet() {
@@ -165,5 +162,4 @@ public class TransactionalMapReadQuorumTest {
         map.values(TruePredicate.INSTANCE);
         transactionContext.commitTransaction();
     }
-
 }

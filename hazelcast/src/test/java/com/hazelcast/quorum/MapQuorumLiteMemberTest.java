@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 @Category(QuickTest.class)
 public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
-
     private TestHazelcastInstanceFactory factory;
 
     @Before
@@ -27,9 +26,9 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test(expected = QuorumException.class)
     public void test_readQuorumNotSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("r", QuorumType.READ, 3, false);
-        final Config liteConfig = craeteConfig("r", QuorumType.READ, 3, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("r", QuorumType.READ, 3, false);
+        Config liteConfig = createConfig("r", QuorumType.READ, 3, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
@@ -38,9 +37,9 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test
     public void test_readQuorumSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("r", QuorumType.READ, 2, false);
-        final Config liteConfig = craeteConfig("r", QuorumType.READ, 2, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("r", QuorumType.READ, 2, false);
+        Config liteConfig = createConfig("r", QuorumType.READ, 2, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
@@ -49,9 +48,9 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test(expected = QuorumException.class)
     public void test_readReadWriteQuorumNotSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("rw", QuorumType.READ_WRITE, 3, false);
-        final Config liteConfig = craeteConfig("rw", QuorumType.READ_WRITE, 3, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("rw", QuorumType.READ_WRITE, 3, false);
+        Config liteConfig = createConfig("rw", QuorumType.READ_WRITE, 3, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
@@ -60,9 +59,9 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test
     public void test_readReadWriteQuorumSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("rw", QuorumType.READ_WRITE, 2, false);
-        final Config liteConfig = craeteConfig("rw", QuorumType.READ_WRITE, 2, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("rw", QuorumType.READ_WRITE, 2, false);
+        Config liteConfig = createConfig("rw", QuorumType.READ_WRITE, 2, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
@@ -71,9 +70,9 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test(expected = QuorumException.class)
     public void test_readWriteQuorumNotSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("w", QuorumType.WRITE, 3, false);
-        final Config liteConfig = craeteConfig("w", QuorumType.WRITE, 3, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("w", QuorumType.WRITE, 3, false);
+        Config liteConfig = createConfig("w", QuorumType.WRITE, 3, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
@@ -82,18 +81,18 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
 
     @Test
     public void test_readWriteQuorumSatisfied_withLiteMembers() {
-        final Config config = craeteConfig("w", QuorumType.WRITE, 2, false);
-        final Config liteConfig = craeteConfig("w", QuorumType.WRITE, 2, true);
-        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        Config config = createConfig("w", QuorumType.WRITE, 2, false);
+        Config liteConfig = createConfig("w", QuorumType.WRITE, 2, true);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(liteConfig);
 
         instance.getMap("w").put(0, 0);
     }
 
-    private Config craeteConfig(final String name, final QuorumType type, final int size, final boolean liteMember) {
-        final QuorumConfig quorumConfig = new QuorumConfig().setName(name).setType(type).setEnabled(true).setSize(size);
-        final MapConfig mapConfig = new MapConfig(name);
+    private Config createConfig(String name, QuorumType type, int size, boolean liteMember) {
+        QuorumConfig quorumConfig = new QuorumConfig().setName(name).setType(type).setEnabled(true).setSize(size);
+        MapConfig mapConfig = new MapConfig(name);
         mapConfig.setQuorumName(name);
         Config config = new Config();
         config.addQuorumConfig(quorumConfig);
@@ -101,5 +100,4 @@ public class MapQuorumLiteMemberTest extends HazelcastTestSupport {
         config.setLiteMember(liteMember);
         return config;
     }
-
 }

@@ -27,24 +27,23 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class LockReadQuorumTest extends AbstractLockQuorumTest {
+
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.READ, 3);
         cluster.splitFiveMembersThreeAndTwo();
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testMutationOkWhenQuorumSizeNotMet() throws Exception {
+    public void testMutationOkWhenQuorumSizeNotMet() {
         l4.lock();
         l5.forceUnlock();
 
@@ -58,22 +57,22 @@ public class LockReadQuorumTest extends AbstractLockQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetRemainingLeaseTimeFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testGetRemainingLeaseTimeFailsWhenQuorumSizeNotMet() {
         l4.getRemainingLeaseTime();
     }
 
     @Test(expected = QuorumException.class)
-    public void testIsLockedFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testIsLockedFailsWhenQuorumSizeNotMet() {
         l4.isLocked();
     }
 
     @Test(expected = QuorumException.class)
-    public void testIsLockedByCurrentThreadFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testIsLockedByCurrentThreadFailsWhenQuorumSizeNotMet() {
         l4.isLockedByCurrentThread();
     }
 
     @Test(expected = QuorumException.class)
-    public void testGetLockCountFailsWhenQuorumSizeNotMet() throws Exception {
+    public void testGetLockCountFailsWhenQuorumSizeNotMet() {
         l5.getLockCount();
     }
 }

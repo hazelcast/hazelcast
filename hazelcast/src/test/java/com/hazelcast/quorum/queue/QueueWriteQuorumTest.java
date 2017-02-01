@@ -27,25 +27,24 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class QueueWriteQuorumTest extends AbstractQueueQuorumTest {
+
     @BeforeClass
-    public static void initialize() throws InterruptedException {
+    public static void initialize() throws Exception {
         initializeFiveMemberCluster(QuorumType.WRITE, 3);
         addQueueData(q4);
         cluster.splitFiveMembersThreeAndTwo();
     }
 
     @AfterClass
-    public static void killAllHazelcastInstances() throws IOException {
+    public static void killAllHazelcastInstances() {
         HazelcastInstanceFactory.terminateAll();
     }
 
     @Test
-    public void testOperationsSuccessfulWhenQuorumSizeNotMet() throws Exception {
+    public void testOperationsSuccessfulWhenQuorumSizeNotMet() {
         q4.peek();
         q4.element();
         q4.getLocalQueueStats();
@@ -58,12 +57,12 @@ public class QueueWriteQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testOfferOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testOfferOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.offer("foo");
     }
 
     @Test(expected = QuorumException.class)
-    public void testAddOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testAddOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.add("foo");
     }
 
@@ -73,12 +72,12 @@ public class QueueWriteQuorumTest extends AbstractQueueQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    public void testRemoveOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testRemoveOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.remove();
     }
 
     @Test(expected = QuorumException.class)
-    public void testPollOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
+    public void testPollOperationThrowsExceptionWhenQuorumSizeNotMet() {
         q4.poll();
     }
 }

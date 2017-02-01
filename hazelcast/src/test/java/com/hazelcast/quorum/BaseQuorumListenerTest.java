@@ -40,11 +40,11 @@ import static org.junit.Assert.assertTrue;
 public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
 
     @Test
-    public void testQuorumFailureEventFiredWhenNodeCountDropsBelowThreshold() throws Exception {
-        final CountDownLatch quorumNotPresent = new CountDownLatch(1);
-        final String distributedObjectName = randomString();
-        final Config config = addQuorum(new Config(), distributedObjectName, quorumListener(null, quorumNotPresent));
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+    public void testQuorumFailureEventFiredWhenNodeCountDropsBelowThreshold() {
+        CountDownLatch quorumNotPresent = new CountDownLatch(1);
+        String distributedObjectName = randomString();
+        Config config = addQuorum(new Config(), distributedObjectName, quorumListener(null, quorumNotPresent));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance();
         factory.newHazelcastInstance().shutdown();
@@ -52,12 +52,12 @@ public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() throws Exception {
-        final CountDownLatch quorumNotPresent = new CountDownLatch(1);
-        final CountDownLatch quorumPresent = new CountDownLatch(1);
-        final String distributedObjectName = randomString();
-        final Config config = addQuorum(new Config(), distributedObjectName, quorumListener(quorumPresent, quorumNotPresent));
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+    public void testQuorumEventsFiredWhenNodeCountBelowThenAboveThreshold() {
+        CountDownLatch quorumNotPresent = new CountDownLatch(1);
+        CountDownLatch quorumPresent = new CountDownLatch(1);
+        String distributedObjectName = randomString();
+        Config config = addQuorum(new Config(), distributedObjectName, quorumListener(quorumPresent, quorumNotPresent));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         assertOpenEventually(quorumNotPresent, 15);
@@ -67,10 +67,10 @@ public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testDifferentQuorumsGetCorrectEvents() throws Exception {
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-        final CountDownLatch quorumFailureLatch = new CountDownLatch(2);
-        final Config config = new Config();
+    public void testDifferentQuorumsGetCorrectEvents() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        CountDownLatch quorumFailureLatch = new CountDownLatch(2);
+        Config config = new Config();
         addQuorum(config, "fourNode", quorumListener(null, quorumFailureLatch));
         addQuorum(config, "threeNode", quorumListener(null, quorumFailureLatch));
         factory.newHazelcastInstance(config);
@@ -79,13 +79,13 @@ public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCustomResolverFiresQuorumFailureEvent() throws Exception {
-        final CountDownLatch quorumNotPresent = new CountDownLatch(1);
+    public void testCustomResolverFiresQuorumFailureEvent() {
+        CountDownLatch quorumNotPresent = new CountDownLatch(1);
 
-        final QuorumListenerConfig listenerConfig = new QuorumListenerConfig(quorumListener(null, quorumNotPresent));
-        final String distributedObjectName = randomString();
-        final String quorumName = randomString();
-        final QuorumConfig quorumConfig = new QuorumConfig()
+        QuorumListenerConfig listenerConfig = new QuorumListenerConfig(quorumListener(null, quorumNotPresent));
+        String distributedObjectName = randomString();
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig()
                 .setName(quorumName)
                 .setEnabled(true)
                 .addListenerConfig(listenerConfig)
@@ -95,46 +95,44 @@ public abstract class BaseQuorumListenerTest extends HazelcastTestSupport {
                         return false;
                     }
                 });
-        final Config config = new Config().addQuorumConfig(quorumConfig);
+        Config config = new Config().addQuorumConfig(quorumConfig);
         addQuorumConfig(config, distributedObjectName, quorumName);
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance();
         assertOpenEventually(quorumNotPresent, 15);
-
     }
 
     @Test
-    public void testQuorumEventProvidesCorrectMemberListSize() throws Exception {
+    public void testQuorumEventProvidesCorrectMemberListSize() {
         final CountDownLatch quorumNotPresent = new CountDownLatch(1);
-        final QuorumListenerConfig listenerConfig = new QuorumListenerConfig(new QuorumListener() {
+        QuorumListenerConfig listenerConfig = new QuorumListenerConfig(new QuorumListener() {
             public void onChange(QuorumEvent quorumEvent) {
                 if (!quorumEvent.isPresent()) {
-                    final Collection<Member> currentMembers = quorumEvent.getCurrentMembers();
+                    Collection<Member> currentMembers = quorumEvent.getCurrentMembers();
                     assertEquals(3, quorumEvent.getThreshold());
                     assertTrue(currentMembers.size() < quorumEvent.getThreshold());
                     quorumNotPresent.countDown();
                 }
             }
         });
-        final String distributedObjectName = randomString();
-        final String quorumName = randomString();
-        final QuorumConfig quorumConfig = new QuorumConfig(quorumName, true, 3)
+        String distributedObjectName = randomString();
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true, 3)
                 .addListenerConfig(listenerConfig);
-        final Config config = new Config().addQuorumConfig(quorumConfig);
+        Config config = new Config().addQuorumConfig(quorumConfig);
         addQuorumConfig(config, distributedObjectName, quorumName);
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         assertOpenEventually(quorumNotPresent);
     }
 
-
     protected Config addQuorum(Config config, String distributedObjectName, QuorumListener listener) {
-        final String quorumName = randomString();
-        final QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
+        String quorumName = randomString();
+        QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
         listenerConfig.setImplementation(listener);
         config.addQuorumConfig(new QuorumConfig(quorumName, true, 3).addListenerConfig(listenerConfig));
         addQuorumConfig(config, distributedObjectName, quorumName);

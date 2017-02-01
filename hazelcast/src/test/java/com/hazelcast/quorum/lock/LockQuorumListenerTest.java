@@ -34,12 +34,12 @@ import java.util.concurrent.CountDownLatch;
 public class LockQuorumListenerTest extends BaseQuorumListenerTest {
 
     @Test
-    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() throws Exception {
-        final CountDownLatch quorumNotPresent = new CountDownLatch(1);
-        final String lockName = randomString();
-        final Config config = addQuorum(new Config(), lockName, quorumListener(null, quorumNotPresent));
-        final HazelcastInstance instance = createHazelcastInstance(config);
-        final ILock q = instance.getLock(lockName);
+    public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() {
+        CountDownLatch quorumNotPresent = new CountDownLatch(1);
+        String lockName = randomString();
+        Config config = addQuorum(new Config(), lockName, quorumListener(null, quorumNotPresent));
+        HazelcastInstance instance = createHazelcastInstance(config);
+        ILock q = instance.getLock(lockName);
         try {
             q.lock();
         } catch (Exception expected) {
