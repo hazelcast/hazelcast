@@ -260,7 +260,7 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
-    public void setQuorumName(String quorumName) {
+    public MapConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
 }

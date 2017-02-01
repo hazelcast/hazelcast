@@ -871,8 +871,9 @@ public class MapConfig {
         return quorumName;
     }
 
-    public void setQuorumName(String quorumName) {
+    public MapConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
+        return this;
     }
 
     @Override
