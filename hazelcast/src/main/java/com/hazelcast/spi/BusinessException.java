@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2016, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.scheduledexecutor;
-
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.spi.BusinessException;
+package com.hazelcast.spi;
 
 /**
- * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
+ * Marked interface for exceptions.
+ *
+ * When an exception is marked with this interface then
+ * it won't be logged by {@link Operation#logError(Throwable)}
+ *
+ * It's intended to be used for exceptions which are part of a flow,
+ * for example {@link com.hazelcast.durableexecutor.StaleTaskIdException}
+ * is always propagated to the user - there is no reason why Hazelcast
+ * should log it on its own.
  */
-public class StaleTaskException
-        extends HazelcastException implements BusinessException {
-
-    public StaleTaskException(String msg) {
-        super(msg);
-    }
-
+public interface BusinessException {
 }
