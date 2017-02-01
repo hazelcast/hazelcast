@@ -339,6 +339,8 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                     public Object createNew(String arg) {
                         LockConfig lockConfig = nodeEngine.getConfig().findLockConfig(name);
                         String quorumName = lockConfig.getQuorumName();
+                        // The quorumName will be null if there is no quorum defined for this data structure,
+                        // but the QuorumService is active, due to another data structure with a quorum configuration
                         return quorumName == null ? NULL_OBJECT : quorumName;
                     }
                 });
