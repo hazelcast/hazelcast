@@ -53,26 +53,27 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testQuorumIsSetCorrectlyOnNodeInitialization() {
-        Config config = new Config();
-        QuorumConfig quorumConfig1 = new QuorumConfig();
         String quorumName1 = randomString();
-        quorumConfig1.setName(quorumName1);
-        quorumConfig1.setEnabled(true);
-        quorumConfig1.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return true;
-            }
-        });
-
-        QuorumConfig quorumConfig2 = new QuorumConfig();
         String quorumName2 = randomString();
-        quorumConfig2.setName(quorumName2);
-        quorumConfig2.setEnabled(true);
-        quorumConfig2.setSize(2);
 
-        config.addQuorumConfig(quorumConfig1);
-        config.addQuorumConfig(quorumConfig2);
+        QuorumConfig quorumConfig1 = new QuorumConfig()
+                .setName(quorumName1)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return true;
+                    }
+                });
+
+        QuorumConfig quorumConfig2 = new QuorumConfig()
+                .setName(quorumName2)
+                .setEnabled(true)
+                .setSize(2);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig1)
+                .addQuorumConfig(quorumConfig2);
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         final Quorum quorum1 = hazelcastInstance.getQuorumService().getQuorum(quorumName1);
@@ -88,11 +89,16 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testQuorumIgnoresMemberAttributeEvents() {
-        Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig().setName(randomString()).setEnabled(true);
         final RecordingQuorumFunction function = new RecordingQuorumFunction();
-        quorumConfig.setQuorumFunctionImplementation(function);
-        config.addQuorumConfig(quorumConfig);
+
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(randomString())
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(function);
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig);
+
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hazelcastInstance);
         MembershipAwareService service = nodeEngine.getService(QuorumServiceImpl.SERVICE_NAME);
@@ -113,22 +119,26 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test(expected = QuorumException.class)
     public void testCustomQuorumFunctionFails() {
-        Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig();
-        String quorumName = randomString();
-        quorumConfig.setName(quorumName);
-        quorumConfig.setEnabled(true);
-        quorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return false;
-            }
-        });
-        config.addQuorumConfig(quorumConfig);
         String mapName = randomMapName();
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setQuorumName(quorumName);
-        config.addMapConfig(mapConfig);
+        String quorumName = randomString();
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setQuorumName(quorumName);
+
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return false;
+                    }
+                });
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .addMapConfig(mapConfig);
+
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         map.put("1", "1");
@@ -136,22 +146,26 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testCustomQuorumFunctionIsPresent() {
-        Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig();
-        String quorumName = randomString();
-        quorumConfig.setName(quorumName);
-        quorumConfig.setEnabled(true);
-        quorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return false;
-            }
-        });
-        config.addQuorumConfig(quorumConfig);
         String mapName = randomMapName();
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setQuorumName(quorumName);
-        config.addMapConfig(mapConfig);
+        String quorumName = randomString();
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setQuorumName(quorumName);
+
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return false;
+                    }
+                });
+
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig)
+                .addMapConfig(mapConfig);
+
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
         try {
@@ -165,22 +179,26 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test(expected = QuorumException.class)
     public void testCustomQuorumFunctionFailsForAllNodes() {
-        Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig();
-        String quorumName = randomString();
-        quorumConfig.setName(quorumName);
-        quorumConfig.setEnabled(true);
-        quorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return false;
-            }
-        });
-        config.addQuorumConfig(quorumConfig);
         String mapName = randomMapName();
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setQuorumName(quorumName);
-        config.addMapConfig(mapConfig);
+        String quorumName = randomString();
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setQuorumName(quorumName);
+
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return false;
+                    }
+                });
+
+        Config config = new Config()
+                .addMapConfig(mapConfig)
+                .addQuorumConfig(quorumConfig);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         factory.newHazelcastInstance(config);
         HazelcastInstance hz = factory.newHazelcastInstance(config);
@@ -190,28 +208,32 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testCustomQuorumFunctionFailsThenSuccess() {
-        Config config = new Config();
-        QuorumConfig quorumConfig = new QuorumConfig();
-        String quorumName = randomString();
-        quorumConfig.setName(quorumName);
-        quorumConfig.setEnabled(true);
         final AtomicInteger count = new AtomicInteger(1);
-        quorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                if (count.get() == 1) {
-                    count.incrementAndGet();
-                    return false;
-                } else {
-                    return true;
-                }
-            }
-        });
-        config.addQuorumConfig(quorumConfig);
         String mapName = randomMapName();
-        MapConfig mapConfig = new MapConfig(mapName);
-        mapConfig.setQuorumName(quorumName);
-        config.addMapConfig(mapConfig);
+        String quorumName = randomString();
+
+        MapConfig mapConfig = new MapConfig(mapName)
+                .setQuorumName(quorumName);
+
+        QuorumConfig quorumConfig = new QuorumConfig()
+                .setName(quorumName)
+                .setEnabled(true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        if (count.get() == 1) {
+                            count.incrementAndGet();
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }
+                });
+
+        Config config = new Config()
+                .addMapConfig(mapConfig)
+                .addQuorumConfig(quorumConfig);
+
         TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(2);
         HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(config);
         IMap<Object, Object> map = hazelcastInstance.getMap(mapName);
@@ -228,37 +250,36 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void testOneQuorumsFailsOneQuorumSuccessForDifferentMaps() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         String fourNodeQuorum = randomString();
-        QuorumConfig fourNodeQuorumConfig = new QuorumConfig(fourNodeQuorum, true);
-        fourNodeQuorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return members.size() == 4;
-            }
-        });
-
         String threeNodeQuorum = randomString();
-        QuorumConfig threeNodeQuorumConfig = new QuorumConfig(threeNodeQuorum, true);
-        threeNodeQuorumConfig.setQuorumFunctionImplementation(new QuorumFunction() {
-            @Override
-            public boolean apply(Collection<Member> members) {
-                return members.size() == 3;
-            }
-        });
 
-        MapConfig fourNodeMapConfig = new MapConfig("fourNode");
-        fourNodeMapConfig.setQuorumName(fourNodeQuorum);
+        MapConfig fourNodeMapConfig = new MapConfig("fourNode")
+                .setQuorumName(fourNodeQuorum);
+        MapConfig threeNodeMapConfig = new MapConfig("threeNode")
+                .setQuorumName(threeNodeQuorum);
 
-        MapConfig threeNodeMapConfig = new MapConfig("threeNode");
-        threeNodeMapConfig.setQuorumName(threeNodeQuorum);
+        QuorumConfig fourNodeQuorumConfig = new QuorumConfig(fourNodeQuorum, true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return members.size() == 4;
+                    }
+                });
+        QuorumConfig threeNodeQuorumConfig = new QuorumConfig(threeNodeQuorum, true)
+                .setQuorumFunctionImplementation(new QuorumFunction() {
+                    @Override
+                    public boolean apply(Collection<Member> members) {
+                        return members.size() == 3;
+                    }
+                });
 
-        Config config = new Config();
-        config.addQuorumConfig(threeNodeQuorumConfig);
-        config.addQuorumConfig(fourNodeQuorumConfig);
-        config.addMapConfig(fourNodeMapConfig);
-        config.addMapConfig(threeNodeMapConfig);
+        Config config = new Config()
+                .addMapConfig(fourNodeMapConfig)
+                .addMapConfig(threeNodeMapConfig)
+                .addQuorumConfig(threeNodeQuorumConfig)
+                .addQuorumConfig(fourNodeQuorumConfig);
 
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
@@ -278,9 +299,8 @@ public class QuorumTest extends HazelcastTestSupport {
      */
     @Test
     public void oneQuorumShouldNotAffectQuorumAwareOperationsOnDataStructuresWithoutQuorumConfiguration() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
-
         String quorumName = randomString();
+
         QuorumConfig quorumConfig = new QuorumConfig(quorumName, true)
                 .setQuorumFunctionImplementation(new QuorumFunction() {
                     @Override
@@ -293,9 +313,10 @@ public class QuorumTest extends HazelcastTestSupport {
                 .setQuorumName(quorumName);
 
         Config config = new Config()
-                .addQuorumConfig(quorumConfig)
-                .addMapConfig(mapConfig);
+                .addMapConfig(mapConfig)
+                .addQuorumConfig(quorumConfig);
 
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance hz = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
@@ -313,28 +334,25 @@ public class QuorumTest extends HazelcastTestSupport {
 
     @Test
     public void givenQuorumFunctionConfigured_whenImplementsHazelcastInstanceAware_thenHazelcastInjectsItsInstance() {
-        String quorumName = randomString();
-        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true);
-        quorumConfig.setQuorumFunctionClassName(HazelcastInstanceAwareQuorumFunction.class.getName());
+        QuorumConfig quorumConfig = new QuorumConfig(randomString(), true)
+                .setQuorumFunctionClassName(HazelcastInstanceAwareQuorumFunction.class.getName());
 
-        Config config = new Config();
-        config.addQuorumConfig(quorumConfig);
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig);
 
         HazelcastInstance instance = createHazelcastInstance(config);
-
         assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
     }
 
     @Test
     public void givenQuorumFunctionInstanceConfigured_whenImplementsHazelcastInstanceAware_thenHazelcastInjectsItsInstance() {
-        String quorumName = randomString();
-        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true);
-        quorumConfig.setQuorumFunctionImplementation(new HazelcastInstanceAwareQuorumFunction());
+        QuorumConfig quorumConfig = new QuorumConfig(randomString(), true)
+                .setQuorumFunctionImplementation(new HazelcastInstanceAwareQuorumFunction());
 
-        Config config = new Config();
-        config.addQuorumConfig(quorumConfig);
+        Config config = new Config()
+                .addQuorumConfig(quorumConfig);
+
         HazelcastInstance instance = createHazelcastInstance(config);
-
         assertEquals(instance, HazelcastInstanceAwareQuorumFunction.instance);
     }
 
