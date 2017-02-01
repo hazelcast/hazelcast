@@ -107,6 +107,10 @@ public final class ClusterVersion implements IdentifiedDataSerializable, Compara
         }
     }
 
+    public boolean isUnknown() {
+        return this.major == 0 && this.minor == 0;
+    }
+
     @Override
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;

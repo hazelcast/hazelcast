@@ -68,7 +68,7 @@ public class ClusterStateManager {
     private static final long LOCK_LEASE_EXTENSION_MILLIS = TimeUnit.SECONDS.toMillis(20);
 
     // this is the version at which the cluster operates. see Cluster#getClusterVersion
-    volatile ClusterVersion clusterVersion;
+    private volatile ClusterVersion clusterVersion = ClusterVersion.UNKNOWN;
 
     private final Node node;
     private final ILogger logger;
@@ -166,16 +166,16 @@ public class ClusterStateManager {
         clusterServiceLock.lock();
         try {
             state = ClusterState.ACTIVE;
-            // not notifying cluster version listeners about change to null. consider for example the following scenario:
+            // not notifying cluster version listeners about change to UNKNOWN. consider for example the following scenario:
             // - node starts with codebase version 3.9, overrides init cluster version via group property to 3.8
             // - node joins an existing 3.8 cluster which is undergoing rolling-upgrade to 3.9
             // - once all cluster members are on 3.9, cluster version is upgraded to 3.9.0
-            // - clusterVersion is reset to null
+            // - clusterVersion is reset to UNKNOWN
             // - if cluster version listener is notified of null cluster version, it should receive the overridden one (3.8)
             // - if 3.8 discovery & join messages are incompatible, node will not be able to join 3.9 cluster
             // Instead, not notifying cluster version listeners will let the node use its last set cluster version for discovery &
             // join messages and join the cluster.
-            clusterVersion = null;
+            clusterVersion = ClusterVersion.UNKNOWN;
             stateLockRef.set(LockGuard.NOT_LOCKED);
         } finally {
             clusterServiceLock.unlock();
@@ -238,7 +238,7 @@ public class ClusterStateManager {
 
     // validate transition from current to newClusterVersion is allowed
     private void validateClusterVersionChange(ClusterVersion newClusterVersion) {
-        if (clusterVersion != null && clusterVersion.getMajor() != newClusterVersion.getMajor()) {
+        if (clusterVersion != null && !clusterVersion.isUnknown() && clusterVersion.getMajor() != newClusterVersion.getMajor()) {
             throw new IllegalArgumentException("Transition to requested version " + newClusterVersion
                     + " not allowed for current cluster version " + clusterVersion);
         }

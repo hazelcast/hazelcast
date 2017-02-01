@@ -89,7 +89,7 @@ public final class MemberVersion
     }
 
     public boolean isUnknown() {
-        return this.equals(UNKNOWN);
+        return this.major == 0 && this.minor == 0 && this.patch == 0;
     }
 
     @Override
