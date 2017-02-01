@@ -56,6 +56,26 @@ public final class ClusterVersion implements IdentifiedDataSerializable, Compara
         return minor;
     }
 
+    public boolean isEqualTo(ClusterVersion version) {
+        return this.equals(version);
+    }
+
+    public boolean isLessThan(ClusterVersion version) {
+        return this.major < version.major || this.major == version.major && this.minor < version.minor;
+    }
+
+    public boolean isLessOrEqual(ClusterVersion version) {
+        return isLessThan(version) || isEqualTo(version);
+    }
+
+    public boolean isGreaterThan(ClusterVersion version) {
+        return this.major > version.major || this.major == version.major && this.minor > version.minor;
+    }
+
+    public boolean isGreaterOrEqual(ClusterVersion version) {
+        return isGreaterThan(version) || isEqualTo(version);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
