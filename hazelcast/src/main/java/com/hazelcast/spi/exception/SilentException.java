@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.quorum;
+package com.hazelcast.spi.exception;
 
-import com.hazelcast.spi.exception.SilentException;
-import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.spi.Operation;
 
 /**
- * An exception thrown when the cluster size is below the defined threshold.
+ * Marked interface for exceptions.
+ *
+ * When an exception is marked with this interface then
+ * it won't be logged by {@link Operation#logError(Throwable)}
+ *
+ * It's intended to be used for exceptions which are part of a flow,
+ * for example {@link com.hazelcast.durableexecutor.StaleTaskIdException}
+ * is always propagated to the user - there is no reason why Hazelcast
+ * should log it on its own.
+ *
+ * The exception is silent from Hazelcast point of view only. Obviously
+ * it's very visible for user code.
  */
-public class QuorumException extends TransactionException implements SilentException {
-
-    public QuorumException(String message) {
-        super(message);
-    }
+public interface SilentException {
 }

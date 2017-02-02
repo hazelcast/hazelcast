@@ -17,12 +17,13 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.exception.SilentException;
 
 /**
  * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
  */
 public class StaleTaskException
-        extends HazelcastException {
+        extends HazelcastException implements SilentException {
 
     public StaleTaskException(String msg) {
         super(msg);
