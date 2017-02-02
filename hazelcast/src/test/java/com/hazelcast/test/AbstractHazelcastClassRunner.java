@@ -19,10 +19,13 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
+import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.internal.runners.statements.RunAfters;
+import org.junit.internal.runners.statements.RunBefores;
 import org.junit.rules.TestRule;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -158,14 +161,44 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
+        Statement nextStatement = statement;
+        List<TestRule> testRules = getTestRules(target);
+        if (!testRules.isEmpty()) {
+            for (TestRule rule : testRules) {
+                if (rule instanceof BounceMemberRule) {
+                    nextStatement = ((BounceMemberRule) rule).stopBouncing(statement);
+                }
+            }
+        }
         if (THREAD_DUMP_ON_FAILURE) {
-            return new ThreadDumpAwareRunAfters(method, statement, afters, target);
+            return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target);
         }
         if (afters.isEmpty()) {
-            return statement;
+            return nextStatement;
         } else {
-            return new RunAfters(statement, afters, target);
+            return new RunAfters(nextStatement, afters, target);
         }
+    }
+
+    // Override withBefores to accommodate spawning the member bouncing thread after @Before's have been executed and before @Test
+    // when MemberBounceRule is in use
+    @Override
+    protected Statement withBefores(FrameworkMethod method, Object target,
+                                    Statement statement) {
+        List<FrameworkMethod> befores = getTestClass().getAnnotatedMethods(
+                Before.class);
+        List<TestRule> testRules = getTestRules(target);
+        if (!testRules.isEmpty()) {
+            for (TestRule rule : testRules) {
+                if (rule instanceof BounceMemberRule) {
+                    Statement bounceMembersAfterBefores = ((BounceMemberRule) rule).startBouncing(statement);
+                    return befores.isEmpty() ? statement : new RunBefores(bounceMembersAfterBefores,
+                            befores, target);
+                }
+            }
+        }
+        return befores.isEmpty() ? statement : new RunBefores(statement,
+                befores, target);
     }
 
     @Override
