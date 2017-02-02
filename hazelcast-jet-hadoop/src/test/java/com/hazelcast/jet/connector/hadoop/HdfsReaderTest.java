@@ -36,10 +36,12 @@ import org.junit.runner.RunWith;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
@@ -47,23 +49,46 @@ public class HdfsReaderTest extends JetTestSupport {
 
     @Test
     public void testReadFile() throws Exception {
-        Path path = writeToFile("hello 1\n", "world 2\n", "hello 3\n", "world 4\n");
+        Path path = writeToFile("key-1 value-1\n", "key-2 value-2\n", "key-3 value-3\n", "key-4 value-4\n");
 
         JetInstance instance = createJetMember();
         createJetMember();
         DAG dag = new DAG();
         Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString()))
-                .localParallelism(4);
+                             .localParallelism(4);
         Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
-                .localParallelism(1);
+                             .localParallelism(1);
         dag.edge(between(producer, consumer));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 
-        IList<Object> list = instance.getList("consumer");
+        IList<Map.Entry> list = instance.getList("consumer");
         assertEquals(4, list.size());
+        assertTrue(list.get(0).getValue().toString().contains("value"));
+    }
+
+    @Test
+    public void testReadFile_withMapping() throws Exception {
+        Path path = writeToFile("key-1 value-1\n", "key-2 value-2\n", "key-3 value-3\n", "key-4 value-4\n");
+
+        JetInstance instance = createJetMember();
+        createJetMember();
+        DAG dag = new DAG();
+        Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString(), (k, v) -> v.toString()))
+                             .localParallelism(4);
+        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
+                             .localParallelism(1);
+        dag.edge(between(producer, consumer));
+
+        Future<Void> future = instance.newJob(dag).execute();
+        assertCompletesEventually(future);
+
+
+        IList<String> list = instance.getList("consumer");
+        assertEquals(4, list.size());
+        assertTrue(list.get(0).contains("key"));
     }
 
     private static Path writeToFile(String... values) throws IOException {

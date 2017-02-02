@@ -18,10 +18,12 @@ package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Distributed.BiFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -44,9 +46,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -55,7 +57,9 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparingInt;
@@ -69,38 +73,40 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
  * HDFS reader for Jet, emits records read from HDFS file as Map.Entry
+ *
+ * @param <K> key type of the records
+ * @param <V> value type of the records
+ * @param <R> the type of the mapped value
  */
-public final class HdfsReader extends AbstractProcessor {
+public final class HdfsReader<K, V, R> extends AbstractProcessor {
 
-    private final List<RecordReader> recordReaders;
+    private final Traverser<R> trav;
+    private final BiFunction<K, V, R> mapper;
 
-    private HdfsReader(List<RecordReader> recordReaders) {
-        this.recordReaders = recordReaders;
+    private HdfsReader(@Nonnull List<RecordReader> recordReaders, @Nonnull BiFunction<K, V, R> mapper) {
+        this.trav = traverseIterable(recordReaders).flatMap(this::traverseRecordReader);
+        this.mapper = mapper;
     }
 
     @Override
     public boolean complete() {
-        return uncheckCall(this::tryComplete);
+        boolean isComplete = emitCooperatively(trav);
+        if (isComplete) {
+            getLogger().info("Completed reading.");
+        }
+        return isComplete;
     }
 
-    private boolean tryComplete() throws IOException {
-        Iterator<RecordReader> iterator = recordReaders.iterator();
-        while (iterator.hasNext()) {
-            RecordReader recordReader = iterator.next();
-            for (boolean read = true; read; ) {
-                Object key = recordReader.createKey();
-                Object value = recordReader.createValue();
-                if (read = recordReader.next(key, value)) {
-                    emit(new SimpleImmutableEntry<>(key, value));
-                    if (getOutbox().isHighWater()) {
-                        return false;
-                    }
-                }
+    private Traverser<R> traverseRecordReader(RecordReader<K, V> r) {
+        return () -> {
+            K key = r.createKey();
+            V value = r.createValue();
+            try {
+                return r.next(key, value) ? mapper.apply(key, value) : null;
+            } catch (IOException e) {
+                throw sneakyThrow(e);
             }
-            recordReader.close();
-            iterator.remove();
-        }
-        return true;
+        };
     }
 
     @Override
@@ -109,27 +115,48 @@ public final class HdfsReader extends AbstractProcessor {
     }
 
     /**
-     * Creates supplier for reading HDFS files.
+     * Creates supplier for reading HDFS files. It will emit entries of type {@code Map.Entry<K,V>}.
      *
+     * @param <K>  key type of the records
+     * @param <V>  value type of the records
      * @param path input path for reading files
      * @return {@link ProcessorMetaSupplier} supplier
      */
-    public static ProcessorMetaSupplier supplier(String path) {
-        return new MetaSupplier(path);
+    @Nonnull
+    public static <K, V> MetaSupplier<K, V, Entry<K, V>> supplier(@Nonnull String path) {
+        return new MetaSupplier<>(path, SimpleImmutableEntry::new);
     }
 
-    private static class MetaSupplier implements ProcessorMetaSupplier {
+    /**
+     * Creates supplier for reading HDFS files. It will emit entries of type {@code <R>}
+     *
+     * @param <K>    key type of the records
+     * @param <V>    value type of the records
+     * @param <R>    the type of the mapped value
+     * @param path   input path for reading files
+     * @param mapper mapper which can be used to map the key and value to another value
+     * @return {@link ProcessorMetaSupplier} supplier
+     */
+    @Nonnull
+    public static <K, V, R> MetaSupplier<K, V, R> supplier(@Nonnull String path, @Nonnull BiFunction<K, V, R> mapper) {
+        return new MetaSupplier<>(path, mapper);
+    }
+
+    private static class MetaSupplier<K, V, R> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String path;
+        private final BiFunction<K, V, R> mapper;
+
         private transient Map<Address, Collection<IndexedInputSplit>> assigned;
         private transient JobConf configuration;
-        private ILogger logger;
+        private transient ILogger logger;
 
 
-        MetaSupplier(String path) {
+        MetaSupplier(@Nonnull String path, @Nonnull BiFunction<K, V, R> mapper) {
             this.path = path;
+            this.mapper = mapper;
         }
 
         @Override
@@ -156,7 +183,8 @@ public final class HdfsReader extends AbstractProcessor {
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address ->
-                    new Supplier(configuration, assigned.get(address) != null ? assigned.get(address) : emptyList());
+                    new Supplier<>(configuration, assigned.get(address) != null ? assigned.get(address) : emptyList(),
+                            mapper);
         }
 
         private void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
@@ -245,24 +273,26 @@ public final class HdfsReader extends AbstractProcessor {
 
     }
 
-    private static class Supplier implements ProcessorSupplier {
+    private static class Supplier<K, V, R> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private JobConf configuration;
         private List<IndexedInputSplit> assignedSplits;
+        private BiFunction<K, V, R> mapper;
 
-        Supplier(JobConf configuration, Collection<IndexedInputSplit> assignedSplits) {
+        Supplier(JobConf configuration, Collection<IndexedInputSplit> assignedSplits, @Nonnull BiFunction<K, V, R> mapper) {
             this.configuration = configuration;
             this.assignedSplits = assignedSplits.stream().collect(toList());
+            this.mapper = mapper;
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
             Map<Integer, List<IndexedInputSplit>> processorToSplits =
-                    range(0, assignedSplits.size()).boxed()
-                           .map(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
-                           .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+                    range(0, assignedSplits.size()).mapToObj(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
+                                                   .collect(groupingBy(e -> e.getKey() % count,
+                                                           mapping(Map.Entry::getValue, toList())));
             range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
             InputFormat inputFormat = configuration.getInputFormat();
@@ -270,23 +300,25 @@ public final class HdfsReader extends AbstractProcessor {
                     .values().stream()
                     .map(splits -> splits.isEmpty()
                             ? new NoopProcessor()
-                            : new HdfsReader(splits.stream()
-                                                   .map(IndexedInputSplit::getSplit)
-                                                   .map(split -> uncheckCall(() ->
-                                                           inputFormat.getRecordReader(split, configuration, NULL)))
-                                                   .collect(toList()))
+                            : new HdfsReader<>(splits.stream()
+                                                     .map(IndexedInputSplit::getSplit)
+                                                     .map(split -> uncheckCall(() ->
+                                                             inputFormat.getRecordReader(split, configuration, NULL)))
+                                                     .collect(toList()), mapper)
                     ).collect(toList());
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
             configuration.write(out);
             out.writeObject(assignedSplits);
+            out.writeObject(mapper);
         }
 
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
             configuration = new JobConf();
             configuration.readFields(in);
             assignedSplits = (List<IndexedInputSplit>) in.readObject();
+            mapper = (BiFunction<K, V, R>) in.readObject();
         }
     }
 

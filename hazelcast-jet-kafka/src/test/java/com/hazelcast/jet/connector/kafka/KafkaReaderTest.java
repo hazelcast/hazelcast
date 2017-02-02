@@ -45,6 +45,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
 import static java.util.stream.Collectors.toList;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
@@ -95,7 +96,7 @@ public class KafkaReaderTest extends JetTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                Assert.assertEquals(messageCount, list.size());
+                assertEquals(messageCount, list.size());
                 assertTrue(numbers.stream().allMatch(n -> list.contains(new AbstractMap.SimpleImmutableEntry<>(null, n))));
             }
         });
