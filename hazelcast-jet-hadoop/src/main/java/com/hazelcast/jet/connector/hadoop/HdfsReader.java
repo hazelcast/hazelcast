@@ -89,12 +89,13 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
     }
 
     @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        super.init(context);
+    }
+
+    @Override
     public boolean complete() {
-        boolean isComplete = emitCooperatively(trav);
-        if (isComplete) {
-            getLogger().info("Completed reading.");
-        }
-        return isComplete;
+        return emitCooperatively(trav);
     }
 
     private Traverser<R> traverseRecordReader(RecordReader<K, V> r) {
@@ -102,7 +103,12 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             K key = r.createKey();
             V value = r.createValue();
             try {
-                return r.next(key, value) ? mapper.apply(key, value) : null;
+                if (r.next(key, value)) {
+                    return mapper.apply(key, value);
+                } else {
+                    r.close();
+                    return null;
+                }
             } catch (IOException e) {
                 throw sneakyThrow(e);
             }
@@ -219,6 +225,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             }
             // assign all remaining splits to member with lowest number of splits
             for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
+                logger.info("No local member found for " + entry.getKey() + ", will be read remotely.");
                 List<Integer> indexes = entry.getValue();
                 if (indexes.isEmpty()) {
                     int indexToAdd = range(0, counts.length).boxed().min(comparingInt(i -> counts[i]))
@@ -281,10 +288,17 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
         private List<IndexedInputSplit> assignedSplits;
         private BiFunction<K, V, R> mapper;
 
+        private transient ILogger logger;
+
         Supplier(JobConf configuration, Collection<IndexedInputSplit> assignedSplits, @Nonnull BiFunction<K, V, R> mapper) {
             this.configuration = configuration;
             this.assignedSplits = assignedSplits.stream().collect(toList());
             this.mapper = mapper;
+        }
+
+        @Override
+        public void init(@Nonnull Context context) {
+            this.logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(HdfsReader.class);
         }
 
         @Override @Nonnull
@@ -296,6 +310,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
             InputFormat inputFormat = configuration.getInputFormat();
+
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
@@ -338,7 +353,12 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
 
         @Override
         public String toString() {
-            return "IndexedInputSplit{index=" + index + ", split=" + split + '}';
+            try {
+                return "IndexedInputSplit{index=" + index + ", split=" + split + " , locations="
+                        + Arrays.toString(split.getLocations()) + "}";
+            } catch (IOException e) {
+                throw rethrow(e);
+            }
         }
 
         @Override
