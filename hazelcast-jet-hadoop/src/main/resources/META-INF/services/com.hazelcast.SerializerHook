@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.hazelcast.connector.hadoop.WritableSerializerHook$WritableSerializer
+com.hazelcast.jet.connector.hadoop.WritableSerializerHook$WritableSerializer

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.connector.hadoop;
+package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.jet.AbstractProcessor;
@@ -23,7 +23,6 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopProcessor;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import org.apache.hadoop.fs.Path;
@@ -72,8 +71,6 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
  * HDFS reader for Jet, emits records read from HDFS file as Map.Entry
  */
 public final class HdfsReader extends AbstractProcessor {
-
-    private static final ILogger LOGGER = Logger.getLogger(HdfsReader.class);
 
     private final List<RecordReader> recordReaders;
 
@@ -128,6 +125,7 @@ public final class HdfsReader extends AbstractProcessor {
         private final String path;
         private transient Map<Address, Collection<IndexedInputSplit>> assigned;
         private transient JobConf configuration;
+        private ILogger logger;
 
 
         MetaSupplier(String path) {
@@ -136,6 +134,7 @@ public final class HdfsReader extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
+            logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(HdfsReader.class);
             configuration = new JobConf();
             configuration.setInputFormat(TextInputFormat.class);
             TextInputFormat.addInputPath(configuration, new Path(path));
@@ -160,8 +159,8 @@ public final class HdfsReader extends AbstractProcessor {
                     new Supplier(configuration, assigned.get(address) != null ? assigned.get(address) : emptyList());
         }
 
-        private static void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
-            LOGGER.info(assigned.entrySet().stream().flatMap(e -> concat(
+        private void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
+            logger.info(assigned.entrySet().stream().flatMap(e -> concat(
                     Stream.of(e.getKey() + ":"),
                     Optional.of(e.getValue()).orElse(emptyList()).stream().map(Object::toString))
             ).collect(joining("\n")));
@@ -170,11 +169,11 @@ public final class HdfsReader extends AbstractProcessor {
         private static boolean isSplitLocalForMember(Member member, InputSplit split) throws IOException {
             final InetAddress memberAddr = member.getAddress().getInetAddress();
             return Arrays.stream(split.getLocations())
-                    .flatMap(loc -> Arrays.stream(uncheckCall(() -> InetAddress.getAllByName(loc))))
-                    .anyMatch(memberAddr::equals);
+                         .flatMap(loc -> Arrays.stream(uncheckCall(() -> InetAddress.getAllByName(loc))))
+                         .anyMatch(memberAddr::equals);
         }
 
-        private static Map<Address, Collection<IndexedInputSplit>> assignSplits(
+        private Map<Address, Collection<IndexedInputSplit>> assignSplits(
                 IndexedInputSplit[] inputSplits, Member[] members) throws IOException {
             Map<IndexedInputSplit, List<Integer>> assignments = new TreeMap<>();
             int[] counts = new int[members.length];
@@ -200,7 +199,7 @@ public final class HdfsReader extends AbstractProcessor {
                     counts[indexToAdd]++;
                 }
             }
-            LOGGER.info("Counts before pruning: " + Arrays.toString(counts));
+            logger.info("Counts before pruning: " + Arrays.toString(counts));
 
             // prune addresses for splits with more than one member assigned
             boolean found;
@@ -220,7 +219,7 @@ public final class HdfsReader extends AbstractProcessor {
                 }
             } while (found);
 
-            LOGGER.info("Final counts=" + Arrays.toString(counts));
+            logger.info("Final counts=" + Arrays.toString(counts));
             // assign to map
             Map<Address, Collection<IndexedInputSplit>> mapToSplit = new HashMap<>();
             for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
@@ -260,9 +259,10 @@ public final class HdfsReader extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            Map<Integer, List<IndexedInputSplit>> processorToSplits = range(0, assignedSplits.size()).boxed()
-                    .map(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
-                    .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
+            Map<Integer, List<IndexedInputSplit>> processorToSplits =
+                    range(0, assignedSplits.size()).boxed()
+                           .map(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
+                           .collect(groupingBy(e -> e.getKey() % count, mapping(Map.Entry::getValue, toList())));
             range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
             InputFormat inputFormat = configuration.getInputFormat();
@@ -319,9 +319,9 @@ public final class HdfsReader extends AbstractProcessor {
             IndexedInputSplit that;
             return this == o ||
                     o != null
-                    && getClass() == o.getClass()
-                    && index == (that = (IndexedInputSplit) o).index
-                    && Objects.equals(split, that.split);
+                            && getClass() == o.getClass()
+                            && index == (that = (IndexedInputSplit) o).index
+                            && Objects.equals(split, that.split);
         }
 
         @Override

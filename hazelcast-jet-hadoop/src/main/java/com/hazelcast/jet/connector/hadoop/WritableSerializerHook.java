@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.connector.hadoop;
+package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
