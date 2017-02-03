@@ -55,6 +55,9 @@ public final class Processors {
      * The number of Hazelcast partitions should be configured to at least
      * {@code localParallelism * clusterSize}, otherwise some processors will have
      * no partitions assigned to them.
+     * <p>
+     * If the underlying map is concurrently being modified, there are no guarantees
+     * given with respect to missing or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier mapReader(@Nonnull String mapName) {
@@ -64,6 +67,9 @@ public final class Processors {
     /**
      * Returns a meta-supplier of processors that will fetch entries from a
      * Hazelcast {@code IMap} in a remote cluster.
+     * <p>
+     * If the underlying map is concurrently being modified, there are no guarantees
+     * given with respect to missing or duplicate items.
      */
     @Nonnull
     public static ProcessorMetaSupplier mapReader(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
