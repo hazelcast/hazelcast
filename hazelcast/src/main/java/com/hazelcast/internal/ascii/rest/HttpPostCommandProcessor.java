@@ -29,10 +29,10 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.version.Version;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;
@@ -172,9 +172,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass))) {
                 res = response(ResponseType.FORBIDDEN);
             } else {
-                ClusterVersion version;
+                Version version;
                 try {
-                    version = ClusterVersion.of(versionParam);
+                    version = Version.of(versionParam);
                     clusterService.changeClusterVersion(version);
                     res = response(ResponseType.SUCCESS, "version", clusterService.getClusterVersion().toString());
                 } catch (Exception ex) {

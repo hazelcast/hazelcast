@@ -44,6 +44,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.version.Version;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -61,7 +62,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
-import com.hazelcast.version.ClusterVersion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
@@ -350,7 +350,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     public boolean finalizeJoin(Collection<MemberInfo> members, Address callerAddress, String clusterId,
-                                ClusterState clusterState, ClusterVersion clusterVersion,
+                                ClusterState clusterState, Version clusterVersion,
                                 long clusterStartTime, long masterTime) {
         lock.lock();
         try {
@@ -977,7 +977,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public ClusterVersion getClusterVersion() {
+    public Version getClusterVersion() {
         return clusterStateManager.getClusterVersion();
     }
 
@@ -987,13 +987,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     @Override
-    public void changeClusterVersion(ClusterVersion version) {
+    public void changeClusterVersion(Version version) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion, false);
     }
 
     @Override
-    public void changeClusterVersion(ClusterVersion version, TransactionOptions options) {
+    public void changeClusterVersion(Version version, TransactionOptions options) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
         clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion,
                 false);
@@ -1054,7 +1054,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         hazelcastInstance.getLifecycleService().shutdown();
     }
 
-    void initialClusterState(ClusterState clusterState, ClusterVersion version) {
+    void initialClusterState(ClusterState clusterState, Version version) {
         if (node.joined()) {
             throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
         }

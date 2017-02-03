@@ -33,7 +33,7 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 
 import java.util.Map;
 
@@ -196,14 +196,14 @@ public interface NodeExtension {
      *
      * @param newVersion the new version at which the cluster operates.
      */
-    void onClusterVersionChange(ClusterVersion newVersion);
+    void onClusterVersionChange(Version newVersion);
 
     /**
      * Check if this node's codebase version is compatible with given cluster version.
      * @param clusterVersion the cluster version to check against
      * @return {@code true} if compatible, otherwise false.
      */
-    boolean isNodeVersionCompatibleWith(ClusterVersion clusterVersion);
+    boolean isNodeVersionCompatibleWith(Version clusterVersion);
 
     /**
      * Registers given listener if it's a known type.

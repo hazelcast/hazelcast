@@ -19,7 +19,6 @@ package com.hazelcast.version;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.StringUtil;
 
@@ -161,7 +160,7 @@ public final class MemberVersion
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.NODE_VERSION;
+        return ClusterDataSerializerHook.MEMBER_VERSION;
     }
 
     @Override
@@ -180,16 +179,9 @@ public final class MemberVersion
     }
 
     /**
-     * @return a {@link ClusterVersion} initialized with this {@code MemberVersion}'s major.minor version.
+     * @return a {@link Version} initialized with this {@code MemberVersion}'s major.minor version.
      */
-    public ClusterVersion asClusterVersion() {
-        return new ClusterVersion(major, minor);
-    }
-
-    /**
-     * @return the minor version of this {@code MemberVersion} as a {@link Version} object.
-     */
-    public Version asSerializationVersion() {
-        return new Version(minor);
+    public Version asVersion() {
+        return Version.of(major, minor);
     }
 }

@@ -16,14 +16,19 @@
 
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 
 public final class Versions {
 
     /**
      * Represents cluster version 3.8
      */
-    public static final Version V3_8 = Version.of(8);
+    public static final Version V3_8 = Version.of(3, 8);
+
+    /**
+     * Represents cluster version 3.9
+     */
+    public static final Version V3_9 = Version.of(3, 9);
 
     private Versions() {
     }

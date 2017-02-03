@@ -90,7 +90,7 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
     @Test
     public void test_changeClusterVersion_disallowedForMinorVersions() {
         expectedException.expect(VersionMismatchException.class);
-        clusterService.changeClusterVersion(VERSION_2_0_5.asClusterVersion());
+        clusterService.changeClusterVersion(VERSION_2_0_5.asVersion());
     }
 
     void upgradeCluster(MemberVersion version) {

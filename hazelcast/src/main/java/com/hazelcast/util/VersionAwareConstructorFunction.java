@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 
 /**
  * VersionAware version of the ConstructorFunction.

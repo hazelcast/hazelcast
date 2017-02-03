@@ -22,7 +22,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Rule;
@@ -61,7 +61,7 @@ public class ClusterVersionChangeTest
 
     @Test
     public void test_clusterVersionUpgradeFails_whenNodeMajorVersionPlusOne() {
-        ClusterVersion newVersion = new ClusterVersion(codebaseVersion.getMajor()+1, codebaseVersion.getMinor());
+        Version newVersion = Version.of(codebaseVersion.getMajor()+1, codebaseVersion.getMinor());
 
         expectedException.expect(VersionMismatchException.class);
         cluster.changeClusterVersion(newVersion);
@@ -69,7 +69,7 @@ public class ClusterVersionChangeTest
 
     @Test
     public void test_clusterVersionUpgradeFails_whenNodeMinorVersionPlusOne() {
-        ClusterVersion newVersion = new ClusterVersion(codebaseVersion.getMajor(), codebaseVersion.getMinor()+1);
+        Version newVersion = Version.of(codebaseVersion.getMajor(), codebaseVersion.getMinor()+1);
 
         expectedException.expect(VersionMismatchException.class);
         cluster.changeClusterVersion(newVersion);
@@ -83,7 +83,7 @@ public class ClusterVersionChangeTest
         }
 
         @Override
-        public void onClusterVersionChange(ClusterVersion newVersion) {
+        public void onClusterVersionChange(Version newVersion) {
             latch.countDown();
         }
     }

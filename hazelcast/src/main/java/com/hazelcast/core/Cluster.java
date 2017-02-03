@@ -21,7 +21,7 @@ import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 
 import java.util.Set;
 
@@ -191,7 +191,7 @@ public interface Cluster {
      * @return the version at which this cluster operates.
      * @since 3.8
      */
-    ClusterVersion getClusterVersion();
+    Version getClusterVersion();
 
     /**
      * Returns the Hot Restart service for interacting with Hot Restart.
@@ -258,7 +258,7 @@ public interface Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p/>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(ClusterVersion)}, then a
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p/>
      * If an invalid version transition is requested, for example changing to a different major version, an
@@ -274,7 +274,7 @@ public interface Cluster {
      * @param version new version of the cluster
      * @since 3.8
      */
-    void changeClusterVersion(ClusterVersion version);
+    void changeClusterVersion(Version version);
 
     /**
      * Changes the cluster version transactionally, with the transaction options provided. Internally this method uses the same
@@ -284,7 +284,7 @@ public interface Cluster {
      * If the requested cluster version is same as the current one, nothing happens.
      * <p/>
      * If a member of the cluster is not compatible with the given cluster {@code version}, as implemented by
-     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(ClusterVersion)}, then a
+     * {@link com.hazelcast.instance.NodeExtension#isNodeVersionCompatibleWith(Version)}, then a
      * {@link com.hazelcast.internal.cluster.impl.VersionMismatchException} is thrown.
      * <p/>
      * If an invalid version transition is requested, for example changing to a different major version, an
@@ -301,5 +301,5 @@ public interface Cluster {
      * @param options options by which to execute the transaction
      * @since 3.8
      */
-    void changeClusterVersion(ClusterVersion version, TransactionOptions options);
+    void changeClusterVersion(Version version, TransactionOptions options);
 }

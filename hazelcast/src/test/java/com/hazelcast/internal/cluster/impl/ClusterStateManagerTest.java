@@ -29,7 +29,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,7 +62,7 @@ public class ClusterStateManagerTest {
     private static final String TXN = "txn";
     private static final String ANOTHER_TXN = "another-txn";
     private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-    private static final ClusterVersion CURRENT_CLUSTER_VERSION = ClusterVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
@@ -75,7 +75,7 @@ public class ClusterStateManagerTest {
     public void setup() {
         NodeExtension nodeExtension = mock(NodeExtension.class);
         when(nodeExtension.isStartCompleted()).thenReturn(true);
-        when(nodeExtension.isNodeVersionCompatibleWith(Matchers.any(ClusterVersion.class))).thenReturn(true);
+        when(nodeExtension.isNodeVersionCompatibleWith(Matchers.any(Version.class))).thenReturn(true);
 
         when(node.getPartitionService()).thenReturn(partitionService);
         when(node.getClusterService()).thenReturn(clusterService);

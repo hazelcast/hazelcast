@@ -12,12 +12,12 @@ import com.hazelcast.monitor.HotRestartState;
 import com.hazelcast.monitor.NodeState;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.WanSyncState;
+import com.hazelcast.version.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
-import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanSyncStatus;
 import org.junit.Test;
@@ -67,7 +67,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
 
         ClusterState clusterState = ClusterState.ACTIVE;
         com.hazelcast.instance.NodeState nodeState = com.hazelcast.instance.NodeState.PASSIVE;
-        ClusterVersion clusterVersion = ClusterVersion.of("3.8.0");
+        Version clusterVersion = Version.of("3.8.0");
         MemberVersion memberVersion = MemberVersion.of("3.9.0");
         NodeState state = new NodeStateImpl(clusterState, nodeState, clusterVersion, memberVersion);
         final BackupTaskStatus backupTaskStatus = new BackupTaskStatus(BackupTaskState.IN_PROGRESS, 5, 10);

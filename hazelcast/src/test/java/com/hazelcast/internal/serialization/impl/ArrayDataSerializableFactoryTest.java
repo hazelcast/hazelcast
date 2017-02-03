@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -64,7 +64,7 @@ public class ArrayDataSerializableFactoryTest {
         constructorFunctions[0] = function;
 
         ArrayDataSerializableFactory factory = new ArrayDataSerializableFactory(constructorFunctions);
-        Version version = MemberVersion.of(3, 6, 0).asSerializationVersion();
+        Version version = MemberVersion.of(3, 6, 0).asVersion();
         factory.create(0, version);
 
         verify(function, times(0)).createNew(0);
