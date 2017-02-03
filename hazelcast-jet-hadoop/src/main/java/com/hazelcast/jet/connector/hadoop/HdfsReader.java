@@ -22,7 +22,7 @@ import com.hazelcast.jet.Distributed.BiFunction;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -41,7 +41,6 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -187,76 +186,65 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address ->
-                    new Supplier<>(configuration, assigned.get(address) != null ? assigned.get(address) : emptyList(),
-                            mapper);
-        }
-
-        private void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
-            logger.info(assigned.entrySet().stream().flatMap(e -> concat(
-                    Stream.of(e.getKey() + ":"),
-                    Optional.of(e.getValue()).orElse(emptyList()).stream().map(Object::toString))
-            ).collect(joining("\n")));
-        }
-
-        private static boolean isSplitLocalForMember(Member member, InputSplit split) throws IOException {
-            final InetAddress memberAddr = member.getAddress().getInetAddress();
-            return Arrays.stream(split.getLocations())
-                         .flatMap(loc -> Arrays.stream(uncheckCall(() -> InetAddress.getAllByName(loc))))
-                         .anyMatch(memberAddr::equals);
+            return address -> new Supplier<>(
+                    configuration,
+                    assigned.get(address) != null ? assigned.get(address) : emptyList(),
+                    mapper);
         }
 
         private Map<Address, Collection<IndexedInputSplit>> assignSplits(
-                IndexedInputSplit[] inputSplits, Member[] members) throws IOException {
-            Map<IndexedInputSplit, List<Integer>> assignments = new TreeMap<>();
-            int[] counts = new int[members.length];
+                IndexedInputSplit[] indexedSplits, Member[] members
+        ) {
+            Map<IndexedInputSplit, List<Integer>> splitToMembers = new TreeMap<>();
+            int[] memberToSplitCount = new int[members.length];
 
             // assign local members
-            for (IndexedInputSplit inputSplit : inputSplits) {
-                List<Integer> indexes = new ArrayList<>();
-                for (int i = 0; i < members.length; i++) {
-                    if (isSplitLocalForMember(members[i], inputSplit.getSplit())) {
-                        indexes.add(i);
-                        counts[i]++;
-                    }
-                }
-                assignments.put(inputSplit, indexes);
+            for (IndexedInputSplit is : indexedSplits) {
+                splitToMembers.put(is,
+                        range(0, members.length)
+                                .filter(i -> isSplitLocalForMember(is.getSplit(), members[i]))
+                                .peek(i -> memberToSplitCount[i]++)
+                                .boxed()
+                                .collect(toList())
+                );
             }
             // assign all remaining splits to member with lowest number of splits
-            for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
-                logger.info("No local member found for " + entry.getKey() + ", will be read remotely.");
-                List<Integer> indexes = entry.getValue();
+            for (Entry<IndexedInputSplit, List<Integer>> e : splitToMembers.entrySet()) {
+                logger.info("No local member found for " + e.getKey() + ", will be read remotely.");
+                List<Integer> indexes = e.getValue();
                 if (indexes.isEmpty()) {
-                    int indexToAdd = range(0, counts.length).boxed().min(comparingInt(i -> counts[i]))
-                                                            .orElseThrow(() -> new AssertionError("Empty counts"));
+                    int indexToAdd = range(0, memberToSplitCount.length)
+                            .boxed()
+                            .min(comparingInt(i -> memberToSplitCount[i]))
+                            .orElseThrow(() -> new AssertionError("Empty counts"));
                     indexes.add(indexToAdd);
-                    counts[indexToAdd]++;
+                    memberToSplitCount[indexToAdd]++;
                 }
             }
-            logger.info("Counts before pruning: " + Arrays.toString(counts));
+            logger.info("Counts before pruning: " + Arrays.toString(memberToSplitCount));
 
             // prune addresses for splits with more than one member assigned
             boolean found;
             do {
                 found = false;
-                for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
+                for (Entry<IndexedInputSplit, List<Integer>> entry : splitToMembers.entrySet()) {
                     List<Integer> indexes = entry.getValue();
                     if (indexes.size() > 1) {
                         found = true;
                         // find member with most splits and remove from list
-                        int indexWithMaxCount = indexes.stream().max(comparingInt(i -> counts[i]))
+                        int indexWithMaxCount = indexes.stream().max(comparingInt(i -> memberToSplitCount[i]))
                                                        .orElseThrow(() -> new AssertionError("Empty indexes"));
                         // remove the item in the list which has the value "indexWithMaxCount"
                         indexes.remove(Integer.valueOf(indexWithMaxCount));
-                        counts[indexWithMaxCount]--;
+                        memberToSplitCount[indexWithMaxCount]--;
                     }
                 }
             } while (found);
 
-            logger.info("Final counts=" + Arrays.toString(counts));
+            logger.info("Final counts=" + Arrays.toString(memberToSplitCount));
             // assign to map
             Map<Address, Collection<IndexedInputSplit>> mapToSplit = new HashMap<>();
-            for (Map.Entry<IndexedInputSplit, List<Integer>> entry : assignments.entrySet()) {
+            for (Entry<IndexedInputSplit, List<Integer>> entry : splitToMembers.entrySet()) {
                 IndexedInputSplit split = entry.getKey();
                 List<Integer> indexes = entry.getValue();
 
@@ -275,6 +263,24 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
                 }
             }
             return mapToSplit;
+        }
+
+        private void printAssignments(Map<Address, Collection<IndexedInputSplit>> assigned) {
+            logger.info(assigned.entrySet().stream().flatMap(e -> concat(
+                    Stream.of(e.getKey() + ":"),
+                    Optional.of(e.getValue()).orElse(emptyList()).stream().map(Object::toString))
+            ).collect(joining("\n")));
+        }
+
+        private static boolean isSplitLocalForMember(InputSplit split, Member member) {
+            try {
+                final InetAddress memberAddr = member.getAddress().getInetAddress();
+                return Arrays.stream(split.getLocations())
+                             .flatMap(loc -> Arrays.stream(uncheckCall(() -> InetAddress.getAllByName(loc))))
+                             .anyMatch(memberAddr::equals);
+            } catch (IOException e) {
+                throw sneakyThrow(e);
+            }
         }
 
     }
@@ -305,7 +311,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             Map<Integer, List<IndexedInputSplit>> processorToSplits =
                     range(0, assignedSplits.size()).mapToObj(i -> new SimpleImmutableEntry<>(i, assignedSplits.get(i)))
                                                    .collect(groupingBy(e -> e.getKey() % count,
-                                                           mapping(Map.Entry::getValue, toList())));
+                                                           mapping(Entry::getValue, toList())));
             range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
             InputFormat inputFormat = configuration.getInputFormat();
@@ -313,7 +319,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             return processorToSplits
                     .values().stream()
                     .map(splits -> splits.isEmpty()
-                            ? new NoopProcessor()
+                            ? new NoopP()
                             : new HdfsReader<>(splits.stream()
                                                      .map(IndexedInputSplit::getSplit)
                                                      .map(split -> uncheckCall(() ->
