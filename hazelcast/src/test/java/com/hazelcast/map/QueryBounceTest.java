@@ -53,7 +53,7 @@ public class QueryBounceTest {
     private IMap<String, SampleObjects.Employee> map;
 
     @Rule
-    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(new Config()).build();
+    public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig()).build();
 
     @Rule
     public TestName testName = new TestName();
@@ -76,6 +76,10 @@ public class QueryBounceTest {
     @Test(timeout = 4 * MINUTE)
     public void testQueryWithIndexes() {
         prepareAndRunQueryTasks();
+    }
+
+    protected Config getConfig() {
+        return new Config();
     }
 
     private void prepareAndRunQueryTasks() {
