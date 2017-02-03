@@ -15,6 +15,6 @@
  */
 
 /**
- * Javadoc pending
+ * Util class for starting a server instance
  */
 package com.hazelcast.jet.server;
