@@ -25,7 +25,7 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -241,7 +241,7 @@ public final class IMapReader extends AbstractProcessor {
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
                         ? new IMapReader(partitionToIterator, partitions)
-                        : new NoopProcessor()
+                        : new NoopP()
                 )
                 .collect(toList());
     }

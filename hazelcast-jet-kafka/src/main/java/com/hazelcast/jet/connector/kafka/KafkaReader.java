@@ -23,7 +23,7 @@ import com.hazelcast.jet.Distributed.Optional;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.Address;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -232,7 +232,7 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
                     .values().stream()
                     .map(partitions -> !partitions.isEmpty()
                             ? new KafkaReader<>(topicId, properties, partitions, deserializeKey, deserializeValue)
-                            : new NoopProcessor()
+                            : new NoopP()
                     )
                     .collect(toList()));
         }

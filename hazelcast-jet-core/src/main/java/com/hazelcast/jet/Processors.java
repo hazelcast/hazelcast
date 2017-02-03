@@ -479,7 +479,7 @@ public final class Processors {
     /**
      * A processor that does nothing.
      */
-    public static class NoopProcessor implements Processor {
+    public static class NoopP implements Processor {
     }
 
     /**

@@ -24,7 +24,7 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -114,7 +114,7 @@ public final class IListReader extends AbstractProcessor {
                 // return empty producer on all other nodes
                 return c -> {
                     assertCountIsOne(c);
-                    return singletonList(new NoopProcessor());
+                    return singletonList(new NoopP());
                 };
             };
         }

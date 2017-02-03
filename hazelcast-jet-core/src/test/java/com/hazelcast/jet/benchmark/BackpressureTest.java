@@ -25,8 +25,9 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.benchmark.WordCountTest.CombineP;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.nio.Address;
@@ -95,12 +96,10 @@ public class BackpressureTest extends JetTestSupport {
                     .map(Partition::getPartitionId)
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
-        Vertex generator = dag.newVertex("generator", ProcessorMetaSupplier.of(
-                (Address address) -> address.getPort() == member1Port
-                        ? ProcessorSupplier.of(GeneratingProducer::new)
-                        : ProcessorSupplier.of(NoopProcessor::new)
+        Vertex generator = dag.newVertex("generator", ProcessorMetaSupplier.of((Address address) ->
+                ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : NoopP::new)
         ));
-        Vertex hiccuper = dag.newVertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
+        Vertex hiccuper = dag.newVertex("hiccuper", HiccupP::new);
         Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
 
         dag.edge(between(generator, hiccuper)
@@ -120,7 +119,7 @@ public class BackpressureTest extends JetTestSupport {
         }
     }
 
-    private static class GeneratingProducer extends AbstractProcessor {
+    private static class GenerateP extends AbstractProcessor {
 
         private int item;
         private int count;
@@ -141,12 +140,12 @@ public class BackpressureTest extends JetTestSupport {
         }
     }
 
-    private static class Hiccuper extends WordCountTest.Combiner {
+    private static class HiccupP extends CombineP {
 
         private long hiccupDeadline;
         private long nextHiccupTime;
 
-        Hiccuper() {
+        HiccupP() {
             updateNextHiccupTime();
         }
 

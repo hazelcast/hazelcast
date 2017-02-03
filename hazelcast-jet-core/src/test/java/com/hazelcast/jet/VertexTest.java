@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -24,7 +24,6 @@ import org.junit.experimental.categories.Category;
 
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 import static java.util.Collections.singletonList;
@@ -37,7 +36,7 @@ public class VertexTest {
     @Test
     public void when_constructed_then_hasDefaultParallelism() {
         // When
-        v = new Vertex("v", NoopProcessor::new);
+        v = new Vertex("v", NoopP::new);
 
         // Then
         assertEquals(-1, v.getLocalParallelism());
@@ -46,7 +45,7 @@ public class VertexTest {
     @Test
     public void when_constructWithName_then_hasThatName() {
         // When
-        v = new Vertex("v", NoopProcessor::new);
+        v = new Vertex("v", NoopP::new);
 
         // Then
         assertEquals("v", v.getName());
@@ -55,7 +54,7 @@ public class VertexTest {
     @Test
     public void when_constructWithSimpleSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
-        v = new Vertex("v", NoopProcessor::new);
+        v = new Vertex("v", NoopP::new);
 
         // Then
         validateProcessor();
@@ -64,7 +63,7 @@ public class VertexTest {
     @Test
     public void when_constructWithProcessorSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
-        v = new Vertex("v", ProcessorSupplier.of(NoopProcessor::new));
+        v = new Vertex("v", ProcessorSupplier.of(NoopP::new));
 
         // Then
         validateProcessor();
@@ -73,7 +72,7 @@ public class VertexTest {
     @Test
     public void when_constructWithMetaSupplier_then_suppliesCorrectProcessor() throws Exception {
         // When
-        v = new Vertex("v", ProcessorMetaSupplier.of(NoopProcessor::new));
+        v = new Vertex("v", ProcessorMetaSupplier.of(NoopP::new));
 
         // Then
         validateProcessor();
@@ -82,7 +81,7 @@ public class VertexTest {
     @Test
     public void when_setLocalParallelism_then_hasThatParallelism() {
         // Given
-        v = new Vertex("v", NoopProcessor::new);
+        v = new Vertex("v", NoopP::new);
 
         // When
         v.localParallelism(1);
@@ -96,7 +95,7 @@ public class VertexTest {
         Function<Address, ProcessorSupplier> fn = v.getSupplier().get(singletonList(address));
         ProcessorSupplier supplier = fn.apply(address);
         Collection<? extends Processor> processors = supplier.get(1);
-        assertEquals(NoopProcessor.class, processors.iterator().next().getClass());
+        assertEquals(NoopP.class, processors.iterator().next().getClass());
 
     }
 }

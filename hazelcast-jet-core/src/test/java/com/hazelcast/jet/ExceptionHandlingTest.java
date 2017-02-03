@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Distributed.Supplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInComplete;
 import com.hazelcast.jet.TestProcessors.ProcessorThatFailsInInit;
 import com.hazelcast.nio.Address;
@@ -103,7 +103,7 @@ public class ExceptionHandlingTest extends JetTestSupport {
         DAG dag = new DAG().vertex(new Vertex("faulty",
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
-                                address.getPort() == localPort ? NoopProcessor::new : () -> {
+                                address.getPort() == localPort ? NoopP::new : () -> {
                                     throw e;
                                 })
                 )));
