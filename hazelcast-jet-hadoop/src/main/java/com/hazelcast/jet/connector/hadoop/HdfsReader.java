@@ -105,10 +105,9 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
             try {
                 if (r.next(key, value)) {
                     return mapper.apply(key, value);
-                } else {
-                    r.close();
-                    return null;
                 }
+                r.close();
+                return null;
             } catch (IOException e) {
                 throw sneakyThrow(e);
             }

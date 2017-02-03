@@ -109,8 +109,7 @@ public class JetService
         logger.info("Starting Jet " + jetBuildInfo.getVersion() + " (" + jetBuildInfo.getBuild() + " - " +
                 jetBuildInfo.getRevision() + ") ");
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + config.getInstanceConfig()
-                        .getCooperativeThreadCount());
+                + config.getInstanceConfig().getCooperativeThreadCount());
 
         logger.info("\n" +
                 "\to   o   o   o---o o---o o     o---o   o   o---o o-o-o        o o---o o-o-o\n" +
