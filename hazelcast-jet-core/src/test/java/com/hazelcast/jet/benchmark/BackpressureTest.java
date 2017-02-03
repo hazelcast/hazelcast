@@ -26,8 +26,8 @@ import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopP;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.benchmark.WordCountTest.CombineP;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.nio.Address;
@@ -41,11 +41,15 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.wholeItem;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -137,6 +141,23 @@ public class BackpressureTest extends JetTestSupport {
                 }
             }
             return false;
+        }
+    }
+
+    private static class CombineP extends AbstractProcessor {
+        private Map<String, Long> counts = new HashMap<>();
+        private Traverser<Entry<String, Long>> resultTraverser = lazy(() -> traverseIterable(counts.entrySet()));
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+            Entry<String, Long> entry = (Entry<String, Long>) item;
+            counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
+            return true;
+        }
+
+        @Override
+        public boolean complete() {
+            return emitCooperatively(resultTraverser);
         }
     }
 

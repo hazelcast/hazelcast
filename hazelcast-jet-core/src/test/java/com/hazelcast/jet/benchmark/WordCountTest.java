@@ -19,17 +19,19 @@ package com.hazelcast.jet.benchmark;
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.IMap;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Jet;
 import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -73,8 +75,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
     private static final int COUNT = 1_000_000;
     private static final int DISTINCT = 100_000;
+    private static final int WORDS_PER_ROW = 20;
+
+    private static final int WARMUP_TIME = 20_000;
+    private static final int TOTAL_TIME = 60_000;
 
     private JetInstance instance;
+    private ILogger logger;
 
     @AfterClass
     public static void afterClass() {
@@ -82,7 +89,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
     @Before
-    public void setUp() {
+    public void before() throws Exception {
         JetConfig config = new JetConfig();
         config.getInstanceConfig().setCooperativeThreadCount(PARALLELISM);
         Config hazelcastConfig = config.getHazelcastConfig();
@@ -90,23 +97,47 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         join.getMulticastConfig().setEnabled(false);
         join.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
 
-        for (int i = 0; i < NODE_COUNT; i++) {
+        for (int i = 1; i < NODE_COUNT; i++) {
             instance = Jet.newJetInstance(config);
         }
+        logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
+        generateMockInput();
+    }
 
-        IMap<Integer, String> map = instance.getMap("words");
-        int row = 0;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < COUNT; i++) {
-            sb.append(i % DISTINCT);
-            if (i % 20 == 0) {
-                map.put(row++, sb.toString());
-                sb.setLength(0);
-            } else {
-                sb.append(' ');
+    private void generateMockInput() throws Exception {
+        logger.info("Generating input");
+        final DAG dag = new DAG();
+        Vertex source = dag.newVertex("source",
+                (List<Address> addrs) -> (Address addr) -> ProcessorSupplier.of(
+                        addr.equals(addrs.get(0)) ? MockInputP::new : NoopP::new));
+        Vertex sink = dag.newVertex("sink", IMapWriter.supplier("words"));
+        dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
+        instance.newJob(dag).execute().get();
+        logger.info("Input generated.");
+    }
+
+    private static class MockInputP extends AbstractProcessor {
+        private int row;
+        private int counter;
+        private final StringBuilder sb = new StringBuilder();
+
+        private final Traverser<Entry<Integer, String>> trav = () -> {
+            if (counter == COUNT) {
+                return null;
             }
+            sb.setLength(0);
+            String delimiter = "";
+            for (int i = 0; i < WORDS_PER_ROW && counter < COUNT; i++, counter++) {
+                sb.append(delimiter).append(counter % DISTINCT);
+                delimiter = " ";
+            }
+            return new SimpleImmutableEntry<>(row++, sb.toString());
+        };
+
+        @Override
+        public boolean complete() {
+            return emitCooperatively(trav);
         }
-        map.put(row, sb.toString());
     }
 
     @Test
@@ -123,32 +154,30 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void testJet() {
         DAG dag = new DAG();
 
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"))
-                .localParallelism(1);
-        Vertex tokenizer = dag.newVertex("tokenizer",
+        Vertex source = dag.newVertex("source", IMapReader.supplier("words"));
+        Vertex tokenize = dag.newVertex("tokenize",
                 flatMap((Map.Entry<?, String> line) -> {
                     StringTokenizer s = new StringTokenizer(line.getValue());
                     return () -> s.hasMoreTokens() ? s.nextToken() : null;
                 })
         );
         // word -> (word, count)
-        Vertex accumulator = dag.newVertex("accumulator",
+        Vertex accumulate = dag.newVertex("accumulate",
                 groupAndAccumulate(() -> 0L, (count, x) -> count + 1)
         );
         // (word, count) -> (word, count)
-        Vertex combiner = dag.newVertex("combiner",
+        Vertex combine = dag.newVertex("combine",
                 groupAndAccumulate(Entry<String, Long>::getKey, () -> 0L,
                         (Long count, Entry<String, Long> wordAndCount) -> count + wordAndCount.getValue()));
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"))
-                .localParallelism(1);
+        Vertex sink = dag.newVertex("sink", IMapWriter.supplier("counts"));
 
-        dag.edge(between(producer, tokenizer))
-           .edge(between(tokenizer, accumulator)
+        dag.edge(between(source.localParallelism(1), tokenize))
+           .edge(between(tokenize, accumulate)
                    .partitioned(wholeItem(), HASH_CODE))
-           .edge(between(accumulator, combiner)
+           .edge(between(accumulate, combine)
                    .distributed()
                    .partitioned(entryKey()))
-           .edge(between(combiner, consumer));
+           .edge(between(combine, sink.localParallelism(1)));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
         assertCounts(instance.getMap("counts"));
@@ -158,16 +187,16 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Ignore
     public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"));
-        Vertex generator = dag.newVertex("generator", Mapper::new);
-        Vertex accumulator = dag.newVertex("accumulator", Reducer::new);
-        Vertex combiner = dag.newVertex("combiner", Reducer::new);
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
+        Vertex source = dag.newVertex("source", IMapReader.supplier("words"));
+        Vertex generate = dag.newVertex("generate", MapP::new);
+        Vertex accumulate = dag.newVertex("accumulate", ReduceP::new);
+        Vertex combine = dag.newVertex("combine", ReduceP::new);
+        Vertex sink = dag.newVertex("sink", IMapWriter.supplier("counts"));
 
-        dag.edge(between(producer, generator))
-           .edge(between(generator, accumulator))
-           .edge(between(accumulator, combiner).distributed().allToOne())
-           .edge(between(combiner, consumer));
+        dag.edge(between(source, generate))
+           .edge(between(generate, accumulate))
+           .edge(between(accumulate, combine).distributed().allToOne())
+           .edge(between(combine, sink));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
 
@@ -179,10 +208,11 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         long testStart = System.currentTimeMillis();
         int warmupCount = 0;
         boolean warmupEnded = false;
-        ILogger logger = instance.getHazelcastInstance().getLoggingService().getLogger(WordCountTest.class);
         logger.info("Starting test..");
         logger.info("Warming up...");
         while (true) {
+            System.gc();
+            System.gc();
             long start = System.currentTimeMillis();
             run.run();
             long end = System.currentTimeMillis();
@@ -190,16 +220,16 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
             times.add(time);
             logger.info(label + ": totalTime=" + time);
             long sinceTestStart = end - testStart;
-            if (sinceTestStart < 30000) {
+            if (sinceTestStart < WARMUP_TIME) {
                 warmupCount++;
             }
 
-            if (!warmupEnded && sinceTestStart > 30000) {
+            if (!warmupEnded && sinceTestStart > WARMUP_TIME) {
                 logger.info("Warm up ended");
                 warmupEnded = true;
             }
 
-            if (sinceTestStart > 90000) {
+            if (sinceTestStart > TOTAL_TIME) {
                 break;
             }
         }
@@ -248,41 +278,8 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class Generator extends AbstractProcessor {
 
-        private static final Pattern PATTERN = Pattern.compile("\\w+");
-
-        private final FlatMapper<Entry<Integer, String>, Entry<String, Long>> p = flatMapper(entry -> {
-            String text = entry.getValue().toLowerCase();
-            Matcher m = PATTERN.matcher(text);
-            return () -> m.find() ? new SimpleImmutableEntry<>(m.group(), 1L) : null;
-        });
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            return p.tryProcess((Entry<Integer, String>) item);
-        }
-    }
-
-    static class Combiner extends AbstractProcessor {
-        private Map<String, Long> counts = new HashMap<>();
-        private Traverser<Entry<String, Long>> resultTraverser = lazy(() -> traverseIterable(counts.entrySet()));
-
-        @Override
-        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-            Map.Entry<String, Long> entry = (Map.Entry<String, Long>) item;
-            counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
-            return true;
-        }
-
-        @Override
-        public boolean complete() {
-            return emitCooperatively(resultTraverser);
-        }
-    }
-
-
-    private static class Mapper extends AbstractProcessor {
+    private static class MapP extends AbstractProcessor {
 
         private static final Pattern PATTERN = Pattern.compile("\\w+");
         private Map<String, Long> counts = new HashMap<>();
@@ -308,7 +305,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class Reducer extends AbstractProcessor {
+    private static class ReduceP extends AbstractProcessor {
 
         private Map<String, Long> counts = new HashMap<>();
 
