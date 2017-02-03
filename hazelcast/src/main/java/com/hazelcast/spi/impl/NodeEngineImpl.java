@@ -181,7 +181,9 @@ public class NodeEngineImpl implements NodeEngine {
 
     private MetricsRegistryImpl newMetricRegistry(Node node) {
         ProbeLevel probeLevel = node.getProperties().getEnum(METRICS_LEVEL, ProbeLevel.class);
-        return new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class), probeLevel);
+        ILogger metricRegistryLogger = node.getLogger(MetricsRegistryImpl.class);
+        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        return new MetricsRegistryImpl(metricRegistryLogger, probeLevel, threadGroup);
     }
 
     private Diagnostics newDiagnostics() {

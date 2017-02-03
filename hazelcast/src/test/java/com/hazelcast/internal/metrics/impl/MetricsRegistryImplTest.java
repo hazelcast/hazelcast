@@ -1,7 +1,9 @@
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -18,6 +20,7 @@ import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -27,7 +30,9 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
     }
 
     @Test

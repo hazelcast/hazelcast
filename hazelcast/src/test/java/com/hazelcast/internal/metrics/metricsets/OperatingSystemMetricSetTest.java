@@ -1,8 +1,10 @@
 package com.hazelcast.internal.metrics.metricsets;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -21,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.mock;
 
 // The operating system sensor pack is very hard to test because you never know the
 // concrete implementation of the OperatingSystemMXBean.
@@ -32,7 +35,9 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
         OperatingSystemMetricSet.register(metricsRegistry);
     }
 
@@ -104,7 +109,9 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenLong() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(metricsRegistry, fakeOperatingSystemBean, "longMethod", "longMethod");
@@ -115,7 +122,9 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void registerMethod_whenNotExist() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(metricsRegistry, fakeOperatingSystemBean, "notexist", "notexist");

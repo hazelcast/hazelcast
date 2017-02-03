@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
@@ -89,7 +91,9 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected MetricsRegistryImpl newMetricsRegistry() {
-        return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = loggingService.getLogger(HazelcastThreadGroup.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        return new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port, MetricsRegistry metricsRegistry) throws Exception {

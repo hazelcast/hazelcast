@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.DiscardableMetricsProvider;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
@@ -60,8 +61,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     final ILogger logger;
     final ProbeLevel minimumLevel;
 
-    private final ScheduledExecutorService scheduledExecutorService
-            = new ScheduledThreadPoolExecutor(2, new ThreadFactoryImpl("MetricsRegistry-thread-"));
+    private final ScheduledExecutorService scheduledExecutorService;
 
     private final ConcurrentMap<String, ProbeInstance> probeInstances = new ConcurrentHashMap<String, ProbeInstance>();
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
@@ -80,9 +80,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
      *                     then the registration is skipped.
      * @throws NullPointerException if logger or minimumLevel is null
      */
-    public MetricsRegistryImpl(ILogger logger, ProbeLevel minimumLevel) {
+    public MetricsRegistryImpl(ILogger logger, ProbeLevel minimumLevel, HazelcastThreadGroup hazelcastThreadGroup) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
+        this.scheduledExecutorService = new ScheduledThreadPoolExecutor(2,
+                new ThreadFactoryImpl(hazelcastThreadGroup, "MetricsRegistry-thread-"));
 
         if (logger.isFinestEnabled()) {
             logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);

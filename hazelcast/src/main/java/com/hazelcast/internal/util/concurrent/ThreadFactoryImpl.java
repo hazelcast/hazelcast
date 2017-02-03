@@ -16,19 +16,24 @@
 
 package com.hazelcast.internal.util.concurrent;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
+
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadFactoryImpl implements ThreadFactory {
     private final String basename;
     private final AtomicInteger id = new AtomicInteger();
+    private final HazelcastThreadGroup hazelcastThreadGroup;
 
-    public ThreadFactoryImpl(String basename) {
+    public ThreadFactoryImpl(HazelcastThreadGroup hazelcastThreadGroup, String basename) {
+        this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.basename = basename;
     }
 
     @Override
     public Thread newThread(Runnable r) {
-        return new Thread(r, basename + id.incrementAndGet());
+        String name = hazelcastThreadGroup.getThreadNamePrefix(basename) + id.incrementAndGet();
+        return new Thread(hazelcastThreadGroup.getInternalThreadGroup(), r, name);
     }
 }

@@ -1,9 +1,11 @@
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -15,6 +17,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -23,7 +26,9 @@ public class DoubleGaugeImplTest {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
+        ILogger logger = mock(ILogger.class);
+        HazelcastThreadGroup hazelcastThreadGroup = new HazelcastThreadGroup("name", logger, null);
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO, hazelcastThreadGroup);
     }
 
     class SomeObject {
