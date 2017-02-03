@@ -48,12 +48,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.entryKey;
+import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
+import static com.hazelcast.jet.Processors.flatMap;
+import static com.hazelcast.jet.Processors.groupAndAccumulate;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
@@ -119,14 +123,28 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void testJet() {
         DAG dag = new DAG();
 
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"));
-        Vertex generator = dag.newVertex("generator", Generator::new);
-        Vertex accumulator = dag.newVertex("accumulator", Combiner::new);
-        Vertex combiner = dag.newVertex("combiner", Combiner::new);
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
+        Vertex producer = dag.newVertex("producer", IMapReader.supplier("words"))
+                .localParallelism(1);
+        Vertex tokenizer = dag.newVertex("tokenizer",
+                flatMap((Map.Entry<?, String> line) -> {
+                    StringTokenizer s = new StringTokenizer(line.getValue());
+                    return () -> s.hasMoreTokens() ? s.nextToken() : null;
+                })
+        );
+        // word -> (word, count)
+        Vertex accumulator = dag.newVertex("accumulator",
+                groupAndAccumulate(() -> 0L, (count, x) -> count + 1)
+        );
+        // (word, count) -> (word, count)
+        Vertex combiner = dag.newVertex("combiner",
+                groupAndAccumulate(Entry<String, Long>::getKey, () -> 0L,
+                        (Long count, Entry<String, Long> wordAndCount) -> count + wordAndCount.getValue()));
+        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"))
+                .localParallelism(1);
 
-        dag.edge(between(producer, generator))
-           .edge(between(generator, accumulator).partitioned(entryKey(), HASH_CODE))
+        dag.edge(between(producer, tokenizer))
+           .edge(between(tokenizer, accumulator)
+                   .partitioned(wholeItem(), HASH_CODE))
            .edge(between(accumulator, combiner)
                    .distributed()
                    .partitioned(entryKey()))
