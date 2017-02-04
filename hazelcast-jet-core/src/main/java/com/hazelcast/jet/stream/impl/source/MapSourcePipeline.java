@@ -35,7 +35,7 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
     }
 
     @Override
-    protected ProcessorMetaSupplier getProducer() {
+    protected ProcessorMetaSupplier getSourceMetaSupplier() {
         return Processors.readMap(map.getName());
     }
 

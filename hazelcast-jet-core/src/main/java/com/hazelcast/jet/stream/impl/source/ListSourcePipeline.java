@@ -32,7 +32,7 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
     }
 
     @Override
-    protected ProcessorMetaSupplier getProducer() {
+    protected ProcessorMetaSupplier getSourceMetaSupplier() {
         return Processors.readList(list.getName());
     }
 

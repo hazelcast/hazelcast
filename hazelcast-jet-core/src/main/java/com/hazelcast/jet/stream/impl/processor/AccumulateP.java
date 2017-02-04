@@ -19,33 +19,34 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 
 import javax.annotation.Nonnull;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
-public class CollectorCombinerP<T> extends AbstractProcessor {
+public class AccumulateP<IN, OUT> extends AbstractProcessor {
 
-    private final BiConsumer<T, T> combiner;
-    private T result;
+    private final BiFunction<OUT, IN, OUT> accumulator;
+    private final OUT identity;
+    private OUT result;
 
-    public CollectorCombinerP(BiConsumer<T, T> combiner, Function ignored) {
-        this.combiner = combiner;
+
+    public AccumulateP(BiFunction<OUT, IN, OUT> accumulator, OUT identity) {
+        this.accumulator = accumulator;
+        this.identity = identity;
+    }
+
+    @Override
+    protected void init(@Nonnull Context context) throws Exception {
+        result = identity;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        if (result != null) {
-            combiner.accept(result, (T) item);
-        } else {
-            result = (T) item;
-        }
+        result = accumulator.apply(result, (IN) item);
         return true;
     }
 
     @Override
     public boolean complete() {
-        if (result != null) {
-            emit(result);
-        }
+        emit(result);
         return true;
     }
 }

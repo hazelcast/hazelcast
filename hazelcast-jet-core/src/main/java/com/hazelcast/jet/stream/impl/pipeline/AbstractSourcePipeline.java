@@ -22,20 +22,20 @@ import com.hazelcast.jet.Vertex;
 
 public abstract class AbstractSourcePipeline<E_OUT> extends AbstractPipeline<E_OUT> {
 
-    public AbstractSourcePipeline(StreamContext context) {
+    protected AbstractSourcePipeline(StreamContext context) {
         super(context);
     }
 
     @Override
     public Vertex buildDAG(DAG dag) {
-        Vertex vertex = dag.newVertex(getName(), getProducer());
+        Vertex vertex = dag.newVertex(getName(), getSourceMetaSupplier());
         if (isOrdered()) {
             vertex.localParallelism(1);
         }
         return vertex;
     }
 
-    protected abstract ProcessorMetaSupplier getProducer();
+    protected abstract ProcessorMetaSupplier getSourceMetaSupplier();
 
     protected abstract String getName();
 }
