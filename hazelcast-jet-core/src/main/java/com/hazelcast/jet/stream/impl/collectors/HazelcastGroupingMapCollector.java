@@ -23,8 +23,8 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.GroupingAccumulatorP;
-import com.hazelcast.jet.stream.impl.processor.GroupingCombinerP;
+import com.hazelcast.jet.stream.impl.processor.GroupAndAccumulateP;
+import com.hazelcast.jet.stream.impl.processor.CombineGroupsP;
 
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -64,9 +64,9 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
         Vertex merger = dag.newVertex(uniqueVertexName("grouping-accumulator"),
-                () -> new GroupingAccumulatorP<>(classifier, collector));
+                () -> new GroupAndAccumulateP<>(classifier, collector));
         Vertex combiner = dag.newVertex(uniqueVertexName("grouping-combiner"),
-                () -> new GroupingCombinerP<>(collector));
+                () -> new CombineGroupsP<>(collector));
         Vertex writer = dag.newVertex(writerVertexName(mapName), mapWriter(mapName));
 
         dag.edge(between(previous, merger).partitioned(classifier::apply, HASH_CODE))

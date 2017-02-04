@@ -20,34 +20,37 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collector;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
 
-public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
+public class GroupAndAccumulateP<T, K, V, A, R> extends AbstractProcessor {
 
     private final Map<K, A> groups = new HashMap<>();
+    private final Function<? super T, ? extends K> classifier;
     private final Collector<V, A, R> collector;
-    private final Traverser<Entry<K, R>> resultTraverser;
+    private final Traverser<Entry<K, A>> resultTraverser;
 
-    public GroupingCombinerP(Collector<V, A, R> collector) {
+    public GroupAndAccumulateP(Function<? super T, ? extends K> classifier, Collector<V, A, R> collector) {
+        this.classifier = classifier;
         this.collector = collector;
         this.resultTraverser = lazy(() -> traverseStream(groups
                 .entrySet().stream()
-                .map(item -> new SimpleImmutableEntry<>(item.getKey(), collector.finisher().apply(item.getValue())))
+                .map(entry -> entry(entry.getKey(), entry.getValue()))
         ));
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        Map.Entry<K, A> entry = (Map.Entry) item;
+        Map.Entry<K, V> entry = entry(classifier.apply((T) item), (V) item);
         A value = groups.computeIfAbsent(entry.getKey(), k -> collector.supplier().get());
-        collector.combiner().apply(value, entry.getValue());
+        collector.accumulator().accept(value, entry.getValue());
         return true;
     }
 
@@ -55,5 +58,4 @@ public class GroupingCombinerP<K, V, A, R> extends AbstractProcessor {
     public boolean complete() {
         return emitCooperatively(resultTraverser);
     }
-
 }
