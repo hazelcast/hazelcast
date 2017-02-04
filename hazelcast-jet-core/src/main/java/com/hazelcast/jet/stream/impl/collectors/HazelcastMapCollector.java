@@ -51,7 +51,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
 
     @Override
     protected ProcessorMetaSupplier getConsumer() {
-        return Processors.mapWriter(mapName);
+        return Processors.writeMap(mapName);
     }
 
     @Override

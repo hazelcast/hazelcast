@@ -25,13 +25,12 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.IListWriter;
+import com.hazelcast.jet.impl.connector.WriteIListP;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -44,13 +43,15 @@ import java.util.Properties;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.connector.kafka.ReadKafkaP.readKafka;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class KafkaReaderTest extends JetTestSupport {
+public class ReadKafkaPTest extends JetTestSupport {
 
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create(-1, -1,
@@ -58,14 +59,12 @@ public class KafkaReaderTest extends JetTestSupport {
                 put("num.partitions", "100");
             }}));
     private static String zkConnStr;
-    private static int brokerPort;
     private static String brokerConnectionString;
 
     @BeforeClass
     public static void setUp() throws Exception {
         zkConnStr = kafkaRule.helper().zookeeperConnectionString();
-        brokerPort = kafkaRule.helper().kafkaPort();
-        brokerConnectionString = "localhost:" + brokerPort;
+        brokerConnectionString = "localhost:" + kafkaRule.helper().kafkaPort();
     }
 
     @Test
@@ -77,21 +76,21 @@ public class KafkaReaderTest extends JetTestSupport {
         DAG dag = new DAG();
         Function<byte[], String> deserializeString = String::new;
 
-        Vertex producer = dag.newVertex("producer",
-                KafkaReader.supplier(zkConnStr, consumerGroupId, topic, brokerConnectionString,
+        Vertex source = dag.newVertex("source",
+                readKafka(zkConnStr, consumerGroupId, topic, brokerConnectionString,
                         deserializeString, deserializeString))
                              .localParallelism(4);
 
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
+        Vertex sink = dag.newVertex("sink", writeList("sink"))
                              .localParallelism(1);
 
-        dag.edge(between(producer, consumer));
+        dag.edge(between(source, sink));
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);
         List<String> numbers = IntStream.range(0, messageCount).mapToObj(Integer::toString).collect(toList());
         send(topic, numbers);
-        IList<Object> list = instance.getList("consumer");
+        IList<Object> list = instance.getList("sink");
 
         assertTrueEventually(new AssertTask() {
             @Override

@@ -25,7 +25,7 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.IMapReader;
+import com.hazelcast.jet.impl.connector.ReadIMapP;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -44,11 +44,13 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.readMap;
+import static com.hazelcast.jet.connector.kafka.WriteKafkaP.writeKafka;
 import static java.util.stream.IntStream.range;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class KafkaWriterTest extends JetTestSupport {
+public class WriteKafkaPTest extends JetTestSupport {
 
     @ClassRule
     public static KafkaJunitRule kafkaRule = new KafkaJunitRule(EphemeralKafkaBroker.create(-1, -1,
@@ -77,17 +79,17 @@ public class KafkaWriterTest extends JetTestSupport {
                 .mapToObj(Integer::toString)
                 .collect(Collectors.toMap(m -> m, m -> m));
 
-        instance.getMap("producer").putAll(map);
+        instance.getMap("source").putAll(map);
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer"))
-                             .localParallelism(1);
+        Vertex source = dag.newVertex("source", readMap("source"))
+                           .localParallelism(1);
 
         Function<String, byte[]> serializer = String::getBytes;
-        Vertex consumer = dag.newVertex("consumer", KafkaWriter.supplier(zkConnStr,
-                producerGroup, topic, brokerConnectionString, serializer, serializer))
-                             .localParallelism(4);
+        Vertex sink = dag.newVertex("sink",
+                writeKafka(zkConnStr, producerGroup, topic, brokerConnectionString, serializer, serializer))
+                         .localParallelism(4);
 
-        dag.edge(between(producer, consumer));
+        dag.edge(between(source, sink));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);

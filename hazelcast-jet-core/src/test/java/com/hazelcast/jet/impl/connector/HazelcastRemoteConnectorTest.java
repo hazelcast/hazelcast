@@ -80,8 +80,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         populateList(hz.getList("producer"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IListReader.supplier("producer", clientConfig)).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", ReadIListP.supplier("producer", clientConfig)).localParallelism(1);
+        Vertex consumer = dag.newVertex("consumer", WriteIListP.supplier("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
@@ -93,8 +93,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         populateList(jet.getList("producer"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IListReader.supplier("producer")).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer", clientConfig)).localParallelism(4);
+        Vertex producer = dag.newVertex("producer", ReadIListP.supplier("producer")).localParallelism(1);
+        Vertex consumer = dag.newVertex("consumer", WriteIListP.supplier("consumer", clientConfig)).localParallelism(4);
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
@@ -106,8 +106,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         populateMap(hz.getMap("producer"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer", clientConfig)).localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", ReadIMapP.supplier("producer", clientConfig)).localParallelism(4);
+        Vertex consumer = dag.newVertex("consumer", WriteIListP.supplier("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);
@@ -119,8 +119,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         populateMap(jet.getMap("producer"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer")).localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("consumer", clientConfig)).localParallelism(4);
+        Vertex producer = dag.newVertex("producer", ReadIMapP.supplier("producer")).localParallelism(4);
+        Vertex consumer = dag.newVertex("consumer", WriteIMapP.supplier("consumer", clientConfig)).localParallelism(4);
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);

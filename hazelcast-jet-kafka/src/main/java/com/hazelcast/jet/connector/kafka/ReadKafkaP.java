@@ -35,7 +35,6 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
@@ -55,12 +54,12 @@ import static java.util.stream.Collectors.toList;
 
 
 /**
- * Kafka Consumer for Jet, emits records read from Kafka as Map.Entry
+ * Kafka Consumer for Jet, emits records read from Kafka as {@code Map.Entry}.
  *
  * @param <K> type of the message key
  * @param <V> type of the message value
  */
-public final class KafkaReader<K, V> extends AbstractProcessor implements Closeable {
+public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeable {
     private static final int POLL_TIMEOUT_MS = 100;
     private final Properties properties;
     private final String topic;
@@ -70,8 +69,8 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
     private final Function<byte[], K> deserializeKey;
     private final Function<byte[], V> deserializeValue;
 
-    private KafkaReader(String topic, Properties properties, List<Integer> partitions,
-                        Function<byte[], K> deserializeKey, Function<byte[], V> deserializeValue) {
+    private ReadKafkaP(String topic, Properties properties, List<Integer> partitions,
+                       Function<byte[], K> deserializeKey, Function<byte[], V> deserializeValue) {
         this.topic = topic;
         this.properties = properties;
         this.partitions = partitions;
@@ -129,12 +128,13 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         consumer.close();
     }
 
     /**
-     * Creates supplier for consuming kafka topics.
+     * Returns a meta-supplier of processors that consume a kafka topic and emit
+     * items from it as {@code Map.Entry} instances.
      *
      * @param <K>                    type of keys read
      * @param <V>                    type of values read
@@ -144,12 +144,11 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
      * @param brokerConnectionString kafka broker address
      * @param deserializeKey         function for deserializing keys
      * @param deserializeValue       function for deserializing values
-     * @return {@link ProcessorMetaSupplier} supplier
      */
-    static <K, V> ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
-                                                 String brokerConnectionString,
-                                                 Function<byte[], K> deserializeKey,
-                                                 Function<byte[], V> deserializeValue) {
+    static <K, V> ProcessorMetaSupplier readKafka(String zkAddress, String groupId, String topicId,
+                                                  String brokerConnectionString,
+                                                  Function<byte[], K> deserializeKey,
+                                                  Function<byte[], V> deserializeValue) {
         return new MetaSupplier<>(topicId,
                 getProperties(zkAddress, groupId, brokerConnectionString),
                 deserializeKey, deserializeValue);
@@ -231,7 +230,7 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
             return (processors = processorToPartitions
                     .values().stream()
                     .map(partitions -> !partitions.isEmpty()
-                            ? new KafkaReader<>(topicId, properties, partitions, deserializeKey, deserializeValue)
+                            ? new ReadKafkaP<>(topicId, properties, partitions, deserializeKey, deserializeValue)
                             : new NoopP()
                     )
                     .collect(toList()));
@@ -240,8 +239,8 @@ public final class KafkaReader<K, V> extends AbstractProcessor implements Closea
         @Override
         public void complete(Throwable error) {
             processors.stream()
-                      .filter(p -> p instanceof KafkaReader)
-                      .map(p -> (KafkaReader) p)
+                      .filter(p -> p instanceof ReadKafkaP)
+                      .map(p -> (ReadKafkaP) p)
                       .forEach(p -> Util.uncheckRun(p::close));
         }
     }

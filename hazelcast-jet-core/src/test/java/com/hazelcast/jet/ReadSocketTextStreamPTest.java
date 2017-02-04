@@ -17,8 +17,8 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.impl.connector.IListWriter;
-import com.hazelcast.jet.impl.connector.SocketTextStreamReader;
+import com.hazelcast.jet.impl.connector.WriteIListP;
+import com.hazelcast.jet.impl.connector.ReadSocketTextStreamP;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class SocketTextStreamReaderTest extends JetTestSupport {
+public class ReadSocketTextStreamPTest extends JetTestSupport {
 
     private JetTestInstanceFactory factory;
     private JetInstance instance;
@@ -77,8 +77,8 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         })).start();
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", ReadSocketTextStreamP.supplier(HOST, PORT)).localParallelism(1);
+        Vertex consumer = dag.newVertex("consumer", WriteIListP.supplier("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
         // When
@@ -105,7 +105,7 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         })).start();
 
         DAG dag = new DAG().vertex(
-                new Vertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1)
+                new Vertex("producer", ReadSocketTextStreamP.supplier(HOST, PORT)).localParallelism(1)
         );
 
         Future<Void> job = instance.newJob(dag).execute();

@@ -40,7 +40,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         String listName = uniqueListName();
         IList<T> list = context.getJetInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.listWriter(listName));
+        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
         if (upstream.isOrdered()) {
             writer.localParallelism(1);
         }

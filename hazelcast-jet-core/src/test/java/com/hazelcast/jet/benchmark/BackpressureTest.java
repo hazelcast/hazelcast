@@ -29,7 +29,7 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.IMapWriter;
+import com.hazelcast.jet.impl.connector.WriteIMapP;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -104,7 +104,7 @@ public class BackpressureTest extends JetTestSupport {
                 ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : NoopP::new)
         ));
         Vertex hiccuper = dag.newVertex("hiccuper", HiccupP::new);
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
+        Vertex consumer = dag.newVertex("consumer", WriteIMapP.supplier("counts"));
 
         dag.edge(between(generator, hiccuper)
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))

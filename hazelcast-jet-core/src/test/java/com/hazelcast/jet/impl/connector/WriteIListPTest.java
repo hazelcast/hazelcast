@@ -29,12 +29,12 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 @Category(QuickTest.class)
-public class IListWriterTest {
+public class WriteIListPTest {
 
     @Test
     public void when_processItems_then_addedToList() {
         final List<Object> sink = new ArrayList<>();
-        final IListWriter w = new IListWriter(sink);
+        final WriteIListP w = new WriteIListP(sink);
         final MockInbox inbox = new MockInbox();
         final List<Integer> input = asList(1, 2, 3, 4);
         inbox.addAll(input);

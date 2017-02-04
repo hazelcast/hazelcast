@@ -82,7 +82,7 @@ public class Reducer {
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.listWriter(listName));
+        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
         dag.edge(between(combiner, writer));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);

@@ -39,13 +39,13 @@ import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
 import static java.util.stream.IntStream.rangeClosed;
 
-public final class IListReader extends AbstractProcessor {
+public final class ReadIListP extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
     private final Traverser<Object> traverser;
 
-    IListReader(List<Object> list, int fetchSize) {
+    ReadIListP(List<Object> list, int fetchSize) {
         final int size = list.size();
         traverser = size <= fetchSize
                 ? traverseIterable(list)
@@ -161,7 +161,7 @@ public final class IListReader extends AbstractProcessor {
         @Override @Nonnull
         public List<Processor> get(int count) {
             assertCountIsOne(count);
-            return singletonList(new IListReader(list, fetchSize));
+            return singletonList(new ReadIListP(list, fetchSize));
         }
     }
 

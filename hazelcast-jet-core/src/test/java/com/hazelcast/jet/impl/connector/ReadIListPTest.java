@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
-public class IListReaderTest {
+public class ReadIListPTest {
 
     @Test
     public void when_sizeLessThanFetchSize_then_readAll() {
@@ -47,7 +47,7 @@ public class IListReaderTest {
     private static void testReader(int fetchSize) {
         final ArrayDequeOutbox outbox = new ArrayDequeOutbox(1, new int[]{2});
         final Queue<Object> bucket = outbox.queueWithOrdinal(0);
-        final IListReader r = new IListReader(asList(1, 2, 3, 4), fetchSize);
+        final ReadIListP r = new ReadIListP(asList(1, 2, 3, 4), fetchSize);
         r.init(outbox, Mockito.mock(Processor.Context.class));
 
         // When

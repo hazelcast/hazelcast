@@ -24,6 +24,7 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -76,12 +77,12 @@ import static org.apache.hadoop.mapred.Reporter.NULL;
  * @param <V> value type of the records
  * @param <R> the type of the mapped value
  */
-public final class HdfsReader<K, V, R> extends AbstractProcessor {
+public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
     private final Traverser<R> trav;
     private final BiFunction<K, V, R> mapper;
 
-    private HdfsReader(@Nonnull List<RecordReader> recordReaders, @Nonnull BiFunction<K, V, R> mapper) {
+    private ReadHdfsP(@Nonnull List<RecordReader> recordReaders, @Nonnull BiFunction<K, V, R> mapper) {
         this.trav = traverseIterable(recordReaders).flatMap(this::traverseRecordReader);
         this.mapper = mapper;
     }
@@ -113,7 +114,8 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
     }
 
     /**
-     * Creates supplier for reading HDFS files. It will emit entries of type {@code Map.Entry<K,V>}.
+     * Returns a meta-supplier of processors that read HDFS files.
+     * It will emit entries of type {@code Map.Entry<K,V>}.
      *
      * @param <K>  key type of the records
      * @param <V>  value type of the records
@@ -121,12 +123,13 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
      * @return {@link ProcessorMetaSupplier} supplier
      */
     @Nonnull
-    public static <K, V> MetaSupplier<K, V, Entry<K, V>> supplier(@Nonnull String path) {
-        return new MetaSupplier<>(path, SimpleImmutableEntry::new);
+    public static <K, V> MetaSupplier<K, V, Entry<K, V>> readHdfs(@Nonnull String path) {
+        return new MetaSupplier<>(path, Util::entry);
     }
 
     /**
-     * Creates supplier for reading HDFS files. It will emit entries of type {@code <R>}
+     * Returns a meta-supplier of processors that read HDFS files.
+     * It will emit entries of type {@code Map.Entry<K,V>}.
      *
      * @param <K>    key type of the records
      * @param <V>    value type of the records
@@ -136,7 +139,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
      * @return {@link ProcessorMetaSupplier} supplier
      */
     @Nonnull
-    public static <K, V, R> MetaSupplier<K, V, R> supplier(@Nonnull String path, @Nonnull BiFunction<K, V, R> mapper) {
+    public static <K, V, R> MetaSupplier<K, V, R> readHdfs(@Nonnull String path, @Nonnull BiFunction<K, V, R> mapper) {
         return new MetaSupplier<>(path, mapper);
     }
 
@@ -159,7 +162,7 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
 
         @Override
         public void init(@Nonnull Context context) {
-            logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(HdfsReader.class);
+            logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(ReadHdfsP.class);
             configuration = new JobConf();
             configuration.setInputFormat(TextInputFormat.class);
             TextInputFormat.addInputPath(configuration, new Path(path));
@@ -338,11 +341,11 @@ public final class HdfsReader<K, V, R> extends AbstractProcessor {
                     .values().stream()
                     .map(splits -> splits.isEmpty()
                             ? new NoopP()
-                            : new HdfsReader<>(splits.stream()
-                                                     .map(IndexedInputSplit::getSplit)
-                                                     .map(split -> uncheckCall(() ->
+                            : new ReadHdfsP<>(splits.stream()
+                                                    .map(IndexedInputSplit::getSplit)
+                                                    .map(split -> uncheckCall(() ->
                                                              inputFormat.getRecordReader(split, configuration, NULL)))
-                                                     .collect(toList()), mapper)
+                                                    .collect(toList()), mapper)
                     ).collect(toList());
         }
 

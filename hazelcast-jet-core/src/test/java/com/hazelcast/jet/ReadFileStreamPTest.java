@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet;
 
-import com.hazelcast.jet.impl.connector.FileStreamReader;
-import com.hazelcast.jet.impl.connector.FileStreamReader.WatchType;
-import com.hazelcast.jet.impl.connector.IListWriter;
+import com.hazelcast.jet.impl.connector.ReadFileStreamP;
+import com.hazelcast.jet.impl.connector.ReadFileStreamP.WatchType;
+import com.hazelcast.jet.impl.connector.WriteIListP;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 @Ignore //https://github.com/hazelcast/hazelcast-jet/issues/298
-public class FileStreamReaderTest extends JetTestSupport {
+public class ReadFileStreamPTest extends JetTestSupport {
 
     private JetInstance instance;
     private File directory;
@@ -120,9 +120,9 @@ public class FileStreamReaderTest extends JetTestSupport {
 
     private DAG buildDag(WatchType type) {
         DAG dag = new DAG();
-        Vertex reader = dag.newVertex("reader", FileStreamReader.supplier(directory.getPath(), type))
+        Vertex reader = dag.newVertex("reader", ReadFileStreamP.supplier(directory.getPath(), type))
                            .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", IListWriter.supplier(list.getName())).localParallelism(1);
+        Vertex writer = dag.newVertex("writer", WriteIListP.supplier(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
     }

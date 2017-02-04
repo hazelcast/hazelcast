@@ -47,13 +47,13 @@ import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
-public final class IMapReader extends AbstractProcessor {
+public final class ReadIMapP extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
     private final Traverser<Entry> outputTraverser;
 
-    IMapReader(Function<Integer, Iterator<Entry>> partitionToIterator, List<Integer> partitions) {
+    ReadIMapP(Function<Integer, Iterator<Entry>> partitionToIterator, List<Integer> partitions) {
         final CircularListCursor<Iterator> iteratorCursor = new CircularListCursor<>(
                 partitions.stream().map(partitionToIterator).collect(toList())
         );
@@ -240,7 +240,7 @@ public final class IMapReader extends AbstractProcessor {
         return processorToPartitions
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
-                        ? new IMapReader(partitionToIterator, partitions)
+                        ? new ReadIMapP(partitionToIterator, partitions)
                         : new NoopP()
                 )
                 .collect(toList());

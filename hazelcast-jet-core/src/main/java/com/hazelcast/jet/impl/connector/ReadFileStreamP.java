@@ -53,7 +53,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * {@link WatchType} parameter controls how new and modifies files are
  * handled by the {@code Processor}.
  */
-public class FileStreamReader extends AbstractProcessor implements Closeable {
+public class ReadFileStreamP extends AbstractProcessor implements Closeable {
 
     private final WatchType watchType;
     private final int parallelism;
@@ -85,7 +85,7 @@ public class FileStreamReader extends AbstractProcessor implements Closeable {
     }
 
 
-    FileStreamReader(String folder, WatchType watchType, int parallelism, int id) {
+    ReadFileStreamP(String folder, WatchType watchType, int parallelism, int id) {
         this.watchType = watchType;
         this.parallelism = parallelism;
         this.id = id;
@@ -181,7 +181,7 @@ public class FileStreamReader extends AbstractProcessor implements Closeable {
     }
 
     /**
-     * Creates a supplier for {@link FileStreamReader}
+     * Creates a supplier for {@link ReadFileStreamP}
      *
      * @param folderPath the folder to watch
      * @param watchType  the
@@ -196,7 +196,7 @@ public class FileStreamReader extends AbstractProcessor implements Closeable {
         private final String folderPath;
         private final WatchType watchType;
 
-        private transient ArrayList<FileStreamReader> readers;
+        private transient ArrayList<ReadFileStreamP> readers;
 
         Supplier(String folderPath, WatchType watchType) {
             this.folderPath = folderPath;
@@ -204,10 +204,10 @@ public class FileStreamReader extends AbstractProcessor implements Closeable {
         }
 
         @Override @Nonnull
-        public List<FileStreamReader> get(int count) {
+        public List<ReadFileStreamP> get(int count) {
             readers = new ArrayList<>();
             for (int i = 0; i < count; i++) {
-                readers.add(new FileStreamReader(folderPath, watchType, count, i));
+                readers.add(new ReadFileStreamP(folderPath, watchType, count, i));
             }
             return readers;
         }

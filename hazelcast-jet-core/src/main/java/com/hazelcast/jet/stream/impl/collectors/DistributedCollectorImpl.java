@@ -73,7 +73,7 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(uniqueVertexName("writer"), Processors.listWriter(listName));
+        Vertex writer = dag.newVertex(uniqueVertexName("writer"), Processors.writeList(listName));
         dag.edge(between(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getJetInstance().getList(listName);

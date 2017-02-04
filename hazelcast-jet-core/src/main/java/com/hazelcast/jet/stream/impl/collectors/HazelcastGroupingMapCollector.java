@@ -23,8 +23,8 @@ import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.GroupAndAccumulateP;
 import com.hazelcast.jet.stream.impl.processor.CombineGroupsP;
+import com.hazelcast.jet.stream.impl.processor.GroupAndAccumulateP;
 
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -32,7 +32,7 @@ import java.util.stream.Collector;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
-import static com.hazelcast.jet.Processors.mapWriter;
+import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
@@ -67,7 +67,7 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
                 () -> new GroupAndAccumulateP<>(classifier, collector));
         Vertex combiner = dag.newVertex(uniqueVertexName("grouping-combiner"),
                 () -> new CombineGroupsP<>(collector));
-        Vertex writer = dag.newVertex(writerVertexName(mapName), mapWriter(mapName));
+        Vertex writer = dag.newVertex(writerVertexName(mapName), writeMap(mapName));
 
         dag.edge(between(previous, merger).partitioned(classifier::apply, HASH_CODE))
            .edge(between(merger, combiner).distributed().partitioned(entryKey()))
