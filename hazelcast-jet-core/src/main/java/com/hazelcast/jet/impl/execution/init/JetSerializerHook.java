@@ -24,9 +24,10 @@ import com.hazelcast.nio.serialization.SerializerHook;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import static com.hazelcast.jet.Util.entry;
 
 public final class JetSerializerHook {
 
@@ -125,9 +126,7 @@ public final class JetSerializerHook {
 
                 @Override
                 public Entry read(ObjectDataInput in) throws IOException {
-                    Object key = in.readObject();
-                    Object value = in.readObject();
-                    return new SimpleImmutableEntry(key, value);
+                    return entry(in.readObject(), in.readObject());
                 }
             };
         }

@@ -20,7 +20,6 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,6 +28,7 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
 
 public class MergeP<T, K, V> extends AbstractProcessor {
 
@@ -47,7 +47,7 @@ public class MergeP<T, K, V> extends AbstractProcessor {
         this.merger = merger;
         this.resultTraverser = lazy(() -> traverseStream(merged
                 .entrySet().stream()
-                .map(item -> new SimpleImmutableEntry<>(item.getKey(), item.getValue()))
+                .map(item -> entry(item.getKey(), item.getValue()))
         ));
     }
 
@@ -57,7 +57,7 @@ public class MergeP<T, K, V> extends AbstractProcessor {
         if (keyMapper == null || valueMapper == null) {
             entry = (Map.Entry<K, V>) item;
         } else {
-            entry = new SimpleImmutableEntry<>(keyMapper.apply((T) item), valueMapper.apply((T) item));
+            entry = entry(keyMapper.apply((T) item), valueMapper.apply((T) item));
         }
         V value = merged.get(entry.getKey());
         if (value == null) {

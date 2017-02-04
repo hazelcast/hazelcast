@@ -40,7 +40,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,6 +49,7 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -131,7 +131,7 @@ public class BackpressureTest extends JetTestSupport {
         @Override
         public boolean complete() {
             while (!getOutbox().isHighWater()) {
-                emit(new SimpleImmutableEntry<>(Integer.toString(item), 1L));
+                emit(entry(Integer.toString(item), 1L));
                 item++;
                 if (item == DISTINCT) {
                     if (++count == COUNT_PER_DISTINCT_AND_SLICE) {

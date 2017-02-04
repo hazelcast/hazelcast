@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.connector.IMapReader;
 import com.hazelcast.jet.impl.connector.IMapWriter;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -239,7 +238,7 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupAndAccumulate(keyExtractor, supplier, accumulator, SimpleImmutableEntry::new);
+        return groupAndAccumulate(keyExtractor, supplier, accumulator, Util::entry);
     }
 
     /**
@@ -325,7 +324,7 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
     ) {
-        return groupAndCollect(keyExtractor, supplier, collector, SimpleImmutableEntry::new);
+        return groupAndCollect(keyExtractor, supplier, collector, Util::entry);
     }
 
     /**

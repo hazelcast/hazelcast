@@ -35,6 +35,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -245,16 +246,16 @@ public class ProcessorsTest {
 
     private static TwinConsumer<Entry<String, List<Integer>>> ga_stringEntryResultTester() {
         final Set<Entry<String, List<Integer>>> expected = new HashSet<>(asList(
-                new SimpleImmutableEntry<>("1", asList(1, 1)),
-                new SimpleImmutableEntry<>("2", asList(2, 2))
+                entry("1", asList(1, 1)),
+                entry("2", asList(2, 2))
         ));
         return (result1, result2) -> assertEquals(expected, new HashSet<>(asList(result1, result2)));
     }
 
     private static TwinConsumer<Entry<Integer, List<Integer>>> ga_intEntryResultTester() {
         final Set<Entry<Integer, List<Integer>>> expected = new HashSet<>(asList(
-                new SimpleImmutableEntry<>(1, asList(1, 1)),
-                new SimpleImmutableEntry<>(2, asList(2, 2))
+                entry(1, asList(1, 1)),
+                entry(2, asList(2, 2))
         ));
         return (result1, result2) -> assertEquals(expected, new HashSet<>(asList(result1, result2)));
     }

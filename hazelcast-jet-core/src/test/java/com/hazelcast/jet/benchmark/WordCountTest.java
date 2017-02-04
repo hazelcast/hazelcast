@@ -62,6 +62,7 @@ import static com.hazelcast.jet.Processors.flatMap;
 import static com.hazelcast.jet.Processors.groupAndAccumulate;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -131,7 +132,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
                 sb.append(delimiter).append(counter % DISTINCT);
                 delimiter = " ";
             }
-            return new SimpleImmutableEntry<>(row++, sb.toString());
+            return entry(row++, sb.toString());
         };
 
         @Override
@@ -296,7 +297,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public boolean complete() {
-            emit(new SimpleImmutableEntry<>("result", counts));
+            emit(entry("result", counts));
             return true;
         }
 
@@ -320,7 +321,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
 
         @Override
         public boolean completeEdge(int ordinal) {
-            emit(new SimpleImmutableEntry<>("result", counts));
+            emit(entry("result", counts));
             return true;
         }
 

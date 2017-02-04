@@ -40,7 +40,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static java.util.AbstractMap.SimpleImmutableEntry;
+import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
@@ -234,7 +234,7 @@ public final class IMapReader extends AbstractProcessor {
                                          Function<Integer, Iterator<Entry>> partitionToIterator) {
         Map<Integer, List<Integer>> processorToPartitions =
                 range(0, ownedPartitions.size())
-                        .mapToObj(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
+                        .mapToObj(i -> entry(i, ownedPartitions.get(i)))
                         .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, toList())));
         range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
         return processorToPartitions
