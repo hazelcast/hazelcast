@@ -59,6 +59,8 @@ import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.flatMap;
 import static com.hazelcast.jet.Processors.groupAndAccumulate;
+import static com.hazelcast.jet.Processors.readMap;
+import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static org.junit.Assert.assertEquals;
@@ -108,7 +110,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex source = dag.newVertex("source",
                 (List<Address> addrs) -> (Address addr) -> ProcessorSupplier.of(
                         addr.equals(addrs.get(0)) ? MockInputP::new : NoopP::new));
-        Vertex sink = dag.newVertex("sink", WriteIMapP.supplier("words"));
+        Vertex sink = dag.newVertex("sink", writeMap("words"));
         dag.edge(between(source.localParallelism(1), sink.localParallelism(1)));
         instance.newJob(dag).execute().get();
         logger.info("Input generated.");
@@ -152,7 +154,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void testJet() {
         DAG dag = new DAG();
 
-        Vertex source = dag.newVertex("source", ReadIMapP.supplier("words"));
+        Vertex source = dag.newVertex("source", readMap("words"));
         Vertex tokenize = dag.newVertex("tokenize",
                 flatMap((Map.Entry<?, String> line) -> {
                     StringTokenizer s = new StringTokenizer(line.getValue());
@@ -167,7 +169,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         Vertex combine = dag.newVertex("combine",
                 groupAndAccumulate(Entry<String, Long>::getKey, () -> 0L,
                         (Long count, Entry<String, Long> wordAndCount) -> count + wordAndCount.getValue()));
-        Vertex sink = dag.newVertex("sink", WriteIMapP.supplier("counts"));
+        Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
         dag.edge(between(source.localParallelism(1), tokenize))
            .edge(between(tokenize, accumulate)
@@ -185,11 +187,11 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     @Ignore
     public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", ReadIMapP.supplier("words"));
+        Vertex source = dag.newVertex("source", readMap("words"));
         Vertex generate = dag.newVertex("generate", MapP::new);
         Vertex accumulate = dag.newVertex("accumulate", ReduceP::new);
         Vertex combine = dag.newVertex("combine", ReduceP::new);
-        Vertex sink = dag.newVertex("sink", WriteIMapP.supplier("counts"));
+        Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
         dag.edge(between(source, generate))
            .edge(between(generate, accumulate))

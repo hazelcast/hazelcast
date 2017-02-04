@@ -202,7 +202,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
          *     only request the minimum number of splits, but the exact number is up
          *     to HDFS.
          * </li><li>
-         *     {@code HdfsReader} acquires some splits and must plan out which splits
+         *     {@code ReadHdfsP} acquires some splits and must plan out which splits
          *     will be read by which Jet cluster member. The first concern is data
          *     locality: if a split is local to a member, that member must read it.
          *     Some splits may not be on any Jet member; these can be assigned

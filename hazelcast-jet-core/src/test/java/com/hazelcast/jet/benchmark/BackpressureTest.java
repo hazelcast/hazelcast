@@ -47,6 +47,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.wholeItem;
+import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.Traversers.lazy;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
@@ -100,15 +101,15 @@ public class BackpressureTest extends JetTestSupport {
                     .map(Partition::getPartitionId)
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
-        Vertex generator = dag.newVertex("generator", ProcessorMetaSupplier.of((Address address) ->
+        Vertex source = dag.newVertex("source", ProcessorMetaSupplier.of((Address address) ->
                 ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : NoopP::new)
         ));
         Vertex hiccuper = dag.newVertex("hiccuper", HiccupP::new);
-        Vertex consumer = dag.newVertex("consumer", WriteIMapP.supplier("counts"));
+        Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
-        dag.edge(between(generator, hiccuper)
+        dag.edge(between(source, hiccuper)
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
-           .edge(between(hiccuper, consumer));
+           .edge(between(hiccuper, sink));
 
         uncheckedGet(jet1.newJob(dag).execute());
         assertCounts(jet1.getMap("counts"));
@@ -127,20 +128,23 @@ public class BackpressureTest extends JetTestSupport {
 
         private int item;
         private int count;
-
-        @Override
-        public boolean complete() {
-            while (!getOutbox().isHighWater()) {
-                emit(entry(Integer.toString(item), 1L));
-                item++;
-                if (item == DISTINCT) {
-                    if (++count == COUNT_PER_DISTINCT_AND_SLICE) {
-                        return true;
-                    }
+        private final Traverser<Entry<String, Long>> trav = () -> {
+            if (count == COUNT_PER_DISTINCT_AND_SLICE) {
+                return null;
+            }
+            try {
+                return entry(Integer.toString(item), 1L);
+            } finally {
+                if (++item == DISTINCT) {
+                    count++;
                     item = 0;
                 }
             }
-            return false;
+        };
+
+        @Override
+        public boolean complete() {
+            return emitCooperatively(trav);
         }
     }
 
