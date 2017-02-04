@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.jet.impl.connector.ReadFileStreamP;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.impl.connector.ReadFileStreamP.WatchType;
-import com.hazelcast.jet.impl.connector.WriteIListP;
 import com.hazelcast.jet.stream.IStreamList;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -37,6 +39,7 @@ import java.nio.file.Path;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -122,7 +125,7 @@ public class ReadFileStreamPTest extends JetTestSupport {
         DAG dag = new DAG();
         Vertex reader = dag.newVertex("reader", ReadFileStreamP.supplier(directory.getPath(), type))
                            .localParallelism(1);
-        Vertex writer = dag.newVertex("writer", WriteIListP.supplier(list.getName())).localParallelism(1);
+        Vertex writer = dag.newVertex("writer", writeList(list.getName())).localParallelism(1);
         dag.edge(between(reader, writer));
         return dag;
     }
@@ -136,17 +139,15 @@ public class ReadFileStreamPTest extends JetTestSupport {
     private static void appendToFile(File file, String... lines) throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileOutputStream(file, true))) {
             for (String payload : lines) {
-                writer.write(payload + "\n");
+                writer.write(payload + '\n');
             }
         }
     }
 
-    private File createTempDirectory() throws IOException {
+    private static File createTempDirectory() throws IOException {
         Path directory = Files.createTempDirectory("file-stream-reader");
         File file = directory.toFile();
         file.deleteOnExit();
         return file;
     }
-
-
 }
