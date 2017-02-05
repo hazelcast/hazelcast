@@ -116,7 +116,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         int readBytes = socketChannel.read(inputBuffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {
-                throw new EOFException("Remote socket closed!");
+                throw new EOFException("Remote socket closed! after readHandler is set.");
             }
             return 0;
         }
