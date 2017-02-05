@@ -47,7 +47,7 @@ public abstract class AbstractHandler {
         }
 
         if (e instanceof EOFException) {
-            connection.close("Connection closed by the other side", e);
+            connection.close("Connection closed by the other side:" + e.getMessage(), e);
         } else {
             connection.close("Exception in " + getClass().getSimpleName(), e);
         }
