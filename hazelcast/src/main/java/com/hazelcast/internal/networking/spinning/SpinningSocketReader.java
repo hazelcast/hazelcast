@@ -113,6 +113,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
             }
         }
 
+
         int readBytes = socketChannel.read(inputBuffer);
         if (readBytes <= 0) {
             if (readBytes == -1) {

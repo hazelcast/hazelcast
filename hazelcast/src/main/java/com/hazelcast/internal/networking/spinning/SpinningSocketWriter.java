@@ -201,7 +201,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         if (writeHandler == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             initializer.init(connection, this, CLUSTER);
-            return 0;
+       //     return 0;
         }
 
         fillOutputBuffer();
