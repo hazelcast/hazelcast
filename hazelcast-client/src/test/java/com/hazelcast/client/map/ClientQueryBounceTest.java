@@ -17,8 +17,7 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.map.QueryBounceTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,8 +25,8 @@ import org.junit.runner.RunWith;
 /**
  * Test querying a cluster from Hazelcast clients while members are shutting down and joining.
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class ClientQueryBounceTest extends QueryBounceTest {
 
 }

@@ -21,10 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
+import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,8 +41,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Query map while members of the cluster are being shutdown and started
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({SlowTest.class, ParallelTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(SlowTest.class)
 public class QueryBounceTest {
 
     private static final String TEST_MAP_NAME = "employees";
@@ -53,6 +53,9 @@ public class QueryBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig()).build();
+
+    @Rule
+    public JitterRule jitterRule = new JitterRule();
 
     @Rule
     public TestName testName = new TestName();

@@ -236,10 +236,12 @@ public class BounceMemberRule implements TestRule {
                 }
                 sleepSeconds(1);
             }
+            testRunning.set(false);
+            waitForFutures(futures);
+        } else {
+            waitForFutures(futures);
+            testRunning.set(false);
         }
-
-        testRunning.set(false);
-        waitForFutures(futures);
     }
 
     public static Builder with(Config memberConfig) {
@@ -469,15 +471,19 @@ public class BounceMemberRule implements TestRule {
         public void run() {
             int i = 0;
             int nextInstance;
-            while (testRunning.get()) {
-                instances[i].shutdown();
-                nextInstance = (i + 1) % instances.length;
-                sleepSeconds(2);
+            try {
+                while (testRunning.get()) {
+                    instances[i].shutdown();
+                    nextInstance = (i + 1) % instances.length;
+                    sleepSeconds(2);
 
-                instances[i] = factory.newHazelcastInstance();
-                sleepSeconds(2);
-                // move to next member
-                i = nextInstance;
+                    instances[i] = factory.newHazelcastInstance();
+                    sleepSeconds(2);
+                    // move to next member
+                    i = nextInstance;
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
         }
     }
