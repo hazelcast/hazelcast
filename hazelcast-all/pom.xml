@@ -156,12 +156,12 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-aws</artifactId>
-            <version>1.0</version>
+            <version>1.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-hibernate3</artifactId>
-            <version>3.6.5</version>
+            <version>3.8</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
@@ -171,7 +171,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-wm</artifactId>
-            <version>3.7.1</version>
+            <version>3.8</version>
         </dependency>
     </dependencies>
 </project>
