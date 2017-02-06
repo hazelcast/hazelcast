@@ -48,10 +48,27 @@ public class WanPublisherConfig implements DataSerializable {
         return this;
     }
 
+    /**
+     * Get the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
+     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * replication events behave as determined by the {@link #getQueueFullBehavior()}.
+     * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
+     *
+     * @return the queue capacity
+     */
     public int getQueueCapacity() {
         return queueCapacity;
     }
 
+    /**
+     * Set the capacity of the queue for WAN replication events. IMap, ICache, normal and backup events count against
+     * the queue capacity separately. When the queue capacity is reached, backup events are dropped while normal
+     * replication events behave as determined by the {@link #getQueueFullBehavior()}.
+     * The default queue size for replication queues is {@value #DEFAULT_QUEUE_CAPACITY}.
+     *
+     * @param queueCapacity the queue capacity
+     * @return this configuration
+     */
     public WanPublisherConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
         return this;
@@ -79,6 +96,14 @@ public class WanPublisherConfig implements DataSerializable {
         return className;
     }
 
+    /**
+     * Set the name of the class implementing the WanReplicationEndpoint.
+     * NOTE: OS and EE have different interfaces that this class should implement.
+     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     *
+     * @param className the name of the class implementation for the WAN replication
+     * @return the wan publisher config
+     */
     public WanPublisherConfig setClassName(String className) {
         this.className = className;
         return this;
@@ -88,6 +113,14 @@ public class WanPublisherConfig implements DataSerializable {
         return implementation;
     }
 
+    /**
+     * Set the implementation of the WanReplicationEndpoint.
+     * NOTE: OS and EE have different interfaces that this object should implement.
+     * For OS see {@link com.hazelcast.wan.WanReplicationEndpoint}.
+     *
+     * @param implementation the implementation for the WAN replication
+     * @return the wan publisher config
+     */
     public WanPublisherConfig setImplementation(Object implementation) {
         this.implementation = implementation;
         return this;

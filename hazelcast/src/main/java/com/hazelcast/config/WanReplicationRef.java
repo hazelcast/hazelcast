@@ -16,10 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -87,15 +87,37 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         return this;
     }
 
+    /**
+     * Add class name implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication events.
+     * NOTE : EE only
+     *
+     * @param filter the class name
+     * @return this configuration
+     */
     public WanReplicationRef addFilter(String filter) {
         filters.add(filter);
         return this;
     }
 
+    /**
+     * Return the list of class names implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication
+     * events.
+     * NOTE : EE only
+     *
+     * @return list of class names implementing the CacheWanEventFilter or MapWanEventFilter
+     */
     public List<String> getFilters() {
         return filters;
     }
 
+    /**
+     * Set the list of class names implementing the CacheWanEventFilter or MapWanEventFilter for filtering WAN replication
+     * events.
+     * NOTE : EE only
+     *
+     * @param filters the list of class names implementing CacheWanEventFilter or MapWanEventFilter
+     * @return this configuration
+     */
     public WanReplicationRef setFilters(List<String> filters) {
         this.filters = filters;
         return this;

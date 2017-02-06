@@ -16,18 +16,40 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.WANQueueFullBehavior;
+import com.hazelcast.config.WanPublisherConfig;
+
 /**
  * This interface offers the implementation of different kinds of replication techniques like
  * TCP, UDP or maybe even an JMS based service
  */
 public interface WanReplicationPublisher {
 
+    /**
+     * Publish the {@code eventObject} WAN replication event. The event may be dropped if queue capacity has been reached.
+     *
+     * @param serviceName the service publishing the event
+     * @param eventObject the replication event
+     */
     void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
 
+    /**
+     * Publish the {@code eventObject} WAN replication event backup. The event may be dropped if queue capacity has been reached.
+     *
+     * @param serviceName the service publishing the event
+     * @param eventObject the replication backup event
+     */
     void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject);
 
     void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
 
+    /**
+     * Check the capacity of the WAN replication queues.
+     *
+     * @throws WANReplicationQueueFullException if queue capacity has been reached and
+     *                                          {@link WanPublisherConfig#getQueueFullBehavior()} is
+     *                                          set to {@link WANQueueFullBehavior#THROW_EXCEPTION}
+     */
     void checkWanReplicationQueues();
 
 }

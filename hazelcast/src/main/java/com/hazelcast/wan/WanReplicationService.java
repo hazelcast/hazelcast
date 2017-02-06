@@ -16,6 +16,7 @@
 
 package com.hazelcast.wan;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.spi.CoreService;
@@ -67,15 +68,36 @@ public interface WanReplicationService
 
     void checkWanReplicationQueues(String name);
 
+    /**
+     * Initiate wan sync for a specific map.
+     * NOTE: not supported on OS, only on EE
+     *
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the group name on the target cluster
+     * @param mapName            the map name
+     * @throws UnsupportedOperationException if the operation is not supported (not EE)
+     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
+     * @throws SyncFailedException           if there is a sync request in progress
+     */
     void syncMap(String wanReplicationName, String targetGroupName, String mapName);
 
+    /**
+     * Initiate wan sync for all maps.
+     * NOTE: not supported on OS, only on EE
+     *
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the group name on the target cluster
+     * @throws UnsupportedOperationException if the operation is not supported (not EE)
+     * @throws InvalidConfigurationException if there is no WAN replication config for {@code wanReplicationName}
+     * @throws SyncFailedException           if there is a sync request in progress
+     */
     void syncAllMaps(String wanReplicationName, String targetGroupName);
 
     /**
      * Clears WAN replication queues of the given wanReplicationName for the given target.
      *
-     * @param wanReplicationName
-     * @param targetGroupName
+     * @param wanReplicationName the name of the wan replication config
+     * @param targetGroupName    the target cluster group name
      */
     void clearQueues(String wanReplicationName, String targetGroupName);
 
