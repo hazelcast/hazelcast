@@ -148,7 +148,6 @@ public class ScheduledExecutorServiceSlowTest
 
         HazelcastInstance[] instances = createClusterWithCount(3);
         IScheduledExecutorService s = getScheduledExecutor(instances, "s");
-        String key = generateKeyOwnedBy(instances[1]);
 
         int expectedTotal = 11;
         IScheduledFuture[] futures = new IScheduledFuture[expectedTotal];
@@ -189,4 +188,74 @@ public class ScheduledExecutorServiceSlowTest
         assertEquals(expectedTotal, countScheduledTasksOn(s), 0);
     }
 
+    @Test
+    public void schedulePeriodicTask_withMultipleSchedulers_atRandomPartitions_thenGetAllScheduled()
+            throws ExecutionException, InterruptedException {
+
+        String runsCounterName = "runs";
+        HazelcastInstance[] instances = createClusterWithCount(3);
+        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+
+        int numOfSchedulers = 10;
+        int numOfTasks = 10;
+        int expectedTotal = numOfSchedulers * numOfTasks;
+
+        runsLatch.trySetCount(expectedTotal);
+
+        for (int i = 0; i < numOfSchedulers; i++) {
+            IScheduledExecutorService s = getScheduledExecutor(instances, "scheduler_" + i);
+            String key = generateKeyOwnedBy(instances[1]);
+
+            for (int k = 0; k < numOfTasks; k++) {
+                s.scheduleOnKeyOwnerAtFixedRate(new ICountdownLatchRunnableTask(runsCounterName), key, 0, 2, SECONDS);
+            }
+        }
+
+        runsLatch.await(10, SECONDS);
+
+        int actualTotal = 0;
+        for (int i = 0; i < numOfSchedulers; i++) {
+            actualTotal += countScheduledTasksOn(getScheduledExecutor(instances, "scheduler_" + i));
+        }
+
+        assertEquals(expectedTotal, actualTotal, 0);
+    }
+
+    @Test
+    public void schedulePeriodicTask_withMultipleSchedulers_atRandomPartitions_shutdownOrDestroy_thenGetAllScheduled()
+            throws ExecutionException, InterruptedException {
+
+        String runsCounterName = "runs";
+        HazelcastInstance[] instances = createClusterWithCount(3);
+        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+
+        int numOfSchedulers = 10;
+        int numOfTasks = 10;
+        int expectedTotal = numOfSchedulers * numOfTasks;
+
+        runsLatch.trySetCount(expectedTotal);
+
+        for (int i = 0; i < numOfSchedulers; i++) {
+            IScheduledExecutorService s = getScheduledExecutor(instances, "scheduler_" + i);
+            String key = generateKeyOwnedBy(instances[1]);
+
+            for (int k = 0; k < numOfTasks; k++) {
+                s.scheduleOnKeyOwnerAtFixedRate(new ICountdownLatchRunnableTask(runsCounterName), key, 0, 2, SECONDS);
+            }
+        }
+
+        runsLatch.await(10, SECONDS);
+
+        getScheduledExecutor(instances, "scheduler_" + 0).shutdown();
+        getScheduledExecutor(instances, "scheduler_" + 1).shutdown();
+        getScheduledExecutor(instances, "scheduler_" + 3).destroy();
+
+        int actualTotal = 0;
+        for (int i = 0; i < numOfSchedulers; i++) {
+            actualTotal += countScheduledTasksOn(getScheduledExecutor(instances, "scheduler_" + i));
+        }
+
+
+        assertEquals(expectedTotal - 3 /*numOfShutdownOrDestroy*/ * numOfTasks, actualTotal, 0);
+    }
 }

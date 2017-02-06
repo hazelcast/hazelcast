@@ -21,30 +21,17 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.scheduledexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-
-public class ScheduledExecutorPartition implements ScheduledExecutorContainerHolder {
+public class ScheduledExecutorPartition extends AbstractScheduledExecutorContainerHolder {
 
     private final ILogger logger;
 
     private final int partitionId;
-
-    private final NodeEngine nodeEngine;
-
-    private final ConcurrentMap<String, ScheduledExecutorContainer> containers =
-            new ConcurrentHashMap<String, ScheduledExecutorContainer>();
 
     private final ConstructorFunction<String, ScheduledExecutorContainer> containerConstructorFunction =
             new ConstructorFunction<String, ScheduledExecutorContainer>() {
@@ -62,26 +49,9 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
             };
 
     public ScheduledExecutorPartition(NodeEngine nodeEngine, int partitionId) {
+        super(nodeEngine);
         this.logger = nodeEngine.getLogger(getClass());
         this.partitionId = partitionId;
-        this.nodeEngine = nodeEngine;
-    }
-
-    public Collection<ScheduledExecutorContainer> getContainers() {
-        return Collections.unmodifiableCollection(containers.values());
-    }
-
-    public ScheduledExecutorContainer getOrCreateContainer(String name) {
-        checkNotNull(name, "Name can't be null");
-
-        return getOrPutIfAbsent(containers, name, containerConstructorFunction);
-    }
-
-    public void destroy() {
-        for (ScheduledExecutorContainer container : containers.values()) {
-            ((InternalExecutionService) nodeEngine.getExecutionService())
-                    .shutdownScheduledDurableExecutor(container.getName());
-        }
     }
 
     public Operation prepareReplicationOperation(int replicaIndex, boolean migrationMode) {
@@ -101,6 +71,11 @@ public class ScheduledExecutorPartition implements ScheduledExecutorContainerHol
         }
 
         return new ReplicationOperation(map);
+    }
+
+    @Override
+    public ConstructorFunction<String, ScheduledExecutorContainer> getContainerConstructorFunction() {
+        return containerConstructorFunction;
     }
 
     void disposeObsoleteReplicas(int thresholdReplicaIndex) {

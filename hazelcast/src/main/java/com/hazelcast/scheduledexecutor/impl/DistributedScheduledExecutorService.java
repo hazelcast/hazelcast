@@ -116,9 +116,11 @@ public class DistributedScheduledExecutorService
 
     @Override
     public void destroyDistributedObject(String name) {
-        if (shutdownExecutors.remove(name) != null) {
+        if (shutdownExecutors.remove(name) == null) {
             ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(name);
         }
+
+        resetContainerInPartitionsAndMemberBin(name);
     }
 
     public void shutdownExecutor(String name) {
@@ -172,4 +174,13 @@ public class DistributedScheduledExecutorService
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
     }
 
+    private void resetContainerInPartitionsAndMemberBin(String name) {
+        if (memberBin != null) {
+            memberBin.destroyContainer(name);
+        }
+
+        for (ScheduledExecutorPartition partition : partitions) {
+            partition.destroyContainer(name);
+        }
+    }
 }
