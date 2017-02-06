@@ -2393,15 +2393,22 @@
 
     <xs:complexType name="near-cache">
         <xs:all>
-            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
                 <xs:annotation>
                     <xs:documentation>
-                        Maximum size of the Near Cache. When max size is reached,
-                        cache is evicted based on the policy defined.
-                        Any integer between 0 and Integer.MAX_VALUE.
-                        0 means Integer.MAX_VALUE. Default is 0.
-
-                        Deprecated since 3.8, please use &lt;eviction/&gt;
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY (default): keys and values are stored as binary data.
+                        OBJECT: values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to evict the cached entries if the entries are changed (updated or removed).
+                        Default value is true.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -2424,6 +2431,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU">
                 <xs:annotation>
                     <xs:documentation>
@@ -2438,35 +2446,27 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
-                        True to evict the cached entries if the entries are changed (updated or removed).
-                        Default value is true.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
-                <xs:annotation>
-                    <xs:documentation>
-                        Data type used to store entries.
-                        Possible values:
-                        BINARY (default): keys and values are stored as binary data.
-                        OBJECT: values are stored in their object forms.
-                        NATIVE: keys and values are stored in native memory. Only available on Hazelcast Enterprise.
+                        Maximum size of the Near Cache. When max size is reached,
+                        cache is evicted based on the policy defined.
+                        Any integer between 0 and Integer.MAX_VALUE.
+                        0 means Integer.MAX_VALUE. Default is 0.
+
+                        Deprecated since 3.8, please use &lt;eviction/&gt;
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        True to cache local entries also.
+                        True to cache local entries, which belong to the member itself.
                         This is useful when in-memory-format for Near Cache is different than the map's one.
                         Default value is false.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" type="xs:string" default="default"/>
     </xs:complexType>

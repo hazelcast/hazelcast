@@ -159,7 +159,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
         if (evictionConfig != null) {
             this.evictionConfig = evictionConfig;
         } else {
-            this.evictionConfig.setSize(maxSize);
+            this.evictionConfig.setSize(calculateMaxSize(maxSize));
             this.evictionConfig.setEvictionPolicy(EvictionPolicy.valueOf(evictionPolicy));
             this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
         }
@@ -263,6 +263,7 @@ public class NearCacheConfig implements DataSerializable, Serializable {
      * @deprecated since 3.8, use {@link #setEvictionConfig(EvictionConfig)} and {@link EvictionConfig#setSize(int)} instead
      */
     public NearCacheConfig setMaxSize(int maxSize) {
+        checkNotNegative(maxSize, "maxSize cannot be a negative number!");
         this.maxSize = calculateMaxSize(maxSize);
         this.evictionConfig.setSize(this.maxSize);
         this.evictionConfig.setMaximumSizePolicy(ENTRY_COUNT);
