@@ -36,13 +36,13 @@
     <name>hazelcast-jet-distribution</name>
     <artifactId>hazelcast-jet-distribution</artifactId>
     <packaging>jar</packaging>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
     <url>http://www.hazelcast.com/</url>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-root</artifactId>
-        <version>0.3-SNAPSHOT</version>
+        <version>0.3.1-SNAPSHOT</version>
     </parent>
 
     <properties>
