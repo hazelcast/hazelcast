@@ -458,7 +458,8 @@ public class ConfigXmlGenerator {
             final WanConsumerConfig consumerConfig = wan.getWanConsumerConfig();
             if (consumerConfig != null) {
                 gen.open("wan-consumer")
-                        .node("class-name", classNameOrImplClass(consumerConfig.getClassName(), consumerConfig.getImplementation()))
+                        .node("class-name", classNameOrImplClass(consumerConfig.getClassName(),
+                                consumerConfig.getImplementation()))
                         .appendProperties(consumerConfig.getProperties())
                         .close();
             }
