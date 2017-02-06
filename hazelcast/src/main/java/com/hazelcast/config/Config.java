@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -25,20 +24,17 @@ import com.hazelcast.logging.Logger;
 import java.io.File;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.text.MessageFormat.format;
 
 /**
  * Contains all the configuration to start a {@link com.hazelcast.core.HazelcastInstance}. A Config
@@ -1346,7 +1342,7 @@ public class Config {
         return this;
     }
 
-    private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
+    <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
         T candidate = configPatterns.get(itemName);
         if (candidate != null) {
             return candidate;
@@ -1359,44 +1355,6 @@ public class Config {
             LOGGER.finest("No configuration found for " + itemName + ", using default config!");
         }
         return null;
-    }
-
-    // TODO: This mechanism isn't used anymore to determine if 2 HZ configurations are compatible.
-    // See {@link ConfigCheck} for more information.
-
-    /**
-     * Checks if a {@link Config} matches the group configuration.
-     *
-     * @param config the {@link Config} to check
-     * @return {@code true} if config is compatible with this one, {@code false} if config belongs to another group
-     * @throws RuntimeException if map, queue, topic configs are incompatible
-     */
-    public boolean isCompatible(final Config config) {
-        if (config == null) {
-            throw new IllegalArgumentException("Expected not null config");
-        }
-        if (!this.groupConfig.getName().equals(config.getGroupConfig().getName())) {
-            return false;
-        }
-        if (!this.groupConfig.getPassword().equals(config.getGroupConfig().getPassword())) {
-            throw new HazelcastException("Incompatible group password");
-        }
-        checkMapConfigCompatible(config);
-        return true;
-    }
-
-    private void checkMapConfigCompatible(final Config config) {
-        Set<String> mapConfigNames = new HashSet<String>(mapConfigs.keySet());
-        mapConfigNames.addAll(config.mapConfigs.keySet());
-        for (final String name : mapConfigNames) {
-            final MapConfig thisMapConfig = lookupByPattern(mapConfigs, name);
-            final MapConfig thatMapConfig = lookupByPattern(config.mapConfigs, name);
-            if (thisMapConfig != null && thatMapConfig != null
-                    && !thisMapConfig.isCompatible(thatMapConfig)) {
-                throw new HazelcastException(format("Incompatible map config this:\n{0}\nanother:\n{1}",
-                        thisMapConfig, thatMapConfig));
-            }
-        }
     }
 
     @Override

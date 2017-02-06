@@ -373,8 +373,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         Config config2 = new InMemoryXmlConfig(xml);
         config2.getGroupConfig().setPassword(pass);
 
-        assertTrue(config.isCompatible(config2));
-        assertTrue(config2.isCompatible(config));
+        assertTrue(ConfigCompatibilityChecker.isCompatible(config, config2));
     }
 
     @Test

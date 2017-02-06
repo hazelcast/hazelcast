@@ -159,7 +159,7 @@ public class PartitionStateGeneratorTest {
     public void testXmlPartitionGroupConfig() {
         Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
         PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
-        assertFalse(partitionGroupConfig.isEnabled());
+        assertTrue(partitionGroupConfig.isEnabled());
         assertEquals(PartitionGroupConfig.MemberGroupType.CUSTOM, partitionGroupConfig.getGroupType());
         assertEquals(2, partitionGroupConfig.getMemberGroupConfigs().size());
     }

@@ -41,12 +41,16 @@
         <password>dev-pass</password>
     </group>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
+    <instance-name>dummy</instance-name>
     <management-center enabled="true" update-interval="5">http://mywebserver:8080</management-center>
+    <properties>
+        <property name="foo">bar</property>
+    </properties>
     <wan-replication name="my-wan-cluster">
         <wan-publisher group-name="tokyo">
             <class-name>com.hazelcast.enterprise.wan.replication.WanBatchReplication</class-name>
-            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <queue-capacity>1000</queue-capacity>
+            <queue-full-behavior>THROW_EXCEPTION</queue-full-behavior>
             <properties>
                 <property name="batch.size">50</property>
                 <property name="batch.max.delay.millis">3000</property>
@@ -74,31 +78,41 @@
         </wan-consumer>
     </wan-replication>
     <network>
+        <public-address>dummy</public-address>
         <port auto-increment="true" port-count="100">5701</port>
         <!-- If the address should be reused. See NetworkConfig.setReuseAddress for more information. -->
-        <reuse-address>false</reuse-address>
+        <reuse-address>true</reuse-address>
         <outbound-ports>
             <ports>33000-35000</ports>
             <ports>37000,37001,37002,37003</ports>
             <ports>38000,38500-38600</ports>
         </outbound-ports>
         <join>
-            <multicast enabled="true">
-                <multicast-group>224.2.2.3</multicast-group>
-                <multicast-port>54327</multicast-port>
-                <multicast-timeout-seconds>2</multicast-timeout-seconds>
-                <multicast-time-to-live>32</multicast-time-to-live>
+            <multicast enabled="true" loopbackModeEnabled="true">
+                <multicast-group>1.2.3.4</multicast-group>
+                <multicast-port>12345</multicast-port>
+                <multicast-timeout-seconds>5</multicast-timeout-seconds>
+                <multicast-time-to-live>10</multicast-time-to-live>
                 <trusted-interfaces>
                     <interface>10.10.1.*</interface>
                     <interface>10.10.2.*</interface>
                 </trusted-interfaces>
             </multicast>
-            <tcp-ip enabled="false">
-                <interface>127.0.0.1</interface>
+            <tcp-ip enabled="false" connection-timeout-seconds="123">
+                <required-member>dummy</required-member>
+                <member>dummy1</member>
+                <member>dummy2</member>
+                <interface>127.0.0.10</interface>
+                <members>dummy3,dummy4</members>
+                <member-list>
+                    <member>dummy5</member>
+                    <member>dummy6</member>
+                </member-list>
             </tcp-ip>
             <aws enabled="false">
                 <access-key>my-access-key</access-key>
                 <secret-key>my-secret-key</secret-key>
+                <iam-role>dummy</iam-role>
                 <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
                 <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
@@ -108,17 +122,25 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+<!--            <discovery-strategies>
+                <node-filter class="DummyFilterClass"/>
+                <discovery-strategy class="DummyClass" enabled="true">
+                    <properties>
+                        <property name="foo">bar</property>
+                    </properties>
+                </discovery-strategy>
+            </discovery-strategies>-->
         </join>
-        <interfaces enabled="false">
+        <interfaces enabled="true">
             <interface>10.10.1.*</interface>
         </interfaces>
-        <ssl enabled="false">
+        <ssl enabled="true">
             <factory-class-name>com.hazelcast.examples.MySSLContextFactory</factory-class-name>
             <properties>
                 <property name="foo">bar</property>
             </properties>
         </ssl>
-        <socket-interceptor enabled="false">
+        <socket-interceptor enabled="true">
             <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
             <properties>
                 <property name="foo">bar</property>
@@ -142,7 +164,7 @@
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
     </network>
-    <partition-group enabled="false" group-type="CUSTOM">
+    <partition-group enabled="true" group-type="CUSTOM">
         <member-group>
             <interface>10.10.0.*</interface>
             <interface>10.10.3.*</interface>
@@ -155,10 +177,22 @@
         </member-group>
     </partition-group>
     <executor-service name="default">
+        <statistics-enabled>false</statistics-enabled>
         <pool-size>16</pool-size>
         <queue-capacity>1000</queue-capacity>
     </executor-service>
+    <durable-executor-service name="dummy">
+        <pool-size>10</pool-size>
+        <durability>2</durability>
+        <capacity>10</capacity>
+    </durable-executor-service>
+    <scheduled-executor-service name="dummy">
+        <pool-size>10</pool-size>
+        <durability>2</durability>
+        <capacity>50</capacity>
+    </scheduled-executor-service>
     <queue name="default">
+        <statistics-enabled>false</statistics-enabled>
         <!--
             Maximum size of the queue. When a JVM's local queue size reaches the maximum,
             all put/offer operations will get blocked until the queue size
@@ -166,14 +200,22 @@
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size>0</max-size>
+        <max-size>10</max-size>
 
-        <backup-count>0</backup-count>
-        <async-backup-count>0</async-backup-count>
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <empty-queue-ttl>12</empty-queue-ttl>
 
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
+        <queue-store enabled="true">
+            <!--<class-name>DummyClass</class-name>-->
+            <factory-class-name>DummyFactoryClass</factory-class-name>
+            <properties>
+                <property name="foo">bar</property>
+            </properties>
+        </queue-store>
 
         <quorum-ref>quorumRuleWithThreeMembers</quorum-ref>
     </queue>
@@ -185,35 +227,38 @@
            OBJECT : values will be stored in their object forms
            NATIVE : values will be stored in non-heap region of JVM
         -->
-        <in-memory-format>BINARY</in-memory-format>
+        <in-memory-format>OBJECT</in-memory-format>
         <!--
             Whether statistical information (hits, creation time, last access time etc.) should be gathered and stored.
             You can disable if you do not plan to use eviction on your entries.
         -->
-        <statistics-enabled>true</statistics-enabled>
+        <statistics-enabled>false</statistics-enabled>
+
+        <optimize-queries>true</optimize-queries>
+        <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--
             Number of backups. If 1 is set as the backup-count for example,
             then all entries of the map will be copied to another JVM for
             fail-safety. 0 means no backup.
         -->
-        <backup-count>1</backup-count>
+        <backup-count>2</backup-count>
 
         <!--
             Number of async backups. 0 means no backup.
         -->
-        <async-backup-count>1</async-backup-count>
+        <async-backup-count>2</async-backup-count>
 
         <!--
             Maximum number of seconds for each item to live.
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
-        <time-to-live-seconds>0</time-to-live-seconds>
+        <time-to-live-seconds>2</time-to-live-seconds>
 
         <!--
             Maximum number of seconds for each item to stay idle (untouched).
             Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
         -->
-        <max-idle-seconds>0</max-idle-seconds>
+        <max-idle-seconds>2</max-idle-seconds>
         <!--
             Valid values are:
             NONE (no eviction),
@@ -221,14 +266,15 @@
             LFU (Least Frequently Used).
             NONE is the default.
         -->
-        <eviction-policy>NONE</eviction-policy>
+        <eviction-policy>LRU</eviction-policy>
         <!--
             Maximum size of the map. When max size is reached,
             map is evicted based on the policy defined.
             Any integer between 0 and Integer.MAX_VALUE. 0 means
             Integer.MAX_VALUE. Default is 0.
         -->
-        <max-size policy="PER_NODE">0</max-size>
+
+        <max-size policy="PER_NODE">20</max-size>
         <!--
             `eviction-percentage` property is deprecated.
 
@@ -242,7 +288,7 @@
             As of version 3.7, eviction mechanism changed.
             It uses a probabilistic algorithm based on sampling. Please see documentation for further details
         -->
-        <min-eviction-check-millis>100</min-eviction-check-millis>
+        <min-eviction-check-millis>200</min-eviction-check-millis>
 
         <!--
             While recovering from split-brain (network partitioning),
@@ -261,7 +307,13 @@
 
             Beware that `merge-policy` is not supported for NATIVE in-memory format.
         -->
-        <merge-policy>com.hazelcast.map.merge.PutIfAbsentMapMergePolicy</merge-policy>
+        <merge-policy>com.hazelcast.map.merge.HigherHitsMapMergePolicy</merge-policy>
+
+        <read-backup-data>true</read-backup-data>
+
+        <hot-restart>
+            <fsync>true</fsync>
+        </hot-restart>
 
         <!--
             Used to store Map entries in a backing store. If configured entries will be loaded from this store on startup.
@@ -301,6 +353,7 @@
                 <filter-impl>com.example.WanTestFilter1</filter-impl>
                 <filter-impl>com.example.WanTestFilter2</filter-impl>
             </filters>
+            <republishing-enabled>false</republishing-enabled>
         </wan-replication-ref>
 
         <indexes>
@@ -347,17 +400,30 @@
     <multimap name="default">
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
+        <statistics-enabled>false</statistics-enabled>
+        <binary>false</binary>
         <value-collection-type>SET</value-collection-type>
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </multimap>
 
+    <replicatedmap name="dummy">
+        <in-memory-format>BINARY</in-memory-format>
+        <concurrency-level>12</concurrency-level>
+        <replication-delay-millis>12</replication-delay-millis>
+        <async-fillup>false</async-fillup>
+        <statistics-enabled>false</statistics-enabled>
+        <entry-listeners>
+            <entry-listener include-value="false" local="true">DummyListener</entry-listener>
+        </entry-listeners>
+    </replicatedmap>
+
     <list name="default">
         <statistics-enabled>false</statistics-enabled>
-        <max-size>0</max-size>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
+        <max-size>5</max-size>
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
         <item-listeners>
             <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
         </item-listeners>
@@ -374,9 +440,12 @@
     </set>
 
     <topic name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <global-ordering-enabled>true</global-ordering-enabled>
         <message-listeners>
             <message-listener>com.hazelcast.examples.MessageListener</message-listener>
         </message-listeners>
+        <multi-threading-enabled>false</multi-threading-enabled>
     </topic>
 
 
@@ -409,27 +478,44 @@
 
     <cache name="default">
         <key-type class-name="java.lang.Object"/>
-        <value-type class-name="java.lang.Object"/>
+        <value-type class-name="java.lang.String"/>
         <statistics-enabled>false</statistics-enabled>
         <management-enabled>false</management-enabled>
 
         <read-through>true</read-through>
         <write-through>true</write-through>
-        <cache-loader-factory
-                class-name="com.example.cache.MyCacheLoaderFactory"/>
-        <cache-writer-factory
-                class-name="com.example.cache.MyCacheWriterFactory"/>
-        <expiry-policy-factory
-                class-name="com.example.cache.MyExpirePolicyFactory"/>
+        <cache-loader-factory class-name="com.example.cache.MyCacheLoaderFactory"/>
+        <cache-writer-factory class-name="com.example.cache.MyCacheWriterFactory"/>
+        <expiry-policy-factory class-name="com.example.cache.MyExpirePolicyFactory">
+            <timed-expiry-policy-factory expiry-policy-type="ETERNAL" duration-amount="123" time-unit="MICROSECONDS"/>
+        </expiry-policy-factory>
 
         <cache-entry-listeners>
-            <cache-entry-listener old-value-required="false" synchronous="false">
-                <cache-entry-listener-factory
-                        class-name="com.example.cache.MyEntryListenerFactory"/>
-                <cache-entry-event-filter-factory
-                        class-name="com.example.cache.MyEntryEventFilterFactory"/>
+            <cache-entry-listener old-value-required="true" synchronous="true">
+                <cache-entry-listener-factory class-name="com.example.cache.MyEntryListenerFactory"/>
+                <cache-entry-event-filter-factory class-name="com.example.cache.MyEntryEventFilterFactory"/>
             </cache-entry-listener>
         </cache-entry-listeners>
+        <in-memory-format>OBJECT</in-memory-format>
+        <backup-count>2</backup-count>
+        <async-backup-count>2</async-backup-count>
+        <eviction comparator-class-name="DummyClass" eviction-policy="LRU" max-size-policy="FREE_NATIVE_MEMORY_PERCENTAGE"
+                  size="50"/>
+        <wan-replication-ref name="my-wan-cluster">
+            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <filters>
+                <filter-impl>com.example.WanTestFilter1</filter-impl>
+                <filter-impl>com.example.WanTestFilter2</filter-impl>
+            </filters>
+        </wan-replication-ref>
+        <quorum-ref>dummyQuorum</quorum-ref>
+        <partition-lost-listeners>
+            <partition-lost-listener>DummyListener</partition-lost-listener>
+        </partition-lost-listeners>
+        <merge-policy>DummyPolicy</merge-policy>
+        <hot-restart>
+            <fsync>true</fsync>
+        </hot-restart>
     </cache>
 
     <listeners>
@@ -441,6 +527,11 @@
 
     <serialization>
         <portable-version>0</portable-version>
+        <use-native-byte-order>true</use-native-byte-order>
+        <byte-order>LITTLE_ENDIAN</byte-order>
+        <enable-compression>true</enable-compression>
+        <enable-shared-object>true</enable-shared-object>
+        <allow-unsafe>true</allow-unsafe>
         <data-serializable-factories>
             <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory
             </data-serializable-factory>
@@ -449,15 +540,17 @@
             <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
         </portable-factories>
         <serializers>
-            <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
+            <global-serializer override-java-serialization="true">com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
             <serializer type-class="com.hazelcast.examples.DummyType"
                         class-name="com.hazelcast.examples.SerializerFactory"/>
         </serializers>
-        <check-class-def-errors>true</check-class-def-errors>
+        <check-class-def-errors>false</check-class-def-errors>
     </serialization>
 
-    <native-memory allocator-type="POOLED" enabled="true">
+    <native-memory allocator-type="STANDARD" enabled="true">
         <size unit="MEGABYTES" value="256"/>
+        <min-block-size>123</min-block-size>
+        <page-size>123</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
 

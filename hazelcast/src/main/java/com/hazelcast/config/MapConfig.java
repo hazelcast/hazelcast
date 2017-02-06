@@ -848,25 +848,6 @@ public class MapConfig {
         return cacheDeserializedValues;
     }
 
-    public boolean isCompatible(MapConfig other) {
-        if (this == other) {
-            return true;
-        }
-        return other != null
-                && (this.name != null ? this.name.equals(other.name) : other.name == null)
-                && this.backupCount == other.backupCount
-                && this.asyncBackupCount == other.asyncBackupCount
-                && this.evictionPercentage == other.evictionPercentage
-                && this.minEvictionCheckMillis == other.minEvictionCheckMillis
-                && this.maxIdleSeconds == other.maxIdleSeconds
-                && (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize()
-                || (Math.min(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == 0
-                && Math.max(maxSizeConfig.getSize(), other.maxSizeConfig.getSize()) == Integer.MAX_VALUE))
-                && this.timeToLiveSeconds == other.timeToLiveSeconds
-                && this.hotRestartConfig.isEnabled() == other.hotRestartConfig.isEnabled()
-                && this.readBackupData == other.readBackupData;
-    }
-
     public String getQuorumName() {
         return quorumName;
     }
