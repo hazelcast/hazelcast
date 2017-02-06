@@ -18,6 +18,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,6 +40,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
+@Ignore(value = "https://github.com/hazelcast/hazelcast/issues/7011")
 public class ClientMapStoreTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "clientMapStoreLoad";
