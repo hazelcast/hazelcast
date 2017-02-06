@@ -29,10 +29,7 @@ import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.function.ObjIntConsumer;
 import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 /**
  * An extension of {@link java.util.stream.IntStream} to support distributed stream operations by replacing
@@ -54,7 +51,9 @@ public interface DistributedIntStream extends IntStream {
      *                  should be included
      * @return the new stream
      */
-    DistributedIntStream filter(Distributed.IntPredicate predicate);
+    default DistributedIntStream filter(Distributed.IntPredicate predicate) {
+        return filter((IntPredicate) predicate);
+    }
 
     /**
      * Returns a stream consisting of the results of applying the given
@@ -68,7 +67,9 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedIntStream map(Distributed.IntUnaryOperator mapper);
+    default DistributedIntStream map(Distributed.IntUnaryOperator mapper) {
+        return map((IntUnaryOperator) mapper);
+    }
 
     /**
      * Returns an object-valued {@code DistributedStream} consisting of the results of
@@ -83,7 +84,9 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    <U> DistributedStream<U> mapToObj(Distributed.IntFunction<? extends U> mapper);
+    default <U> DistributedStream<U> mapToObj(Distributed.IntFunction<? extends U> mapper) {
+        return mapToObj((IntFunction<? extends U>) mapper);
+    }
 
     /**
      * Returns a {@code DistributedLongStream} consisting of the results of applying the
@@ -97,7 +100,9 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedLongStream mapToLong(Distributed.IntToLongFunction mapper);
+    default DistributedLongStream mapToLong(Distributed.IntToLongFunction mapper) {
+        return mapToLong((IntToLongFunction) mapper);
+    }
 
     /**
      * Returns a {@code DistributedDoubleStream} consisting of the results of applying the
@@ -111,7 +116,9 @@ public interface DistributedIntStream extends IntStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedDoubleStream mapToDouble(Distributed.IntToDoubleFunction mapper);
+    default DistributedDoubleStream mapToDouble(Distributed.IntToDoubleFunction mapper) {
+        return mapToDouble((IntToDoubleFunction) mapper);
+    }
 
     /**
      * Returns a stream consisting of the results of replacing each element of
@@ -131,7 +138,9 @@ public interface DistributedIntStream extends IntStream {
      * @return the new stream
      * @see DistributedStream#flatMap(Distributed.Function)
      */
-    DistributedIntStream flatMap(Distributed.IntFunction<? extends IntStream> mapper);
+    default DistributedIntStream flatMap(Distributed.IntFunction<? extends IntStream> mapper) {
+        return flatMap((IntFunction<? extends IntStream>) mapper);
+    }
 
     /**
      * Returns a stream consisting of the distinct elements of this stream.
@@ -172,7 +181,9 @@ public interface DistributedIntStream extends IntStream {
      *               they are consumed from the stream
      * @return the new stream
      */
-    DistributedIntStream peek(Distributed.IntConsumer action);
+    default DistributedIntStream peek(Distributed.IntConsumer action) {
+        return peek((IntConsumer) action);
+    }
 
     /**
      * Returns a stream consisting of the elements of this stream, truncated
@@ -218,7 +229,9 @@ public interface DistributedIntStream extends IntStream {
      * @param action a
      *               non-interfering action to perform on the elements
      */
-    void forEach(Distributed.IntConsumer action);
+    default void forEach(Distributed.IntConsumer action) {
+        forEach((IntConsumer) action);
+    }
 
     /**
      * Performs an action for each element of this stream, guaranteeing that
@@ -232,7 +245,9 @@ public interface DistributedIntStream extends IntStream {
      *               non-interfering action to perform on the elements
      * @see #forEach(Distributed.IntConsumer)
      */
-    void forEachOrdered(Distributed.IntConsumer action);
+    default void forEachOrdered(Distributed.IntConsumer action) {
+        forEachOrdered((IntConsumer) action);
+    }
 
     /**
      * Performs a reduction on the
@@ -269,7 +284,9 @@ public interface DistributedIntStream extends IntStream {
      * @see #max()
      * @see #average()
      */
-    int reduce(int identity, Distributed.IntBinaryOperator op);
+    default int reduce(int identity, Distributed.IntBinaryOperator op) {
+        return reduce(identity, (IntBinaryOperator) op);
+    }
 
     /**
      * Performs a reduction on the
@@ -306,7 +323,9 @@ public interface DistributedIntStream extends IntStream {
      * @return the result of the reduction
      * @see #reduce(int, Distributed.IntBinaryOperator)
      */
-    OptionalInt reduce(Distributed.IntBinaryOperator op);
+    default OptionalInt reduce(Distributed.IntBinaryOperator op) {
+        return reduce((IntBinaryOperator) op);
+    }
 
     /**
      * Performs a mutable
@@ -344,8 +363,10 @@ public interface DistributedIntStream extends IntStream {
      * @return the result of the reduction
      * @see DistributedStream#collect(Distributed.Supplier, Distributed.BiConsumer, Distributed.BiConsumer)
      */
-    <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjIntConsumer<R> accumulator,
-                  Distributed.BiConsumer<R, R> combiner);
+    default <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjIntConsumer<R> accumulator,
+                          Distributed.BiConsumer<R, R> combiner) {
+        return collect((Supplier<R>) supplier, accumulator, combiner);
+    }
 
     /**
      * Returns whether any elements of this stream match the provided
@@ -362,7 +383,9 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    boolean anyMatch(Distributed.IntPredicate predicate);
+    default boolean anyMatch(Distributed.IntPredicate predicate) {
+        return anyMatch((IntPredicate) predicate);
+    }
 
     /**
      * Returns whether all elements of this stream match the provided predicate.
@@ -379,7 +402,9 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean allMatch(Distributed.IntPredicate predicate);
+    default boolean allMatch(Distributed.IntPredicate predicate) {
+        return allMatch((IntPredicate) predicate);
+    }
 
     /**
      * Returns whether no elements of this stream match the provided predicate.
@@ -396,7 +421,9 @@ public interface DistributedIntStream extends IntStream {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean noneMatch(Distributed.IntPredicate predicate);
+    default boolean noneMatch(Distributed.IntPredicate predicate) {
+        return noneMatch((IntPredicate) predicate);
+    }
 
     /**
      * Returns a {@code LongStream} consisting of the elements of this stream,
@@ -463,79 +490,47 @@ public interface DistributedIntStream extends IntStream {
     DistributedIntStream parallel();
 
     @Override
-    default IntStream filter(IntPredicate predicate) {
-        return filter((Distributed.IntPredicate) predicate);
-    }
+    DistributedIntStream filter(IntPredicate predicate);
 
     @Override
-    default IntStream map(IntUnaryOperator mapper) {
-        return map((Distributed.IntUnaryOperator) mapper);
-    }
+    DistributedIntStream map(IntUnaryOperator mapper);
 
     @Override
-    default <U> Stream<U> mapToObj(IntFunction<? extends U> mapper) {
-        return mapToObj((Distributed.IntFunction) mapper);
-    }
+    <U> DistributedStream<U> mapToObj(IntFunction<? extends U> mapper);
 
     @Override
-    default LongStream mapToLong(IntToLongFunction mapper) {
-        return mapToLong((Distributed.IntToLongFunction) mapper);
-    }
+    DistributedLongStream mapToLong(IntToLongFunction mapper);
 
     @Override
-    default DoubleStream mapToDouble(IntToDoubleFunction mapper) {
-        return mapToDouble((Distributed.IntToDoubleFunction) mapper);
-    }
+    DistributedDoubleStream mapToDouble(IntToDoubleFunction mapper);
 
     @Override
-    default IntStream flatMap(IntFunction<? extends IntStream> mapper) {
-        return flatMap((Distributed.IntFunction) mapper);
-    }
+    DistributedIntStream flatMap(IntFunction<? extends IntStream> mapper);
 
     @Override
-    default IntStream peek(IntConsumer action) {
-        return peek((Distributed.IntConsumer) action);
-    }
+    DistributedIntStream peek(IntConsumer action);
 
     @Override
-    default void forEach(IntConsumer action) {
-        forEach((Distributed.IntConsumer) action);
-    }
+    void forEach(IntConsumer action);
 
     @Override
-    default void forEachOrdered(IntConsumer action) {
-        forEachOrdered((Distributed.IntConsumer) action);
-    }
+    void forEachOrdered(IntConsumer action);
 
     @Override
-    default int reduce(int identity, IntBinaryOperator op) {
-        return reduce(identity, (Distributed.IntBinaryOperator) op);
-    }
+    int reduce(int identity, IntBinaryOperator op);
 
     @Override
-    default OptionalInt reduce(IntBinaryOperator op) {
-        return reduce((Distributed.IntBinaryOperator) op);
-    }
+    OptionalInt reduce(IntBinaryOperator op);
 
     @Override
-    default <R> R collect(Supplier<R> supplier, ObjIntConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-        return collect((Distributed.Supplier<R>) supplier,
-                (Distributed.ObjIntConsumer<R>) accumulator,
-                (Distributed.BiConsumer<R, R>) combiner);
-    }
+    <R> R collect(Supplier<R> supplier, ObjIntConsumer<R> accumulator, BiConsumer<R, R> combiner);
 
     @Override
-    default boolean anyMatch(IntPredicate predicate) {
-        return anyMatch((Distributed.IntPredicate) predicate);
-    }
+    boolean anyMatch(IntPredicate predicate);
 
     @Override
-    default boolean allMatch(IntPredicate predicate) {
-        return allMatch((Distributed.IntPredicate) predicate);
-    }
+    boolean allMatch(IntPredicate predicate);
 
     @Override
-    default boolean noneMatch(IntPredicate predicate) {
-        return noneMatch((Distributed.IntPredicate) predicate);
-    }
+    boolean noneMatch(IntPredicate predicate);
 }

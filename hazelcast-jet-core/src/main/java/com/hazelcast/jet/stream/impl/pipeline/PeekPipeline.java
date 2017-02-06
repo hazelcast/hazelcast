@@ -20,7 +20,9 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.impl.StreamUtil;
+
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
@@ -28,10 +30,11 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
-    private final Distributed.Consumer<? super T> consumer;
+    private final Consumer<? super T> consumer;
 
-    public PeekPipeline(StreamContext context, Pipeline<T> upstream, Distributed.Consumer<? super T> consumer) {
+    public PeekPipeline(StreamContext context, Pipeline<T> upstream, Consumer<? super T> consumer) {
         super(context, upstream.isOrdered(), upstream);
+        StreamUtil.checkSerializable(consumer, "consumer");
         this.consumer = consumer;
     }
 

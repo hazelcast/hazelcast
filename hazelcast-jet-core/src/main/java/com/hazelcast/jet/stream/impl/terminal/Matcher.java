@@ -18,14 +18,17 @@ package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.AnyMatchP;
 
+import java.util.function.Predicate;
+
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
@@ -40,6 +43,11 @@ public class Matcher {
     }
 
     public <T> boolean anyMatch(Pipeline<T> upstream, Distributed.Predicate<? super T> predicate) {
+        return anyMatch(upstream, (java.util.function.Predicate<? super T>) predicate);
+    }
+
+    public <T> boolean anyMatch(Pipeline<T> upstream, Predicate<? super T> predicate) {
+        checkSerializable(predicate, "predicate");
         DAG dag = new DAG();
         Vertex anyMatch = dag.newVertex(uniqueVertexName("any-match"), () -> new AnyMatchP<>(predicate));
         Vertex previous = upstream.buildDAG(dag);

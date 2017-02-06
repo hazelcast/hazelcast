@@ -57,7 +57,9 @@ public interface DistributedStream<T> extends Stream<T> {
      *                  should be included
      * @return the new stream
      */
-    DistributedStream<T> filter(Distributed.Predicate<? super T> predicate);
+    default DistributedStream<T> filter(Distributed.Predicate<? super T> predicate) {
+        return filter((Predicate<? super T>) predicate);
+    }
 
     /**
      * Returns a stream consisting of the results of applying the given
@@ -69,7 +71,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @param mapper a non-interfering, stateless function to apply to each element
      * @return the new stream
      */
-    <R> DistributedStream<R> map(Distributed.Function<? super T, ? extends R> mapper);
+    default <R> DistributedStream<R> map(Distributed.Function<? super T, ? extends R> mapper) {
+        return map((Function<? super T, ? extends R>) mapper);
+    }
 
     /**
      * Returns an {@code DistributedIntStream} consisting of the results of applying the
@@ -80,7 +84,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @param mapper a non-interfering, stateless function to apply to each element
      * @return the new stream
      */
-    DistributedIntStream mapToInt(Distributed.ToIntFunction<? super T> mapper);
+    default DistributedIntStream mapToInt(Distributed.ToIntFunction<? super T> mapper) {
+        return mapToInt((ToIntFunction<? super T>) mapper);
+    }
 
     /**
      * Returns a {@code DistributedLongStream} consisting of the results of applying the
@@ -91,7 +97,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @param mapper a non-interfering, stateless function to apply to each element
      * @return the new stream
      */
-    DistributedLongStream mapToLong(Distributed.ToLongFunction<? super T> mapper);
+    default DistributedLongStream mapToLong(Distributed.ToLongFunction<? super T> mapper) {
+        return mapToLong((ToLongFunction<? super T>) mapper);
+    }
 
     /**
      * Returns a {@code DistributedDoubleStream} consisting of the results of applying the
@@ -102,7 +110,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @param mapper a non-interfering, stateless function to apply to each element
      * @return the new stream
      */
-    DistributedDoubleStream mapToDouble(Distributed.ToDoubleFunction<? super T> mapper);
+    default DistributedDoubleStream mapToDouble(Distributed.ToDoubleFunction<? super T> mapper) {
+        return mapToDouble((ToDoubleFunction<? super T>) mapper);
+    }
 
     /**
      * Returns a stream consisting of the results of replacing each element of
@@ -119,7 +129,9 @@ public interface DistributedStream<T> extends Stream<T> {
      *               a stream of new values
      * @return the new stream
      */
-    <R> DistributedStream<R> flatMap(Distributed.Function<? super T, ? extends Stream<? extends R>> mapper);
+    default <R> DistributedStream<R> flatMap(Distributed.Function<? super T, ? extends Stream<? extends R>> mapper) {
+        return flatMap((Function<? super T, ? extends Stream<? extends R>>) mapper);
+    }
 
     /**
      * Returns an {@code IntStream} consisting of the results of replacing each
@@ -136,7 +148,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return the new stream
      * @see #flatMap(Function)
      */
-    DistributedIntStream flatMapToInt(Distributed.Function<? super T, ? extends IntStream> mapper);
+    default DistributedIntStream flatMapToInt(Distributed.Function<? super T, ? extends IntStream> mapper) {
+        return flatMapToInt((Function<? super T, ? extends IntStream>) mapper);
+    }
 
     /**
      * Returns an {@code LongStream} consisting of the results of replacing each
@@ -153,7 +167,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return the new stream
      * @see #flatMap(Function)
      */
-    DistributedLongStream flatMapToLong(Distributed.Function<? super T, ? extends LongStream> mapper);
+    default DistributedLongStream flatMapToLong(Distributed.Function<? super T, ? extends LongStream> mapper) {
+        return flatMapToLong((Function<? super T, ? extends LongStream>) mapper);
+    }
 
     /**
      * Returns an {@code DoubleStream} consisting of the results of replacing
@@ -170,36 +186,14 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return the new stream
      * @see #flatMap(Function)
      */
-    DistributedDoubleStream flatMapToDouble(Distributed.Function<? super T, ? extends DoubleStream> mapper);
+    default DistributedDoubleStream flatMapToDouble(Distributed.Function<? super T, ? extends DoubleStream> mapper) {
+        return flatMapToDouble((Function<? super T, ? extends DoubleStream>) mapper);
+    }
 
-    /**
-     * Returns a stream consisting of the distinct elements (according to
-     * {@link Object#equals(Object)}) of this stream.
-     *
-     * <p>For ordered streams, the selection of distinct elements is stable
-     * (for duplicated elements, the element appearing first in the encounter
-     * order is preserved.)  For unordered streams, no stability guarantees
-     * are made.
-     *
-     * <p>This is a stateful intermediate operation.
-     *
-     * @return the new stream
-     */
+    @Override
     DistributedStream<T> distinct();
 
-    /**
-     * Returns a stream consisting of the elements of this stream, sorted
-     * according to natural order.  If the elements of this stream are not
-     * {@code Comparable}, a {@code java.lang.ClassCastException} may be thrown
-     * when the terminal operation is executed.
-     *
-     * <p>For ordered streams, the sort is stable.  For unordered streams, no
-     * stability guarantees are made.
-     *
-     * <p>This is a stateful intermediate operation.
-     *
-     * @return the new stream
-     */
+    @Override
     DistributedStream<T> sorted();
 
     /**
@@ -215,7 +209,9 @@ public interface DistributedStream<T> extends Stream<T> {
      *                   {@code Distributed.Comparator} to be used to compare stream elements
      * @return the new stream
      */
-    DistributedStream<T> sorted(Distributed.Comparator<? super T> comparator);
+    default DistributedStream<T> sorted(Distributed.Comparator<? super T> comparator) {
+        return sorted((Comparator<? super T>) comparator);
+    }
 
     /**
      * Returns a stream consisting of the elements of this stream, additionally
@@ -233,32 +229,14 @@ public interface DistributedStream<T> extends Stream<T> {
      *               they are consumed from the stream
      * @return the new stream
      */
-    DistributedStream<T> peek(Distributed.Consumer<? super T> action);
+    default DistributedStream<T> peek(Distributed.Consumer<? super T> action) {
+        return peek((Consumer<? super T>) action);
+    }
 
-    /**
-     * Returns a stream consisting of the elements of this stream, truncated
-     * to be no longer than {@code maxSize} in length.
-     *
-     * <p>This is a short-circuiting stateful intermediate operation.
-     *
-     * @param maxSize the number of elements the stream should be limited to
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code maxSize} is negative
-     */
+    @Override
     DistributedStream<T> limit(long maxSize);
 
-    /**
-     * Returns a stream consisting of the remaining elements of this stream
-     * after discarding the first {@code n} elements of the stream.
-     * If this stream contains fewer than {@code n} elements then an
-     * empty stream will be returned.
-     *
-     * <p>This is a stateful intermediate operation.
-     *
-     * @param n the number of leading elements to skip
-     * @return the new stream
-     * @throws IllegalArgumentException if {@code n} is negative
-     */
+    @Override
     DistributedStream<T> skip(long n);
 
     /**
@@ -269,7 +247,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @param action a
      *               non-interfering action to perform on the elements
      */
-    void forEach(Distributed.Consumer<? super T> action);
+    default void forEach(Distributed.Consumer<? super T> action) {
+        forEach((Consumer<? super T>) action);
+    }
 
     /**
      * Performs an action for each element of this stream, in the encounter
@@ -281,7 +261,9 @@ public interface DistributedStream<T> extends Stream<T> {
      *               non-interfering action to perform on the elements
      * @see #forEach(Consumer)
      */
-    void forEachOrdered(Distributed.Consumer<? super T> action);
+    default void forEachOrdered(Distributed.Consumer<? super T> action) {
+        forEachOrdered((Consumer<? super T>) action);
+    }
 
     /**
      * Performs a reduction on the
@@ -312,7 +294,9 @@ public interface DistributedStream<T> extends Stream<T> {
      *                    function for combining two values
      * @return the result of the reduction
      */
-    T reduce(T identity, Distributed.BinaryOperator<T> accumulator);
+    default T reduce(T identity, Distributed.BinaryOperator<T> accumulator) {
+        return reduce(identity, (BinaryOperator<T>) accumulator);
+    }
 
     /**
      * Performs a reduction on the
@@ -349,7 +333,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @see #min(Distributed.Comparator)
      * @see #max(Distributed.Comparator)
      */
-    Optional<T> reduce(Distributed.BinaryOperator<T> accumulator);
+    default Optional<T> reduce(Distributed.BinaryOperator<T> accumulator) {
+        return reduce((BinaryOperator<T>) accumulator);
+    }
 
     /**
      * Performs a reduction on the
@@ -393,9 +379,11 @@ public interface DistributedStream<T> extends Stream<T> {
      * @see #reduce(Distributed.BinaryOperator)
      * @see #reduce(Object, Distributed.BinaryOperator)
      */
-    <U> U reduce(U identity,
-                 Distributed.BiFunction<U, ? super T, U> accumulator,
-                 Distributed.BinaryOperator<U> combiner);
+    default <U> U reduce(U identity,
+                         Distributed.BiFunction<U, ? super T, U> accumulator,
+                         Distributed.BinaryOperator<U> combiner) {
+        return reduce(identity, (BiFunction<U, ? super T, U>) accumulator,  combiner);
+    }
 
     /**
      * Performs a mutable
@@ -431,9 +419,11 @@ public interface DistributedStream<T> extends Stream<T> {
      *                    compatible with the accumulator function
      * @return the result of the reduction
      */
-    <R> R collect(Distributed.Supplier<R> supplier,
-                  Distributed.BiConsumer<R, ? super T> accumulator,
-                  Distributed.BiConsumer<R, R> combiner);
+    default <R> R collect(Distributed.Supplier<R> supplier,
+                          Distributed.BiConsumer<R, ? super T> accumulator,
+                          Distributed.BiConsumer<R, R> combiner) {
+        return collect((Supplier<R>) supplier, accumulator, combiner);
+    }
 
     /**
      * Performs a mutable
@@ -474,7 +464,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the minimum element is null
      */
-    Optional<T> min(Distributed.Comparator<? super T> comparator);
+    default Optional<T> min(Distributed.Comparator<? super T> comparator) {
+        return min((Comparator<? super T>) comparator);
+    }
 
     /**
      * Returns the maximum element of this stream according to the provided
@@ -490,7 +482,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * or an empty {@code Optional} if the stream is empty
      * @throws NullPointerException if the maximum element is null
      */
-    Optional<T> max(Distributed.Comparator<? super T> comparator);
+    default Optional<T> max(Distributed.Comparator<? super T> comparator) {
+        return max((Comparator<? super T>) comparator);
+    }
 
     /**
      * Returns whether any elements of this stream match the provided
@@ -506,7 +500,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    boolean anyMatch(Distributed.Predicate<? super T> predicate);
+    default boolean anyMatch(Distributed.Predicate<? super T> predicate) {
+        return anyMatch((Predicate<? super T>) predicate);
+    }
 
     /**
      * Returns whether all elements of this stream match the provided predicate.
@@ -521,7 +517,9 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean allMatch(Distributed.Predicate<? super T> predicate);
+    default boolean allMatch(Distributed.Predicate<? super T> predicate) {
+        return allMatch((Predicate<? super T>) predicate);
+    }
 
     /**
      * Returns whether no elements of this stream match the provided predicate.
@@ -537,161 +535,94 @@ public interface DistributedStream<T> extends Stream<T> {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean noneMatch(Distributed.Predicate<? super T> predicate);
+    default boolean noneMatch(Distributed.Predicate<? super T> predicate) {
+        return noneMatch((Predicate<? super T>) predicate);
+    }
 
-    /**
-     * Returns an equivalent stream that is sequential.  May return
-     * itself, either because the stream was already sequential, or because
-     * the underlying stream state was modified to be sequential.
-     *
-     * <p>This is an intermediate operation.
-     *
-     * @return a sequential stream
-     */
     @Override
     DistributedStream<T> sequential();
 
-    /**
-     * Returns an equivalent stream that is parallel.  May return
-     * itself, either because the stream was already parallel, or because
-     * the underlying stream state was modified to be parallel.
-     *
-     * <p>This is an intermediate operation.
-     *
-     * @return a parallel stream
-     */
     @Override
     DistributedStream<T> parallel();
 
-    /**
-     * Returns an equivalent stream that is unordered. May return
-     * itself, either because the stream was already unordered, or because
-     * the underlying stream state was modified to be unordered.
-     *
-     * <p>This is an intermediate operation.
-     *
-     * @return an unordered stream
-     */
     @Override
     DistributedStream<T> unordered();
 
     @Override
-    default DistributedStream<T> filter(Predicate<? super T> predicate) {
-        return filter((Distributed.Predicate) predicate);
-    }
+    DistributedStream<T> filter(Predicate<? super T> predicate);
 
     @Override
-    default <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper) {
-        return map((Distributed.Function) mapper);
-    }
+    <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper);
 
     @Override
-    default DistributedIntStream mapToInt(ToIntFunction<? super T> mapper) {
-        return mapToInt((Distributed.ToIntFunction) mapper);
-    }
+    DistributedIntStream mapToInt(ToIntFunction<? super T> mapper);
 
     @Override
-    default DistributedLongStream mapToLong(ToLongFunction<? super T> mapper) {
-        return mapToLong((Distributed.ToLongFunction) mapper);
-    }
+    DistributedLongStream mapToLong(ToLongFunction<? super T> mapper);
 
     @Override
-    default DistributedDoubleStream mapToDouble(ToDoubleFunction<? super T> mapper) {
-        return mapToDouble((Distributed.ToDoubleFunction) mapper);
-    }
+    DistributedDoubleStream mapToDouble(ToDoubleFunction<? super T> mapper);
 
     @Override
-    default <R> DistributedStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper) {
-        return flatMap((Distributed.Function) mapper);
-    }
+    <R> DistributedStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
 
     @Override
-    default DistributedIntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper) {
-        return flatMapToInt((Distributed.Function) mapper);
-    }
+    DistributedIntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper);
 
     @Override
-    default DistributedLongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper) {
-        return flatMapToLong((Distributed.Function) mapper);
-    }
+    DistributedLongStream flatMapToLong(Function<? super T, ? extends LongStream> mapper);
 
     @Override
-    default DistributedDoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper) {
-        return flatMapToDouble((Distributed.Function) mapper);
-    }
+    DistributedDoubleStream flatMapToDouble(Function<? super T, ? extends DoubleStream> mapper);
 
     @Override
-    default DistributedStream<T> sorted(Comparator<? super T> comparator) {
-        return sorted((Distributed.Comparator) comparator);
-    }
+    DistributedStream<T> sorted(Comparator<? super T> comparator);
 
     @Override
-    default DistributedStream<T> peek(Consumer<? super T> action) {
-        return peek((Distributed.Consumer) action);
-    }
+    DistributedStream<T> peek(Consumer<? super T> action);
 
     @Override
-    default void forEach(Consumer<? super T> action) {
-        forEach((Distributed.Consumer) action);
-    }
+    void forEach(Consumer<? super T> action);
 
     @Override
-    default void forEachOrdered(Consumer<? super T> action) {
-        forEachOrdered((Distributed.Consumer) action);
-    }
+    void forEachOrdered(Consumer<? super T> action);
 
     @Override
-    default T reduce(T identity, BinaryOperator<T> accumulator) {
-        return reduce(identity, (Distributed.BinaryOperator<T>) accumulator);
-    }
+    T reduce(T identity, BinaryOperator<T> accumulator);
 
     @Override
-    default Optional<T> reduce(BinaryOperator<T> accumulator) {
-        return reduce((Distributed.BinaryOperator<T>) accumulator);
-    }
+    Optional<T> reduce(BinaryOperator<T> accumulator);
 
     @Override
-    default <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
-        return reduce(identity,
-                (Distributed.BiFunction<U, ? super T, U>) accumulator,
-                (Distributed.BinaryOperator<U>) combiner);
-    }
+    <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner);
 
     @Override
-    default <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
-        return collect((Distributed.Supplier<R>) supplier,
-                (Distributed.BiConsumer<R, ? super T>) accumulator,
-                (Distributed.BiConsumer<R, R>) combiner);
-    }
+    <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner);
 
     @Override
     default <R, A> R collect(Collector<? super T, A, R> collector) {
-        return (R) collect((DistributedCollector) collector);
+        if (!(collector instanceof DistributedCollector)) {
+            throw new IllegalArgumentException("You must use DistributedCollector");
+        }
+
+        //noinspection unchecked
+        return collect((DistributedCollector<? super T, A, R>) collector);
     }
 
     @Override
-    default Optional<T> min(Comparator<? super T> comparator) {
-        return min((Distributed.Comparator) comparator);
-    }
+    Optional<T> min(Comparator<? super T> comparator);
 
     @Override
-    default Optional<T> max(Comparator<? super T> comparator) {
-        return max((Distributed.Comparator) comparator);
-    }
+
+    Optional<T> max(Comparator<? super T> comparator);
 
     @Override
-    default boolean anyMatch(Predicate<? super T> predicate) {
-        return anyMatch((Distributed.Predicate) predicate);
-    }
+    boolean anyMatch(Predicate<? super T> predicate);
 
     @Override
-    default boolean allMatch(Predicate<? super T> predicate) {
-        return allMatch((Distributed.Predicate) predicate);
-    }
+    boolean allMatch(Predicate<? super T> predicate);
 
     @Override
-    default boolean noneMatch(Predicate<? super T> predicate) {
-        return noneMatch((Distributed.Predicate) predicate);
-    }
+    boolean noneMatch(Predicate<? super T> predicate);
 
 }

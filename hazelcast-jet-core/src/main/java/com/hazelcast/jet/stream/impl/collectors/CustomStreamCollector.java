@@ -17,12 +17,14 @@
 package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.buildAccumulator;
 import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.buildCombiner;
 import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.execute;
@@ -35,6 +37,9 @@ public class CustomStreamCollector<T, R> extends AbstractCollector<T, R, R> {
 
     public CustomStreamCollector(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator,
                                  BiConsumer<R, R> combiner) {
+        checkSerializable(supplier, "supplier");
+        checkSerializable(accumulator, "accumulator");
+        checkSerializable(combiner, "combiner");
         this.supplier = supplier;
         this.accumulator = accumulator;
         this.combiner = combiner;

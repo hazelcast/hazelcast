@@ -21,6 +21,12 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.util.UuidUtil;
 
+import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutionException;
 
@@ -75,5 +81,37 @@ public final class StreamUtil {
 
     private static String randomName() {
         return UuidUtil.newUnsecureUUID().toString();
+    }
+
+    /**
+     * Checks, that {@code argument} implements {@link Serializable}.
+     * It also checks, if the {@code argument} is actually serializable by trying to serialize it.
+     * This will reveal early, if all it's fields are serializable.
+     *
+     * @param argument Object to check
+     * @param argumentName Argument name for the exception
+     * @throws IllegalArgumentException If {@code argument} is not serializable.
+     */
+    public static void checkSerializable(Object argument, String argumentName) {
+        if (argument != null) {
+            if (!(argument instanceof Serializable)) {
+                throw new IllegalArgumentException("Argument \"" + argumentName + "\" must be serializable");
+            }
+            try  (ObjectOutputStream os  = new ObjectOutputStream(new NullOutputStream())) {
+                os.writeObject(argument);
+            } catch (NotSerializableException | InvalidClassException e) {
+                throw new IllegalArgumentException("Argument \"" + argumentName + "\" must be serializable", e);
+            } catch (IOException e) {
+                // never really thrown, as the underlying stream never throws it
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static class NullOutputStream extends OutputStream {
+        @Override
+        public void write(int b) throws IOException {
+            // do nothing
+        }
     }
 }

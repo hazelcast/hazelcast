@@ -29,8 +29,6 @@ import java.util.function.LongToIntFunction;
 import java.util.function.LongUnaryOperator;
 import java.util.function.ObjLongConsumer;
 import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
@@ -54,7 +52,9 @@ public interface DistributedLongStream extends LongStream {
      *                  should be included
      * @return the new stream
      */
-    DistributedLongStream filter(Distributed.LongPredicate predicate);
+    default DistributedLongStream filter(Distributed.LongPredicate predicate) {
+        return filter((LongPredicate) predicate);
+    }
 
     /**
      * Returns a stream consisting of the results of applying the given
@@ -68,7 +68,9 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedLongStream map(Distributed.LongUnaryOperator mapper);
+    default DistributedLongStream map(Distributed.LongUnaryOperator mapper) {
+        return map((LongUnaryOperator) mapper);
+    }
 
     /**
      * Returns an object-valued {@code Stream} consisting of the results of
@@ -83,7 +85,9 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    <U> DistributedStream<U> mapToObj(Distributed.LongFunction<? extends U> mapper);
+    default <U> DistributedStream<U> mapToObj(Distributed.LongFunction<? extends U> mapper) {
+        return mapToObj((LongFunction<? extends U>) mapper);
+    }
 
     /**
      * Returns an {@code IntStream} consisting of the results of applying the
@@ -97,7 +101,9 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedIntStream mapToInt(Distributed.LongToIntFunction mapper);
+    default DistributedIntStream mapToInt(Distributed.LongToIntFunction mapper) {
+        return mapToInt((LongToIntFunction) mapper);
+    }
 
     /**
      * Returns a {@code DoubleStream} consisting of the results of applying the
@@ -111,7 +117,9 @@ public interface DistributedLongStream extends LongStream {
      *               function to apply to each element
      * @return the new stream
      */
-    DistributedDoubleStream mapToDouble(Distributed.LongToDoubleFunction mapper);
+    default DistributedDoubleStream mapToDouble(Distributed.LongToDoubleFunction mapper) {
+        return mapToDouble((LongToDoubleFunction) mapper);
+    }
 
     /**
      * Returns a stream consisting of the results of replacing each element of
@@ -131,7 +139,9 @@ public interface DistributedLongStream extends LongStream {
      * @return the new stream
      * @see DistributedStream#flatMap(Distributed.Function)
      */
-    DistributedLongStream flatMap(Distributed.LongFunction<? extends LongStream> mapper);
+    default DistributedLongStream flatMap(Distributed.LongFunction<? extends LongStream> mapper) {
+        return flatMap((LongFunction<? extends LongStream>) mapper);
+    }
 
     /**
      * Returns a stream consisting of the distinct elements of this stream.
@@ -174,7 +184,9 @@ public interface DistributedLongStream extends LongStream {
      *               they are consumed from the stream
      * @return the new stream
      */
-    DistributedLongStream peek(Distributed.LongConsumer action);
+    default DistributedLongStream peek(Distributed.LongConsumer action) {
+        return peek((LongConsumer) action);
+    }
 
     /**
      * Returns a stream consisting of the elements of this stream, truncated
@@ -220,7 +232,9 @@ public interface DistributedLongStream extends LongStream {
      * @param action a
      *               non-interfering action to perform on the elements
      */
-    void forEach(Distributed.LongConsumer action);
+    default void forEach(Distributed.LongConsumer action) {
+        forEach((LongConsumer) action);
+    }
 
     /**
      * Performs an action for each element of this stream, guaranteeing that
@@ -234,7 +248,9 @@ public interface DistributedLongStream extends LongStream {
      *               non-interfering action to perform on the elements
      * @see #forEach(LongConsumer)
      */
-    void forEachOrdered(Distributed.LongConsumer action);
+    default void forEachOrdered(Distributed.LongConsumer action) {
+        forEachOrdered((LongConsumer) action);
+    }
 
     /**
      * Performs a reduction on the
@@ -271,7 +287,9 @@ public interface DistributedLongStream extends LongStream {
      * @see #max()
      * @see #average()
      */
-    long reduce(long identity, Distributed.LongBinaryOperator op);
+    default long reduce(long identity, Distributed.LongBinaryOperator op) {
+        return reduce(identity, (LongBinaryOperator) op);
+    }
 
     /**
      * Performs a reduction on the
@@ -308,7 +326,9 @@ public interface DistributedLongStream extends LongStream {
      * @return the result of the reduction
      * @see #reduce(long, LongBinaryOperator)
      */
-    OptionalLong reduce(Distributed.LongBinaryOperator op);
+    default OptionalLong reduce(Distributed.LongBinaryOperator op) {
+        return reduce((LongBinaryOperator) op);
+    }
 
     /**
      * Performs a mutable
@@ -346,8 +366,10 @@ public interface DistributedLongStream extends LongStream {
      * @return the result of the reduction
      * @see Stream#collect(Supplier, BiConsumer, BiConsumer)
      */
-    <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjLongConsumer<R> accumulator,
-                  Distributed.BiConsumer<R, R> combiner);
+    default <R> R collect(Distributed.Supplier<R> supplier, Distributed.ObjLongConsumer<R> accumulator,
+                          Distributed.BiConsumer<R, R> combiner) {
+        return collect((Supplier<R>) supplier, accumulator, combiner);
+    }
 
     /**
      * Returns whether any elements of this stream match the provided
@@ -364,7 +386,9 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if any elements of the stream match the provided
      * predicate, otherwise {@code false}
      */
-    boolean anyMatch(Distributed.LongPredicate predicate);
+    default boolean anyMatch(Distributed.LongPredicate predicate) {
+        return anyMatch((LongPredicate) predicate);
+    }
 
     /**
      * Returns whether all elements of this stream match the provided predicate.
@@ -381,7 +405,9 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if either all elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean allMatch(Distributed.LongPredicate predicate);
+    default boolean allMatch(Distributed.LongPredicate predicate) {
+        return allMatch((LongPredicate) predicate);
+    }
 
     /**
      * Returns whether no elements of this stream match the provided predicate.
@@ -398,7 +424,9 @@ public interface DistributedLongStream extends LongStream {
      * @return {@code true} if either no elements of the stream match the
      * provided predicate or the stream is empty, otherwise {@code false}
      */
-    boolean noneMatch(Distributed.LongPredicate predicate);
+    default boolean noneMatch(Distributed.LongPredicate predicate) {
+        return noneMatch((LongPredicate) predicate);
+    }
 
     /**
      * Returns a {@code DoubleStream} consisting of the elements of this stream,
@@ -452,79 +480,47 @@ public interface DistributedLongStream extends LongStream {
     DistributedLongStream parallel();
 
     @Override
-    default LongStream filter(LongPredicate predicate) {
-        return filter((Distributed.LongPredicate) predicate);
-    }
+    DistributedLongStream filter(LongPredicate predicate);
 
     @Override
-    default LongStream map(LongUnaryOperator mapper) {
-        return map((Distributed.LongUnaryOperator) mapper);
-    }
+    DistributedLongStream map(LongUnaryOperator mapper);
 
     @Override
-    default <U> Stream<U> mapToObj(LongFunction<? extends U> mapper) {
-        return mapToObj((Distributed.LongFunction) mapper);
-    }
+    <U> DistributedStream<U> mapToObj(LongFunction<? extends U> mapper);
 
     @Override
-    default IntStream mapToInt(LongToIntFunction mapper) {
-        return mapToInt((Distributed.LongToIntFunction) mapper);
-    }
+    DistributedIntStream mapToInt(LongToIntFunction mapper);
 
     @Override
-    default DoubleStream mapToDouble(LongToDoubleFunction mapper) {
-        return mapToDouble((Distributed.LongToDoubleFunction) mapper);
-    }
+    DistributedDoubleStream mapToDouble(LongToDoubleFunction mapper);
 
     @Override
-    default LongStream flatMap(LongFunction<? extends LongStream> mapper) {
-        return flatMap((Distributed.LongFunction) mapper);
-    }
+    DistributedLongStream flatMap(LongFunction<? extends LongStream> mapper);
 
     @Override
-    default LongStream peek(LongConsumer action) {
-        return peek((Distributed.LongConsumer) action);
-    }
+    DistributedLongStream peek(LongConsumer action);
 
     @Override
-    default void forEach(LongConsumer action) {
-        forEach((Distributed.LongConsumer) action);
-    }
+    void forEach(LongConsumer action);
 
     @Override
-    default void forEachOrdered(LongConsumer action) {
-        forEachOrdered((Distributed.LongConsumer) action);
-    }
+    void forEachOrdered(LongConsumer action);
 
     @Override
-    default long reduce(long identity, LongBinaryOperator op) {
-        return reduce(identity, (Distributed.LongBinaryOperator) op);
-    }
+    long reduce(long identity, LongBinaryOperator op);
 
     @Override
-    default OptionalLong reduce(LongBinaryOperator op) {
-        return reduce((Distributed.LongBinaryOperator) op);
-    }
+    OptionalLong reduce(LongBinaryOperator op);
 
     @Override
-    default <R> R collect(Supplier<R> supplier, ObjLongConsumer<R> accumulator, BiConsumer<R, R> combiner) {
-        return collect((Distributed.Supplier<R>) supplier,
-                (Distributed.ObjLongConsumer<R>) accumulator,
-                (Distributed.BiConsumer<R, R>) combiner);
-    }
+    <R> R collect(Supplier<R> supplier, ObjLongConsumer<R> accumulator, BiConsumer<R, R> combiner);
 
     @Override
-    default boolean anyMatch(LongPredicate predicate) {
-        return anyMatch((Distributed.LongPredicate) predicate);
-    }
+    boolean anyMatch(LongPredicate predicate);
 
     @Override
-    default boolean allMatch(LongPredicate predicate) {
-        return allMatch((Distributed.LongPredicate) predicate);
-    }
+    boolean allMatch(LongPredicate predicate);
 
     @Override
-    default boolean noneMatch(LongPredicate predicate) {
-        return noneMatch((Distributed.LongPredicate) predicate);
-    }
+    boolean noneMatch(LongPredicate predicate);
 }

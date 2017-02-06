@@ -18,14 +18,10 @@ package com.hazelcast.jet.stream.impl.collectors;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -34,6 +30,10 @@ import com.hazelcast.jet.stream.impl.processor.CollectorCombineP;
 import com.hazelcast.jet.stream.impl.processor.CombineP;
 
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
@@ -100,7 +100,7 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
 
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
-        Supplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
+        Distributed.Supplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
         Vertex combinerVertex = dag.newVertex(uniqueVertexName("combiner"), processorSupplier).localParallelism(1);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
@@ -110,7 +110,7 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
         return combinerVertex;
     }
 
-    private static <A, R> Supplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
+    private static <A, R> Distributed.Supplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
         if (combiner instanceof BiConsumer) {
             return () -> new CollectorCombineP((BiConsumer) combiner, finisher);
         } else if (combiner instanceof BinaryOperator) {

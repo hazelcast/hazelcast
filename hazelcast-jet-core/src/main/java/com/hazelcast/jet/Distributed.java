@@ -28,6 +28,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
+
 /**
  * Utility class with serializable versions of {@code java.util.function} interfaces.
  */
@@ -1343,7 +1345,7 @@ public final class Distributed {
          * @see Comparable
          */
         @SuppressWarnings("unchecked")
-        static <T extends Comparable<? super T>> Comparator<T> naturalOrder() {
+        static <T extends Comparable<? super T>> Distributed.Comparator<T> naturalOrder() {
             return (Comparator<T>) DistributedComparators.NATURAL_ORDER_COMPARATOR;
         }
 
@@ -1360,8 +1362,228 @@ public final class Distributed {
          * @see Comparable
          */
         @SuppressWarnings("unchecked")
-        static <T extends Comparable<? super T>> Comparator<T> reverseOrder() {
+        static <T extends Comparable<? super T>> Distributed.Comparator<T> reverseOrder() {
             return (Comparator<T>) DistributedComparators.REVERSE_ORDER_COMPARATOR;
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.Comparator)
+         */
+        default Distributed.Comparator<T> thenComparing(java.util.Comparator<? super T> other) {
+            Objects.requireNonNull(other);
+            checkSerializable(other, "other");
+            return (c1, c2) -> {
+                int res = compare(c1, c2);
+                return (res != 0) ? res : other.compare(c1, c2);
+            };
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.Comparator)
+         */
+        default Distributed.Comparator<T> thenComparing(Distributed.Comparator<? super T> other) {
+            return thenComparing((java.util.Comparator<? super T>) other);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
+         */
+        default <U> Distributed.Comparator<T> thenComparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor,
+                java.util.Comparator<? super U> keyComparator) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            checkSerializable(keyComparator, "keyComparator");
+            return thenComparing(comparing(keyExtractor, keyComparator));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
+         */
+        default <U> Distributed.Comparator<T> thenComparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor,
+                Distributed.Comparator<? super U> keyComparator) {
+            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor, keyComparator);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function)
+         */
+        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparing(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function)
+         */
+        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor) {
+            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
+         */
+        default Distributed.Comparator<T> thenComparingInt(java.util.function.ToIntFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingInt(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
+         */
+        default Distributed.Comparator<T> thenComparingInt(Distributed.ToIntFunction<? super T> keyExtractor) {
+            return thenComparingInt((java.util.function.ToIntFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
+         */
+        default Distributed.Comparator<T> thenComparingLong(java.util.function.ToLongFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingLong(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
+         */
+        default Distributed.Comparator<T> thenComparingLong(Distributed.ToLongFunction<? super T> keyExtractor) {
+            return thenComparingLong((java.util.function.ToLongFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
+         */
+        default Distributed.Comparator<T> thenComparingDouble(java.util.function.ToDoubleFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingDouble(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
+         */
+        default Distributed.Comparator<T> thenComparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
+            return thenComparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#nullsFirst(java.util.Comparator)
+         */
+        static <T> Distributed.Comparator<T> nullsFirst(java.util.Comparator<? super T> comparator) {
+            checkSerializable(comparator, "comparator");
+            return new DistributedComparators.NullComparator<>(true, comparator);
+        }
+
+        /**
+         * @see java.util.Comparator#nullsFirst(java.util.Comparator)
+         */
+        static <T> Distributed.Comparator<T> nullsFirst(Distributed.Comparator<? super T> comparator) {
+            return nullsFirst((java.util.Comparator<? super T>) comparator);
+        }
+
+        /**
+         * @see java.util.Comparator#nullsLast(java.util.Comparator)
+         */
+        static <T> Distributed.Comparator<T> nullsLast(java.util.Comparator<? super T> comparator) {
+            checkSerializable(comparator, "comparator");
+            return new DistributedComparators.NullComparator<>(false, comparator);
+        }
+
+        /**
+         * @see java.util.Comparator#nullsLast(java.util.Comparator)
+         */
+        static <T> Distributed.Comparator<T> nullsLast(Distributed.Comparator<? super T> comparator) {
+            return nullsLast((java.util.Comparator<? super T>) comparator);
+        }
+
+        /**
+         * @see java.util.Comparator#comparing(java.util.function.Function, java.util.Comparator)
+         */
+        static <T, U> Distributed.Comparator<T> comparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor,
+                java.util.Comparator<? super U> keyComparator) {
+            Objects.requireNonNull(keyExtractor);
+            Objects.requireNonNull(keyComparator);
+            checkSerializable(keyExtractor, "keyExtractor");
+            checkSerializable(keyComparator, "keyComparator");
+            return (c1, c2) -> keyComparator.compare(keyExtractor.apply(c1),
+                            keyExtractor.apply(c2));
+        }
+
+        /**
+         * @see java.util.Comparator#comparing(java.util.function.Function, java.util.Comparator)
+         */
+        static <T, U> Distributed.Comparator<T> comparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor,
+                Distributed.Comparator<? super U> keyComparator) {
+            return comparing((java.util.function.Function<? super T, ? extends U>) keyExtractor, keyComparator);
+        }
+
+        /**
+         * @see java.util.Comparator#comparing(java.util.function.Function)
+         */
+        static <T, U extends Comparable<? super U>> Distributed.Comparator<T> comparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor) {
+            Objects.requireNonNull(keyExtractor);
+            checkSerializable(keyExtractor, "keyExtractor");
+            return (c1, c2) -> keyExtractor.apply(c1).compareTo(keyExtractor.apply(c2));
+        }
+
+        /**
+         * @see java.util.Comparator#comparing(java.util.function.Function)
+         */
+        static <T, U extends Comparable<? super U>> Distributed.Comparator<T> comparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor) {
+            return comparing((java.util.function.Function<? super T, ? extends U>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#comparingInt(java.util.function.ToIntFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingInt(java.util.function.ToIntFunction<? super T> keyExtractor) {
+            Objects.requireNonNull(keyExtractor);
+            checkSerializable(keyExtractor, "keyExtractor");
+            return (c1, c2) -> Integer.compare(keyExtractor.applyAsInt(c1), keyExtractor.applyAsInt(c2));
+        }
+
+        /**
+         * @see java.util.Comparator#comparingInt(java.util.function.ToIntFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingInt(Distributed.ToIntFunction<? super T> keyExtractor) {
+            return comparingInt((java.util.function.ToIntFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#comparingInt(java.util.function.ToIntFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingLong(java.util.function.ToLongFunction<? super T> keyExtractor) {
+            Objects.requireNonNull(keyExtractor);
+            checkSerializable(keyExtractor, "keyExtractor");
+            return (c1, c2) -> Long.compare(keyExtractor.applyAsLong(c1), keyExtractor.applyAsLong(c2));
+        }
+
+        /**
+         * @see java.util.Comparator#comparingLong(java.util.function.ToLongFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingLong(Distributed.ToLongFunction<? super T> keyExtractor) {
+            return comparingLong((java.util.function.ToLongFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#comparingDouble(java.util.function.ToDoubleFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingDouble(java.util.function.ToDoubleFunction<? super T> keyExtractor) {
+            Objects.requireNonNull(keyExtractor);
+            checkSerializable(keyExtractor, "keyExtractor");
+            return (c1, c2) -> Double.compare(keyExtractor.applyAsDouble(c1), keyExtractor.applyAsDouble(c2));
+        }
+
+        /**
+         * @see java.util.Comparator#comparingDouble(java.util.function.ToDoubleFunction)
+         */
+        static <T> Distributed.Comparator<T> comparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
+            return comparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
         }
     }
 

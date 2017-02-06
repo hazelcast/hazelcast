@@ -32,8 +32,20 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.IntBinaryOperator;
+import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
+import java.util.function.IntUnaryOperator;
+import java.util.function.ObjIntConsumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class IntPipeline implements DistributedIntStream {
@@ -47,37 +59,43 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public DistributedIntStream filter(Distributed.IntPredicate predicate) {
+    public DistributedIntStream filter(IntPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         DistributedStream<Integer> filter = inner.filter(predicate::test);
         return wrap(filter);
     }
 
     @Override
-    public DistributedIntStream map(Distributed.IntUnaryOperator mapper) {
-        DistributedStream<Integer> map = inner.map(integer -> mapper.applyAsInt(integer));
+    public DistributedIntStream map(IntUnaryOperator mapper) {
+        checkSerializable(mapper, "mapper");
+        DistributedStream<Integer> map = inner.map(mapper::applyAsInt);
         return wrap(map);
     }
 
     @Override
-    public <U> DistributedStream<U> mapToObj(Distributed.IntFunction<? extends U> mapper) {
-        return inner.map(m -> mapper.apply(m));
+    public <U> DistributedStream<U> mapToObj(IntFunction<? extends U> mapper) {
+        checkSerializable(mapper, "mapper");
+        return inner.map(mapper::apply);
     }
 
     @Override
-    public DistributedLongStream mapToLong(Distributed.IntToLongFunction mapper) {
+    public DistributedLongStream mapToLong(IntToLongFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Long> stream = inner.map(mapper::applyAsLong);
         return new LongPipeline(context, (Pipeline<Long>) stream);
     }
 
     @Override
-    public DistributedDoubleStream mapToDouble(Distributed.IntToDoubleFunction mapper) {
+    public DistributedDoubleStream mapToDouble(IntToDoubleFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Double> stream = inner.map(mapper::applyAsDouble);
         return new DoublePipeline(context, (Pipeline<Double>) stream);
     }
 
     @Override
-    public DistributedIntStream flatMap(Distributed.IntFunction<? extends IntStream> mapper) {
-        return wrap(inner.<Integer>flatMap(n -> mapper.apply(n).boxed()));
+    public DistributedIntStream flatMap(IntFunction<? extends IntStream> mapper) {
+        checkSerializable(mapper, "mapper");
+        return wrap(inner.flatMap(n -> mapper.apply(n).boxed()));
     }
 
     @Override
@@ -91,7 +109,8 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public DistributedIntStream peek(Distributed.IntConsumer action) {
+    public DistributedIntStream peek(IntConsumer action) {
+        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -106,12 +125,14 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public void forEach(Distributed.IntConsumer action) {
+    public void forEach(IntConsumer action) {
+        checkSerializable(action, "action");
         inner.forEach(action::accept);
     }
 
     @Override
-    public void forEachOrdered(Distributed.IntConsumer action) {
+    public void forEachOrdered(IntConsumer action) {
+        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -129,23 +150,23 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public int reduce(int identity, Distributed.IntBinaryOperator op) {
-        return new Reducer(context).<Integer>reduce(inner,
-                identity,
-                (Distributed.BinaryOperator<Integer>) op::applyAsInt);
+    public int reduce(int identity, IntBinaryOperator op) {
+        checkSerializable(op, "op");
+        return new Reducer(context).<Integer>reduce(inner, identity, op::applyAsInt);
     }
 
     @Override
-    public OptionalInt reduce(Distributed.IntBinaryOperator op) {
-        Optional<Integer> result = new Reducer(context).reduce(inner,
-                (Distributed.BinaryOperator<Integer>) op::applyAsInt);
+    public OptionalInt reduce(IntBinaryOperator op) {
+        checkSerializable(op, "op");
+        Optional<Integer> result = new Reducer(context).reduce(inner, op::applyAsInt);
         return result.isPresent() ? OptionalInt.of(result.get()) : OptionalInt.empty();
     }
 
     @Override
-    public <R> R collect(Distributed.Supplier<R> supplier,
-                         Distributed.ObjIntConsumer<R> accumulator,
-                         Distributed.BiConsumer<R, R> combiner) {
+    public <R> R collect(Supplier<R> supplier,
+                         ObjIntConsumer<R> accumulator,
+                         BiConsumer<R, R> combiner) {
+        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Integer> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -193,17 +214,20 @@ public class IntPipeline implements DistributedIntStream {
     }
 
     @Override
-    public boolean anyMatch(Distributed.IntPredicate predicate) {
+    public boolean anyMatch(IntPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
-    public boolean allMatch(Distributed.IntPredicate predicate) {
+    public boolean allMatch(IntPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
-    public boolean noneMatch(Distributed.IntPredicate predicate) {
+    public boolean noneMatch(IntPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 

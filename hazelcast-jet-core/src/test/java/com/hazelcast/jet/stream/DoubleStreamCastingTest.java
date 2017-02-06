@@ -31,79 +31,79 @@ public class DoubleStreamCastingTest extends AbstractStreamTest {
         stream = list.stream().mapToDouble(m -> m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void map() {
         stream.map(m -> m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void flatMap() {
         stream.flatMap(DoubleStream::of);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void collect() {
         stream.collect(() -> new Double[]{0D},
                 (r, e) -> r[0] += e,
                 (a, b) -> a[0] += b[0]);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void forEach() {
         stream.forEach(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void forEachOrdered() {
         stream.forEachOrdered(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void allMatch() {
         stream.allMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void anyMatch() {
         stream.anyMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void noneMatch() {
         stream.noneMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void filter() {
         stream.filter(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToObj() {
         stream.mapToObj(m -> m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToInt() {
         stream.mapToInt(m -> (int) m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToLong() {
         stream.mapToLong(m -> (long) m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void peek() {
         stream.peek(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void reduce() {
         stream.reduce((l, r) -> l + r);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void reduce2() {
         stream.reduce(0, (l, r) -> l + r);
     }

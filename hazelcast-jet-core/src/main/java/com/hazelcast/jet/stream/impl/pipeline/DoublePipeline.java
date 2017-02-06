@@ -31,8 +31,20 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleFunction;
+import java.util.function.DoublePredicate;
+import java.util.function.DoubleToIntFunction;
+import java.util.function.DoubleToLongFunction;
+import java.util.function.DoubleUnaryOperator;
+import java.util.function.ObjDoubleConsumer;
+import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
+
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class DoublePipeline implements DistributedDoubleStream {
@@ -46,37 +58,43 @@ public class DoublePipeline implements DistributedDoubleStream {
     }
 
     @Override
-    public DistributedDoubleStream filter(Distributed.DoublePredicate predicate) {
+    public DistributedDoubleStream filter(DoublePredicate predicate) {
+        checkSerializable(predicate, "predicate");
         DistributedStream<Double> filter = inner.filter(predicate::test);
         return wrap(filter);
     }
 
     @Override
-    public DistributedDoubleStream map(Distributed.DoubleUnaryOperator mapper) {
+    public DistributedDoubleStream map(DoubleUnaryOperator mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Double> map = inner.map(mapper::applyAsDouble);
         return wrap(map);
     }
 
     @Override
-    public <U> DistributedStream<U> mapToObj(Distributed.DoubleFunction<? extends U> mapper) {
-        return inner.map(m -> mapper.apply(m));
+    public <U> DistributedStream<U> mapToObj(DoubleFunction<? extends U> mapper) {
+        checkSerializable(mapper, "mapper");
+        return inner.map(mapper::apply);
     }
 
     @Override
-    public DistributedIntStream mapToInt(Distributed.DoubleToIntFunction mapper) {
+    public DistributedIntStream mapToInt(DoubleToIntFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Integer> stream = inner.map(mapper::applyAsInt);
         return new IntPipeline(context, (Pipeline<Integer>) stream);
     }
 
     @Override
-    public DistributedLongStream mapToLong(Distributed.DoubleToLongFunction mapper) {
+    public DistributedLongStream mapToLong(DoubleToLongFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Long> stream = inner.map(mapper::applyAsLong);
         return new LongPipeline(context, (Pipeline<Long>) stream);
     }
 
     @Override
-    public DistributedDoubleStream flatMap(Distributed.DoubleFunction<? extends DoubleStream> mapper) {
-        return wrap(inner.<Double>flatMap(n -> mapper.apply(n).boxed()));
+    public DistributedDoubleStream flatMap(DoubleFunction<? extends DoubleStream> mapper) {
+        checkSerializable(mapper, "mapper");
+        return wrap(inner.flatMap(n -> mapper.apply(n).boxed()));
     }
 
     @Override
@@ -90,7 +108,8 @@ public class DoublePipeline implements DistributedDoubleStream {
     }
 
     @Override
-    public DistributedDoubleStream peek(Distributed.DoubleConsumer action) {
+    public DistributedDoubleStream peek(DoubleConsumer action) {
+        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -105,12 +124,13 @@ public class DoublePipeline implements DistributedDoubleStream {
     }
 
     @Override
-    public void forEach(Distributed.DoubleConsumer action) {
+    public void forEach(DoubleConsumer action) {
         inner.forEach(action::accept);
     }
 
     @Override
-    public void forEachOrdered(Distributed.DoubleConsumer action) {
+    public void forEachOrdered(DoubleConsumer action) {
+        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -128,23 +148,23 @@ public class DoublePipeline implements DistributedDoubleStream {
     }
 
     @Override
-    public double reduce(double identity, Distributed.DoubleBinaryOperator op) {
-        return new Reducer(context).<Double>reduce(inner,
-                identity,
-                (Distributed.BinaryOperator<Double>) op::applyAsDouble);
+    public double reduce(double identity, DoubleBinaryOperator op) {
+        checkSerializable(op, "op");
+        return new Reducer(context).<Double>reduce(inner, identity, op::applyAsDouble);
     }
 
     @Override
-    public OptionalDouble reduce(Distributed.DoubleBinaryOperator op) {
-        Optional<Double> result = new Reducer(context).reduce(inner,
-                (Distributed.BinaryOperator<Double>) op::applyAsDouble);
+    public OptionalDouble reduce(DoubleBinaryOperator op) {
+        checkSerializable(op, "op");
+        Optional<Double> result = new Reducer(context).reduce(inner, op::applyAsDouble);
         return result.isPresent() ? OptionalDouble.of(result.get()) : OptionalDouble.empty();
     }
 
     @Override
-    public <R> R collect(Distributed.Supplier<R> supplier,
-                         Distributed.ObjDoubleConsumer<R> accumulator,
-                         Distributed.BiConsumer<R, R> combiner) {
+    public <R> R collect(Supplier<R> supplier,
+                         ObjDoubleConsumer<R> accumulator,
+                         BiConsumer<R, R> combiner) {
+        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Double> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -192,17 +212,20 @@ public class DoublePipeline implements DistributedDoubleStream {
     }
 
     @Override
-    public boolean anyMatch(Distributed.DoublePredicate predicate) {
+    public boolean anyMatch(DoublePredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
-    public boolean allMatch(Distributed.DoublePredicate predicate) {
+    public boolean allMatch(DoublePredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
-    public boolean noneMatch(Distributed.DoublePredicate predicate) {
+    public boolean noneMatch(DoublePredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 
@@ -276,6 +299,7 @@ public class DoublePipeline implements DistributedDoubleStream {
         return new DoublePipeline(context, (Pipeline<Double>) pipeline);
     }
 
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private static OptionalDouble toOptionalDouble(Optional<Double> optional) {
         return optional.isPresent() ? OptionalDouble.of(optional.get()) : OptionalDouble.empty();
     }

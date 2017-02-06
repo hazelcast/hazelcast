@@ -20,6 +20,7 @@ package com.hazelcast.jet.stream;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +28,8 @@ import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static org.junit.Assert.assertTrue;
 
 public class DistributedStreamCastingTest extends AbstractStreamTest {
 
@@ -38,120 +41,131 @@ public class DistributedStreamCastingTest extends AbstractStreamTest {
         stream = list.stream();
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void map() {
         stream.map(Object::toString);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void flatMap() {
         stream.flatMap(Stream::of);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void collect() {
         stream.collect(Collectors.counting());
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void collect2() {
         stream.collect(() -> new Integer[]{0},
                 (r, e) -> r[0] += e,
                 (a, b) -> a[0] += b[0]);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void forEach() {
         stream.forEach(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void forEachOrdered() {
         stream.forEachOrdered(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void allMatch() {
         stream.allMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void anyMatch() {
         stream.anyMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void noneMatch() {
         stream.noneMatch(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void filter() {
         stream.filter(m -> true);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToInt() {
         stream.mapToInt(m -> m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToDouble() {
         stream.mapToDouble(m -> (double) m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void mapToLong() {
         stream.mapToLong(m -> (long) m);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void flatMapToInt() {
         stream.flatMapToInt(IntStream::of);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void flatMapToDouble() {
         stream.flatMapToDouble(DoubleStream::of);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void flatMapToLong() {
         stream.flatMapToLong(LongStream::of);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void max() {
-        stream.max(Comparator.naturalOrder());
+        Comparator<Integer> c = Integer::compareTo;
+        stream.max(c);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void min() {
-        stream.min(Comparator.naturalOrder());
+        Comparator<Integer> c = Integer::compareTo;
+        stream.min(c);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void peek() {
         stream.peek(System.out::println);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void reduce() {
         stream.reduce((l, r) -> l + r);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void reduce2() {
         stream.reduce(0, (l, r) -> l + r);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void reduce3() {
         stream.reduce(0, (l, r) -> l + r, (l, r) -> l + r);
     }
 
-    @Test(expected = ClassCastException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void sorted() {
-        stream.sorted(Comparator.naturalOrder());
+        Comparator<Integer> c = Integer::compareTo;
+        stream.sorted(c);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void sorted_when_serializableButNotReally_then_fail() {
+        Comparator<Integer> comparator = Comparator.comparing(Object::toString);
+        assertTrue(comparator instanceof Serializable);
+        // Comparator.comparing returns serializable instance, however, its keyExtractor is not, so it should fail here
+        stream.sorted(comparator);
     }
 }

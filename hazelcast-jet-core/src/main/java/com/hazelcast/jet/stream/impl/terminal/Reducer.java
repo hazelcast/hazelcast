@@ -18,6 +18,7 @@ package com.hazelcast.jet.stream.impl.terminal;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Distributed.Supplier;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.Processors;
@@ -33,6 +34,7 @@ import java.util.function.BinaryOperator;
 
 import static com.hazelcast.jet.Distributed.Function.identity;
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
@@ -47,8 +49,16 @@ public class Reducer {
     }
 
     public <T, U> U reduce(Pipeline<T> upstream, U identity,
+                           Distributed.BiFunction<U, ? super T, U> accumulator,
+                           Distributed.BinaryOperator<U> combiner) {
+        return reduce(upstream, identity, (BiFunction<U, ? super T, U>) accumulator, combiner);
+    }
+
+    public <T, U> U reduce(Pipeline<T> upstream, U identity,
                            BiFunction<U, ? super T, U> accumulator,
                            BinaryOperator<U> combiner) {
+        checkSerializable(accumulator, "accumulator");
+        checkSerializable(combiner, "combiner");
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildMappingAccumulator(dag, upstream, identity, accumulator);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner);
@@ -66,14 +76,24 @@ public class Reducer {
         return combinerVertex;
     }
 
+    public <T> Optional<T> reduce(Pipeline<T> upstream, Distributed.BinaryOperator<T> operator) {
+        return reduce(upstream, (BinaryOperator<T>) operator);
+    }
+
     public <T> Optional<T> reduce(Pipeline<T> upstream, BinaryOperator<T> operator) {
+        checkSerializable(operator, "operator");
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, null);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
         return this.<T>execute(dag, combinerVertex);
     }
 
+    public <T> T reduce(Pipeline<T> upstream, T identity, Distributed.BinaryOperator<T> accumulator) {
+        return reduce(upstream, identity, (BinaryOperator<T>) accumulator);
+    }
+
     public <T> T reduce(Pipeline<T> upstream, T identity, BinaryOperator<T> accumulator) {
+        checkSerializable(accumulator, "accumulator");
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, identity);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
@@ -130,4 +150,3 @@ public class Reducer {
     }
 
 }
-

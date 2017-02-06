@@ -17,21 +17,32 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.DistributedCollectors;
 import com.hazelcast.jet.stream.DistributedDoubleStream;
 import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
+import com.hazelcast.jet.stream.impl.StreamUtil;
 import com.hazelcast.jet.stream.impl.collectors.CustomStreamCollector;
 import com.hazelcast.jet.stream.impl.terminal.Matcher;
 import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -53,71 +64,65 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     @Override
-    public DistributedStream<E_OUT> filter(Distributed.Predicate<? super E_OUT> predicate) {
-        return new TransformPipeline(context, this,
+    public DistributedStream<E_OUT> filter(Predicate<? super E_OUT> predicate) {
+        StreamUtil.checkSerializable(predicate, "predicate");
+        return  new TransformPipeline(context, this,
                 new TransformOperation(TransformOperation.Type.FILTER, predicate));
     }
 
     @Override
-    public <R> DistributedStream<R> map(Distributed.Function<? super E_OUT, ? extends R> mapper) {
+    public <R> DistributedStream<R> map(Function<? super E_OUT, ? extends R> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
         return new TransformPipeline(context, this,
                 new TransformOperation(TransformOperation.Type.MAP, mapper));
     }
 
     @Override
-    public DistributedIntStream mapToInt(Distributed.ToIntFunction<? super E_OUT> mapper) {
-        Distributed.Function<? super E_OUT, Integer> mapFunction =
-                (Distributed.Function<? super E_OUT, Integer>) mapper::applyAsInt;
-
-        Pipeline<Integer> map = (Pipeline<Integer>) this.map(mapFunction);
+    public DistributedIntStream mapToInt(ToIntFunction<? super E_OUT> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Integer> map = (Pipeline<Integer>) this.map(mapper::applyAsInt);
         return new IntPipeline(context, map);
     }
 
     @Override
-    public DistributedLongStream mapToLong(Distributed.ToLongFunction<? super E_OUT> mapper) {
-        Distributed.Function<? super E_OUT, Long> mapFunction =
-                (Distributed.Function<? super E_OUT, Long>) mapper::applyAsLong;
-
-        Pipeline<Long> map = (Pipeline<Long>) this.map(mapFunction);
+    public DistributedLongStream mapToLong(ToLongFunction<? super E_OUT> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Long> map = (Pipeline<Long>) this.map(mapper::applyAsLong);
         return new LongPipeline(context, map);
     }
 
     @Override
-    public DistributedDoubleStream mapToDouble(Distributed.ToDoubleFunction<? super E_OUT> mapper) {
-        Distributed.Function<? super E_OUT, Double> mapFunction =
-                (Distributed.Function<? super E_OUT, Double>) mapper::applyAsDouble;
-
-        Pipeline<Double> map = (Pipeline<Double>) this.map(mapFunction);
+    public DistributedDoubleStream mapToDouble(ToDoubleFunction<? super E_OUT> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Double> map = (Pipeline<Double>) this.map(mapper::applyAsDouble);
         return new DoublePipeline(context, map);
     }
 
     @Override
-    public <R> DistributedStream<R> flatMap(Distributed.Function<? super E_OUT, ? extends Stream<? extends R>> mapper) {
+    public <R> DistributedStream<R> flatMap(Function<? super E_OUT, ? extends Stream<? extends R>> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
         return new TransformPipeline(context, this,
                 new TransformOperation(TransformOperation.Type.FLAT_MAP, mapper));
     }
 
     @Override
-    public DistributedIntStream flatMapToInt(Distributed.Function<? super E_OUT, ? extends IntStream> mapper) {
-        Distributed.Function<? super E_OUT, ? extends Stream<Integer>> mapFunction = m -> mapper.apply(m).boxed();
-
-        Pipeline<Integer> pipeline = (Pipeline<Integer>) this.flatMap(mapFunction);
+    public DistributedIntStream flatMapToInt(Function<? super E_OUT, ? extends IntStream> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Integer> pipeline = (Pipeline<Integer>) this.flatMap(m -> mapper.apply(m).boxed());
         return new IntPipeline(context, pipeline);
     }
 
     @Override
-    public DistributedLongStream flatMapToLong(Distributed.Function<? super E_OUT, ? extends LongStream> mapper) {
-        Distributed.Function<? super E_OUT, ? extends Stream<Long>> mapFunction = m -> mapper.apply(m).boxed();
-
-        Pipeline<Long> pipeline = (Pipeline<Long>) this.flatMap(mapFunction);
+    public DistributedLongStream flatMapToLong(Function<? super E_OUT, ? extends LongStream> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Long> pipeline = (Pipeline<Long>) this.flatMap(m -> mapper.apply(m).boxed());
         return new LongPipeline(context, pipeline);
     }
 
     @Override
-    public DistributedDoubleStream flatMapToDouble(Distributed.Function<? super E_OUT, ? extends DoubleStream> mapper) {
-        Distributed.Function<? super E_OUT, ? extends Stream<Double>> mapFunction = m -> mapper.apply(m).boxed();
-
-        Pipeline<Double> pipeline = (Pipeline<Double>) this.flatMap(mapFunction);
+    public DistributedDoubleStream flatMapToDouble(Function<? super E_OUT, ? extends DoubleStream> mapper) {
+        StreamUtil.checkSerializable(mapper, "mapper");
+        Pipeline<Double> pipeline = (Pipeline<Double>) this.flatMap(m -> mapper.apply(m).boxed());
         return new DoublePipeline(context, pipeline);
     }
 
@@ -132,12 +137,14 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     @Override
-    public DistributedStream<E_OUT> sorted(Distributed.Comparator<? super E_OUT> comparator) {
+    public final DistributedStream<E_OUT> sorted(Comparator<? super E_OUT> comparator) {
+        StreamUtil.checkSerializable(comparator, "comparator");
         return new SortPipeline<>(this, context, comparator);
     }
 
     @Override
-    public DistributedStream<E_OUT> peek(Distributed.Consumer<? super E_OUT> action) {
+    public DistributedStream<E_OUT> peek(Consumer<? super E_OUT> action) {
+        StreamUtil.checkSerializable(action, "action");
         return new PeekPipeline<>(context, this, action);
     }
 
@@ -152,7 +159,8 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     @Override
-    public void forEach(Distributed.Consumer<? super E_OUT> action) {
+    public void forEach(Consumer<? super E_OUT> action) {
+        StreamUtil.checkSerializable(action, "action");
         IList<E_OUT> list = this.collect(DistributedCollectors.toIList());
         list.forEach(action::accept);
         list.destroy();
@@ -160,7 +168,8 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
 
 
     @Override
-    public void forEachOrdered(Distributed.Consumer<? super E_OUT> action) {
+    public void forEachOrdered(Consumer<? super E_OUT> action) {
+        StreamUtil.checkSerializable(action, "action");
         forEach(action);
     }
 
@@ -182,63 +191,70 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     }
 
     @Override
-    public E_OUT reduce(E_OUT identity, Distributed.BinaryOperator<E_OUT> accumulator) {
+    public E_OUT reduce(E_OUT identity, BinaryOperator<E_OUT> accumulator) {
         return new Reducer(context).reduce(this, identity, accumulator);
     }
 
     @Override
-    public Optional<E_OUT> reduce(Distributed.BinaryOperator<E_OUT> accumulator) {
+    public Optional<E_OUT> reduce(BinaryOperator<E_OUT> accumulator) {
         return new Reducer(context).reduce(this, accumulator);
     }
 
     @Override
-    public <U> U reduce(U identity, Distributed.BiFunction<U, ? super E_OUT, U> accumulator,
-                        Distributed.BinaryOperator<U> combiner) {
+    public <U> U reduce(U identity, BiFunction<U, ? super E_OUT, U> accumulator,
+                        BinaryOperator<U> combiner) {
         return new Reducer(context).reduce(this, identity, accumulator, combiner);
     }
 
     @Override
-    public <R> R collect(Distributed.Supplier<R> supplier, Distributed.BiConsumer<R, ? super E_OUT> accumulator,
-                         Distributed.BiConsumer<R, R> combiner) {
-        return new CustomStreamCollector<>(supplier, accumulator, combiner).collect(context, this);
+    public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super E_OUT> accumulator,
+                         BiConsumer<R, R> combiner) {
+        StreamUtil.checkSerializable(supplier, "supplier");
+        StreamUtil.checkSerializable(accumulator, "accumulator");
+        StreamUtil.checkSerializable(combiner, "combiner");
+        return new CustomStreamCollector<E_OUT, R>(supplier, accumulator, combiner).collect(context, this);
     }
 
     @Override
     public <R, A> R collect(DistributedCollector<? super E_OUT, A, R> collector) {
+        StreamUtil.checkSerializable(collector, "collector");
         return collector.collect(context, this);
     }
 
     @Override
-    public Optional<E_OUT> min(Distributed.Comparator<? super E_OUT> comparator) {
-        return reduce((Distributed.BinaryOperator<E_OUT>) (left, right) ->
-                comparator.compare(left, right) < 0 ? left : right);
+    public Optional<E_OUT> min(Comparator<? super E_OUT> comparator) {
+        StreamUtil.checkSerializable(comparator, "comparator");
+        return reduce((left, right) -> comparator.compare(left, right) < 0 ? left : right);
     }
 
     @Override
-    public Optional<E_OUT> max(Distributed.Comparator<? super E_OUT> comparator) {
-        return reduce((Distributed.BinaryOperator<E_OUT>) (left, right) ->
-                comparator.compare(left, right) > 0 ? left : right);
+    public Optional<E_OUT> max(Comparator<? super E_OUT> comparator) {
+        StreamUtil.checkSerializable(comparator, "comparator");
+        return reduce((left, right) -> comparator.compare(left, right) > 0 ? left : right);
     }
 
     @Override
     public long count() {
         return reduce(0L,
-                (Distributed.BiFunction<Long, E_OUT, Long>) (i, m) -> i + 1,
-                (Distributed.BinaryOperator<Long>) (a, b) -> a + b);
+                (i, m) -> i + 1,
+                (a, b) -> a + b);
     }
 
     @Override
-    public boolean anyMatch(Distributed.Predicate<? super E_OUT> predicate) {
+    public boolean anyMatch(Predicate<? super E_OUT> predicate) {
+        StreamUtil.checkSerializable(predicate, "predicate");
         return new Matcher(context).anyMatch(this, predicate);
     }
 
     @Override
-    public boolean allMatch(Distributed.Predicate<? super E_OUT> predicate) {
-        return !new Matcher(context).anyMatch(this, predicate.negate());
+    public boolean allMatch(Predicate<? super E_OUT> predicate) {
+        StreamUtil.checkSerializable(predicate, "predicate");
+        return !new Matcher(context).anyMatch(this, t -> ! predicate.test(t));
     }
 
     @Override
-    public boolean noneMatch(Distributed.Predicate<? super E_OUT> predicate) {
+    public boolean noneMatch(Predicate<? super E_OUT> predicate) {
+        StreamUtil.checkSerializable(predicate, "predicate");
         return !new Matcher(context).anyMatch(this, predicate);
     }
 
@@ -293,7 +309,7 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
 
     @Override
     public void close() {
-        throw new UnsupportedOperationException("Jet streams are not closable.");
+        throw new UnsupportedOperationException("Jet streams are not closeable.");
     }
 
     /**
@@ -308,4 +324,5 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     public Spliterator<E_OUT> spliterator() {
         throw new UnsupportedOperationException();
     }
+
 }

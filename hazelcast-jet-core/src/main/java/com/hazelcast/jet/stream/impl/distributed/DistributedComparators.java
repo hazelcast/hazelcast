@@ -18,6 +18,9 @@ package com.hazelcast.jet.stream.impl.distributed;
 
 import com.hazelcast.jet.Distributed;
 
+import java.util.Comparator;
+import java.util.Objects;
+
 /**
  *
  */
@@ -52,6 +55,44 @@ public final class DistributedComparators {
         @Override
         public Distributed.Comparator<Comparable<Object>> reversed() {
             return NATURAL_ORDER_COMPARATOR;
+        }
+    }
+
+    /**
+     * Null-friendly comparators
+     */
+    public static final class NullComparator<T> implements Distributed.Comparator<T> {
+        private static final long serialVersionUID = -7569533591570686392L;
+        private final boolean nullFirst;
+        // if null, non-null Ts are considered equal
+        private final Comparator<T> real;
+
+        @SuppressWarnings("unchecked")
+        public NullComparator(boolean nullFirst, Comparator<? super T> real) {
+            this.nullFirst = nullFirst;
+            this.real = (Comparator<T>) real;
+        }
+
+        @Override
+        public int compare(T a, T b) {
+            if (a == null) {
+                return (b == null) ? 0 : (nullFirst ? -1 : 1);
+            } else if (b == null) {
+                return nullFirst ? 1 : -1;
+            } else {
+                return (real == null) ? 0 : real.compare(a, b);
+            }
+        }
+
+        @Override
+        public Distributed.Comparator<T> thenComparing(Comparator<? super T> other) {
+            Objects.requireNonNull(other);
+            return new NullComparator<>(nullFirst, real == null ? other : real.thenComparing(other));
+        }
+
+        @Override
+        public Distributed.Comparator<T> reversed() {
+            return new NullComparator<>(!nullFirst, real == null ? null : real.reversed());
         }
     }
 }

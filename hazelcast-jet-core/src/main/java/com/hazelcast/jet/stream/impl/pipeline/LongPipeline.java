@@ -32,8 +32,20 @@ import java.util.OptionalDouble;
 import java.util.OptionalLong;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
+import java.util.function.BiConsumer;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongConsumer;
+import java.util.function.LongFunction;
+import java.util.function.LongPredicate;
+import java.util.function.LongToDoubleFunction;
+import java.util.function.LongToIntFunction;
+import java.util.function.LongUnaryOperator;
+import java.util.function.ObjLongConsumer;
+import java.util.function.Supplier;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+
+import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
 public class LongPipeline implements DistributedLongStream {
@@ -47,37 +59,43 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public DistributedLongStream filter(Distributed.LongPredicate predicate) {
+    public DistributedLongStream filter(LongPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         DistributedStream<Long> filter = inner.filter(predicate::test);
         return wrap(filter);
     }
 
     @Override
-    public DistributedLongStream map(Distributed.LongUnaryOperator mapper) {
+    public DistributedLongStream map(LongUnaryOperator mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Long> map = inner.map(mapper::applyAsLong);
         return wrap(map);
     }
 
     @Override
-    public <U> DistributedStream<U> mapToObj(Distributed.LongFunction<? extends U> mapper) {
-        return inner.map(m -> mapper.apply(m));
+    public <U> DistributedStream<U> mapToObj(LongFunction<? extends U> mapper) {
+        checkSerializable(mapper, "mapper");
+        return inner.map(mapper::apply);
     }
 
     @Override
-    public DistributedIntStream mapToInt(Distributed.LongToIntFunction mapper) {
+    public DistributedIntStream mapToInt(LongToIntFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Integer> stream = inner.map(mapper::applyAsInt);
         return new IntPipeline(context, (Pipeline<Integer>) stream);
     }
 
     @Override
-    public DistributedDoubleStream mapToDouble(Distributed.LongToDoubleFunction mapper) {
+    public DistributedDoubleStream mapToDouble(LongToDoubleFunction mapper) {
+        checkSerializable(mapper, "mapper");
         DistributedStream<Double> stream = inner.map(mapper::applyAsDouble);
         return new DoublePipeline(context, (Pipeline<Double>) stream);
     }
 
     @Override
-    public DistributedLongStream flatMap(Distributed.LongFunction<? extends LongStream> mapper) {
-        return wrap(inner.<Long>flatMap(n -> mapper.apply(n).boxed()));
+    public DistributedLongStream flatMap(LongFunction<? extends LongStream> mapper) {
+        checkSerializable(mapper, "mapper");
+        return wrap(inner.flatMap(n -> mapper.apply(n).boxed()));
     }
 
     @Override
@@ -91,7 +109,8 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public DistributedLongStream peek(Distributed.LongConsumer action) {
+    public DistributedLongStream peek(LongConsumer action) {
+        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -106,12 +125,14 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public void forEach(Distributed.LongConsumer action) {
+    public void forEach(LongConsumer action) {
+        checkSerializable(action, "action");
         inner.forEach(action::accept);
     }
 
     @Override
-    public void forEachOrdered(Distributed.LongConsumer action) {
+    public void forEachOrdered(LongConsumer action) {
+        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -129,23 +150,23 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public long reduce(long identity, Distributed.LongBinaryOperator op) {
-        return new Reducer(context).<Long>reduce(inner,
-                identity,
-                (Distributed.BinaryOperator<Long>) op::applyAsLong);
+    public long reduce(long identity, LongBinaryOperator op) {
+        checkSerializable(op, "op");
+        return new Reducer(context).<Long>reduce(inner, identity, op::applyAsLong);
     }
 
     @Override
-    public OptionalLong reduce(Distributed.LongBinaryOperator op) {
-        Optional<Long> result = new Reducer(context).reduce(inner,
-                (Distributed.BinaryOperator<Long>) op::applyAsLong);
+    public OptionalLong reduce(LongBinaryOperator op) {
+        checkSerializable(op, "op");
+        Optional<Long> result = new Reducer(context).reduce(inner, op::applyAsLong);
         return result.isPresent() ? OptionalLong.of(result.get()) : OptionalLong.empty();
     }
 
     @Override
-    public <R> R collect(Distributed.Supplier<R> supplier,
-                         Distributed.ObjLongConsumer<R> accumulator,
-                         Distributed.BiConsumer<R, R> combiner) {
+    public <R> R collect(Supplier<R> supplier,
+                         ObjLongConsumer<R> accumulator,
+                         BiConsumer<R, R> combiner) {
+        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Long> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -193,17 +214,20 @@ public class LongPipeline implements DistributedLongStream {
     }
 
     @Override
-    public boolean anyMatch(Distributed.LongPredicate predicate) {
+    public boolean anyMatch(LongPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
-    public boolean allMatch(Distributed.LongPredicate predicate) {
+    public boolean allMatch(LongPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
-    public boolean noneMatch(Distributed.LongPredicate predicate) {
+    public boolean noneMatch(LongPredicate predicate) {
+        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 
