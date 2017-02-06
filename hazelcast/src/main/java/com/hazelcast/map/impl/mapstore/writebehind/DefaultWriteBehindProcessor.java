@@ -250,7 +250,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
                 } catch (Exception ex) {
                     Iterator<Object> keys = batchMap.keySet().iterator();
                     while (keys.hasNext()) {
-                        if (!map.containsKey(DefaultWriteBehindProcessor.this.toObject(keys.next()))) {
+                        if (!map.containsKey(toObject(keys.next()))) {
                             keys.remove();
                         }
                     }
