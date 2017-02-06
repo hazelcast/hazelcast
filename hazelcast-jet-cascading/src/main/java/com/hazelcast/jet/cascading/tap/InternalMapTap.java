@@ -169,12 +169,12 @@ public class InternalMapTap extends InternalJetTap {
 
     @Override
     public ProcessorMetaSupplier getSource() {
-        return Processors.mapReader(mapName);
+        return Processors.readMap(mapName);
     }
 
     @Override
     public ProcessorMetaSupplier getSink() {
-        return Processors.mapWriter(mapName);
+        return Processors.writeMap(mapName);
     }
 
     private IMap findIMap(HazelcastInstance instance) {

@@ -19,24 +19,22 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 
 import javax.annotation.Nonnull;
-import java.util.function.BinaryOperator;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-public class CombinerP<T, R> extends AbstractProcessor {
+public class CollectorCombineP<T> extends AbstractProcessor {
 
-    private final BinaryOperator<T> combiner;
-    private final Function<T, R> finisher;
+    private final BiConsumer<T, T> combiner;
     private T result;
 
-    public CombinerP(BinaryOperator<T> combiner, Function<T, R> finisher) {
+    public CollectorCombineP(BiConsumer<T, T> combiner, Function ignored) {
         this.combiner = combiner;
-        this.finisher = finisher;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         if (result != null) {
-            result = combiner.apply(result, (T) item);
+            combiner.accept(result, (T) item);
         } else {
             result = (T) item;
         }
@@ -46,7 +44,7 @@ public class CombinerP<T, R> extends AbstractProcessor {
     @Override
     public boolean complete() {
         if (result != null) {
-            emit(finisher.apply(result));
+            emit(result);
         }
         return true;
     }

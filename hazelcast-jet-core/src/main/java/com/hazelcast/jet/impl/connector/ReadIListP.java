@@ -24,7 +24,7 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
@@ -39,13 +39,13 @@ import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
 import static java.util.stream.IntStream.rangeClosed;
 
-public final class IListReader extends AbstractProcessor {
+public final class ReadIListP extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
     private final Traverser<Object> traverser;
 
-    IListReader(List<Object> list, int fetchSize) {
+    ReadIListP(List<Object> list, int fetchSize) {
         final int size = list.size();
         traverser = size <= fetchSize
                 ? traverseIterable(list)
@@ -114,7 +114,7 @@ public final class IListReader extends AbstractProcessor {
                 // return empty producer on all other nodes
                 return c -> {
                     assertCountIsOne(c);
-                    return singletonList(new NoopProcessor());
+                    return singletonList(new NoopP());
                 };
             };
         }
@@ -161,7 +161,7 @@ public final class IListReader extends AbstractProcessor {
         @Override @Nonnull
         public List<Processor> get(int count) {
             assertCountIsOne(count);
-            return singletonList(new IListReader(list, fetchSize));
+            return singletonList(new ReadIListP(list, fetchSize));
         }
     }
 

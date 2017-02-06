@@ -40,14 +40,14 @@ import static java.util.Collections.singletonList;
  * <p>
  * It will terminate when the socket is closed by the server.
  */
-public class SocketTextStreamReader extends AbstractProcessor implements Closeable {
+public class ReadSocketTextStreamP extends AbstractProcessor implements Closeable {
 
     private final String host;
     private final int port;
     private BufferedReader bufferedReader;
     private Socket socket;
 
-    SocketTextStreamReader(String host, int port) {
+    ReadSocketTextStreamP(String host, int port) {
         this.host = host;
         this.port = port;
     }
@@ -89,7 +89,7 @@ public class SocketTextStreamReader extends AbstractProcessor implements Closeab
     }
 
     /**
-     * Creates a supplier for {@link SocketTextStreamReader}
+     * Creates a supplier for {@link ReadSocketTextStreamP}
      *
      * @param host The host name to connect to
      * @param port The port number to connect to
@@ -115,7 +115,7 @@ public class SocketTextStreamReader extends AbstractProcessor implements Closeab
         private final String host;
         private final int port;
 
-        private transient SocketTextStreamReader reader;
+        private transient ReadSocketTextStreamP reader;
 
         Supplier(String host, int port) {
             this.host = host;
@@ -125,7 +125,7 @@ public class SocketTextStreamReader extends AbstractProcessor implements Closeab
         @Override @Nonnull
         public List<Processor> get(int count) {
             assertCountIsOne(count);
-            this.reader = new SocketTextStreamReader(host, port);
+            this.reader = new ReadSocketTextStreamP(host, port);
             return singletonList(reader);
         }
 

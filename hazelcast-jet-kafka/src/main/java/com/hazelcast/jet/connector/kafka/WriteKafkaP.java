@@ -40,14 +40,14 @@ import static java.util.stream.Collectors.toList;
  * @param <K>                    type of keys written
  * @param <V>                    type of values written
  */
-public final class KafkaWriter<K, V> extends AbstractProcessor {
+public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
     private final Function<K, byte[]> serializeKey;
     private final Function<V, byte[]> serializeValue;
     private final String topic;
     private final KafkaProducer<byte[], byte[]> producer;
 
-    KafkaWriter(String topic, KafkaProducer producer,
+    WriteKafkaP(String topic, KafkaProducer producer,
                 Function<K, byte[]> serializeKey, Function<V, byte[]> serializeValue) {
 
         this.topic = topic;
@@ -87,7 +87,8 @@ public final class KafkaWriter<K, V> extends AbstractProcessor {
     }
 
     /**
-     * Creates supplier for producing messages to kafka topics.
+     * Returns a meta-supplier of processors that publish messages to kafka topics.
+     * It expects items of type {@code Map.Entry}.
      *
      * @param <K>                    type of keys written
      * @param <V>                    type of values written
@@ -97,11 +98,10 @@ public final class KafkaWriter<K, V> extends AbstractProcessor {
      * @param brokerConnectionString kafka broker address
      * @param serializeKey           function for serializing keys
      * @param serializeValue         function for serializing values
-     * @return {@link ProcessorMetaSupplier} supplier
      */
-    public static <K, V> ProcessorMetaSupplier supplier(String zkAddress, String groupId, String topicId,
-                                                        String brokerConnectionString, Function<K, byte[]> serializeKey,
-                                                        Function<V, byte[]> serializeValue) {
+    public static <K, V> ProcessorMetaSupplier writeKafka(String zkAddress, String groupId, String topicId,
+                                                          String brokerConnectionString, Function<K, byte[]> serializeKey,
+                                                          Function<V, byte[]> serializeValue) {
         Properties properties = getProperties(zkAddress, groupId, brokerConnectionString);
         return ProcessorMetaSupplier.of(new Supplier<>(topicId, properties, serializeKey, serializeValue));
     }
@@ -132,7 +132,7 @@ public final class KafkaWriter<K, V> extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new KafkaWriter<>(topicId, producer, serializeKey, serializeValue))
+            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer, serializeKey, serializeValue))
                          .limit(count)
                          .collect(toList());
         }

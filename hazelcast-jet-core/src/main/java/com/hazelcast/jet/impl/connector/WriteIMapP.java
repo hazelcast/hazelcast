@@ -37,12 +37,12 @@ import java.util.stream.Stream;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
 
-public final class IMapWriter implements Processor {
+public final class WriteIMapP implements Processor {
 
     private final IMap map;
     private final ArrayMap buffer = new ArrayMap();
 
-    private IMapWriter(IMap map) {
+    private WriteIMapP(IMap map) {
         this.map = map;
     }
 
@@ -121,7 +121,7 @@ public final class IMapWriter implements Processor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new IMapWriter(map)).limit(count).collect(toList());
+            return Stream.generate(() -> new WriteIMapP(map)).limit(count).collect(toList());
         }
     }
 

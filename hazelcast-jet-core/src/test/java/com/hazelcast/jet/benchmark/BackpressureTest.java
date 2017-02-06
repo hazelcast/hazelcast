@@ -25,10 +25,11 @@ import com.hazelcast.jet.JetTestInstanceFactory;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.IMapWriter;
+import com.hazelcast.jet.impl.connector.WriteIMapP;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -39,12 +40,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.wholeItem;
+import static com.hazelcast.jet.Processors.writeMap;
+import static com.hazelcast.jet.Traversers.lazy;
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.uncheckedGet;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -95,17 +101,15 @@ public class BackpressureTest extends JetTestSupport {
                     .map(Partition::getPartitionId)
                     .findAny()
                     .orElseThrow(() -> new RuntimeException("Can't find a partition owned by member " + jet2));
-        Vertex generator = dag.newVertex("generator", ProcessorMetaSupplier.of(
-                (Address address) -> address.getPort() == member1Port
-                        ? ProcessorSupplier.of(GeneratingProducer::new)
-                        : ProcessorSupplier.of(NoopProcessor::new)
+        Vertex source = dag.newVertex("source", ProcessorMetaSupplier.of((Address address) ->
+                ProcessorSupplier.of(address.getPort() == member1Port ? GenerateP::new : NoopP::new)
         ));
-        Vertex hiccuper = dag.newVertex("hiccuper", ProcessorMetaSupplier.of(Hiccuper::new));
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("counts"));
+        Vertex hiccuper = dag.newVertex("hiccuper", HiccupP::new);
+        Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
-        dag.edge(between(generator, hiccuper)
+        dag.edge(between(source, hiccuper)
                 .distributed().partitioned(wholeItem(), (x, y) -> ptionOwnedByMember2))
-           .edge(between(hiccuper, consumer));
+           .edge(between(hiccuper, sink));
 
         uncheckedGet(jet1.newJob(dag).execute());
         assertCounts(jet1.getMap("counts"));
@@ -120,33 +124,53 @@ public class BackpressureTest extends JetTestSupport {
         }
     }
 
-    private static class GeneratingProducer extends AbstractProcessor {
+    private static class GenerateP extends AbstractProcessor {
 
         private int item;
         private int count;
-
-        @Override
-        public boolean complete() {
-            while (!getOutbox().isHighWater()) {
-                emit(new SimpleImmutableEntry<>(Integer.toString(item), 1L));
-                item++;
-                if (item == DISTINCT) {
-                    if (++count == COUNT_PER_DISTINCT_AND_SLICE) {
-                        return true;
-                    }
+        private final Traverser<Entry<String, Long>> trav = () -> {
+            if (count == COUNT_PER_DISTINCT_AND_SLICE) {
+                return null;
+            }
+            try {
+                return entry(Integer.toString(item), 1L);
+            } finally {
+                if (++item == DISTINCT) {
+                    count++;
                     item = 0;
                 }
             }
-            return false;
+        };
+
+        @Override
+        public boolean complete() {
+            return emitCooperatively(trav);
         }
     }
 
-    private static class Hiccuper extends WordCountTest.Combiner {
+    private static class CombineP extends AbstractProcessor {
+        private Map<String, Long> counts = new HashMap<>();
+        private Traverser<Entry<String, Long>> resultTraverser = lazy(() -> traverseIterable(counts.entrySet()));
+
+        @Override
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+            Entry<String, Long> entry = (Entry<String, Long>) item;
+            counts.compute(entry.getKey(), (k, v) -> v == null ? entry.getValue() : v + entry.getValue());
+            return true;
+        }
+
+        @Override
+        public boolean complete() {
+            return emitCooperatively(resultTraverser);
+        }
+    }
+
+    private static class HiccupP extends CombineP {
 
         private long hiccupDeadline;
         private long nextHiccupTime;
 
-        Hiccuper() {
+        HiccupP() {
             updateNextHiccupTime();
         }
 

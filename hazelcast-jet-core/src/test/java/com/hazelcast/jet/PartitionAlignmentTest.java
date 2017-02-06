@@ -37,7 +37,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.KeyExtractors.wholeItem;
-import static com.hazelcast.jet.Processors.listWriter;
+import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.TestUtil.executeAndPeel;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -79,7 +79,7 @@ public class PartitionAlignmentTest {
         final Vertex distributedProducer = dag.newVertex("distributedProducer", supplierOfListProducer).localParallelism(1);
         final Vertex localProducer = dag.newVertex("localProducer", supplierOfListProducer).localParallelism(1);
         final Vertex processor = dag.newVertex("processor", Counter::new).localParallelism(localProcessorCount);
-        final Vertex consumer = dag.newVertex("consumer", listWriter("numbers")).localParallelism(1);
+        final Vertex consumer = dag.newVertex("consumer", writeList("numbers")).localParallelism(1);
 
         dag.edge(between(distributedProducer, processor).partitioned(wholeItem(), partitioner).distributed())
            .edge(from(localProducer).to(processor, 1).partitioned(wholeItem(), partitioner))

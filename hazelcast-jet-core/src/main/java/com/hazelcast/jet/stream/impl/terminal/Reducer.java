@@ -24,8 +24,8 @@ import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
-import com.hazelcast.jet.stream.impl.processor.AccumulatorP;
-import com.hazelcast.jet.stream.impl.processor.CombinerP;
+import com.hazelcast.jet.stream.impl.processor.AccumulateP;
+import com.hazelcast.jet.stream.impl.processor.CombineP;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -57,7 +57,7 @@ public class Reducer {
     }
 
     private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
-        Supplier<Processor> supplier = () -> new CombinerP<>(combiner, identity());
+        Supplier<Processor> supplier = () -> new CombineP<>(combiner, identity());
         Vertex combinerVertex = dag.newVertex(uniqueVertexName("combiner"), supplier).localParallelism(1);
         dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
@@ -82,7 +82,7 @@ public class Reducer {
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.listWriter(listName));
+        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
         dag.edge(between(combiner, writer));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);
@@ -99,7 +99,7 @@ public class Reducer {
     private static <T, U> Vertex buildMappingAccumulator(
             DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
     ) {
-        Vertex acc = dag.newVertex(uniqueVertexName("accumulator"), () -> new AccumulatorP<>(accumulator, identity));
+        Vertex acc = dag.newVertex(uniqueVertexName("accumulator"), () -> new AccumulateP<>(accumulator, identity));
         Vertex previous = upstream.buildDAG(dag);
         if (previous != acc) {
             dag.edge(between(previous, acc));
@@ -124,8 +124,8 @@ public class Reducer {
             BinaryOperator<T> accumulator, T identity
     ) {
         return identity != null
-                ? new Vertex(uniqueVertexName("accumulator"), () -> new AccumulatorP<>(accumulator, identity))
-                : new Vertex(uniqueVertexName("combiner"), () -> new CombinerP<>(
+                ? new Vertex(uniqueVertexName("accumulator"), () -> new AccumulateP<>(accumulator, identity))
+                : new Vertex(uniqueVertexName("combiner"), () -> new CombineP<>(
                         accumulator, identity()));
     }
 

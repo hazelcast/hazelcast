@@ -29,6 +29,7 @@ import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatist
 import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
@@ -49,6 +50,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collector;
+
+import static com.hazelcast.jet.Util.entry;
 
 /**
  * Distributed implementations of {@link java.util.stream.Collectors}
@@ -1173,13 +1176,13 @@ public abstract class DistributedCollectors {
             this.forFalse = forFalse;
         }
 
-        @Override
+        @Override @Nonnull
         public Set<Map.Entry<Boolean, T>> entrySet() {
             return new AbstractSet<Entry<Boolean, T>>() {
-                @Override
+                @Override @Nonnull
                 public Iterator<Entry<Boolean, T>> iterator() {
-                    Map.Entry<Boolean, T> falseEntry = new SimpleImmutableEntry<>(false, forFalse);
-                    Map.Entry<Boolean, T> trueEntry = new SimpleImmutableEntry<>(true, forTrue);
+                    Map.Entry<Boolean, T> falseEntry = entry(false, forFalse);
+                    Map.Entry<Boolean, T> trueEntry = entry(true, forTrue);
                     return Arrays.asList(falseEntry, trueEntry).iterator();
                 }
 

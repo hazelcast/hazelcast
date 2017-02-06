@@ -17,7 +17,7 @@
 package com.hazelcast.jet;
 
 import com.hazelcast.jet.Edge.ForwardingPattern;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,8 +40,8 @@ public class EdgeTest {
 
     @Before
     public void before() {
-        a = new Vertex(A, NoopProcessor::new);
-        b = new Vertex(B, NoopProcessor::new);
+        a = new Vertex(A, NoopP::new);
+        b = new Vertex(B, NoopP::new);
     }
 
     @Test

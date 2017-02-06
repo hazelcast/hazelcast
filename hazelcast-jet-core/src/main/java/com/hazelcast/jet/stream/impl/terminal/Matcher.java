@@ -63,7 +63,7 @@ public class Matcher {
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.listWriter(listName));
+        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
         dag.edge(between(vertex, writer));
         executeJob(context, dag);
         return context.getJetInstance().getList(listName);

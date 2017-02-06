@@ -31,12 +31,12 @@ import java.util.stream.Stream;
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
 import static java.util.stream.Collectors.toList;
 
-public final class IListWriter implements Processor {
+public final class WriteIListP implements Processor {
 
     private final List list;
     private final ArrayList<Object> buffer = new ArrayList<>();
 
-    IListWriter(List list) {
+    WriteIListP(List list) {
         this.list = list;
     }
 
@@ -102,7 +102,7 @@ public final class IListWriter implements Processor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new IListWriter(list)).limit(count).collect(toList());
+            return Stream.generate(() -> new WriteIListP(list)).limit(count).collect(toList());
         }
     }
 }

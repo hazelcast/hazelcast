@@ -22,15 +22,15 @@ import javax.annotation.Nonnull;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-public class CollectorAccumulatorP<IN, OUT> extends AbstractProcessor {
+public class CollectorAccumulateP<IN, OUT> extends AbstractProcessor {
 
     private final BiConsumer<OUT, IN> accumulator;
     private final Supplier<OUT> supplier;
     private OUT result;
 
 
-    public CollectorAccumulatorP(BiConsumer<OUT, IN> accumulator,
-                                 Supplier<OUT> supplier) {
+    public CollectorAccumulateP(BiConsumer<OUT, IN> accumulator,
+                                Supplier<OUT> supplier) {
         this.accumulator = accumulator;
         this.supplier = supplier;
     }

@@ -25,7 +25,7 @@ import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
-import com.hazelcast.jet.Processors.NoopProcessor;
+import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.util.CircularListCursor;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
@@ -40,20 +40,20 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.client.HazelcastClient.newHazelcastClient;
-import static java.util.AbstractMap.SimpleImmutableEntry;
+import static com.hazelcast.jet.Util.entry;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
-public final class IMapReader extends AbstractProcessor {
+public final class ReadIMapP extends AbstractProcessor {
 
     private static final int DEFAULT_FETCH_SIZE = 16384;
 
     private final Traverser<Entry> outputTraverser;
 
-    IMapReader(Function<Integer, Iterator<Entry>> partitionToIterator, List<Integer> partitions) {
+    ReadIMapP(Function<Integer, Iterator<Entry>> partitionToIterator, List<Integer> partitions) {
         final CircularListCursor<Iterator> iteratorCursor = new CircularListCursor<>(
                 partitions.stream().map(partitionToIterator).collect(toList())
         );
@@ -234,14 +234,14 @@ public final class IMapReader extends AbstractProcessor {
                                          Function<Integer, Iterator<Entry>> partitionToIterator) {
         Map<Integer, List<Integer>> processorToPartitions =
                 range(0, ownedPartitions.size())
-                        .mapToObj(i -> new SimpleImmutableEntry<>(i, ownedPartitions.get(i)))
+                        .mapToObj(i -> entry(i, ownedPartitions.get(i)))
                         .collect(groupingBy(e -> e.getKey() % count, mapping(Entry::getValue, toList())));
         range(0, count).forEach(processor -> processorToPartitions.computeIfAbsent(processor, x -> emptyList()));
         return processorToPartitions
                 .values().stream()
                 .map(partitions -> !partitions.isEmpty()
-                        ? new IMapReader(partitionToIterator, partitions)
-                        : new NoopProcessor()
+                        ? new ReadIMapP(partitionToIterator, partitions)
+                        : new NoopP()
                 )
                 .collect(toList());
     }

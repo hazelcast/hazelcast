@@ -20,8 +20,9 @@ import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.IListWriter;
+import com.hazelcast.jet.impl.connector.WriteIListP;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.hadoop.conf.Configuration;
@@ -40,12 +41,14 @@ import java.util.Map;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-public class HdfsReaderTest extends JetTestSupport {
+public class ReadHdfsPTest extends JetTestSupport {
 
     @Test
     public void testReadFile() throws Exception {
@@ -54,17 +57,17 @@ public class HdfsReaderTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         createJetMember();
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString()))
-                             .localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
-                             .localParallelism(1);
-        dag.edge(between(producer, consumer));
+        Vertex source = dag.newVertex("source", readHdfs(path.toString()))
+                           .localParallelism(4);
+        Vertex sink = dag.newVertex("sink", writeList("sink"))
+                         .localParallelism(1);
+        dag.edge(between(source, sink));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 
-        IList<Map.Entry> list = instance.getList("consumer");
+        IList<Map.Entry> list = instance.getList("sink");
         assertEquals(4, list.size());
         assertTrue(list.get(0).getValue().toString().contains("value"));
     }
@@ -76,17 +79,17 @@ public class HdfsReaderTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         createJetMember();
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", HdfsReader.supplier(path.toString(), (k, v) -> v.toString()))
-                             .localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer"))
-                             .localParallelism(1);
-        dag.edge(between(producer, consumer));
+        Vertex source = dag.newVertex("source", readHdfs(path.toString(), (k, v) -> v.toString()))
+                           .localParallelism(4);
+        Vertex sink = dag.newVertex("sink", writeList("sink"))
+                         .localParallelism(1);
+        dag.edge(between(source, sink));
 
         Future<Void> future = instance.newJob(dag).execute();
         assertCompletesEventually(future);
 
 
-        IList<String> list = instance.getList("consumer");
+        IList<String> list = instance.getList("sink");
         assertEquals(4, list.size());
         assertTrue(list.get(0).contains("key"));
     }

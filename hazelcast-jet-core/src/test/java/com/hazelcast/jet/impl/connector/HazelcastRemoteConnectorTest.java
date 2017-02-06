@@ -39,6 +39,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.readList;
+import static com.hazelcast.jet.Processors.readMap;
+import static com.hazelcast.jet.Processors.writeList;
+import static com.hazelcast.jet.Processors.writeMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -77,41 +81,41 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
 
     @Test
     public void when_listReaderConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
-        populateList(hz.getList("producer"));
+        populateList(hz.getList("source"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IListReader.supplier("producer", clientConfig)).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
-        dag.edge(between(producer, consumer));
+        Vertex source = dag.newVertex("source", readList("source", clientConfig)).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", writeList("sink")).localParallelism(1);
+        dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList("consumer").size());
+        assertEquals(ITEM_COUNT, jet.getList("sink").size());
     }
 
     @Test
     public void when_listWriterConfiguredWithClientConfig_then_writeToRemoteCluster() throws Exception {
-        populateList(jet.getList("producer"));
+        populateList(jet.getList("source"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IListReader.supplier("producer")).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer", clientConfig)).localParallelism(4);
-        dag.edge(between(producer, consumer));
+        Vertex source = dag.newVertex("source", readList("source")).localParallelism(1);
+        Vertex sink = dag.newVertex("sink", writeList("sink", clientConfig)).localParallelism(4);
+        dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, hz.getList("consumer").size());
+        assertEquals(ITEM_COUNT, hz.getList("sink").size());
     }
 
     @Test
     public void when_mapReaderConfiguredWithClientConfig_then_readFromRemoteCluster() throws Exception {
-        populateMap(hz.getMap("producer"));
+        populateMap(hz.getMap("source"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer", clientConfig)).localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
-        dag.edge(between(producer, consumer));
+        Vertex source = dag.newVertex("source", readMap("source", clientConfig)).localParallelism(4);
+        Vertex sink = dag.newVertex("sink", WriteIListP.supplier("sink")).localParallelism(1);
+        dag.edge(between(source, sink));
 
         executeAndWait(dag);
-        assertEquals(ITEM_COUNT, jet.getList("consumer").size());
+        assertEquals(ITEM_COUNT, jet.getList("sink").size());
     }
 
     @Test
@@ -119,8 +123,8 @@ public class HazelcastRemoteConnectorTest extends JetTestSupport {
         populateMap(jet.getMap("producer"));
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", IMapReader.supplier("producer")).localParallelism(4);
-        Vertex consumer = dag.newVertex("consumer", IMapWriter.supplier("consumer", clientConfig)).localParallelism(4);
+        Vertex producer = dag.newVertex("producer", readMap("producer")).localParallelism(4);
+        Vertex consumer = dag.newVertex("consumer", writeMap("consumer", clientConfig)).localParallelism(4);
         dag.edge(between(producer, consumer));
 
         executeAndWait(dag);

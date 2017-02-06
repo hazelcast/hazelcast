@@ -67,7 +67,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
                 () -> new MergeP<>(keyMapper, valueMapper, mergeFunction));
         Vertex combiner = dag.newVertex(uniqueVertexName("merging-combiner"),
                 () -> new MergeP<T, K, V>(null, null, mergeFunction));
-        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.mapWriter(mapName));
+        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.writeMap(mapName));
 
         dag.edge(between(previous, merger).partitioned(keyMapper::apply, HASH_CODE))
            .edge(between(merger, combiner).distributed().partitioned(entryKey()))

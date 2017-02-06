@@ -49,13 +49,13 @@ import static org.apache.hadoop.mapreduce.TaskType.JOB_SETUP;
 /**
  * HDFS writer for Jet, consumes Map.Entry objects and writes them to the output file in HDFS.
  */
-public final class HdfsWriter extends AbstractProcessor {
+public final class WriteHdfsP extends AbstractProcessor {
 
     private final RecordWriter recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
     private final OutputCommitter outputCommitter;
 
-    private HdfsWriter(RecordWriter recordWriter, TaskAttemptContextImpl taskAttemptContext,
+    private WriteHdfsP(RecordWriter recordWriter, TaskAttemptContextImpl taskAttemptContext,
                        OutputCommitter outputCommitter) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
@@ -86,12 +86,12 @@ public final class HdfsWriter extends AbstractProcessor {
     }
 
     /**
-     * Creates supplier for writing HDFS files.
+     * Returns a meta-supplier of processors that write HDFS files.
      *
      * @param path output path for writing files
      * @return {@link ProcessorMetaSupplier} supplier
      */
-    public static ProcessorMetaSupplier supplier(String path) {
+    public static ProcessorMetaSupplier writeHdfs(String path) {
         return new MetaSupplier(path);
     }
 
@@ -173,7 +173,7 @@ public final class HdfsWriter extends AbstractProcessor {
                 TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(conf, taskAttemptID);
                 RecordWriter recordWriter = uncheckCall(() -> conf.getOutputFormat().getRecordWriter(null,
                         conf, uuid + '-' + valueOf(i), Reporter.NULL));
-                return new HdfsWriter(recordWriter, taskAttemptContext, outputCommitter);
+                return new WriteHdfsP(recordWriter, taskAttemptContext, outputCommitter);
 
             }).collect(toList());
         }

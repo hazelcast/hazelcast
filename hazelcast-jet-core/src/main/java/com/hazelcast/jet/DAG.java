@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +39,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.util.Collections.newSetFromMap;
 import static java.util.stream.Collectors.groupingBy;
@@ -393,10 +393,9 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     private static void validateAgainstMultigraph(Collection<Edge> edges) {
-        final Set<SimpleImmutableEntry<String, String>> distinctSrcDest = new HashSet<>();
+        final Set<Entry<String, String>> distinctSrcDest = new HashSet<>();
         for (Edge e : edges) {
-            final SimpleImmutableEntry<String, String> srcDestId =
-                    new SimpleImmutableEntry<>(e.getSourceName(), e.getDestName());
+            final Entry<String, String> srcDestId = entry(e.getSourceName(), e.getDestName());
             if (!distinctSrcDest.add(srcDestId)) {
                 throw new IllegalArgumentException(
                         String.format("Duplicate edge: %s -> %s", srcDestId.getKey(), srcDestId.getValue()));

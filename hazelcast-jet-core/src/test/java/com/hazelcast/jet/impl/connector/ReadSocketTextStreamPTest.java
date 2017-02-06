@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.core.IList;
-import com.hazelcast.jet.impl.connector.IListWriter;
-import com.hazelcast.jet.impl.connector.SocketTextStreamReader;
+import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.JetInstance;
+import com.hazelcast.jet.JetTestInstanceFactory;
+import com.hazelcast.jet.JetTestSupport;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -35,13 +38,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastSerialClassRunner.class)
-public class SocketTextStreamReaderTest extends JetTestSupport {
+public class ReadSocketTextStreamPTest extends JetTestSupport {
 
     private JetTestInstanceFactory factory;
     private JetInstance instance;
@@ -77,8 +81,8 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         })).start();
 
         DAG dag = new DAG();
-        Vertex producer = dag.newVertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1);
-        Vertex consumer = dag.newVertex("consumer", IListWriter.supplier("consumer")).localParallelism(1);
+        Vertex producer = dag.newVertex("producer", ReadSocketTextStreamP.supplier(HOST, PORT)).localParallelism(1);
+        Vertex consumer = dag.newVertex("consumer", writeList("consumer")).localParallelism(1);
         dag.edge(between(producer, consumer));
 
         // When
@@ -105,7 +109,7 @@ public class SocketTextStreamReaderTest extends JetTestSupport {
         })).start();
 
         DAG dag = new DAG().vertex(
-                new Vertex("producer", SocketTextStreamReader.supplier(HOST, PORT)).localParallelism(1)
+                new Vertex("producer", ReadSocketTextStreamP.supplier(HOST, PORT)).localParallelism(1)
         );
 
         Future<Void> job = instance.newJob(dag).execute();

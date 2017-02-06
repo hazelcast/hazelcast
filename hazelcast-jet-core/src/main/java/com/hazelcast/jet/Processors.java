@@ -18,13 +18,12 @@ package com.hazelcast.jet;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
-import com.hazelcast.jet.impl.connector.IListReader;
-import com.hazelcast.jet.impl.connector.IListWriter;
-import com.hazelcast.jet.impl.connector.IMapReader;
-import com.hazelcast.jet.impl.connector.IMapWriter;
+import com.hazelcast.jet.impl.connector.ReadIListP;
+import com.hazelcast.jet.impl.connector.WriteIListP;
+import com.hazelcast.jet.impl.connector.ReadIMapP;
+import com.hazelcast.jet.impl.connector.WriteIMapP;
 
 import javax.annotation.Nonnull;
-import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -60,8 +59,8 @@ public final class Processors {
      * given with respect to missing or duplicate items.
      */
     @Nonnull
-    public static ProcessorMetaSupplier mapReader(@Nonnull String mapName) {
-        return IMapReader.supplier(mapName);
+    public static ProcessorMetaSupplier readMap(@Nonnull String mapName) {
+        return ReadIMapP.supplier(mapName);
     }
 
     /**
@@ -72,16 +71,16 @@ public final class Processors {
      * given with respect to missing or duplicate items.
      */
     @Nonnull
-    public static ProcessorMetaSupplier mapReader(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return IMapReader.supplier(mapName, clientConfig);
+    public static ProcessorMetaSupplier readMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return ReadIMapP.supplier(mapName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that will put data into a Hazelcast {@code IMap}.
      */
     @Nonnull
-    public static ProcessorMetaSupplier mapWriter(@Nonnull String mapName) {
-        return IMapWriter.supplier(mapName);
+    public static ProcessorMetaSupplier writeMap(@Nonnull String mapName) {
+        return WriteIMapP.supplier(mapName);
     }
 
     /**
@@ -89,16 +88,16 @@ public final class Processors {
      * a remote cluster.
      */
     @Nonnull
-    public static ProcessorMetaSupplier mapWriter(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
-        return IMapWriter.supplier(mapName, clientConfig);
+    public static ProcessorMetaSupplier writeMap(@Nonnull String mapName, @Nonnull ClientConfig clientConfig) {
+        return WriteIMapP.supplier(mapName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that emit items retrieved from an IMDG IList.
      */
     @Nonnull
-    public static ProcessorMetaSupplier listReader(@Nonnull String listName) {
-        return IListReader.supplier(listName);
+    public static ProcessorMetaSupplier readList(@Nonnull String listName) {
+        return ReadIListP.supplier(listName);
     }
 
     /**
@@ -106,16 +105,16 @@ public final class Processors {
      * in a remote cluster.
      */
     @Nonnull
-    public static ProcessorMetaSupplier listReader(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return IListReader.supplier(listName, clientConfig);
+    public static ProcessorMetaSupplier readList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+        return ReadIListP.supplier(listName, clientConfig);
     }
 
     /**
      * Returns a meta-supplier of processors that write received items to an IMDG IList.
      */
     @Nonnull
-    public static ProcessorSupplier listWriter(@Nonnull String listName) {
-        return IListWriter.supplier(listName);
+    public static ProcessorSupplier writeList(@Nonnull String listName) {
+        return WriteIListP.supplier(listName);
     }
 
     /**
@@ -123,8 +122,8 @@ public final class Processors {
      * a remote cluster.
      */
     @Nonnull
-    public static ProcessorSupplier listWriter(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
-        return IListWriter.supplier(listName, clientConfig);
+    public static ProcessorSupplier writeList(@Nonnull String listName, @Nonnull ClientConfig clientConfig) {
+        return WriteIListP.supplier(listName, clientConfig);
     }
 
     /**
@@ -239,7 +238,7 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiFunction<? super A, ? super T, ? extends A> accumulator
     ) {
-        return groupAndAccumulate(keyExtractor, supplier, accumulator, SimpleImmutableEntry::new);
+        return groupAndAccumulate(keyExtractor, supplier, accumulator, Util::entry);
     }
 
     /**
@@ -325,7 +324,7 @@ public final class Processors {
             @Nonnull Distributed.Supplier<? extends A> supplier,
             @Nonnull Distributed.BiConsumer<? super A, ? super T> collector
     ) {
-        return groupAndCollect(keyExtractor, supplier, collector, SimpleImmutableEntry::new);
+        return groupAndCollect(keyExtractor, supplier, collector, Util::entry);
     }
 
     /**
@@ -479,7 +478,7 @@ public final class Processors {
     /**
      * A processor that does nothing.
      */
-    public static class NoopProcessor implements Processor {
+    public static class NoopP implements Processor {
     }
 
     /**
