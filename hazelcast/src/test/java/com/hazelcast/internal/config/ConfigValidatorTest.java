@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -107,6 +108,8 @@ public class ConfigValidatorTest extends HazelcastTestSupport {
      * Not supported client configuration, so test is expected to throw exception.
      */
     @Test(expected = IllegalArgumentException.class)
+    @Ignore("As of 3.8 a warning is logged when client configuration specifies cache-local-entries option. "
+            + "This test is to be enabled again in 3.9, when this configuration will throw an exception.")
     public void checkNearCacheConfig_withUnsupportedClientConfig() {
         checkNearCacheConfig(MAP_NAME, getNearCacheConfig(BINARY), true);
     }
