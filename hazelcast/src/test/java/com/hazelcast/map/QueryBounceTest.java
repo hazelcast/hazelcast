@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 
-import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -68,12 +67,12 @@ public class QueryBounceTest {
         populateMap(map);
     }
 
-    @Test(timeout = 4 * MINUTE)
+    @Test
     public void testQuery() {
         prepareAndRunQueryTasks();
     }
 
-    @Test(timeout = 4 * MINUTE)
+    @Test
     public void testQueryWithIndexes() {
         prepareAndRunQueryTasks();
     }
