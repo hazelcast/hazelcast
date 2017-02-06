@@ -67,7 +67,7 @@ public class IndexImpl implements Index {
             converter = entry.getConverter(attributeName);
         }
 
-        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getValue());
+        Object newAttributeValue = extractAttributeValue(entry.getKeyData(), entry.getTargetObject(false));
         if (oldRecordValue == null) {
             indexStore.newIndex(newAttributeValue, entry);
         } else {

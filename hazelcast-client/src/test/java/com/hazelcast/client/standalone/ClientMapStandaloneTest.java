@@ -45,6 +45,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.query.Predicates.equal;
 import static com.hazelcast.query.Predicates.in;
+import static com.hazelcast.query.Predicates.or;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -210,6 +211,24 @@ public class ClientMapStandaloneTest {
 
         Collection values = map.values(Predicates.lessThan("date", new Date().getTime()));
         assertEquals(values.iterator().next(), element);
+    }
+
+    @Test
+    public void testPortable_query_with_index() throws Exception {
+        IMap<Integer, MyPortableElement> map = createMap();
+
+        for (int i = 0; i < 100; i++) {
+            MyPortableElement element = new MyPortableElement(i);
+            map.put(i, element);
+        }
+        map.addIndex("id", false);
+        Predicate predicate = or(
+                equal("id", 0),
+                equal("id", 1)
+        );
+
+        Collection values = map.values(predicate);
+        assertEquals(2, values.size());
     }
 
     @Test
