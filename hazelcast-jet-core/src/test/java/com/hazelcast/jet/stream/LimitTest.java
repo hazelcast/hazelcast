@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class LimitTest extends AbstractStreamTest {
@@ -33,7 +34,7 @@ public class LimitTest extends AbstractStreamTest {
         int limit = 10;
         IList list = map.stream()
                         .limit(limit)
-                        .collect(DistributedCollectors.toIList());
+                        .collect(DistributedCollectors.toIList(uniqueListName()));
 
 
         assertEquals(limit, list.size());
@@ -48,7 +49,7 @@ public class LimitTest extends AbstractStreamTest {
         IList list = map.stream()
                         .map(Map.Entry::getValue)
                         .limit(limit)
-                        .collect(DistributedCollectors.toIList());
+                        .collect(DistributedCollectors.toIList(uniqueListName()));
 
 
         assertEquals(limit, list.size());
@@ -62,7 +63,7 @@ public class LimitTest extends AbstractStreamTest {
         int limit = 10;
         IList<Integer> result = list.stream()
                                     .limit(limit)
-                                    .collect(DistributedCollectors.toIList());
+                                    .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(limit, result.size());
     }

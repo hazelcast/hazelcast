@@ -33,6 +33,7 @@ import java.util.PrimitiveIterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -114,7 +115,7 @@ public class IntStreamTest extends AbstractStreamTest {
     public void boxed() {
         DistributedStream<Integer> boxed = stream.boxed();
 
-        IList<Integer> list = boxed.collect(DistributedCollectors.toIList());
+        IList<Integer> list = boxed.collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, list.size());
     }
@@ -276,7 +277,7 @@ public class IntStreamTest extends AbstractStreamTest {
 
     @Test
     public void mapToObj() {
-        IList<Integer> list = stream.mapToObj(m -> m).collect(DistributedCollectors.toIList());
+        IList<Integer> list = stream.mapToObj(m -> m).collect(DistributedCollectors.toIList(uniqueListName()));
 
         Object[] array = list.toArray();
         Arrays.sort(array);

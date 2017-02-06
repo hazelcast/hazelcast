@@ -45,6 +45,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
 @SuppressWarnings("checkstyle:methodcount")
 class IntPipeline implements DistributedIntStream {
@@ -134,15 +135,18 @@ class IntPipeline implements DistributedIntStream {
 
     @Override
     public int[] toArray() {
-        IList<Integer> list = inner.collect(DistributedCollectors.toIList());
-        int[] array = new int[list.size()];
+        IList<Integer> list = inner.collect(DistributedCollectors.toIList(uniqueListName()));
+        try {
+            int[] array = new int[list.size()];
 
-        Iterator<Integer> iterator = list.iterator();
-        int index = 0;
-        while (iterator.hasNext()) {
-            array[index++] = iterator.next();
+            int index = 0;
+            for (Integer i : list) {
+                array[index++] = i;
+            }
+            return array;
+        } finally {
+            list.destroy();
         }
-        return array;
     }
 
     @Override

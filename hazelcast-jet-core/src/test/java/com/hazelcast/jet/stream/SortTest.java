@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class SortTest extends AbstractStreamTest {
@@ -35,7 +36,7 @@ public class SortTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .sorted()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
 
@@ -54,7 +55,7 @@ public class SortTest extends AbstractStreamTest {
                 .stream()
                 .map(Entry::getValue)
                 .sorted()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
 
@@ -73,7 +74,7 @@ public class SortTest extends AbstractStreamTest {
                 .stream()
                 .map(Entry::getValue)
                 .sorted((left, right) -> right.compareTo(left))
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
 
@@ -93,7 +94,7 @@ public class SortTest extends AbstractStreamTest {
                 .map(Map.Entry::getValue)
                 .sorted(Integer::compareTo)
                 .map(i -> i * i)
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
         for (int i = 0; i < COUNT; i++) {

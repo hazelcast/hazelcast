@@ -20,6 +20,8 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
 import org.junit.Test;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static org.junit.Assert.assertEquals;
 
 public class FilterTest extends AbstractStreamTest {
@@ -31,7 +33,7 @@ public class FilterTest extends AbstractStreamTest {
 
         IMap<String, Integer> result = map.stream()
                                           .filter(f -> f.getValue() < 10)
-                                          .collect(DistributedCollectors.toIMap());
+                                          .collect(DistributedCollectors.toIMap(uniqueMapName()));
 
         assertEquals(10, result.size());
 
@@ -49,7 +51,7 @@ public class FilterTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .filter(f -> f < 100)
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(100, result.size());
 

@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Map;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class UnorderedTest extends AbstractStreamTest {
@@ -34,7 +35,7 @@ public class UnorderedTest extends AbstractStreamTest {
         IList<Integer> collected = list.stream()
                 .unordered()
                 .map(i -> i)
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, collected.size());
         Integer[] result = collected.toArray(new Integer[COUNT]);
@@ -56,7 +57,7 @@ public class UnorderedTest extends AbstractStreamTest {
                 .map(i -> i)
                 .unordered()
                 .map(i -> i)
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, collected.size());
         Integer[] result = collected.toArray(new Integer[COUNT]);
@@ -78,7 +79,7 @@ public class UnorderedTest extends AbstractStreamTest {
         IList<Integer> collected = map.stream()
                 .unordered()
                 .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, collected.size());
         Integer[] result = collected.toArray(new Integer[COUNT]);

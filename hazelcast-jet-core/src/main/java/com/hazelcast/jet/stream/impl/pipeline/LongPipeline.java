@@ -45,6 +45,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
 @SuppressWarnings("checkstyle:methodcount")
 class LongPipeline implements DistributedLongStream {
@@ -134,15 +135,18 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public long[] toArray() {
-        IList<Long> list = inner.collect(DistributedCollectors.toIList());
-        long[] array = new long[list.size()];
+        IList<Long> list = inner.collect(DistributedCollectors.toIList(uniqueListName()));
+        try {
+            long[] array = new long[list.size()];
 
-        Iterator<Long> iterator = list.iterator();
-        int index = 0;
-        while (iterator.hasNext()) {
-            array[index++] = iterator.next();
+            int index = 0;
+            for (Long l : list) {
+                array[index++] = l;
+            }
+            return array;
+        } finally {
+            list.destroy();
         }
-        return array;
     }
 
     @Override

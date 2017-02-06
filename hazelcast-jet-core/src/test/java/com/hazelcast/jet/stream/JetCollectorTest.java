@@ -28,6 +28,8 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static com.hazelcast.jet.stream.DistributedCollectors.groupingByToIMap;
 import static com.hazelcast.jet.stream.DistributedCollectors.toIList;
 import static org.junit.Assert.assertArrayEquals;
@@ -41,7 +43,7 @@ public class JetCollectorTest extends AbstractStreamTest {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
-        IMap<String, Integer> collected = map.stream().collect(DistributedCollectors.toIMap());
+        IMap<String, Integer> collected = map.stream().collect(DistributedCollectors.toIMap(uniqueMapName()));
 
         assertEquals(COUNT, collected.size());
         for (int i = 0; i < COUNT; i++) {
@@ -56,7 +58,7 @@ public class JetCollectorTest extends AbstractStreamTest {
         fillMap(map);
 
         IMap<Integer, Integer> collected = map.stream()
-                .collect(DistributedCollectors.toIMap(e -> Integer.parseInt(e.getKey().split("-")[1]),
+                .collect(DistributedCollectors.toIMap(uniqueMapName(), e -> Integer.parseInt(e.getKey().split("-")[1]),
                         e -> e.getValue() * 2, (l, r) -> l));
 
         assertEquals(COUNT, collected.size());
@@ -78,7 +80,7 @@ public class JetCollectorTest extends AbstractStreamTest {
         IMap<Integer, List<Integer>> collected = map
                 .stream()
                 .map(Map.Entry::getValue)
-                .collect(groupingByToIMap(m -> m % mod));
+                .collect(groupingByToIMap(uniqueMapName(), m -> m % mod));
 
         assertEquals(mod, collected.size());
 
@@ -102,6 +104,7 @@ public class JetCollectorTest extends AbstractStreamTest {
                 .stream()
                 .map(Map.Entry::getValue)
                 .collect(groupingByToIMap(
+                        uniqueMapName(),
                         m -> m < COUNT / 2 ? 0 : 1,
                         DistributedCollectors.groupingBy(m -> m % mod)));
 
@@ -130,7 +133,7 @@ public class JetCollectorTest extends AbstractStreamTest {
 
         IMap<Integer, List<Integer>> collected = list
                 .stream()
-                .collect(groupingByToIMap(m -> m % mod));
+                .collect(groupingByToIMap(uniqueMapName(), m -> m % mod));
 
         assertEquals(mod, collected.size());
 
@@ -153,7 +156,7 @@ public class JetCollectorTest extends AbstractStreamTest {
 
         IMap<String, Integer> collected = map.stream()
                 .flatMap(m -> Stream.of(m.getValue().split("\\s")))
-                .collect(DistributedCollectors.toIMap(v -> v, v -> 1, (l, r) -> l + r));
+                .collect(DistributedCollectors.toIMap(uniqueMapName(), v -> v, v -> 1, (l, r) -> l + r));
 
         assertEquals(10, collected.size());
 
@@ -172,7 +175,7 @@ public class JetCollectorTest extends AbstractStreamTest {
 
         IMap<String, Integer> collected = list.stream()
                                               .flatMap(m -> Stream.of(m.split("\\s")))
-                                              .collect(DistributedCollectors.toIMap(v -> v, v -> 1, (l, r) -> l + r));
+                                              .collect(DistributedCollectors.toIMap(uniqueMapName(), v -> v, v -> 1, (l, r) -> l + r));
 
         assertEquals(10, collected.size());
 
@@ -186,7 +189,7 @@ public class JetCollectorTest extends AbstractStreamTest {
         IStreamList<Integer> list = getList();
         fillList(list);
 
-        IStreamList<Integer> collected = list.stream().collect(toIList());
+        IStreamList<Integer> collected = list.stream().collect(toIList(uniqueListName()));
 
         assertArrayEquals(list.toArray(), collected.toArray());
     }
@@ -196,7 +199,7 @@ public class JetCollectorTest extends AbstractStreamTest {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
-        IList<Map.Entry<String, Integer>> collected = map.stream().collect(toIList());
+        IList<Map.Entry<String, Integer>> collected = map.stream().collect(toIList(uniqueListName()));
 
         Map.Entry<String, Integer>[] expecteds = map.entrySet().toArray(new Map.Entry[0]);
         Map.Entry<String, Integer>[] actuals = collected.toArray(new Map.Entry[0]);

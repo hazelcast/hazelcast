@@ -21,17 +21,11 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.stream.IStreamList;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-
 public class IListReducer<T> extends AbstractSinkReducer<T, IStreamList<T>> {
 
     private final String listName;
 
-    public IListReducer() {
-        this(uniqueListName());
-    }
-
-    private IListReducer(String listName) {
+    public IListReducer(String listName) {
         this.listName = listName;
     }
 

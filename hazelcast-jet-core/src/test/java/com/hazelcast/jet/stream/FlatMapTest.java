@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.IntStream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class FlatMapTest extends AbstractStreamTest {
@@ -38,7 +39,7 @@ public class FlatMapTest extends AbstractStreamTest {
                                    .flatMap(e -> IntStream.iterate(e.getValue(), IntUnaryOperator.identity())
                                                           .limit(repetitions)
                                                           .boxed())
-                                   .collect(DistributedCollectors.toIList());
+                                   .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT * repetitions, result.size());
 
@@ -62,7 +63,7 @@ public class FlatMapTest extends AbstractStreamTest {
                                     .flatMap(i -> IntStream.iterate(i, IntUnaryOperator.identity())
                                                            .limit(repetitions)
                                                            .boxed())
-                                    .collect(DistributedCollectors.toIList());
+                                    .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT * repetitions, result.size());
 

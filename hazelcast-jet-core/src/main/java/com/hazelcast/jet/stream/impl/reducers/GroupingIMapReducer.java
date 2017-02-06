@@ -18,9 +18,7 @@ package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.DistributedCollector;
 import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
@@ -35,7 +33,6 @@ import static com.hazelcast.jet.KeyExtractors.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
 public class GroupingIMapReducer<T, A, K, D> implements Reducer<T, IMap<K, D>> {
 
@@ -43,12 +40,7 @@ public class GroupingIMapReducer<T, A, K, D> implements Reducer<T, IMap<K, D>> {
     private final Function<? super T, ? extends K> classifier;
     private final Collector<? super T, A, D> collector;
 
-    public GroupingIMapReducer(Distributed.Function<? super T, ? extends K> classifier,
-                               DistributedCollector<? super T, A, D> downstream) {
-        this(uniqueMapName(), classifier, downstream);
-    }
-
-    private GroupingIMapReducer(String mapName, Function<? super T, ? extends K> classifier,
+    public GroupingIMapReducer(String mapName, Function<? super T, ? extends K> classifier,
                                 Collector<? super T, A, D> collector) {
         this.mapName = mapName;
         this.classifier = classifier;

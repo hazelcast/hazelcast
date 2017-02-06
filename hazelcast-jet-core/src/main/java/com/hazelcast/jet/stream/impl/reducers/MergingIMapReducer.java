@@ -31,21 +31,12 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.KeyExtractors.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
 public class MergingIMapReducer<T, K, V> extends IMapReducer<T, K, V> {
 
     private final BinaryOperator<V> mergeFunction;
 
     public MergingIMapReducer(
-            Function<? super T, ? extends K> keyMapper,
-            Function<? super T, ? extends V> valueMapper,
-            BinaryOperator<V> mergeFunction
-    ) {
-        this(uniqueMapName(), keyMapper, valueMapper, mergeFunction);
-    }
-
-    private MergingIMapReducer(
             String mapName,
             Function<? super T, ? extends K> keyMapper,
             Function<? super T, ? extends V> valueMapper,

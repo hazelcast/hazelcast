@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
 @Ignore
@@ -39,7 +41,7 @@ public class Demo extends AbstractStreamTest {
                 .map(Map.Entry::getValue)
                 .filter(e -> (int) Math.sqrt(e) == Math.sqrt(e))
                 .sorted()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         for (Integer integer : list) {
             System.out.println(integer);
@@ -68,7 +70,7 @@ public class Demo extends AbstractStreamTest {
                 .map(Map.Entry::getValue)
                 .map(m -> m % 10)
                 .distinct()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         for (Integer integer : distinct) {
             System.out.println(integer);

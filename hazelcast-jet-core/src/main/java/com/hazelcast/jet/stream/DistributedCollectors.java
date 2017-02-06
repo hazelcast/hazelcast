@@ -1048,17 +1048,19 @@ public abstract class DistributedCollectors {
      * @param <T>         the type of the input elements
      * @param <K>         the output type of the key mapping function
      * @param <U>         the output type of the value mapping function
+     * @param mapName Name of the map to store the results
      * @param keyMapper   a mapping function to produce keys
      * @param valueMapper a mapping function to produce values
      * @return a {@code Reducer} which collects elements into a {@code IMap}
      * whose keys and values are the result of applying mapping functions to
      * the input elements
-     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
+     * @see #toIMap(String, Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
      */
     public static <T, K, U> Reducer<T, IStreamMap<K, U>>
-    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
+    toIMap(String mapName,
+           Distributed.Function<? super T, ? extends K> keyMapper,
            Distributed.Function<? super T, ? extends U> valueMapper) {
-        return new IMapReducer<>(keyMapper, valueMapper);
+        return new IMapReducer<>(mapName, keyMapper, valueMapper);
     }
 
     /**
@@ -1076,14 +1078,15 @@ public abstract class DistributedCollectors {
      *
      * @param <K> The type of the key in {@code Map.Entry}
      * @param <U> The type of the value in {@code Map.Entry}
+     * @param mapName Name of the map to store the results
      * @return a {@code Reducer} that accumulates elements into a
      * Hazelcast {@code IMap} whose keys and values are the keys and values of the corresponding
      * {@code Map.Entry}.
-     * @see #toIMap(Distributed.Function, Distributed.Function)
-     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
+     * @see #toIMap(String, Distributed.Function, Distributed.Function)
+     * @see #toIMap(String, Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
      */
-    public static <K, U> Reducer<Entry<K, U>, IStreamMap<K, U>> toIMap() {
-        return toIMap(Map.Entry::getKey, Map.Entry::getValue);
+    public static <K, U> Reducer<Entry<K, U>, IStreamMap<K, U>> toIMap(String mapName) {
+        return toIMap(mapName, Map.Entry::getKey, Map.Entry::getValue);
     }
 
     /**
@@ -1101,6 +1104,7 @@ public abstract class DistributedCollectors {
      * @param <T>           the type of the input elements
      * @param <K>           the output type of the key mapping function
      * @param <U>           the output type of the value mapping function
+     * @param mapName Name of the map to store the results
      * @param keyMapper     a mapping function to produce keys
      * @param valueMapper   a mapping function to produce values
      * @param mergeFunction a merge function, used to resolve collisions between
@@ -1112,13 +1116,14 @@ public abstract class DistributedCollectors {
      * elements, and whose values are the result of applying a value mapping
      * function to all input elements equal to the key and combining them
      * using the merge function
-     * @see #toIMap(Distributed.Function, Distributed.Function)
+     * @see #toIMap(String, Distributed.Function, Distributed.Function)
      */
     public static <T, K, U> Reducer<T, IStreamMap<K, U>>
-    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
+    toIMap(String mapName,
+           Distributed.Function<? super T, ? extends K> keyMapper,
            Distributed.Function<? super T, ? extends U> valueMapper,
            Distributed.BinaryOperator<U> mergeFunction) {
-        return new MergingIMapReducer<>(keyMapper, valueMapper, mergeFunction);
+        return new MergingIMapReducer<>(mapName, keyMapper, valueMapper, mergeFunction);
     }
 
     /**
@@ -1128,11 +1133,12 @@ public abstract class DistributedCollectors {
      * The returned collector may not be used as a downstream collector.
      *
      * @param <T> the type of the input elements
+     * @param listName Name of the list to store the results
      * @return a {@code Distributed.Collector} which collects all the input elements into a
      * Hazelcast {@code IList}, in encounter order
      */
-    public static <T> Reducer<T, IStreamList<T>> toIList() {
-        return new IListReducer<>();
+    public static <T> Reducer<T, IStreamList<T>> toIList(String listName) {
+        return new IListReducer<>(listName);
     }
 
     /**
@@ -1152,13 +1158,14 @@ public abstract class DistributedCollectors {
      *
      * @param <T>        the type of the input elements
      * @param <K>        the type of the keys
+     * @param mapName Name of the map to store the results
      * @param classifier the classifier function mapping input elements to keys
      * @return a {@code Reducer} implementing the group-by operation
-     * @see #groupingByToIMap(Distributed.Function, DistributedCollector)
+     * @see #groupingByToIMap(String, Distributed.Function, DistributedCollector)
      */
     public static <T, K> Reducer<T, IMap<K, List<T>>>
-    groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier) {
-        return groupingByToIMap(classifier, toList());
+    groupingByToIMap(String mapName, Distributed.Function<? super T, ? extends K> classifier) {
+        return groupingByToIMap(mapName, classifier, toList());
     }
 
     /**
@@ -1184,14 +1191,16 @@ public abstract class DistributedCollectors {
      * @param <K>        the type of the keys
      * @param <A>        the intermediate accumulation type of the downstream collector
      * @param <D>        the result type of the downstream reduction
+     * @param mapName Name of the map to store the results
      * @param classifier a classifier function mapping input elements to keys
      * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
      * @return a {@code Reducer} implementing the cascaded group-by operation
-     * @see #groupingByToIMap(Distributed.Function)
+     * @see #groupingByToIMap(String, Distributed.Function)
      */
     public static <T, K, A, D>
-    Reducer<T, IMap<K, D>> groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier,
+    Reducer<T, IMap<K, D>> groupingByToIMap(String mapName,
+                                            Distributed.Function<? super T, ? extends K> classifier,
                                             DistributedCollector<? super T, A, D> downstream) {
-        return new GroupingIMapReducer<>(classifier, downstream);
+        return new GroupingIMapReducer<>(mapName, classifier, downstream);
     }
 }

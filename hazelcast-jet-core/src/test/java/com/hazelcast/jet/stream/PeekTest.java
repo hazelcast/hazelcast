@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 import static org.junit.Assert.assertEquals;
 
 public class PeekTest extends AbstractStreamTest {
@@ -37,7 +39,7 @@ public class PeekTest extends AbstractStreamTest {
         final AtomicInteger runningTotal = new AtomicInteger(0);
         IMap<String, Integer> collected = map.stream()
                                              .peek(e -> runningTotal.addAndGet(e.getValue()))
-                                             .collect(DistributedCollectors.toIMap());
+                                             .collect(DistributedCollectors.toIMap(uniqueMapName()));
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
         assertEquals(COUNT, collected.size());
@@ -51,7 +53,7 @@ public class PeekTest extends AbstractStreamTest {
         final List<Integer> result = new ArrayList<>();
         IList<Integer> collected = list.stream()
                                        .peek(result::add)
-                                       .collect(DistributedCollectors.toIList());
+                                       .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
         assertEquals(COUNT, collected.size());
@@ -70,7 +72,7 @@ public class PeekTest extends AbstractStreamTest {
         IList<Integer> collected = map.stream()
                                       .map(Entry::getValue)
                                       .peek(runningTotal::addAndGet)
-                                      .collect(DistributedCollectors.toIList());
+                                      .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals((COUNT - 1) * (COUNT) / 2, runningTotal.get());
         assertEquals(COUNT, collected.size());

@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class MapTest extends AbstractStreamTest {
@@ -32,7 +33,7 @@ public class MapTest extends AbstractStreamTest {
 
         IList<Integer> list = map.stream()
                                  .map(e -> e.getValue() * e.getValue())
-                                 .collect(DistributedCollectors.toIList());
+                                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
 
         assertEquals(COUNT, list.size());
@@ -52,7 +53,7 @@ public class MapTest extends AbstractStreamTest {
 
         IList<Integer> result = list.stream()
                                     .map(i -> i * i)
-                                    .collect(DistributedCollectors.toIList());
+                                    .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, result.size());
 

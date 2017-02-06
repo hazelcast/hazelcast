@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class MultipleTransformsTest extends AbstractStreamTest {
@@ -37,7 +38,7 @@ public class MultipleTransformsTest extends AbstractStreamTest {
                                  .map(Entry::getValue)
                                  .filter(e -> e < count)
                                  .flatMap(Stream::of)
-                                 .collect(DistributedCollectors.toIList());
+                                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(count, list.size());
         Integer[] result = list.toArray(new Integer[count]);
@@ -58,7 +59,7 @@ public class MultipleTransformsTest extends AbstractStreamTest {
                                     .filter(e -> e < count)
                                     .map(e -> e * e)
                                     .flatMap(Stream::of)
-                                    .collect(DistributedCollectors.toIList());
+                                    .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(count, result.size());
 
@@ -79,7 +80,7 @@ public class MultipleTransformsTest extends AbstractStreamTest {
                                  .map(Entry::getValue)
                                  .filter(e -> e < count)
                                  .flatMap(Stream::of)
-                                 .collect(DistributedCollectors.toIList());
+                                 .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(count, list.size());
         Integer[] result = list.toArray(new Integer[count]);

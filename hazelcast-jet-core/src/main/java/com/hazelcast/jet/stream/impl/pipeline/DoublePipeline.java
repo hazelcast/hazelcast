@@ -44,6 +44,7 @@ import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
 @SuppressWarnings("checkstyle:methodcount")
 class DoublePipeline implements DistributedDoubleStream {
@@ -133,15 +134,19 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public double[] toArray() {
-        IList<Double> list = inner.collect(DistributedCollectors.toIList());
-        double[] array = new double[list.size()];
+        IList<Double> list = inner.collect(DistributedCollectors.toIList(uniqueListName()));
+        try {
+            double[] array = new double[list.size()];
 
-        Iterator<Double> iterator = list.iterator();
-        int index = 0;
-        while (iterator.hasNext()) {
-            array[index++] = iterator.next();
+            int index = 0;
+            for (Double d : list) {
+                array[index++] = d;
+            }
+
+            return array;
+        } finally {
+            list.destroy();
         }
-        return array;
     }
 
     @Override

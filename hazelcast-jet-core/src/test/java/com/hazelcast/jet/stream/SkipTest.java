@@ -21,6 +21,7 @@ import org.junit.Test;
 
 import java.util.Map;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 
 public class SkipTest extends AbstractStreamTest {
@@ -33,7 +34,7 @@ public class SkipTest extends AbstractStreamTest {
         int skip = 10;
         IList list = map.stream()
                         .skip(skip)
-                        .collect(DistributedCollectors.toIList());
+                        .collect(DistributedCollectors.toIList(uniqueListName()));
 
 
         assertEquals(COUNT - skip, list.size());
@@ -48,7 +49,7 @@ public class SkipTest extends AbstractStreamTest {
         IList list = map.stream()
                         .map(Map.Entry::getValue)
                         .skip(skip)
-                        .collect(DistributedCollectors.toIList());
+                        .collect(DistributedCollectors.toIList(uniqueListName()));
 
 
         assertEquals(COUNT - skip, list.size());
@@ -62,7 +63,7 @@ public class SkipTest extends AbstractStreamTest {
         int skip = 1024;
         IList<Integer> result = list.stream()
                                     .skip(skip)
-                                    .collect(DistributedCollectors.toIList());
+                                    .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT - skip, result.size());
 

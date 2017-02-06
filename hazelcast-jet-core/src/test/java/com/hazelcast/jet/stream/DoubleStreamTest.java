@@ -31,6 +31,7 @@ import java.util.OptionalDouble;
 import java.util.PrimitiveIterator;
 import java.util.stream.DoubleStream;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -96,7 +97,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
     public void boxed() {
         DistributedStream<Double> boxed = stream.boxed();
 
-        IList<Double> list = boxed.collect(DistributedCollectors.toIList());
+        IList<Double> list = boxed.collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(COUNT, list.size());
     }
@@ -258,7 +259,7 @@ public class DoubleStreamTest extends AbstractStreamTest {
 
     @Test
     public void mapToObj() {
-        IList<Double> list = stream.mapToObj(m -> (Double) m).collect(DistributedCollectors.toIList());
+        IList<Double> list = stream.mapToObj(m -> (Double) m).collect(DistributedCollectors.toIList(uniqueListName()));
 
         Object[] array = list.toArray();
         Arrays.sort(array);

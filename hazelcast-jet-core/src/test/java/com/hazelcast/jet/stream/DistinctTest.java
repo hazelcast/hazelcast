@@ -19,6 +19,7 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IList;
 import org.junit.Test;
 
+import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -33,7 +34,7 @@ public class DistinctTest extends AbstractStreamTest {
         IList<Integer> result = list
                 .stream()
                 .distinct()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(modulus, result.size());
 
@@ -52,7 +53,7 @@ public class DistinctTest extends AbstractStreamTest {
                 .stream()
                 .map(f -> f.getValue() % modulus)
                 .distinct()
-                .collect(DistributedCollectors.toIList());
+                .collect(DistributedCollectors.toIList(uniqueListName()));
 
         assertEquals(modulus, result.size());
 
