@@ -20,6 +20,8 @@ import com.hazelcast.internal.nearcache.NearCacheRecord;
 
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
 
 /**
  * Abstract implementation of {@link NearCacheRecord} with value and
@@ -29,16 +31,26 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
+    // primitive long typed fields:
+    // "creationTime", "expirationTime" and "accessTime", "recordState", "sequence"
+    public static final int NUMBER_OF_LONG_FIELD_TYPES = 5;
+    // primitive int typed fields: "accessHit"
+    public static final int NUMBER_OF_INTEGER_FIELD_TYPES = 1;
+
     private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT =
             AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
 
-    protected V value;
+    private static final AtomicLongFieldUpdater<AbstractNearCacheRecord> RECORD_STATE =
+            AtomicLongFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "recordState");
+
     protected long creationTime = TIME_NOT_SET;
     protected long sequence;
     protected UUID uuid;
 
+    protected volatile V value;
     protected volatile long expirationTime = TIME_NOT_SET;
     protected volatile long accessTime = TIME_NOT_SET;
+    protected volatile long recordState = READ_PERMITTED;
     protected volatile int accessHit;
 
     public AbstractNearCacheRecord(V value, long creationTime, long expirationTime) {
@@ -146,5 +158,27 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
         } else {
             return false;
         }
+    }
+
+    @Override
+    public long getRecordState() {
+        return recordState;
+    }
+
+    @Override
+    public boolean casRecordState(long expect, long update) {
+        return RECORD_STATE.compareAndSet(this, expect, update);
+    }
+
+    @Override
+    public String toString() {
+        return "creationTime=" + creationTime
+                + ", sequence=" + sequence
+                + ", uuid=" + uuid
+                + ", expirationTime=" + expirationTime
+                + ", accessTime=" + accessTime
+                + ", accessHit=" + accessHit
+                + ", recordState=" + recordState
+                + ", value=" + value;
     }
 }

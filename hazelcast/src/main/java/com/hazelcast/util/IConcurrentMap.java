@@ -16,7 +16,9 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IFunction;
+
 
 /**
  * A {@link java.util.concurrent.ConcurrentMap} with applyIfAbsent function.
@@ -62,6 +64,39 @@ public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap
      * @throws ClassCastException {@inheritDoc}
      * @throws NullPointerException {@inheritDoc}
      */
-    V applyIfAbsent(K key,
-                    IFunction<? super K, ? extends V> mappingFunction);
+    V applyIfAbsent(K key, IFunction<? super K, ? extends V> mappingFunction);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The default implementation is equivalent to performing the following
+     * steps for this {@code map}, then returning the current value or
+     * {@code null} if now absent. :
+     *
+     * <pre> {@code
+     * if (map.get(key) != null) {
+     *     V oldValue = map.get(key);
+     *     V newValue = remappingFunction.apply(key, oldValue);
+     *     if (newValue != null)
+     *         map.replace(key, oldValue, newValue);
+     *     else
+     *         map.remove(key, oldValue);
+     * }
+     * }</pre>
+     *
+     * The default implementation may retry these steps when multiple threads
+     * attempt updates including potentially calling the remapping function
+     * multiple times.
+     *
+     * <p>This implementation assumes that the ConcurrentMap cannot contain null
+     * values and {@code get()} returning null unambiguously means the key is
+     * absent. Implementations which support null values <strong>must</strong>
+     * override this default implementation.
+     *
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @throws ClassCastException {@inheritDoc}
+     * @throws NullPointerException {@inheritDoc}
+     */
+    V applyIfPresent(K key, IBiFunction<? super K, ? super V, ? extends V> mappingFunction);
 }

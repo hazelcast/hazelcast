@@ -29,4 +29,9 @@ public class NearCacheDataRecord extends AbstractNearCacheRecord<Data> {
         super(value, creationTime, expiryTime);
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "NearCacheDataRecord{" + super.toString() + '}';
+    }
 }

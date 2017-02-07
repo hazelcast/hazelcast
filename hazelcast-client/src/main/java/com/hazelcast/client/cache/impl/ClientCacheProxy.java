@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 
 /**
  * ICache implementation for client
@@ -100,11 +101,13 @@ public class ClientCacheProxy<K, V> extends AbstractClientCacheProxy<K, V> {
     public boolean containsKey(K key) {
         ensureOpen();
         validateNotNull(key);
+
         final Data keyData = toData(key);
-        Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
+        Object cached = getCachedValue(keyData, false);
+        if (cached != NOT_CACHED) {
             return true;
         }
+
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
         ClientMessage result = invoke(request, keyData);
         return CacheContainsKeyCodec.decodeResponse(result).response;

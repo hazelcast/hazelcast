@@ -17,13 +17,15 @@
 package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.record.NearCacheDataRecord;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
+import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_INTEGER_FIELD_TYPES;
+import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
@@ -60,24 +62,22 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
                 REFERENCE_SIZE
                         // reference to "value" field
                         + REFERENCE_SIZE
+                        // "uuid" ref size + 2 long in uuid
+                        + REFERENCE_SIZE + (2 * (Long.SIZE / Byte.SIZE))
                         // heap cost of this value data
                         + (value != null ? value.getHeapCost() : 0)
-                        // 3 primitive long typed fields: "creationTime", "expirationTime" and "accessTime"
-                        + (3 * (Long.SIZE / Byte.SIZE))
-                        // reference to "accessHit" field
-                        + REFERENCE_SIZE
-                        // primitive int typed "value" field in "AtomicInteger" typed "accessHit" field
-                        + (Integer.SIZE / Byte.SIZE);
+                        + NUMBER_OF_LONG_FIELD_TYPES * (Long.SIZE / Byte.SIZE)
+                        + NUMBER_OF_INTEGER_FIELD_TYPES * (Integer.SIZE / Byte.SIZE);
     }
 
     @Override
     protected NearCacheDataRecord valueToRecord(V value) {
         Data data = toData(value);
-        long creationTime = Clock.currentTimeMillis();
+        long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
             return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheDataRecord(data, creationTime, NearCacheRecord.TIME_NOT_SET);
+            return new NearCacheDataRecord(data, creationTime, TIME_NOT_SET);
         }
     }
 
@@ -85,14 +85,14 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
     protected V recordToValue(NearCacheDataRecord record) {
         if (record.getValue() == null) {
             nearCacheStats.incrementMisses();
-            return (V) NULL_OBJECT;
+            return (V) CACHED_AS_NULL;
         }
         Data data = record.getValue();
         return dataToValue(data);
     }
 
     @Override
-    protected void putToRecord(NearCacheDataRecord record, V value) {
+    protected void updateRecordValue(NearCacheDataRecord record, V value) {
         record.setValue(toData(value));
     }
 

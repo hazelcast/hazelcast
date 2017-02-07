@@ -45,7 +45,12 @@ public interface NearCache<K, V> extends InitializingObject {
     /**
      * NULL Object
      */
-    Object NULL_OBJECT = new Object();
+    Object CACHED_AS_NULL = new Object();
+
+    /**
+     * NOT_CACHED Object
+     */
+    Object NOT_CACHED = new Object();
 
     /**
      * Gets the name of this {@link NearCache} instance.
@@ -158,4 +163,26 @@ public interface NearCache<K, V> extends InitializingObject {
      * @throws IllegalArgumentException if no implementation found for the supplied clazz type.
      */
     <T> T unwrap(Class<T> clazz);
+
+    /**
+     * Tries to reserve supplied key for update.
+     * <p>
+     * If one thread takes reservation, only that thread can update the key.
+     *
+     * @param key key to be reserved for update
+     * @return reservation id if reservation succeeds, else returns {@link NearCacheRecord#NOT_RESERVED}
+     */
+    long tryReserveForUpdate(K key);
+
+    /**
+     * Tries to update reserved key with supplied value. If update happens, value is published.
+     * Publishing means making the value readable to all threads. If update fails, record is not updated.
+     *
+     * @param key           reserved key for update
+     * @param value         value to be associated with reserved key
+     * @param reservationId id for this reservation
+     * @param deserialize   eagerly deserialize returning value
+     * @return associated value if deserialize is {@code true} and update succeeds, otherwise returns null
+     */
+    V tryPublishReserved(K key, V value, long reservationId, boolean deserialize);
 }

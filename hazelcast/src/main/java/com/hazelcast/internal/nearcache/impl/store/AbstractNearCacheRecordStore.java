@@ -18,6 +18,7 @@ package com.hazelcast.internal.nearcache.impl.store;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
@@ -34,17 +35,27 @@ import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
 import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
+
+    protected static final AtomicLongFieldUpdater<AbstractNearCacheRecordStore> RESERVATION_ID
+            = newUpdater(AbstractNearCacheRecordStore.class, "reservationId");
 
     /**
      * If Unsafe is available, Object array index scale (every index represents a reference)
@@ -55,8 +66,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
      * by ignoring compressed-references disable mode on 64 bit JVM.
      */
     protected static final int REFERENCE_SIZE = MEM_AVAILABLE ? MEM.arrayIndexScale(Object[].class) : (Integer.SIZE / Byte.SIZE);
-
-    private static final int MILLI_SECONDS_IN_A_SECOND = 1000;
+    protected static final int MILLI_SECONDS_IN_A_SECOND = 1000;
 
     protected final long timeToLiveMillis;
     protected final long maxIdleMillis;
@@ -64,8 +74,23 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-
+    protected final IFunction<K, R> reserveForUpdate = new IFunction<K, R>() {
+        @Override
+        public R apply(K key) {
+            R record = null;
+            try {
+                record = valueToRecord(null);
+                onRecordCreate(key, record);
+                record.casRecordState(READ_PERMITTED, RESERVED);
+            } catch (Throwable throwable) {
+                onPutError(key, null, record, null, throwable);
+                throw rethrow(throwable);
+            }
+            return record;
+        }
+    };
     protected MaxSizeChecker maxSizeChecker;
+
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected EvictionChecker evictionChecker;
     protected EvictionStrategy<KS, R, NCRM> evictionStrategy;
@@ -73,6 +98,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected NCRM records;
 
     protected volatile StaleReadDetector staleReadDetector = ALWAYS_FRESH;
+    protected volatile long reservationId;
 
     public AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
@@ -123,14 +149,18 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract R valueToRecord(V value);
 
+    protected abstract void updateRecordValue(R record, V value);
+
     protected abstract V recordToValue(R record);
 
     // public for tests.
     public abstract R getRecord(K key);
 
-    protected abstract R putRecord(K key, R record);
+    protected abstract R getOrCreateToReserve(K key);
 
-    protected abstract void putToRecord(R record, V value);
+    protected abstract V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize);
+
+    protected abstract R putRecord(K key, R record);
 
     protected abstract R removeRecord(K key);
 
@@ -275,6 +305,9 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         try {
             record = getRecord(key);
             if (record != null) {
+                if (record.getRecordState() != READ_PERMITTED) {
+                    return null;
+                }
 
                 if (staleReadDetector.isStaleRead(key, record)) {
                     remove(key);
@@ -286,6 +319,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
                     onExpire(key, record);
                     return null;
                 }
+
                 onRecordAccess(record);
                 nearCacheStats.incrementHits();
                 value = recordToValue(record);
@@ -297,14 +331,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             }
         } catch (Throwable error) {
             onGetError(key, value, record, error);
-            throw ExceptionUtil.rethrow(error);
+            throw rethrow(error);
         }
     }
 
     @Override
     public void put(K key, V value) {
         checkAvailable();
-
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
         if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
@@ -323,7 +356,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             onPut(key, value, record, oldRecord);
         } catch (Throwable error) {
             onPutError(key, value, record, oldRecord, error);
-            throw ExceptionUtil.rethrow(error);
+            throw rethrow(error);
         }
     }
 
@@ -343,7 +376,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return record != null;
         } catch (Throwable error) {
             onRemoveError(key, record, removed, error);
-            throw ExceptionUtil.rethrow(error);
+            throw rethrow(error);
         }
     }
 
@@ -403,6 +436,56 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         if (isEvictionEnabled()) {
             evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
         }
+    }
+
+    @Override
+    public long tryReserveForUpdate(K key) {
+        checkAvailable();
+        // if there is no eviction configured we return if the Near Cache is full and it's a new key
+        // (we have to check the key, otherwise we might lose updates on existing keys)
+        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+            return NOT_RESERVED;
+        }
+
+        R reservedRecord = getOrCreateToReserve(key);
+        long reservationId = nextReservationId();
+        if (reservedRecord.casRecordState(RESERVED, reservationId)) {
+            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+            nearCacheStats.incrementOwnedEntryCount();
+            return reservationId;
+        } else {
+            return NOT_RESERVED;
+        }
+    }
+
+    @Override
+    public V tryPublishReserved(K key, final V value, final long reservationId, boolean deserialize) {
+        return updateAndGetReserved(key, value, reservationId, deserialize);
+    }
+
+    protected R updateReservedRecordInternal(K key, V value, R reservedRecord, long reservationId) {
+        if (!reservedRecord.casRecordState(reservationId, UPDATE_STARTED)) {
+            return reservedRecord;
+        }
+
+        try {
+            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+
+            updateRecordValue(reservedRecord, value);
+            reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
+
+            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+            onPut(key, value, reservedRecord, null);
+        } catch (Throwable error) {
+            onPutError(key, value, reservedRecord, null, error);
+            throw rethrow(error);
+        }
+
+        return reservedRecord;
+    }
+
+    protected long nextReservationId() {
+        return RESERVATION_ID.incrementAndGet(this);
     }
 
     private class MaxSizeEvictionChecker implements EvictionChecker {

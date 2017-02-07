@@ -54,10 +54,9 @@ public class ClientCacheNearCachePreloaderTest extends AbstractNearCachePreloade
 
     @Parameters(name = "invalidationOnChange:{0}")
     public static Collection<Object[]> parameters() {
-        // FIXME: the Near Cache pre-loader doesn't work with enabled invalidations due to a known getAll() issue!
         return Arrays.asList(new Object[][]{
                 {false},
-                //{true},
+                {true}
         });
     }
 
