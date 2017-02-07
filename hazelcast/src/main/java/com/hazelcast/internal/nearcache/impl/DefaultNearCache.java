@@ -198,6 +198,18 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
         throw new IllegalArgumentException("Unwrapping to " + clazz + " is not supported by this implementation");
     }
 
+    @Override
+    public long tryReserveForUpdate(K key) {
+        nearCacheRecordStore.doEvictionIfRequired();
+
+        return nearCacheRecordStore.tryReserveForUpdate(key);
+    }
+
+    @Override
+    public V tryPublishReserved(K key, V value, long reservationId, boolean deserialize) {
+        return nearCacheRecordStore.tryPublishReserved(key, value, reservationId, deserialize);
+    }
+
     public NearCacheRecordStore<K, V> getNearCacheRecordStore() {
         return nearCacheRecordStore;
     }

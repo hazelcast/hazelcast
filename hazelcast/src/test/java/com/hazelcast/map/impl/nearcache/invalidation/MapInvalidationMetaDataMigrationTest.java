@@ -22,8 +22,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -80,8 +83,13 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
         Map<Integer, Long> destination = getPartitionToSequenceMap(mapName, instance3);
 
+        for (Map.Entry<Integer, Long> entry : source.entrySet()) {
+            Integer key = entry.getKey();
+            Long first = entry.getValue();
+            Long last = destination.get(key);
 
-        assertEquals(source, destination);
+            assertEquals(first, last);
+        }
     }
 
     @Test
@@ -220,7 +228,11 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         HashMap<Integer, Long> partitionToSequenceMap = new HashMap<Integer, Long>(partitionCount);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
-        MetaDataGenerator metaDataGenerator = mapService.getMapServiceContext().getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        Invalidator invalidator = mapNearCacheManager.getInvalidator();
+
+        MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
         for (int i = 0; i < partitionCount; i++) {
             partitionToSequenceMap.put(i, metaDataGenerator.currentSequence(mapName, i));
         }
@@ -233,7 +245,11 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
         int partitionCount = nodeEngineImpl.getPartitionService().getPartitionCount();
         HashMap<Integer, UUID> partitionToSequenceMap = new HashMap<Integer, UUID>(partitionCount);
         MapService mapService = nodeEngineImpl.getService(SERVICE_NAME);
-        MetaDataGenerator metaDataGenerator = mapService.getMapServiceContext().getMapNearCacheManager().getInvalidator().getMetaDataGenerator();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
+        Invalidator invalidator = mapNearCacheManager.getInvalidator();
+
+        MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
         for (int i = 0; i < partitionCount; i++) {
             partitionToSequenceMap.put(i, metaDataGenerator.getUuidOrNull(i));
         }

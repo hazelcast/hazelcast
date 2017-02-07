@@ -360,7 +360,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             requestedKeys.add(dataKey);
         }
 
-        List<Object> resultingKeyValuePairs = new ArrayList<Object>(keys.size());
+        List<Object> resultingKeyValuePairs = new ArrayList<Object>(2 * keys.size());
         getAllObjectInternal(requestedKeys, resultingKeyValuePairs);
 
         Map<K, V> result = MapUtil.createHashMap(keys.size());

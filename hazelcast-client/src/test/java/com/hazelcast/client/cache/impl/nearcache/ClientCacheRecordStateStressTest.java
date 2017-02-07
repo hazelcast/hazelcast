@@ -26,8 +26,11 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.map.impl.nearcache.KeyStateMarker;
-import com.hazelcast.map.impl.nearcache.KeyStateMarkerImpl;
+import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -48,20 +51,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.util.RandomPicker.getInt;
 import static java.lang.Integer.MAX_VALUE;
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(NightlyTest.class)
-public class ClientCacheKeyStateMarkerStressTest extends HazelcastTestSupport {
+public class ClientCacheRecordStateStressTest extends HazelcastTestSupport {
 
     @Parameterized.Parameter
     public NearCacheConfig.LocalUpdatePolicy localUpdatePolicy;
@@ -74,7 +76,7 @@ public class ClientCacheKeyStateMarkerStressTest extends HazelcastTestSupport {
         });
     }
 
-    private final int KEY_SPACE = 10000;
+    private final int KEY_SPACE = 100;
     private final int TEST_RUN_SECONDS = 60;
     private final int GET_ALL_THREAD_COUNT = 2;
     private final int PUT_ALL_THREAD_COUNT = 1;
@@ -100,7 +102,7 @@ public class ClientCacheKeyStateMarkerStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void final_state_of_all_slots_are_unmarked() throws Exception {
+    public void all_records_are_readable_state_in_the_end() throws Exception {
         HazelcastInstance member = factory.newHazelcastInstance();
         CachingProvider provider = HazelcastServerCachingProvider.createCachingProvider(member);
         final CacheManager serverCacheManager = provider.getCacheManager();
@@ -185,20 +187,24 @@ public class ClientCacheKeyStateMarkerStressTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        assertAllKeysInUnmarkedState(clientCache);
+        assertFinalRecordStateIsReadPermitted(clientCache, member);
     }
 
-    private void assertAllKeysInUnmarkedState(Cache clientCache) {
+    private void assertFinalRecordStateIsReadPermitted(Cache clientCache, HazelcastInstance member) {
         ClientCacheProxy proxy = ((ClientCacheProxy) clientCache);
         NearCache nearCache = proxy.getNearCache();
-        KeyStateMarker keyStateMarker = proxy.getKeyStateMarker();
-        AtomicIntegerArray marks = ((KeyStateMarkerImpl) keyStateMarker).getMarks();
 
-        String msg = format("nearCacheSize=%d,localUpdatePolicy=%s, markerStates=(%s)",
-                nearCache.size(), localUpdatePolicy, keyStateMarker);
+        DefaultNearCache unwrap = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
+        InternalSerializationService ss = getSerializationService(member);
 
-        for (int i = 0; i < marks.length(); i++) {
-            assertEquals(msg, 0, marks.get(i));
+        for (int i = 0; i < KEY_SPACE; i++) {
+            Data key = ss.toData(i);
+            AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) unwrap.getNearCacheRecordStore();
+            NearCacheRecord record = nearCacheRecordStore.getRecord(key);
+
+            if (record != null) {
+                assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+            }
         }
     }
 

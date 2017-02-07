@@ -23,8 +23,11 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.NearCache;
-import com.hazelcast.map.impl.nearcache.KeyStateMarker;
-import com.hazelcast.map.impl.nearcache.KeyStateMarkerImpl;
+import com.hazelcast.internal.nearcache.NearCacheRecord;
+import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
+import com.hazelcast.internal.nearcache.impl.store.AbstractNearCacheRecordStore;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -38,17 +41,16 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerArray;
 
+import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.util.RandomPicker.getInt;
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class ClientMapKeyStateMarkerStressTest extends HazelcastTestSupport {
+public class ClientMapRecordStateStressTest extends HazelcastTestSupport {
 
-    private final int KEY_SPACE = 10000;
+    private final int KEY_SPACE = 100;
     private final int TEST_RUN_SECONDS = 60;
     private final int GET_ALL_THREAD_COUNT = 3;
     private final int GET_THREAD_COUNT = 2;
@@ -72,7 +74,7 @@ public class ClientMapKeyStateMarkerStressTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void final_state_of_all_slots_are_unmarked() throws Exception {
+    public void all_records_are_readable_state_in_the_end() throws Exception {
         HazelcastInstance member = factory.newHazelcastInstance();
         factory.newHazelcastInstance();
         factory.newHazelcastInstance();
@@ -132,19 +134,22 @@ public class ClientMapKeyStateMarkerStressTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        assertAllKeysInUnmarkedState(clientMap);
+        assertFinalRecordStateIsReadPermitted(clientMap, getSerializationService(member));
     }
 
-    private void assertAllKeysInUnmarkedState(IMap clientMap) {
+    private void assertFinalRecordStateIsReadPermitted(IMap clientMap, InternalSerializationService ss) {
         NearCachedClientMapProxy proxy = (NearCachedClientMapProxy) clientMap;
         NearCache nearCache = proxy.getNearCache();
-        KeyStateMarker keyStateMarker = proxy.getKeyStateMarker();
-        AtomicIntegerArray marks = ((KeyStateMarkerImpl) keyStateMarker).getMarks();
 
-        String msg = format("nearCacheSize=%d, markerStates=(%s)", nearCache.size(), keyStateMarker);
+        DefaultNearCache unwrap = (DefaultNearCache) nearCache.unwrap(DefaultNearCache.class);
+        for (int i = 0; i < KEY_SPACE; i++) {
+            Data key = ss.toData(i);
+            AbstractNearCacheRecordStore nearCacheRecordStore = (AbstractNearCacheRecordStore) unwrap.getNearCacheRecordStore();
+            NearCacheRecord record = nearCacheRecordStore.getRecord(key);
 
-        for (int i = 0; i < marks.length(); i++) {
-            assertEquals(msg, 0, marks.get(i));
+            if (record != null) {
+                assertEquals(record.toString(), READ_PERMITTED, record.getRecordState());
+            }
         }
     }
 
@@ -195,7 +200,7 @@ public class ClientMapKeyStateMarkerStressTest extends HazelcastTestSupport {
         public void run() {
             do {
                 map.clear();
-                sleepAtLeastMillis(3000);
+                sleepAtLeastMillis(5000);
             } while (!stop.get());
         }
     }

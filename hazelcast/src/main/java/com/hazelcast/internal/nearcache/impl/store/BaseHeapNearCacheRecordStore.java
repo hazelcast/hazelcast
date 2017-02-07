@@ -20,6 +20,7 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
@@ -33,13 +34,13 @@ import java.util.Map;
 public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheRecord>
         extends AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R>> {
 
-    protected static final int DEFAULT_INITIAL_CAPACITY = 1000;
+    private static final int DEFAULT_INITIAL_CAPACITY = 1000;
 
     private final NearCachePreloader<K> nearCachePreloader;
 
     public BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
                                         ClassLoader classLoader) {
-            super(nearCacheConfig, serializationService, classLoader);
+        super(nearCacheConfig, serializationService, classLoader);
 
         NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
         this.nearCachePreloader = preloaderConfig.isEnabled()
@@ -135,4 +136,28 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
             nearCachePreloader.destroy();
         }
     }
+
+    @Override
+    protected R getOrCreateToReserve(K key) {
+        return records.applyIfAbsent(key, reserveForUpdate);
+    }
+
+    @Override
+    protected V updateAndGetReserved(K key, final V value, final long reservationId, boolean deserialize) {
+        R existingRecord = records.applyIfPresent(key, new IBiFunction<K, R, R>() {
+            @Override
+            public R apply(K key, R reservedRecord) {
+                return updateReservedRecordInternal(key, value, reservedRecord, reservationId);
+            }
+        });
+
+        if (existingRecord == null || !deserialize) {
+            return null;
+        }
+
+        Object cachedValue = existingRecord.getValue();
+        return cachedValue instanceof Data ? toValue(cachedValue) : (V) existingRecord.getValue();
+    }
+
+
 }

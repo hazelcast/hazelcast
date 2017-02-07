@@ -42,7 +42,8 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.nearcache.NearCache.NULL_OBJECT;
+import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
+import static com.hazelcast.internal.nearcache.NearCache.NOT_CACHED;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -102,14 +103,12 @@ public abstract class TransactionalMapProxySupport
 
     public Object getInternal(Data key) {
         if (nearCacheEnabled) {
-            Object cached = mapNearCacheManager.getFromNearCache(name, key);
-            if (cached != null) {
-                if (cached.equals(NULL_OBJECT)) {
-                    cached = null;
-                }
-                return cached;
+            Object value = getCachedValue(key, true);
+            if (value != NOT_CACHED) {
+                return value;
             }
         }
+
         MapOperation operation = operationProvider.createGetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
         int partitionId = partitionService.getPartitionId(key);
@@ -119,6 +118,20 @@ public abstract class TransactionalMapProxySupport
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    private Object getCachedValue(Data key, boolean deserializeValue) {
+        Object value = mapNearCacheManager.getFromNearCache(name, key);
+
+        if (value == null) {
+            return NOT_CACHED;
+        }
+
+        if (value == CACHED_AS_NULL) {
+            return null;
+        }
+
+        return deserializeValue ? getNodeEngine().getSerializationService().toObject(value) : value;
     }
 
     public Object getForUpdateInternal(Data key) {
