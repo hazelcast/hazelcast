@@ -61,19 +61,23 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     @Override
     public void run() {
         long now = getNow();
+        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
 
         responses = new MapEntries(recordStore.size());
         Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data dataKey = record.getKey();
-            Object oldValue = record.getValue();
 
-            if (!applyPredicate(dataKey, oldValue)) {
+            Object oldValue = record.getValue();
+            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
+
+            if (!applyPredicate(dataKey, value)) {
                 continue;
             }
 
-            Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Map.Entry entry = createMapEntry(dataKey, value);
             Data response = process(entry);
             if (response != null) {
                 responses.add(dataKey, response);

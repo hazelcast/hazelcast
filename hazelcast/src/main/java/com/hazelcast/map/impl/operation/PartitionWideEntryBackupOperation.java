@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -42,18 +43,21 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
     @Override
     public void run() {
         long now = getNow();
+        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
 
         Iterator<Record> iterator = recordStore.iterator(now, true);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data dataKey = record.getKey();
             Object oldValue = record.getValue();
+            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
 
-            if (!applyPredicate(dataKey, oldValue)) {
+            if (!applyPredicate(dataKey, value)) {
                 continue;
             }
 
-            Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Map.Entry entry = createMapEntry(dataKey, value);
             processBackup(entry);
 
             if (noOp(entry, oldValue)) {
