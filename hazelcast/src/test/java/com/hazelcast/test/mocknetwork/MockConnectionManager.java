@@ -158,12 +158,10 @@ public class MockConnectionManager implements ConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    public void destroyConnection(final Connection connection) {
+    public void onClose(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
-        if (null != endPoint && mapConnections.remove(endPoint, connection)) {
+        if (mapConnections.remove(endPoint, connection)) {
             logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);
-
-            connection.close(null, null);
 
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
@@ -178,8 +176,6 @@ public class MockConnectionManager implements ConnectionManager {
                     return endPoint.hashCode();
                 }
             });
-        } else {
-            connection.close(null, null);
         }
     }
 

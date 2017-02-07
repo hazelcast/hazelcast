@@ -31,6 +31,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MockConnection implements Connection {
 
@@ -38,10 +39,9 @@ public class MockConnection implements Connection {
     protected final NodeEngineImpl nodeEngine;
 
     private final Address remoteEndpoint;
-
     volatile MockConnection localConnection;
 
-    private volatile boolean live = true;
+    private volatile AtomicBoolean alive = new AtomicBoolean(true);
 
     public MockConnection(Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine) {
         this.localEndpoint = localEndpoint;
@@ -64,7 +64,7 @@ public class MockConnection implements Connection {
     }
 
     public boolean write(OutboundFrame frame) {
-        if (!live) {
+        if (!alive.get()) {
             return false;
         }
 
@@ -110,21 +110,20 @@ public class MockConnection implements Connection {
     }
 
     public void close(String msg, Throwable cause) {
-        if (!live) {
+        if (!alive.compareAndSet(true, false)) {
             return;
         }
-        live = false;
 
         if (localConnection != null) {
             //this is a member-to-member connection
             NodeEngineImpl localNodeEngine = localConnection.nodeEngine;
             Node localNode = localNodeEngine.getNode();
             MockConnectionManager connectionManager = (MockConnectionManager) localNode.connectionManager;
-            connectionManager.destroyConnection(this);
+            connectionManager.onClose(this);
         } else {
             //this is a client-member connection. we need to notify NodeEngine about a client connection being closed.
             MockConnectionManager connectionManager = (MockConnectionManager) nodeEngine.getNode().connectionManager;
-            connectionManager.destroyConnection(this);
+            connectionManager.onClose(this);
         }
 
     }
@@ -161,7 +160,7 @@ public class MockConnection implements Connection {
 
     @Override
     public boolean isAlive() {
-        return live && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN;
+        return alive.get() && nodeEngine.getNode().getState() != NodeState.SHUT_DOWN;
     }
 
     @Override
