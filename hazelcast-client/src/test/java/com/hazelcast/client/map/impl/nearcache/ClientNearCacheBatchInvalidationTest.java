@@ -191,7 +191,7 @@ public class ClientNearCacheBatchInvalidationTest extends ClientTestSupport {
         assertNearCacheSizeEventually(clientMap, 0);
     }
 
-    private ClientConfig newClientConfig(String mapName) {
+    protected ClientConfig newClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInMemoryFormat(getNearCacheInMemoryFormat());
         nearCacheConfig.setName(mapName);
