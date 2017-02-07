@@ -92,12 +92,7 @@ public class ClientHeartbeatMonitor implements Runnable {
                 String message = "Client heartbeat is timed out, closing connection to " + connection
                         + ". Now: " + timeToString(currentTimeMillis)
                         + ". LastTimePacketReceived: " + timeToString(lastTimePacketReceived);
-                connection.close(message, null);
-                if (clientEndpoint.resourcesExist()) {
-                    return;
-                }
-
-                clientEndpointManager.removeEndpoint(clientEndpoint, true, message);
+                clientEndpointManager.removeEndpoint(clientEndpoint, message);
             }
         }
     }

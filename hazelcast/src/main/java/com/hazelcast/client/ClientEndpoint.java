@@ -109,9 +109,4 @@ public interface ClientEndpoint extends Client {
      */
     void setClientVersion(String version);
 
-    /**
-     *
-     * @return true if any listeners are registered or transactions exist for the endpoint
-     */
-    boolean resourcesExist();
 }

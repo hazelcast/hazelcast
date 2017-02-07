@@ -85,15 +85,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public boolean isAlive() {
-        if (conn.isAlive()) {
-            return true;
-        }
-        String clientUuid = getUuid();
-        if (null != clientUuid) {
-            Connection connection = clientEngine.getEndpointManager().findLiveConnectionFor(clientUuid);
-            return null != connection;
-        }
-        return false;
+        return conn.isAlive();
     }
 
     @Override
@@ -238,11 +230,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
             }
         }
         removeListenerActions.clear();
-    }
-
-    @Override
-    public boolean resourcesExist() {
-        return !removeListenerActions.isEmpty() || !transactionContextMap.isEmpty();
     }
 
     public void destroy() throws LoginException {
