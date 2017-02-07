@@ -40,6 +40,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testShutDownNodeWhenOtherWaitingOnLockLocalKey() throws InterruptedException {
+        System.out.println("DUMMY");
         testShutDownNodeWhenOtherWaitingOnLock(true);
     }
 
