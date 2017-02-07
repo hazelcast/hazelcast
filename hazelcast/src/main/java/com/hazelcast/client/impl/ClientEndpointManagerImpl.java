@@ -18,8 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.client.ClientEvent;
-import com.hazelcast.client.ClientEventType;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.counters.MwCounter;
@@ -83,19 +81,20 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     }
 
     @Override
-    public void registerEndpoint(ClientEndpoint endpoint) {
+    public boolean registerEndpoint(ClientEndpoint endpoint) {
         checkNotNull(endpoint, "endpoint can't be null");
 
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
-            logger.severe("An endpoint already exists for connection:" + conn);
+            return false;
         } else {
             totalRegistrations.inc();
+            return true;
         }
     }
 
     @Override
-    public void removeEndpoint(ClientEndpoint clientEndpoint, String reason) {
+    public void removeEndpoint(ClientEndpoint clientEndpoint) {
         checkNotNull(clientEndpoint, "endpoint can't be null");
 
         ClientEndpointImpl endpoint = (ClientEndpointImpl) clientEndpoint;
@@ -112,11 +111,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
             logger.warning(e);
         }
 
-        ClientEvent event = new ClientEvent(endpoint.getUuid(),
-                ClientEventType.DISCONNECTED,
-                endpoint.getSocketAddress(),
-                endpoint.getClientType());
-        clientEngine.sendClientEvent(event);
     }
 
     @Override
