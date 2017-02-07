@@ -1384,6 +1384,55 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
+    MapRemoveAllCodec.RequestParameters params = MapRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aData, params.predicate));
+}
+{
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.RequestParameters params = MapAddNearCacheInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(anInt, params.listenerFlags));
+                assertTrue(isEqual(aBoolean, params.localOnly));
+}
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapInvalidationEvent( aData ,  aString ,  aUUID ,  aLong   );
+        int length = inputStream.readInt();
+
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
+        int length = inputStream.readInt();
+
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
     MultiMapPutCodec.RequestParameters params = MultiMapPutCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.name));
                 assertTrue(isEqual(aData, params.key));
@@ -5648,10 +5697,9 @@ public class ServerCompatibilityTest_1_4 {
         inputStream.read(bytes);
     ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters params = ScheduledExecutorGetAllScheduledFuturesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.schedulerName));
-                assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    strings   );
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    taskHandlers   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);

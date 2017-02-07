@@ -1170,6 +1170,59 @@ public class EncodeDecodeCompatibilityNullTest {
             assertTrue(isEqual(datas, params.response));
 }
 {
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeRequest(    aString ,    aData   );
+    MapRemoveAllCodec.RequestParameters params = MapRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aData, params.predicate));
+}
+{
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeResponse( );
+    MapRemoveAllCodec.ResponseParameters params = MapRemoveAllCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+}
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
+    MapAddNearCacheInvalidationListenerCodec.RequestParameters params = MapAddNearCacheInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(anInt, params.listenerFlags));
+            assertTrue(isEqual(aBoolean, params.localOnly));
+}
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
+    MapAddNearCacheInvalidationListenerCodec.ResponseParameters params = MapAddNearCacheInvalidationListenerCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+            assertTrue(isEqual(aString, params.response));
+}
+{
+    class MapAddNearCacheInvalidationListenerCodecHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  com.hazelcast.nio.serialization.Data
+ key ,   java.lang.String
+ sourceUuid ,   java.util.UUID
+ partitionUuid ,   long
+ sequence   ) {
+                          assertTrue(isEqual(null, key));
+                          assertTrue(isEqual(aString, sourceUuid));
+                          assertTrue(isEqual(aUUID, partitionUuid));
+                          assertTrue(isEqual(aLong, sequence));
+        }
+        @Override
+        public void handle(  java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
+                          assertTrue(isEqual(datas, keys));
+                          assertTrue(isEqual(strings, sourceUuids));
+                          assertTrue(isEqual(uuids, partitionUuids));
+                          assertTrue(isEqual(longs, sequences));
+        }
+    }
+    MapAddNearCacheInvalidationListenerCodecHandler handler = new MapAddNearCacheInvalidationListenerCodecHandler();
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapInvalidationEvent( null ,  aString ,  aUUID ,  aLong   );
+        handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+     }
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
+        handler.handle(ClientMessage.createForDecode(clientMessage.buffer(), 0));
+     }
+}
+{
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
     MultiMapPutCodec.RequestParameters params = MultiMapPutCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.name));
@@ -4540,15 +4593,14 @@ public class EncodeDecodeCompatibilityNullTest {
     ScheduledExecutorSubmitToAddressCodec.ResponseParameters params = ScheduledExecutorSubmitToAddressCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(    aString ,    anAddress   );
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(    aString   );
     ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters params = ScheduledExecutorGetAllScheduledFuturesCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.schedulerName));
-            assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    strings   );
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    taskHandlers   );
     ScheduledExecutorGetAllScheduledFuturesCodec.ResponseParameters params = ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
-            assertTrue(isEqual(strings, params.handlers));
+            assertTrue(isEqual(taskHandlers, params.handlers));
 }
 {
     ClientMessage clientMessage = ScheduledExecutorGetStatsCodec.encodeRequest(    aString   );
