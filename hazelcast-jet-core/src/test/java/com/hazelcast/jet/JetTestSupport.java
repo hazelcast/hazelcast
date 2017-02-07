@@ -92,6 +92,15 @@ public class JetTestSupport extends HazelcastTestSupport {
         });
     }
 
+    public static void assertTrueEventually(UncheckedRunnable runnable, long timeoutSeconds) {
+        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                runnable.run();
+            }
+        }, timeoutSeconds);
+    }
+
     public Address nextAddress() {
         return instanceFactory.nextAddress();
     }

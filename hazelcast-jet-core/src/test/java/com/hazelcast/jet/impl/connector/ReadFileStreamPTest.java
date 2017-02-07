@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Edge.between;
@@ -45,7 +48,6 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
-@Ignore //https://github.com/hazelcast/hazelcast-jet/issues/298
 public class ReadFileStreamPTest extends JetTestSupport {
 
     private JetInstance instance;
@@ -60,65 +62,149 @@ public class ReadFileStreamPTest extends JetTestSupport {
     }
 
     @Test
-    public void when_watchType_new() throws IOException, InterruptedException {
+    public void when_watchType_new_then_ignorePreexisting() throws IOException, InterruptedException, ExecutionException {
         DAG dag = buildDag(WatchType.NEW);
 
+        // this is a pre-existing file, should not be picked up
         File file = createNewFile();
+        appendToFile(file,   "hello", "pre-existing");
+        sleepAtLeastMillis(50);
 
         Future<Void> jobFuture = instance.newJob(dag).execute();
-
+        // wait for the processor to initialize and pickup what it wants to
         sleepAtLeastSeconds(2);
-        appendToFile(file, "hello", "world");
-        assertTrueEventually(() -> assertEquals(2, list.size()));
 
-        assertTrue(file.delete());
-        assertTrue(directory.delete());
-        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
+        // check that nothing is picked up
+        assertEquals(0, list.size());
+
+        finishDirectory(jobFuture, file);
     }
 
     @Test
-    public void when_watchType_reProcess() throws IOException, InterruptedException {
+    @Ignore //this does not work reliably due to ENTRY_CREATE might be reported before contents is written
+    public void when_watchType_new_then_pickupNew() throws IOException, InterruptedException, ExecutionException {
+        DAG dag = buildDag(WatchType.NEW);
+
+        Future<Void> jobFuture = instance.newJob(dag).execute();
+        // wait for the processor to initialize
+        sleepAtLeastSeconds(2);
+
+        File file = new File(directory, randomName());
+        appendToFile(file, "hello");
+
+        assertTrueEventually(() -> assertEquals(1, list.size()), 2);
+
+        finishDirectory(jobFuture, file);
+    }
+
+    @Test
+    @Ignore //this does not work reliably due to ENTRY_CREATE might be reported before contents is written
+    public void when_watchType_new_then_doNotPickupModifications() throws IOException, InterruptedException, ExecutionException {
+        DAG dag = buildDag(WatchType.NEW);
+
+        Future<Void> jobFuture = instance.newJob(dag).execute();
+        // wait for the processor to initialize
+        sleepAtLeastSeconds(2);
+
+        File file = new File(directory, randomName());
+        appendToFile(file, "hello", "pre-existing");
+
+        assertTrueEventually(() -> assertEquals(2, list.size()), 2);
+
+        appendToFile(file, "third line");
+
+        // wait for the processor to pickup what it wants to
+        sleepAtLeastSeconds(1);
+
+        // the list should not have the third line
+        assertEquals(2, list.size());
+
+        finishDirectory(jobFuture, file);
+    }
+
+    @Test
+    public void when_watchType_reProcess_then_pickupPreexistingAfterModify() throws IOException, InterruptedException, ExecutionException {
         DAG dag = buildDag(WatchType.REPROCESS);
 
+        // this is a pre-existing file, should not be picked up
         File file = createNewFile();
+        appendToFile(file, "hello", "pre-existing");
+        sleepAtLeastMillis(50);
 
         Future<Void> jobFuture = instance.newJob(dag).execute();
-
+        // wait for the processor to initialize
         sleepAtLeastSeconds(2);
-        appendToFile(file, "hello", "world");
-        assertTrueEventually(() -> assertEquals(2, list.size()));
+        // check that nothing was picked up
+        assertEquals(0, list.size());
 
-        sleepAtLeastSeconds(2);
-        appendToFile(file, "jet");
-        assertTrueEventually(() -> assertEquals(5, list.size()));
+        // append more lines to the file, these should not be picked up
+        appendToFile(file, "third line");
+        assertTrueEventually(() -> assertCountDistinct(3, list), 2);
 
-        assertTrue(file.delete());
-        assertTrue(directory.delete());
-        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
+        finishDirectory(jobFuture, file);
     }
 
     @Test
-    public void when_watchType_appendedOnly() throws IOException, InterruptedException {
-        DAG dag = buildDag(WatchType.APPENDED_ONLY);
-        File file = createNewFile();
-
-        appendToFile(file, "init");
+    public void when_watchType_reProcess_then_pickupNewAndModified() throws IOException, InterruptedException, ExecutionException {
+        DAG dag = buildDag(WatchType.REPROCESS);
 
         Future<Void> jobFuture = instance.newJob(dag).execute();
-
+        // wait for the processor to initialize
         sleepAtLeastSeconds(2);
 
+        File file = new File(directory, randomName());
+        appendToFile(file, "hello", "pre-existing");
+        assertTrueEventually(() -> assertCountDistinct(2, list), 2);
+
+        // append third line to the file, now all three lines should be picked again
+        appendToFile(file, "third line");
+        assertTrueEventually(() -> assertCountDistinct(3, list), 2);
+        // the size should be at least five, because the first two appended lines must have been picked up at least twice
+        assertTrueEventually(() -> assertTrue(list.size() >= 5), 2);
+
+        finishDirectory(jobFuture, file);
+    }
+
+    @Test
+    public void when_watchType_appendedOnly_appendingToPreexisting_then_pickupEntirely() throws IOException, InterruptedException, ExecutionException {
+        DAG dag = buildDag(WatchType.APPENDED_ONLY);
+
+        // this is a pre-existing file, should not be picked up
+        File file = createNewFile();
+        appendToFile(file, "hello", "pre-existing");
+        sleepAtLeastMillis(50);
+
+        Future<Void> jobFuture = instance.newJob(dag).execute();
+        // wait for the processor to initialize
+        sleepAtLeastSeconds(2);
+
+        // pre-existing file should not be picked up
+        assertEquals(0, list.size());
+        appendToFile(file, "third line");
+        // now, all three lines are picked up
+        assertTrueEventually(() -> assertEquals(3, list.size()), 2);
+
+        finishDirectory(jobFuture, file);
+    }
+
+    @Test
+    public void when_watchType_appendedOnly_newAndModified_then_pickupAddition() throws IOException, InterruptedException, ExecutionException {
+        DAG dag = buildDag(WatchType.APPENDED_ONLY);
+
+        Future<Void> jobFuture = instance.newJob(dag).execute();
+        // wait for the processor to initialize
+        sleepAtLeastSeconds(2);
+
+        assertEquals(0, list.size());
+        File file = new File(directory, randomName());
         appendToFile(file, "hello", "world");
-        assertTrueEventually(() -> assertEquals(3, list.size()));
+        assertTrueEventually(() -> assertEquals(2, list.size()), 2);
 
-        sleepAtLeastSeconds(2);
+        // now add one more line, only this line should be picked up
+        appendToFile(file, "third line");
+        assertTrueEventually(() -> assertEquals(3, list.size()), 2);
 
-        appendToFile(file, "append", "only");
-        assertTrueEventually(() -> assertEquals(5, list.size()));
-
-        assertTrue(file.delete());
-        assertTrue(directory.delete());
-        assertTrueEventually(() -> assertTrue("job should be completed eventually", jobFuture.isDone()));
+        finishDirectory(jobFuture, file);
     }
 
     private DAG buildDag(WatchType type) {
@@ -132,7 +218,7 @@ public class ReadFileStreamPTest extends JetTestSupport {
 
     private File createNewFile() {
         File file = new File(directory, randomName());
-        assertTrueEventually(() -> assertTrue(file.createNewFile()));
+        assertTrueEventually(() -> assertTrue(file.createNewFile()), 2);
         return file;
     }
 
@@ -145,9 +231,29 @@ public class ReadFileStreamPTest extends JetTestSupport {
     }
 
     private static File createTempDirectory() throws IOException {
-        Path directory = Files.createTempDirectory("file-stream-reader");
+        Path directory = Files.createTempDirectory("read-file-stream-p");
         File file = directory.toFile();
         file.deleteOnExit();
         return file;
+    }
+
+    private void finishDirectory(Future<Void> jobFuture, File ... files) throws InterruptedException, ExecutionException {
+        for (File file : files) {
+            assertTrue(file.delete());
+        }
+        assertTrue(directory.delete());
+        assertTrueEventually(() -> assertTrue("job should complete eventually", jobFuture.isDone()), 5);
+        // called for side-effect of throwing exception, if the job failed
+        jobFuture.get();
+    }
+
+    /**
+     * Asserts the count of distinct elements. We use this, because reprocess might pick-up single line
+     * multiple times due to multiple {@link java.nio.file.StandardWatchEventKinds#ENTRY_MODIFY}
+     * events fired during writing to the file.
+     */
+    private <T> void assertCountDistinct(int expected, IStreamList<T> list) {
+        Set<T> set = new HashSet<>(list);
+        assertEquals(expected, set.size());
     }
 }

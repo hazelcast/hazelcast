@@ -23,9 +23,12 @@ import javax.annotation.Nonnull;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchEvent;
@@ -43,14 +46,16 @@ import static com.sun.nio.file.SensitivityWatchEventModifier.HIGH;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 /**
- * A source that reads files from directory and emits them lines by line.
+ * A source that reads files from a directory and emits them line by line. It processes files,
+ * as they are created/modified. It completes, when the directory is deleted.
  *
- * This source is mainly aimed for testing a simple streaming setup that reads from files.
+ * <p>This source is mainly aimed for testing a simple streaming setup that reads from files.
  *
  * <p>
- * {@link WatchType} parameter controls how new and modifies files are
+ * {@link WatchType} parameter controls how new and modified files are
  * handled by the {@code Processor}.
  */
 public class ReadFileStreamP extends AbstractProcessor implements Closeable {
@@ -58,28 +63,42 @@ public class ReadFileStreamP extends AbstractProcessor implements Closeable {
     private final WatchType watchType;
     private final int parallelism;
     private final int id;
-    private final Path path;
+    private final Path watchedDirectory;
 
-    private final Map<String, Long> fileOffsets = new HashMap<>();
+    private final Map<Path, Long> fileOffsets;
 
     private WatchService watcher;
 
     public enum WatchType {
 
         /**
-         * Process only new files. Modified files will not be re-read.
+         * Process only new files. Modified or pre-existing files will not be re-read.
+         *
+         * <p><b>Warning: </b>Might not work reliably, as the OS may report
+         * new file before its contents are created, just after creation. This might
+         * change by operating system, file system type, encryption/compression,
+         * network drives, etc.
          */
         NEW,
 
         /**
-         * Re-read files from beginning when a modification occurs on them. The whole
-         * fill will be emitted every time there is a modification.
+         * Re-read files from the beginning when a modification occurs. The whole
+         * file will be emitted every time there is a modification. Pre-existing files will
+         * be emitted upon first modification.
+         *
+         * <p><b>Warning: </b>A file being written to might be picked up multiple
+         * times during that period, with possibly incomplete lines.
          */
         REPROCESS,
 
         /**
          * Read only appended content to the files. Only the new content since the
-         * last read will be emitted.
+         * last read will be emitted. Pre-existing files will be processed entirely upon
+         * first modification.
+         *
+         * <p><b>Warning: </b>A file being written to might be picked up at any
+         * moment during that period, possibly splitting the lines or even words where
+         * they are not split.
          */
         APPENDED_ONLY
     }
@@ -89,20 +108,30 @@ public class ReadFileStreamP extends AbstractProcessor implements Closeable {
         this.watchType = watchType;
         this.parallelism = parallelism;
         this.id = id;
-        this.path = Paths.get(folder);
+        this.watchedDirectory = Paths.get(folder);
+
+        if (watchType == WatchType.APPENDED_ONLY) {
+            fileOffsets = new HashMap<>();
+        } else {
+            fileOffsets = null;
+        }
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         watcher = FileSystems.getDefault().newWatchService();
-        path.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
-        getLogger().info("Started to watch the directory: " + path);
+        watchedDirectory.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE}, HIGH);
+        getLogger().info("Started to watch the directory: " + watchedDirectory);
     }
 
     @Override
     public boolean complete() {
         try {
-            return tryComplete();
+            boolean isDone = tryComplete();
+            if (isDone) {
+                close();
+            }
+            return isDone;
         } catch (InterruptedException ignored) {
             return true;
         } catch (IOException e) {
@@ -114,10 +143,15 @@ public class ReadFileStreamP extends AbstractProcessor implements Closeable {
         WatchKey key = watcher.take();
         for (WatchEvent<?> event : key.pollEvents()) {
             final WatchEvent.Kind<?> kind = event.kind();
-            final Path filePath = path.resolve(((WatchEvent<Path>) event).context());
+            final Path filePath = watchedDirectory.resolve(((WatchEvent<Path>) event).context());
 
-            if (kind == ENTRY_DELETE && filePath.equals(path)) {
-                getLogger().info("Directory " + path + " deleted, stopped watching");
+            if (kind == OVERFLOW) {
+                getLogger().warning("Detected OVERFLOW in " + watchedDirectory);
+                continue;
+            }
+
+            if (kind == ENTRY_DELETE && filePath.equals(watchedDirectory)) {
+                getLogger().info("Directory " + watchedDirectory + " deleted, stopped watching");
                 return true;
             }
 
@@ -133,37 +167,60 @@ public class ReadFileStreamP extends AbstractProcessor implements Closeable {
     }
 
     private void processEvent(Kind<?> kind, Path file) throws IOException {
-        if (kind == ENTRY_DELETE) {
-            getLogger().info("Deteceted deleted file: " + file);
-            fileOffsets.remove(file.toString());
-        } else if (kind == ENTRY_CREATE || kind == ENTRY_MODIFY) {
-            getLogger().info("Detected modified file: " + file);
-            long previousOffset = watchType == WatchType.REPROCESS ?
-                    0L : fileOffsets.computeIfAbsent(file.toString(), s -> 0L);
+        // ignore subdirectories
+        if (Files.isDirectory(file)) {
+            return;
+        }
 
+        if (kind == ENTRY_DELETE && watchType == WatchType.APPENDED_ONLY) {
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine("Detected deleted file: " + file);
+            }
+            if (fileOffsets != null) {
+                fileOffsets.remove(file);
+            }
+        } else if (kind == ENTRY_CREATE) {
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine("Detected new file: " + file);
+            }
+            long newOffset = processFile(file, 0L);
+            if (fileOffsets != null) {
+                fileOffsets.put(file, newOffset);
+            }
+        } else if (kind == ENTRY_MODIFY && watchType != WatchType.NEW) {
+            if (getLogger().isFineEnabled()) {
+                getLogger().fine("Detected modified file: " + file);
+            }
+
+            long previousOffset = fileOffsets != null ? fileOffsets.getOrDefault(file, 0L) : 0L;
             long newOffset = processFile(file, previousOffset);
 
-            if (watchType == WatchType.APPENDED_ONLY) {
-                fileOffsets.put(file.toString(), newOffset);
+            if (fileOffsets != null) {
+                fileOffsets.put(file, newOffset);
             }
         }
     }
 
     private boolean shouldProcessEvent(Path file) {
-        int hashCode = file.toFile().getPath().hashCode();
+        int hashCode = file.hashCode();
         return ((hashCode & Integer.MAX_VALUE) % parallelism) == id;
     }
 
     private long processFile(Path file, long offset) throws IOException {
         try (FileInputStream fis = new FileInputStream(file.toFile())) {
             fis.getChannel().position(offset);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(fis, "UTF-8"))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(fis, StandardCharsets.UTF_8))) {
                 for (String line; (line = reader.readLine()) != null; ) {
-                    getLogger().finest("line = " + line);
+                    if (getLogger().isFinestEnabled()) {
+                        getLogger().finest("line = " + line);
+                    }
                     emit(line);
                 }
                 return fis.getChannel().position();
             }
+        } catch (FileNotFoundException ignored) {
+            // ignore missing file: on file deletion, ENTRY_MODIFY is reported just before ENTRY_DELETE
+            return offset;
         }
     }
 
