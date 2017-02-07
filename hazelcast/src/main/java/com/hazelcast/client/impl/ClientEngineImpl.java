@@ -274,7 +274,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         sendClientEvent(event);
     }
 
-    void sendClientEvent(ClientEvent event) {
+    private void sendClientEvent(ClientEvent event) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
         String uuid = event.getUuid();
@@ -403,7 +403,13 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 return;
             }
 
-            endpointManager.removeEndpoint(endpoint, "connection removed");
+            endpointManager.removeEndpoint(endpoint);
+            ClientEvent event = new ClientEvent(endpoint.getUuid(),
+                    ClientEventType.DISCONNECTED,
+                    endpoint.getSocketAddress(),
+                    endpoint.getClientType());
+            sendClientEvent(event);
+
             if (!endpoint.isFirstConnection()) {
                 logger.finest("connectionRemoved: Not the owner conn:" + connection + " for endpoint " + endpoint);
                 return;

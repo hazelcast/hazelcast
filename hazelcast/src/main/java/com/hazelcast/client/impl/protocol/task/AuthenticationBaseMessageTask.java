@@ -177,8 +177,9 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
         setConnectionType();
         logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated" + ", principal : " + principal
                 + ", owner connection : " + isOwnerConnection() + ", client version : " + clientVersion);
-        endpointManager.registerEndpoint(endpoint);
-        clientEngine.bind(endpoint);
+        if (endpointManager.registerEndpoint(endpoint)) {
+            clientEngine.bind(endpoint);
+        }
 
         final Address thisAddress = clientEngine.getThisAddress();
         byte status = AuthenticationStatus.AUTHENTICATED.getId();

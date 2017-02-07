@@ -76,8 +76,9 @@ public interface ClientEndpointManager {
      *
      * @param endpoint the endpoint to register.
      * @throws java.lang.NullPointerException if endpoint is null.
+     * @return false if an endpoint is already registered
      */
-    void registerEndpoint(ClientEndpoint endpoint);
+    boolean registerEndpoint(ClientEndpoint endpoint);
 
     /**
      * Removes an endpoint from this ClientEndpointManager.
@@ -86,9 +87,8 @@ public interface ClientEndpointManager {
      * No action taken if endpoint is not registered or already removed
      *
      * @param endpoint the endpoint to remove.
-     * @param reason The reason why the endpoint is being removed
      * @throws java.lang.NullPointerException if endpoint is null.
      */
-    void removeEndpoint(ClientEndpoint endpoint, String reason);
+    void removeEndpoint(ClientEndpoint endpoint);
 
 }
