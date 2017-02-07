@@ -64,13 +64,6 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
         }
     }
 
-    @Override
-    public void afterRun() throws Exception {
-        evict(null);
-
-        super.afterRun();
-    }
-
     private void publishWanReplicationEvent(Data key, Data value, Record record) {
         if (record == null) {
             return;

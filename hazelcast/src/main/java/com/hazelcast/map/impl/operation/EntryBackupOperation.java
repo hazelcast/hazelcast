@@ -100,11 +100,6 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
         }
     }
 
-    @Override
-    public void afterRun() throws Exception {
-        evict(dataKey);
-    }
-
     private boolean entryRemovedBackup(Map.Entry entry) {
         final Object value = entry.getValue();
         if (value == null) {

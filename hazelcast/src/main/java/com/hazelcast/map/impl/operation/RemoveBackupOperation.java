@@ -58,8 +58,6 @@ public class RemoveBackupOperation extends MutatingKeyBasedMapOperation implemen
 
     @Override
     public void afterRun() throws Exception {
-        evict(dataKey);
-
         if (!disableWanReplicationEvent && mapContainer.isWanReplicationEnabled()) {
             mapEventPublisher.publishWanReplicationRemoveBackup(name, dataKey, Clock.currentTimeMillis());
         }

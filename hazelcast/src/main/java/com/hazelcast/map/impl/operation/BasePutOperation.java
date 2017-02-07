@@ -53,7 +53,6 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         mapEventPublisher.publishEvent(getCallerAddress(), name, getEventType(), dataKey, dataOldValue, value);
         invalidateNearCache(dataKey);
         publishWANReplicationEvent(mapEventPublisher, value);
-        evict(dataKey);
     }
 
     private void publishWANReplicationEvent(MapEventPublisher mapEventPublisher, Object value) {

@@ -140,12 +140,6 @@ public abstract class MapOperation extends AbstractNamedOperation implements Ide
         return mapNearCacheManager.getInvalidator();
     }
 
-    protected void evict(Data excludedKey) {
-        assert recordStore != null : "Record-store cannot be null";
-
-        recordStore.evictEntries(excludedKey);
-    }
-
     private RecordStore getRecordStoreOrNull() {
         int partitionId = getPartitionId();
         if (partitionId == -1) {

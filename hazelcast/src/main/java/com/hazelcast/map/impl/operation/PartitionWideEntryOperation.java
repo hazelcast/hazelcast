@@ -87,8 +87,6 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
                 continue;
             }
             entryAddedOrUpdated(entry, dataKey, oldValue, now);
-
-            evict(dataKey);
         }
     }
 
