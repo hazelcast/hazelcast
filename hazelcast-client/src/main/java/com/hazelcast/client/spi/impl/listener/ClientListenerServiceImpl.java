@@ -19,7 +19,6 @@ package com.hazelcast.client.spi.impl.listener;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
@@ -33,19 +32,17 @@ import com.hazelcast.util.executor.StripedRunnable;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.logging.Level;
 
 public abstract class ClientListenerServiceImpl implements ClientListenerService {
 
     protected final HazelcastClientInstanceImpl client;
-    protected final ClientExecutionServiceImpl executionService;
     protected final SerializationService serializationService;
-    protected final ClientInvocationService invocationService;
-    protected final ExecutorService registrationExecutor;
+    protected final ScheduledExecutorService registrationExecutor;
     protected final ILogger logger;
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
@@ -54,8 +51,6 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.client = client;
-        executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        invocationService = client.getInvocationService();
         serializationService = client.getSerializationService();
         logger = client.getLoggingService().getLogger(ClientListenerService.class);
         ThreadGroup threadGroup = client.getThreadGroup();
@@ -65,7 +60,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         ClassLoader classLoader = client.getClientConfig().getClassLoader();
 
         ThreadFactory threadFactory = new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".eventRegistration-");
-        registrationExecutor = Executors.newSingleThreadExecutor(threadFactory);
+        registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
     }
 
     public void addEventHandler(long callId, EventHandler handler) {

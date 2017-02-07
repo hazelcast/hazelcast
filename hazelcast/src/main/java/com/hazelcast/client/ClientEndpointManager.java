@@ -76,40 +76,19 @@ public interface ClientEndpointManager {
      *
      * @param endpoint the endpoint to register.
      * @throws java.lang.NullPointerException if endpoint is null.
+     * @return false if an endpoint is already registered
      */
-    void registerEndpoint(ClientEndpoint endpoint);
+    boolean registerEndpoint(ClientEndpoint endpoint);
 
     /**
-     * Removes an endpoint from this ClientEndpointManager. This method doesn't close the endpoint.
+     * Removes an endpoint from this ClientEndpointManager.
+     * Closes associated connection and runs all registered destroy actions to endpoint.
      *
-     * todo: what happens when the endpoint already is removed
-     * todo: what happens when the endpoint was never registered
+     * No action taken if endpoint is not registered or already removed
      *
      * @param endpoint the endpoint to remove.
-     * @param reason The reason why the endpoint is being removed
      * @throws java.lang.NullPointerException if endpoint is null.
-     * @see #removeEndpoint(ClientEndpoint, boolean, String)
      */
-    void removeEndpoint(ClientEndpoint endpoint, String reason);
+    void removeEndpoint(ClientEndpoint endpoint);
 
-    /**
-     * Removes an endpoint and optionally closes it immediately.
-     *
-     * todo: what happens when the endpoint already is removed
-     * todo: what happens when the endpoint was never registered
-     *
-     * @param ce the endpoint to remove.
-     * @param closeImmediately if the endpoint is immediately closed.
-     * @param reason The reason why the endpoint is being removed.
-     * @throws java.lang.NullPointerException if endpoint is null.
-     * @see #removeEndpoint(ClientEndpoint, String)
-     */
-    void removeEndpoint(ClientEndpoint ce, boolean closeImmediately, String reason);
-
-    /**
-     *
-     * @param clientUuid The uuid of the desired client conection
-     * @return Any connection with the provided client uuid which is live
-     */
-    Connection findLiveConnectionFor(String clientUuid);
 }

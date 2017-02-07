@@ -65,6 +65,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
+import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -171,6 +172,11 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return clientExtension.createSocketInterceptor();
         }
         return null;
+    }
+
+    @Override
+    public Collection<ClientConnection> getActiveConnections() {
+        return connections.values();
     }
 
     @Override
@@ -517,7 +523,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                             clusterService.setPrincipal(new ClientPrincipal(result.uuid, result.ownerUuid));
                         }
                         connection.setConnectedServerVersion(result.serverHazelcastVersion);
-                        connection.setClientUnregisteredMembers(result.clientUnregisteredMembers);
                         authenticated(target, connection);
                         callback.onSuccess(connection, asOwner);
                         break;

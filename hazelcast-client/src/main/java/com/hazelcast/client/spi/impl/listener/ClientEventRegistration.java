@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi.impl.listener;
 
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
-import com.hazelcast.core.Member;
+import com.hazelcast.nio.Connection;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -26,13 +26,13 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class ClientEventRegistration {
 
-    private Member subscriber;
+    private Connection subscriber;
     private final String serverRegistrationId;
     private final long callId;
     private final ListenerMessageCodec codec;
 
     public ClientEventRegistration(String serverRegistrationId,
-                                   long callId, Member subscriber, ListenerMessageCodec codec) {
+                                   long callId, Connection subscriber, ListenerMessageCodec codec) {
         isNotNull(serverRegistrationId, "serverRegistrationId");
         this.serverRegistrationId = serverRegistrationId;
         this.callId = callId;
@@ -59,7 +59,7 @@ public class ClientEventRegistration {
      *
      * @return subscriber
      */
-    public Member getSubscriber() {
+    public Connection getSubscriber() {
         return subscriber;
     }
 

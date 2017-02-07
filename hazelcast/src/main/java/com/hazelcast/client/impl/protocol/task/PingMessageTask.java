@@ -69,8 +69,4 @@ public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec
         return null;
     }
 
-    @Override
-    protected Connection findSendConnection() {
-        return connection;
-    }
 }

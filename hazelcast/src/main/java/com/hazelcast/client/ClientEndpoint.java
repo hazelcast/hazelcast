@@ -90,8 +90,6 @@ public interface ClientEndpoint extends Client {
 
     void authenticated(ClientPrincipal principal);
 
-    ClientPrincipal getPrincipal();
-
     /**
      * @return true if endpoint is authenticated with valid security credentials, returns false otherwise
      */
@@ -109,9 +107,4 @@ public interface ClientEndpoint extends Client {
      */
     void setClientVersion(String version);
 
-    /**
-     *
-     * @return true if any listeners are registered or transactions exist for the endpoint
-     */
-    boolean resourcesExist();
 }

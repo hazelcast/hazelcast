@@ -38,7 +38,6 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
@@ -55,6 +54,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -169,8 +169,8 @@ class TestClientRegistry {
          */
         void blockFrom(Address address) {
             LOGGER.info("Blocked messages from " + address);
-            TwoWayBlockableExecutor.LockPair executor = addressBlockMap.get(address);
-            executor.blockIncoming();
+            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            lockPair.blockIncoming();
         }
 
         /**
@@ -208,7 +208,7 @@ class TestClientRegistry {
         private final NodeEngineImpl serverNodeEngine;
         private final Address remoteAddress;
         private final Address localAddress;
-        private final Connection serverSideConnection;
+        private final MockedNodeConnection serverSideConnection;
         private final TwoWayBlockableExecutor executor;
 
         MockedClientConnection(HazelcastClientInstanceImpl client,
@@ -261,9 +261,7 @@ class TestClientRegistry {
                 public void run() {
                     ClientMessage newPacket = readFromPacket((ClientMessage) frame);
                     lastWriteTime = System.currentTimeMillis();
-                    node.clientEngine.handleClientMessage(newPacket, serverSideConnection);
-
-
+                    serverSideConnection.handleClientMessage(newPacket);
                 }
             });
             return true;
@@ -364,6 +362,9 @@ class TestClientRegistry {
 
         private final MockedClientConnection responseConnection;
         private final int connectionId;
+        private volatile long lastReadTimeMillis;
+        private volatile long lastWriteTimeMillis;
+        private volatile AtomicBoolean alive = new AtomicBoolean(true);
 
         public MockedNodeConnection(int connectionId, Address localEndpoint, Address remoteEndpoint, NodeEngineImpl nodeEngine
                 , MockedClientConnection responseConnection) {
@@ -371,6 +372,8 @@ class TestClientRegistry {
             this.responseConnection = responseConnection;
             this.connectionId = connectionId;
             register();
+            lastReadTimeMillis = System.currentTimeMillis();
+            lastWriteTimeMillis = System.currentTimeMillis();
         }
 
         private void register() {
@@ -382,11 +385,17 @@ class TestClientRegistry {
         public boolean write(OutboundFrame frame) {
             final ClientMessage packet = (ClientMessage) frame;
             if (isAlive()) {
+                lastWriteTimeMillis = System.currentTimeMillis();
                 ClientMessage newPacket = readFromPacket(packet);
                 responseConnection.handleClientMessage(newPacket);
                 return true;
             }
             return false;
+        }
+
+        void handleClientMessage(ClientMessage newPacket) {
+            lastReadTimeMillis = System.currentTimeMillis();
+            nodeEngine.getNode().clientEngine.handleClientMessage(newPacket, this);
         }
 
         @Override
@@ -413,6 +422,11 @@ class TestClientRegistry {
 
         @Override
         public void close(String reason, Throwable cause) {
+            if (!alive.compareAndSet(true, false)) {
+                return;
+            }
+
+            Logger.getLogger(MockedNodeConnection.class).warning("Server connection closed : " + reason, cause);
             super.close(reason, cause);
             responseConnection.onServerClose(reason);
         }
@@ -423,6 +437,16 @@ class TestClientRegistry {
             Address remoteEndpoint = getEndPoint();
             result = 31 * result + (remoteEndpoint != null ? remoteEndpoint.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public long lastReadTimeMillis() {
+            return lastReadTimeMillis;
+        }
+
+        @Override
+        public long lastWriteTimeMillis() {
+            return lastWriteTimeMillis;
         }
 
         @Override

@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentMap;
 public final class ClientEndpointImpl implements ClientEndpoint {
 
     private final ClientEngineImpl clientEngine;
-    private final Connection conn;
+    private final Connection connection;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
     private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
@@ -60,11 +60,11 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     private String clientVersionString;
     private long authenticationCorrelationId;
 
-    public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection conn) {
+    public ClientEndpointImpl(ClientEngineImpl clientEngine, Connection connection) {
         this.clientEngine = clientEngine;
-        this.conn = conn;
-        if (conn instanceof TcpIpConnection) {
-            TcpIpConnection tcpIpConnection = (TcpIpConnection) conn;
+        this.connection = connection;
+        if (connection instanceof TcpIpConnection) {
+            TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
             socketAddress = tcpIpConnection.getSocketChannelWrapper().socket().getRemoteSocketAddress();
         } else {
             socketAddress = null;
@@ -75,7 +75,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public Connection getConnection() {
-        return conn;
+        return connection;
     }
 
     @Override
@@ -85,15 +85,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
 
     @Override
     public boolean isAlive() {
-        if (conn.isAlive()) {
-            return true;
-        }
-        String clientUuid = getUuid();
-        if (null != clientUuid) {
-            Connection connection = clientEngine.getEndpointManager().findLiveConnectionFor(clientUuid);
-            return null != connection;
-        }
-        return false;
+        return connection.isAlive();
     }
 
     @Override
@@ -143,10 +135,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         clientVersion = BuildInfo.calculateVersion(version);
     }
 
-    public ClientPrincipal getPrincipal() {
-        return principal;
-    }
-
     @Override
     public InetSocketAddress getSocketAddress() {
         return (InetSocketAddress) socketAddress;
@@ -155,7 +143,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public ClientType getClientType() {
         ClientType type;
-        switch (conn.getType()) {
+        switch (connection.getType()) {
             case JAVA_CLIENT:
                 type = ClientType.JAVA;
                 break;
@@ -178,7 +166,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
                 type = ClientType.OTHER;
                 break;
             default:
-                throw new IllegalArgumentException("Invalid connection type: " + conn.getType());
+                throw new IllegalArgumentException("Invalid connection type: " + connection.getType());
         }
         return type;
     }
@@ -240,11 +228,6 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         removeListenerActions.clear();
     }
 
-    @Override
-    public boolean resourcesExist() {
-        return !removeListenerActions.isEmpty() || !transactionContextMap.isEmpty();
-    }
-
     public void destroy() throws LoginException {
         clearAllListeners();
 
@@ -274,8 +257,8 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     @Override
     public String toString() {
         return "ClientEndpoint{"
-                + "conn=" + conn
-                + ", principal='" + principal + '\''
+                + "connection=" + connection
+                + ", principal='" + principal
                 + ", firstConnection=" + firstConnection
                 + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersionString
