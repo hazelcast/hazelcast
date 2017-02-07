@@ -62,7 +62,7 @@ public class SplitBrainJoinMessage extends JoinMessage {
         return "SplitBrainJoinMessage{"
                 + "packetVersion=" + packetVersion
                 + ", buildNumber=" + buildNumber
-                + ", codebaseVersion=" + version
+                + ", memberVersion=" + memberVersion
                 + ", clusterVersion=" + clusterVersion
                 + ", address=" + address
                 + ", uuid='" + uuid + '\''

@@ -234,9 +234,9 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public void validateJoinRequest(JoinMessage joinMessage) {
         // check joining member's major.minor version is same as current cluster version's major.minor numbers
-        if (!joinMessage.getVersion().asVersion().equals(node.getClusterService().getClusterVersion())) {
-            throw new VersionMismatchException("Joining node's version " + joinMessage.getVersion() + " is not compatible with "
-                    + node.getVersion());
+        if (!joinMessage.getMemberVersion().asVersion().equals(node.getClusterService().getClusterVersion())) {
+            throw new VersionMismatchException("Joining node's version " + joinMessage.getMemberVersion() + " is not"
+                    + " compatible with " + node.getVersion());
         }
     }
 
