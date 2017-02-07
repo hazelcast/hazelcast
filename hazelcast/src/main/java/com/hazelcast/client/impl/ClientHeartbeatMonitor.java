@@ -97,7 +97,7 @@ public class ClientHeartbeatMonitor implements Runnable {
                     return;
                 }
 
-                clientEndpointManager.removeEndpoint(clientEndpoint, true, message);
+                clientEndpointManager.removeEndpoint(clientEndpoint, message);
             }
         }
     }
