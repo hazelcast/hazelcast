@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2015, Christoph Engelbert (aka noctarius) and
- * contributors. All rights reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.noctarius.hazelcast.kubernetes;
+
+package com.hazelcast.kubernetes;
 
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
@@ -28,21 +28,22 @@ import java.net.UnknownHostException;
 import java.util.List;
 import java.util.Map;
 
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
-import static com.noctarius.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_MASTER_URL;
+import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_SYSTEM_PREFIX;
+import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
+import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
 
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
     private static final String HAZELCAST_SERVICE_PORT = "hazelcast-service-port";
+    private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
 
     private final EndpointResolver endpointResolver;
 
@@ -50,7 +51,8 @@ final class HazelcastKubernetesDiscoveryStrategy
         super(logger, properties);
 
         String serviceDns = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS);
-        int serviceDnsTimeout = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_TIMEOUT, 5);
+        int serviceDnsTimeout
+                = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_DNS_TIMEOUT, DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS);
         String serviceName = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_NAME);
         String serviceLabel = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_NAME);
         String serviceLabelValue = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_LABEL_VALUE, "true");
@@ -58,12 +60,12 @@ final class HazelcastKubernetesDiscoveryStrategy
         String namespace = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE, getNamespaceOrDefault());
         String kubernetesMaster = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
 
-        logger.info("Kubernetes Discovery properties: { " //
-                + "service-dns: " + serviceDns + ", " //
-                + "service-dns-timeout: " + serviceDnsTimeout + ", " //
-                + "service-name: " + serviceName + ", " //
-                + "service-label: " + serviceLabel + ", " //
-                + "service-label-value: " + serviceLabelValue + ", " //
+        logger.info("Kubernetes Discovery properties: { "
+                + "service-dns: " + serviceDns + ", "
+                + "service-dns-timeout: " + serviceDnsTimeout + ", "
+                + "service-name: " + serviceName + ", "
+                + "service-label: " + serviceLabel + ", "
+                + "service-label-value: " + serviceLabelValue + ", "
                 + "namespace: " + namespace + ", " + "kubernetes-master: " + kubernetesMaster + "}");
 
         EndpointResolver endpointResolver;
@@ -154,7 +156,7 @@ final class HazelcastKubernetesDiscoveryStrategy
         return sb.append(property.key()).toString();
     }
 
-    static abstract class EndpointResolver {
+    abstract static class EndpointResolver {
         protected final ILogger logger;
 
         EndpointResolver(ILogger logger) {

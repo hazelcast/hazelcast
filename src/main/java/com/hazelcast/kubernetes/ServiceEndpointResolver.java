@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2015, Christoph Engelbert (aka noctarius) and
- * contributors. All rights reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.noctarius.hazelcast.kubernetes;
+
+package com.hazelcast.kubernetes;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.util.StringUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.EndpointAddress;
 import io.fabric8.kubernetes.api.model.EndpointSubset;
 import io.fabric8.kubernetes.api.model.Endpoints;
@@ -59,10 +61,10 @@ class ServiceEndpointResolver
         this.namespace = namespace;
         this.serviceLabel = serviceLabel;
         this.serviceLabelValue = serviceLabelValue;
-        this.client = buildeKubernetesClient(apiToken, kubernetesMaster);
+        this.client = buildKubernetesClient(apiToken, kubernetesMaster);
     }
 
-    private KubernetesClient buildeKubernetesClient(String apiToken, String kubernetesMaster) {
+    private KubernetesClient buildKubernetesClient(String apiToken, String kubernetesMaster) {
         String oauthToken = apiToken;
         if (StringUtil.isNullOrEmpty(oauthToken)) {
             oauthToken = getAccountToken();
@@ -128,17 +130,20 @@ class ServiceEndpointResolver
         client.close();
     }
 
+    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
     private String getAccountToken() {
+        InputStream is = null;
         try {
             String tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token";
             File file = new File(tokenFile);
             byte[] data = new byte[(int) file.length()];
-            InputStream is = new FileInputStream(file);
+            is = new FileInputStream(file);
             is.read(data);
-            return new String(data);
-
+            return new String(data, "UTF-8");
         } catch (IOException e) {
             throw new RuntimeException("Could not get token file", e);
+        } finally {
+            IOUtil.closeResource(is);
         }
     }
 }

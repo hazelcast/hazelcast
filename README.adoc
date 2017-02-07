@@ -1,5 +1,4 @@
 = Hazelcast Discovery Plugin for Kubernetes
-Christoph Engelbert <https://github.com/noctarius[@noctarius2k]>
 // Settings:
 :compat-mode!:
 :idseparator: -
@@ -25,7 +24,7 @@ link:http://docs.hazelcast.org/docs/3.6-EA2/manual/html-single/index.html#discov
 == Configuration Property Documentation
 
 The available configuration properties are documented inside the Javadoc of this plugin:
-link:http://noctarius.github.io/hazelcast-kubernetes-discovery/com/noctarius/hazelcast/kubernetes/KubernetesProperties.html#field_summary[Configuration Properties]
+link:http://hazelcast.github.io/hazelcast-kubernetes/com/hazelcast/kubernetes/KubernetesProperties.html#field_summary[Configuration Properties]
 
 == Configuration
 === REST API Request
@@ -42,8 +41,8 @@ maven, Gradle, sbt or similar tools, this is as easy as adding it to the build c
     <!-- application dependencies -->
 
     <dependency>
-      <groupId>com.noctarius.discovery</groupId>
-      <artifactId>hazelcast-kubernetes-discovery</artifactId>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast-kubernetes</artifactId>
       <version>${hazelcast-kubernetes-version}</version>
     </dependency>
   </dependencies>
@@ -79,7 +78,7 @@ This fragment will add the discovery plugin as well as necessary transitive depe
       <!-- activate the Kubernetes plugin -->
       <discovery-strategies>
         <discovery-strategy enabled="true"
-            class="com.noctarius.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+            class="com.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
 
           <properties>
             <!-- configure discovery service API lookup -->
@@ -110,8 +109,8 @@ If using maven, Gradle, sbt or similar tools, this is as easy as adding it to th
     <!-- application dependencies -->
 
     <dependency>
-      <groupId>com.noctarius.discovery</groupId>
-      <artifactId>hazelcast-kubernetes-discovery</artifactId>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast-kubernetes</artifactId>
       <version>${hazelcast-kubernetes-version}</version>
     </dependency>
   </dependencies>
@@ -141,7 +140,7 @@ link:https://github.com/kubernetes/kubernetes/tree/v1.0.6/cluster/addons/dns[Kub
       <!-- activate the Kubernetes plugin -->
       <discovery-strategies>
         <discovery-strategy enabled="true"
-            class="com.noctarius.hazelcast.kubernetes.HazelcastKubernetesDiscoveryStrategy">
+            class="com.hazelcast.HazelcastKubernetesDiscoveryStrategy">
 
           <properties>
             <!-- configure discovery service API lookup -->
