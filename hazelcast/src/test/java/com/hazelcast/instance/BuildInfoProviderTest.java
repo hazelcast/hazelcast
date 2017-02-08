@@ -1,12 +1,14 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Properties;
 import java.util.regex.Pattern;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
@@ -14,17 +16,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class BuildInfoProviderTest {
+public class BuildInfoProviderTest extends HazelcastTestSupport {
 
     // major.minor.patch-RC-SNAPSHOT
-    private static final Pattern VERSION_PATTERN
-            = Pattern.compile("^[\\d]+\\.[\\d]+(\\.[\\d]+)?(\\-[\\w]+)?(\\-SNAPSHOT)?$");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^[\\d]+\\.[\\d]+(\\.[\\d]+)?(\\-[\\w]+)?(\\-SNAPSHOT)?$");
+
+    @After
+    public void cleanup() {
+        System.clearProperty("hazelcast.build");
+    }
 
     @Test
-    public void testPattern() {
+    public void testConstructor() {
+        assertUtilityConstructor(BuildInfoProvider.class);
+    }
+
+    @Test
+    public void testVersionPattern() {
         assertTrue(VERSION_PATTERN.matcher("3.1").matches());
         assertTrue(VERSION_PATTERN.matcher("3.1-SNAPSHOT").matches());
         assertTrue(VERSION_PATTERN.matcher("3.1-RC").matches());
@@ -72,7 +82,6 @@ public class BuildInfoProviderTest {
         assertTrue(buildInfo.toString(), VERSION_PATTERN.matcher(version).matches());
         assertEquals(buildInfo.toString(), buildNumber, Integer.parseInt(build));
         assertFalse(buildInfo.toString(), buildInfo.isEnterprise());
-
     }
 
     @Test
@@ -102,9 +111,24 @@ public class BuildInfoProviderTest {
         System.clearProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION);
     }
 
-    @After
-    public void cleanup() {
-        System.clearProperty("hazelcast.build");
-    }
+    @Test
+    public void testJetBuildInfo() {
+        Properties properties = new Properties();
+        properties.setProperty("jet.version", "1.0");
+        properties.setProperty("jet.build", "1486562404303");
+        properties.setProperty("jet.git.revision", "a252185d2d39c8ed5ef2596e889307d396a239cc");
 
+        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        BuildInfoProvider.setJetProperties(properties, buildInfo);
+
+        JetBuildInfo jetBuildInfo = buildInfo.getJetBuildInfo();
+
+        assertEquals("1.0", jetBuildInfo.getVersion());
+        assertEquals("1486562404303", jetBuildInfo.getBuild());
+        assertEquals("a252185d2d39c8ed5ef2596e889307d396a239cc", jetBuildInfo.getRevision());
+
+        assertContains(jetBuildInfo.toString(), "1.0");
+        assertContains(jetBuildInfo.toString(), "1486562404303");
+        assertContains(jetBuildInfo.toString(), "a252185d2d39c8ed5ef2596e889307d396a239cc");
+    }
 }

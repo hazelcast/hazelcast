@@ -18,12 +18,12 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.InputStream;
 import java.util.Properties;
 
 import static com.hazelcast.nio.IOUtil.closeResource;
+import static com.hazelcast.util.EmptyStatement.ignore;
 
 /**
  * Provides information about current Hazelcast build.
@@ -68,7 +68,7 @@ public final class BuildInfoProvider {
         return buildInfo;
     }
 
-    private static void setJetProperties(Properties properties, BuildInfo buildInfo) {
+    static void setJetProperties(Properties properties, BuildInfo buildInfo) {
         if (properties.isEmpty()) {
             return;
         }
@@ -78,6 +78,21 @@ public final class BuildInfoProvider {
 
         JetBuildInfo jetBuildInfo = new JetBuildInfo(version, build, revision);
         buildInfo.setJetBuildInfo(jetBuildInfo);
+    }
+
+    private static Properties loadPropertiesFromResource(String resourceName) {
+        InputStream properties = BuildInfoProvider.class.getClassLoader().getResourceAsStream(resourceName);
+        Properties runtimeProperties = new Properties();
+        try {
+            if (properties != null) {
+                runtimeProperties.load(properties);
+            }
+        } catch (Exception ignored) {
+            ignore(ignored);
+        } finally {
+            closeResource(properties);
+        }
+        return runtimeProperties;
     }
 
     private static BuildInfo readBuildInfoProperties(Properties runtimeProperties, BuildInfo upstreamBuildInfo) {
@@ -109,21 +124,4 @@ public final class BuildInfoProvider {
         byte serialVersion = Byte.parseByte(sv);
         return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion, upstreamBuildInfo);
     }
-
-    private static Properties loadPropertiesFromResource(String resourceName) {
-        final InputStream properties =
-                BuildInfoProvider.class.getClassLoader().getResourceAsStream(resourceName);
-        Properties runtimeProperties = new Properties();
-        try {
-            if (properties != null) {
-                runtimeProperties.load(properties);
-            }
-        } catch (Exception ignored) {
-            EmptyStatement.ignore(ignored);
-        } finally {
-            closeResource(properties);
-        }
-        return runtimeProperties;
-    }
-
 }

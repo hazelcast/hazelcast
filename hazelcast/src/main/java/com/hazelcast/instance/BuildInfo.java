@@ -19,8 +19,10 @@ package com.hazelcast.instance;
 import com.hazelcast.logging.Logger;
 
 import static com.hazelcast.util.StringUtil.tokenizeVersionString;
+import static java.lang.Integer.parseInt;
 
 public class BuildInfo {
+
     public static final int UNKNOWN_HAZELCAST_VERSION = -1;
 
     // major.minor.patch-RC-SNAPSHOT
@@ -83,7 +85,7 @@ public class BuildInfo {
     }
 
     /**
-     * @return jet build info if Jet is used null otherwise
+     * @return {@link JetBuildInfo} if Hazelcast Jet is used, {@code null} otherwise
      */
     public JetBuildInfo getJetBuildInfo() {
         return jetBuildInfo;
@@ -115,14 +117,13 @@ public class BuildInfo {
         String[] versionTokens = tokenizeVersionString(version);
         if (versionTokens != null) {
             try {
-                int calculatedVersion = MAJOR_VERSION_MULTIPLIER * Integer.parseInt(versionTokens[0])
-                        + MINOR_VERSION_MULTIPLIER * Integer.parseInt(versionTokens[1]);
-
+                int calculatedVersion = MAJOR_VERSION_MULTIPLIER * parseInt(versionTokens[0])
+                        + MINOR_VERSION_MULTIPLIER * parseInt(versionTokens[1]);
                 int groupCount = versionTokens.length;
                 if (groupCount >= PATCH_TOKEN_INDEX) {
                     String patchVersionString = versionTokens[PATCH_TOKEN_INDEX];
                     if (null != patchVersionString && !patchVersionString.startsWith("-")) {
-                        calculatedVersion += Integer.parseInt(patchVersionString);
+                        calculatedVersion += parseInt(patchVersionString);
                     }
                 }
                 return calculatedVersion;
