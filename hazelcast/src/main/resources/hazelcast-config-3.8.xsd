@@ -1794,17 +1794,17 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="password" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        Passphrase to use when generating the secret key.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="salt" type="xs:string" default="thesalt">
                 <xs:annotation>
                     <xs:documentation>
                         Salt value to use when generating the secret key.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-            <xs:element name="password" type="xs:string">
-                <xs:annotation>
-                    <xs:documentation>
-                        Pass phrase to use when generating the secret key.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
