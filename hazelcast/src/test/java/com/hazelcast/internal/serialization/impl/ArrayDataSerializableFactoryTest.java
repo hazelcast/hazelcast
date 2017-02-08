@@ -1,6 +1,5 @@
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SampleIdentifiedDataSerializable;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -9,6 +8,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.VersionAwareConstructorFunction;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;

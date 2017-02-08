@@ -17,10 +17,10 @@
 package com.hazelcast.nio.serialization.impl;
 
 
-import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 /**
  * VersionedDataSerializableFactory is used to create IdentifiedDataSerializable instances during de-serialization.

@@ -36,10 +36,10 @@ import com.hazelcast.util.Clock;
 
 import java.util.Iterator;
 
-import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
-import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.flushAccumulator;
 import static com.hazelcast.map.impl.querycache.publisher.AccumulatorSweeper.removeAccumulator;
+import static com.hazelcast.spi.partition.MigrationEndpoint.DESTINATION;
+import static com.hazelcast.spi.partition.MigrationEndpoint.SOURCE;
 
 /**
  * Defines migration behavior of map service.

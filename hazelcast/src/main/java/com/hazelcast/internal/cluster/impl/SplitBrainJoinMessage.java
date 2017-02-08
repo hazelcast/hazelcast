@@ -19,8 +19,8 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;

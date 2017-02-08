@@ -18,8 +18,8 @@ package com.hazelcast.monitor;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.management.JsonSerializable;
-import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 public interface NodeState extends JsonSerializable {
 

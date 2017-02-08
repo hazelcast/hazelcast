@@ -16,9 +16,9 @@
 
 package com.hazelcast.internal.networking.nonblocking.iobalancer;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.internal.networking.nonblocking.MigratableHandler;
 import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThread;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

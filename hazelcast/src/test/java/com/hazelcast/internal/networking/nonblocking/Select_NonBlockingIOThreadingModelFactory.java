@@ -1,8 +1,6 @@
 package com.hazelcast.internal.networking.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.internal.networking.nonblocking.SelectorMode;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.IOThreadingModelFactory;
 import com.hazelcast.nio.tcp.MockIOService;

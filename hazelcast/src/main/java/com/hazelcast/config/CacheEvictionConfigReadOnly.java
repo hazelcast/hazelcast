@@ -16,8 +16,8 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 /**
  * Read only version of {@link CacheEvictionConfig}.

@@ -19,7 +19,6 @@ package com.hazelcast.osgi.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.osgi.HazelcastOSGiService;
-
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 

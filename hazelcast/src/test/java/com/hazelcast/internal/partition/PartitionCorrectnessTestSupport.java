@@ -30,8 +30,8 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.test.TestPartitionUtils.PartitionReplicaVersionsView;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.Before;
 import org.junit.runners.Parameterized;
 

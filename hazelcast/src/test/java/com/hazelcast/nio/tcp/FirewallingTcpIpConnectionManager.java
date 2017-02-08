@@ -18,11 +18,11 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingIOThreadingModel;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.HashSet;

@@ -17,10 +17,10 @@
 package com.hazelcast.internal.management;
 
 import com.hazelcast.internal.management.dto.MapConfigDTO;
+import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.management.operation.ScriptExecutorOperation;
 import com.hazelcast.internal.management.operation.UpdateManagementCenterUrlOperation;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;

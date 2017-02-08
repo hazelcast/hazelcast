@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ADD;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.APPEND;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.BULK_GET;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DECREMENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.DELETE;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
@@ -66,7 +67,6 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.HTTP_PUT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.INCREMENT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.NO_OP;
-import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.BULK_GET;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.PREPEND;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.REPLACE;
