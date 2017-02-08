@@ -48,6 +48,11 @@ public class WanReplicationRefReadOnly extends WanReplicationRef {
     }
 
     @Override
+    public WanReplicationRef addFilter(String filter) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
     public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
         throw new UnsupportedOperationException("This config is read-only");
     }
