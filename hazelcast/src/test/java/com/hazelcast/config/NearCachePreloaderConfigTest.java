@@ -20,18 +20,18 @@ public class NearCachePreloaderConfigTest {
     private NearCachePreloaderConfig config = new NearCachePreloaderConfig();
 
     @Test
-    public void testConstructor_withFileName() {
-        config = new NearCachePreloaderConfig("myStorage.store");
+    public void testConstructor_withDirectory() {
+        config = new NearCachePreloaderConfig("myParentDirectory");
 
         assertTrue(config.isEnabled());
-        assertEquals("myStorage.store", config.getDirectory());
+        assertEquals("myParentDirectory", config.getDirectory());
     }
 
     @Test
     public void setDirectory() {
-        config.setDirectory("myStorage.store");
+        config.setDirectory("myParentDirectory");
 
-        assertEquals("myStorage.store", config.getDirectory());
+        assertEquals("myParentDirectory", config.getDirectory());
     }
 
     @Test(expected = NullPointerException.class)
@@ -72,7 +72,7 @@ public class NearCachePreloaderConfigTest {
     @Test
     public void testSerialization() {
         config.setEnabled(true);
-        config.setDirectory("foobar");
+        config.setDirectory("myParentDirectory");
         config.setStoreInitialDelaySeconds(23);
         config.setStoreIntervalSeconds(42);
 
