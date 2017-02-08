@@ -288,7 +288,7 @@ public class MapContainer {
     }
 
     public boolean shouldCloneOnEntryProcessing() {
-        return getIndexes().hasIndex() & OBJECT.equals(mapConfig.getInMemoryFormat());
+        return getIndexes().hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 }
 
