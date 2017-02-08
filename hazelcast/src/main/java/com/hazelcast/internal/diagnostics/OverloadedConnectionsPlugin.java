@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.networking.nonblocking.NonBlockingSocketWriter;
+import com.hazelcast.internal.networking.spinning.SpinningSocketWriter;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.internal.networking.nonblocking.NonBlockingSocketWriter;
-import com.hazelcast.internal.networking.spinning.SpinningSocketWriter;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;

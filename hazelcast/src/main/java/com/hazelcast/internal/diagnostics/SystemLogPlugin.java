@@ -31,10 +31,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListenable;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.version.Version;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+import com.hazelcast.version.Version;
 
 import java.util.Queue;
 import java.util.Set;

@@ -25,7 +25,6 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.util.LockGuard;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.version.Version;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -37,6 +36,7 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.Preconditions;
+import com.hazelcast.version.Version;
 
 import java.util.ArrayList;
 import java.util.Collection;

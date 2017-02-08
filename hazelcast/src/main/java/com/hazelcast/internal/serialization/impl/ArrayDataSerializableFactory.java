@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.VersionedDataSerializableFactory;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.VersionAwareConstructorFunction;
+import com.hazelcast.version.Version;
 
 public final class ArrayDataSerializableFactory implements VersionedDataSerializableFactory {
 

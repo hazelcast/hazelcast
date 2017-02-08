@@ -44,7 +44,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.version.Version;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -62,6 +61,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;

@@ -29,10 +29,10 @@ import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.internal.management.operation.AddWanConfigOperation;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.version.Version;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.io.UnsupportedEncodingException;

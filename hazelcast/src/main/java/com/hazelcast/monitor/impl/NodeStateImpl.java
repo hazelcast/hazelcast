@@ -19,8 +19,8 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.monitor.NodeState;
-import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import static com.hazelcast.util.JsonUtil.getString;
 

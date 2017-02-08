@@ -34,10 +34,10 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.LocalWanStats;
-import com.hazelcast.monitor.WanSyncState;
 import com.hazelcast.monitor.MemberPartitionState;
 import com.hazelcast.monitor.MemberState;
 import com.hazelcast.monitor.NodeState;
+import com.hazelcast.monitor.WanSyncState;
 
 import java.util.Collection;
 import java.util.HashMap;

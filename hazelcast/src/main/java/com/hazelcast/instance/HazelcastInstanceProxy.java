@@ -16,8 +16,8 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.cardinality.CardinalityEstimator;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.DistributedObject;

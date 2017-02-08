@@ -45,7 +45,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.version.Version;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.MemberReadHandler;
 import com.hazelcast.nio.tcp.MemberWriteHandler;
@@ -62,6 +61,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import com.hazelcast.wan.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 

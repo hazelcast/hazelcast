@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.map;
 
+import com.hazelcast.client.impl.AddInterceptorOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
@@ -24,7 +25,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.client.impl.AddInterceptorOperationSupplier;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;

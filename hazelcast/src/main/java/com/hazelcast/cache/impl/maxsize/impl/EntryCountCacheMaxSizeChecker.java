@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.maxsize.impl;
 
-import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecordMap;
+import com.hazelcast.internal.eviction.MaxSizeChecker;
 
 /**
  * Cache max-size policy implementation for

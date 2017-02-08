@@ -45,11 +45,11 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.Address;
-import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
