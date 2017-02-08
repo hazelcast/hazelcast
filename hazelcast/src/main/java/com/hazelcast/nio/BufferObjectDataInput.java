@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.version.Version;
 
 import java.io.Closeable;
 import java.io.IOException;

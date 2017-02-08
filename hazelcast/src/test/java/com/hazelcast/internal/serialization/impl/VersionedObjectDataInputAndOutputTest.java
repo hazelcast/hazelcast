@@ -1,7 +1,8 @@
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.cluster.impl.Versions;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -24,7 +25,7 @@ public class VersionedObjectDataInputAndOutputTest {
     @Test
     public void testVersionOnInput() {
         ObjectDataInputStream input = new ObjectDataInputStream(new ByteArrayInputStream(new byte[]{}), iss);
-        Version version = Version.of(3);
+        Version version = Versions.V3_8;
 
         input.setVersion(version);
         assertEquals(version, input.getVersion());
@@ -34,7 +35,7 @@ public class VersionedObjectDataInputAndOutputTest {
     @Test
     public void testVersionOnOutput() {
         ObjectDataOutputStream output = new ObjectDataOutputStream(new ByteArrayOutputStream(16), iss);
-        Version version = Version.of(3);
+        Version version = Versions.V3_8;
 
         output.setVersion(version);
         assertEquals(version, output.getVersion());

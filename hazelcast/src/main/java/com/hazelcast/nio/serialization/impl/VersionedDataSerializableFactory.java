@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization.impl;
 
 
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.version.MemberVersion;

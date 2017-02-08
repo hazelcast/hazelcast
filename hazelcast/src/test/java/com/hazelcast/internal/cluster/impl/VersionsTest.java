@@ -1,6 +1,6 @@
 package com.hazelcast.internal.cluster.impl;
 
-import com.hazelcast.nio.Version;
+import com.hazelcast.version.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -22,6 +22,11 @@ public class VersionsTest extends HazelcastTestSupport {
 
     @Test
     public void version_3_8() {
-        assertEquals(Version.of(8), Versions.V3_8);
+        assertEquals(Version.of(3, 8), Versions.V3_8);
+    }
+
+    @Test
+    public void version_3_9() {
+        assertEquals(Version.of(3, 9), Versions.V3_9);
     }
 }

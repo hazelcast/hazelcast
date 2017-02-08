@@ -8,13 +8,13 @@ import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.internal.cluster.impl.VersionMismatchException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.version.Version;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 import org.junit.Before;
 import org.junit.Rule;
@@ -58,20 +58,20 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
     @Test
     public void test_nodeVersionCompatibleWith_ownClusterVersion() {
         MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
-        assertTrue(nodeExtension.isNodeVersionCompatibleWith(currentVersion.asClusterVersion()));
+        assertTrue(nodeExtension.isNodeVersionCompatibleWith(currentVersion.asVersion()));
     }
 
     @Test
     public void test_nodeVersionNotCompatibleWith_otherMinorVersion() {
         MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
-        ClusterVersion minorMinusOne = new ClusterVersion(currentVersion.getMajor(), currentVersion.getMinor() - 1);
+        Version minorMinusOne = Version.of(currentVersion.getMajor(), currentVersion.getMinor() - 1);
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(minorMinusOne));
     }
 
     @Test
     public void test_nodeVersionNotCompatibleWith_otherMajorVersion() {
         MemberVersion currentVersion = getNode(hazelcastInstance).getVersion();
-        ClusterVersion majorPlusOne = new ClusterVersion(currentVersion.getMajor() + 1, currentVersion.getMinor());
+        Version majorPlusOne = Version.of(currentVersion.getMajor() + 1, currentVersion.getMinor());
         assertFalse(nodeExtension.isNodeVersionCompatibleWith(majorPlusOne));
     }
 
@@ -121,7 +121,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(1);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(ClusterVersion newVersion) {
+            public void onClusterVersionChange(Version newVersion) {
                 latch.countDown();
             }
         };
@@ -149,8 +149,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final AtomicBoolean failed = new AtomicBoolean(false);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(ClusterVersion newVersion) {
-                if (!newVersion.equals(node.getVersion().asClusterVersion())) {
+            public void onClusterVersionChange(Version newVersion) {
+                if (!newVersion.equals(node.getVersion().asVersion())) {
                     failed.set(true);
                 }
                 latch.countDown();
@@ -168,8 +168,8 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         final AtomicBoolean failed = new AtomicBoolean(false);
         ClusterVersionListener listener = new ClusterVersionListener() {
             @Override
-            public void onClusterVersionChange(ClusterVersion newVersion) {
-                if (!newVersion.equals(ClusterVersion.of("2.1.7"))) {
+            public void onClusterVersionChange(Version newVersion) {
+                if (!newVersion.equals(Version.of("2.1.7"))) {
                     failed.set(true);
                 }
                 latch.countDown();
@@ -206,7 +206,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void onClusterVersionChange(ClusterVersion newVersion) {
+        public void onClusterVersionChange(Version newVersion) {
 
         }
 

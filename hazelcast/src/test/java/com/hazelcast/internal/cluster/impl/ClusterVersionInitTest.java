@@ -3,11 +3,11 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.version.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Rule;
@@ -35,13 +35,13 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         config.getGroupConfig().setName(randomName());
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         setupInstance(config);
-        assertEqualsEventually(new Callable<ClusterVersion>() {
+        assertEqualsEventually(new Callable<Version>() {
             @Override
-            public ClusterVersion call()
+            public Version call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion.asClusterVersion());
+        }, codebaseVersion.asVersion());
     }
 
     @Test
@@ -51,13 +51,13 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         setupInstance(config);
-        assertEqualsEventually(new Callable<ClusterVersion>() {
+        assertEqualsEventually(new Callable<Version>() {
             @Override
-            public ClusterVersion call()
+            public Version call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion.asClusterVersion());
+        }, codebaseVersion.asVersion());
     }
 
     @Test
@@ -67,13 +67,13 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
         setupInstance(config);
-        assertEqualsEventually(new Callable<ClusterVersion>() {
+        assertEqualsEventually(new Callable<Version>() {
             @Override
-            public ClusterVersion call()
+            public Version call()
                     throws Exception {
                 return cluster.getClusterVersion();
             }
-        }, codebaseVersion.asClusterVersion());
+        }, codebaseVersion.asVersion());
     }
 
     @Test
@@ -85,13 +85,13 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         HazelcastInstance joiner = Hazelcast.newHazelcastInstance(config);
         final ClusterServiceImpl joinerCluster = (ClusterServiceImpl) joiner.getCluster();
 
-        assertEqualsEventually(new Callable<ClusterVersion>() {
+        assertEqualsEventually(new Callable<Version>() {
             @Override
-            public ClusterVersion call()
+            public Version call()
                     throws Exception {
                 return joinerCluster.getClusterVersion();
             }
-        }, codebaseVersion.asClusterVersion());
+        }, codebaseVersion.asVersion());
 
         joiner.shutdown();
     }
@@ -106,13 +106,13 @@ public class ClusterVersionInitTest extends HazelcastTestSupport {
         HazelcastInstance joiner = Hazelcast.newHazelcastInstance(config);
         final ClusterServiceImpl joinerCluster = (ClusterServiceImpl) joiner.getCluster();
 
-        assertEqualsEventually(new Callable<ClusterVersion>() {
+        assertEqualsEventually(new Callable<Version>() {
             @Override
-            public ClusterVersion call()
+            public Version call()
                     throws Exception {
                 return joinerCluster.getClusterVersion();
             }
-        }, codebaseVersion.asClusterVersion());
+        }, codebaseVersion.asVersion());
 
         joiner.shutdown();
     }

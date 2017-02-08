@@ -18,7 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
@@ -80,7 +80,7 @@ public class TestClusterUpgradeUtils {
     }
 
     // assert all members' clusterService reports the given version
-    public static void assertClusterVersion(HazelcastInstance[] instances, ClusterVersion version) {
+    public static void assertClusterVersion(HazelcastInstance[] instances, Version version) {
         for (int i=0; i < instances.length; i++) {
             assertEquals(version, instances[i].getCluster().getClusterVersion());
         }

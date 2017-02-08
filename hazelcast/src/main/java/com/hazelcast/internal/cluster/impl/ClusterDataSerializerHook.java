@@ -45,10 +45,10 @@ import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.Address;
+import com.hazelcast.version.Version;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.version.ClusterVersion;
 import com.hazelcast.version.MemberVersion;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
@@ -88,12 +88,12 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int JOIN_MESSAGE = 29;
     public static final int JOIN_REQUEST = 30;
     public static final int MIGRATION_INFO = 31;
-    public static final int NODE_VERSION = 32;
+    public static final int MEMBER_VERSION = 32;
     public static final int CLUSTER_STATE_CHANGE = 33;
     public static final int SPLIT_BRAIN_JOIN_MESSAGE = 34;
-    public static final int CLUSTER_VERSION = 35;
+    public static final int VERSION = 35;
 
-    private static final int LEN = CLUSTER_VERSION + 1;
+    private static final int LEN = VERSION + 1;
 
     @Override
     public int getFactoryId() {
@@ -264,7 +264,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new MigrationInfo();
             }
         };
-        constructors[NODE_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MEMBER_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MemberVersion();
             }
@@ -279,9 +279,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new SplitBrainJoinMessage();
             }
         };
-        constructors[CLUSTER_VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[VERSION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ClusterVersion();
+                return new Version();
             }
         };
 

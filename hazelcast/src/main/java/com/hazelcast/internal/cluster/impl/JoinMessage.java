@@ -36,7 +36,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
      * this is populated with the codebase version of the node trying to join the cluster
      * (ie {@link com.hazelcast.instance.Node#getVersion()}).
      */
-    protected MemberVersion version;
+    protected MemberVersion memberVersion;
     protected Address address;
     protected String uuid;
     protected boolean liteMember;
@@ -47,16 +47,17 @@ public class JoinMessage implements IdentifiedDataSerializable {
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address,
+    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address,
                        String uuid, boolean liteMember, ConfigCheck configCheck) {
-        this(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, Collections.<Address>emptySet(), 0);
+        this(packetVersion, buildNumber, memberVersion, address, uuid, liteMember, configCheck,
+                Collections.<Address>emptySet(), 0);
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
+    public JoinMessage(byte packetVersion, int buildNumber, MemberVersion memberVersion, Address address, String uuid,
                        boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses, int dataMemberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
-        this.version = version;
+        this.memberVersion = memberVersion;
         this.address = address;
         this.uuid = uuid;
         this.liteMember = liteMember;
@@ -73,8 +74,8 @@ public class JoinMessage implements IdentifiedDataSerializable {
         return buildNumber;
     }
 
-    public MemberVersion getVersion() {
-        return version;
+    public MemberVersion getMemberVersion() {
+        return memberVersion;
     }
 
     public Address getAddress() {
@@ -109,7 +110,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         packetVersion = in.readByte();
         buildNumber = in.readInt();
-        version = in.readObject();
+        memberVersion = in.readObject();
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
@@ -131,7 +132,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByte(packetVersion);
         out.writeInt(buildNumber);
-        out.writeObject(version);
+        out.writeObject(memberVersion);
         address.writeData(out);
         out.writeUTF(uuid);
         configCheck.writeData(out);
@@ -152,7 +153,7 @@ public class JoinMessage implements IdentifiedDataSerializable {
         return "JoinMessage{"
                 + "packetVersion=" + packetVersion
                 + ", buildNumber=" + buildNumber
-                + ", version=" + version
+                + ", memberVersion=" + memberVersion
                 + ", address=" + address
                 + ", uuid='" + uuid + '\''
                 + ", liteMember=" + liteMember

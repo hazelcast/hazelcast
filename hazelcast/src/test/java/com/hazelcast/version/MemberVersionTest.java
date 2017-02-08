@@ -1,8 +1,8 @@
 package com.hazelcast.version;
 
+import com.hazelcast.internal.cluster.impl.Versions;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.SerializationServiceV1;
-import com.hazelcast.nio.Version;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -134,7 +134,7 @@ public class MemberVersionTest {
 
     @Test
     public void testAsClusterVersion() {
-        ClusterVersion clusterVersion = MemberVersion.of(3, 8, 2).asClusterVersion();
+        Version clusterVersion = MemberVersion.of(3, 8, 2).asVersion();
 
         assertEquals(3, clusterVersion.getMajor());
         assertEquals(8, clusterVersion.getMinor());
@@ -142,9 +142,9 @@ public class MemberVersionTest {
 
     @Test
     public void testAsSerializationVersion() {
-        Version version = MemberVersion.of(3, 8, 2).asSerializationVersion();
+        Version version = MemberVersion.of(3, 8, 2).asVersion();
 
-        assertEquals(8, version.getValue());
+        assertEquals(Versions.V3_8, version);
     }
 
     @Test

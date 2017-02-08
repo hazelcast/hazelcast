@@ -74,7 +74,7 @@ public class JoinRequest extends JoinMessage {
     }
 
     public MemberInfo toMemberInfo() {
-        return new MemberInfo(address, uuid, attributes, liteMember, version);
+        return new MemberInfo(address, uuid, attributes, liteMember, memberVersion);
     }
 
     @Override
@@ -122,7 +122,7 @@ public class JoinRequest extends JoinMessage {
         return "JoinRequest{"
                 + "packetVersion=" + packetVersion
                 + ", buildNumber=" + buildNumber
-                + ", version=" + version
+                + ", memberVersion=" + memberVersion
                 + ", address=" + address
                 + ", uuid='" + uuid + "'"
                 + ", liteMember=" + liteMember

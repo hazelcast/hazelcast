@@ -502,7 +502,7 @@ public class ClusterJoinManager {
             node.setMasterAddress(thisAddress);
 
             if (clusterService.getClusterVersion() == null) {
-                clusterService.getClusterStateManager().setClusterVersion(version.asClusterVersion());
+                clusterService.getClusterStateManager().setClusterVersion(version.asVersion());
             }
 
             clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());

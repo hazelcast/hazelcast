@@ -19,7 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.monitor.NodeState;
-import com.hazelcast.version.ClusterVersion;
+import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
 
 import static com.hazelcast.util.JsonUtil.getString;
@@ -29,14 +29,14 @@ public class NodeStateImpl implements NodeState {
     private ClusterState clusterState;
     private com.hazelcast.instance.NodeState nodeState;
 
-    private ClusterVersion clusterVersion;
+    private Version clusterVersion;
     private MemberVersion memberVersion;
 
     public NodeStateImpl() {
     }
 
     public NodeStateImpl(ClusterState clusterState, com.hazelcast.instance.NodeState nodeState,
-                         ClusterVersion clusterVersion, MemberVersion memberVersion) {
+                         Version clusterVersion, MemberVersion memberVersion) {
         this.clusterState = clusterState;
         this.nodeState = nodeState;
         this.clusterVersion = clusterVersion;
@@ -54,7 +54,7 @@ public class NodeStateImpl implements NodeState {
     }
 
     @Override
-    public ClusterVersion getClusterVersion() {
+    public Version getClusterVersion() {
         return clusterVersion;
     }
 
@@ -84,7 +84,7 @@ public class NodeStateImpl implements NodeState {
         }
         String jsonClusterVersion = getString(json, "clusterVersion", null);
         if (jsonClusterVersion != null) {
-            clusterVersion = ClusterVersion.of(jsonClusterVersion);
+            clusterVersion = Version.of(jsonClusterVersion);
         }
         String jsonNodeVersion = getString(json, "memberVersion", null);
         if (jsonNodeState != null) {
