@@ -284,14 +284,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data keyData = toData(key);
-        return getInternal(keyData);
+        return toObject(getInternal(keyData));
     }
 
-    protected V getInternal(Data keyData) {
+    protected Object getInternal(Data keyData) {
         ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapGetCodec.ResponseParameters resultParameters = MapGetCodec.decodeResponse(response);
-        return toObject(resultParameters.response);
+        return resultParameters.response;
     }
 
     @Override
