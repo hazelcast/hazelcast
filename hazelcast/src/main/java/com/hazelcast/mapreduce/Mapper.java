@@ -50,7 +50,7 @@ import java.io.Serializable;
  * @param <KeyOut>   The key type for mapped results
  * @param <ValueOut> The value type for mapped results
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 @BinaryInterface

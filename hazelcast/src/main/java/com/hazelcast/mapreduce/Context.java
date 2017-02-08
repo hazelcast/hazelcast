@@ -23,7 +23,7 @@ package com.hazelcast.mapreduce;
  * @param <K> key type of the resulting keys
  * @param <V> value type of the resulting values
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 public interface Context<K, V> {

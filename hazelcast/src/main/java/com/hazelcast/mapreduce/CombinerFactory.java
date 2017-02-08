@@ -31,7 +31,7 @@ import java.io.Serializable;
  * @param <ValueIn>  value type of the incoming values
  * @param <ValueOut> value type of the reduced values
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 @BinaryInterface
