@@ -73,6 +73,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.EntryProcessorTest.ApplyCountAwareIndexedTestPredicate.PREDICATE_APPLY_COUNT;
 import static java.util.Arrays.asList;
@@ -125,8 +126,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 String oldValue = event.getOldValue();
                 if ("newValue".equals(val)
                         // contract difference
-                        && (inMemoryFormat == BINARY && "value".equals(oldValue)
-                        ||  inMemoryFormat == OBJECT && null == oldValue)) {
+                        && ((inMemoryFormat == BINARY || inMemoryFormat == NATIVE) && "value".equals(oldValue)
+                        || inMemoryFormat == OBJECT && null == oldValue)) {
                     latch.countDown();
                 }
             }
@@ -157,8 +158,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 String oldValue = event.getOldValue();
                 if ("newValue".equals(val)
                         // contract difference
-                        && (inMemoryFormat == BINARY && "value".equals(oldValue)
-                        ||  inMemoryFormat == OBJECT && null == oldValue)) {
+                        && ((inMemoryFormat == BINARY || inMemoryFormat == NATIVE) && "value".equals(oldValue)
+                        || inMemoryFormat == OBJECT && null == oldValue)) {
                     latch.countDown();
                 }
             }
@@ -1731,7 +1732,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
 
     private IMap<Long, MyData> setupImapForEntryProcessorWithIndex() {
-        Config config = new Config();
+        Config config = getConfig();
         MapConfig testMapConfig = config.getMapConfig(MAP_NAME);
         testMapConfig.setInMemoryFormat(inMemoryFormat);
         testMapConfig.getMapIndexConfigs().add(new MapIndexConfig("lastValue", true));
