@@ -15,6 +15,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,8 +25,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.net.URL;
-import java.net.URLDecoder;
 
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
@@ -36,16 +36,16 @@ public class ManagementCenterServiceIntegrationTest extends HazelcastTestSupport
 
     private static final String clusterName = "Session Integration (AWS discovery)";
     private int portNum;
-    private JettyServer jettyServer;
+    private Server jettyServer;
 
     @Before
     public void setUp() throws Exception {
-        URL root = new URL(MancenterServlet.class.getResource("/"), "../test-classes");
-        String baseDir = URLDecoder.decode(root.getFile(), "UTF-8");
-        String sourceDir = baseDir + "/../../src/test/webapp";
-        String sourceName = "server_config.xml";
         portNum = availablePort();
-        jettyServer = new JettyServer(portNum, sourceDir, sourceName);
+        jettyServer = new Server(portNum);
+        ServletHandler handler = new ServletHandler();
+        handler.addServletWithMapping(MancenterServlet.class, "/mancen/*");
+        jettyServer.setHandler(handler);
+        jettyServer.start();
 
         Hazelcast.newHazelcastInstance(getManagementCenterConfig());
     }
