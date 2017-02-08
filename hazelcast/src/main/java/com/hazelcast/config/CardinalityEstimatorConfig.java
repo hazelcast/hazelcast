@@ -52,8 +52,8 @@ public class CardinalityEstimatorConfig {
 
     public CardinalityEstimatorConfig(String name, int backupCount, int asyncBackupCount) {
         this.name = name;
-        this.backupCount = backupCount;
-        this.asyncBackupCount = asyncBackupCount;
+        this.backupCount = checkBackupCount(backupCount, asyncBackupCount);
+        this.asyncBackupCount = checkAsyncBackupCount(backupCount, asyncBackupCount);
     }
 
     public CardinalityEstimatorConfig(CardinalityEstimatorConfig config) {
