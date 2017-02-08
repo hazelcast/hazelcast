@@ -18,7 +18,7 @@ Visit [jet.hazelcast.org](http://jet.hazelcast.org) to learn more about the arch
 
 ### Getting Started
 
-See [Getting Started Guide](http://jet.hazelcast.org/getting-started/)
+See the [Getting Started Guide](http://jet.hazelcast.org/getting-started/).
 
 
 ### Code Samples
@@ -27,11 +27,11 @@ See [Hazelcast Jet Code Samples](https://github.com/hazelcast/hazelcast-jet-code
 
 ### Documentation
 
-See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.3/)
+See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.3/).
 
 ### Architecture
 
-See [Jet Architecture](https://jet.hazelcast.org/architecture/)
+See [Jet Architecture](https://jet.hazelcast.org/architecture/).
 
 ### High Performance Design
 
@@ -39,7 +39,7 @@ See the [write up](https://jet.hazelcast.org/performance/) of our high performan
 
 ### Releases
 
-Download from [jet.hazelcast.org](http://jet.hazelcast.org/download/)
+Download from [jet.hazelcast.org](http://jet.hazelcast.org/download/).
 
 Use Maven snippet:
 ```xml
@@ -115,7 +115,7 @@ Please join the mail group if you are interested in using or developing Hazelcas
 
 #### License
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
+Hazelcast Jet is available under the Apache 2 License. Please see the [Licensing section](http://docs.hazelcast.org/docs/latest-dev/manual/html-single/index.html#licensing) for more information.
 
 #### Copyright
 
