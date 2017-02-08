@@ -19,10 +19,10 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageReadHandler;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.internal.networking.ReadHandler;
 import com.hazelcast.internal.networking.SocketReader;
 import com.hazelcast.internal.networking.SocketReaderInitializer;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
 

@@ -1,17 +1,14 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.logging.AbstractLogger;
-import com.hazelcast.logging.Log4j2Factory;
-import com.hazelcast.test.SaveLoggingPropertiesRule;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LogEvent;
-import com.hazelcast.logging.LoggerFactory;
+import com.hazelcast.logging.Log4j2Factory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.SaveLoggingPropertiesRule;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -21,13 +18,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.logging.Level;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})

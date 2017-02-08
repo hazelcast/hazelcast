@@ -22,8 +22,8 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.hotrestart.HotRestartService;
-import com.hazelcast.version.Version;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.version.Version;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;

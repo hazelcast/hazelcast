@@ -1,7 +1,6 @@
 package com.hazelcast.client.cache;
 
 import javax.cache.configuration.Factory;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by ihsan on 31/10/16.
