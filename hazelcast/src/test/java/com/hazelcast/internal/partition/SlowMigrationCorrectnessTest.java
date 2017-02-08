@@ -29,6 +29,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,14 +40,16 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * https://github.com/hazelcast/hazelcast/issues/5444
+ */
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({SlowTest.class})
-// related issue https://github.com/hazelcast/hazelcast/issues/5444
-@Ignore
+@Ignore(value = "https://github.com/hazelcast/hazelcast/issues/9828")
 public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTest {
 
-    @Parameterized.Parameters(name = "backups:{0},nodes:{1}")
+    @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][] {
                 {1, 2},
