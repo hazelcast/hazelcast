@@ -748,7 +748,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     protected void storeInNearCache(Data key, Data valueData, V value, long reservationId, boolean cacheOnUpdate) {
-        if (nearCache == null || valueData == null) {
+        if (nearCache == null) {
             return;
         }
 
