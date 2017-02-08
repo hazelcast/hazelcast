@@ -17,9 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import javax.cache.event.CacheEntryEvent;
 import javax.cache.event.EventType;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.INHERITANCE;
 
 /**
  * CacheEntryEvent implementation is the actual event object received by sub-interfaces of
@@ -35,6 +38,7 @@ import javax.cache.event.EventType;
  * @see javax.cache.event.CacheEntryRemovedListener#onRemoved(Iterable)
  * @see javax.cache.event.CacheEntryExpiredListener#onExpired(Iterable)
  */
+@BinaryInterface(reason = INHERITANCE)
 public class CacheEntryEventImpl<K, V>
         extends CacheEntryEvent<K, V> {
 

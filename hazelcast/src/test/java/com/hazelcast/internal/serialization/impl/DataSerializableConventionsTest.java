@@ -35,7 +35,6 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -48,7 +47,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Tests for classes which are used as Data in the client protocol
+ * Tests to verify serializable classes conventions are observed. Each conventions test scans the classpath (excluding test classes)
+ * and tests <b>concrete</b> classes which implement (directly or transitively) {@code Serializable} or
+ * {@code DataSerializable} interface, then verifies that it's either annotated with {@code @BinaryInterface} or
+ * they also implement {@code IdentifiedDataSerializable}. Additionally, tests whether IDS instanced obtained from DS factories
+ * have the same ID as the one reported by their `getId` method and that F_ID/ID combinations are unique.
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
@@ -67,21 +70,12 @@ public class DataSerializableConventionsTest {
         dataSerializableClasses.removeAll(allIdDataSerializableClasses);
         // also remove IdentifiedDataSerializable itself
         dataSerializableClasses.remove(IdentifiedDataSerializable.class);
+        // do not check abstract classes & interfaces
+        filterNonConcreteClasses(dataSerializableClasses);
 
         // locate all classes annotated with BinaryInterface (and their subclasses) and remove those as well
-        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, false);
+        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, true);
         dataSerializableClasses.removeAll(allAnnotatedClasses);
-
-        // filter out public classes from public packages (i.e. not "impl" nor "internal" and not annotated with @PrivateApi)
-        Set<Class> publicClasses = new HashSet<Class>();
-        for (Object o : dataSerializableClasses) {
-            Class klass = (Class) o;
-            // if in public packages and not @PrivateApi ==> exclude from checks
-            if (isPublicClass(klass)) {
-                publicClasses.add(klass);
-            }
-        }
-        dataSerializableClasses.removeAll(publicClasses);
 
         if (dataSerializableClasses.size() > 0) {
             SortedSet<String> nonCompliantClassNames = new TreeSet<String>();
@@ -109,27 +103,12 @@ public class DataSerializableConventionsTest {
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
 
         serializableClasses.removeAll(allIdDataSerializableClasses);
+        // do not check abstract classes & interfaces
+        filterNonConcreteClasses(serializableClasses);
 
         // locate all classes annotated with BinaryInterface (and their subclasses) and remove those as well
-        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, false);
+        Set<?> allAnnotatedClasses = REFLECTIONS.getTypesAnnotatedWith(BinaryInterface.class, true);
         serializableClasses.removeAll(allAnnotatedClasses);
-
-        // filter out public classes from public packages (i.e. not "impl" nor "internal" and not annotated with @PrivateApi)
-        Set<Class> publicClasses = new HashSet<Class>();
-        for (Object o : serializableClasses) {
-            Class klass = (Class) o;
-            // if in public packages and not @PrivateApi ==> exclude from checks
-            if (isPublicClass(klass)) {
-                publicClasses.add(klass);
-            }
-            else {
-                // if not a public class but inherits Serializable from a public class, also exclude
-                if (inheritsClassFromPublicClass(klass, Serializable.class)) {
-                    publicClasses.add(klass);
-                }
-            }
-        }
-        serializableClasses.removeAll(publicClasses);
 
         if (serializableClasses.size() > 0) {
             SortedSet<String> nonCompliantClassNames = new TreeSet<String>();
@@ -260,14 +239,22 @@ public class DataSerializableConventionsTest {
     private Set<Class<? extends IdentifiedDataSerializable>> getIDSConcreteClasses() {
         Set<Class<? extends IdentifiedDataSerializable>> identifiedDataSerializables
                 = REFLECTIONS.getSubTypesOf(IdentifiedDataSerializable.class);
-        Iterator<Class<? extends IdentifiedDataSerializable>> iterator = identifiedDataSerializables.iterator();
+        filterNonConcreteClasses(identifiedDataSerializables);
+        return identifiedDataSerializables;
+    }
+
+    /**
+     * Removes abstract classes and interfaces from given Set in-place.
+     * @param classes
+     */
+    private void filterNonConcreteClasses(Set classes) {
+        Iterator<Class> iterator = classes.iterator();
         while (iterator.hasNext()) {
-            Class<? extends IdentifiedDataSerializable> klass = iterator.next();
+            Class<?> klass = iterator.next();
             if (klass.isInterface() || Modifier.isAbstract(klass.getModifiers())) {
                 iterator.remove();
             }
         }
-        return identifiedDataSerializables;
     }
 
     /**

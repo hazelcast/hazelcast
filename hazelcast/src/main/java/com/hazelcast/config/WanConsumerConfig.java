@@ -19,14 +19,18 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.PUBLIC_API;
+
 /**
  * Config to be used by WanReplicationConsumer instances (EE only).
  */
+@BinaryInterface(reason = PUBLIC_API)
 public class WanConsumerConfig implements DataSerializable {
 
     private Map<String, Comparable> properties = new HashMap<String, Comparable>();

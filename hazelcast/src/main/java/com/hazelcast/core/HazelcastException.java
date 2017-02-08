@@ -16,9 +16,14 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.INHERITANCE;
+
 /**
  * Base Hazelcast exception.
  */
+@BinaryInterface(reason = INHERITANCE)
 public class HazelcastException extends RuntimeException {
 
     public HazelcastException() {

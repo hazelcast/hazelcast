@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 
 /**
@@ -29,6 +31,7 @@ import java.io.Serializable;
  * (s)he should use {@link StorageTypeAwareCacheMergePolicy} which is sub-type of this interface.
  * </p>
  */
+@BinaryInterface
 public interface CacheMergePolicy extends Serializable {
 
     /**
