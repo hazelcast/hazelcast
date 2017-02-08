@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class FloatingPointSumAggregator<I> extends AbstractAggregator<I, Double> {
+import java.io.IOException;
+
+public final class FloatingPointSumAggregator<I> extends AbstractAggregator<I, Double> implements IdentifiedDataSerializable {
 
     private double sum;
 
@@ -45,6 +50,28 @@ public class FloatingPointSumAggregator<I> extends AbstractAggregator<I, Double>
     @Override
     public Double aggregate() {
         return sum;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.FLOATING_POINT_SUM;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeDouble(sum);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.sum = in.readDouble();
     }
 
 }

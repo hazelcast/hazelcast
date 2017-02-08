@@ -30,7 +30,7 @@ import java.util.Map;
  */
 public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
 
-    private final String attributePath;
+    protected String attributePath;
 
     public AbstractAggregator() {
         this(null);

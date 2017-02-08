@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class DoubleAverageAggregator<I> extends AbstractAggregator<I, Double> {
+import java.io.IOException;
+
+public final class DoubleAverageAggregator<I> extends AbstractAggregator<I, Double> implements IdentifiedDataSerializable {
 
     private double sum;
 
@@ -52,6 +57,30 @@ public class DoubleAverageAggregator<I> extends AbstractAggregator<I, Double> {
             return null;
         }
         return (sum / (double) count);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.DOUBLE_AVG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeDouble(sum);
+        out.writeLong(count);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.sum = in.readDouble();
+        this.count = in.readLong();
     }
 
 }

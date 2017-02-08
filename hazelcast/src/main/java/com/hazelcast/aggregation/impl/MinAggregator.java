@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> {
+import java.io.IOException;
+
+public final class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> implements IdentifiedDataSerializable {
 
     private R min;
 
@@ -55,5 +60,27 @@ public class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I
     @Override
     public R aggregate() {
         return min;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.MIN;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeObject(min);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.min = in.readObject();
     }
 }

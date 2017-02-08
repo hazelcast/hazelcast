@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> {
+import java.io.IOException;
+
+public final class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> implements IdentifiedDataSerializable {
 
     private R max;
 
@@ -55,5 +60,27 @@ public class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I
     @Override
     public R aggregate() {
         return max;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.MAX;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeObject(max);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.max = in.readObject();
     }
 }

@@ -17,11 +17,15 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, Set<R>> {
+public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, Set<R>> implements IdentifiedDataSerializable {
     Set<R> values = new HashSet<R>();
 
     public DistinctValuesAggregator() {
@@ -48,4 +52,34 @@ public class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, Set<R>
     public Set<R> aggregate() {
         return values;
     }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.DISTINCT_VALUES;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeInt(values.size());
+        for (Object value : values) {
+            out.writeObject(value);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        int count = in.readInt();
+        this.values = new HashSet<R>(count);
+        for (int i = 0; i < count; i++) {
+            values.add((R) in.readObject());
+        }
+    }
+
 }

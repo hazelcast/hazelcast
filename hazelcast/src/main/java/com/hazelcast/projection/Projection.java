@@ -16,8 +16,6 @@
 
 package com.hazelcast.projection;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 
 /**
@@ -43,7 +41,6 @@ import java.io.Serializable;
  * @param <O> output type
  * @since 3.8
  */
-@BinaryInterface
 public abstract class Projection<I, O> implements Serializable {
 
     /**

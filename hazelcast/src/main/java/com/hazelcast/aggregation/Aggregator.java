@@ -16,8 +16,6 @@
 
 package com.hazelcast.aggregation;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 
 /**
@@ -36,7 +34,6 @@ import java.io.Serializable;
  * @param <R> result type
  * @since 3.8
  */
-@BinaryInterface
 public abstract class Aggregator<I, R> implements Serializable {
 
     /**

@@ -125,6 +125,12 @@ public final class FactoryIdHelper {
     public static final String USER_CODE_DEPLOYMENT_DS_FACTORY = "hazelcast.serialization.ds.user.code.deployment";
     public static final int USER_CODE_DEPLOYMENT_DS_FACTORY_ID = -40;
 
+    public static final String AGGREGATOR_DS_FACTORY = "hazelcast.serialization.ds.aggregator";
+    public static final int AGGREGATOR_DS_FACTORY_ID = -41;
+
+    public static final String PROJECTION_DS_FACTORY = "hazelcast.serialization.ds.projection";
+    public static final int PROJECTION_DS_FACTORY_ID = -42;
+
     // =========================== portables =============================================
 
     public static final String SPI_PORTABLE_FACTORY = "hazelcast.serialization.portable.spi";
