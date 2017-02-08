@@ -27,7 +27,15 @@ See [Hazelcast Jet Code Samples](https://github.com/hazelcast/hazelcast-jet-code
 
 ### Documentation
 
-See documentation at [jet.hazelcast.org](http://jet.hazelcast.org/)
+See the [Jet Reference Manual](https://docs.hazelcast.org/docs/jet/0.3/)
+
+### Architecture
+
+See [Jet Architecture](https://jet.hazelcast.org/architecture/)
+
+### High Performance Design
+
+See the [write up](https://jet.hazelcast.org/performance/) of our high performance secret source. 
 
 ### Releases
 
