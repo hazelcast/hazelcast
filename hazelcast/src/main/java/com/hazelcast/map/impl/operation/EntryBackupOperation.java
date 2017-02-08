@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -63,9 +64,12 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
 
     @Override
     public void run() {
+        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
         oldValue = recordStore.get(dataKey, true);
+        Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
 
-        Map.Entry entry = createMapEntry(dataKey, oldValue);
+        Map.Entry entry = createMapEntry(dataKey, value);
 
         entryProcessor.processBackup(entry);
 

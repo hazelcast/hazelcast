@@ -82,9 +82,12 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
+        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
         oldValue = recordStore.get(dataKey, false);
+        Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
 
-        Map.Entry entry = createMapEntry(dataKey, oldValue);
+        Map.Entry entry = createMapEntry(dataKey, value);
 
         response = process(entry);
 

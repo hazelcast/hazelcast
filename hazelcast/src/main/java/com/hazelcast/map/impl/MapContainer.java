@@ -50,6 +50,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 import static java.lang.System.getProperty;
@@ -284,6 +285,10 @@ public class MapContainer {
 
     // callback called when the MapContainer is de-registered from MapService and destroyed - basically on map-destroy
     public void onDestroy() {
+    }
+
+    public boolean shouldCloneOnEntryProcessing() {
+        return getIndexes().hasIndex() & OBJECT.equals(mapConfig.getInMemoryFormat());
     }
 }
 

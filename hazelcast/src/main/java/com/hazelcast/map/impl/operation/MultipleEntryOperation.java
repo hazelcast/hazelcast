@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+
 public class MultipleEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
 
     protected Set<Data> keys;
@@ -55,15 +56,20 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
     }
 
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void run() throws Exception {
         long now = getNow();
+        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+
         responses = new MapEntries(keys.size());
         for (Data key : keys) {
             if (!isKeyProcessable(key)) {
                 continue;
             }
 
-            Object value = recordStore.get(key, false);
+            Object oldValue = recordStore.get(key, false);
+            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
 
             Map.Entry entry = createMapEntry(key, value);
             if (!isEntryProcessable(entry)) {
@@ -76,14 +82,14 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             }
 
             // first call noOp, other if checks below depends on it.
-            if (noOp(entry, value, now)) {
+            if (noOp(entry, oldValue, now)) {
                 continue;
             }
-            if (entryRemoved(entry, key, value, now)) {
+            if (entryRemoved(entry, key, oldValue, now)) {
                 continue;
             }
 
-            entryAddedOrUpdated(entry, key, value, now);
+            entryAddedOrUpdated(entry, key, oldValue, now);
 
             evict(key);
         }
