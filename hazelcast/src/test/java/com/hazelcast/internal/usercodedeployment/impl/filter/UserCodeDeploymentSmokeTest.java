@@ -12,14 +12,14 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.FilteringClassLoader;
-import usercodedeployment.IncrementingEntryProcessor;
-import usercodedeployment.blacklisted.BlacklistedEP;
-import usercodedeployment.whitelisted.WhitelistedEP;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import usercodedeployment.IncrementingEntryProcessor;
+import usercodedeployment.blacklisted.BlacklistedEP;
+import usercodedeployment.whitelisted.WhitelistedEP;
 
 import java.util.Arrays;
 import java.util.Collection;

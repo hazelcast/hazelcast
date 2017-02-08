@@ -1,7 +1,5 @@
 package com.hazelcast.internal.networking.nonblocking;
 
-import com.hazelcast.internal.networking.nonblocking.SelectionKeysSetTest;
-import com.hazelcast.internal.networking.nonblocking.SelectorOptimizer;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;

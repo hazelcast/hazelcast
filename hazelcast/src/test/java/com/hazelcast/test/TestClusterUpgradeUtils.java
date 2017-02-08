@@ -18,8 +18,8 @@ package com.hazelcast.test;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.version.Version;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import static com.hazelcast.instance.BuildInfoProvider.HAZELCAST_INTERNAL_OVERRIDE_VERSION;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;

@@ -22,7 +22,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;

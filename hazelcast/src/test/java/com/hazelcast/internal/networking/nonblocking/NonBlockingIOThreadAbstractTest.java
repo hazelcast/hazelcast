@@ -1,8 +1,8 @@
 package com.hazelcast.internal.networking.nonblocking;
 
+import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.networking.IOOutOfMemoryHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;

@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.networking.nonblocking;
 
-import com.hazelcast.internal.networking.nonblocking.SelectorMode;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

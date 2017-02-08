@@ -43,7 +43,6 @@ import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.ALWAY
 import static com.hazelcast.test.bounce.BounceTestConfiguration.DriverType.CLIENT;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.lang.System.currentTimeMillis;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * JUnit rule for testing behavior of cluster while members bounce (shutdown & startup). Key concepts:
