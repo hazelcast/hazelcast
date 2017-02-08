@@ -151,6 +151,7 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             }
             if (isFlagSet(header, EE_FLAG)) {
                 in.readByte();
+                in.readByte();
             }
 
             ds.readData(in);

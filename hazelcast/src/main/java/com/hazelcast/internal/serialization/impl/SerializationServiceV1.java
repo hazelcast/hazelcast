@@ -81,7 +81,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;
     private static final int FACTORY_AND_CLASS_ID_BYTE_COMP_LENGTH = 2;
-    private static final int EE_BYTE_LENGTH = 1;
+    private static final int EE_BYTE_LENGTH = 2;
 
     private final PortableContextImpl portableContext;
     private final PortableSerializer portableSerializer;
