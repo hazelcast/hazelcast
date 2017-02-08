@@ -22,6 +22,8 @@ import com.hazelcast.spi.ReadonlyOperation;
 
 public class TriggerLoadIfNeededOperation extends MapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
+    private Boolean isLoaded;
+
     public TriggerLoadIfNeededOperation() {
     }
 
@@ -31,11 +33,17 @@ public class TriggerLoadIfNeededOperation extends MapOperation implements Partit
 
     @Override
     public void run() {
+        isLoaded = recordStore.isLoaded();
         recordStore.maybeDoInitialLoad();
     }
 
+    @Override
+    public Object getResponse() {
+        return isLoaded;
+    }
+
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     @Override
