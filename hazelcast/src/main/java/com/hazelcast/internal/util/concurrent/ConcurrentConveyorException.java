@@ -16,9 +16,14 @@
 
 package com.hazelcast.internal.util.concurrent;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Exception thrown by the {@link ConcurrentConveyor}.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ConcurrentConveyorException extends RuntimeException {
     public ConcurrentConveyorException(String message) {
         super(message);

@@ -18,6 +18,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.internal.util.ThreadLocalRandomProvider;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.AbstractMap;
 import java.util.Collections;
@@ -27,12 +28,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * ConcurrentHashMap to extend iterator capability.
  *
  * @param <K> Type of the key
  * @param <V> Type of the value
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMap<K, V> {
 
     private static final float LOAD_FACTOR = 0.91f;

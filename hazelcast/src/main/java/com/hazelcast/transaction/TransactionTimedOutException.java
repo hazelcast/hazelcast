@@ -16,9 +16,14 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Thrown when a transaction has timed out.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TransactionTimedOutException extends TransactionException {
 
     public TransactionTimedOutException() {

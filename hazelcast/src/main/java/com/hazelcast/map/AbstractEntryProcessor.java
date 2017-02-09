@@ -20,6 +20,8 @@ import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * An abstract {@link EntryProcessor} that already has implemented the {@link #getBackupProcessor()}. In a most cases you
  * want the same logic to be executed on the primary and on the backup. This implementation has this behavior.
@@ -65,6 +67,7 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
         return entryBackupProcessor;
     }
 
+    @BinaryInterface
     private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V> {
         @Override
         public void processBackup(Map.Entry<K, V> entry) {

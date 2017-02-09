@@ -16,13 +16,18 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Message for {@link ITopic}.
  *
  * @param <E> message type
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class Message<E> extends EventObject {
 
     protected E messageObject;

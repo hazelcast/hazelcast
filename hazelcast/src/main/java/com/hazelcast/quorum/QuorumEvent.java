@@ -17,15 +17,19 @@
 package com.hazelcast.quorum;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Collection;
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An Event that is send when a {@link Quorum} changes.
  * <p/>
  * Hold member list, quorum threshold and the quorum result.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class QuorumEvent extends EventObject {
 
     private final int threshold;

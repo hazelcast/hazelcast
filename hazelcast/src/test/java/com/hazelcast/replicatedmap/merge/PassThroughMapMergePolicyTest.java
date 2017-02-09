@@ -40,7 +40,7 @@ public class PassThroughMapMergePolicyTest {
 
     @Before
     public void given() {
-        policy = new PassThroughMergePolicy();
+        policy = PassThroughMergePolicy.INSTANCE;
     }
 
     @Test

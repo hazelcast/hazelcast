@@ -17,11 +17,15 @@
 package com.hazelcast.internal.partition;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Thrown when local partition-state version doesn't match the version
  * of master member while running a migration/replication operation.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class PartitionStateVersionMismatchException extends HazelcastException {
 
     public PartitionStateVersionMismatchException(String message) {

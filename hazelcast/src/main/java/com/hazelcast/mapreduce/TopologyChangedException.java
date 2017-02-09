@@ -17,6 +17,9 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * This exception is thrown when a topology change happens during the
@@ -27,6 +30,7 @@ import com.hazelcast.core.HazelcastException;
  * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
 @Deprecated
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TopologyChangedException
         extends HazelcastException {
 

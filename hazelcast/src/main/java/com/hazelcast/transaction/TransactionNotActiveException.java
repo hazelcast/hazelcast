@@ -17,10 +17,14 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link HazelcastException} thrown when an a transactional operation is executed without an active transaction.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TransactionNotActiveException extends HazelcastException {
 
     public TransactionNotActiveException() {

@@ -17,11 +17,15 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A HazelcastException indicating that there is some kind of system error causing a response to be send
  * multiple times for some operation.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ResponseAlreadySentException extends HazelcastException {
 
     public ResponseAlreadySentException() {

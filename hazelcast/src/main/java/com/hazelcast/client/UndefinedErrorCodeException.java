@@ -17,11 +17,15 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * This exception is thrown when an exception that is coming from server is not recognized by the protocol.
  * Class name of the original exception is included in the exception
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class UndefinedErrorCodeException extends HazelcastException {
 
     private final String className;

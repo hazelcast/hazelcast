@@ -17,11 +17,15 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An exception thrown when a task's name is already used before for another (or the same, if re-attempted) schedule.
  * Tasks under a scheduler must have unique names.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DuplicateTaskException
         extends HazelcastException {
 

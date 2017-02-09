@@ -17,11 +17,15 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link HazelcastException} that is thrown when something goes wrong while dealing with transactions and transactional
  * data-structures.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TransactionException extends HazelcastException {
 
     public TransactionException() {

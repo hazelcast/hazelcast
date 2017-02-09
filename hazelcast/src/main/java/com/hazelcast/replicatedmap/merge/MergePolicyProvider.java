@@ -56,10 +56,10 @@ public final class MergePolicyProvider {
     }
 
     private void addOutOfBoxPolicies() {
-        mergePolicyMap.put(PutIfAbsentMapMergePolicy.class.getName(), new PutIfAbsentMapMergePolicy());
-        mergePolicyMap.put(HigherHitsMapMergePolicy.class.getName(), new HigherHitsMapMergePolicy());
-        mergePolicyMap.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
-        mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
+        mergePolicyMap.put(PutIfAbsentMapMergePolicy.class.getName(), PutIfAbsentMapMergePolicy.INSTANCE);
+        mergePolicyMap.put(HigherHitsMapMergePolicy.class.getName(), HigherHitsMapMergePolicy.INSTANCE);
+        mergePolicyMap.put(PassThroughMergePolicy.class.getName(), PassThroughMergePolicy.INSTANCE);
+        mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), LatestUpdateMapMergePolicy.INSTANCE);
     }
 
     public ReplicatedMapMergePolicy getMergePolicy(String className) {

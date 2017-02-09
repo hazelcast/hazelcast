@@ -17,11 +17,15 @@
 package com.hazelcast.scheduledexecutor;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.exception.SilentException;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Exception thrown by the {@link IScheduledFuture} during any operation on a stale (=previously destroyed) task.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class StaleTaskException
         extends HazelcastException implements SilentException {
 

@@ -24,6 +24,7 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.core.IFunction;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -48,6 +49,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -148,6 +150,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @author Jason T. Greene
  */
 @SuppressWarnings("all")
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         implements com.hazelcast.util.IConcurrentMap<K, V>, Serializable {
 
@@ -469,6 +472,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * subclasses from ReentrantLock opportunistically, just to
      * simplify some locking and avoid separate construction.
      */
+    @BinaryInterface(reason = OTHER_CONVENTION)
     static final class Segment<K, V> extends ReentrantLock implements Serializable {
         /*
          * Segments maintain a table of entry lists that are ALWAYS
@@ -1720,6 +1724,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
     /*
      * This class is needed for JDK5 compatibility.
      */
+    @BinaryInterface(reason = OTHER_CONVENTION)
     protected static class SimpleEntry<K, V> implements Entry<K, V>, java.io.Serializable {
         private static final long serialVersionUID = -8499721149061103585L;
 
@@ -1777,6 +1782,7 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
      * Custom Entry class used by EntryIterator.next(), that relays setValue
      * changes to the underlying map.
      */
+    @BinaryInterface(reason = OTHER_CONVENTION)
     protected class WriteThroughEntry extends SimpleEntry<K, V> {
         private static final long serialVersionUID = -7900634345345313646L;
 

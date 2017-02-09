@@ -16,11 +16,16 @@
 
 package com.hazelcast.spi.exception;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.IOException;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link java.io.IOException} indicating that there was a IO failure, but it can be retried.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class RetryableIOException extends IOException implements RetryableException {
 
     public RetryableIOException() {

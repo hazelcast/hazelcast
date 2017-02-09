@@ -17,8 +17,10 @@
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.EventRegistration;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 import static java.lang.Boolean.TRUE;
 
 /**
@@ -27,12 +29,15 @@ import static java.lang.Boolean.TRUE;
 public final class InvalidationUtils {
 
     public static final long NO_SEQUENCE = -1L;
-    public static final IFunction<EventRegistration, Boolean> TRUE_FILTER = new IFunction<EventRegistration, Boolean>() {
+    public static final IFunction<EventRegistration, Boolean> TRUE_FILTER = new TrueFilter();
+
+    @BinaryInterface(reason = OTHER_CONVENTION)
+    public static class TrueFilter implements IFunction<EventRegistration, Boolean> {
         @Override
         public Boolean apply(EventRegistration eventRegistration) {
             return TRUE;
         }
-    };
+    }
 
     private InvalidationUtils() {
     }

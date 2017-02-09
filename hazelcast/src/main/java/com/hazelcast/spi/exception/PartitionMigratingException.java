@@ -17,11 +17,15 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that is thrown when an operation is executed
  * on a partition, but that partition is currently being moved around.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class PartitionMigratingException extends RetryableHazelcastException {
 
     public PartitionMigratingException(Address thisAddress, int partitionId, String operationName, String serviceName) {

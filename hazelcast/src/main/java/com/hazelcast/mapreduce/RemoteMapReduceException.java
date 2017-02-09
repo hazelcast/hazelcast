@@ -17,8 +17,11 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.List;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * This exception class is used to show stack traces of multiple failed
@@ -27,6 +30,7 @@ import java.util.List;
  * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
  */
 @Deprecated
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class RemoteMapReduceException
         extends HazelcastException {
 

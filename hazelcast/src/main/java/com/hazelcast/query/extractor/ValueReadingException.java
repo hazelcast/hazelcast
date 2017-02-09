@@ -16,9 +16,14 @@
 
 package com.hazelcast.query.extractor;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Exception thrown if there is any checked or unchecked exception caught in the value reading in {@link ValueReader}
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ValueReadingException extends RuntimeException {
 
     public ValueReadingException(String message, Throwable throwable) {

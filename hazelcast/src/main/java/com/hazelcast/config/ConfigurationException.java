@@ -17,10 +17,14 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link HazelcastException} that is thrown when something is wrong with the server or client configuration.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ConfigurationException extends HazelcastException {
 
     public ConfigurationException(String itemName, String candidate, String duplicate) {

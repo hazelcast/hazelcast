@@ -17,7 +17,11 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class StringPartitioningStrategy implements PartitioningStrategy {
 
     public static final StringPartitioningStrategy INSTANCE = new StringPartitioningStrategy();

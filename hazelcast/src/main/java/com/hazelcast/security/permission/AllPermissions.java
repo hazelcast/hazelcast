@@ -16,10 +16,15 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Enumeration;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public final class AllPermissions extends ClusterPermission {
 
     public AllPermissions() {
@@ -56,6 +61,7 @@ public final class AllPermissions extends ClusterPermission {
         return 111;
     }
 
+    @BinaryInterface(reason = OTHER_CONVENTION)
     public static final class AllPermissionsCollection extends PermissionCollection {
         private static final AllPermissions ALL_PERMISSIONS = new AllPermissions();
         private boolean all;

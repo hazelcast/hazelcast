@@ -17,10 +17,14 @@
 package com.hazelcast.client.impl.protocol.exception;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Thrown when client message size exceeds Integer.MAX_VALUE
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MaxMessageSizeExceeded
         extends HazelcastException {
     public MaxMessageSizeExceeded() {

@@ -17,10 +17,14 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that indicates that a requested service is not exist.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ServiceNotFoundException extends HazelcastException {
 
     public ServiceNotFoundException(String message) {

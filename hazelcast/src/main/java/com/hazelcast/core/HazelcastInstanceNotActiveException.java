@@ -16,9 +16,15 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Thrown when HazelcastInstance is not active during an invocation.
+ * TODO this Exception does not inherit from HazelcastException, is this intentional?
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class HazelcastInstanceNotActiveException extends IllegalStateException {
 
     public HazelcastInstanceNotActiveException() {

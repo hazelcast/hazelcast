@@ -17,10 +17,14 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Exception thrown when 2 nodes want to join, but there configuration doesn't match
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ConfigMismatchException extends HazelcastException {
     public ConfigMismatchException(String message) {
         super(message);

@@ -16,10 +16,15 @@
 
 package com.hazelcast.spi.exception;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} that indicates that an operation is about to
  * be send to a non existing machine.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TargetDisconnectedException extends RetryableHazelcastException {
 
     public TargetDisconnectedException(String message) {

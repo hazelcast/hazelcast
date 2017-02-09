@@ -18,12 +18,15 @@ package com.hazelcast.partition.strategy;
 
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link PartitioningStrategy} that checks if the key implements {@link PartitionAware}.
  * If so, the {@link PartitionAware#getPartitionKey()} is called. Otherwise null is returned.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DefaultPartitioningStrategy implements PartitioningStrategy {
 
     @Override

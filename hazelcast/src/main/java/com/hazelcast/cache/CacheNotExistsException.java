@@ -16,6 +16,10 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * This exception class is thrown while creating {@link com.hazelcast.cache.impl.CacheRecordStore}
  * instances but the cache config does not exist on the node to create the instance on. This can
@@ -27,6 +31,7 @@ package com.hazelcast.cache;
  * For the first option, the caller can decide to just retry the operation a couple of times since
  * distribution is executed in a asynchronous way.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class CacheNotExistsException extends IllegalStateException {
 
     public CacheNotExistsException(String s) {

@@ -16,13 +16,17 @@
 
 package com.hazelcast.ringbuffer;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.exception.SilentException;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An {@link RuntimeException} that is thrown when accessing an item in the {@link Ringbuffer} using a sequence that is smaller
  * than the current head sequence and that the ringbuffer store is disabled. This means that the item isn't available in the
  * ringbuffer and it cannot be loaded from the store either, thus being completely unavailable.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class StaleSequenceException extends RuntimeException implements SilentException {
 
     private final long headSeq;

@@ -16,13 +16,18 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * For internal usage only.
  *
  * @param <E>
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public final class StoreEvent<E> extends EventObject {
 
     private static final long serialVersionUID = -7071512331813330032L;

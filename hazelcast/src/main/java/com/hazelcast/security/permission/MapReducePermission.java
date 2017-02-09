@@ -16,9 +16,14 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * To be able to map-reduce from a client in a secure environment
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MapReducePermission extends InstancePermission {
 
     private static final int ALL = CREATE | DESTROY;

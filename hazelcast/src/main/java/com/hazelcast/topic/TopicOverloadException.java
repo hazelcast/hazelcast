@@ -17,6 +17,9 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link HazelcastException} thrown when a publisher wants to write to a topic, but there is not sufficient storage
@@ -24,6 +27,7 @@ import com.hazelcast.core.HazelcastException;
  *
  * This exception is only thrown in combination with the reliable topic.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TopicOverloadException extends HazelcastException {
 
     /**

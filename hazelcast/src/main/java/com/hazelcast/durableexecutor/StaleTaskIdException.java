@@ -17,14 +17,18 @@
 package com.hazelcast.durableexecutor;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.exception.SilentException;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An {@link RuntimeException} that is thrown when retrieving the result of a task via {@link DurableExecutorService} if the
  * result of the task is overwritten. This means the task is executed but the result isn't available anymore
  */
 @Beta
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class StaleTaskIdException extends HazelcastException implements SilentException {
 
     public StaleTaskIdException(String message) {

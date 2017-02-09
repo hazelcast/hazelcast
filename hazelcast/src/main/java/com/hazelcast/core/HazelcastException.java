@@ -18,12 +18,12 @@ package com.hazelcast.core;
 
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.INHERITANCE;
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Base Hazelcast exception.
  */
-@BinaryInterface(reason = INHERITANCE)
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class HazelcastException extends RuntimeException {
 
     public HazelcastException() {

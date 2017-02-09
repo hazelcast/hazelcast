@@ -16,6 +16,8 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -30,6 +32,8 @@ import java.util.Deque;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * AddressUtil contains Address helper methods.
@@ -634,6 +638,7 @@ public final class AddressUtil {
     /**
      * Thrown when given address is not valid.
      */
+    @BinaryInterface(reason = OTHER_CONVENTION)
     public static class InvalidAddressException extends IllegalArgumentException {
 
         public InvalidAddressException(final String message) {

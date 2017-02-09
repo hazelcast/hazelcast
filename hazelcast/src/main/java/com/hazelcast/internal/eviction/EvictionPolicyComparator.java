@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.eviction;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -25,7 +23,6 @@ import java.util.Comparator;
  * A kind of {@link java.util.Comparator} to be used while comparing
  * entries to be evicted.
  */
-@BinaryInterface
 public abstract class EvictionPolicyComparator<K, V, E extends EvictableEntryView<K, V>>
         implements Comparator<E>, Serializable {
 

@@ -16,12 +16,17 @@
 
 package com.hazelcast.version;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.io.Serializable;
 import java.util.Comparator;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Version comparator that disregards patch version, comparing versions on their major & minor versions only.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 @SuppressWarnings("checkstyle:magicnumber")
 class MajorMinorVersionComparator implements Comparator<MemberVersion>, Serializable {
 

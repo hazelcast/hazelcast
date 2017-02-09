@@ -19,12 +19,16 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DataAwareEntryEvent extends EntryEvent {
 
     private static final long serialVersionUID = 1;

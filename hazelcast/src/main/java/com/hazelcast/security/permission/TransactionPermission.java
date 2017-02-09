@@ -16,8 +16,13 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.security.Permission;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class TransactionPermission extends ClusterPermission {
 
     public TransactionPermission() {

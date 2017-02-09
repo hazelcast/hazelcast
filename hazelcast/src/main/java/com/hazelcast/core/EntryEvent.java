@@ -16,7 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Map Entry event.
@@ -28,6 +31,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * @see com.hazelcast.core.IMap#addEntryListener(com.hazelcast.map.listener.MapListener, boolean)
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class EntryEvent<K, V> extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -2296203982913729851L;

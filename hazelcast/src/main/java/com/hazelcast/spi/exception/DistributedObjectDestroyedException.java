@@ -17,11 +17,15 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that indicates that a {@link com.hazelcast.core.DistributedObject}
  * access was attempted, but the object is destroyed.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DistributedObjectDestroyedException extends HazelcastException {
 
     public DistributedObjectDestroyedException(String message) {

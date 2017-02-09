@@ -41,7 +41,7 @@ public class PutIfAbsentMapMergePolicyTest {
 
     @Before
     public void given() {
-        policy = new PutIfAbsentMapMergePolicy();
+        policy = PutIfAbsentMapMergePolicy.INSTANCE;
     }
 
     @Test

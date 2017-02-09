@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.collection;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Serializable;
@@ -27,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -52,6 +54,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <T> the type of elements maintained by this set
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
 
     private static final long serialVersionUID = 0L;

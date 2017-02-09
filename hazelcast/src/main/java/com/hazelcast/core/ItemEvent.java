@@ -16,7 +16,11 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Map Item event.
@@ -24,7 +28,7 @@ import java.util.EventObject;
  * @see com.hazelcast.core.EntryEvent
  * @see com.hazelcast.core.ICollection#addItemListener(ItemListener, boolean)
  */
-
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ItemEvent<E> extends EventObject {
 
     protected E item;

@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * An unchecked version of {@link java.util.concurrent.TimeoutException}.
  * <p>
@@ -26,6 +30,7 @@ package com.hazelcast.core;
  *
  * @see java.util.concurrent.TimeoutException
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class OperationTimeoutException extends HazelcastException {
 
     public OperationTimeoutException() {

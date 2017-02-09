@@ -17,10 +17,14 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Indicates that the version of a joining member is not compatible with the cluster version.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class VersionMismatchException extends HazelcastException {
     public VersionMismatchException(String message) {
         super(message);

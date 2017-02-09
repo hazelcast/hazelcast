@@ -75,10 +75,19 @@ public @interface BinaryInterface {
          */
         PUBLIC_API,
         /**
-         * Class is not used in serialized form in the context of Hazelcast however is {@code Serializable} due
-         * to inheritance from a class external to Hazelcast.
+         * Class may or may not be used in serialized form in the context of Hazelcast however is {@code Serializable}
+         * due to conventions and cannot be converted to {@code IdentifiedDataSerializable}. Examples:
+         * <ul>
+         *     <li>inheritance from a class external to Hazelcast e.g. {@code CacheEntryEvent}, which imposes
+         *     serializability even when not required</li>
+         *     <li>inheritance from a class external to Hazelcast, serializability may be desired, however
+         *     {@code IdentifiedDataSerializable} requires a default no-args constructor and non-final fields which
+         *     is not always possible (e.g. subclasses of {@code java.util.EventObject} & {@code java.lang.Exception})</li>
+         *     <li>a {@code Comparator} which should by convention also implement {@code Serializable}.</li>
+         * </ul>
          */
-        INHERITANCE,
+        OTHER_CONVENTION,
+
     }
 
 }
