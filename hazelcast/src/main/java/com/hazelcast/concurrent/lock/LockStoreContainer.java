@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.TaskScheduler;
@@ -47,7 +48,7 @@ public final class LockStoreContainer {
                         if (info != null) {
                             int backupCount = info.getBackupCount();
                             int asyncBackupCount = info.getAsyncBackupCount();
-                            EntryTaskScheduler entryTaskScheduler = createScheduler(namespace);
+                            EntryTaskScheduler<Data, Integer> entryTaskScheduler = createScheduler(namespace);
                             return new LockStoreImpl(lockService, namespace, entryTaskScheduler, backupCount, asyncBackupCount);
                         }
                     }
@@ -92,16 +93,14 @@ public final class LockStoreContainer {
 
     public void put(LockStoreImpl ls) {
         ls.setLockService(lockService);
-        EntryTaskScheduler entryTaskScheduler = createScheduler(ls.getNamespace());
-        ls.setEntryTaskScheduler(entryTaskScheduler);
+        ls.setEntryTaskScheduler(createScheduler(ls.getNamespace()));
         lockStores.put(ls.getNamespace(), ls);
     }
 
-    private EntryTaskScheduler createScheduler(ObjectNamespace namespace) {
+    private EntryTaskScheduler<Data, Integer> createScheduler(ObjectNamespace namespace) {
         NodeEngine nodeEngine = lockService.getNodeEngine();
         LockEvictionProcessor entryProcessor = new LockEvictionProcessor(nodeEngine, namespace);
         TaskScheduler globalScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
-        return EntryTaskSchedulerFactory
-                .newScheduler(globalScheduler, entryProcessor, ScheduleType.FOR_EACH);
+        return EntryTaskSchedulerFactory.newScheduler(globalScheduler, entryProcessor, ScheduleType.FOR_EACH);
     }
 }

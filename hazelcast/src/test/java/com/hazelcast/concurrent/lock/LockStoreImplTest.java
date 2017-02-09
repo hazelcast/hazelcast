@@ -53,7 +53,7 @@ public class LockStoreImplTest extends HazelcastTestSupport {
     private static final int ASYNC_BACKUP_COUNT = 0;
 
     private LockService mockLockServiceImpl;
-    private EntryTaskScheduler mockScheduler;
+    private EntryTaskScheduler<Data, Integer> mockScheduler;
     private LockStoreImpl lockStore;
 
     private Data key = new HeapData();
