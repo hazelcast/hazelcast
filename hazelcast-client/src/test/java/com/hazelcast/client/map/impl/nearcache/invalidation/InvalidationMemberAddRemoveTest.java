@@ -82,7 +82,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
                 while (!stopTest.get()) {
                     HazelcastInstance member = factory.newHazelcastInstance(config);
                     sleepSeconds(5);
-                    member.getLifecycleService().shutdown();
+                    member.getLifecycleService().terminate();
                 }
 
             }

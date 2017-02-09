@@ -94,7 +94,7 @@ public class MetaDataGenerator {
         uuids.put(partitionId, uuid);
     }
 
-    public void resetMetadata(final int partitionId) {
+    public void removeUuidAndSequence(final int partitionId) {
         // remove uuid.
         uuids.remove(partitionId);
 
@@ -106,5 +106,9 @@ public class MetaDataGenerator {
 
     public void destroyMetaDataFor(String dataStructureName) {
         sequenceGenerators.remove(dataStructureName);
+    }
+
+    public void regenerateUuid(int partitionId) {
+        uuids.put(partitionId, uuidConstructor.createNew(partitionId));
     }
 }

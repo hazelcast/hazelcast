@@ -77,9 +77,11 @@ class MapMigrationAwareService implements MigrationAwareService {
 
         if (SOURCE == event.getMigrationEndpoint()) {
             clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
-            getMetaDataGenerator().resetMetadata(event.getPartitionId());
+            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         } else if (DESTINATION == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+            if (event.getNewReplicaIndex() != 0) {
+                getMetaDataGenerator().regenerateUuid(event.getPartitionId());
+            }
         }
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
@@ -104,9 +106,7 @@ class MapMigrationAwareService implements MigrationAwareService {
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (DESTINATION == event.getMigrationEndpoint()) {
             clearMapsHavingLesserBackupCountThan(event.getPartitionId(), event.getCurrentReplicaIndex());
-            getMetaDataGenerator().resetMetadata(event.getPartitionId());
-        } else if (SOURCE == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
         mapServiceContext.reloadOwnedPartitions();
