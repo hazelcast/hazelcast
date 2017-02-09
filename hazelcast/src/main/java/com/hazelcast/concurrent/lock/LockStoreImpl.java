@@ -58,13 +58,13 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     private int asyncBackupCount;
 
     private LockService lockService;
-    private EntryTaskScheduler entryTaskScheduler;
+    private EntryTaskScheduler<Data, Integer> entryTaskScheduler;
 
     public LockStoreImpl() {
     }
 
     public LockStoreImpl(LockService lockService, ObjectNamespace name,
-                         EntryTaskScheduler entryTaskScheduler, int backupCount, int asyncBackupCount) {
+                         EntryTaskScheduler<Data, Integer> entryTaskScheduler, int backupCount, int asyncBackupCount) {
         this.lockService = lockService;
         this.namespace = name;
         this.entryTaskScheduler = entryTaskScheduler;
@@ -100,10 +100,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     @Override
     public boolean extendLeaseTime(Data key, String caller, long threadId, long leaseTime) {
         LockResourceImpl lock = locks.get(key);
-        if (lock == null) {
-            return false;
-        }
-        return lock.extendLeaseTime(caller, threadId, leaseTime);
+        return lock != null && lock.extendLeaseTime(caller, threadId, leaseTime);
     }
 
     public LockResourceImpl getLock(Data key) {
@@ -119,10 +116,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     @Override
     public boolean isLockedBy(Data key, String caller, long threadId) {
         LockResource lock = locks.get(key);
-        if (lock == null) {
-            return false;
-        }
-        return lock.isLockedBy(caller, threadId);
+        return lock != null && lock.isLockedBy(caller, threadId);
     }
 
     @Override
@@ -153,11 +147,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
-        if (lock == null) {
-            return true;
-        } else {
-            return lock.canAcquireLock(caller, threadId);
-        }
+        return lock == null || lock.canAcquireLock(caller, threadId);
     }
 
     @Override
@@ -248,7 +238,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         this.lockService = lockService;
     }
 
-    void setEntryTaskScheduler(EntryTaskScheduler entryTaskScheduler) {
+    void setEntryTaskScheduler(EntryTaskScheduler<Data, Integer> entryTaskScheduler) {
         this.entryTaskScheduler = entryTaskScheduler;
     }
 
@@ -314,10 +304,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     public boolean hasSignalKey(ConditionKey conditionKey) {
         LockResourceImpl lock = locks.get(conditionKey.getKey());
-        if (lock == null) {
-            return false;
-        }
-        return lock.hasSignalKey(conditionKey);
+        return lock != null && lock.hasSignalKey(conditionKey);
     }
 
     public void registerExpiredAwaitOp(AwaitOperation awaitResponse) {

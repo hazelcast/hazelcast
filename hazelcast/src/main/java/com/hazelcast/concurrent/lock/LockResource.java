@@ -18,6 +18,9 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
 
+/**
+ * A lock for a specific key in a specific namespace. It contains the details of a single lock in the system.
+ */
 public interface LockResource {
 
     Data getKey();

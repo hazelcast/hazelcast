@@ -273,7 +273,11 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                 }
 
                 long leaseTime = expirationTime - now;
-                ls.scheduleEviction(lock.getKey(), lock.getVersion(), leaseTime);
+                if (leaseTime <= 0) {
+                    ls.forceUnlock(lock.getKey());
+                } else {
+                    ls.scheduleEviction(lock.getKey(), lock.getVersion(), leaseTime);
+                }
             }
         }
     }
