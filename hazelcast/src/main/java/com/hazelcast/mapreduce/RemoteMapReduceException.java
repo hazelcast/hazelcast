@@ -17,11 +17,11 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.List;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * This exception class is used to show stack traces of multiple failed

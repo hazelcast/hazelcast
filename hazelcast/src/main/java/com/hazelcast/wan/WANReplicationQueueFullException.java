@@ -18,9 +18,9 @@ package com.hazelcast.wan;
 
 import com.hazelcast.config.WANQueueFullBehavior;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that is thrown when the wan replication queues are full

@@ -17,9 +17,9 @@
 package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Used to provide information about the lost partition of a cache.

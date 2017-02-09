@@ -17,9 +17,9 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A 'marker' exception that indicates that an operation can be retried. E.g. if map.get is send to a partition that

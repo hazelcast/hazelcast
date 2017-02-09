@@ -16,11 +16,11 @@
 
 package com.hazelcast.quorum;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.transaction.TransactionException;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An exception thrown when the cluster size is below the defined threshold.

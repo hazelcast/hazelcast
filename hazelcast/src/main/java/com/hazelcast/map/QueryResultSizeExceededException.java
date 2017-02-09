@@ -17,10 +17,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.properties.GroupProperty;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 import static java.lang.String.format;
 
 /**

@@ -16,11 +16,11 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.AbstractMap;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 @BinaryInterface(reason = OTHER_CONVENTION)
 public class MapEntrySimple<K, V> extends AbstractMap.SimpleEntry<K, V> {

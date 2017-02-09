@@ -18,9 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.AbstractIMapEvent;
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Used for providing information about the lost partition for a map

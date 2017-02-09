@@ -16,13 +16,13 @@
 
 package com.hazelcast.security.permission;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.security.Permission;
 import java.security.PermissionCollection;
 import java.util.Enumeration;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 @BinaryInterface(reason = OTHER_CONVENTION)
 public class DenyAllPermissionCollection extends PermissionCollection {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -33,7 +33,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedList;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.OTHER_CONVENTION;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * AddressUtil contains Address helper methods.

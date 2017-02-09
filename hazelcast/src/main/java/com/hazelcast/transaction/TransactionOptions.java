@@ -19,12 +19,12 @@ package com.hazelcast.transaction;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.nio.serialization.impl.BinaryInterface.Reason.PUBLIC_API;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.PUBLIC_API;
 
 /**
  * Contains the configuration for a Hazelcast transaction.
