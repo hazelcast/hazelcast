@@ -32,6 +32,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.util.RandomPicker.getInt;
@@ -41,6 +43,11 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
+    private static final int TEST_RUN_SECONDS = 30;
+    private static final int KEY_COUNT = 100000;
+    private static final int INVALIDATION_BATCH_SIZE = 10000;
+    private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
+
     private final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
 
     @After
@@ -48,11 +55,113 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         factory.shutdownAll();
     }
 
+    @Test
+    public void ensure_nearCached_and_actual_data_sync_eventually() throws Exception {
+        final String mapName = "origin-map";
+        final AtomicBoolean stopTest = new AtomicBoolean();
+
+        // members are created.
+        final Config config = createConfig().addMapConfig(createMapConfig(mapName));
+        final HazelcastInstance member = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        // map is populated form member.
+        final IMap<Integer, Integer> memberMap = member.getMap(mapName);
+        for (int i = 0; i < KEY_COUNT; i++) {
+            memberMap.put(i, i);
+        }
+
+        // a new member comes with near-cache configured.
+        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName).setNearCacheConfig(createNearCacheConfig(mapName)));
+        final HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config2);
+        final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
+
+        List<Thread> threads = new ArrayList<Thread>();
+
+        // continuously adds and removes member
+        Thread shadowMember = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!stopTest.get()) {
+                    HazelcastInstance member = factory.newHazelcastInstance(config);
+                    sleepSeconds(5);
+                    member.getLifecycleService().terminate();
+                }
+
+            }
+        });
+        threads.add(shadowMember);
+
+        // populates client near-cache
+        Thread populateClientNearCache = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    for (int i = 0; i < KEY_COUNT; i++) {
+                        nearCachedMap.get(i);
+                    }
+                }
+            }
+        });
+        threads.add(populateClientNearCache);
+
+        // updates map data from member.
+        Thread putFromMember = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    int key = getInt(KEY_COUNT);
+                    int value = getInt(Integer.MAX_VALUE);
+                    memberMap.put(key, value);
+
+                    sleepAtLeastMillis(5);
+                }
+            }
+        });
+        threads.add(putFromMember);
+
+        Thread clearFromMember = new Thread(new Runnable() {
+            public void run() {
+                while (!stopTest.get()) {
+                    memberMap.clear();
+                    sleepSeconds(5);
+                }
+            }
+        });
+        threads.add(clearFromMember);
+
+        // start threads
+        for (Thread thread : threads) {
+            thread.start();
+        }
+        // stress system some seconds
+        sleepSeconds(TEST_RUN_SECONDS);
+
+        //stop threads
+        stopTest.set(true);
+        for (Thread thread : threads) {
+            thread.join();
+        }
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < KEY_COUNT; i++) {
+                    Integer valueSeenFromMember = memberMap.get(i);
+                    Integer valueSeenFromClient = nearCachedMap.get(i);
+
+                    assertEquals(valueSeenFromMember, valueSeenFromClient);
+                }
+            }
+        });
+    }
+
     protected Config createConfig() {
         Config config = new Config();
+        config.setProperty("hazelcast.invalidation.reconciliation.interval.seconds",
+                Integer.toString(RECONCILIATION_INTERVAL_SECONDS));
         config.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         config.setProperty("hazelcast.map.invalidation.batch.enabled", "true");
-        config.setProperty("hazelcast.map.invalidation.batch.size", "10000");
+        config.setProperty("hazelcast.map.invalidation.batch.size",
+                Integer.toString(INVALIDATION_BATCH_SIZE));
         config.setProperty("hazelcast.partition.count", "271");
         return config;
     }
@@ -71,103 +180,6 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
                 .setSize(Integer.MAX_VALUE)
                 .setEvictionPolicy(EvictionPolicy.NONE);
         return nearCacheConfig;
-    }
-
-    @Test
-    public void ensure_nearCached_and_actual_data_sync_eventually() throws Exception {
-        final String mapName = "origin-map";
-        final int mapSize = 100000;
-        final AtomicBoolean stopTest = new AtomicBoolean();
-
-        // members are created.
-        final Config config = createConfig().addMapConfig(createMapConfig(mapName));
-        final HazelcastInstance member = factory.newHazelcastInstance(config);
-        factory.newHazelcastInstance(config);
-
-        // map is populated form member.
-        final IMap<Integer, Integer> memberMap = member.getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
-            memberMap.put(i, i);
-        }
-
-        // a new member comes with near-cache configured.
-        final Config config2 = createConfig().addMapConfig(createMapConfig(mapName).setNearCacheConfig(createNearCacheConfig(mapName)));
-        final HazelcastInstance nearCachedMember = factory.newHazelcastInstance(config2);
-        final IMap<Integer, Integer> nearCachedMap = nearCachedMember.getMap(mapName);
-
-        // continuously adds and removes member
-        Thread shadowMember = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stopTest.get()) {
-                    HazelcastInstance member = factory.newHazelcastInstance(config);
-                    sleepSeconds(5);
-                    member.getLifecycleService().shutdown();
-                }
-
-            }
-        });
-
-        // populates client near-cache
-        Thread populateClientNearCache = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    for (int i = 0; i < mapSize; i++) {
-                        nearCachedMap.get(i);
-                    }
-                }
-            }
-        });
-
-        // updates map data from member.
-        Thread putFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    int key = getInt(mapSize);
-                    int value = getInt(Integer.MAX_VALUE);
-                    memberMap.put(key, value);
-
-                    sleepAtLeastMillis(5);
-                }
-            }
-        });
-
-        Thread clearFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    memberMap.clear();
-                    sleepSeconds(5);
-                }
-            }
-        });
-
-        // start threads
-        putFromMember.start();
-        populateClientNearCache.start();
-        clearFromMember.start();
-        shadowMember.start();
-
-        // stress system some seconds
-        sleepSeconds(60);
-
-        //stop threads
-        stopTest.set(true);
-        shadowMember.join();
-        clearFromMember.join();
-        populateClientNearCache.join();
-        putFromMember.join();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                for (int i = 0; i < mapSize; i++) {
-                    Integer valueSeenFromMember = memberMap.get(i);
-                    Integer valueSeenFromClient = nearCachedMap.get(i);
-
-                    assertEquals(valueSeenFromMember, valueSeenFromClient);
-                }
-            }
-        });
     }
 
 }

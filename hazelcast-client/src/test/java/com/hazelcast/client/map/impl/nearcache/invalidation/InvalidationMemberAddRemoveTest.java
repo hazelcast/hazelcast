@@ -44,7 +44,12 @@ import static org.junit.Assert.assertEquals;
 @Category({NightlyTest.class})
 public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
-    private static final int POPULATOR_THREAD_COUNT = 3;
+    private static final int NEAR_CACHE_POPULATOR_THREAD_COUNT = 3;
+    private static final int TEST_RUN_SECONDS = 30;
+    private static final int INVALIDATION_BATCH_SIZE = 10000;
+    private static final int KEY_COUNT = 100000;
+    private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
+
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
@@ -55,7 +60,6 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
     @Test
     public void ensure_nearCachedClient_and_member_data_sync_eventually() throws Exception {
         final String mapName = "default";
-        final int mapSize = 100000;
         final AtomicBoolean stopTest = new AtomicBoolean();
 
         // members are created.
@@ -65,7 +69,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
 
         // map is populated form member.
         final IMap<Integer, Integer> memberMap = member.getMap(mapName);
-        for (int i = 0; i < mapSize; i++) {
+        for (int i = 0; i < KEY_COUNT; i++) {
             memberMap.put(i, i);
         }
 
@@ -82,7 +86,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
                 while (!stopTest.get()) {
                     HazelcastInstance member = factory.newHazelcastInstance(config);
                     sleepSeconds(5);
-                    member.getLifecycleService().shutdown();
+                    member.getLifecycleService().terminate();
                 }
 
             }
@@ -90,11 +94,11 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         threads.add(shadowMember);
 
         // populates client near-cache
-        for (int i = 0; i < POPULATOR_THREAD_COUNT; i++) {
+        for (int i = 0; i < NEAR_CACHE_POPULATOR_THREAD_COUNT; i++) {
             Thread populateClientNearCache = new Thread(new Runnable() {
                 public void run() {
                     while (!stopTest.get()) {
-                        for (int i = 0; i < mapSize; i++) {
+                        for (int i = 0; i < KEY_COUNT; i++) {
                             clientMap.get(i);
                         }
                     }
@@ -108,7 +112,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         Thread putFromMember = new Thread(new Runnable() {
             public void run() {
                 while (!stopTest.get()) {
-                    int key = getInt(mapSize);
+                    int key = getInt(KEY_COUNT);
                     int value = getInt(Integer.MAX_VALUE);
                     memberMap.put(key, value);
 
@@ -117,7 +121,6 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
             }
         });
         threads.add(putFromMember);
-
 
         Thread clearFromMember = new Thread(new Runnable() {
             public void run() {
@@ -129,14 +132,11 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         });
         threads.add(clearFromMember);
 
-
         for (Thread thread : threads) {
             thread.start();
         }
-
         // stress system some seconds
-        sleepSeconds(60);
-
+        sleepSeconds(TEST_RUN_SECONDS);
         //stop threads
         stopTest.set(true);
         for (Thread thread : threads) {
@@ -146,7 +146,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                for (int i = 0; i < mapSize; i++) {
+                for (int i = 0; i < KEY_COUNT; i++) {
                     Integer valueSeenFromMember = memberMap.get(i);
                     Integer valueSeenFromClient = clientMap.get(i);
 
@@ -163,7 +163,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), "271");
         config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_ENABLED.getName(), "true");
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), "1000");
+        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE.getName(), Integer.toString(INVALIDATION_BATCH_SIZE));
         return config;
     }
 
@@ -180,7 +180,7 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
     protected ClientConfig createClientConfig() {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
-        clientConfig.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", "30");
+        clientConfig.setProperty("hazelcast.invalidation.reconciliation.interval.seconds", Integer.toString(RECONCILIATION_INTERVAL_SECONDS));
         return clientConfig;
     }
 }

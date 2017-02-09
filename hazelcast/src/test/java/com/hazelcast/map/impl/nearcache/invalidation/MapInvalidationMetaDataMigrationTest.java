@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
@@ -207,20 +208,31 @@ public class MapInvalidationMetaDataMigrationTest extends HazelcastTestSupport {
 
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-        waitAllForSafeState(instance2, instance3);
+        waitAllForSafeState(instance1, instance2, instance3);
         instance1.shutdown();
 
         Map<Integer, UUID> destination2 = getPartitionToUuidMap(instance2);
         Map<Integer, UUID> destination3 = getPartitionToUuidMap(instance3);
-        for (Map.Entry<Integer, UUID> entry : destination2.entrySet()) {
-            Integer key = entry.getKey();
-            UUID value = entry.getValue();
-            if (value != null) {
-                destination3.put(key, value);
+
+        Map<Integer, UUID> merged = mergeOwnedPartitionUuids(destination2, destination3,
+                getNodeEngineImpl(instance2).getPartitionService());
+
+        assertEquals(source1, merged);
+    }
+
+    protected Map<Integer, UUID> mergeOwnedPartitionUuids(Map<Integer, UUID> destination2, Map<Integer, UUID> destination3,
+                                                          InternalPartitionService partitionService) {
+        Map<Integer, UUID> merged = new HashMap<Integer, UUID>();
+
+        int partitionCount = partitionService.getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            if (partitionService.getPartition(i).isLocal()) {
+                merged.put(i, destination2.get(i));
+            } else {
+                merged.put(i, destination3.get(i));
             }
         }
-
-        assertEquals(source1, destination3);
+        return merged;
     }
 
     private Map<Integer, Long> getPartitionToSequenceMap(String mapName, HazelcastInstance instance) {

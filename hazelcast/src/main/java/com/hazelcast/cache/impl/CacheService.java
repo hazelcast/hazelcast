@@ -83,9 +83,11 @@ public class CacheService extends AbstractCacheService {
         super.commitMigration(event);
 
         if (SOURCE == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().resetMetadata(event.getPartitionId());
+            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         } else if (DESTINATION == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+            if (event.getNewReplicaIndex() != 0) {
+                getMetaDataGenerator().regenerateUuid(event.getPartitionId());
+            }
         }
     }
 
@@ -94,9 +96,7 @@ public class CacheService extends AbstractCacheService {
         super.rollbackMigration(event);
 
         if (DESTINATION == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().resetMetadata(event.getPartitionId());
-        } else if (SOURCE == event.getMigrationEndpoint()) {
-            getMetaDataGenerator().getOrCreateUuid(event.getPartitionId());
+            getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
     }
 
