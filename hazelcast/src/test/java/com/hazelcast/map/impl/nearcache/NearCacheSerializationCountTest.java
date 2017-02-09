@@ -102,7 +102,7 @@ public class NearCacheSerializationCountTest extends HazelcastTestSupport {
         return new NearCacheConfig()
                 .setName(MAP_NAME)
                 .setLocalUpdatePolicy(localUpdatePolicy)
-                .setInMemoryFormat(inMemoryFormat);
+                .setInMemoryFormat(inMemoryFormat).setCacheLocalEntries(true);
     }
 
     protected Config createConfig() {
