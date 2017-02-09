@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,6 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -40,7 +42,7 @@ public class MetaDataGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void destroying_map_removes_related_metadata() throws Exception {
-        String mapName = "test";
+        final String mapName = "test";
 
         Config config = new Config();
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -50,15 +52,25 @@ public class MetaDataGeneratorTest extends HazelcastTestSupport {
         IMap map = member.getMap(mapName);
         map.put(1, 1);
 
+        final MetaDataGenerator metaDataGenerator = getMetaDataGenerator(member);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNotNull(metaDataGenerator.sequenceGenerators.get(mapName));
+            }
+        });
+
         map.destroy();
 
+        assertNull(metaDataGenerator.sequenceGenerators.get(mapName));
+    }
+
+    protected MetaDataGenerator getMetaDataGenerator(HazelcastInstance member) {
         MapService mapService = getNodeEngineImpl(member).getService(SERVICE_NAME);
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapNearCacheManager mapNearCacheManager = mapServiceContext.getMapNearCacheManager();
         Invalidator invalidator = mapNearCacheManager.getInvalidator();
-        MetaDataGenerator metaDataGenerator = invalidator.getMetaDataGenerator();
-
-        assertNull(metaDataGenerator.sequenceGenerators.get(mapName));
+        return invalidator.getMetaDataGenerator();
     }
 
 }
