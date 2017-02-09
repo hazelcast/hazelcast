@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class CountAggregator<I> extends AbstractAggregator<I, Long> {
+import java.io.IOException;
+
+public final class CountAggregator<I> extends AbstractAggregator<I, Long> implements IdentifiedDataSerializable {
     private long count;
 
     public CountAggregator() {
@@ -43,5 +48,27 @@ public class CountAggregator<I> extends AbstractAggregator<I, Long> {
     @Override
     public Long aggregate() {
         return count;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.COUNT;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeLong(count);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.count = in.readLong();
     }
 }

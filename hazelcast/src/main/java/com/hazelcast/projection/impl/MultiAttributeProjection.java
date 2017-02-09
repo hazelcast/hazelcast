@@ -16,25 +16,31 @@
 
 package com.hazelcast.projection.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.query.impl.Extractable;
+
+import java.io.IOException;
 
 /**
  * Projection that extracts the values of the given attributes and returns them in an Object[] array.
  *
  * @param <I> type of the input
  */
-public class MultiAttributeProjection<I> extends Projection<I, Object[]> {
+public final class MultiAttributeProjection<I> extends Projection<I, Object[]> implements IdentifiedDataSerializable {
 
-    private final String[] attributePaths;
-    private final int attributeCount;
+    private String[] attributePaths;
+
+    MultiAttributeProjection() {
+    }
 
     public MultiAttributeProjection(String... attributePath) {
         if (attributePath.length == 0) {
             throw new IllegalArgumentException("You need to specify at least one attributePath");
         }
         this.attributePaths = attributePath;
-        this.attributeCount = attributePath.length;
     }
 
     @Override
@@ -42,13 +48,33 @@ public class MultiAttributeProjection<I> extends Projection<I, Object[]> {
     public Object[] transform(I input) {
         if (input instanceof Extractable) {
             Extractable extractable = ((Extractable) input);
-            Object[] result = new Object[attributeCount];
-            for (int i = 0; i < attributeCount; i++) {
+            Object[] result = new Object[attributePaths.length];
+            for (int i = 0; i < attributePaths.length; i++) {
                 result[i] = extractable.getAttributeValue(attributePaths[i]);
             }
             return result;
         }
         throw new IllegalArgumentException("The given map entry is not extractable");
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ProjectionDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ProjectionDataSerializerHook.MULTI_ATTRIBUTE;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTFArray(attributePaths);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePaths = in.readUTFArray();
     }
 
 }

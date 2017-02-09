@@ -17,8 +17,13 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class LongSumAggregator<I> extends AbstractAggregator<I, Long> {
+import java.io.IOException;
+
+public final class LongSumAggregator<I> extends AbstractAggregator<I, Long> implements IdentifiedDataSerializable {
 
     private long sum;
 
@@ -45,6 +50,28 @@ public class LongSumAggregator<I> extends AbstractAggregator<I, Long> {
     @Override
     public Long aggregate() {
         return sum;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.LONG_SUM;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeLong(sum);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.sum = in.readLong();
     }
 
 }

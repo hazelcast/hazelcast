@@ -17,11 +17,16 @@
 package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigDecimal> {
+public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigDecimal>
+        implements IdentifiedDataSerializable {
 
     private BigInteger sum = BigInteger.ZERO;
     private long count;
@@ -56,6 +61,30 @@ public class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigDec
         }
         return new BigDecimal(sum)
                 .divide(BigDecimal.valueOf(count));
+    }
+
+    @Override
+    public int getFactoryId() {
+        return AggregatorDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return AggregatorDataSerializerHook.BIG_INT_AVG;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(attributePath);
+        out.writeObject(sum);
+        out.writeLong(count);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        this.attributePath = in.readUTF();
+        this.sum = in.readObject();
+        this.count = in.readLong();
     }
 
 }
