@@ -214,12 +214,43 @@ public class MapKeyLoader {
                 public void run() {
                     // checks if loading has finished and triggers loading in case SENDER died and SENDER_BACKUP took over.
                     Operation op = new TriggerLoadIfNeededOperation(mapName);
-                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                    opService.<Boolean>invokeOnPartition(SERVICE_NAME, op, mapNamePartition)
+                            // required since loading may be triggerd after migration
+                            // and in this case the callback is the only way to get to know if the key load finished or not.
+                            .andThen(loadingFinishedCallback());
                 }
             });
         }
 
         return keyLoadFinished;
+    }
+
+    private ExecutionCallback<Boolean> loadingFinishedCallback() {
+        return new ExecutionCallback<Boolean>() {
+            @Override
+            public void onResponse(Boolean loadingFinished) {
+                if (loadingFinished) {
+                    updateLocalKeyLoadStatus(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                updateLocalKeyLoadStatus(t);
+            }
+        };
+    }
+
+    private void updateLocalKeyLoadStatus(Throwable t) {
+        Operation op = new KeyLoadStatusOperation(mapName, t);
+        // This updates the local record store on the partition thread.
+        // If invoked by the SENDER_BACKUP however it's the replica index has to be set to 1, otherwise
+        // it will be a remote call to the SENDER who is the owner of the given partitionId.
+        if (hasBackup && role.is(Role.SENDER_BACKUP)) {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).setReplicaIndex(1).invoke();
+        } else {
+            opService.createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
+        }
     }
 
     public Future<?> startLoading(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
