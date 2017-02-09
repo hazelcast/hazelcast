@@ -64,8 +64,8 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
 
     private static final int NEAR_CACHE_POPULATOR_THREAD_COUNT = 5;
     private static final int TEST_RUN_SECONDS = 30;
-    private static final int INVALIDATION_BATCH_SIZE = 10000;
-    private static final int KEY_COUNT = 100000;
+    private static final int INVALIDATION_BATCH_SIZE = 100;
+    private static final int KEY_COUNT = 1000;
     private static final int RECONCILIATION_INTERVAL_SECONDS = 30;
 
     @Override
@@ -151,16 +151,6 @@ public class InvalidationMemberAddRemoveTest extends ClientNearCacheTestSupport 
             }
         });
         threads.add(putFromMember);
-
-        Thread clearFromMember = new Thread(new Runnable() {
-            public void run() {
-                while (!stopTest.get()) {
-                    memberCache.clear();
-                    sleepSeconds(5);
-                }
-            }
-        });
-        threads.add(clearFromMember);
 
         // start threads
         for (Thread thread : threads) {
