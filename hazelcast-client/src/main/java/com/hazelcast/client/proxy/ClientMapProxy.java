@@ -110,7 +110,6 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
 import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndProvider;
@@ -1348,10 +1347,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapAggregateCodec.encodeRequest(name, toData(aggregator));
         ClientMessage response = invoke(request);
 
-        MapAggregateCodec.ResponseParameters resultParameters =
-                MapAggregateCodec.decodeResponse(response);
-        AggregationResult result = toObject(resultParameters.response);
-        return (R) result.getAggregator().aggregate();
+        MapAggregateCodec.ResponseParameters resultParameters = MapAggregateCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     @Override
@@ -1364,8 +1361,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         MapAggregateWithPredicateCodec.ResponseParameters resultParameters =
                 MapAggregateWithPredicateCodec.decodeResponse(response);
-        AggregationResult result = toObject(resultParameters.response);
-        return (R) result.getAggregator().aggregate();
+        return toObject(resultParameters.response);
     }
 
     @Override
