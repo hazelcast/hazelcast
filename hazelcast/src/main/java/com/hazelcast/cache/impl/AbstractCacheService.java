@@ -63,12 +63,8 @@ import static com.hazelcast.cache.impl.AbstractCacheRecordStore.SOURCE_NOT_AVAIL
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
-public abstract class AbstractCacheService
-        implements  ICacheService,
-                    PostJoinAwareService,
-                    PartitionAwareService,
-                    QuorumAwareService,
-                    SplitBrainHandlerService {
+public abstract class AbstractCacheService implements ICacheService, PostJoinAwareService, PartitionAwareService,
+        QuorumAwareService, SplitBrainHandlerService {
 
     private static final String SETUP_REF = "setupRef";
 
@@ -422,6 +418,7 @@ public abstract class AbstractCacheService
         }
     }
 
+    @Override
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
     }
@@ -657,10 +654,11 @@ public abstract class AbstractCacheService
      */
     @Override
     public String getQuorumName(String cacheName) {
-        if (configs.get(cacheName) == null) {
+        CacheConfig cacheConfig = configs.get(cacheName);
+        if (cacheConfig == null) {
             return null;
         }
-        return configs.get(cacheName).getQuorumName();
+        return cacheConfig.getQuorumName();
     }
 
     /**
