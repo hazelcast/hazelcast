@@ -75,7 +75,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
-    protected final ConstructorFunction<String, CacheContext> cacheContexesConstructorFunction =
+    protected final ConstructorFunction<String, CacheContext> cacheContextsConstructorFunction =
             new ConstructorFunction<String, CacheContext>() {
                 @Override
                 public CacheContext createNew(String name) {
@@ -355,7 +355,7 @@ public abstract class AbstractCacheService implements ICacheService, PostJoinAwa
 
     @Override
     public CacheContext getOrCreateCacheContext(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContexesConstructorFunction);
+        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContextsConstructorFunction);
     }
 
     @Override
