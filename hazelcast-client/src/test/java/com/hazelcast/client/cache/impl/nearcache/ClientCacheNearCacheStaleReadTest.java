@@ -1,13 +1,15 @@
-package com.hazelcast.client.map.impl.nearcache;
+package com.hazelcast.client.cache.impl.nearcache;
 
+import com.hazelcast.client.cache.impl.ClientCacheProxy;
+import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
+import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.proxy.NearCachedClientMapProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -20,6 +22,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.cache.Cache;
+import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -30,29 +34,28 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 /**
- * A test to ensure no lost invalidations on the Near Cache.
- *
- * Issue: https://github.com/hazelcast/hazelcast/issues/4671
- *
- * Thanks Lukas Blunschi for this test (https://github.com/lukasblu).
+ * Ported to jcache
+ * @see com.hazelcast.client.map.impl.nearcache.ClientMapNearCacheStaleReadTest
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
+public class ClientCacheNearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final int NUM_GETTERS = 7;
     private static final int MAX_RUNTIME = 30;
-    private static final String MAP_NAME = "test";
+    private static final String CACHE_NAME = "test";
     private static final String KEY = "key123";
-    private static final ILogger LOGGER = Logger.getLogger(ClientMapNearCacheStaleReadTest.class);
+    private static final ILogger LOGGER = Logger.getLogger(ClientCacheNearCacheStaleReadTest.class);
 
     private AtomicInteger valuePut;
     private AtomicBoolean stop;
     private AtomicInteger assertionViolationCount;
     private AtomicBoolean failed;
-    private IMap<String, String> map;
+    private Cache<String, String> cache;
     private HazelcastInstance member;
     private HazelcastInstance client;
+    private NearCacheConfig.LocalUpdatePolicy localUpdatePolicy = NearCacheConfig.LocalUpdatePolicy.INVALIDATE;
+    private InMemoryFormat inMemoryFormat = InMemoryFormat.BINARY;
 
     @Before
     public void setUp() throws Exception {
@@ -63,14 +66,15 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
         assertionViolationCount = new AtomicInteger(0);
 
         Config config = new Config();
-        config.setProperty(GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
+        config.setProperty(GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getName(), "2");
         member = factory.newHazelcastInstance(config);
 
-        ClientConfig clientConfig = getClientConfig(MAP_NAME);
+        ClientConfig clientConfig = getClientConfig(CACHE_NAME);
         clientConfig.setProperty("hazelcast.invalidation.max.tolerated.miss.count", "0");
         client = factory.newHazelcastClient(clientConfig);
-
-        map = client.getMap(MAP_NAME);
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+        cache = cacheManager.createCache(CACHE_NAME, createCacheConfig(inMemoryFormat));
     }
 
     @After
@@ -98,7 +102,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
             sleepSeconds(2);
         }
         int valuePutLast = valuePut.get();
-        String valueMapStr = map.get(KEY);
+        String valueMapStr = cache.get(KEY);
         int valueMap = parseInt(valueMapStr);
 
         // fail if not eventually consistent
@@ -107,8 +111,8 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
             msg = "Near Cache did *not* become consistent. (valueMap = " + valueMap + ", valuePut = " + valuePutLast + ").";
 
             // flush Near Cache and re-fetch value
-            flushClientNearCache(map);
-            String valueMap2Str = map.get(KEY);
+            flushClientNearCache(cache);
+            String valueMap2Str = cache.get(KEY);
             int valueMap2 = parseInt(valueMap2Str);
 
             // test again
@@ -137,10 +141,17 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
         }
     }
 
+    private CacheConfig<String, String> createCacheConfig(InMemoryFormat inMemoryFormat) {
+        return new CacheConfig<String, String>()
+                .setName(CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
+    }
+
     // will be overridden
     protected ClientConfig getClientConfig(String mapName) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig(mapName)
-                .setInMemoryFormat(InMemoryFormat.BINARY);
+                .setInMemoryFormat(inMemoryFormat)
+                .setLocalUpdatePolicy(localUpdatePolicy);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
@@ -152,13 +163,8 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
      * <p>
      * Warning: this uses Hazelcast internals which might change from one version to the other.
      */
-    private void flushClientNearCache(IMap map) {
-        if (!(map instanceof NearCachedClientMapProxy)) {
-            return;
-        }
-
-        NearCachedClientMapProxy clientMapProxy = (NearCachedClientMapProxy) map;
-        clientMapProxy.getNearCache().clear();
+    private void flushClientNearCache(Cache cache) {
+        ((ClientCacheProxy) cache).getNearCache().clear();
     }
 
     private void runTestInternal() throws Exception {
@@ -206,11 +212,11 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
                 // put new value and update last state
                 // note: the value in the map/Near Cache is *always* larger or equal to valuePut
                 // assertion: valueMap >= valuePut
-                map.put(KEY, String.valueOf(i));
+                cache.put(KEY, String.valueOf(i));
                 valuePut.set(i);
 
                 // check if we see our last update
-                String valueMapStr = map.get(KEY);
+                String valueMapStr = cache.get(KEY);
                 if (valueMapStr == null) {
                     continue;
                 }
@@ -227,7 +233,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
                     }
 
                     // test again and stop if really lost
-                    valueMapStr = map.get(KEY);
+                    valueMapStr = cache.get(KEY);
                     valueMap = parseInt(valueMapStr);
                     if (valueMap != i) {
                         LOGGER.warning("Near Cache invalidation lost! (valueMap = " + valueMap + ", i = " + i + ")");
@@ -250,7 +256,7 @@ public class ClientMapNearCacheStaleReadTest extends HazelcastTestSupport {
                 n++;
 
                 // blindly get the value (to trigger the issue) and parse the value (to get some CPU load)
-                String valueMapStr = map.get(KEY);
+                String valueMapStr = cache.get(KEY);
                 int i = parseInt(valueMapStr);
                 assertEquals("" + i, valueMapStr);
             }
