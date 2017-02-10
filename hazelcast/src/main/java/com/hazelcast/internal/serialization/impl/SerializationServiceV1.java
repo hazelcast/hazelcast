@@ -65,7 +65,6 @@ import static com.hazelcast.internal.serialization.impl.ConstantSerializers.Shor
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import static com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
-import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.COMP_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.EE_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.IDS_FLAG;
 import static com.hazelcast.internal.serialization.impl.DataSerializableSerializer.isFlagSet;
@@ -80,7 +79,6 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.create
 public class SerializationServiceV1 extends AbstractSerializationService {
 
     private static final int FACTORY_AND_CLASS_ID_BYTE_LENGTH = 8;
-    private static final int FACTORY_AND_CLASS_ID_BYTE_COMP_LENGTH = 2;
     private static final int EE_BYTE_LENGTH = 2;
 
     private final PortableContextImpl portableContext;
@@ -213,11 +211,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         ObjectDataInput input = createObjectDataInput(data);
         byte header = input.readByte();
         if (isFlagSet(header, IDS_FLAG)) {
-            if (isFlagSet(header, COMP_FLAG)) {
-                skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_COMP_LENGTH);
-            } else {
-                skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
-            }
+            skipBytesSafely(input, FACTORY_AND_CLASS_ID_BYTE_LENGTH);
         } else {
             input.readUTF();
         }

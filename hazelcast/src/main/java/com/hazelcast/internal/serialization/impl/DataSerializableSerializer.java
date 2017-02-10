@@ -51,7 +51,6 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
 
     public static final byte IDS_FLAG = 1 << 0;
     public static final byte EE_FLAG = 1 << 1;
-    public static final byte COMP_FLAG = 1 << 2;
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
@@ -129,13 +128,12 @@ final class DataSerializableSerializer implements StreamSerializer<DataSerializa
             // If you ever change the way this is serialized think about to change
             // BasicOperationService::extractOperationCallId
             if (isFlagSet(header, IDS_FLAG)) {
-                boolean comp = isFlagSet(header, COMP_FLAG);
-                factoryId = comp ? in.readByte() : in.readInt();
+                factoryId = in.readInt();
                 final DataSerializableFactory dsf = factories.get(factoryId);
                 if (dsf == null) {
                     throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
                 }
-                id = comp ? in.readByte() : in.readInt();
+                id = in.readInt();
                 if (null == aClass) {
                     ds = dsf.create(id);
                     if (ds == null) {
