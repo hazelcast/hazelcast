@@ -24,14 +24,15 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class GetAllScheduledOperationFactory implements OperationFactory {
+public class GetAllScheduledOnPartitionOperationFactory
+        implements OperationFactory {
 
     private String schedulerName;
 
-    public GetAllScheduledOperationFactory() {
+    public GetAllScheduledOnPartitionOperationFactory() {
     }
 
-    public GetAllScheduledOperationFactory(String schedulerName) {
+    public GetAllScheduledOnPartitionOperationFactory(String schedulerName) {
         this.schedulerName = schedulerName;
     }
 
@@ -42,7 +43,7 @@ public class GetAllScheduledOperationFactory implements OperationFactory {
 
     @Override
     public int getId() {
-        return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED_OPERATION_FACTORY;
+        return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY;
     }
 
     @Override

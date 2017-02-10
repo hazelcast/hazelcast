@@ -68,7 +68,7 @@ public final class InvokeOnMembers {
     }
 
     /**
-     * Executes all the operations on the partitions.
+     * Executes the operation on all targets.
      */
     public Map<Member, Object> invoke() throws Exception {
         invokeOnAllTargets();
