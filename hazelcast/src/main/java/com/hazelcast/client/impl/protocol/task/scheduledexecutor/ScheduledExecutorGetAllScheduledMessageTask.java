@@ -29,7 +29,7 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.InvokeOnMembers;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperationFactory;
+import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
@@ -48,8 +48,6 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 public class ScheduledExecutorGetAllScheduledMessageTask
         extends AbstractMessageTask<ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters> {
-
-    private static final int GET_ALL_SCHEDULED_TIMEOUT = 10;
 
     public ScheduledExecutorGetAllScheduledMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -114,7 +112,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     private void retrieveAllPartitionOwnedScheduled(Map<Member, List<String>> accumulator) {
         try {
             accumulateTaskHandlersAsUrnValues(accumulator, nodeEngine.getOperationService().invokeOnAllPartitions(
-                    getServiceName(), new GetAllScheduledOperationFactory(parameters.schedulerName)));
+                    getServiceName(), new GetAllScheduledOnPartitionOperationFactory(parameters.schedulerName)));
         } catch (Throwable t) {
             throw rethrow(t);
         }

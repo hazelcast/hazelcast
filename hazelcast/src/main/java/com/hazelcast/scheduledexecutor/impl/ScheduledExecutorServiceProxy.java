@@ -29,7 +29,7 @@ import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperationFactory;
+import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -334,7 +334,7 @@ public class ScheduledExecutorServiceProxy
     private <V> void retrieveAllPartitionOwnedScheduled(Map<Member, List<IScheduledFuture<V>>> accumulator) {
         try {
             accumulateTaskHandlersAsScheduledFutures(accumulator, getNodeEngine().getOperationService().invokeOnAllPartitions(
-                    getServiceName(), new GetAllScheduledOperationFactory(name)));
+                    getServiceName(), new GetAllScheduledOnPartitionOperationFactory(name)));
         } catch (Throwable t) {
             throw rethrow(t);
         }

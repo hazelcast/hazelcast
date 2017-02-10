@@ -26,7 +26,7 @@ import com.hazelcast.scheduledexecutor.impl.operations.DisposeBackupTaskOperatio
 import com.hazelcast.scheduledexecutor.impl.operations.DisposeTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperation;
-import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperationFactory;
+import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
 import com.hazelcast.scheduledexecutor.impl.operations.GetDelayOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
@@ -81,7 +81,7 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
 
     public static final int GET_ALL_SCHEDULED_ON_PARTITION = 25;
 
-    public static final int GET_ALL_SCHEDULED_OPERATION_FACTORY = 26;
+    public static final int GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY = 26;
 
     public static final int SHUTDOWN = 23;
 
@@ -148,8 +148,8 @@ public class    ScheduledExecutorDataSerializerHook implements DataSerializerHoo
                         return new ScheduledTaskResult();
                     case GET_ALL_SCHEDULED_ON_PARTITION:
                         return new GetAllScheduledOnPartitionOperation();
-                    case GET_ALL_SCHEDULED_OPERATION_FACTORY:
-                        return new GetAllScheduledOperationFactory();
+                    case GET_ALL_SCHEDULED_ON_PARTITION_OPERATION_FACTORY:
+                        return new GetAllScheduledOnPartitionOperationFactory();
                     default:
                         throw new IllegalArgumentException("Illegal Scheduled Executor serializer type ID: " + typeId);
                 }
