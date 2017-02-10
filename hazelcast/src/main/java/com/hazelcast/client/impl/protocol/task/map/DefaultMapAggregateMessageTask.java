@@ -29,9 +29,8 @@ import java.util.Collection;
 
 public abstract class DefaultMapAggregateMessageTask<P>
         extends AbstractMapQueryMessageTask<P,
-        AggregationResult, AggregationResult, AggregationResult> {
+        AggregationResult, AggregationResult, Object> {
 
-    private static final AggregationResult EMPTY_AGGREGATION_RESULT = new AggregationResult();
 
     public DefaultMapAggregateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -58,9 +57,9 @@ public abstract class DefaultMapAggregateMessageTask<P>
     }
 
     @Override
-    protected AggregationResult reduce(Collection<AggregationResult> results) {
+    protected Object reduce(Collection<AggregationResult> results) {
         if (results.isEmpty()) {
-            return EMPTY_AGGREGATION_RESULT;
+            return null;
         }
 
         AggregationResult combinedResult = null;
@@ -77,6 +76,6 @@ public abstract class DefaultMapAggregateMessageTask<P>
                 combinedResult.onCombineFinished();
             }
         }
-        return combinedResult;
+        return combinedResult != null ? combinedResult.getAggregator().aggregate() : null;
     }
 }

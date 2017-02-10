@@ -29,6 +29,7 @@ import java.util.Map;
 
 import static com.hazelcast.query.Predicates.greaterThan;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -136,6 +137,16 @@ public class MapAggregateTest extends HazelcastTestSupport {
 
         Double avg = map.aggregate(new DoubleAverageAggregator<Map.Entry<String, Person>>("age"), greaterThan("age", 2.0d));
         assertEquals(Double.valueOf(5.5d), avg);
+    }
+
+    @Test
+    public void doubleAvg_1Node_objectValue_withEmptyResultPredicate() {
+        IMap<String, Person> map = getMapWithNodeCount(1);
+        populateMapWithPersons(map);
+
+        Double avg = map.aggregate(new DoubleAverageAggregator<Map.Entry<String, Person>>("age"),
+                greaterThan("age", 30.0d));
+        assertNull(avg);
     }
 
     @Test
