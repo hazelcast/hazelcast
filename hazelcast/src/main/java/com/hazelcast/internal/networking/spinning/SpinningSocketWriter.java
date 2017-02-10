@@ -33,7 +33,6 @@ import java.nio.ByteBuffer;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Level;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 import static com.hazelcast.nio.Protocols.CLUSTER;
@@ -199,7 +198,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
 
         if (writeHandler == null) {
-            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
+            logger.warning("SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             initializer.init(connection, this, CLUSTER);
             return;
         }

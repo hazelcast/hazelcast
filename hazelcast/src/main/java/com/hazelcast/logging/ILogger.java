@@ -18,7 +18,6 @@ package com.hazelcast.logging;
 
 import java.util.logging.Level;
 
-
 /**
  * The Hazelcast logging interface. The reason if its existence is that Hazelcast doesn't want any dependencies
  * on concrete logging frameworks so it creates it own meta logging framework where existing logging frameworks can
@@ -34,7 +33,7 @@ public interface ILogger {
     void finest(String message);
 
     /**
-     * Logs a throwable at {@link Level#FINEST}.  The message of the Throwable will be the message.
+     * Logs a throwable at {@link Level#FINEST}. The message of the Throwable will be the message.
      *
      * @param thrown the Throwable to log.
      */
@@ -63,6 +62,21 @@ public interface ILogger {
     void fine(String message);
 
     /**
+     * Logs a throwable at {@link Level#FINE}. The message of the Throwable will be the message.
+     *
+     * @param thrown the Throwable to log.
+     */
+    void fine(Throwable thrown);
+
+    /**
+     * Logs message with associated throwable information at {@link Level#FINE}.
+     *
+     * @param message the message to log
+     * @param thrown  the Throwable associated to the message.
+     */
+    void fine(String message, Throwable thrown);
+
+    /**
      * Checks if the {@link Level#FINE} is enabled.
      *
      * @return true if enabled, false otherwise.
@@ -77,6 +91,13 @@ public interface ILogger {
     void info(String message);
 
     /**
+     * Checks if the {@link Level#INFO} is enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
+    boolean isInfoEnabled();
+
+    /**
      * Logs a message at {@link Level#WARNING}.
      *
      * @param message the message to log.
@@ -84,7 +105,7 @@ public interface ILogger {
     void warning(String message);
 
     /**
-     * Logs a throwable at {@link Level#WARNING}.  The message of the Throwable will be the message.
+     * Logs a throwable at {@link Level#WARNING}. The message of the Throwable will be the message.
      *
      * @param thrown the Throwable to log.
      */
@@ -99,6 +120,13 @@ public interface ILogger {
     void warning(String message, Throwable thrown);
 
     /**
+     * Checks if the {@link Level#WARNING} is enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
+    boolean isWarningEnabled();
+
+    /**
      * Logs a message at {@link Level#SEVERE}.
      *
      * @param message the message to log.
@@ -106,7 +134,7 @@ public interface ILogger {
     void severe(String message);
 
     /**
-     * Logs a throwable at {@link Level#SEVERE}.  The message of the Throwable will be the message.
+     * Logs a throwable at {@link Level#SEVERE}. The message of the Throwable will be the message.
      *
      * @param thrown the Throwable to log.
      */

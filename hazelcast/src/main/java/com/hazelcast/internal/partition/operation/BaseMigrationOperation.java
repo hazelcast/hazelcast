@@ -41,7 +41,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 abstract class BaseMigrationOperation extends AbstractPartitionOperation
         implements MigrationCycleOperation, PartitionAwareOperation {
@@ -200,7 +199,7 @@ abstract class BaseMigrationOperation extends AbstractPartitionOperation
         if (e instanceof PartitionStateVersionMismatchException) {
             ILogger logger = getLogger();
             if (logger.isFineEnabled()) {
-                logger.log(Level.FINE, e.getMessage(), e);
+                logger.fine(e.getMessage(), e);
             }
             return;
         }

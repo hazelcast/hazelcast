@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * Calls the AWS API to load ip addresses related to given credentials.
@@ -65,7 +64,7 @@ public class AwsAddressProvider implements AddressProvider {
         try {
             privateToPublic = awsClient.getAddresses();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Aws addresses are failed to load : " + e.getMessage());
+            logger.warning("Aws addresses are failed to load : " + e.getMessage());
         }
     }
 }

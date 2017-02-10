@@ -27,6 +27,7 @@ public class TestLoggerFactory implements LoggerFactory {
     }
 
     private static class DelegatingTestLogger implements ILogger {
+
         private ILogger delegate;
 
         private DelegatingTestLogger(ILogger delegate) {
@@ -59,6 +60,16 @@ public class TestLoggerFactory implements LoggerFactory {
         }
 
         @Override
+        public void fine(Throwable thrown) {
+            delegate.fine(thrown);
+        }
+
+        @Override
+        public void fine(String message, Throwable thrown) {
+            delegate.fine(message, thrown);
+        }
+
+        @Override
         public boolean isFineEnabled() {
             return true;
         }
@@ -66,6 +77,11 @@ public class TestLoggerFactory implements LoggerFactory {
         @Override
         public void info(String message) {
             delegate.info(message);
+        }
+
+        @Override
+        public boolean isInfoEnabled() {
+            return true;
         }
 
         @Override
@@ -81,6 +97,11 @@ public class TestLoggerFactory implements LoggerFactory {
         @Override
         public void warning(String message, Throwable thrown) {
             delegate.warning(message, thrown);
+        }
+
+        @Override
+        public boolean isWarningEnabled() {
+            return true;
         }
 
         @Override
@@ -123,5 +144,4 @@ public class TestLoggerFactory implements LoggerFactory {
             return true;
         }
     }
-
 }

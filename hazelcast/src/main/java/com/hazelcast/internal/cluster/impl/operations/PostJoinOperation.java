@@ -28,7 +28,6 @@ import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -67,7 +66,7 @@ public class PostJoinOperation extends AbstractJoinOperation implements UrgentSy
                                     + t.getClass().getSimpleName() + ": " + t.getMessage());
 
                             if (logger.isFineEnabled()) {
-                                logger.log(Level.FINE, "Error while running post-join operation: ", t);
+                                logger.fine("Error while running post-join operation: ", t);
                             }
                         }
                     }

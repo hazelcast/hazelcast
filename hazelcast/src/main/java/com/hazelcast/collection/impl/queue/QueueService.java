@@ -66,7 +66,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * Provides important services via methods for the the Queue
@@ -215,7 +214,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         ItemEvent itemEvent = new DataAwareItemEvent(event.name, event.eventType, event.data,
                 member, nodeEngine.getSerializationService());
         if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isInfoEnabled()) {
                 logger.info("Dropping event " + itemEvent + " from unknown address:" + event.caller);
             }
             return;

@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
-import java.util.logging.Level;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
@@ -101,7 +100,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         try {
             eventExecutor.execute(new ClientEventProcessor(clientMessage, (ClientConnection) connection));
         } catch (RejectedExecutionException e) {
-            logger.log(Level.WARNING, " event clientMessage could not be handled ", e);
+            logger.warning("Event clientMessage could not be handled", e);
         }
     }
 

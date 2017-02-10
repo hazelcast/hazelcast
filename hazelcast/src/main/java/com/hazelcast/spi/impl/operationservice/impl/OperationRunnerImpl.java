@@ -470,9 +470,9 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             }
         } else if (t instanceof OutOfMemoryError) {
             try {
-                logger.log(SEVERE, t.getMessage(), t);
+                logger.severe(t.getMessage(), t);
             } catch (Throwable ignored) {
-                logger.log(SEVERE, ignored.getMessage(), t);
+                logger.severe(ignored.getMessage(), t);
             }
         } else {
             final Level level = nodeEngine.isRunning() ? SEVERE : FINEST;

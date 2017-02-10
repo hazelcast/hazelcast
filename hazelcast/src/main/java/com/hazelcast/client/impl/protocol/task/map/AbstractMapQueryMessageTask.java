@@ -44,7 +44,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -125,12 +124,12 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 futures.add(future);
             } catch (Throwable t) {
                 if (t.getCause() instanceof QueryResultSizeExceededException) {
-                    rethrow(t);
+                    throw rethrow(t);
                 } else {
                     // log failure to invoke query on member at fine level
                     // the missing partition IDs will be queried anyway, so it's not a terminal failure
                     if (logger.isFineEnabled()) {
-                        logger.log(Level.FINE, "Query invocation failed on member " + member, t);
+                        logger.fine("Query invocation failed on member " + member, t);
                     }
                 }
             }
@@ -175,12 +174,12 @@ public abstract class AbstractMapQueryMessageTask<P, QueryResult extends Result,
                 }
             } catch (Throwable t) {
                 if (t.getCause() instanceof QueryResultSizeExceededException) {
-                    rethrow(t);
+                    throw rethrow(t);
                 } else {
                     // log failure to invoke query on member at fine level
                     // the missing partition IDs will be queried anyway, so it's not a terminal failure
                     if (logger.isFineEnabled()) {
-                        logger.log(Level.FINE, "Query on member failed with exception", t);
+                        logger.fine("Query on member failed with exception", t);
                     }
                 }
             }

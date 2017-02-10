@@ -689,7 +689,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private void logUnknownAddressesInPartitionTable(Address sender, Set<Address> unknownAddresses) {
-        if (!unknownAddresses.isEmpty() && logger.isLoggable(Level.WARNING)) {
+        if (!unknownAddresses.isEmpty() && logger.isWarningEnabled()) {
             StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
                     .append(" sent from master[").append(sender).append("].")
                     .append(" (Probably they have recently joined or left the cluster.)")
