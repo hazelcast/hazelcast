@@ -124,10 +124,14 @@ public class QueryResult implements Result<QueryResult>, IdentifiedDataSerializa
 
     @Override
     public void combine(QueryResult result) {
-        if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(result.getPartitionIds().size());
+        Collection<Integer> otherPartitionIds = result.getPartitionIds();
+        if (otherPartitionIds == null) {
+            return;
         }
-        partitionIds.addAll(result.getPartitionIds());
+        if (partitionIds == null) {
+            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+        }
+        partitionIds.addAll(otherPartitionIds);
         rows.addAll(result.getRows());
     }
 
