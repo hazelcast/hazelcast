@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -71,7 +72,7 @@ import static java.util.stream.Collectors.toMap;
  */
 public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
-    private Set<Edge> edges = new HashSet<>();
+    private Set<Edge> edges = new LinkedHashSet<>();
     private Map<String, Vertex> verticesByName = new HashMap<>();
     private Set<Vertex> verticesByIdentity = newSetFromMap(new IdentityHashMap<Vertex, Boolean>());
 
@@ -209,7 +210,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns an iterator over the DAG's vertices in topological order.
+     * Returns an iterator over the DAG's vertices in reverse topological order.
      */
     public Iterator<Vertex> reverseIterator() {
         validate();
@@ -217,7 +218,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
     }
 
     /**
-     * Returns an iterator over the DAG's vertices in reverse topological order.
+     * Returns an iterator over the DAG's vertices in topological order.
      */
     @Override
     public Iterator<Vertex> iterator() {
@@ -229,7 +230,19 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public String toString() {
-        return "Vertices " + verticesByName + "\nEdges " + edges;
+        final StringBuilder b = new StringBuilder("dag\n");
+        for (Iterator<Vertex> it = iterator(); it.hasNext();) {
+            final Vertex v = it.next();
+            b.append("    .vertex(\"").append(v.getName()).append("\")");
+            if (v.getLocalParallelism() != -1) {
+                b.append(".localParallelism(").append(v.getLocalParallelism()).append(')');
+            }
+            b.append('\n');
+        }
+        for (Edge e : edges) {
+            b.append("    .edge(").append(e).append(")\n");
+        }
+        return b.toString();
     }
 
     void validate() throws IllegalArgumentException {
@@ -419,12 +432,8 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     private static final class AnnotatedVertex {
         Vertex v;
-
-        //for Tarjan's algorithm
         int index;
-        //for Tarjan's algorithm
         int lowlink;
-        //for Tarjan's algorithm
         boolean onstack;
 
         private AnnotatedVertex(Vertex v) {
@@ -432,7 +441,5 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             index = -1;
             lowlink = -1;
         }
-
     }
-
 }

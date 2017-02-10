@@ -153,7 +153,7 @@ public class ExecutionService {
                 long idleCount = 0;
                 for (ProgressState result;
                      !(result = t.call()).isDone() && !tracker.jobFuture.isCompletedExceptionally();
-                        ) {
+                ) {
                     if (result.isMadeProgress()) {
                         idleCount = 0;
                     } else {

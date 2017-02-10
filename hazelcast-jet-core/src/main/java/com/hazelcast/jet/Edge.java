@@ -317,7 +317,35 @@ public class Edge implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return '(' + sourceName + ", " + sourceOrdinal + ") -> (" + destName + ", " + destOrdinal + ')';
+        final StringBuilder b = new StringBuilder();
+        if (sourceOrdinal == 0 && destOrdinal == 0) {
+            b.append("between(\"").append(sourceName).append("\", \"").append(destName).append("\")");
+        } else {
+            b.append("from(\"").append(sourceName).append('"');
+            if (sourceOrdinal != 0) {
+                b.append(", ").append(sourceOrdinal);
+            }
+            b.append(").to(\"").append(destName).append('"');
+            if (destOrdinal != 0) {
+                b.append(", ").append(destOrdinal);
+            }
+            b.append(')');
+        }
+        switch (getForwardingPattern()) {
+            case VARIABLE_UNICAST:
+                break;
+            case PARTITIONED:
+                b.append(getPartitioner() instanceof Single ? ".allToOne()" : ".partitioned(?)");
+                break;
+            case BROADCAST:
+                b.append(".broadcast()");
+                break;
+            default:
+        }
+        if (isDistributed()) {
+            b.append(".distributed()");
+        }
+        return b.toString();
     }
 
     @Override

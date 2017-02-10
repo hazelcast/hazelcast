@@ -87,6 +87,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         @Override
         public Future<Void> execute() {
+            logger.fine("Submitted for execution: " + dag);
             long executionId = getIdGenerator().newId();
             deployResources(executionId);
             Operation op = new ExecuteJobOperation(executionId, dag);
@@ -98,7 +99,7 @@ public class JetInstanceImpl extends AbstractJetInstance {
         private void deployResources(long executionId) {
             final Set<ResourceConfig> resources = config.getResourceConfigs();
             if (logger.isFineEnabled() && resources.size() > 0) {
-                logger.fine("Deploying the following resources for " + executionId + ":" + resources);
+                logger.fine("Deploying the following resources for " + executionId + ':' + resources);
             }
             new ResourceIterator(resources, config.getResourcePartSize()).forEachRemaining(
                     part -> invokeOnCluster(() -> new ResourceUpdateOperation(executionId, part))
