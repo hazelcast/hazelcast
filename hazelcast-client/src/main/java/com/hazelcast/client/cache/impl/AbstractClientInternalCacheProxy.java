@@ -747,7 +747,8 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
     }
 
-    protected void storeInNearCache(Data key, Data valueData, V value, long reservationId, boolean cacheOnUpdate) {
+    protected void storeInNearCache(Data key, Data valueData, V value,
+                                    long reservationId, boolean cacheOnUpdate) {
         if (nearCache == null) {
             return;
         }
@@ -759,8 +760,13 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
 
         if (reservationId != NOT_RESERVED) {
-            Object valueToStore = nearCache.selectToSave(value, valueData);
-            nearCache.tryPublishReserved(key, valueToStore, reservationId, false);
+            if (valueData == null) {
+                // we are not caching nulls in near cache for jcache
+                nearCache.remove(key);
+            } else {
+                Object valueToStore = nearCache.selectToSave(value, valueData);
+                nearCache.tryPublishReserved(key, valueToStore, reservationId, false);
+            }
         }
     }
 
