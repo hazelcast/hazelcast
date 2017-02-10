@@ -45,6 +45,9 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     private boolean isCurrentlyLessThan(R extractedValue) {
+        if (extractedValue == null) {
+            return false;
+        }
         return max == null || max.compareTo(extractedValue) < 0;
     }
 

@@ -55,10 +55,14 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
 
     @Override
     public void combine(AggregationResult result) {
-        if (partitionIds == null) {
-            partitionIds = new ArrayList<Integer>(result.getPartitionIds().size());
+        Collection<Integer> otherPartitionIds = result.getPartitionIds();
+        if (otherPartitionIds == null) {
+            return;
         }
-        partitionIds.addAll(result.getPartitionIds());
+        if (partitionIds == null) {
+            partitionIds = new ArrayList<Integer>(otherPartitionIds.size());
+        }
+        partitionIds.addAll(otherPartitionIds);
         aggregator.combine((result.aggregator));
     }
 
@@ -86,20 +90,25 @@ public class AggregationResult implements Result<AggregationResult>, IdentifiedD
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(aggregator);
-        out.writeInt(partitionIds.size());
-        for (Integer partitionId : partitionIds) {
-            out.writeInt(partitionId);
+        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
+        out.writeInt(partitionSize);
+        if (partitionSize > 0) {
+            for (Integer partitionId : partitionIds) {
+                out.writeInt(partitionId);
+            }
         }
+        out.writeObject(aggregator);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        this.aggregator = in.readObject();
-        int partitionIdsSize = in.readInt();
-        this.partitionIds = new ArrayList<Integer>(partitionIdsSize);
-        for (int i = 0; i < partitionIdsSize; i++) {
-            this.partitionIds.add(in.readInt());
+        int partitionSize = in.readInt();
+        if (partitionSize > 0) {
+            this.partitionIds = new ArrayList<Integer>(partitionSize);
+            for (int i = 0; i < partitionSize; i++) {
+                this.partitionIds.add(in.readInt());
+            }
         }
+        this.aggregator = in.readObject();
     }
 }

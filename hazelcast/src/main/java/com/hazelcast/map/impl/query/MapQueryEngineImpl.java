@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 
@@ -155,7 +156,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             if (t.getCause() instanceof QueryResultSizeExceededException) {
                 throw rethrow(t);
             }
-            logger.warning("Could not get results", t);
+            logger.log(Level.FINE, "Could not get results", t);
         }
     }
 

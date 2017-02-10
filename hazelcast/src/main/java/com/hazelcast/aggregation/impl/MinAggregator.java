@@ -45,6 +45,9 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     private boolean isCurrentlyGreaterThan(R otherValue) {
+        if (otherValue == null) {
+            return false;
+        }
         return min == null || min.compareTo(otherValue) > 0;
     }
 
