@@ -29,6 +29,7 @@ This section lists the enhancements performed for Hazelcast 3.8 release.
 - Cluster Split-Brain Protection for Queue and Lock: Split-brain protection is now available for the queue and lock data structures. Please refer to the sections Lock Split-Brain Protection and Queue Split-Brain Protection.
 - Unified Near Cache Implementation: Different near cache implementations for JCache, map, client side and member side are unified. You can refer to the Near Cache section.
 - High Performance Near Cache: A near cache preloader is introduced to preserve the information about which keys are used in a populated near cache. You can refer to the Near Cache Preloader section.
+- `removeAll(predicate)` for Map: You can remove all map entries that match your predicate. You can refer to the Removing Bulk Map Entries with Predicates section.
 - Ringbuffer with Persistent Datastore: Implemented for the Ringbuffer which is similar to the existing queue store mechanism. Please refer to Ringbuffer with Persistent Datastore section.
 - Hazelcast Striim Hot Cache Adapter: Hot Cache functionality based on Striim's Change Data Capture (CDC) for the underlying database updates. Please note that this enhancement is available for Hazelcast Enterprise. Please refer to the Hazelcast Striim Hot Cache section.
 - One-off WAN Synchronization with Dynamically Added Endpoint: Improvement to allow copying the maps' all content to a target cluster dynamically in runtime. Please note that this enhancement is available for Hazelcast Enterprise.
