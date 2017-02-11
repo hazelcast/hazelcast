@@ -16,13 +16,20 @@ import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecut
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToAddressMessageTask;
 import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorSubmitToPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledMessageTask;
-import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskCancelFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskDisposeFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetDelayFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetResultFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsCancelledFromPartitionMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromAddressMessageTask;
+import com.hazelcast.client.impl.protocol.task.scheduledexecutor.ScheduledExecutorTaskIsDoneFromPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
@@ -1770,34 +1777,64 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new ScheduledExecutorShutdownMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskDisposeMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskDisposeFromPartitionMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskCancelMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskDisposeFromAddressMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskIsDoneMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskCancelFromPartitionMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskGetDelayMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskCancelFromAddressMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskGetStatisticsMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskIsDoneFromPartitionMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskGetResultMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskIsDoneFromAddressMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetDelayFromPartitionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetDelayFromAddressMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetStatisticsFromAddressMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetResultFromPartitionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskGetResultFromAddressMessageTask(clientMessage, node, connection);
             }
         };
         factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
@@ -1805,9 +1842,14 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new ScheduledExecutorGetAllScheduledMessageTask(clientMessage, node, connection);
             }
         };
-        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromPartitionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
-                return new ScheduledExecutorTaskIsCancelledMessageTask(clientMessage, node, connection);
+                return new ScheduledExecutorTaskIsCancelledFromPartitionMessageTask(clientMessage, node, connection);
+            }
+        };
+        factories[com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromAddressCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new ScheduledExecutorTaskIsCancelledFromAddressMessageTask(clientMessage, node, connection);
             }
         };
 //endregion
