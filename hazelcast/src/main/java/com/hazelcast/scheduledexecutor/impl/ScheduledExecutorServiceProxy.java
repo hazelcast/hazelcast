@@ -22,8 +22,6 @@ import com.hazelcast.core.PartitionAware;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
@@ -35,13 +33,12 @@ import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.function.Supplier;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +72,7 @@ public class ScheduledExecutorServiceProxy
     private final String name;
 
     ScheduledExecutorServiceProxy(String name, NodeEngine nodeEngine,
-                                         DistributedScheduledExecutorService service) {
+                                  DistributedScheduledExecutorService service) {
         super(nodeEngine, service);
         this.name = name;
     }
@@ -223,8 +220,8 @@ public class ScheduledExecutorServiceProxy
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
         attachHazelcastInstance(command);
-       return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(),
-               initialDelay, period, unit);
+        return scheduleOnMembersAtFixedRate(command, getNodeEngine().getClusterService().getMembers(),
+                initialDelay, period, unit);
     }
 
     @Override
@@ -448,7 +445,7 @@ public class ScheduledExecutorServiceProxy
         }
     }
 
-    private static class GetAllScheduledOnMemberOperationFactory implements OperationFactory {
+    private static class GetAllScheduledOnMemberOperationFactory implements Supplier<Operation> {
 
         private final String schedulerName;
 
@@ -457,28 +454,8 @@ public class ScheduledExecutorServiceProxy
         }
 
         @Override
-        public Operation createOperation() {
+        public Operation get() {
             return new GetAllScheduledOnMemberOperation(schedulerName);
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 0;
-        }
-
-        @Override
-        public int getId() {
-            return 0;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
         }
     }
 }

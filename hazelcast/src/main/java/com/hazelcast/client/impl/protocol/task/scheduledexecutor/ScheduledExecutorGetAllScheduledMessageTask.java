@@ -23,8 +23,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.InvokeOnMembers;
@@ -33,12 +31,10 @@ import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitio
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.util.function.Supplier;
 
-import java.io.IOException;
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,7 +52,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     @Override
     protected void processMessage()
             throws Throwable {
-        Map<Member, List<String>> scheduledTasks = new LinkedHashMap<Member, List<String>>();
+        Map<Member, List<ScheduledTaskHandler>> scheduledTasks = new LinkedHashMap<Member, List<ScheduledTaskHandler>>();
         retrieveAllMemberOwnedScheduled(scheduledTasks);
         retrieveAllPartitionOwnedScheduled(scheduledTasks);
         sendResponse(scheduledTasks.entrySet());
@@ -70,7 +66,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return ScheduledExecutorGetAllScheduledFuturesCodec
-                .encodeResponse((Collection<Map.Entry<Member, List<String>>>) response);
+                .encodeResponse((Collection<Map.Entry<Member, List<ScheduledTaskHandler>>>) response);
     }
 
     @Override
@@ -95,10 +91,10 @@ public class ScheduledExecutorGetAllScheduledMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.schedulerName };
+        return new Object[]{parameters.schedulerName};
     }
 
-    private void retrieveAllMemberOwnedScheduled(Map<Member, List<String>> accumulator) {
+    private void retrieveAllMemberOwnedScheduled(Map<Member, List<ScheduledTaskHandler>> accumulator) {
         try {
             InvokeOnMembers invokeOnMembers = new InvokeOnMembers(nodeEngine, getServiceName(),
                     new GetAllScheduledOnMemberOperationFactory(parameters.schedulerName),
@@ -109,7 +105,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
         }
     }
 
-    private void retrieveAllPartitionOwnedScheduled(Map<Member, List<String>> accumulator) {
+    private void retrieveAllPartitionOwnedScheduled(Map<Member, List<ScheduledTaskHandler>> accumulator) {
         try {
             accumulateTaskHandlersAsUrnValues(accumulator, nodeEngine.getOperationService().invokeOnAllPartitions(
                     getServiceName(), new GetAllScheduledOnPartitionOperationFactory(parameters.schedulerName)));
@@ -119,7 +115,7 @@ public class ScheduledExecutorGetAllScheduledMessageTask
     }
 
     @SuppressWarnings("unchecked")
-    private void accumulateTaskHandlersAsUrnValues(Map<Member, List<String>> accumulator,
+    private void accumulateTaskHandlersAsUrnValues(Map<Member, List<ScheduledTaskHandler>> accumulator,
                                                    Map<?, ?> taskHandlersMap) {
 
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -135,22 +131,17 @@ public class ScheduledExecutorGetAllScheduledMessageTask
             }
 
             List<ScheduledTaskHandler> handlers = (List<ScheduledTaskHandler>) entry.getValue();
-            List<String> urns = new ArrayList<String>();
-
-            for (ScheduledTaskHandler handler : handlers) {
-                urns.add(handler.toUrn());
-            }
 
             if (accumulator.containsKey(owner)) {
-                List<String> memberUrns = accumulator.get(owner);
-                memberUrns.addAll(urns);
+                List<ScheduledTaskHandler> memberUrns = accumulator.get(owner);
+                memberUrns.addAll(handlers);
             } else {
-                accumulator.put(owner, urns);
+                accumulator.put(owner, handlers);
             }
         }
     }
 
-    private class GetAllScheduledOnMemberOperationFactory implements OperationFactory {
+    private class GetAllScheduledOnMemberOperationFactory implements Supplier<Operation> {
 
         private final String schedulerName;
 
@@ -159,29 +150,9 @@ public class ScheduledExecutorGetAllScheduledMessageTask
         }
 
         @Override
-        public Operation createOperation() {
+        public Operation get() {
             return new GetAllScheduledOnMemberOperation(schedulerName)
                     .setCallerUuid(endpoint.getUuid());
-        }
-
-        @Override
-        public int getFactoryId() {
-            return 0;
-        }
-
-        @Override
-        public int getId() {
-            return 0;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out)
-                throws IOException {
-        }
-
-        @Override
-        public void readData(ObjectDataInput in)
-                throws IOException {
         }
     }
 }

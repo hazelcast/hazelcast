@@ -20,10 +20,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.serialization.SerializationService;
+import com.hazelcast.util.function.Supplier;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,13 +49,13 @@ public final class InvokeOnMembers {
     private final SerializationService serializationService;
 
     private final String serviceName;
-    private final OperationFactory operationFactory;
+    private final Supplier<Operation> operationFactory;
     private final Collection<Member> targets;
     private final Map<Member, Future> futures;
     private final Map<Member, Object> results;
 
     public InvokeOnMembers(NodeEngine nodeEngine,
-                           String serviceName, OperationFactory operationFactory,
+                           String serviceName, Supplier<Operation> operationFactory,
                            Collection<Member> targets) {
         this.logger = nodeEngine.getLogger(getClass());
         this.operationService = nodeEngine.getOperationService();
@@ -83,7 +83,7 @@ public final class InvokeOnMembers {
     private void invokeOnAllTargets() {
         for (Member target : targets) {
             Future future = operationService
-                    .createInvocationBuilder(serviceName, operationFactory.createOperation(), target.getAddress())
+                    .createInvocationBuilder(serviceName, operationFactory.get(), target.getAddress())
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke();
@@ -119,7 +119,7 @@ public final class InvokeOnMembers {
         }
 
         for (Member failedMember : failedMembers) {
-            Operation operation = operationFactory.createOperation();
+            Operation operation = operationFactory.get();
             Future future = operationService
                     .createInvocationBuilder(serviceName, operation, failedMember.getAddress())
                     .invoke();

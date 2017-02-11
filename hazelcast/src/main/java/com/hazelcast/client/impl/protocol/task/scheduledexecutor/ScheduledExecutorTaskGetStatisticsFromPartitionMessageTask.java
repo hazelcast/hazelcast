@@ -17,45 +17,49 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
+import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.scheduledexecutor.impl.operations.GetStatisticsOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorSubmitToPartitionMessageTask
-        extends AbstractPartitionMessageTask<ScheduledExecutorSubmitToPartitionCodec.RequestParameters> {
+public class ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask
+        extends AbstractPartitionMessageTask<ScheduledExecutorGetStatsFromPartitionCodec.RequestParameters> {
 
-    public ScheduledExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskGetStatisticsFromPartitionMessageTask(ClientMessage clientMessage, Node node,
+                                                                      Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new ScheduleTaskOperation(parameters.schedulerName, def);
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(clientMessage.getPartitionId(),
+                parameters.schedulerName,
+                parameters.taskName);
+        return new GetStatisticsOperation(handler);
     }
 
     @Override
-    protected ScheduledExecutorSubmitToPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorSubmitToPartitionCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorGetStatsFromPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetStatsFromPartitionCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorSubmitToPartitionCodec.encodeResponse();
+        ScheduledTaskStatistics stats = (ScheduledTaskStatistics) response;
+        return ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(stats.getLastIdleTime(TimeUnit.NANOSECONDS),
+                stats.getTotalIdleTime(TimeUnit.NANOSECONDS), stats.getTotalRuns(),
+                stats.getTotalRunTime(TimeUnit.NANOSECONDS));
     }
 
     @Override
@@ -65,7 +69,7 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_MODIFY);
+        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -73,17 +77,14 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
         return parameters.schedulerName;
     }
 
+
     @Override
     public String getMethodName() {
-        return "submitToPartition";
+        return "getStatistics";
     }
 
     @Override
     public Object[] getParameters() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new Object[] { parameters.schedulerName, def };
+        return null;
     }
 }

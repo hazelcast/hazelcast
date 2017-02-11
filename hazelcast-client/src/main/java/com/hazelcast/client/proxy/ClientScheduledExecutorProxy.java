@@ -82,15 +82,15 @@ public class ClientScheduledExecutorProxy
     private static final ClientMessageDecoder GET_ALL_SCHEDULED_DECODER = new ClientMessageDecoder() {
         @Override
         public Map<Member, List<IScheduledFuture>> decodeClientMessage(ClientMessage clientMessage) {
-            Collection<Map.Entry<Member, List<String>>> urnsPerMember =
+            Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
                     ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(clientMessage).handlers;
 
             Map<Member, List<IScheduledFuture>> tasksMap = new HashMap<Member, List<IScheduledFuture>>();
 
-            for (Map.Entry<Member, List<String>> entry : urnsPerMember) {
+            for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
                 List<IScheduledFuture> memberTasks = new ArrayList<IScheduledFuture>();
-                for (String urn : entry.getValue()) {
-                    memberTasks.add(new ScheduledFutureProxy(ScheduledTaskHandler.of(urn)));
+                for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
+                    memberTasks.add(new ScheduledFutureProxy(scheduledTaskHandler));
                 }
 
                 tasksMap.put(entry.getKey(), memberTasks);
@@ -128,7 +128,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period,
-                                                      TimeUnit unit) {
+                                                   TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(unit, "Unit is null");
 
@@ -155,7 +155,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> scheduleOnMemberAtFixedRate(Runnable command, Member member, long initialDelay,
-                                                              long period, TimeUnit unit) {
+                                                           long period, TimeUnit unit) {
         checkNotNull(member, "Member is null");
         return scheduleOnMembersAtFixedRate(command, Collections.singleton(member), initialDelay, period, unit).get(member);
     }
@@ -181,7 +181,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public IScheduledFuture<?> scheduleOnKeyOwnerAtFixedRate(Runnable command, Object key, long initialDelay,
-                                                                long period, TimeUnit unit) {
+                                                             long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(key, "Key is null");
         checkNotNull(unit, "Unit is null");
@@ -207,7 +207,7 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnAllMembersAtFixedRate(Runnable command, long initialDelay,
-                                                                               long period, TimeUnit unit) {
+                                                                            long period, TimeUnit unit) {
         return scheduleOnMembersAtFixedRate(command, getContext().getClusterService().getMemberList(),
                 initialDelay, period, unit);
     }
@@ -240,15 +240,15 @@ public class ClientScheduledExecutorProxy
 
     @Override
     public Map<Member, IScheduledFuture<?>> scheduleOnMembersAtFixedRate(Runnable command,
-                                                                            Collection<Member> members, long initialDelay,
-                                                                            long period, TimeUnit unit) {
+                                                                         Collection<Member> members, long initialDelay,
+                                                                         long period, TimeUnit unit) {
         checkNotNull(command, "Command is null");
         checkNotNull(members, "Members is null");
         checkNotNull(unit, "Unit is null");
 
         String name = extractNameOrGenerateOne(command);
         Callable adapter = createScheduledRunnableAdapter(command);
-         Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
+        Map<Member, IScheduledFuture<?>> futures = new HashMap<Member, IScheduledFuture<?>>();
         for (Member member : members) {
             TaskDefinition definition = new TaskDefinition(
                     TaskDefinition.Type.AT_FIXED_RATE, name, adapter, initialDelay, period, unit);
@@ -341,8 +341,12 @@ public class ClientScheduledExecutorProxy
     }
 
     private <V> IScheduledFuture<V> scheduleOnPartition(String name, TaskDefinition definition, int partitionId) {
-        Data data = getSerializationService().toData(definition);
-        ClientMessage request = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(getName(), data);
+        TimeUnit unit = definition.getUnit();
+        Data commandData = getSerializationService().toData(definition.getCommand());
+        ClientMessage request = ScheduledExecutorSubmitToPartitionCodec.encodeRequest(getName(),
+                definition.getType().getId(), definition.getName(), commandData,
+                unit.toMillis(definition.getInitialDelay()),
+                unit.toMillis(definition.getPeriod()));
         return scheduleOnPartition(name, request, SUBMIT_DECODER, partitionId);
     }
 
@@ -355,15 +359,20 @@ public class ClientScheduledExecutorProxy
     }
 
     private <V> IScheduledFuture<V> scheduleOnMember(String name, Member member, TaskDefinition definition) {
-        Data data = getSerializationService().toData(definition);
-        ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(), member.getAddress(), data);
+        TimeUnit unit = definition.getUnit();
+
+        Data commandData = getSerializationService().toData(definition.getCommand());
+        ClientMessage request = ScheduledExecutorSubmitToAddressCodec.encodeRequest(getName(), member.getAddress(),
+                definition.getType().getId(), definition.getName(), commandData,
+                unit.toMillis(definition.getInitialDelay()),
+                unit.toMillis(definition.getPeriod()));
         doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()).join();
         return createFutureProxy(member.getAddress(), name);
     }
 
     private <T> ClientDelegatingFuture<T> doSubmitOnPartition(ClientMessage clientMessage,
-                                                    ClientMessageDecoder clientMessageDecoder,
-                                                    int partitionId) {
+                                                              ClientMessageDecoder clientMessageDecoder,
+                                                              int partitionId) {
         SerializationService serializationService = getContext().getSerializationService();
 
         try {
@@ -377,8 +386,8 @@ public class ClientScheduledExecutorProxy
     }
 
     private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,
-                                                              ClientMessageDecoder clientMessageDecoder,
-                                                              Address address) {
+                                                            ClientMessageDecoder clientMessageDecoder,
+                                                            Address address) {
         SerializationService serializationService = getContext().getSerializationService();
 
         try {

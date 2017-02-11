@@ -54,6 +54,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
@@ -200,13 +201,13 @@ public class ReferenceObjects {
         aPartitionTable = new LinkedList<Map.Entry<Address, List<Integer>>>(partitionsMap.entrySet());
     }
 
-    public static Collection<Map.Entry<Member, List<String>>> taskHandlers;
+    public static Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> taskHandlers;
 
     static {
-        Map<Member, List<String>> membersMap = new HashMap<Member, List<String>>();
-        String sampleURN = ScheduledTaskHandlerImpl.of(anAddress, "sche", "task").toUrn();
-        membersMap.put(aMember, Collections.singletonList(sampleURN));
-        taskHandlers = new LinkedList<Map.Entry<Member, List<String>>>(membersMap.entrySet());
+        Map<Member, List<ScheduledTaskHandler>> membersMap = new HashMap<Member, List<ScheduledTaskHandler>>();
+        ScheduledTaskHandler scheduledTaskHandler = ScheduledTaskHandlerImpl.of(anAddress, "sche", "task");
+        membersMap.put(aMember, Collections.singletonList(scheduledTaskHandler));
+        taskHandlers = new LinkedList<Map.Entry<Member, List<ScheduledTaskHandler>>>(membersMap.entrySet());
     }
 
     public static SimpleEntryView<Data, Data> anEntryView = new SimpleEntryView<Data, Data>(aData, aData);
