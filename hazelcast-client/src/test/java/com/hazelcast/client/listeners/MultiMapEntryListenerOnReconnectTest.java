@@ -11,24 +11,25 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
+public class MultiMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
 
-    private MultiMap multiMap;
+    private MultiMap<String, String> multiMap;
 
     @Override
     protected String addListener() {
         multiMap = client.getMultiMap(randomString());
-        final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            public void onEntryEvent(EntryEvent<Object, Object> event) {
-                eventCount.incrementAndGet();
+        EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+            @Override
+            public void onEntryEvent(EntryEvent<String, String> event) {
+                onEvent(event.getKey());
             }
         };
         return multiMap.addEntryListener(listener, true);
     }
 
     @Override
-    public void produceEvent() {
-        multiMap.put(randomString(), randomString());
+    public void produceEvent(String event) {
+        multiMap.put(event, randomString());
     }
 
     @Override

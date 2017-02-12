@@ -13,23 +13,23 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private ITopic topic;
+    private ITopic<String> topic;
 
     @Override
     protected String addListener() {
         topic = client.getTopic(randomString());
-        MessageListener listener = new MessageListener() {
+        MessageListener<String> listener = new MessageListener<String>() {
             @Override
-            public void onMessage(Message message) {
-                eventCount.incrementAndGet();
+            public void onMessage(Message<String> message) {
+                onEvent(message.getMessageObject());
             }
         };
         return topic.addMessageListener(listener);
     }
 
     @Override
-    public void produceEvent() {
-        topic.publish(randomString());
+    public void produceEvent(String event) {
+        topic.publish(event);
     }
 
     @Override

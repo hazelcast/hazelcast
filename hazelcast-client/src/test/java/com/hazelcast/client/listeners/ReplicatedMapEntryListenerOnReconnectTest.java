@@ -29,22 +29,23 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private ReplicatedMap replicatedMap;
+    private ReplicatedMap<String, String> replicatedMap;
 
     @Override
     protected String addListener() {
         replicatedMap = client.getReplicatedMap(randomString());
-        final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            public void onEntryEvent(EntryEvent<Object, Object> event) {
-                eventCount.incrementAndGet();
+        final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+            @Override
+            public void onEntryEvent(EntryEvent<String, String> event) {
+                onEvent(event.getKey());
             }
         };
         return replicatedMap.addEntryListener(listener);
     }
 
     @Override
-    public void produceEvent() {
-        replicatedMap.put(randomString(), randomString());
+    public void produceEvent(String event) {
+        replicatedMap.put(event, randomString());
     }
 
     @Override

@@ -27,24 +27,24 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
+public class EntryListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
 
-    private IMap iMap;
+    private IMap<String, String> iMap;
 
     @Override
     protected String addListener() {
         iMap = client.getMap(randomString());
-        final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            public void onEntryEvent(EntryEvent<Object, Object> event) {
-                eventCount.incrementAndGet();
+        final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
+            public void onEntryEvent(EntryEvent<String, String> event) {
+                onEvent(event.getKey());
             }
         };
         return iMap.addEntryListener(listener, true);
     }
 
     @Override
-    public void produceEvent() {
-        iMap.put(randomString(), randomString());
+    public void produceEvent(String event) {
+        iMap.put(event, randomString());
     }
 
     @Override

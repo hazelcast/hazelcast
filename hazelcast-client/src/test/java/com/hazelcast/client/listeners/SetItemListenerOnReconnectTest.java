@@ -29,19 +29,19 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
 
-    private ISet iSet;
+    private ISet<String> iSet;
 
     @Override
     protected String addListener() {
         iSet = client.getSet(randomString());
-        ItemListener listener = new ItemListener() {
+        ItemListener<String> listener = new ItemListener<String>() {
             @Override
-            public void itemAdded(ItemEvent item) {
-                eventCount.incrementAndGet();
+            public void itemAdded(ItemEvent<String> item) {
+                onEvent(item.getItem());
             }
 
             @Override
-            public void itemRemoved(ItemEvent item) {
+            public void itemRemoved(ItemEvent<String> item) {
 
             }
         };
@@ -49,8 +49,8 @@ public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnect
     }
 
     @Override
-    public void produceEvent() {
-        iSet.add(randomString());
+    public void produceEvent(String event) {
+        iSet.add(event);
     }
 
     @Override
