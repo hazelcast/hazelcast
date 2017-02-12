@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest {
+public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconnectTest{
 
     private IQueue<String> iQueue;
 
@@ -37,8 +37,8 @@ public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconne
 
         ItemListener<String> listener = new ItemListener<String>() {
             @Override
-            public void itemAdded(ItemEvent item) {
-                eventCount.incrementAndGet();
+            public void itemAdded(ItemEvent<String> item) {
+                onEvent(item.getItem());
             }
 
             @Override
@@ -50,8 +50,8 @@ public class QueueItemListenerOnReconnectTest extends AbstractListenersOnReconne
     }
 
     @Override
-    public void produceEvent() {
-        iQueue.add(randomString());
+    public void produceEvent(String event) {
+        iQueue.add(event);
     }
 
     @Override

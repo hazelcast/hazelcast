@@ -37,8 +37,8 @@ public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnect
 
         ItemListener<String> listener = new ItemListener<String>() {
             @Override
-            public void itemAdded(ItemEvent item) {
-                eventCount.incrementAndGet();
+            public void itemAdded(ItemEvent<String> item) {
+                onEvent(item.getItem());
             }
 
             @Override
@@ -49,8 +49,8 @@ public class SetItemListenerOnReconnectTest extends AbstractListenersOnReconnect
     }
 
     @Override
-    public void produceEvent() {
-        iSet.add(randomString());
+    public void produceEvent(String event) {
+        iSet.add(event);
     }
 
     @Override
