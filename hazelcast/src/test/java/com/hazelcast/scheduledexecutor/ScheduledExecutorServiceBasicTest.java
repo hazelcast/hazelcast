@@ -459,6 +459,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test()
+    public void scheduleOnKeyOwner_getDelay()
+            throws ExecutionException, InterruptedException {
+        int delay = 20;
+        String taskName = "Test";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        Object key = generateKeyOwnedBy(instances[1]);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> first = executorService.scheduleOnKeyOwner(
+                named(taskName, new PlainCallableTask()), key, delay, TimeUnit.MINUTES);
+
+        assertEquals(19, first.getDelay(TimeUnit.MINUTES));
+    }
+
+    @Test()
     public void schedule_cancel()
             throws ExecutionException, InterruptedException {
 
@@ -691,6 +707,20 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         assertEquals(0, latch.getCount());
         assertEquals(4, futures.size());
+    }
+
+    @Test
+    public void scheduleOnKeyOwner_thenGet()
+            throws InterruptedException, ExecutionException {
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        String key = generateKeyOwnedBy(instances[1]);
+
+        IScheduledFuture<Double> future = executorService.scheduleOnKeyOwner(
+                new PlainCallableTask(), key,2, SECONDS);
+
+        assertEquals(25.0, future.get(), 0.0);
     }
 
     @Test

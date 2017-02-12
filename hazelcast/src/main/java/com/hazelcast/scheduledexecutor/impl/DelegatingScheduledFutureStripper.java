@@ -34,11 +34,12 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <V>
  */
-public class DelegatedScheduledFuturePeelerDecorator<V> implements ScheduledFuture<V> {
+public class DelegatingScheduledFutureStripper<V>
+        implements ScheduledFuture<V> {
 
     private final ScheduledFuture<V> original;
 
-    DelegatedScheduledFuturePeelerDecorator(ScheduledFuture<V> original) {
+    public DelegatingScheduledFutureStripper(ScheduledFuture<V> original) {
         checkNotNull(original, "Original is null.");
         this.original = original;
     }
@@ -113,7 +114,7 @@ public class DelegatedScheduledFuturePeelerDecorator<V> implements ScheduledFutu
             return false;
         }
 
-        DelegatedScheduledFuturePeelerDecorator<?> that = (DelegatedScheduledFuturePeelerDecorator<?>) o;
+        DelegatingScheduledFutureStripper<?> that = (DelegatingScheduledFutureStripper<?>) o;
 
         return original.equals(that.original);
     }

@@ -33,15 +33,15 @@ import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorS
 public class SyncStateOperation
         extends AbstractBackupAwareSchedulerOperation {
 
-    private String taskName;
+    protected String taskName;
 
-    private Map<Object, Object> state;
+    protected Map<Object, Object> state;
 
-    private ScheduledTaskStatisticsImpl stats;
+    protected ScheduledTaskStatisticsImpl stats;
 
-    private ScheduledTaskResult result;
+    protected ScheduledTaskResult result;
 
-    private boolean shouldRun;
+    protected boolean shouldRun;
 
     public SyncStateOperation() {
     }

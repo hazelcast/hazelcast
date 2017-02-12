@@ -222,6 +222,8 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
         private transient HazelcastInstance instance;
 
+        ErroneousCallableTask() {}
+
         ErroneousCallableTask(String completionLatchName) {
             this.completionLatchName = completionLatchName;
         }
@@ -232,7 +234,9 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
             try {
                 throw new IllegalStateException("Erroneous task");
             } finally {
-                instance.getCountDownLatch(completionLatchName).countDown();
+                if (completionLatchName != null) {
+                    instance.getCountDownLatch(completionLatchName).countDown();
+                }
             }
         }
 
