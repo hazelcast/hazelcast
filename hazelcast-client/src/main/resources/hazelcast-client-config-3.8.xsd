@@ -349,6 +349,11 @@
 
     <xs:complexType name="near-cache">
         <xs:all>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -356,8 +361,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU">
                 <xs:annotation>
                     <xs:documentation>
@@ -365,9 +368,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
             <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
@@ -375,7 +375,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="local-update-policy" type="xs:string" default="INVALIDATE" minOccurs="0" maxOccurs="1"/>
             <xs:element name="preloader" type="preloader" minOccurs="0" maxOccurs="1"/>
         </xs:all>
     </xs:complexType>

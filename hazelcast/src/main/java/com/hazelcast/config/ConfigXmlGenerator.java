@@ -742,13 +742,15 @@ public class ConfigXmlGenerator {
     private static void mapNearCacheConfigXmlGenerator(XmlGenerator gen, NearCacheConfig n) {
         if (n != null) {
             gen.open("near-cache")
-                    .node("max-size", n.getMaxSize())
-                    .node("time-to-live-seconds", n.getTimeToLiveSeconds())
-                    .node("max-idle-seconds", n.getMaxIdleSeconds())
-                    .node("eviction-policy", n.getEvictionPolicy())
+                    .node("in-memory-format", n.getInMemoryFormat())
                     .node("invalidate-on-change", n.isInvalidateOnChange())
-                    .node("in-memory-format", n.getInMemoryFormat());
+                    .node("time-to-live-seconds", n.getTimeToLiveSeconds())
+                    .node("max-idle-seconds", n.getMaxIdleSeconds());
             evictionConfigXmlGenerator(gen, n.getEvictionConfig());
+            gen
+                    .node("eviction-policy", n.getEvictionPolicy())
+                    .node("max-size", n.getMaxSize())
+                    .node("cache-local-entries", n.isCacheLocalEntries());
             gen.close();
         }
     }
@@ -759,9 +761,9 @@ public class ConfigXmlGenerator {
         }
         final String comparatorClass = !isNullOrEmpty(e.getComparatorClassName()) ? e.getComparatorClassName() : null;
         gen.node("eviction", null,
-                "size", e.getSize(),
                 "max-size-policy", e.getMaximumSizePolicy(),
                 "eviction-policy", e.getEvictionPolicy(),
+                "size", e.getSize(),
                 "comparator-class-name", comparatorClass);
     }
 
