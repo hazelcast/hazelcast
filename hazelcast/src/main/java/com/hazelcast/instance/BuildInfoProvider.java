@@ -28,10 +28,12 @@ import static com.hazelcast.nio.IOUtil.closeResource;
  */
 public final class BuildInfoProvider {
 
+    public static final BuildInfo BUILD_INFO = parseBuildInfo();
+
     private BuildInfoProvider() {
     }
 
-    public static BuildInfo getBuildInfo() {
+    private static BuildInfo parseBuildInfo() {
         final InputStream inRuntimeProperties =
                 BuildInfoProvider.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
         Properties runtimeProperties = new Properties();
@@ -68,4 +70,7 @@ public final class BuildInfoProvider {
         return new BuildInfo(version, build, revision, buildNumber, enterprise, serialVersion);
     }
 
+    public static BuildInfo getBuildInfo() {
+        return BUILD_INFO;
+    }
 }

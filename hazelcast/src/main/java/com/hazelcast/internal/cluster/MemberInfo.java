@@ -33,6 +33,7 @@ public class MemberInfo implements DataSerializable {
     private String uuid;
     private boolean liteMember;
     private Map<String, Object> attributes;
+    private int buildNumber;
 
     public MemberInfo() {
     }
@@ -52,9 +53,18 @@ public class MemberInfo implements DataSerializable {
                 ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
         this.liteMember = liteMember;
     }
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember, int buildNumber) {
+        this.address = address;
+        this.uuid = uuid;
+        this.attributes = attributes == null || attributes.isEmpty()
+                ? Collections.<String, Object>emptyMap() : new HashMap<String, Object>(attributes);
+        this.liteMember = liteMember;
+        this.buildNumber = buildNumber;
+    }
 
     public MemberInfo(MemberImpl member) {
         this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember());
+        this.buildNumber = member.getBuildNumber();
     }
 
     public Address getAddress() {
@@ -71,6 +81,10 @@ public class MemberInfo implements DataSerializable {
 
     public boolean isLiteMember() {
         return liteMember;
+    }
+
+    public int getBuildNumber() {
+        return buildNumber;
     }
 
     @Override
