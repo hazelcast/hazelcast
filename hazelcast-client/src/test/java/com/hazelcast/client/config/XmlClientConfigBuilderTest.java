@@ -369,7 +369,7 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
         return buildConfig(xml, properties);
     }
 
-    static ClientConfig buildConfig(String xml) {
+    public static ClientConfig buildConfig(String xml) {
         return buildConfig(xml, null);
     }
 
