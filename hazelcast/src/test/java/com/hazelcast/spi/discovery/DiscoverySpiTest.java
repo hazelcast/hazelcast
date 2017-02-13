@@ -49,6 +49,7 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.partitiongroup.PartitionGroupStrategy;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -84,6 +85,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -297,6 +302,55 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
             assertEquals("Member Group: " + String.valueOf(memberGroup), 2, memberGroup.size());
         }
         hazelcastInstance.shutdown();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_enabled_whenDiscoveryConfigIsNull() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+        
+        config.getNetworkConfig().getJoin().setDiscoveryConfig(null);
+    }
+
+    @Test
+    public void testCustomDiscoveryService_whenDiscoveredNodes_isNull() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
+            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
+                return mock(DiscoveryService.class);
+            }
+        };
+        config.getNetworkConfig().getJoin().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        try {
+            Hazelcast.newHazelcastInstance(config);
+            fail("Instance should not be started!");
+        } catch (IllegalStateException expected) {
+        }
+    }
+
+    @Test
+    public void testCustomDiscoveryService_whenDiscoveredNodes_isEmpty() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
+            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
+                when(discoveryService.discoverNodes()).thenReturn(Collections.<DiscoveryNode>emptyList());
+                return discoveryService;
+            }
+        };
+        config.getNetworkConfig().getJoin().getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        try {
+            verify(discoveryService).discoverNodes();
+        } finally {
+            instance.getLifecycleService().terminate();
+        }
     }
 
     @SuppressWarnings("unchecked")

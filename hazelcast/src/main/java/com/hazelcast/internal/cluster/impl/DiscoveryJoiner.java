@@ -26,6 +26,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 public class DiscoveryJoiner
         extends TcpIpJoiner {
 
@@ -40,7 +42,8 @@ public class DiscoveryJoiner
 
     @Override
     protected Collection<Address> getPossibleAddresses() {
-        Iterable<DiscoveryNode> discoveredNodes = discoveryService.discoverNodes();
+        Iterable<DiscoveryNode> discoveredNodes = checkNotNull(discoveryService.discoverNodes(),
+                "Discovered nodes cannot be null!");
 
         MemberImpl localMember = node.nodeEngine.getLocalMember();
         Address localAddress = localMember.getAddress();

@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.util.Preconditions.isNotNull;
+
 /**
  * Contains configuration parameters for client network related behaviour
  */
@@ -59,9 +61,10 @@ public class ClientNetworkConfig {
      * Defines the Discovery Provider SPI configuration
      *
      * @param discoveryConfig the Discovery Provider SPI configuration
+     * @throws java.lang.IllegalArgumentException if discoveryConfig is null
      */
     public void setDiscoveryConfig(DiscoveryConfig discoveryConfig) {
-        this.discoveryConfig = discoveryConfig;
+        this.discoveryConfig = isNotNull(discoveryConfig, "discoveryConfig");
     }
 
     /**

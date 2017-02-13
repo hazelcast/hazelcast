@@ -56,7 +56,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -79,6 +78,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -306,6 +309,15 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(publicAddress, translator.translate(privateAddress));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void test_enabled_whenDiscoveryConfigIsNull() {
+        ClientConfig config = new ClientConfig();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setDiscoveryConfig(null);
+    }
+
     @Test      
     public void test_enabled_whenDiscoveryConfigIsEmpty() {
         ClientConfig config = new ClientConfig();
@@ -323,13 +335,40 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_enabled_whenDiscoveryStrategiesAreEmpty() {
+    public void test_CustomDiscoveryService_whenDiscoveredNodes_isNull() {
         ClientConfig config = new ClientConfig();
         config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
 
+        final DiscoveryService discoveryService = mock(DiscoveryService.class);
         DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
             public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
-                return Mockito.mock(DiscoveryService.class);
+                return discoveryService;
+            }
+        };
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        networkConfig.setConnectionAttemptLimit(1);
+        networkConfig.setConnectionAttemptPeriod(1);
+        networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        try {
+            HazelcastClient.newHazelcastClient(config);
+            fail("Client cannot start, discovery nodes is null!");
+        } catch (NullPointerException expected) {
+            // discovered nodes is null
+        }
+        verify(discoveryService).discoverNodes();
+    }
+
+    @Test
+    public void test_CustomDiscoveryService_whenDiscoveredNodes_isEmpty() {
+        ClientConfig config = new ClientConfig();
+        config.setProperty(GroupProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        DiscoveryServiceProvider discoveryServiceProvider = new DiscoveryServiceProvider() {
+            public DiscoveryService newDiscoveryService(DiscoveryServiceSettings arg0) {
+                when(discoveryService.discoverNodes()).thenReturn(Collections.<DiscoveryNode>emptyList());
+                return discoveryService;
             }
         };
         ClientNetworkConfig networkConfig = config.getNetworkConfig();
@@ -342,6 +381,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         } catch (IllegalStateException expected) {
             // no server available
         }
+        verify(discoveryService).discoverNodes();
     }
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {

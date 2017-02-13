@@ -24,6 +24,8 @@ import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 public class DiscoveryAddressTranslator
         implements AddressTranslator {
 
@@ -71,7 +73,8 @@ public class DiscoveryAddressTranslator
 
     @Override
     public void refresh() {
-        Iterable<DiscoveryNode> discoveredNodes = discoveryService.discoverNodes();
+        Iterable<DiscoveryNode> discoveredNodes = checkNotNull(discoveryService.discoverNodes(),
+                "Discovered nodes cannot be null!");
 
         Map<Address, Address> privateToPublic = new HashMap<Address, Address>();
         for (DiscoveryNode discoveryNode : discoveredNodes) {
