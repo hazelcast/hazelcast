@@ -61,6 +61,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -492,11 +493,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     protected <K> Iterable<Data> convertToData(Iterable<K> keys) {
-        return IterableUtil.map(nullToEmpty(keys), new IFunction<K, Data>() {
-            public Data apply(K key) {
-                return toData(key);
-            }
-        });
+        return IterableUtil.map(nullToEmpty(keys), new KeyToData<K>());
     }
 
     private Operation createLoadAllOperation(List<Data> keys, boolean replaceExistingValues) {
@@ -1198,5 +1195,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public int getTotalBackupCount() {
         return mapConfig.getBackupCount() + mapConfig.getAsyncBackupCount();
+    }
+
+    @SerializableByConvention
+    private class KeyToData<K> implements IFunction<K, Data> {
+        public Data apply(K key) {
+            return toData(key);
+        }
     }
 }

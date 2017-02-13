@@ -24,6 +24,7 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.IConcurrentMap;
@@ -56,14 +57,7 @@ public class DefaultContext<KeyIn, ValueIn>
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
 
-    private final IFunction<KeyIn, Combiner<ValueIn, ?>> combinerFunction = new IFunction<KeyIn, Combiner<ValueIn, ?>>() {
-        @Override
-        public Combiner<ValueIn, ?> apply(KeyIn keyIn) {
-            Combiner<ValueIn, ?> combiner = combinerFactory.newCombiner(keyIn);
-            combiner.beginCombine();
-            return combiner;
-        }
-    };
+    private final IFunction<KeyIn, Combiner<ValueIn, ?>> combinerFunction = new CombinerFunction();
 
     // This field is only accessed through the updater
     private volatile int collected;
@@ -163,4 +157,13 @@ public class DefaultContext<KeyIn, ValueIn>
         }
     }
 
+    @SerializableByConvention
+    private class CombinerFunction implements IFunction<KeyIn, Combiner<ValueIn, ?>> {
+        @Override
+        public Combiner<ValueIn, ?> apply(KeyIn keyIn) {
+            Combiner<ValueIn, ?> combiner = combinerFactory.newCombiner(keyIn);
+            combiner.beginCombine();
+            return combiner;
+        }
+    }
 }

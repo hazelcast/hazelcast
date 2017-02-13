@@ -18,7 +18,9 @@ package com.hazelcast.partition.strategy;
 
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 
+@SerializableByConvention
 public final class StringAndPartitionAwarePartitioningStrategy implements PartitioningStrategy {
 
     //since the StringAndPartitionAwarePartitioningStrategy is stateless, we can just create an instance up front

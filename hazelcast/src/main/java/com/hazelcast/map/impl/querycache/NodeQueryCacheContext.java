@@ -36,6 +36,7 @@ import com.hazelcast.map.impl.querycache.subscriber.NodeSubscriberContext;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContext;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -73,12 +74,7 @@ public class NodeQueryCacheContext implements QueryCacheContext {
         this.invokerWrapper = new NodeInvokerWrapper(nodeEngine.getOperationService());
         // init these in the end
         this.subscriberContext = new NodeSubscriberContext(this);
-        this.publisherContext = new DefaultPublisherContext(this, nodeEngine, new IFunction<String, String>() {
-            @Override
-            public String apply(String mapName) {
-                return registerLocalIMapListener(mapName);
-            }
-        });
+        this.publisherContext = new DefaultPublisherContext(this, nodeEngine, new RegisterMapListenerFunction());
         flushPublishersOnNodeShutdown();
     }
 
@@ -180,4 +176,12 @@ public class NodeQueryCacheContext implements QueryCacheContext {
             }
         }, mapName);
     }
+
+    @SerializableByConvention
+    private class RegisterMapListenerFunction implements IFunction<String, String> {
+        @Override
+        public String apply(String mapName) {
+            return registerLocalIMapListener(mapName);
+        }
+    };
 }

@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.UnmodifiableIterator;
@@ -31,7 +32,6 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 
 import static com.hazelcast.config.MaxSizeConfig.MaxSizePolicy.PER_NODE;
-
 
 public final class MapKeyLoaderUtil {
 
@@ -107,13 +107,22 @@ public final class MapKeyLoaderUtil {
     }
 
     static IFunction<Data, Entry<Integer, Data>> toPartition(final IPartitionService partitionService) {
-        return new IFunction<Data, Entry<Integer, Data>>() {
-            @Override
-            public Entry<Integer, Data> apply(Data input) {
-                Integer partition = partitionService.getPartitionId(input);
-                return new MapEntrySimple<Integer, Data>(partition, input);
-            }
-        };
+        return new DataToEntry(partitionService);
+    }
+
+    @SerializableByConvention
+    private static class DataToEntry implements IFunction<Data, Entry<Integer, Data>> {
+        private final IPartitionService partitionService;
+
+        public DataToEntry(IPartitionService partitionService) {
+            this.partitionService = partitionService;
+        }
+
+        @Override
+        public Entry<Integer, Data> apply(Data input) {
+            Integer partition = partitionService.getPartitionId(input);
+            return new MapEntrySimple<Integer, Data>(partition, input);
+        }
     }
 
 }
