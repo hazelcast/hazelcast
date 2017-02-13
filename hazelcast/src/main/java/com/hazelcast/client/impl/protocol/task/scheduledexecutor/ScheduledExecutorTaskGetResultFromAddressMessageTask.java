@@ -17,36 +17,36 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromAddressCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAddressMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
+import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorSubmitToAddressMessageTask
-        extends AbstractAddressMessageTask<ScheduledExecutorSubmitToAddressCodec.RequestParameters> {
+public class ScheduledExecutorTaskGetResultFromAddressMessageTask
+        extends AbstractAddressMessageTask<ScheduledExecutorGetResultFromAddressCodec.RequestParameters> {
 
-    public ScheduledExecutorSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskGetResultFromAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new ScheduleTaskOperation(parameters.schedulerName, def);
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(parameters.address,
+                parameters.schedulerName,
+                parameters.taskName);
+        return new GetResultOperation(handler);
     }
 
     @Override
@@ -54,14 +54,16 @@ public class ScheduledExecutorSubmitToAddressMessageTask
         return parameters.address;
     }
 
+
     @Override
-    protected ScheduledExecutorSubmitToAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorSubmitToAddressCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorGetResultFromAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetResultFromAddressCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorSubmitToAddressCodec.encodeResponse();
+        Data data = nodeEngine.getSerializationService().toData(response);
+        return ScheduledExecutorGetResultFromAddressCodec.encodeResponse(data);
     }
 
     @Override
@@ -71,7 +73,7 @@ public class ScheduledExecutorSubmitToAddressMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_MODIFY);
+        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -81,15 +83,25 @@ public class ScheduledExecutorSubmitToAddressMessageTask
 
     @Override
     public String getMethodName() {
-        return "submitToAddress";
+        return "getResultTimeout";
     }
 
     @Override
     public Object[] getParameters() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new Object[]{parameters.schedulerName, parameters.address, def};
+        return null;
+    }
+
+    /**
+     * Exceptions may be wrapped in ExecutionExceptionDecorator, the wrapped ExecutionException should be sent to
+     * the client.
+     * @param throwable
+     */
+    @Override
+    protected void sendClientMessage(Throwable throwable) {
+        if (throwable instanceof ScheduledTaskResult.ExecutionExceptionDecorator) {
+            super.sendClientMessage(throwable.getCause());
+        } else {
+            super.sendClientMessage(throwable);
+        }
     }
 }

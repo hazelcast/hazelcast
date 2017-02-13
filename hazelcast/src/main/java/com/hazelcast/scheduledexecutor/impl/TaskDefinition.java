@@ -29,9 +29,28 @@ public class TaskDefinition<V>
 
     public enum Type {
 
-        SINGLE_RUN,
+        SINGLE_RUN(0),
 
-        AT_FIXED_RATE
+        AT_FIXED_RATE(1);
+
+        private final byte id;
+
+        Type(int status) {
+            this.id = (byte) status;
+        }
+
+        public byte getId() {
+            return id;
+        }
+
+        public static Type getById(int id) {
+            for (Type as : values()) {
+                if (as.getId() == id) {
+                    return as;
+                }
+            }
+            throw new IllegalArgumentException("Unsupported id value");
+        }
 
     }
 

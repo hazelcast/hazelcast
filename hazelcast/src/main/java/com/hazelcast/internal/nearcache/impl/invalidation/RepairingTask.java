@@ -23,7 +23,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -200,12 +200,10 @@ public final class RepairingTask implements Runnable {
 
         boolean initialized = false;
         try {
-            List<Object> objects = metaDataFetcher.assignAndGetUuids();
-            for (int i = 0; i < objects.size(); ) {
-                Integer partition = (Integer) objects.get(i++);
-                UUID uuid = ((UUID) objects.get(i++));
+            for (Map.Entry<Integer, UUID> entry : metaDataFetcher.assignAndGetUuids()) {
+                Integer partition = entry.getKey();
+                UUID uuid = entry.getValue();
                 partitionUuids.set(partition, uuid);
-
                 if (logger.isFinestEnabled()) {
                     logger.finest(partition + "-" + uuid);
                 }
