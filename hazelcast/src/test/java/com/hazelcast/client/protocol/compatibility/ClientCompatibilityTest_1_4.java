@@ -1590,7 +1590,8 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = MapFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -1607,7 +1608,7 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapAssignAndGetUuidsCodec.ResponseParameters params = MapAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(datas, params.response));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -5839,7 +5840,8 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = CacheFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -5856,7 +5858,7 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheAssignAndGetUuidsCodec.ResponseParameters params = CacheAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(datas, params.response));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -6753,7 +6755,5 @@ public class ClientCompatibilityTest_1_4 {
 
     }
 }
-
-
 
 

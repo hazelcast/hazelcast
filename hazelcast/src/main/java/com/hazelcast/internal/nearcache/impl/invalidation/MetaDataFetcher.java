@@ -20,7 +20,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.InternalCompletableFuture;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,7 +53,7 @@ public abstract class MetaDataFetcher {
      * @return list of partition-id, partition-uuid pairs for initialization
      * @throws Exception possible exceptions raised by remote calls
      */
-    protected abstract List<Object> assignAndGetUuids() throws Exception;
+    protected abstract Collection<Map.Entry<Integer, UUID>> assignAndGetUuids() throws Exception;
 
     public final void fetchMetadata(ConcurrentMap<String, RepairingHandler> handlers) {
         if (handlers.isEmpty()) {
@@ -73,32 +75,20 @@ public abstract class MetaDataFetcher {
         return names;
     }
 
-    protected void repairUuids(List<Object> uuids, ConcurrentMap<String, RepairingHandler> handlers) {
-        for (int i = 0; i < uuids.size(); ) {
-            int partitionId = (Integer) uuids.get(i++);
-            long mostSigBits = (Long) uuids.get(i++);
-            long leastSigBits = (Long) uuids.get(i++);
-
+    protected void repairUuids(Collection<Map.Entry<Integer, UUID>> uuids, ConcurrentMap<String, RepairingHandler> handlers) {
+        for (Map.Entry<Integer, UUID> entry : uuids) {
             for (RepairingHandler handler : handlers.values()) {
-                handler.checkOrRepairUuid(partitionId, new UUID(mostSigBits, leastSigBits));
+                handler.checkOrRepairUuid(entry.getKey(), entry.getValue());
             }
         }
     }
 
-    protected void repairSequences(List<Object> namePartitionSequenceList, ConcurrentMap<String, RepairingHandler> handlers) {
-        String name = null;
-
-        for (int i = 0; i < namePartitionSequenceList.size(); ) {
-            Object item = namePartitionSequenceList.get(i++);
-
-            if (item instanceof String) {
-                name = ((String) item);
-            } else {
-                int partitionId = (Integer) item;
-                long nextSequence = (Long) namePartitionSequenceList.get(i++);
-
-                RepairingHandler repairingHandler = handlers.get(name);
-                repairingHandler.checkOrRepairSequence(partitionId, nextSequence, true);
+    protected void repairSequences(Collection<Map.Entry<String, List<Map.Entry<Integer, Long>>>> namePartitionSequenceList,
+            ConcurrentMap<String, RepairingHandler> handlers) {
+        for (Map.Entry<String, List<Map.Entry<Integer, Long>>> entry : namePartitionSequenceList) {
+            for (Map.Entry<Integer, Long> subEntry : entry.getValue()) {
+                RepairingHandler repairingHandler = handlers.get(entry.getKey());
+                repairingHandler.checkOrRepairSequence(subEntry.getKey(), subEntry.getValue(), true);
             }
         }
     }

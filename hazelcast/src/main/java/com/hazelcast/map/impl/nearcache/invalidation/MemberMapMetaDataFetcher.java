@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -67,8 +68,8 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
                 futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
             } catch (Exception e) {
                 if (logger.isLoggable(WARNING)) {
-                    logger.log(WARNING, "Cant fetch invalidation meta-data from address + " + address
-                            + " + [" + e.getMessage() + "]");
+                    logger.log(WARNING,
+                            "Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
                 }
             }
         }
@@ -79,8 +80,8 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
     protected void process(InternalCompletableFuture future, ConcurrentMap<String, RepairingHandler> handlers) {
         try {
             MapGetInvalidationMetaDataOperation.MetaDataResponse response = extractResponse(future);
-            repairUuids(response.getPartitionUuidList(), handlers);
-            repairSequences(response.getNamePartitionSequenceList(), handlers);
+            repairUuids(response.getPartitionUuidList().entrySet(), handlers);
+            repairSequences(response.getNamePartitionSequenceList().entrySet(), handlers);
         } catch (Exception e) {
             if (logger.isLoggable(WARNING)) {
                 logger.log(WARNING, "Cant fetch invalidation meta-data [" + e.getMessage() + "]");
@@ -95,16 +96,8 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
     }
 
     @Override
-    public List<Object> assignAndGetUuids() throws Exception {
+    public Collection<Map.Entry<Integer, UUID>> assignAndGetUuids() throws Exception {
         OperationFactory factory = new MapAssignAndGetUuidsOperationFactory();
-        Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, factory);
-
-        List<Object> objects = new ArrayList<Object>(2 * results.size());
-        for (Map.Entry<Integer, Object> entry : results.entrySet()) {
-            objects.add(entry.getKey());
-            objects.add(entry.getValue());
-        }
-
-        return objects;
+        return (Collection) operationService.invokeOnAllPartitions(SERVICE_NAME, factory).entrySet();
     }
 }

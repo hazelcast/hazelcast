@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
+import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataGenerator;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
@@ -71,9 +72,10 @@ public class MemberMapMetaDataFetcherTest extends HazelcastTestSupport {
         ConcurrentMap<String, RepairingHandler> handlers = repairingTask.getHandlers();
         metaDataFetcher.fetchMetadata(handlers);
 
-        UUID foundUuid = repairingTask.getPartitionUuids().get(partition);
         RepairingHandler repairingHandler = handlers.get(mapName);
-        long foundSequence = repairingHandler.getMetaDataContainer(partition).getSequence();
+        MetaDataContainer metaDataContainer = repairingHandler.getMetaDataContainer(partition);
+        UUID foundUuid = metaDataContainer.getUuid();
+        long foundSequence = metaDataContainer.getSequence();
 
         assertEquals(givenSequence, foundSequence);
         assertEquals(givenUuid, foundUuid);

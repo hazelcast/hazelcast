@@ -6297,5 +6297,3 @@ public class ClientCompatibilityTest_1_1 {
 }
 
 
-
-

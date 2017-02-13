@@ -1028,7 +1028,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(   null   );
+    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(   aNamePartitionSequenceList ,   aPartitionUuidList   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -1040,7 +1040,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(   datas   );
+    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(   aPartitionUuidList   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -3879,7 +3879,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(   null   );
+    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(   aNamePartitionSequenceList ,   aPartitionUuidList   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -3891,7 +3891,7 @@ public class BinaryCompatibilityNullFileGenerator {
      outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
 {
-    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(   datas   );
+    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(   aPartitionUuidList   );
     outputStream.writeInt(clientMessage.getFrameLength());
     outputStream.write(clientMessage.buffer().byteArray(), 0 , clientMessage.getFrameLength());
 }
@@ -4525,4 +4525,5 @@ public class BinaryCompatibilityNullFileGenerator {
 
     }
 }
+
 

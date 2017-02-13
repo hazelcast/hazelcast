@@ -20,6 +20,7 @@ package com.hazelcast.client.map.impl.nearcache.invalidation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -27,15 +28,15 @@ import com.hazelcast.core.Member;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataFetcher;
 import com.hazelcast.internal.nearcache.impl.invalidation.RepairingHandler;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.map.impl.operation.MapGetInvalidationMetaDataOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -89,9 +90,9 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
     @Override
     protected void process(InternalCompletableFuture future, ConcurrentMap<String, RepairingHandler> handlers) {
         try {
-            MapGetInvalidationMetaDataOperation.MetaDataResponse response = extractResponse(future);
-            repairUuids(response.getPartitionUuidList(), handlers);
-            repairSequences(response.getNamePartitionSequenceList(), handlers);
+            MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters response = extractResponse(future);
+            repairUuids(response.partitionUuidList, handlers);
+            repairSequences(response.namePartitionSequenceList, handlers);
         } catch (Exception e) {
             if (logger.isLoggable(WARNING)) {
                 logger.log(WARNING, "Cant fetch invalidation meta-data [" + e.getMessage() + "]");
@@ -99,24 +100,18 @@ public class ClientMapMetaDataFetcher extends MetaDataFetcher {
         }
     }
 
-    private MapGetInvalidationMetaDataOperation.MetaDataResponse extractResponse(InternalCompletableFuture future)
+    private MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters extractResponse(InternalCompletableFuture future)
             throws InterruptedException, ExecutionException, TimeoutException {
-
         ClientMessage message = ((ClientMessage) future.get(1, MINUTES));
-        return serializationService.toObject(decodeResponse(message).response);
+        return decodeResponse(message);
     }
 
     @Override
-    public List<Object> assignAndGetUuids() throws Exception {
+    public List<Map.Entry<Integer, UUID>> assignAndGetUuids() throws Exception {
         ClientMessage request = MapAssignAndGetUuidsCodec.encodeRequest();
         ClientInvocation invocation = new ClientInvocation(clientImpl, request);
         MapAssignAndGetUuidsCodec.ResponseParameters responseParameters
                 = MapAssignAndGetUuidsCodec.decodeResponse(invocation.invoke().get());
-        List<Data> response = responseParameters.response;
-        List<Object> objects = new ArrayList<Object>(response.size());
-        for (Data data : response) {
-            objects.add(serializationService.toObject(data));
-        }
-        return objects;
+        return responseParameters.partitionUuidList;
     }
 }

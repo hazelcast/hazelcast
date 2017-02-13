@@ -1157,18 +1157,19 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aNamePartitionSequenceList ,    aPartitionUuidList   );
     MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = MapFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
-            assertTrue(isEqual(aData, params.response));
+            assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+            assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 {
     ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeRequest( );
     MapAssignAndGetUuidsCodec.RequestParameters params = MapAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(    aPartitionUuidList   );
     MapAssignAndGetUuidsCodec.ResponseParameters params = MapAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
-            assertTrue(isEqual(datas, params.response));
+            assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 {
     ClientMessage clientMessage = MapRemoveAllCodec.encodeRequest(    aString ,    aData   );
@@ -4162,18 +4163,19 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aNamePartitionSequenceList ,    aPartitionUuidList   );
     CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = CacheFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
-            assertTrue(isEqual(aData, params.response));
+            assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+            assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 {
     ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeRequest( );
     CacheAssignAndGetUuidsCodec.RequestParameters params = CacheAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
 }
 {
-    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(    aPartitionUuidList   );
     CacheAssignAndGetUuidsCodec.ResponseParameters params = CacheAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(clientMessage.buffer(), 0));
-            assertTrue(isEqual(datas, params.response));
+            assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 {
     ClientMessage clientMessage = XATransactionClearRemoteCodec.encodeRequest(    anXid   );
@@ -4577,7 +4579,7 @@ public class EncodeDecodeCompatibilityTest {
     ScheduledExecutorSubmitToPartitionCodec.RequestParameters params = ScheduledExecutorSubmitToPartitionCodec.decodeRequest(ClientMessage.createForDecode(clientMessage.buffer(), 0));
             assertTrue(isEqual(aString, params.schedulerName));
             assertTrue(isEqual(aByte, params.type));
-            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.taskName));
             assertTrue(isEqual(aData, params.task));
             assertTrue(isEqual(aLong, params.initialDelayInMillis));
             assertTrue(isEqual(aLong, params.periodInMillis));
@@ -4592,7 +4594,7 @@ public class EncodeDecodeCompatibilityTest {
             assertTrue(isEqual(aString, params.schedulerName));
             assertTrue(isEqual(anAddress, params.address));
             assertTrue(isEqual(aByte, params.type));
-            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.taskName));
             assertTrue(isEqual(aData, params.task));
             assertTrue(isEqual(aLong, params.initialDelayInMillis));
             assertTrue(isEqual(aLong, params.periodInMillis));
@@ -4780,7 +4782,4 @@ public class EncodeDecodeCompatibilityTest {
 }
     }
 }
-
-
-
 

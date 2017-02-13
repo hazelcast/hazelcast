@@ -1350,7 +1350,7 @@ public class ServerCompatibilityNullTest_1_4 {
             assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(    null   );
+    ClientMessage clientMessage = MapFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aNamePartitionSequenceList ,    aPartitionUuidList   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -1363,7 +1363,7 @@ public class ServerCompatibilityNullTest_1_4 {
     MapAssignAndGetUuidsCodec.RequestParameters params = MapAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
 }
 {
-    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    ClientMessage clientMessage = MapAssignAndGetUuidsCodec.encodeResponse(    aPartitionUuidList   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5076,7 +5076,7 @@ public class ServerCompatibilityNullTest_1_4 {
             assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(    null   );
+    ClientMessage clientMessage = CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(    aNamePartitionSequenceList ,    aPartitionUuidList   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5089,7 +5089,7 @@ public class ServerCompatibilityNullTest_1_4 {
     CacheAssignAndGetUuidsCodec.RequestParameters params = CacheAssignAndGetUuidsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
 }
 {
-    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(    datas   );
+    ClientMessage clientMessage = CacheAssignAndGetUuidsCodec.encodeResponse(    aPartitionUuidList   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5635,7 +5635,7 @@ public class ServerCompatibilityNullTest_1_4 {
     ScheduledExecutorSubmitToPartitionCodec.RequestParameters params = ScheduledExecutorSubmitToPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
             assertTrue(isEqual(aString, params.schedulerName));
             assertTrue(isEqual(aByte, params.type));
-            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.taskName));
             assertTrue(isEqual(aData, params.task));
             assertTrue(isEqual(aLong, params.initialDelayInMillis));
             assertTrue(isEqual(aLong, params.periodInMillis));
@@ -5655,7 +5655,7 @@ public class ServerCompatibilityNullTest_1_4 {
             assertTrue(isEqual(aString, params.schedulerName));
             assertTrue(isEqual(anAddress, params.address));
             assertTrue(isEqual(aByte, params.type));
-            assertTrue(isEqual(aString, params.name));
+            assertTrue(isEqual(aString, params.taskName));
             assertTrue(isEqual(aData, params.task));
             assertTrue(isEqual(aLong, params.initialDelayInMillis));
             assertTrue(isEqual(aLong, params.periodInMillis));

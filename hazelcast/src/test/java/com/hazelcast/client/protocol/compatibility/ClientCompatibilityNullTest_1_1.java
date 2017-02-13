@@ -6003,5 +6003,3 @@ public class ClientCompatibilityNullTest_1_1 {
 }
 
 
-
-
