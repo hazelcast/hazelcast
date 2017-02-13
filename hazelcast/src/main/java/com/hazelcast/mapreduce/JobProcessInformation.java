@@ -24,7 +24,7 @@ package com.hazelcast.mapreduce;
  * on a regular basis (after 1000 processed elements per node).
  *
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 public interface JobProcessInformation {

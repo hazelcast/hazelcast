@@ -24,7 +24,7 @@ import com.hazelcast.core.HazelcastException;
  * is set to {@link com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.
  *
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 public class TopologyChangedException

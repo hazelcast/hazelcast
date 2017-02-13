@@ -34,7 +34,7 @@ import com.hazelcast.core.ICompletableFuture;
  *
  * @param <V> type of the returning value
  * @since 3.2
- * @deprecated Hazelcast Jet will replace, maybe re-implement this API shortly
+ * @deprecated This API is superseded by Hazelcast JET (http://jet.hazelcast.org) and will be remove in 3.9
  */
 @Deprecated
 public interface TrackableJob<V> {
