@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
+import com.hazelcast.concurrent.lock.LockDataSerializerHook;
 import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -31,7 +32,7 @@ import java.io.IOException;
 
 public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
 
-    private final int version;
+    private int version;
 
     /**
      * This constructor should not be used to obtain an instance of this class; it exists to fulfill IdentifiedDataSerializable
@@ -83,16 +84,18 @@ public final class UnlockIfLeaseExpiredOperation extends UnlockOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
+        super.writeInternal(out);
+        out.writeInt(version);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
+        super.readInternal(in);
+        version = in.readInt();
     }
 
     @Override
     public int getId() {
-        throw new UnsupportedOperationException("This operation is intended to be executed on local member only!");
+        return LockDataSerializerHook.UNLOCK_IF_LEASE_EXPIRED;
     }
 }

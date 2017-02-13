@@ -29,6 +29,7 @@ import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.SignalBackupOperation;
 import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
+import com.hazelcast.concurrent.lock.operations.UnlockIfLeaseExpiredOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
@@ -59,6 +60,7 @@ public final class LockDataSerializerHook implements DataSerializerHook {
     public static final int SIGNAL = 14;
     public static final int UNLOCK_BACKUP = 15;
     public static final int UNLOCK = 16;
+    public static final int UNLOCK_IF_LEASE_EXPIRED = 17;
 
 
     @Override
@@ -106,6 +108,8 @@ public final class LockDataSerializerHook implements DataSerializerHook {
                         return new WaitersInfo();
                     case LOCK_RESOURCE:
                         return new LockResourceImpl();
+                    case UNLOCK_IF_LEASE_EXPIRED:
+                        return new UnlockIfLeaseExpiredOperation();
                     default:
                         return null;
                 }
