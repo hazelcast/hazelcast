@@ -18,7 +18,7 @@ package com.hazelcast.console;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
