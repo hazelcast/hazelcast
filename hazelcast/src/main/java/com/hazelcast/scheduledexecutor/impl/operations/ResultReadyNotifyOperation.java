@@ -27,7 +27,8 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 public class ResultReadyNotifyOperation<V>
-        extends AbstractSchedulerOperation implements Notifier {
+        extends AbstractSchedulerOperation
+        implements Notifier {
 
     private ScheduledTaskHandler handler;
 

@@ -332,7 +332,7 @@ public class ScheduledExecutorContainer {
         switch (definition.getType()) {
             case SINGLE_RUN:
                 runner = new TaskRunner<V>(descriptor);
-                future = new DelegatedScheduledFuturePeelerDecorator<V>(
+                future = new DelegatingScheduledFutureStripper<V>(
                             executionService.scheduleDurable(name, (Callable) runner,
                                 definition.getInitialDelay(), definition.getUnit()));
                 break;

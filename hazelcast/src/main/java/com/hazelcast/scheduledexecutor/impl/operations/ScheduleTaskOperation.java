@@ -18,7 +18,6 @@ package com.hazelcast.scheduledexecutor.impl.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
 import com.hazelcast.spi.Operation;
@@ -31,11 +30,6 @@ public class ScheduleTaskOperation
     private Object definition;
 
     public ScheduleTaskOperation() {
-    }
-
-    public ScheduleTaskOperation(String schedulerName, Data definitionData) {
-        super(schedulerName);
-        this.definition = definitionData;
     }
 
     public ScheduleTaskOperation(String schedulerName, TaskDefinition definition) {
