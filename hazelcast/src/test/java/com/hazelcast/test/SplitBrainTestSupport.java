@@ -335,7 +335,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         }
     }
 
-    private static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
+    public static void blockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
         FirewallingMockConnectionManager h1CM = getFireWalledConnectionManager(h1);
         FirewallingMockConnectionManager h2CM = getFireWalledConnectionManager(h2);
         Node h1Node = getNode(h1);
@@ -344,7 +344,7 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
         h2CM.block(h1Node.getThisAddress());
     }
 
-    private static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
+    public static void unblockCommunicationBetween(HazelcastInstance h1, HazelcastInstance h2) {
         FirewallingMockConnectionManager h1CM = getFireWalledConnectionManager(h1);
         FirewallingMockConnectionManager h2CM = getFireWalledConnectionManager(h2);
         Node h1Node = getNode(h1);

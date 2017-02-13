@@ -18,6 +18,9 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
+import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,6 +32,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
@@ -97,6 +105,50 @@ public class SplitMergeTest extends HazelcastTestSupport {
         waitAllForSafeState(h1, h2, h3);
     }
 
+    @Test
+    public void test_lifecycleEvents_whenMergeSuccess() throws Exception {
+        final HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
+        final HazelcastInstance h2 = factory.newHazelcastInstance(newConfig());
+
+        MergeLifecycleListener lifecycleListener = new MergeLifecycleListener();
+        h2.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        // create split
+        closeConnectionBetween(h1, h2);
+        assertClusterSizeEventually(1, h1);
+        assertClusterSizeEventually(1, h2);
+
+        // merge back
+        mergeBack(h2, getAddress(h1));
+        assertClusterSizeEventually(2, h1);
+        assertClusterSizeEventually(2, h2);
+
+        lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGED);
+    }
+
+    @Test
+    public void test_lifecycleEvents_whenMergeFailed() throws Exception {
+        final HazelcastInstance h1 = factory.newHazelcastInstance(newConfig());
+        final HazelcastInstance h2 = factory.newHazelcastInstance(newConfig()
+            .setProperty(GroupProperty.MAX_JOIN_SECONDS.getName(), "5"));
+
+        MergeLifecycleListener lifecycleListener = new MergeLifecycleListener();
+        h2.getLifecycleService().addLifecycleListener(lifecycleListener);
+
+        // create split
+        closeConnectionBetween(h1, h2);
+        assertClusterSizeEventually(1, h1);
+        assertClusterSizeEventually(1, h2);
+
+        // block comm to prevent rejoin
+        blockCommunicationBetween(h1, h2);
+
+        // try merge back
+        mergeBack(h2, getAddress(h1));
+
+        lifecycleListener.assertStates(LifecycleState.MERGING, LifecycleState.MERGE_FAILED);
+    }
+
     private void mergeBack(HazelcastInstance hz, Address to) {
         getNode(hz).getClusterService().merge(to);
     }
@@ -107,5 +159,29 @@ public class SplitMergeTest extends HazelcastTestSupport {
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "600");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "600");
         return config;
+    }
+
+    private static class MergeLifecycleListener implements LifecycleListener {
+        final BlockingQueue<LifecycleState> eventQ = new ArrayBlockingQueue<LifecycleState>(10);
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            LifecycleState state = event.getState();
+            if (state == LifecycleState.MERGING
+                    || state == LifecycleState.MERGED
+                    || state == LifecycleState.MERGE_FAILED) {
+                eventQ.offer(state);
+            }
+        }
+
+        void assertStates(LifecycleState... states) throws Exception {
+            for (LifecycleState state : states) {
+                assertState(state);
+            }
+        }
+
+        void assertState(LifecycleState state) throws Exception {
+            assertEquals(state, eventQ.poll(30, TimeUnit.SECONDS));
+        }
     }
 }

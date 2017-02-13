@@ -17,6 +17,7 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ManagedService;
@@ -32,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGE_FAILED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.Preconditions.isNotNull;
@@ -55,20 +57,29 @@ class ClusterMergeTask implements Runnable {
     public void run() {
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
         lifecycleService.fireLifecycleEvent(MERGING);
+        LifecycleState finalLifecycleState = MERGE_FAILED;
 
-        resetState();
+        try {
+            resetState();
 
-        Collection<Runnable> tasks = collectMergeTasks();
+            Collection<Runnable> tasks = collectMergeTasks();
 
-        resetServices();
+            resetServices();
 
-        rejoin();
+            rejoin();
 
-        executeMergeTasks(tasks);
+            finalLifecycleState = getFinalLifecycleState();
 
-        if (node.isRunning() && node.joined()) {
-            lifecycleService.fireLifecycleEvent(MERGED);
+            if (finalLifecycleState == MERGED) {
+                executeMergeTasks(tasks);
+            }
+        } finally {
+            lifecycleService.fireLifecycleEvent(finalLifecycleState);
         }
+    }
+
+    private LifecycleState getFinalLifecycleState() {
+       return (node.isRunning() && node.joined()) ? MERGED : MERGE_FAILED;
     }
 
     private void resetState() {

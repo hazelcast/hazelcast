@@ -42,6 +42,7 @@ public final class LifecycleEvent {
         SHUTDOWN,
         MERGING,
         MERGED,
+        MERGE_FAILED,
         CLIENT_CONNECTED,
         CLIENT_DISCONNECTED
     }
