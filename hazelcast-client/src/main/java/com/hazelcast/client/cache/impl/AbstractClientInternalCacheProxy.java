@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientMessageDecoder;
@@ -49,6 +50,8 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -84,6 +87,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE;
 import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UPDATE;
 import static com.hazelcast.instance.BuildInfo.UNKNOWN_HAZELCAST_VERSION;
@@ -91,6 +95,7 @@ import static com.hazelcast.instance.BuildInfo.calculateVersion;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
+import static com.hazelcast.util.Preconditions.checkTrue;
 import static java.lang.String.format;
 
 /**
@@ -213,13 +218,25 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     }
 
     void initNearCache() {
-        NearCacheConfig nearCacheConfig = clientContext.getClientConfig().getNearCacheConfig(name);
+        ClientConfig clientConfig = clientContext.getClientConfig();
+        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig(name);
         if (nearCacheConfig != null) {
+            checkNearCacheConfig(nearCacheConfig, clientConfig.getNativeMemoryConfig());
             cacheOnUpdate = isCacheOnUpdate(nearCacheConfig, nameWithPrefix, logger);
             ICacheDataStructureAdapter<K, V> adapter = new ICacheDataStructureAdapter<K, V>(this);
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, adapter);
             registerInvalidationListener();
         }
+    }
+
+    private static void checkNearCacheConfig(NearCacheConfig nearCacheConfig, NativeMemoryConfig nativeMemoryConfig) {
+        InMemoryFormat inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        if (inMemoryFormat != NATIVE) {
+            return;
+        }
+
+        checkTrue(nativeMemoryConfig.isEnabled(), "Enable native memory config to use NATIVE in-memory-format for Near Cache");
+
     }
 
     static boolean isCacheOnUpdate(NearCacheConfig nearCacheConfig, String cacheName, ILogger logger) {
