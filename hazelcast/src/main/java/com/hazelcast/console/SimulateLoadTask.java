@@ -18,6 +18,7 @@ package com.hazelcast.console;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -25,6 +26,7 @@ import java.util.concurrent.Callable;
 /**
  * A simulated load test.
  */
+@BinaryInterface
 public final class SimulateLoadTask implements Callable, Serializable, HazelcastInstanceAware {
 
     private static final long serialVersionUID = 1;

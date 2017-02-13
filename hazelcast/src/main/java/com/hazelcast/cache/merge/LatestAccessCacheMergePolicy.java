@@ -18,11 +18,13 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 /**
  * `LatestAccessCacheMergePolicy` merges cache entry from source to destination cache
  * if source entry has been accessed more recently than the destination entry.
  */
+@BinaryInterface
 public class LatestAccessCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 
