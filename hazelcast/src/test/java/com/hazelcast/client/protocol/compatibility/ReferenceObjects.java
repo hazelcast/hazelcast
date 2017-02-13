@@ -54,6 +54,7 @@ import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -197,6 +198,15 @@ public class ReferenceObjects {
         Map<Address, List<Integer>> partitionsMap = new HashMap<Address, List<Integer>>();
         partitionsMap.put(anAddress, Collections.singletonList(1));
         aPartitionTable = new LinkedList<Map.Entry<Address, List<Integer>>>(partitionsMap.entrySet());
+    }
+
+    public static Collection<Map.Entry<Member, List<String>>> taskHandlers;
+
+    static {
+        Map<Member, List<String>> membersMap = new HashMap<Member, List<String>>();
+        String sampleURN = ScheduledTaskHandlerImpl.of(anAddress, "sche", "task").toUrn();
+        membersMap.put(aMember, Collections.singletonList(sampleURN));
+        taskHandlers = new LinkedList<Map.Entry<Member, List<String>>>(membersMap.entrySet());
     }
 
     public static SimpleEntryView<Data, Data> anEntryView = new SimpleEntryView<Data, Data>(aData, aData);

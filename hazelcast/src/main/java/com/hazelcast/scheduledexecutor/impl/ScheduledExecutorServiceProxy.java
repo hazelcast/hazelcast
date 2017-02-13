@@ -17,25 +17,31 @@
 package com.hazelcast.scheduledexecutor.impl;
 
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
-import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnMemberOperation;
+import com.hazelcast.scheduledexecutor.impl.operations.GetAllScheduledOnPartitionOperationFactory;
 import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
 import com.hazelcast.scheduledexecutor.impl.operations.ShutdownOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,12 +56,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService.SERVICE_NAME;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "checkstyle:methodcount"})
 public class ScheduledExecutorServiceProxy
         extends AbstractDistributedObject<DistributedScheduledExecutorService>
         implements IScheduledExecutorService {
@@ -287,43 +293,12 @@ public class ScheduledExecutorServiceProxy
 
     @Override
     public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
-        final long timeout = GET_ALL_SCHEDULED_TIMEOUT;
+        Map<Member, List<IScheduledFuture<V>>> accumulator = new LinkedHashMap<Member, List<IScheduledFuture<V>>>();
 
-        Map<Member, List<IScheduledFuture<V>>> tasks =
-                new LinkedHashMap<Member, List<IScheduledFuture<V>>>();
+        retrieveAllPartitionOwnedScheduled(accumulator);
+        retrieveAllMemberOwnedScheduled(accumulator);
 
-        List<Member> members = new ArrayList<Member>(getNodeEngine().getClusterService().getMembers());
-        List<Future<List<ScheduledTaskHandler>>> futures = new ArrayList<Future<List<ScheduledTaskHandler>>>();
-        for (Member member : members) {
-            Address address = member.getAddress();
-
-            ICompletableFuture<List<ScheduledTaskHandler>> future =
-                    getOperationService().invokeOnTarget(getServiceName(),
-                            new GetAllScheduledOperation(getName()), address);
-
-            futures.add(future);
-        }
-
-        List<List<ScheduledTaskHandler>> resolvedFutures = new ArrayList<List<ScheduledTaskHandler>>(
-                returnWithDeadline(futures, timeout, TimeUnit.SECONDS));
-
-        for (int i = 0; i < resolvedFutures.size(); i++) {
-            Member member = members.get(i);
-            List<ScheduledTaskHandler> handlers = resolvedFutures.get(i);
-            List<IScheduledFuture<V>> scheduledFutures = new ArrayList<IScheduledFuture<V>>();
-
-            for (ScheduledTaskHandler handler : handlers) {
-                ScheduledFutureProxy proxy = new ScheduledFutureProxy(handler);
-                attachHazelcastInstance(proxy);
-                scheduledFutures.add(proxy);
-            }
-
-            if (!scheduledFutures.isEmpty()) {
-                tasks.put(member, scheduledFutures);
-            }
-        }
-
-        return tasks;
+        return accumulator;
     }
 
     @Override
@@ -343,6 +318,60 @@ public class ScheduledExecutorServiceProxy
         }
 
         waitWithDeadline(calls, SHUTDOWN_TIMEOUT, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
+    }
+
+    private <V> void retrieveAllMemberOwnedScheduled(Map<Member, List<IScheduledFuture<V>>> accumulator) {
+        try {
+            InvokeOnMembers invokeOnMembers = new InvokeOnMembers(getNodeEngine(), getServiceName(),
+                    new GetAllScheduledOnMemberOperationFactory(name),
+                    getNodeEngine().getClusterService().getMembers());
+            accumulateTaskHandlersAsScheduledFutures(accumulator, invokeOnMembers.invoke());
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    private <V> void retrieveAllPartitionOwnedScheduled(Map<Member, List<IScheduledFuture<V>>> accumulator) {
+        try {
+            accumulateTaskHandlersAsScheduledFutures(accumulator, getNodeEngine().getOperationService().invokeOnAllPartitions(
+                    getServiceName(), new GetAllScheduledOnPartitionOperationFactory(name)));
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <V> void accumulateTaskHandlersAsScheduledFutures(Map<Member, List<IScheduledFuture<V>>> accumulator,
+                                                              Map<?, ?> taskHandlersMap) {
+
+        ClusterService clusterService = getNodeEngine().getClusterService();
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
+
+        for (Map.Entry<?, ?> entry : taskHandlersMap.entrySet()) {
+            Member owner;
+            Object key = entry.getKey();
+            if (key instanceof Number) {
+                owner = clusterService.getMember(partitionService.getPartitionOwner((Integer) key));
+            } else {
+                owner = (Member) key;
+            }
+
+            List<ScheduledTaskHandler> handlers = (List<ScheduledTaskHandler>) entry.getValue();
+            List<IScheduledFuture<V>> futures = new ArrayList<IScheduledFuture<V>>();
+
+            for (ScheduledTaskHandler handler : handlers) {
+                IScheduledFuture future = new ScheduledFutureProxy(handler);
+                attachHazelcastInstance(future);
+                futures.add(future);
+            }
+
+            if (accumulator.containsKey(owner)) {
+                List<IScheduledFuture<V>> memberFutures = accumulator.get(owner);
+                memberFutures.addAll(futures);
+            } else {
+                accumulator.put(owner, futures);
+            }
+        }
     }
 
     private <T> ScheduledRunnableAdapter<T> createScheduledRunnableAdapter(Runnable command) {
@@ -416,6 +445,40 @@ public class ScheduledExecutorServiceProxy
     private void attachHazelcastInstance(Object object) {
         if (object instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) object).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
+    }
+
+    private static class GetAllScheduledOnMemberOperationFactory implements OperationFactory {
+
+        private final String schedulerName;
+
+        GetAllScheduledOnMemberOperationFactory(String schedulerName) {
+            this.schedulerName = schedulerName;
+        }
+
+        @Override
+        public Operation createOperation() {
+            return new GetAllScheduledOnMemberOperation(schedulerName);
+        }
+
+        @Override
+        public int getFactoryId() {
+            return 0;
+        }
+
+        @Override
+        public int getId() {
+            return 0;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out)
+                throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in)
+                throws IOException {
         }
     }
 }

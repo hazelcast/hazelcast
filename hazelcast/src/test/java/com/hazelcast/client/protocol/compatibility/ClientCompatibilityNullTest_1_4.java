@@ -1,49 +1,43 @@
 package com.hazelcast.client.protocol.compatibility;
 
-import com.hazelcast.cache.impl.CacheEventData;
-import com.hazelcast.cache.impl.CacheEventDataImpl;
-import com.hazelcast.cache.impl.CacheEventType;
-import com.hazelcast.client.impl.MemberImpl;
-import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.*;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
-import com.hazelcast.core.Member;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.map.impl.SimpleEntryView;
-import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
-import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
-import com.hazelcast.mapreduce.JobPartitionState;
-import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
-import java.io.IOException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
-import java.io.IOException;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Array;
-import java.net.UnknownHostException;
-import javax.transaction.xa.Xid;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
+import java.util.Arrays;
 
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfEntry;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMember;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPartitionTable;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAddress;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.cacheEventDatas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.datas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.distributedObjectInfos;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.jobPartitionStates;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.longs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.queryCacheEventDatas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.strings;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.taskHandlers;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.uuids;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -1531,6 +1525,72 @@ public class ClientCompatibilityNullTest_1_4 {
     inputStream.read(bytes);
     MapAssignAndGetUuidsCodec.ResponseParameters params = MapAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(datas, params.response));
+}
+
+
+{
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeRequest(    aString ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapRemoveAllCodec.ResponseParameters params = MapRemoveAllCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+}
+
+
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.ResponseParameters params = MapAddNearCacheInvalidationListenerCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.response));
+}
+{
+    class MapAddNearCacheInvalidationListenerCodecHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  com.hazelcast.nio.serialization.Data
+ key ,   java.lang.String
+ sourceUuid ,   java.util.UUID
+ partitionUuid ,   long
+ sequence   ) {
+                            assertTrue(isEqual(null, key));
+                            assertTrue(isEqual(aString, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
+        }
+        @Override
+        public void handle(  java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
+                            assertTrue(isEqual(datas, keys));
+                            assertTrue(isEqual(strings, sourceUuids));
+                            assertTrue(isEqual(uuids, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
+        }
+    }
+    MapAddNearCacheInvalidationListenerCodecHandler handler = new MapAddNearCacheInvalidationListenerCodecHandler();
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
 }
 
 
@@ -6112,7 +6172,7 @@ public class ClientCompatibilityNullTest_1_4 {
 
 
 {
-    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(    aString ,    anAddress   );
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(    aString   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -6123,7 +6183,7 @@ public class ClientCompatibilityNullTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     ScheduledExecutorGetAllScheduledFuturesCodec.ResponseParameters params = ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(strings, params.handlers));
+                assertTrue(isEqual(taskHandlers, params.handlers));
 }
 
 
