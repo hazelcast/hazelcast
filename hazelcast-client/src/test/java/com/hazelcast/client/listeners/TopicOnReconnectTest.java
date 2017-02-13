@@ -21,16 +21,16 @@ public class TopicOnReconnectTest extends AbstractListenersOnReconnectTest {
 
         MessageListener<String> listener = new MessageListener<String>() {
             @Override
-            public void onMessage(Message message) {
-                eventCount.incrementAndGet();
+            public void onMessage(Message<String> message) {
+                onEvent(message.getMessageObject());
             }
         };
         return topic.addMessageListener(listener);
     }
 
     @Override
-    public void produceEvent() {
-        topic.publish(randomString());
+    public void produceEvent(String event) {
+        topic.publish(event);
     }
 
     @Override

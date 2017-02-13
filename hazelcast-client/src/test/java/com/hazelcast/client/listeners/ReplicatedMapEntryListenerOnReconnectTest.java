@@ -37,15 +37,15 @@ public class ReplicatedMapEntryListenerOnReconnectTest extends AbstractListeners
         final EntryAdapter<String, String> listener = new EntryAdapter<String, String>() {
             @Override
             public void onEntryEvent(EntryEvent<String, String> event) {
-                eventCount.incrementAndGet();
+                onEvent(event.getKey());
             }
         };
         return replicatedMap.addEntryListener(listener);
     }
 
     @Override
-    public void produceEvent() {
-        replicatedMap.put(randomString(), randomString());
+    public void produceEvent(String event) {
+        replicatedMap.put(event, randomString());
     }
 
     @Override
