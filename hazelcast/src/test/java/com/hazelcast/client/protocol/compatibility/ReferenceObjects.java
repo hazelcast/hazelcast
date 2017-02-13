@@ -170,6 +170,7 @@ public class ReferenceObjects {
         return isEqual(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber());
 
     }
+
     // Static values below should not be a random value, because the values are used when generating compatibility files and
     // when testing against them. Random values causes test failures.
     public static boolean aBoolean = true;
@@ -190,7 +191,8 @@ public class ReferenceObjects {
         }
     }
 
-    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString, Collections.singletonMap(aString, (Object) aString), false);
+    public static Member aMember = new MemberImpl(anAddress, MemberVersion.UNKNOWN, aString,
+            Collections.singletonMap(aString, (Object) aString), false);
     public static Collection<Map.Entry<Address, List<Integer>>> aPartitionTable;
 
     static {
@@ -217,90 +219,55 @@ public class ReferenceObjects {
     public static List<Map.Entry<Data, Data>> aListOfEntry = Collections.<Map.Entry<Data, Data>>singletonList(
             new AbstractMap.SimpleEntry<Data, Data>(aData, aData));
 
-    public static Throwable[] throwables_1_0 = {new CacheException(aString),
-            new CacheLoaderException(aString),
-            new CacheWriterException(aString),
-            new EntryProcessorException(aString),
-            new ArrayIndexOutOfBoundsException(aString),
-            new ArrayStoreException(aString),
-            new AuthenticationException(aString),
-            new CacheNotExistsException(aString),
-            new CallerNotMemberException(aString),
-            new CancellationException(aString),
-            new ClassCastException(aString),
-            new ClassNotFoundException(aString),
-            new ConcurrentModificationException(aString),
-            new ConfigMismatchException(aString),
-            new ConfigurationException(aString),
-            new DistributedObjectDestroyedException(aString),
-            new DuplicateInstanceNameException(aString),
-            new EOFException(aString),
-            new ExecutionException(new IOException()),
-            new HazelcastException(aString),
-            new HazelcastInstanceNotActiveException(aString),
-            new HazelcastOverloadException(aString),
-            new HazelcastSerializationException(aString),
-            new IOException(aString),
-            new IllegalArgumentException(aString),
-            new IllegalAccessException(aString),
-            new IllegalAccessError(aString),
-            new IllegalMonitorStateException(aString),
-            new IllegalStateException(aString),
-            new IllegalThreadStateException(aString),
-            new IndexOutOfBoundsException(aString),
-            new InterruptedException(aString),
-            new AddressUtil.InvalidAddressException(aString),
-            new InvalidConfigurationException(aString),
-            new MemberLeftException(aString),
-            new NegativeArraySizeException(aString),
-            new NoSuchElementException(aString),
-            new NotSerializableException(aString),
-            new NullPointerException(aString),
-            new OperationTimeoutException(aString),
-            new PartitionMigratingException(aString),
-            new QueryException(aString),
-            new QueryResultSizeExceededException(aString),
-            new QuorumException(aString),
-            new ReachedMaxSizeException(aString),
-            new RejectedExecutionException(aString),
-            new RemoteMapReduceException(aString, Collections.<Exception>emptyList()),
-            new ResponseAlreadySentException(aString),
-            new RetryableHazelcastException(aString),
-            new RetryableIOException(aString),
-            new RuntimeException(aString),
-            new SecurityException(aString),
-            new SocketException(aString),
-            new StaleSequenceException(aString, 1),
-            new TargetDisconnectedException(aString),
-            new TargetNotMemberException(aString),
-            new TimeoutException(aString),
-            new TopicOverloadException(aString),
-            new TopologyChangedException(aString),
-            new TransactionException(aString),
-            new TransactionNotActiveException(aString),
-            new TransactionTimedOutException(aString),
-            new URISyntaxException(aString, aString),
-            new UTFDataFormatException(aString),
-            new UnsupportedOperationException(aString),
-            new WrongTargetException(aString),
-            new XAException(aString),
-            new AccessControlException(aString),
-            new LoginException(aString),
-            new UnsupportedCallbackException(new Callback() {
-            }),
-            new NoDataMemberInClusterException(aString),
-            new ReplicatedMapCantBeCreatedOnLiteMemberException(aString),
-            new MaxMessageSizeExceeded(),
-            new WANReplicationQueueFullException(aString),
-            new AssertionError(aString),
-            new OutOfMemoryError(aString),
-            new StackOverflowError(aString),
-            new NativeOutOfMemoryError(aString)};
+    public static List<Map.Entry<String, List<Map.Entry<Integer, Long>>>> aNamePartitionSequenceList;
 
-    public static Throwable[] throwables_1_1 = {
-            new StaleTaskIdException(aString),
-            new ServiceNotFoundException(aString)
-    };
+    static {
+        List<Map.Entry<Integer, Long>> list = Collections.<Map.Entry<Integer, Long>>singletonList(
+                new AbstractMap.SimpleEntry<Integer, Long>(anInt, aLong));
+        aNamePartitionSequenceList = Collections.<Map.Entry<String, List<Map.Entry<Integer, Long>>>>singletonList(
+                new AbstractMap.SimpleEntry<String, List<Map.Entry<Integer, Long>>>(aString, list));
+    }
+
+    public static List<Map.Entry<Integer, UUID>> aPartitionUuidList = Collections.<Map.Entry<Integer, UUID>>singletonList(
+            new AbstractMap.SimpleEntry<Integer, UUID>(anInt, aUUID));
+
+    static {
+
+    }
+
+    public static Throwable[] throwables_1_0 = {new CacheException(aString), new CacheLoaderException(
+            aString), new CacheWriterException(aString), new EntryProcessorException(aString), new ArrayIndexOutOfBoundsException(
+            aString), new ArrayStoreException(aString), new AuthenticationException(aString), new CacheNotExistsException(
+            aString), new CallerNotMemberException(aString), new CancellationException(aString), new ClassCastException(
+            aString), new ClassNotFoundException(aString), new ConcurrentModificationException(
+            aString), new ConfigMismatchException(aString), new ConfigurationException(
+            aString), new DistributedObjectDestroyedException(aString), new DuplicateInstanceNameException(
+            aString), new EOFException(aString), new ExecutionException(new IOException()), new HazelcastException(
+            aString), new HazelcastInstanceNotActiveException(aString), new HazelcastOverloadException(
+            aString), new HazelcastSerializationException(aString), new IOException(aString), new IllegalArgumentException(
+            aString), new IllegalAccessException(aString), new IllegalAccessError(aString), new IllegalMonitorStateException(
+            aString), new IllegalStateException(aString), new IllegalThreadStateException(aString), new IndexOutOfBoundsException(
+            aString), new InterruptedException(aString), new AddressUtil.InvalidAddressException(
+            aString), new InvalidConfigurationException(aString), new MemberLeftException(
+            aString), new NegativeArraySizeException(aString), new NoSuchElementException(aString), new NotSerializableException(
+            aString), new NullPointerException(aString), new OperationTimeoutException(aString), new PartitionMigratingException(
+            aString), new QueryException(aString), new QueryResultSizeExceededException(aString), new QuorumException(
+            aString), new ReachedMaxSizeException(aString), new RejectedExecutionException(aString), new RemoteMapReduceException(
+            aString, Collections.<Exception>emptyList()), new ResponseAlreadySentException(
+            aString), new RetryableHazelcastException(aString), new RetryableIOException(aString), new RuntimeException(
+            aString), new SecurityException(aString), new SocketException(aString), new StaleSequenceException(aString,
+            1), new TargetDisconnectedException(aString), new TargetNotMemberException(aString), new TimeoutException(
+            aString), new TopicOverloadException(aString), new TopologyChangedException(aString), new TransactionException(
+            aString), new TransactionNotActiveException(aString), new TransactionTimedOutException(
+            aString), new URISyntaxException(aString, aString), new UTFDataFormatException(
+            aString), new UnsupportedOperationException(aString), new WrongTargetException(aString), new XAException(
+            aString), new AccessControlException(aString), new LoginException(aString), new UnsupportedCallbackException(
+            new Callback() {
+            }), new NoDataMemberInClusterException(aString), new ReplicatedMapCantBeCreatedOnLiteMemberException(
+            aString), new MaxMessageSizeExceeded(), new WANReplicationQueueFullException(aString), new AssertionError(
+            aString), new OutOfMemoryError(aString), new StackOverflowError(aString), new NativeOutOfMemoryError(aString)};
+
+    public static Throwable[] throwables_1_1 = {new StaleTaskIdException(aString), new ServiceNotFoundException(aString)};
 
     public static Throwable[] throwables_1_2 = {};
 

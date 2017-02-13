@@ -1589,7 +1589,8 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = MapFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -1606,7 +1607,75 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     MapAssignAndGetUuidsCodec.ResponseParameters params = MapAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(datas, params.response));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
+}
+
+
+{
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeRequest(    aString ,    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapRemoveAllCodec.ResponseParameters params = MapRemoveAllCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+}
+
+
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeRequest(    aString ,    anInt ,    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+
+}
+{
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.ResponseParameters params = MapAddNearCacheInvalidationListenerCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.response));
+}
+{
+    class MapAddNearCacheInvalidationListenerCodecHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
+        @Override
+        public void handle(  com.hazelcast.nio.serialization.Data
+ key ,   java.lang.String
+ sourceUuid ,   java.util.UUID
+ partitionUuid ,   long
+ sequence   ) {
+                            assertTrue(isEqual(aData, key));
+                            assertTrue(isEqual(aString, sourceUuid));
+                            assertTrue(isEqual(aUUID, partitionUuid));
+                            assertTrue(isEqual(aLong, sequence));
+        }
+        @Override
+        public void handle(  java.util.Collection<com.hazelcast.nio.serialization.Data> keys ,   java.util.Collection<java.lang.String> sourceUuids ,   java.util.Collection<java.util.UUID> partitionUuids ,   java.util.Collection<java.lang.Long> sequences   ) {
+                            assertTrue(isEqual(datas, keys));
+                            assertTrue(isEqual(strings, sourceUuids));
+                            assertTrue(isEqual(uuids, partitionUuids));
+                            assertTrue(isEqual(longs, sequences));
+        }
+    }
+    MapAddNearCacheInvalidationListenerCodecHandler handler = new MapAddNearCacheInvalidationListenerCodecHandler();
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
+    {
+        int length = inputStream.readInt();
+            byte[] bytes = new byte[length];
+            inputStream.read(bytes);
+        handler.handle(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+     }
 }
 
 
@@ -5770,7 +5839,8 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheFetchNearCacheInvalidationMetadataCodec.ResponseParameters params = CacheFetchNearCacheInvalidationMetadataCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aData, params.response));
+                assertTrue(isEqual(aNamePartitionSequenceList, params.namePartitionSequenceList));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -5787,7 +5857,7 @@ public class ClientCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     CacheAssignAndGetUuidsCodec.ResponseParameters params = CacheAssignAndGetUuidsCodec.decodeResponse(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(datas, params.response));
+                assertTrue(isEqual(aPartitionUuidList, params.partitionUuidList));
 }
 
 
@@ -6563,7 +6633,5 @@ public class ClientCompatibilityTest_1_4 {
 
     }
 }
-
-
 
 

@@ -1517,6 +1517,10 @@ public class ClientCompatibilityTest_1_0 {
 
 
 
+
+
+
+
 {
     ClientMessage clientMessage = MultiMapPutCodec.encodeRequest(    aString ,    aData ,    aData ,    aLong   );
     int length = inputStream.readInt();
@@ -6140,7 +6144,5 @@ public class ClientCompatibilityTest_1_0 {
 
     }
 }
-
-
 
 

@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationM
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -55,8 +54,11 @@ public class CacheFetchNearCacheInvalidationMetadataTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Data data = serializationService.toData(response);
-        return CacheFetchNearCacheInvalidationMetadataCodec.encodeResponse(data);
+        CacheGetInvalidationMetaDataOperation.MetaDataResponse metaDataResponse =
+                (CacheGetInvalidationMetaDataOperation.MetaDataResponse) response;
+        return CacheFetchNearCacheInvalidationMetadataCodec
+                .encodeResponse(metaDataResponse.getNamePartitionSequenceList().entrySet(),
+                        metaDataResponse.getPartitionUuidList().entrySet());
     }
 
     @Override
