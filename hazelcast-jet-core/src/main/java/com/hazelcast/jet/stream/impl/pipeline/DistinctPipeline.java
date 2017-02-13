@@ -51,11 +51,11 @@ public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private Vertex unorderedGraph(DAG dag) {
         Vertex previous = upstream.buildDAG(dag);
         Vertex distinct = dag.newVertex(uniqueVertexName("distinct-local"), DistinctP::new);
-        Vertex combiner = dag.newVertex(uniqueVertexName("distinct-global"), DistinctP::new);
+        Vertex combine = dag.newVertex(uniqueVertexName("distinct-distributed"), DistinctP::new);
 
         dag.edge(between(previous, distinct).partitioned(wholeItem(), HASH_CODE))
-           .edge(between(distinct, combiner).partitioned(wholeItem()).distributed());
+           .edge(between(distinct, combine).partitioned(wholeItem()).distributed());
 
-        return combiner;
+        return combine;
     }
 }

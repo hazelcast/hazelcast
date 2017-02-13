@@ -38,7 +38,6 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
 public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T, A, R> {
 
@@ -73,7 +72,7 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(uniqueVertexName("writer"), Processors.writeList(listName));
+        Vertex writer = dag.newVertex("write-list-" + listName, Processors.writeList(listName));
         dag.edge(between(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getJetInstance().getList(listName);
@@ -84,30 +83,29 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Vertex accumulatorVertex = dag.newVertex(uniqueVertexName("accumulator"),
-                () -> new CollectorAccumulateP<>(accumulator, supplier));
+        Vertex accumulate = dag.newVertex("accumulate", () -> new CollectorAccumulateP<>(accumulator, supplier));
         if (upstream.isOrdered()) {
-            accumulatorVertex.localParallelism(1);
+            accumulate.localParallelism(1);
         }
         Vertex previous = upstream.buildDAG(dag);
 
-        if (previous != accumulatorVertex) {
-            dag.edge(between(previous, accumulatorVertex));
+        if (previous != accumulate) {
+            dag.edge(between(previous, accumulate));
         }
 
-        return accumulatorVertex;
+        return accumulate;
     }
 
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
         Distributed.Supplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
-        Vertex combinerVertex = dag.newVertex(uniqueVertexName("combiner"), processorSupplier).localParallelism(1);
-        dag.edge(between(accumulatorVertex, combinerVertex)
+        Vertex combine = dag.newVertex("combine", processorSupplier).localParallelism(1);
+        dag.edge(between(accumulatorVertex, combine)
                 .distributed()
                 .allToOne()
         );
 
-        return combinerVertex;
+        return combine;
     }
 
     private static <A, R> Distributed.Supplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {

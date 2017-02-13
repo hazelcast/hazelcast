@@ -39,7 +39,7 @@ public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         Vertex previous = upstream.buildDAG(dag);
         // required final for lambda variable capture
         final Comparator<? super T> comparator = this.comparator;
-        Vertex sorter = dag.newVertex(uniqueVertexName("sorter"), () -> new SortP<>(comparator)).localParallelism(1);
+        Vertex sorter = dag.newVertex(uniqueVertexName("sort"), () -> new SortP<>(comparator)).localParallelism(1);
         dag.edge(between(previous, sorter)
                 .distributed()
                 .allToOne()

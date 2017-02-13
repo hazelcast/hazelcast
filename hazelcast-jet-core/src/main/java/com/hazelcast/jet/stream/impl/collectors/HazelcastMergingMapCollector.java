@@ -32,8 +32,6 @@ import static com.hazelcast.jet.KeyExtractors.entryKey;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector<T, K, V> {
 
@@ -63,15 +61,15 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
 
-        Vertex merger = dag.newVertex(uniqueVertexName("merging-accumulator"),
+        Vertex merge = dag.newVertex("merge-local",
                 () -> new MergeP<>(keyMapper, valueMapper, mergeFunction));
-        Vertex combiner = dag.newVertex(uniqueVertexName("merging-combiner"),
+        Vertex combine = dag.newVertex("merge-distributed",
                 () -> new MergeP<T, K, V>(null, null, mergeFunction));
-        Vertex writer = dag.newVertex(writerVertexName(mapName), Processors.writeMap(mapName));
+        Vertex writer = dag.newVertex("write-map-" + mapName, Processors.writeMap(mapName));
 
-        dag.edge(between(previous, merger).partitioned(keyMapper::apply, HASH_CODE))
-           .edge(between(merger, combiner).distributed().partitioned(entryKey()))
-           .edge(between(combiner, writer));
+        dag.edge(between(previous, merge).partitioned(keyMapper::apply, HASH_CODE))
+           .edge(between(merge, combine).distributed().partitioned(entryKey()))
+           .edge(between(combine, writer));
         executeJob(context, dag);
         return target;
     }

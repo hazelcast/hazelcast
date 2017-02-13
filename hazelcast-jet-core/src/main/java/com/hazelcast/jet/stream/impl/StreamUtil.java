@@ -36,6 +36,7 @@ public final class StreamUtil {
 
     private static final String MAP_PREFIX = "__jet_map_";
     private static final String LIST_PREFIX = "__jet_list_";
+    private static final int UUID_TRUNCATE_INDEX = 24;
 
     private StreamUtil() {
     }
@@ -49,17 +50,10 @@ public final class StreamUtil {
     }
 
     /**
-     * @return the name for a writer vertex
-     */
-    public static String writerVertexName(String name) {
-        return name + "-writer";
-    }
-
-    /**
      * @return a unique name for a vertex which includes the given name
      */
     public static String uniqueVertexName(String name) {
-        return name + "-" + UuidUtil.newUnsecureUUID().toString();
+        return name + '-' + (UuidUtil.newUnsecureUUID().toString().substring(UUID_TRUNCATE_INDEX));
     }
 
     public static void executeJob(StreamContext context, DAG dag) {

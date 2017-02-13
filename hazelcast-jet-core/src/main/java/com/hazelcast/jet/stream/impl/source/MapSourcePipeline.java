@@ -41,7 +41,7 @@ public class MapSourcePipeline<K, V> extends AbstractSourcePipeline<Map.Entry<K,
 
     @Override
     protected String getName() {
-        return "map-reader-" + map.getName();
+        return "read-map-" + map.getName();
     }
 
 

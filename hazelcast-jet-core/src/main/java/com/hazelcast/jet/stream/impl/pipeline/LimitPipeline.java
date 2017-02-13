@@ -43,7 +43,7 @@ public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
             return first;
         }
 
-        Vertex second = dag.newVertex(uniqueVertexName("limit-global"), () -> new LimitP(lim)).localParallelism(1);
+        Vertex second = dag.newVertex(uniqueVertexName("limit-distributed"), () -> new LimitP(lim)).localParallelism(1);
         dag.edge(between(first, second)
                 .distributed()
                 .allToOne()

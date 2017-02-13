@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Edge.from;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
@@ -43,7 +42,7 @@ public class PeekPipeline<T> extends AbstractIntermediatePipeline<T, T> {
         String listName = uniqueListName();
         IList<T> list = context.getJetInstance().getList(listName);
         Vertex previous = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
+        Vertex writer = dag.newVertex("write-list-" + listName, Processors.writeList(listName));
         if (upstream.isOrdered()) {
             writer.localParallelism(1);
         }

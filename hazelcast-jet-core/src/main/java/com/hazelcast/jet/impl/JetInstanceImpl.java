@@ -87,7 +87,6 @@ public class JetInstanceImpl extends AbstractJetInstance {
 
         @Override
         public Future<Void> execute() {
-            logger.fine("Submitted for execution: " + dag);
             long executionId = getIdGenerator().newId();
             deployResources(executionId);
             Operation op = new ExecuteJobOperation(executionId, dag);

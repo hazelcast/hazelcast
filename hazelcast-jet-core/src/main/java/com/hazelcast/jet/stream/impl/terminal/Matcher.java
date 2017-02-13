@@ -31,8 +31,6 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class Matcher {
 
@@ -49,7 +47,7 @@ public class Matcher {
     public <T> boolean anyMatch(Pipeline<T> upstream, Predicate<? super T> predicate) {
         checkSerializable(predicate, "predicate");
         DAG dag = new DAG();
-        Vertex anyMatch = dag.newVertex(uniqueVertexName("any-match"), () -> new AnyMatchP<>(predicate));
+        Vertex anyMatch = dag.newVertex("any-match", () -> new AnyMatchP<>(predicate));
         Vertex previous = upstream.buildDAG(dag);
         if (previous != anyMatch) {
             dag.edge(between(previous, anyMatch));
@@ -71,7 +69,7 @@ public class Matcher {
 
     private IList<Boolean> execute(DAG dag, Vertex vertex) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
+        Vertex writer = dag.newVertex("write-list-" + listName, Processors.writeList(listName));
         dag.edge(between(vertex, writer));
         executeJob(context, dag);
         return context.getJetInstance().getList(listName);

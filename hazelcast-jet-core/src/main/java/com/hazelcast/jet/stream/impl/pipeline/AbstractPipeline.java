@@ -54,11 +54,11 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     protected final StreamContext context;
     private final boolean isOrdered;
 
-    public AbstractPipeline(StreamContext context) {
+    AbstractPipeline(StreamContext context) {
         this(context, false);
     }
 
-    public AbstractPipeline(StreamContext context, boolean isOrdered) {
+    AbstractPipeline(StreamContext context, boolean isOrdered) {
         this.context = context;
         this.isOrdered = isOrdered;
     }
@@ -66,7 +66,7 @@ public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     @Override
     public DistributedStream<E_OUT> filter(Predicate<? super E_OUT> predicate) {
         StreamUtil.checkSerializable(predicate, "predicate");
-        return  new TransformPipeline(context, this,
+        return new TransformPipeline(context, this,
                 new TransformOperation(TransformOperation.Type.FILTER, predicate));
     }
 

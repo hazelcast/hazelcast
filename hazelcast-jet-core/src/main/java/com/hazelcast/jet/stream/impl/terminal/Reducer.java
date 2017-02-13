@@ -37,8 +37,6 @@ import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class Reducer {
 
@@ -60,20 +58,20 @@ public class Reducer {
         checkSerializable(accumulator, "accumulator");
         checkSerializable(combiner, "combiner");
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildMappingAccumulator(dag, upstream, identity, accumulator);
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner);
+        Vertex accumulate = buildMappingAccumulator(dag, upstream, identity, accumulator);
+        Vertex combine = buildCombiner(dag, accumulate, combiner);
 
-        return this.<U>execute(dag, combinerVertex).get();
+        return this.<U>execute(dag, combine).get();
     }
 
-    private <T> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex, BinaryOperator<T> combiner) {
+    private static <T> Vertex buildCombiner(DAG dag, Vertex accumulate, BinaryOperator<T> combiner) {
         Supplier<Processor> supplier = () -> new CombineP<>(combiner, identity());
-        Vertex combinerVertex = dag.newVertex(uniqueVertexName("combiner"), supplier).localParallelism(1);
-        dag.edge(between(accumulatorVertex, combinerVertex)
+        Vertex combine = dag.newVertex("combine", supplier).localParallelism(1);
+        dag.edge(between(accumulate, combine)
                 .distributed()
                 .allToOne()
         );
-        return combinerVertex;
+        return combine;
     }
 
     public <T> Optional<T> reduce(Pipeline<T> upstream, Distributed.BinaryOperator<T> operator) {
@@ -83,9 +81,9 @@ public class Reducer {
     public <T> Optional<T> reduce(Pipeline<T> upstream, BinaryOperator<T> operator) {
         checkSerializable(operator, "operator");
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, operator, null);
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, operator);
-        return this.<T>execute(dag, combinerVertex);
+        Vertex accumulate = buildAccumulator(dag, upstream, operator, null);
+        Vertex combine = buildCombiner(dag, accumulate, operator);
+        return this.<T>execute(dag, combine);
     }
 
     public <T> T reduce(Pipeline<T> upstream, T identity, Distributed.BinaryOperator<T> accumulator) {
@@ -95,15 +93,15 @@ public class Reducer {
     public <T> T reduce(Pipeline<T> upstream, T identity, BinaryOperator<T> accumulator) {
         checkSerializable(accumulator, "accumulator");
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, accumulator, identity);
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, accumulator);
-        return this.<T>execute(dag, combinerVertex).get();
+        Vertex accumulate = buildAccumulator(dag, upstream, accumulator, identity);
+        Vertex combine = buildCombiner(dag, accumulate, accumulator);
+        return this.<T>execute(dag, combine).get();
     }
 
     private <T> Optional<T> execute(DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex(writerVertexName(listName), Processors.writeList(listName));
-        dag.edge(between(combiner, writer));
+        Vertex writeList = dag.newVertex("write-list-" + listName, Processors.writeList(listName));
+        dag.edge(between(combiner, writeList));
         IList<T> list = context.getJetInstance().getList(listName);
         executeJob(context, dag);
         if (list.isEmpty()) {
@@ -119,34 +117,31 @@ public class Reducer {
     private static <T, U> Vertex buildMappingAccumulator(
             DAG dag, Pipeline<? extends T> upstream, U identity, BiFunction<U, ? super T, U> accumulator
     ) {
-        Vertex acc = dag.newVertex(uniqueVertexName("accumulator"), () -> new AccumulateP<>(accumulator, identity));
+        Vertex reduce = dag.newVertex("reduce", () -> new AccumulateP<>(accumulator, identity));
         Vertex previous = upstream.buildDAG(dag);
-        if (previous != acc) {
-            dag.edge(between(previous, acc));
+        if (previous != reduce) {
+            dag.edge(between(previous, reduce));
         }
-        return acc;
+        return reduce;
     }
 
     private static <T> Vertex buildAccumulator(
             DAG dag, Pipeline<? extends T> upstream, BinaryOperator<T> accumulator, T identity
     ) {
-        Vertex accumulatorVertex = getAccumulatorVertex(accumulator, identity);
-        dag.vertex(accumulatorVertex);
+        Vertex reduce = reduceVertex(accumulator, identity);
+        dag.vertex(reduce);
 
         Vertex previous = upstream.buildDAG(dag);
-        if (previous != accumulatorVertex) {
-            dag.edge(between(previous, accumulatorVertex));
+        if (previous != reduce) {
+            dag.edge(between(previous, reduce));
         }
-        return accumulatorVertex;
+        return reduce;
     }
 
-    private static <T> Vertex getAccumulatorVertex(
-            BinaryOperator<T> accumulator, T identity
-    ) {
+    private static <T> Vertex reduceVertex(BinaryOperator<T> accumulator, T identity) {
         return identity != null
-                ? new Vertex(uniqueVertexName("accumulator"), () -> new AccumulateP<>(accumulator, identity))
-                : new Vertex(uniqueVertexName("combiner"), () -> new CombineP<>(
-                        accumulator, identity()));
+                ? new Vertex("reduce", () -> new AccumulateP<>(accumulator, identity))
+                : new Vertex("reduce", () -> new CombineP<>(accumulator, identity()));
     }
 
 }

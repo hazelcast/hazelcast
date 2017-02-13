@@ -154,7 +154,7 @@ public final class DistributedStringJoiner implements Serializable {
         if (value == null) {
             return emptyValue;
         } else {
-            if (suffix.equals("")) {
+            if (suffix.isEmpty()) {
                 return value.toString();
             } else {
                 int initialLength = value.length();
@@ -201,12 +201,7 @@ public final class DistributedStringJoiner implements Serializable {
     public DistributedStringJoiner merge(DistributedStringJoiner other) {
         Objects.requireNonNull(other);
         if (other.value != null) {
-            final int length = other.value.length();
-            // lock the length so that we can seize the data to be appended
-            // before initiate copying to avoid interference, especially when
-            // merge 'this'
-            StringBuilder builder = prepareBuilder();
-            builder.append(other.value, other.prefix.length(), length);
+            prepareBuilder().append(other.value, other.prefix.length(), other.value.length());
         }
         return this;
     }

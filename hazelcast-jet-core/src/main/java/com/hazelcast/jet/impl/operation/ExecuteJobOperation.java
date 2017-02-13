@@ -59,11 +59,11 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
     @Override
     protected void doRun() throws Exception {
         long start = System.currentTimeMillis();
-        getLogger().info("Start executing job " + executionId + ".");
+        getLogger().info("Start executing job " + executionId + ": " + dag);
         JetService service = getService();
-        getLogger().fine("Building execution plan for job " + executionId + ".");
+        getLogger().fine("Building execution plan for job " + executionId + '.');
         Map<Member, ExecutionPlan> executionPlanMap = service.createExecutionPlans(dag);
-        getLogger().fine("Built execution plan for job " + executionId + ".");
+        getLogger().fine("Built execution plan for job " + executionId + '.');
 
         // Future that is signalled on a failure during Init
         CompletableFuture<Object> init = invokeOnCluster(executionPlanMap,

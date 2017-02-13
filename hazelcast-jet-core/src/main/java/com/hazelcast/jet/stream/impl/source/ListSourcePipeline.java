@@ -38,7 +38,7 @@ public class ListSourcePipeline<E> extends AbstractSourcePipeline<E> {
 
     @Override
     protected String getName() {
-        return "list-reader-" + list.getName();
+        return "read-list-" + list.getName();
     }
 
     @Override

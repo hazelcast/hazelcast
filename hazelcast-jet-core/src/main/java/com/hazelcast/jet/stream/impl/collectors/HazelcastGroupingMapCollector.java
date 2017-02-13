@@ -35,8 +35,6 @@ import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
-import static com.hazelcast.jet.stream.impl.StreamUtil.writerVertexName;
 
 public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector<T, A, IMap<K, D>> {
 
@@ -63,11 +61,10 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
 
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);
-        Vertex merger = dag.newVertex(uniqueVertexName("grouping-accumulator"),
+        Vertex merger = dag.newVertex("group-and-accumulate",
                 () -> new GroupAndAccumulateP<>(classifier, collector));
-        Vertex combiner = dag.newVertex(uniqueVertexName("grouping-combiner"),
-                () -> new CombineGroupsP<>(collector));
-        Vertex writer = dag.newVertex(writerVertexName(mapName), writeMap(mapName));
+        Vertex combiner = dag.newVertex("combine-groups", () -> new CombineGroupsP<>(collector));
+        Vertex writer = dag.newVertex("write-map-" + mapName, writeMap(mapName));
 
         dag.edge(between(previous, merger).partitioned(classifier::apply, HASH_CODE))
            .edge(between(merger, combiner).distributed().partitioned(entryKey()))

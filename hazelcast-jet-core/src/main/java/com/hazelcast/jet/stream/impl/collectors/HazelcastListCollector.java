@@ -41,7 +41,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ISt
     }
 
     @Override
-    protected ProcessorMetaSupplier getConsumer() {
+    protected ProcessorMetaSupplier getSinkSupplier() {
         return ProcessorMetaSupplier.of(Processors.writeList(listName));
     }
 
