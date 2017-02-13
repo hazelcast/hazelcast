@@ -48,6 +48,7 @@ import static org.junit.Assert.assertTrue;
 
 @Category(QuickTest.class)
 @RunWith(HazelcastParallelClassRunner.class)
+@Ignore
 public class ReadFileStreamPTest extends JetTestSupport {
 
     private JetInstance instance;
