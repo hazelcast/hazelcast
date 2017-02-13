@@ -17,11 +17,15 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.spi.exception.RetryableHazelcastException} indicating that an operation is executed on
  * the wrong machine.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class WrongTargetException extends RetryableHazelcastException {
 
     private transient Address target;

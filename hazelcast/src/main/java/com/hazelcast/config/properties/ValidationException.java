@@ -17,11 +17,15 @@
 package com.hazelcast.config.properties;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * This exception is thrown from {@link com.hazelcast.config.properties.ValueValidator}
  * implementations whenever the validation has not succeed for any reason.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ValidationException extends HazelcastException {
 
     public ValidationException(String message) {

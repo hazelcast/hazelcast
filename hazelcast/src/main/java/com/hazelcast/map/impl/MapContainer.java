@@ -35,6 +35,7 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -53,6 +54,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.map.impl.eviction.Evictor.NULL_EVICTOR;
 import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 import static java.lang.System.getProperty;
 
 /**
@@ -70,13 +72,7 @@ public class MapContainer {
     protected final SerializationService serializationService;
     protected final QueryEntryFactory queryEntryFactory;
     protected final InterceptorRegistry interceptorRegistry = new InterceptorRegistry();
-    protected final IFunction<Object, Data> toDataFunction = new IFunction<Object, Data>() {
-        @Override
-        public Data apply(Object input) {
-            SerializationService ss = mapStoreContext.getSerializationService();
-            return ss.toData(input, partitioningStrategy);
-        }
-    };
+    protected final IFunction<Object, Data> toDataFunction = new ObjectToData();
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
     /**
      * Holds number of registered {@link InvalidationListener} from clients.
@@ -289,6 +285,15 @@ public class MapContainer {
 
     public boolean shouldCloneOnEntryProcessing() {
         return getIndexes().hasIndex() && OBJECT.equals(mapConfig.getInMemoryFormat());
+    }
+
+    @BinaryInterface(reason = OTHER_CONVENTION)
+    private class ObjectToData implements IFunction<Object, Data> {
+        @Override
+        public Data apply(Object input) {
+            SerializationService ss = mapStoreContext.getSerializationService();
+            return ss.toData(input, partitioningStrategy);
+        }
     }
 }
 

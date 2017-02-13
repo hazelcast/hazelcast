@@ -17,6 +17,9 @@
 package com.hazelcast.cache.impl.event;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Used to provide information about the lost partition of a cache.
@@ -24,6 +27,7 @@ import com.hazelcast.core.Member;
  * @see CachePartitionLostEvent
  * @since 3.6
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class CachePartitionLostEvent extends AbstractICacheEvent {
 
     private static final long serialVersionUID = -7445714640964238109L;

@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.version.MemberVersion;
 
@@ -26,9 +27,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MemberLeftException extends ExecutionException implements RetryableException {
 
     private transient Member member;

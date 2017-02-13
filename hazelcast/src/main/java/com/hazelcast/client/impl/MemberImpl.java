@@ -20,7 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.version.MemberVersion;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

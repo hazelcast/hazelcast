@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
  * An implementation of this interface contains current information about

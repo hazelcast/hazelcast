@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-
 /**
  * PutIfAbsentMapMergePolicy causes the merging entry to be merged from source to destination map
  * if it does not exist in the destination map.

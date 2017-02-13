@@ -16,7 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.properties.GroupProperty;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link com.hazelcast.core.HazelcastException} that is thrown when the system won't handle more load due to
@@ -25,6 +28,7 @@ import com.hazelcast.spi.properties.GroupProperty;
  * This exception is thrown when backpressure is enabled. For more information see
  * {@link GroupProperty#BACKPRESSURE_ENABLED}.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class HazelcastOverloadException extends HazelcastException {
 
     public HazelcastOverloadException(String message) {

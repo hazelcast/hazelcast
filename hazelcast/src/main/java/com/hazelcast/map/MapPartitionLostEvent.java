@@ -18,12 +18,16 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.AbstractIMapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Used for providing information about the lost partition for a map
  *
  * @see com.hazelcast.map.listener.MapPartitionLostListener
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MapPartitionLostEvent extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -7445734640964238109L;

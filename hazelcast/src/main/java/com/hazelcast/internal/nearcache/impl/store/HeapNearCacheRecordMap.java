@@ -21,9 +21,13 @@ import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         extends SampleableConcurrentHashMap<K, V>
         implements SampleableNearCacheRecordMap<K, V> {

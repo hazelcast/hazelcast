@@ -29,7 +29,7 @@ public class LatestUpdateReplicatedMapMergePolicyTest extends AbstractReplicated
 
     @Before
     public void given() {
-        policy = new LatestUpdateMapMergePolicy();
+        policy = LatestUpdateMapMergePolicy.INSTANCE;
     }
 
 }

@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static java.lang.Thread.currentThread;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -225,6 +227,7 @@ public class BatchInvalidator extends Invalidator {
         super.reset();
     }
 
+    @BinaryInterface(reason = OTHER_CONVENTION)
     public static class InvalidationQueue extends ConcurrentLinkedQueue<Invalidation> {
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);

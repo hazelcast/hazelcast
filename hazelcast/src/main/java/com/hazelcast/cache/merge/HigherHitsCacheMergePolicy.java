@@ -18,11 +18,13 @@ package com.hazelcast.cache.merge;
 
 import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 /**
  * `HigherHitsCacheMergePolicy` merges cache entry from source to destination cache
  * if source entry has more hits than the destination one.
  */
+@BinaryInterface
 public class HigherHitsCacheMergePolicy
         implements StorageTypeAwareCacheMergePolicy {
 

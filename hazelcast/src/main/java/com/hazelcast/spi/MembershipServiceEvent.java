@@ -18,6 +18,9 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Membership event fired when a new member is added
@@ -25,6 +28,7 @@ import com.hazelcast.instance.MemberImpl;
  *
  * @see com.hazelcast.spi.MembershipAwareService
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MembershipServiceEvent extends MembershipEvent {
 
     public MembershipServiceEvent(MembershipEvent e) {

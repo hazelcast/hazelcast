@@ -20,10 +20,14 @@ import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.PUBLIC_API;
 
 /**
  * This service event is fired to inform services about a change in a member's attributes collection
  */
+@BinaryInterface(reason = PUBLIC_API)
 public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 
     public MemberAttributeServiceEvent() {

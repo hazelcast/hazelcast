@@ -18,14 +18,18 @@ package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An extended {@link SampleableConcurrentHashMap} with {@link com.hazelcast.core.IMap} specifics.
  *
  * @param <R> Type of records in this CHM
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class StorageSCHM<R extends Record> extends SampleableConcurrentHashMap<Data, R> {
 
     private static final int DEFAULT_INITIAL_CAPACITY = 256;

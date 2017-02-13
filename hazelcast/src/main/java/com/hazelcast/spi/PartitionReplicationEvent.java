@@ -16,11 +16,16 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An event send to {@link com.hazelcast.spi.MigrationAwareService} when partition changes happen.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class PartitionReplicationEvent extends EventObject {
 
     private final int partitionId;

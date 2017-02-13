@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.Map;
 
@@ -65,6 +65,7 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
         return entryBackupProcessor;
     }
 
+    @BinaryInterface
     private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V> {
         @Override
         public void processBackup(Map.Entry<K, V> entry) {

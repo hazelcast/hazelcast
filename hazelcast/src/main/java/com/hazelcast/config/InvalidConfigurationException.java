@@ -16,13 +16,16 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A InvalidConfigurationException is thrown when there is an Invalid Configuration.
  * Invalid Configuration can be a wrong Xml Config or logical config errors that are found
  * at real time.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class InvalidConfigurationException extends RuntimeException {
 
 

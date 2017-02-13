@@ -20,14 +20,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.PUBLIC_API;
 
 /**
  * Internal event that is dispatched to {@link com.hazelcast.spi.PartitionAwareService#onPartitionLost}
  * <p/>
  * It contains the partition id, number of replicas that is lost and the address of node that detects the partition lost
  */
+@BinaryInterface(reason = PUBLIC_API)
 public class IPartitionLostEvent
         implements DataSerializable {
 

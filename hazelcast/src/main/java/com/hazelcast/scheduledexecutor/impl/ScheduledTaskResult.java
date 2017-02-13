@@ -19,10 +19,13 @@ package com.hazelcast.scheduledexecutor.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 public class ScheduledTaskResult
         implements IdentifiedDataSerializable {
@@ -117,6 +120,7 @@ public class ScheduledTaskResult
 
     // ExecutionExceptions get peeled away during Operation response, this wrapper
     // helps identifying them on the proxy and re-construct them.
+    @BinaryInterface(reason = OTHER_CONVENTION)
     public static class ExecutionExceptionDecorator
             extends RuntimeException {
 

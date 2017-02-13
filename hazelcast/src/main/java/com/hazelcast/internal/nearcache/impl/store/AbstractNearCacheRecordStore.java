@@ -33,6 +33,7 @@ import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
@@ -47,6 +48,7 @@ import static com.hazelcast.internal.nearcache.NearCacheRecord.READ_PERMITTED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.RESERVED;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.UPDATE_STARTED;
 import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector.ALWAYS_FRESH;
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
@@ -74,21 +76,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected final SerializationService serializationService;
     protected final ClassLoader classLoader;
     protected final NearCacheStatsImpl nearCacheStats;
-    protected final IFunction<K, R> reserveForUpdate = new IFunction<K, R>() {
-        @Override
-        public R apply(K key) {
-            R record = null;
-            try {
-                record = valueToRecord(null);
-                onRecordCreate(key, record);
-                record.casRecordState(READ_PERMITTED, RESERVED);
-            } catch (Throwable throwable) {
-                onPutError(key, null, record, null, throwable);
-                throw rethrow(throwable);
-            }
-            return record;
-        }
-    };
+    protected final IFunction<K, R> reserveForUpdate = new ReserveForUpdateFunction();
+
     protected MaxSizeChecker maxSizeChecker;
 
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
@@ -493,6 +482,23 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         @Override
         public boolean isEvictionRequired() {
             return maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize();
+        }
+    }
+
+    @BinaryInterface(reason = OTHER_CONVENTION)
+    private class ReserveForUpdateFunction implements IFunction<K, R> {
+        @Override
+        public R apply(K key) {
+            R record = null;
+            try {
+                record = valueToRecord(null);
+                onRecordCreate(key, record);
+                record.casRecordState(READ_PERMITTED, RESERVED);
+            } catch (Throwable throwable) {
+                onPutError(key, null, record, null, throwable);
+                throw rethrow(throwable);
+            }
+            return record;
         }
     }
 }

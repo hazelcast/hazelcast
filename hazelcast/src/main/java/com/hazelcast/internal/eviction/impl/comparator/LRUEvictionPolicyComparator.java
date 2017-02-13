@@ -18,14 +18,14 @@ package com.hazelcast.internal.eviction.impl.comparator;
 
 import com.hazelcast.internal.eviction.EvictableEntryView;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * {@link com.hazelcast.config.EvictionPolicy#LRU} policy based {@link EvictionPolicyComparator}.
  */
-@SuppressFBWarnings(
-        value = "SE_COMPARATOR_SHOULD_BE_SERIALIZABLE",
-        justification = "No need to serializable since its instance is not serialized")
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class LRUEvictionPolicyComparator extends EvictionPolicyComparator {
 
     @Override

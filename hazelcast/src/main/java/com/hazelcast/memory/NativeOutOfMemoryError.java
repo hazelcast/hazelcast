@@ -16,9 +16,14 @@
 
 package com.hazelcast.memory;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Thrown when Hazelcast cannot allocate required native memory.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class NativeOutOfMemoryError extends Error {
 
     public NativeOutOfMemoryError() {

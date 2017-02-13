@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * An unchecked version of {@link InterruptedException}.
  * <p>
@@ -29,6 +33,7 @@ package com.hazelcast.core;
  *
  * @see InterruptedException
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class RuntimeInterruptedException extends HazelcastException {
 
     public RuntimeInterruptedException() {

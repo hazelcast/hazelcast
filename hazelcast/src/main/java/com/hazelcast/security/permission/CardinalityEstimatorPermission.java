@@ -16,6 +16,11 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class CardinalityEstimatorPermission extends InstancePermission {
 
     private static final int READ = 4;

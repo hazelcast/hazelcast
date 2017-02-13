@@ -17,8 +17,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.properties.GroupProperty;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 import static java.lang.String.format;
 
 /**
@@ -26,6 +28,7 @@ import static java.lang.String.format;
  *
  * @see GroupProperty#QUERY_RESULT_SIZE_LIMIT
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class QueryResultSizeExceededException extends HazelcastException {
 
     public QueryResultSizeExceededException(String message) {

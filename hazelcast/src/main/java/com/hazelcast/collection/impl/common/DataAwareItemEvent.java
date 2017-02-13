@@ -20,15 +20,19 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * An {@link ItemEvent} that is able to store a {@link Data}.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DataAwareItemEvent extends ItemEvent {
 
     private static final long serialVersionUID = 1;

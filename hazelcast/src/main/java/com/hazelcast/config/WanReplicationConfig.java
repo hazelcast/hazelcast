@@ -19,14 +19,18 @@ package com.hazelcast.config;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.PUBLIC_API;
+
 /**
  * Configuration for wan replication.
  */
+@BinaryInterface(reason = PUBLIC_API)
 public class WanReplicationConfig implements DataSerializable {
 
     private String name;

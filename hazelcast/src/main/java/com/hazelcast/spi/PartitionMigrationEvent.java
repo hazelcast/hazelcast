@@ -16,14 +16,18 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.partition.MigrationEndpoint;
 
 import java.util.EventObject;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An {@link java.util.EventObject} for a partition migration. Can be used by SPI services to get a callback
  * to listen to partition migration.  See {@link com.hazelcast.spi.MigrationAwareService} for more info.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class PartitionMigrationEvent extends EventObject {
 
     private final MigrationEndpoint migrationEndpoint;

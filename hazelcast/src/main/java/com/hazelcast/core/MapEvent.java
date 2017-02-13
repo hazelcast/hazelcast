@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Used for map-wide events like {@link com.hazelcast.core.EntryEventType#EVICT_ALL}
  * and {@link  com.hazelcast.core.EntryEventType#CLEAR_ALL}.
@@ -23,6 +27,7 @@ package com.hazelcast.core;
  * @see com.hazelcast.map.listener.MapListener
  * @see com.hazelcast.core.EntryListener
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class MapEvent extends AbstractIMapEvent {
 
     private static final long serialVersionUID = -4948640313865667023L;

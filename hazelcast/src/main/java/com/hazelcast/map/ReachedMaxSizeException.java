@@ -16,10 +16,15 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Exception thrown when a write-behind {@link com.hazelcast.core.MapStore} rejects to accept a new element.
  * Used when {@link com.hazelcast.config.MapStoreConfig#writeCoalescing} is set to {@code false}.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ReachedMaxSizeException extends RuntimeException {
 
     private static final long serialVersionUID = -2352370861668557606L;

@@ -16,9 +16,14 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
 /**
  * Thrown when a duplicate instance name is detected.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class DuplicateInstanceNameException extends HazelcastException {
 
     /**

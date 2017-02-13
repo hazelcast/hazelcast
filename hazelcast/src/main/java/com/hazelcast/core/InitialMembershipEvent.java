@@ -16,10 +16,13 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.EventObject;
 import java.util.Set;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An event that is sent when a {@link InitialMembershipListener} registers itself on a {@link Cluster}. For more
@@ -31,6 +34,7 @@ import java.util.Set;
  * @see MembershipEvent
  */
 @SuppressFBWarnings("SE_BAD_FIELD")
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class InitialMembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;

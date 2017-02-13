@@ -18,10 +18,14 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Thrown when {@link com.hazelcast.core.HazelcastInstance#getReplicatedMap(String)} is invoked on a lite member.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class ReplicatedMapCantBeCreatedOnLiteMemberException
         extends HazelcastException {
 

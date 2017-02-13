@@ -17,10 +17,14 @@
 package com.hazelcast.query;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * Exception class for the Query.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class QueryException extends HazelcastException {
 
     public QueryException() {

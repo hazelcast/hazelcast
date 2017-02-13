@@ -16,12 +16,16 @@
 
 package com.hazelcast.quorum;
 
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.exception.SilentException;
 import com.hazelcast.transaction.TransactionException;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * An exception thrown when the cluster size is below the defined threshold.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class QuorumException extends TransactionException implements SilentException {
 
     public QuorumException(String message) {

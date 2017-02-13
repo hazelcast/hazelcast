@@ -21,7 +21,7 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;

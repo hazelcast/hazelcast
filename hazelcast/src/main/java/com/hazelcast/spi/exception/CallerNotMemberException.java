@@ -17,11 +17,15 @@
 package com.hazelcast.spi.exception;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.BinaryInterface;
+
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
 
 /**
  * A {@link RetryableHazelcastException} that indicates that an operation was send by a machine which isn't member
  * in the cluster when the operation is executed.
  */
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class CallerNotMemberException extends RetryableHazelcastException {
 
     public CallerNotMemberException(Address thisAddress, Address caller, int partitionId,

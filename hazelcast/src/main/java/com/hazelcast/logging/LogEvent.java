@@ -17,10 +17,14 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.serialization.BinaryInterface;
 
 import java.util.EventObject;
 import java.util.logging.LogRecord;
 
+import static com.hazelcast.nio.serialization.BinaryInterface.Reason.OTHER_CONVENTION;
+
+@BinaryInterface(reason = OTHER_CONVENTION)
 public class LogEvent extends EventObject {
     final LogRecord logRecord;
     final Member member;
