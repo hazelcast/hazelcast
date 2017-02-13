@@ -18,10 +18,13 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 
 import java.io.IOException;
+
+import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * A specialization of {@link ObjectNamespace} intended to be used by ILock proxies.
@@ -47,6 +50,7 @@ import java.io.IOException;
  * @see OperationParkerImpl#cancelParkedOperations(String, Object, Throwable)
  *
  */
+@SerializableByConvention(PUBLIC_API)
 public final class InternalLockNamespace implements ObjectNamespace {
 
     private String name;

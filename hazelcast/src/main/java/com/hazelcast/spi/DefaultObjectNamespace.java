@@ -18,12 +18,16 @@ package com.hazelcast.spi;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 
 import java.io.IOException;
+
+import static com.hazelcast.nio.serialization.SerializableByConvention.Reason.PUBLIC_API;
 
 /**
  * Default {@link com.hazelcast.spi.ObjectNamespace} implementation.
  */
+@SerializableByConvention(PUBLIC_API)
 public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;
