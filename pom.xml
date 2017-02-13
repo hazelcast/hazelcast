@@ -49,19 +49,26 @@
     <maven.gpg.plugin.version>1.4</maven.gpg.plugin.version>
   </properties>
 
-
   <distributionManagement>
-    <snapshotRepository>
-      <id>sonatype-nexus-snapshots</id>
-      <name>Sonatype Nexus Snapshots</name>
-      <url>http://oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
     <repository>
-      <id>sonatype-nexus-staging</id>
-      <name>Nexus Release Repository</name>
-      <url>http://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+      <id>release-repository</id>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
     </repository>
+    <snapshotRepository>
+      <id>snapshot-repository</id>
+      <name>Maven2 Snapshot Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+      <uniqueVersion>false</uniqueVersion>
+    </snapshotRepository>
   </distributionManagement>
+
+  <repositories>
+    <repository>
+      <id>snapshot-repository</id>
+      <name>Maven2 Snapshot Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </repository>
+  </repositories>
 
   <scm>
     <connection>scm:git:git://github.com/hazelcast/hazelcast-kubernetes.git</connection>
@@ -532,18 +539,4 @@
       </build>
     </profile>
   </profiles>
-
-  <repositories>
-    <repository>
-      <id>sonatype-nexus-public</id>
-      <name>SonaType public snapshots and releases repository</name>
-      <url>https://oss.sonatype.org/content/groups/public</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>
