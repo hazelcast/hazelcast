@@ -33,7 +33,6 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.NamedTask;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
-import com.hazelcast.scheduledexecutor.impl.ScheduledFutureProxy;
 import com.hazelcast.scheduledexecutor.impl.ScheduledRunnableAdapter;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
@@ -66,7 +65,6 @@ public class ClientScheduledExecutorProxy
         extends PartitionSpecificClientProxy
         implements IScheduledExecutorService {
 
-    private static final int UNASSIGNED_PARTITION = -1;
     private static final int SHUTDOWN_TIMEOUT = 10;
 
     private static final FutureUtil.ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
@@ -76,27 +74,6 @@ public class ClientScheduledExecutorProxy
         @Override
         public Void decodeClientMessage(ClientMessage clientMessage) {
             return null;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_ALL_SCHEDULED_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Map<Member, List<IScheduledFuture>> decodeClientMessage(ClientMessage clientMessage) {
-            Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
-                    ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(clientMessage).handlers;
-
-            Map<Member, List<IScheduledFuture>> tasksMap = new HashMap<Member, List<IScheduledFuture>>();
-
-            for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
-                List<IScheduledFuture> memberTasks = new ArrayList<IScheduledFuture>();
-                for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
-                    memberTasks.add(new ScheduledFutureProxy(scheduledTaskHandler));
-                }
-
-                tasksMap.put(entry.getKey(), memberTasks);
-            }
-
-            return tasksMap;
         }
     };
 
@@ -268,9 +245,29 @@ public class ClientScheduledExecutorProxy
     @Override
     public <V> Map<Member, List<IScheduledFuture<V>>> getAllScheduledFutures() {
         ClientMessage request = ScheduledExecutorGetAllScheduledFuturesCodec.encodeRequest(getName());
+        final ClientInvocationFuture future = new ClientInvocation(getClient(), request).invoke();
+        ClientMessage response;
+        try {
+            response = future.get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
 
-        return ClientScheduledExecutorProxy.this.<Map<Member, List<IScheduledFuture<V>>>>
-                doSubmitOnPartition(request, GET_ALL_SCHEDULED_DECODER, UNASSIGNED_PARTITION).join();
+        Collection<Map.Entry<Member, List<ScheduledTaskHandler>>> urnsPerMember =
+                ScheduledExecutorGetAllScheduledFuturesCodec.decodeResponse(response).handlers;
+
+        Map<Member, List<IScheduledFuture<V>>> tasksMap = new HashMap<Member, List<IScheduledFuture<V>>>();
+
+        for (Map.Entry<Member, List<ScheduledTaskHandler>> entry : urnsPerMember) {
+            List<IScheduledFuture<V>> memberTasks = new ArrayList<IScheduledFuture<V>>();
+            for (ScheduledTaskHandler scheduledTaskHandler : entry.getValue()) {
+                memberTasks.add(new ClientScheduledFutureProxy(scheduledTaskHandler, getContext()));
+            }
+
+            tasksMap.put(entry.getKey(), memberTasks);
+        }
+
+        return tasksMap;
     }
 
     @Override
@@ -293,8 +290,7 @@ public class ClientScheduledExecutorProxy
     }
 
     private <V> IScheduledFuture<V> createFutureProxy(ScheduledTaskHandler handler) {
-        ClientScheduledFutureProxy<V> proxy = new ClientScheduledFutureProxy<V>(handler, getContext());
-        return proxy;
+        return new ClientScheduledFutureProxy<V>(handler, getContext());
     }
 
     private <V> IScheduledFuture<V> createFutureProxy(int partitionId, String taskName) {
@@ -347,14 +343,11 @@ public class ClientScheduledExecutorProxy
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
-        return scheduleOnPartition(name, request, SUBMIT_DECODER, partitionId);
-    }
-
-    private <V> IScheduledFuture<V> scheduleOnPartition(String name, ClientMessage clientMessage,
-                                                        ClientMessageDecoder clientMessageDecoder,
-                                                        int partitionId) {
-        clientMessage.setPartitionId(partitionId);
-        doSubmitOnPartition(clientMessage, clientMessageDecoder, partitionId).join();
+        try {
+            new ClientInvocation(getClient(), request, partitionId).invoke().get();
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
         return createFutureProxy(partitionId, name);
     }
 
@@ -366,23 +359,12 @@ public class ClientScheduledExecutorProxy
                 definition.getType().getId(), definition.getName(), commandData,
                 unit.toMillis(definition.getInitialDelay()),
                 unit.toMillis(definition.getPeriod()));
-        doSubmitOnAddress(request, SUBMIT_DECODER, member.getAddress()).join();
-        return createFutureProxy(member.getAddress(), name);
-    }
-
-    private <T> ClientDelegatingFuture<T> doSubmitOnPartition(ClientMessage clientMessage,
-                                                              ClientMessageDecoder clientMessageDecoder,
-                                                              int partitionId) {
-        SerializationService serializationService = getContext().getSerializationService();
-
         try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage,
-                    partitionId).invoke();
-
-            return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
+            new ClientInvocation(getClient(), request, member.getAddress()).invoke().get();
         } catch (Exception e) {
             throw rethrow(e);
         }
+        return createFutureProxy(member.getAddress(), name);
     }
 
     private <T> ClientDelegatingFuture<T> doSubmitOnAddress(ClientMessage clientMessage,

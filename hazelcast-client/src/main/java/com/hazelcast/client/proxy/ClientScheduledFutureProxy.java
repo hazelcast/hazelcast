@@ -116,12 +116,12 @@ public class ClientScheduledFutureProxy<V>
                 ClientMessage request = ScheduledExecutorGetDelayFromAddressCodec.encodeRequest(schedulerName, taskName, address);
                 ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
                 long nanos = ScheduledExecutorGetDelayFromAddressCodec.decodeResponse(response).response;
-                return TimeUnit.NANOSECONDS.convert(nanos, unit);
+                return unit.convert(nanos, TimeUnit.NANOSECONDS);
             } else {
                 ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
                 ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
                 long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response).response;
-                return TimeUnit.NANOSECONDS.convert(nanos, unit);
+                return unit.convert(nanos, TimeUnit.NANOSECONDS);
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
