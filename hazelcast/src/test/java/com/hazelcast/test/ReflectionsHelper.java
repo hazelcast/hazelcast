@@ -48,7 +48,9 @@ public class ReflectionsHelper {
         for (Iterator<URL> iterator = comHazelcastPackageURLs.iterator(); iterator.hasNext(); ) {
             URL url = iterator.next();
             // detect hazelcast-VERSION-tests.jar & $SOMEPATH/hazelcast/target/test-classes/ and exclude it from classpath
-            if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes")) {
+            // also exclude hazelcast-license-extractor artifact
+            if (url.toString().contains("-tests.jar") || url.toString().contains("target/test-classes") ||
+                    url.toString().contains("hazelcast-license-extractor")) {
                 iterator.remove();
             }
         }
