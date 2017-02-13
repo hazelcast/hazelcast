@@ -20,6 +20,7 @@ import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
+import com.hazelcast.nio.serialization.SerializableByConvention;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.SampleableConcurrentHashMap;
 
@@ -29,6 +30,7 @@ import com.hazelcast.util.SampleableConcurrentHashMap;
  * @param <K> the type of the key stored in Near Cache
  * @param <V> the type of the value stored in Near Cache
  */
+@SerializableByConvention
 public class HeapNearCacheRecordMap<K, V extends NearCacheRecord>
         extends SampleableConcurrentHashMap<K, V>
         implements SampleableNearCacheRecordMap<K, V> {
