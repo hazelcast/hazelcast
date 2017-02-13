@@ -30,6 +30,11 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * - NEVER CHANGE THEM
  * - NEVER MAKE THEM IMPLEMENT THE VERSIONED INTERFACE
+ *
+ * For the purposes of serializable classes conventions testing, this annotation is only taken into account when
+ * used on concrete classes; it does not make sense to annotate an interface or an abstract class, because serialized form
+ * is only relevant in the context of a concrete class. However, it may be informative to use this annotation also on
+ * interfaces or abstract classes, as a warning to implementers.
  */
 @Target(TYPE)
 @Retention(RUNTIME)
