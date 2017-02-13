@@ -20,45 +20,22 @@ import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainer;
 import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorContainerHolder;
-import com.hazelcast.scheduledexecutor.impl.ScheduledExecutorDataSerializerHook;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskDescriptor;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GetAllScheduledOperation
-        extends AbstractSchedulerOperation {
+public abstract class AbstractGetAllScheduledOperation extends AbstractSchedulerOperation {
 
-    private static final int MEMBER_BIN = -1;
-
-    private List<ScheduledTaskHandler> response;
-
-    public GetAllScheduledOperation() {
+    public AbstractGetAllScheduledOperation() {
     }
 
-    public GetAllScheduledOperation(String schedulerName) {
+    public AbstractGetAllScheduledOperation(String schedulerName) {
         super(schedulerName);
     }
 
-    @Override
-    public void run()
-            throws Exception {
-        List<ScheduledTaskHandler> handlers = new ArrayList<ScheduledTaskHandler>();
-        DistributedScheduledExecutorService service = getService();
-
-        int partitionCount = getNodeEngine().getPartitionService().getPartitionCount();
-        for (int i = 0; i < partitionCount; i++) {
-            populateScheduledForHolder(handlers, service, i);
-        }
-
-        // Member bin
-        populateScheduledForHolder(handlers, service, MEMBER_BIN);
-        response = handlers;
-    }
-
-    private void populateScheduledForHolder(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
-                                            int holderId) {
+    protected void populateScheduledForHolder(List<ScheduledTaskHandler> handlers, DistributedScheduledExecutorService service,
+                                              int holderId) {
         ScheduledExecutorContainerHolder partition = service.getPartitionOrMemberBin(holderId);
         ScheduledExecutorContainer container = partition.getContainer(schedulerName);
         if (container == null || service.isShutdown(schedulerName)) {
@@ -71,16 +48,6 @@ public class GetAllScheduledOperation
                 handlers.add(container.offprintHandler(task.getDefinition().getName()));
             }
         }
-    }
-
-    @Override
-    public List<ScheduledTaskHandler> getResponse() {
-        return response;
-    }
-
-    @Override
-    public int getId() {
-        return ScheduledExecutorDataSerializerHook.GET_ALL_SCHEDULED;
     }
 
 }

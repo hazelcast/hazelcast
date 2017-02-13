@@ -17,45 +17,43 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
-import com.hazelcast.scheduledexecutor.impl.TaskDefinition;
-import com.hazelcast.scheduledexecutor.impl.operations.ScheduleTaskOperation;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
+import com.hazelcast.scheduledexecutor.impl.operations.CancelTaskOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 
-public class ScheduledExecutorSubmitToPartitionMessageTask
-        extends AbstractPartitionMessageTask<ScheduledExecutorSubmitToPartitionCodec.RequestParameters> {
+public class ScheduledExecutorTaskCancelFromPartitionMessageTask
+        extends AbstractPartitionMessageTask<ScheduledExecutorCancelFromPartitionCodec.RequestParameters> {
 
-    public ScheduledExecutorSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskCancelFromPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new ScheduleTaskOperation(parameters.schedulerName, def);
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(clientMessage.getPartitionId(),
+                parameters.schedulerName,
+                parameters.taskName);
+        return new CancelTaskOperation(handler, parameters.mayInterruptIfRunning);
     }
 
     @Override
-    protected ScheduledExecutorSubmitToPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorSubmitToPartitionCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorCancelFromPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorCancelFromPartitionCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ScheduledExecutorSubmitToPartitionCodec.encodeResponse();
+        return ScheduledExecutorCancelFromPartitionCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -75,15 +73,11 @@ public class ScheduledExecutorSubmitToPartitionMessageTask
 
     @Override
     public String getMethodName() {
-        return "submitToPartition";
+        return "cancel";
     }
 
     @Override
     public Object[] getParameters() {
-        Callable callable = serializationService.toObject(parameters.task);
-        TaskDefinition def = new TaskDefinition(TaskDefinition.Type.getById(parameters.type),
-                parameters.taskName, callable, parameters.initialDelayInMillis, parameters.periodInMillis,
-                TimeUnit.MILLISECONDS);
-        return new Object[] { parameters.schedulerName, def };
+        return new Object[] {parameters.mayInterruptIfRunning };
     }
 }

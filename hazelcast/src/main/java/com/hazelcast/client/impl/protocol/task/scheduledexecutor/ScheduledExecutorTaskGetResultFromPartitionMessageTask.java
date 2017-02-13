@@ -17,60 +17,46 @@
 package com.hazelcast.client.impl.protocol.task.scheduledexecutor;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
+import com.hazelcast.scheduledexecutor.impl.ScheduledTaskHandlerImpl;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskResult;
 import com.hazelcast.scheduledexecutor.impl.operations.GetResultOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ScheduledExecutorPermission;
-import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.security.Permission;
 
-public class ScheduledExecutorTaskGetResultMessageTask
-        extends AbstractInvocationMessageTask<ScheduledExecutorGetResultCodec.RequestParameters> {
+public class ScheduledExecutorTaskGetResultFromPartitionMessageTask
+        extends AbstractPartitionMessageTask<ScheduledExecutorGetResultFromPartitionCodec.RequestParameters> {
 
-    public ScheduledExecutorTaskGetResultMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ScheduledExecutorTaskGetResultFromPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected InvocationBuilder getInvocationBuilder(Operation op) {
-        final InternalOperationService operationService = nodeEngine.getOperationService();
-        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-
-        if (handler.getAddress() != null) {
-            return operationService.createInvocationBuilder(getServiceName(), op, handler.getAddress());
-        } else {
-            return operationService.createInvocationBuilder(getServiceName(), op, handler.getPartitionId());
-        }
-    }
-
-    @Override
     protected Operation prepareOperation() {
-        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-        Operation op = new GetResultOperation(handler);
-        op.setPartitionId(getPartitionId());
-        op.setCallerUuid(endpoint.getUuid());
-        return op;
+        ScheduledTaskHandler handler = ScheduledTaskHandlerImpl.of(clientMessage.getPartitionId(),
+                parameters.schedulerName,
+                parameters.taskName);
+        return new GetResultOperation(handler);
     }
 
     @Override
-    protected ScheduledExecutorGetResultCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ScheduledExecutorGetResultCodec.decodeRequest(clientMessage);
+    protected ScheduledExecutorGetResultFromPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ScheduledExecutorGetResultFromPartitionCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         Data data = nodeEngine.getSerializationService().toData(response);
-        return ScheduledExecutorGetResultCodec.encodeResponse(data);
+        return ScheduledExecutorGetResultFromPartitionCodec.encodeResponse(data);
     }
 
     @Override
@@ -80,14 +66,12 @@ public class ScheduledExecutorTaskGetResultMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-        return new ScheduledExecutorPermission(handler.getSchedulerName(), ActionConstants.ACTION_READ);
+        return new ScheduledExecutorPermission(parameters.schedulerName, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
-        final ScheduledTaskHandler handler = ScheduledTaskHandler.of(parameters.handlerUrn);
-        return handler.getTaskName();
+        return parameters.schedulerName;
     }
 
     @Override
@@ -97,7 +81,7 @@ public class ScheduledExecutorTaskGetResultMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[] { parameters.handlerUrn };
+        return null;
     }
 
     /**

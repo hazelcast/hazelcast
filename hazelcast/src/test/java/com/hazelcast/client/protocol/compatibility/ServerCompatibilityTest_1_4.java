@@ -15,6 +15,7 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
@@ -1379,6 +1380,55 @@ public class ServerCompatibilityTest_1_4 {
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
     assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapRemoveAllCodec.RequestParameters params = MapRemoveAllCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aData, params.predicate));
+}
+{
+    ClientMessage clientMessage = MapRemoveAllCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    MapAddNearCacheInvalidationListenerCodec.RequestParameters params = MapAddNearCacheInvalidationListenerCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(anInt, params.listenerFlags));
+                assertTrue(isEqual(aBoolean, params.localOnly));
+}
+{
+    ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeResponse(    aString   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapInvalidationEvent( aData ,  aString ,  aUUID ,  aLong   );
+        int length = inputStream.readInt();
+
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
+    {
+        ClientMessage clientMessage = MapAddNearCacheInvalidationListenerCodec.encodeIMapBatchInvalidationEvent( datas ,  strings ,  uuids ,  longs   );
+        int length = inputStream.readInt();
+
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+        assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+     }
 }
 {
      int length = inputStream.readInt();
@@ -5617,7 +5667,11 @@ public class ServerCompatibilityTest_1_4 {
         inputStream.read(bytes);
     ScheduledExecutorSubmitToPartitionCodec.RequestParameters params = ScheduledExecutorSubmitToPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.schedulerName));
-                assertTrue(isEqual(aData, params.taskDefinition));
+                assertTrue(isEqual(aByte, params.type));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aData, params.task));
+                assertTrue(isEqual(aLong, params.initialDelayInMillis));
+                assertTrue(isEqual(aLong, params.periodInMillis));
 }
 {
     ClientMessage clientMessage = ScheduledExecutorSubmitToPartitionCodec.encodeResponse( );
@@ -5633,7 +5687,11 @@ public class ServerCompatibilityTest_1_4 {
     ScheduledExecutorSubmitToAddressCodec.RequestParameters params = ScheduledExecutorSubmitToAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.schedulerName));
                 assertTrue(isEqual(anAddress, params.address));
-                assertTrue(isEqual(aData, params.taskDefinition));
+                assertTrue(isEqual(aByte, params.type));
+                assertTrue(isEqual(aString, params.name));
+                assertTrue(isEqual(aData, params.task));
+                assertTrue(isEqual(aLong, params.initialDelayInMillis));
+                assertTrue(isEqual(aLong, params.periodInMillis));
 }
 {
     ClientMessage clientMessage = ScheduledExecutorSubmitToAddressCodec.encodeResponse( );
@@ -5648,10 +5706,40 @@ public class ServerCompatibilityTest_1_4 {
         inputStream.read(bytes);
     ScheduledExecutorGetAllScheduledFuturesCodec.RequestParameters params = ScheduledExecutorGetAllScheduledFuturesCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
                 assertTrue(isEqual(aString, params.schedulerName));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    taskHandlers   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorGetStatsFromPartitionCodec.RequestParameters params = ScheduledExecutorGetStatsFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromPartitionCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorGetStatsFromAddressCodec.RequestParameters params = ScheduledExecutorGetStatsFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
                 assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetAllScheduledFuturesCodec.encodeResponse(    strings   );
+    ClientMessage clientMessage = ScheduledExecutorGetStatsFromAddressCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5661,11 +5749,12 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorGetStatsCodec.RequestParameters params = ScheduledExecutorGetStatsCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorGetDelayFromPartitionCodec.RequestParameters params = ScheduledExecutorGetDelayFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetStatsCodec.encodeResponse(    aLong ,    aLong ,    aLong ,    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetDelayFromPartitionCodec.encodeResponse(    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5675,12 +5764,13 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorGetDelayCodec.RequestParameters params = ScheduledExecutorGetDelayCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
-                assertTrue(isEqual(aString, params.timeUnitName));
+    ScheduledExecutorGetDelayFromAddressCodec.RequestParameters params = ScheduledExecutorGetDelayFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetDelayCodec.encodeResponse(    aLong   );
+    ClientMessage clientMessage = ScheduledExecutorGetDelayFromAddressCodec.encodeResponse(    aLong   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5690,12 +5780,13 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorCancelCodec.RequestParameters params = ScheduledExecutorCancelCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorCancelFromPartitionCodec.RequestParameters params = ScheduledExecutorCancelFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
                 assertTrue(isEqual(aBoolean, params.mayInterruptIfRunning));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorCancelCodec.encodeResponse(    aBoolean   );
+    ClientMessage clientMessage = ScheduledExecutorCancelFromPartitionCodec.encodeResponse(    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5705,11 +5796,14 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorIsCancelledCodec.RequestParameters params = ScheduledExecutorIsCancelledCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorCancelFromAddressCodec.RequestParameters params = ScheduledExecutorCancelFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
+                assertTrue(isEqual(aBoolean, params.mayInterruptIfRunning));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorIsCancelledCodec.encodeResponse(    aBoolean   );
+    ClientMessage clientMessage = ScheduledExecutorCancelFromAddressCodec.encodeResponse(    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5719,11 +5813,12 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorIsDoneCodec.RequestParameters params = ScheduledExecutorIsDoneCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorIsCancelledFromPartitionCodec.RequestParameters params = ScheduledExecutorIsCancelledFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorIsDoneCodec.encodeResponse(    aBoolean   );
+    ClientMessage clientMessage = ScheduledExecutorIsCancelledFromPartitionCodec.encodeResponse(    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5733,11 +5828,13 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorGetResultCodec.RequestParameters params = ScheduledExecutorGetResultCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorIsCancelledFromAddressCodec.RequestParameters params = ScheduledExecutorIsCancelledFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorGetResultCodec.encodeResponse(    aData   );
+    ClientMessage clientMessage = ScheduledExecutorIsCancelledFromAddressCodec.encodeResponse(    aBoolean   );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);
@@ -5747,11 +5844,90 @@ public class ServerCompatibilityTest_1_4 {
      int length = inputStream.readInt();
         byte[] bytes = new byte[length];
         inputStream.read(bytes);
-    ScheduledExecutorDisposeCodec.RequestParameters params = ScheduledExecutorDisposeCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
-                assertTrue(isEqual(aString, params.handlerUrn));
+    ScheduledExecutorIsDoneFromPartitionCodec.RequestParameters params = ScheduledExecutorIsDoneFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
 }
 {
-    ClientMessage clientMessage = ScheduledExecutorDisposeCodec.encodeResponse( );
+    ClientMessage clientMessage = ScheduledExecutorIsDoneFromPartitionCodec.encodeResponse(    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorIsDoneFromAddressCodec.RequestParameters params = ScheduledExecutorIsDoneFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorIsDoneFromAddressCodec.encodeResponse(    aBoolean   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorGetResultFromPartitionCodec.RequestParameters params = ScheduledExecutorGetResultFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetResultFromPartitionCodec.encodeResponse(    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorGetResultFromAddressCodec.RequestParameters params = ScheduledExecutorGetResultFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorGetResultFromAddressCodec.encodeResponse(    aData   );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorDisposeFromPartitionCodec.RequestParameters params = ScheduledExecutorDisposeFromPartitionCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorDisposeFromPartitionCodec.encodeResponse( );
+    int length = inputStream.readInt();
+    byte[] bytes = new byte[length];
+    inputStream.read(bytes);
+    assertTrue(isEqual(Arrays.copyOf(clientMessage.buffer().byteArray(), clientMessage.getFrameLength()), bytes));
+}
+{
+     int length = inputStream.readInt();
+        byte[] bytes = new byte[length];
+        inputStream.read(bytes);
+    ScheduledExecutorDisposeFromAddressCodec.RequestParameters params = ScheduledExecutorDisposeFromAddressCodec.decodeRequest(ClientMessage.createForDecode(new SafeBuffer(bytes), 0));
+                assertTrue(isEqual(aString, params.schedulerName));
+                assertTrue(isEqual(aString, params.taskName));
+                assertTrue(isEqual(anAddress, params.address));
+}
+{
+    ClientMessage clientMessage = ScheduledExecutorDisposeFromAddressCodec.encodeResponse( );
     int length = inputStream.readInt();
     byte[] bytes = new byte[length];
     inputStream.read(bytes);

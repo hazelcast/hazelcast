@@ -258,4 +258,39 @@ public class ScheduledExecutorServiceSlowTest
 
         assertEquals(expectedTotal - 3 /*numOfShutdownOrDestroy*/ * numOfTasks, actualTotal, 0);
     }
+
+    @Test
+    public void schedulePeriodicTask_withMultipleSchedulers_atRandomPartitions_killMember_thenGetAllScheduled()
+            throws ExecutionException, InterruptedException {
+
+        String runsCounterName = "runs";
+        HazelcastInstance[] instances = createClusterWithCount(10);
+        ICountDownLatch runsLatch = instances[0].getCountDownLatch(runsCounterName);
+
+        int numOfSchedulers = 20;
+        int numOfTasks = 10;
+        int expectedTotal = numOfSchedulers * numOfTasks;
+
+        runsLatch.trySetCount(expectedTotal);
+
+        for (int i = 0; i < numOfSchedulers; i++) {
+            IScheduledExecutorService s = getScheduledExecutor(instances, "scheduler_" + i);
+            String key = generateKeyOwnedBy(instances[i % instances.length]);
+
+            for (int k = 0; k < numOfTasks; k++) {
+                s.scheduleOnKeyOwner(new ICountdownLatchRunnableTask(runsCounterName), key, 0, SECONDS);
+            }
+        }
+
+        runsLatch.await(10, SECONDS);
+
+        instances[1].getLifecycleService().terminate();
+
+        int actualTotal = 0;
+        for (int i = 0; i < numOfSchedulers; i++) {
+            actualTotal += countScheduledTasksOn(getScheduledExecutor(instances, "scheduler_" + i));
+        }
+
+        assertEquals(expectedTotal, actualTotal, 0);
+    }
 }
