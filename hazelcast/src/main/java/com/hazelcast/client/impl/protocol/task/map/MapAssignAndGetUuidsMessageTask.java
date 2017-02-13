@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAssignAndGetUuidsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -44,7 +42,7 @@ public class MapAssignAndGetUuidsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapAssignAndGetUuidsCodec.encodeResponse(((List<Data>) response));
+        return MapAssignAndGetUuidsCodec.encodeResponse(((Map<Integer, UUID>) response).entrySet());
     }
 
     @Override
@@ -74,12 +72,7 @@ public class MapAssignAndGetUuidsMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> objects = new ArrayList<Data>(2 * map.size());
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            objects.add(serializationService.toData(entry.getKey()));
-            objects.add(serializationService.toData(entry.getValue()));
-        }
-        return objects;
+        return map;
     }
 
     @Override

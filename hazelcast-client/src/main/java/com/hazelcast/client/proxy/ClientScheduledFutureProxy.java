@@ -16,28 +16,32 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledCodec;
-import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromPartitionCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.scheduledexecutor.IScheduledFuture;
 import com.hazelcast.scheduledexecutor.ScheduledTaskHandler;
 import com.hazelcast.scheduledexecutor.ScheduledTaskStatistics;
 import com.hazelcast.scheduledexecutor.StaleTaskException;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.scheduledexecutor.impl.ScheduledTaskStatisticsImpl;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Callable;
@@ -57,59 +61,6 @@ public class ClientScheduledFutureProxy<V>
         extends ClientProxy
         implements IScheduledFuture<V> {
 
-    private static final ClientMessageDecoder IS_DONE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorIsDoneCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder IS_CANCELLED_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorIsCancelledCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder CANCEL_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Boolean decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorCancelCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_STATS_DECODER = new ClientMessageDecoder() {
-        @Override
-        public ScheduledTaskStatistics decodeClientMessage(ClientMessage clientMessage) {
-            ScheduledExecutorGetStatsCodec.ResponseParameters responseParameters =
-                    ScheduledExecutorGetStatsCodec.decodeResponse(clientMessage);
-
-            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
-        }
-    };
-
-    private static final ClientMessageDecoder GET_DELAY_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Long decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorGetDelayCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder GET_RESULT_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Object decodeClientMessage(ClientMessage clientMessage) {
-            return ScheduledExecutorGetResultCodec.decodeResponse(clientMessage).response;
-        }
-    };
-
-    private static final ClientMessageDecoder DISPOSE_DECODER = new ClientMessageDecoder() {
-        @Override
-        public Void decodeClientMessage(ClientMessage clientMessage) {
-            return null;
-        }
-    };
-
     private ScheduledTaskHandler handler;
 
     public ClientScheduledFutureProxy(ScheduledTaskHandler handler, ClientContext context) {
@@ -126,18 +77,55 @@ public class ClientScheduledFutureProxy<V>
     @Override
     public ScheduledTaskStatistics getStats() {
         checkAccessibleHandler();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorGetStatsFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
+                ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
+                        ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
+                return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                        responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
+            } else {
+                ClientMessage request = ScheduledExecutorGetStatsFromPartitionCodec.encodeRequest(schedulerName, taskName);
+                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
+                ScheduledExecutorGetStatsFromAddressCodec.ResponseParameters responseParameters =
+                        ScheduledExecutorGetStatsFromAddressCodec.decodeResponse(response);
+                return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                        responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos);
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
 
-        ClientMessage request = ScheduledExecutorGetStatsCodec.encodeRequest(handler.toUrn());
-        return this.<ScheduledTaskStatistics>submitAsync(request, GET_STATS_DECODER).join();
     }
 
     @Override
     public long getDelay(TimeUnit unit) {
         checkNotNull(unit, "Unit is null");
         checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorGetDelayCodec.encodeRequest(handler.toUrn(), unit.name());
-        return this.<Long>submitAsync(request, GET_DELAY_DECODER).join();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorGetDelayFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
+                long nanos = ScheduledExecutorGetDelayFromAddressCodec.decodeResponse(response).response;
+                return unit.convert(nanos, TimeUnit.NANOSECONDS);
+            } else {
+                ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
+                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
+                long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response).response;
+                return unit.convert(nanos, TimeUnit.NANOSECONDS);
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
@@ -156,53 +144,127 @@ public class ClientScheduledFutureProxy<V>
 
         checkAccessibleHandler();
 
-        ClientMessage request = ScheduledExecutorCancelCodec.encodeRequest(handler.toUrn(), mayInterruptIfRunning);
-        return this.<Boolean>submitAsync(request, CANCEL_DECODER).join();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorCancelFromAddressCodec.encodeRequest(schedulerName, taskName,
+                        address, false);
+                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
+                return ScheduledExecutorCancelFromAddressCodec.decodeResponse(response).response;
+            } else {
+                ClientMessage request = ScheduledExecutorCancelFromPartitionCodec.encodeRequest(schedulerName,
+                        taskName, false);
+                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
+                return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response).response;
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
     public boolean isCancelled() {
         checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorIsCancelledCodec.encodeRequest(handler.toUrn());
-        return this.<Boolean>submitAsync(request, IS_CANCELLED_DECODER).join();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorIsCancelledFromAddressCodec.encodeRequest(schedulerName,
+                        taskName, address);
+                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
+                return ScheduledExecutorIsCancelledFromAddressCodec.decodeResponse(response).response;
+            } else {
+                ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
+                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
+                return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response).response;
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
     public boolean isDone() {
         checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorIsDoneCodec.encodeRequest(handler.toUrn());
-        return this.<Boolean>submitAsync(request, IS_DONE_DECODER).join();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorIsDoneFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+                ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get();
+                return ScheduledExecutorIsDoneFromAddressCodec.decodeResponse(response).response;
+            } else {
+                ClientMessage request = ScheduledExecutorIsDoneFromPartitionCodec.encodeRequest(schedulerName, taskName);
+                ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get();
+                return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response).response;
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
-    private InternalCompletableFuture<V> get0() {
+    private V get0(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         checkAccessibleHandler();
-
-        ClientMessage request = ScheduledExecutorGetResultCodec.encodeRequest(handler.toUrn());
-        return this.submitAsync(request, GET_RESULT_DECODER);
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        if (address != null) {
+            ClientMessage request = ScheduledExecutorGetResultFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+            ClientMessage response = new ClientInvocation(getClient(), request, address).invoke().get(timeout, unit);
+            Data data = ScheduledExecutorGetResultFromAddressCodec.decodeResponse(response).response;
+            return getSerializationService().toObject(data);
+        } else {
+            ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = new ClientInvocation(getClient(), request, partitionId).invoke().get(timeout, unit);
+            Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response).response;
+            return getSerializationService().toObject(data);
+        }
     }
 
     @Override
     public V get()
             throws InterruptedException, ExecutionException {
-        return this.get0().get();
+        try {
+            return this.get0(Long.MAX_VALUE, TimeUnit.DAYS);
+        } catch (TimeoutException e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override
     public V get(long timeout, TimeUnit unit)
             throws InterruptedException, ExecutionException, TimeoutException {
         checkNotNull(unit, "Unit is null");
-        return this.get0().get(timeout, unit);
+        return this.get0(timeout, unit);
     }
 
     public void dispose() {
         checkAccessibleHandler();
+        Address address = handler.getAddress();
+        String schedulerName = handler.getSchedulerName();
+        String taskName = handler.getTaskName();
+        int partitionId = handler.getPartitionId();
+        try {
+            if (address != null) {
+                ClientMessage request = ScheduledExecutorDisposeFromAddressCodec.encodeRequest(schedulerName, taskName, address);
+                new ClientInvocation(getClient(), request, address).invoke().get();
+            } else {
+                ClientMessage request = ScheduledExecutorDisposeFromPartitionCodec.encodeRequest(schedulerName, taskName);
+                new ClientInvocation(getClient(), request, partitionId).invoke().get();
+            }
+            handler = null;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
 
-        ClientMessage request = ScheduledExecutorDisposeCodec.encodeRequest(handler.toUrn());
-        InternalCompletableFuture future = submitAsync(request, DISPOSE_DECODER);
-        handler = null;
-        future.join();
     }
 
     private void checkAccessibleHandler() {
@@ -212,23 +274,4 @@ public class ClientScheduledFutureProxy<V>
         }
     }
 
-    private <T> ClientDelegatingFuture<T> submitAsync(ClientMessage clientMessage,
-                                                ClientMessageDecoder clientMessageDecoder) {
-        return invokeOnPartitionAsync(clientMessage, clientMessageDecoder, handler.getPartitionId());
-    }
-
-    private  <T> ClientDelegatingFuture<T> invokeOnPartitionAsync(ClientMessage clientMessage,
-                                                                  ClientMessageDecoder clientMessageDecoder,
-                                                                  int partitionId) {
-        SerializationService serializationService = getContext().getSerializationService();
-
-        try {
-            final ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage,
-                    partitionId).invoke();
-
-            return new ClientDelegatingFuture<T>(future, serializationService, clientMessageDecoder);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
 }

@@ -20,13 +20,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAssignAndGetUuidsCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static com.hazelcast.cache.impl.ICacheService.SERVICE_NAME;
 
@@ -44,7 +42,7 @@ public class CacheAssignAndGetUuidsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheAssignAndGetUuidsCodec.encodeResponse(((List<Data>) response));
+        return CacheAssignAndGetUuidsCodec.encodeResponse(((Map<Integer, UUID>) response).entrySet());
     }
 
     @Override
@@ -74,12 +72,7 @@ public class CacheAssignAndGetUuidsMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> objects = new ArrayList<Data>(2 * map.size());
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            objects.add(serializationService.toData(entry.getKey()));
-            objects.add(serializationService.toData(entry.getValue()));
-        }
-        return objects;
+        return map;
     }
 
     @Override

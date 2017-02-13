@@ -120,7 +120,7 @@ public class DistributedScheduledExecutorService
             ((InternalExecutionService) nodeEngine.getExecutionService()).shutdownScheduledDurableExecutor(name);
         }
 
-        resetContainerInPartitionsAndMemberBin(name);
+        resetPartitionOrMemberBinContainer(name);
     }
 
     public void shutdownExecutor(String name) {
@@ -174,7 +174,7 @@ public class DistributedScheduledExecutorService
         partition.disposeObsoleteReplicas(thresholdReplicaIndex);
     }
 
-    private void resetContainerInPartitionsAndMemberBin(String name) {
+    private void resetPartitionOrMemberBinContainer(String name) {
         if (memberBin != null) {
             memberBin.destroyContainer(name);
         }
