@@ -282,8 +282,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int TRIGGER_LOAD_IF_NEEDED = 132;
     public static final int IS_KEYLOAD_FINISHED = 133;
     public static final int REMOVE_FROM_LOAD_ALL = 134;
+    public static final int ENTRY_REMOVING_PROCESSOR = 135;
 
-    private static final int LEN = REMOVE_FROM_LOAD_ALL + 1;
+    private static final int LEN = ENTRY_REMOVING_PROCESSOR + 1;
 
     @Override
     public int getFactoryId() {
@@ -947,6 +948,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[REMOVE_FROM_LOAD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RemoveFromLoadAllOperation();
+            }
+        };
+        constructors[ENTRY_REMOVING_PROCESSOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
             }
         };
 

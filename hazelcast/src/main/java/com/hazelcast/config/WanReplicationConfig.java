@@ -18,7 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ import java.util.List;
 /**
  * Configuration for wan replication.
  */
-public class WanReplicationConfig implements DataSerializable {
+public class WanReplicationConfig implements IdentifiedDataSerializable {
 
     private String name;
     private WanConsumerConfig wanConsumerConfig;
@@ -72,6 +72,16 @@ public class WanReplicationConfig implements DataSerializable {
                 + "{name='" + name + '\''
                 + ", wanPublisherConfigs=" + wanPublisherConfigs
                 + '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.WAN_REPLICATION_CONFIG;
     }
 
     @Override

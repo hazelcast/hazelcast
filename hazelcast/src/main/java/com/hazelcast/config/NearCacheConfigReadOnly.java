@@ -16,15 +16,15 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 /**
  * Contains configuration for a Near Cache (read-only).
  *
  * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
  */
-@BinaryInterface
 public class NearCacheConfigReadOnly extends NearCacheConfig {
+
+    public NearCacheConfigReadOnly() {
+    }
 
     public NearCacheConfigReadOnly(NearCacheConfig config) {
         super(config);
@@ -98,5 +98,10 @@ public class NearCacheConfigReadOnly extends NearCacheConfig {
     @Override
     public NearCachePreloaderConfig getPreloaderConfig() {
         return super.getPreloaderConfig().getAsReadOnly();
+    }
+
+    @Override
+    public int getId() {
+        throw new UnsupportedOperationException("NearCacheConfigReadOnly is not serializable");
     }
 }

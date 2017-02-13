@@ -18,8 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
@@ -34,8 +33,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * You can set a limit for number of entries or total memory cost of entries.
  */
 @Beta
-@BinaryInterface
-public class NearCachePreloaderConfig implements DataSerializable, Serializable {
+public class NearCachePreloaderConfig implements IdentifiedDataSerializable, Serializable {
 
     /**
      * Default initial delay for the Near Cache key storage.
@@ -130,6 +128,16 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
     }
 
     @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ConfigDataSerializerHook.NEAR_CACHE_PRELOADER_CONFIG;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(enabled);
         out.writeUTF(directory);
@@ -167,8 +175,10 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
      */
     @Beta
     @PrivateApi
-    @BinaryInterface
     private static class NearCachePreloaderConfigReadOnly extends NearCachePreloaderConfig {
+
+        public NearCachePreloaderConfigReadOnly() {
+        }
 
         NearCachePreloaderConfigReadOnly(NearCachePreloaderConfig nearCachePreloaderConfig) {
             super(nearCachePreloaderConfig);
@@ -192,6 +202,11 @@ public class NearCachePreloaderConfig implements DataSerializable, Serializable 
         @Override
         public NearCachePreloaderConfig setStoreIntervalSeconds(int storeIntervalSeconds) {
             throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getId() {
+            throw new UnsupportedOperationException("NearCachePreloaderConfigReadOnly is not serializable");
         }
     }
 }
