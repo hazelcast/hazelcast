@@ -20,6 +20,8 @@ import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Executor;
 
+import static com.hazelcast.logging.Logger.getLogger;
+
 /**
  * Delegates task execution to a given Executor.
  *
@@ -45,6 +47,7 @@ class DelegatingTaskDecorator implements Runnable {
         try {
             executor.execute(runnable);
         } catch (Throwable t) {
+            getLogger(getClass()).severe("Cannot execute " + runnable, t);
             ExceptionUtil.sneakyThrow(t);
         }
     }
