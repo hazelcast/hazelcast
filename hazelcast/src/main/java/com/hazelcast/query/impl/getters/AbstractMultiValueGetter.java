@@ -139,12 +139,14 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
 
     private Object getItemAtPositionOrNull(Object object, int position) {
-        if (object instanceof Collection) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof Collection) {
             return CollectionUtil.getItemAtPositionOrNull((Collection) object, position);
         } else if (object instanceof Object[]) {
             return ArrayUtils.getItemAtPositionOrNull((Object[]) object, position);
-        } else if (object == null) {
-            return null;
+        } else if (object.getClass().isArray()) {
+            return Array.get(object, position);
         }
         throw new IllegalArgumentException("Cannot extract an element from class of type" + object.getClass()
                 + " Collections and Arrays are supported only");

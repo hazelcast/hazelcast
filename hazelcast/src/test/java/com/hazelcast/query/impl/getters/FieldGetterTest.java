@@ -170,11 +170,25 @@ public class FieldGetterTest {
     }
 
     @Test
+    public void getValue_singleCell_bytes() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("bytes"), "[0]", null);
+
+        assertEquals(bloke.bytes[0], getter.getValue(bloke));
+    }
+
+    @Test
     public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_shorts() throws Exception {
         FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("shorts"), "[any]", null);
         MultiResult result = (MultiResult) getter.getValue(bloke);
 
         assertContainsInAnyOrder(result, bloke.shorts[0]);
+    }
+
+    @Test
+    public void getValue_singleCell_shorts() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("shorts"), "[0]", null);
+
+        assertEquals(bloke.shorts[0], getter.getValue(bloke));
     }
 
     @Test
@@ -186,11 +200,25 @@ public class FieldGetterTest {
     }
 
     @Test
+    public void getValue_singleCell_ints() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("ints"), "[0]", null);
+
+        assertEquals(bloke.ints[0], getter.getValue(bloke));
+    }
+
+    @Test
     public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_longs() throws Exception {
         FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("longs"), "[any]", null);
         MultiResult result = (MultiResult) getter.getValue(bloke);
 
         assertContainsInAnyOrder(result, bloke.longs[0]);
+    }
+
+    @Test
+    public void getValue_singleCell_longs() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("longs"), "[0]", null);
+
+        assertEquals(bloke.longs[0], getter.getValue(bloke));
     }
 
     @Test
@@ -202,11 +230,25 @@ public class FieldGetterTest {
     }
 
     @Test
+    public void getValue_singleCell_floats() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("floats"), "[0]", null);
+
+        assertEquals(bloke.floats[0], getter.getValue(bloke));
+    }
+
+    @Test
     public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_double() throws Exception {
         FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("doubles"), "[any]", null);
         MultiResult result = (MultiResult) getter.getValue(bloke);
 
         assertContainsInAnyOrder(result, bloke.doubles[0]);
+    }
+
+    @Test
+    public void getValue_singleCell_double() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("doubles"), "[0]", null);
+
+        assertEquals(bloke.doubles[0], getter.getValue(bloke));
     }
 
     @Test
@@ -218,11 +260,25 @@ public class FieldGetterTest {
     }
 
     @Test
+    public void getValue_singleCell_chars() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("chars"), "[0]", null);
+
+        assertEquals(bloke.chars[0], getter.getValue(bloke));
+    }
+
+    @Test
     public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_booleans() throws Exception {
         FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("booleans"), "[any]", null);
         MultiResult result = (MultiResult) getter.getValue(bloke);
 
         assertContainsInAnyOrder(result, bloke.booleans[0]);
+    }
+
+    @Test
+    public void getValue_singleCell_booleans() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("booleans"), "[0]", null);
+
+        assertEquals(bloke.booleans[0], getter.getValue(bloke));
     }
 
     @Test
