@@ -32,6 +32,7 @@ import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 @SuppressWarnings("unused")
+@Ignore
 public class DistributedMapperClientMultiMapReduceTest
         extends AbstractClientMapReduceJobTest {
 

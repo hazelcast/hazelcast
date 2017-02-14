@@ -55,6 +55,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore
 @ConfigureParallelRunnerWith(MapReduceParallelRunnerOptions.class)
 public class MapReduceTest extends HazelcastTestSupport {
 
