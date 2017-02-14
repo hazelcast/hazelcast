@@ -88,7 +88,7 @@ final class TestSamples {
     }
 
     static List<String> sampleStrings() {
-        return asList(LOREM_IPSUM.split(" "));
+        return new ArrayList(asList(LOREM_IPSUM.split(" ")));
     }
 
     static List<Person> samplePersons() {
