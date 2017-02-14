@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class CountAggregator<I> extends AbstractAggregator<I, Long> implements IdentifiedDataSerializable {
+public final class CountAggregator<I> extends AbstractAggregator<I, Object, Long> implements IdentifiedDataSerializable {
     private long count;
 
     public CountAggregator() {
@@ -35,7 +35,7 @@ public final class CountAggregator<I> extends AbstractAggregator<I, Long> implem
     }
 
     @Override
-    public void accumulate(I entry) {
+    public void accumulateExtracted(Object value) {
         count++;
     }
 

@@ -1,6 +1,5 @@
 package com.hazelcast.aggregation;
 
-import com.hazelcast.aggregation.impl.AbstractAggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
@@ -148,7 +147,7 @@ public class MapWordCountAggregationPerformanceTest extends HazelcastTestSupport
         return word.replaceAll("[^A-Za-z0-9]", "");
     }
 
-    private static class WordCountAggregator extends AbstractAggregator<Map.Entry<String, String>, Map<String, MutableInt>> {
+    private static class WordCountAggregator extends Aggregator<Map.Entry<String, String>, Map<String, MutableInt>> {
 
         Map<String, MutableInt> result = new HashMap<String, MutableInt>(1000);
 

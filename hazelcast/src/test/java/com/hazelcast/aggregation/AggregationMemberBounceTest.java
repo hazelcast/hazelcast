@@ -36,11 +36,12 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
         mapName = randomMapName();
         final HazelcastInstance steadyMember = bounceMemberRule.getSteadyMember();
         IMap<Integer, AggregatorsSpecTest.Person> map = steadyMember.getMap(mapName);
-        AggregatorsSpecTest.populateMapWithPersons(map);
+        AggregatorsSpecTest.populateMapWithPersons(map, "");
     }
 
     @Test
     public void aggregationReturnsCorrectResultWhenBouncing() {
+
         Runnable[] runnables = new Runnable[DRIVER_COUNT];
         for (int i = 0; i < DRIVER_COUNT; i++) {
             HazelcastInstance driver = bounceMemberRule.getNextTestDriver();
@@ -48,12 +49,13 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
             runnables[i] = new Runnable() {
                 @Override
                 public void run() {
-                    AggregatorsSpecTest.assertMinAggregators(map);
-                    AggregatorsSpecTest.assertMaxAggregators(map);
-                    AggregatorsSpecTest.assertSumAggregators(map);
-                    AggregatorsSpecTest.assertAverageAggregators(map);
-                    AggregatorsSpecTest.assertCountAggregators(map);
-                    AggregatorsSpecTest.assertDistinctAggregators(map);
+                    String postfix = "";
+                    AggregatorsSpecTest.assertMinAggregators(map, postfix);
+                    AggregatorsSpecTest.assertMaxAggregators(map, postfix);
+                    AggregatorsSpecTest.assertSumAggregators(map, postfix);
+                    AggregatorsSpecTest.assertAverageAggregators(map, postfix);
+                    AggregatorsSpecTest.assertCountAggregators(map, postfix);
+                    AggregatorsSpecTest.assertDistinctAggregators(map, postfix);
                 }
             };
         }

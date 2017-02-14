@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.aggregation.TestSamples.createEntryWithValue;
+import static com.hazelcast.aggregation.TestSamples.createExtractableEntryWithValue;
 import static com.hazelcast.aggregation.TestSamples.sampleBigDecimals;
 import static com.hazelcast.aggregation.TestSamples.samplePersons;
 import static org.hamcrest.Matchers.equalTo;
@@ -62,7 +63,7 @@ public class CountAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
-            aggregation.accumulate(createEntryWithValue(person));
+            aggregation.accumulate(createExtractableEntryWithValue(person));
         }
 
         Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
@@ -98,7 +99,7 @@ public class CountAggregationTest {
 
         Aggregator<Map.Entry<Person, Person>, Long> aggregation = Aggregators.count("age");
         for (Person person : values) {
-            aggregation.accumulate(createEntryWithValue(person));
+            aggregation.accumulate(createExtractableEntryWithValue(person));
         }
 
         Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();Aggregators.count("age");

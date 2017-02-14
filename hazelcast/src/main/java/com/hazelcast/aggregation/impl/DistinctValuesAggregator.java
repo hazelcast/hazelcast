@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, Set<R>> implements IdentifiedDataSerializable {
+public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, R, Set<R>> implements IdentifiedDataSerializable {
     Set<R> values = new HashSet<R>();
 
     public DistinctValuesAggregator() {
@@ -37,9 +37,8 @@ public final class DistinctValuesAggregator<I, R> extends AbstractAggregator<I, 
     }
 
     @Override
-    public void accumulate(I entry) {
-        R extractedValue = (R) extract(entry);
-        values.add(extractedValue);
+    public void accumulateExtracted(R value) {
+        values.add(value);
     }
 
     @Override
