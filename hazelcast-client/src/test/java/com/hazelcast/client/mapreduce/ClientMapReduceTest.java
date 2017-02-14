@@ -32,6 +32,7 @@ import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -49,6 +50,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
+@Ignore
 public class ClientMapReduceTest
         extends AbstractClientMapReduceJobTest {
 
