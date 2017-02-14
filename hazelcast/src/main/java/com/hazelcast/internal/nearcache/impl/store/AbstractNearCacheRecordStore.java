@@ -468,19 +468,12 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
             return reservedRecord;
         }
 
-        try {
-            nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
+        nearCacheStats.decrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
 
-            updateRecordValue(reservedRecord, value);
-            reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
+        updateRecordValue(reservedRecord, value);
+        reservedRecord.casRecordState(UPDATE_STARTED, READ_PERMITTED);
 
-            nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
-            onPut(key, value, reservedRecord, null);
-        } catch (Throwable error) {
-            onPutError(key, value, reservedRecord, null, error);
-            throw rethrow(error);
-        }
-
+        nearCacheStats.incrementOwnedEntryMemoryCost(getTotalStorageMemoryCost(key, reservedRecord));
         return reservedRecord;
     }
 
