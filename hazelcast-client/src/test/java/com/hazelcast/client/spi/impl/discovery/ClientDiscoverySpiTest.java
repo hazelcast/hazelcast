@@ -94,7 +94,7 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
 
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-        URL schemaResource = ClientDiscoverySpiTest.class.getClassLoader().getResource("hazelcast-client-config-3.8.xsd");
+        URL schemaResource = ClientDiscoverySpiTest.class.getClassLoader().getResource("hazelcast-client-config-3.9.xsd");
         Schema schema = factory.newSchema(schemaResource);
 
         InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);

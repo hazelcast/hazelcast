@@ -19,10 +19,10 @@
 This is a full example hazelcast.xml that includes all the configuration elements and attributes of Hazelcast.
 To use this, rename it to hazelcast.xml and place it in the directory where you start Hazelcast.
 Please see the schema to learn how to configure Hazelcast at 
-https://hazelcast.com/schema/config/hazelcast-config-3.8.xsd or the Reference Manual at
+https://hazelcast.com/schema/config/hazelcast-config-3.9.xsd or the Reference Manual at
 https://hazelcast.org/documentation/.
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.8.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.9.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 <!--
