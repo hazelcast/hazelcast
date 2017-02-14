@@ -25,11 +25,11 @@ import java.util.Comparator;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
+class SortPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
     private final Comparator<? super T> comparator;
 
-    public SortPipeline(Pipeline<T> upstream, StreamContext context, Comparator<? super T> comparator) {
+    SortPipeline(Pipeline<T> upstream, StreamContext context, Comparator<? super T> comparator) {
         super(context, true, upstream);
         this.comparator = comparator;
     }

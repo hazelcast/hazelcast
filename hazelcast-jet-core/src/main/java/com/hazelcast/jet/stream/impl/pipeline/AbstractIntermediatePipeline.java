@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.stream.impl.pipeline;
 
-public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends AbstractPipeline<E_OUT> {
+abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends AbstractPipeline<E_OUT> {
 
-    protected final Pipeline<E_IN> upstream;
+    final Pipeline<E_IN> upstream;
 
     AbstractIntermediatePipeline(StreamContext context, boolean isOrdered, Pipeline<E_IN> upstream) {
         super(context, isOrdered);

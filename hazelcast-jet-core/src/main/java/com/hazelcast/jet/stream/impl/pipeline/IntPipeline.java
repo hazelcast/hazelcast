@@ -47,12 +47,12 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class IntPipeline implements DistributedIntStream {
+class IntPipeline implements DistributedIntStream {
 
     private final StreamContext context;
     private final Pipeline<Integer> inner;
 
-    public IntPipeline(StreamContext context, Pipeline<Integer> inner) {
+    IntPipeline(StreamContext context, Pipeline<Integer> inner) {
         this.context = context;
         this.inner = inner;
     }

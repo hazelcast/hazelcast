@@ -54,7 +54,7 @@ import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkTrue;
 
 @SuppressWarnings(value = {"checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
-public abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
+abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
 
     protected final StreamContext context;
     private final boolean isOrdered;

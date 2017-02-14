@@ -27,9 +27,9 @@ import static com.hazelcast.jet.KeyExtractors.wholeItem;
 import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
+class DistinctPipeline<T> extends AbstractIntermediatePipeline<T, T> {
 
-    public DistinctPipeline(StreamContext context, Pipeline<T> upstream) {
+    DistinctPipeline(StreamContext context, Pipeline<T> upstream) {
         super(context, upstream.isOrdered(), upstream);
     }
 

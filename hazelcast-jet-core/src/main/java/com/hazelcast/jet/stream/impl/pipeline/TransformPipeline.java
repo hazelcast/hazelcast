@@ -28,13 +28,11 @@ import java.util.List;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class TransformPipeline extends AbstractIntermediatePipeline {
+class TransformPipeline extends AbstractIntermediatePipeline {
 
     private final List<TransformOperation> operations = new ArrayList<>();
 
-    public TransformPipeline(StreamContext context,
-                             Pipeline upstream,
-                             TransformOperation operation) {
+    TransformPipeline(StreamContext context, Pipeline upstream, TransformOperation operation) {
         super(context, upstream.isOrdered(), upstream);
         operations.add(operation);
     }

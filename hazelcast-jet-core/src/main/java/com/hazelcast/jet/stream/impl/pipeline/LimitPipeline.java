@@ -23,10 +23,10 @@ import com.hazelcast.jet.stream.impl.processor.LimitP;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
+class LimitPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long limit;
 
-    public LimitPipeline(StreamContext context, Pipeline<T> upstream, long limit) {
+    LimitPipeline(StreamContext context, Pipeline<T> upstream, long limit) {
         super(context, upstream.isOrdered(), upstream);
         this.limit = limit;
     }

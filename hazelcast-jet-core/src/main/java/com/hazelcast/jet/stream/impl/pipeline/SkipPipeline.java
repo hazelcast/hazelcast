@@ -24,10 +24,10 @@ import com.hazelcast.jet.stream.impl.processor.SkipP;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-public class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
+class SkipPipeline<T> extends AbstractIntermediatePipeline<T, T> {
     private final long skip;
 
-    public SkipPipeline(StreamContext context, Pipeline<T> upstream, long skip) {
+    SkipPipeline(StreamContext context, Pipeline<T> upstream, long skip) {
         super(context, upstream.isOrdered(), upstream);
         this.skip = skip;
     }

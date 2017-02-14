@@ -46,12 +46,12 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class DoublePipeline implements DistributedDoubleStream {
+class DoublePipeline implements DistributedDoubleStream {
 
     private final StreamContext context;
     private final Pipeline<Double> inner;
 
-    public DoublePipeline(StreamContext context, Pipeline<Double> inner) {
+    DoublePipeline(StreamContext context, Pipeline<Double> inner) {
         this.context = context;
         this.inner = inner;
     }

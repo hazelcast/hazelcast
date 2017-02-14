@@ -47,12 +47,12 @@ import java.util.stream.Stream;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 
 @SuppressWarnings("checkstyle:methodcount")
-public class LongPipeline implements DistributedLongStream {
+class LongPipeline implements DistributedLongStream {
 
     private final StreamContext context;
     private final Pipeline<Long> inner;
 
-    public LongPipeline(StreamContext context, Pipeline<Long> inner) {
+    LongPipeline(StreamContext context, Pipeline<Long> inner) {
         this.context = context;
         this.inner = inner;
     }
