@@ -30,6 +30,7 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -54,7 +55,8 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
                 String userRegistrationId = UuidUtil.newUnsecureUuidString();
                 ClientRegistrationKey registrationKey = new ClientRegistrationKey(userRegistrationId, handler, codec);
                 try {
-                    invoke(registrationKey);
+                    ClientEventRegistration registration = invoke(registrationKey);
+                    registrations.put(registrationKey, registration);
                 } catch (Exception e) {
                     throw new HazelcastException("Listener can not be added", e);
                 }
@@ -68,7 +70,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         }
     }
 
-    private void invoke(ClientRegistrationKey registrationKey) throws Exception {
+    private ClientEventRegistration invoke(ClientRegistrationKey registrationKey) throws Exception {
         EventHandler handler = registrationKey.getHandler();
         handler.beforeListenerRegister();
         ClientMessage request = registrationKey.getCodec().encodeAddRequest(false);
@@ -79,9 +81,8 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         String registrationId = registrationKey.getCodec().decodeAddResponse(future.get());
         handler.onListenerRegister();
         Connection connection = future.getInvocation().getSendConnection();
-        ClientEventRegistration registration = new ClientEventRegistration(registrationId,
+        return new ClientEventRegistration(registrationId,
                 request.getCorrelationId(), connection, registrationKey.getCodec());
-        registrations.put(registrationKey, registration);
     }
 
     @Override
@@ -125,14 +126,18 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
         registrationExecutor.submit(new Runnable() {
             @Override
             public void run() {
+                Map<ClientRegistrationKey, ClientEventRegistration> tempMap =
+                        new HashMap<ClientRegistrationKey, ClientEventRegistration>();
                 for (ClientRegistrationKey registrationKey : registrations.keySet()) {
                     try {
-                        invoke(registrationKey);
+                        ClientEventRegistration eventRegistration = invoke(registrationKey);
+                        tempMap.put(registrationKey, eventRegistration);
                     } catch (Exception e) {
                         logger.warning("Listener " + registrationKey + " can not be added to new connection: "
                                 + connection, e);
                     }
                 }
+                registrations.putAll(tempMap);
             }
         });
 
