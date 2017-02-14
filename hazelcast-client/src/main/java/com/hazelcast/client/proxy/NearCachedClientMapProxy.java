@@ -132,8 +132,10 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         } else {
             try {
                 value = super.getInternal(key);
-            } finally {
                 value = tryPublishReserved(key, value, reservationId);
+            } catch (Throwable throwable) {
+                invalidateNearCache(key);
+                rethrow(throwable);
             }
         }
 
@@ -438,6 +440,8 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     private Object tryPublishReserved(Data key, Object value, long reservationId) {
+        assert value != NOT_CACHED;
+
         Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
     }
