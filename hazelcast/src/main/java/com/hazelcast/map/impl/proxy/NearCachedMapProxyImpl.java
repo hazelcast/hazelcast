@@ -102,8 +102,10 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         } else {
             try {
                 value = super.getInternal(key);
-            } finally {
                 value = tryPublishReserved(key, value, reservationId);
+            } catch (Throwable throwable) {
+                invalidateCache(key);
+                rethrow(throwable);
             }
         }
 
@@ -429,6 +431,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
     }
 
     private Object tryPublishReserved(Data key, Object value, long reservationId) {
+        assert value != NOT_CACHED;
+
         // `value` is cached even it is null.
         Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
