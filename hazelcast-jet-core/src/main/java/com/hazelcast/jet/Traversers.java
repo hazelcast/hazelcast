@@ -104,6 +104,31 @@ public final class Traversers {
         return new LazyTraverser<>(supplierOfTraverser);
     }
 
+    /**
+     * Traverses over a single item which can be set from the outside, by using this
+     * traverser as a {@code Consumer<T>}. Another item can be set at any time and the
+     * subsequent {@code next()} call will consume it.
+     *
+     * @param <T> item type
+     */
+    public static class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T> {
+        T item;
+
+        @Override
+        public T next() {
+            try {
+                return item;
+            } finally {
+                item = null;
+            }
+        }
+
+        @Override
+        public void accept(T t) {
+            item = t;
+        }
+    }
+
     private static final class LazyTraverser<T> implements Traverser<T> {
         private Supplier<Traverser<T>> supplierOfTraverser;
         private Traverser<T> traverser;
@@ -123,24 +148,6 @@ public final class Traversers {
             } finally {
                 supplierOfTraverser = null;
             }
-        }
-    }
-
-    static final class ResettableSingletonTraverser<T> implements Traverser<T>, Consumer<T> {
-        T item;
-
-        @Override
-        public T next() {
-            try {
-                return item;
-            } finally {
-                item = null;
-            }
-        }
-
-        @Override
-        public void accept(T t) {
-            item = t;
         }
     }
 

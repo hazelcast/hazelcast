@@ -17,53 +17,57 @@
 package com.hazelcast.jet.stream.impl.processor;
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import javax.annotation.Nonnull;
-import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseStream;
+
 public class TransformP extends AbstractProcessor {
 
-    private final TransformOperation[] operations;
+    private final Consumer<Object> inputConsumer;
+    private final Traverser<?> outputTraverser;
+    private boolean itemDone = true;
 
-    public TransformP(List<TransformOperation> operations) {
-        this.operations = operations.toArray(new TransformOperation[operations.size()]);
+    public TransformP(List<TransformOperation> transformOps) {
+        final ResettableSingletonTraverser<Object> input = new ResettableSingletonTraverser<>();
+        this.inputConsumer = input;
+        this.outputTraverser = withOpsApplied(input, transformOps);
     }
 
     @Override
-    protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
-        processItem(item, 0);
-        return true;
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        if (itemDone) {
+            inputConsumer.accept(item);
+        }
+        return itemDone = emitCooperatively(outputTraverser);
     }
 
-    private void processItem(Object item, int operatorIndex) {
-        for (int i = operatorIndex; i < operations.length; i++) {
-            TransformOperation operation = operations[i];
-            switch (operation.getType()) {
+    private static Traverser<?> withOpsApplied(Traverser<?> input, List<TransformOperation> transformOps) {
+        Traverser<?> composed = input;
+        for (TransformOperation op : transformOps) {
+            switch (op.getType()) {
                 case FILTER:
-                    if (!((Predicate) operation.getFunction()).test(item)) {
-                        return;
-                    }
+                    composed = composed.filter((Predicate) op.getFunction());
                     break;
                 case MAP:
-                    item = ((Function) operation.getFunction()).apply(item);
+                    composed = composed.map((Function) op.getFunction());
                     break;
                 case FLAT_MAP:
-                    Stream stream = (Stream) ((Function) operation.getFunction()).apply(item);
-                    Iterator iterator = stream.iterator();
-                    while (iterator.hasNext()) {
-                        processItem(iterator.next(), i + 1);
-                    }
-                    stream.close();
-                    return;
+                    composed = composed.flatMap(item -> traverseStream(
+                            ((Function<Object, Stream<?>>) op.getFunction()).apply(item)));
+                    break;
                 default:
-                    throw new IllegalArgumentException("Unknown case: " + operation.getType());
+                    throw new IllegalArgumentException("Unknown case: " + op.getType());
             }
         }
-        emit(item);
+        return composed;
     }
 }

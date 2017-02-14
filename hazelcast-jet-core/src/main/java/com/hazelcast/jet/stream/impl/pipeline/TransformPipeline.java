@@ -40,14 +40,14 @@ class TransformPipeline extends AbstractIntermediatePipeline {
     @Override
     public Vertex buildDAG(DAG dag) {
         Vertex previous = upstream.buildDAG(dag);
-        // required final for lambda variable capture
-        final List<TransformOperation> ops = operations;
+        // the lambda below must not capture `this`, therefore the instance variable
+        // must first be loaded into a local variable
+        List<TransformOperation> ops = this.operations;
         Vertex transform = dag.newVertex(uniqueVertexName("transform"), () -> new TransformP(ops));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
         }
         dag.edge(between(previous, transform));
-
         return transform;
     }
 
