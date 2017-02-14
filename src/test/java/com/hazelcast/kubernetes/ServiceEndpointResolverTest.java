@@ -84,7 +84,6 @@ public class ServiceEndpointResolverTest {
     }
 
     @Test
-    @Ignore //enable when https://github.com/hazelcast/hazelcast-kubernetes/pull/30 is merged.
     public void resolveWithServiceLabelAndNodeInNamespace() {
         nodesInNamespace.getItems().add(createEndpoints(1));
 
