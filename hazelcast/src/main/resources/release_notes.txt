@@ -41,6 +41,7 @@ This section lists the enhancements performed for Hazelcast 3.8 release.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
 
+- Currently there are only MERGING and MERGED states for lifecycle, but no event is fired for a failed merge. This would be informative and further give an idea to user to understand a reason of a SHUTTING_DOWN event since a failed merge is followed by a shutdown. [9856]
 - Tests are needed to prove that removeAll does not deserialize portables. [9474]
 - Client support for distributed scheduled executor service. [9385]
 - When a member without JCache service joins a cluster where JCache service is enabled but not used, the member should not fail. [9301]
@@ -66,6 +67,11 @@ This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
 The following are the issues solved for 3.8 release.
 
+- `TaskDefinition` should be removed from the client protocol. [9846]
+- `AggregationResult` should be serialized via Codec instead of IDS. [9845]
+- `MetaDataResponse` should be serialized via Codec instead of IDS. [9844]
+- The script `stop.bat` does not stop the running Hazelcast instances. [9822]
+- The script `start.bat` allows multiple instances to be started in the same folder; it should not. [9820]
 - Ordering consistency for the the method `writePortable` should be explained in the Reference Manual. [9813]
 - A client cannot add index to map using Portable values without registering Portable classes on member. [9808]
 - Index is not updated after entry processors change values. [9801]
