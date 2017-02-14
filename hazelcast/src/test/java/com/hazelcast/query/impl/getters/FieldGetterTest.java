@@ -45,6 +45,7 @@ public class FieldGetterTest {
     private Field nailCollectionField;
 
     private Body body;
+    private PrimitiveBloke bloke;
 
     private Nail redNail;
     private Nail greenNail;
@@ -74,6 +75,7 @@ public class FieldGetterTest {
 
         unnamedLimb = new Limb(null);
         body = new Body("bodyName", leg, hand, unnamedLimb);
+        bloke = new PrimitiveBloke();
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -159,6 +161,69 @@ public class FieldGetterTest {
         assertContainsInAnyOrder(result, leg, hand, unnamedLimb);
     }
 
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_bytes() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("bytes"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.bytes[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_shorts() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("shorts"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.shorts[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_ints() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("ints"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.ints[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_longs() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("longs"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.longs[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_floats() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("floats"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.floats[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_double() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("doubles"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.doubles[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_chars() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("chars"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.chars[0]);
+    }
+
+    @Test
+    public void getValue_whenModifierOnCollectionIsStar_thenReturnMultiValueResultWithAllItems_booleans() throws Exception {
+        FieldGetter getter = new FieldGetter(null, PrimitiveBloke.class.getField("booleans"), "[any]", null);
+        MultiResult result = (MultiResult) getter.getValue(bloke);
+
+        assertContainsInAnyOrder(result, bloke.booleans[0]);
+    }
 
     @Test
     public void getValue_whenModifierOnArrayIsPositionAndElementAtGivenPositionExist_thenReturnTheItem() throws Exception {
@@ -301,5 +366,17 @@ public class FieldGetterTest {
         private Nail(String colour) {
             this.colour = colour;
         }
+    }
+
+    static class PrimitiveBloke {
+        public byte[] bytes = new byte[]{1};
+        public short[] shorts = new short[]{1};
+        public int[] ints = new int[]{1};
+        public long[] longs = new long[]{1};
+        public float[] floats = new float[]{1.0f};
+        public double[] doubles = new double[]{1.0d};
+        public char[] chars = new char[]{0};
+        public boolean[] booleans = new boolean[]{false};
+
     }
 }
