@@ -27,15 +27,12 @@ import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -181,27 +178,6 @@ public final class HazelcastInstanceFactory {
         }
     }
 
-    public static Set<HazelcastInstanceImpl> getInstanceImpls(Collection<Member> members) {
-        Set<HazelcastInstanceImpl> set = new HashSet<HazelcastInstanceImpl>();
-        for (InstanceFuture future : INSTANCE_MAP.values()) {
-            try {
-                if (future.isSet()) {
-                    HazelcastInstanceProxy instanceProxy = future.get();
-                    HazelcastInstanceImpl impl = instanceProxy.original;
-                    if (impl != null) {
-                        final MemberImpl localMember = impl.node.getLocalMember();
-                        if (members.contains(localMember)) {
-                            set.add(impl);
-                        }
-                    }
-                }
-            } catch (RuntimeException ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-        return set;
-    }
-
     private static HazelcastInstanceProxy newHazelcastProxy(HazelcastInstanceImpl hazelcastInstance) {
         return new HazelcastInstanceProxy(hazelcastInstance);
     }
@@ -312,22 +288,6 @@ public final class HazelcastInstanceFactory {
             }
             proxy.original = null;
         }
-    }
-
-    public static Map<MemberImpl, HazelcastInstanceImpl> getInstanceImplMap() {
-        Map<MemberImpl, HazelcastInstanceImpl> map = new HashMap<MemberImpl, HazelcastInstanceImpl>();
-        for (InstanceFuture future : INSTANCE_MAP.values()) {
-            try {
-                HazelcastInstanceProxy instanceProxy = future.get();
-                HazelcastInstanceImpl impl = instanceProxy.original;
-                if (impl != null) {
-                    map.put(impl.node.getLocalMember(), impl);
-                }
-            } catch (RuntimeException ignored) {
-                EmptyStatement.ignore(ignored);
-            }
-        }
-        return map;
     }
 
     public static void remove(HazelcastInstanceImpl instance) {
