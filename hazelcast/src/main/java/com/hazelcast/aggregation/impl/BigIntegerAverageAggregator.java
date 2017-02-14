@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigDecimal>
+public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, BigInteger, BigDecimal>
         implements IdentifiedDataSerializable {
 
     private BigInteger sum = BigInteger.ZERO;
@@ -40,11 +40,9 @@ public final class BigIntegerAverageAggregator<I> extends AbstractAggregator<I, 
     }
 
     @Override
-    public void accumulate(I entry) {
+    public void accumulateExtracted(BigInteger value) {
         count++;
-
-        BigInteger extractedValue = (BigInteger) extract(entry);
-        sum = sum.add(extractedValue);
+        sum = sum.add(value);
     }
 
     @Override

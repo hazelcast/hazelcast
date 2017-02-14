@@ -24,7 +24,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.math.BigInteger;
 
-public final class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigInteger> implements IdentifiedDataSerializable {
+public final class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigInteger, BigInteger>
+        implements IdentifiedDataSerializable {
 
     private BigInteger sum = BigInteger.ZERO;
 
@@ -37,9 +38,8 @@ public final class BigIntegerSumAggregator<I> extends AbstractAggregator<I, BigI
     }
 
     @Override
-    public void accumulate(I entry) {
-        BigInteger extractedValue = (BigInteger) extract(entry);
-        sum = sum.add(extractedValue);
+    public void accumulateExtracted(BigInteger value) {
+        sum = sum.add(value);
     }
 
     @Override

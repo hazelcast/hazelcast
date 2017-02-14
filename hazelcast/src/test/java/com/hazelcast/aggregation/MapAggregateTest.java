@@ -1,6 +1,5 @@
 package com.hazelcast.aggregation;
 
-import com.hazelcast.aggregation.impl.AbstractAggregator;
 import com.hazelcast.aggregation.impl.DoubleAverageAggregator;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
@@ -165,7 +164,7 @@ public class MapAggregateTest extends HazelcastTestSupport {
         return map;
     }
 
-    private static class ExceptionThrowingAggregator<I> extends AbstractAggregator<I, Double> {
+    private static class ExceptionThrowingAggregator<I> extends Aggregator<I, Double> {
 
         private boolean throwOnAccumulate;
         private boolean throwOnCombine;

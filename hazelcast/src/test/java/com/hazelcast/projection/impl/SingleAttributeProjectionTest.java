@@ -38,6 +38,16 @@ public class SingleAttributeProjectionTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    @Test(expected = IllegalArgumentException.class)
+    public void singleAttribute_attributeNull() {
+        Projections.<Map.Entry<String, Person>, Double>singleAttribute(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void singleAttribute_attributeEmpty() {
+        Projections.<Map.Entry<String, Person>, Double>singleAttribute("");
+    }
+
     @Test
     public void singleAttribute() {
         IMap<String, Person> map = getMapWithNodeCount();

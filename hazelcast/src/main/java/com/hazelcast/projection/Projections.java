@@ -32,7 +32,7 @@ public final class Projections {
     /**
      * Returns a projection that extracts the value of the given attributePath
      *
-     * @param attributePath single attribute path
+     * @param attributePath single attribute path, path must not be null or empty
      * @param <O>           Output type
      * @return a projection that extracts the value of the given attributePath
      */
@@ -44,7 +44,7 @@ public final class Projections {
      * Returns a projection that extracts the value of the given attributePaths.
      * The attribute values will be returned as an Object[] array from each projection call.
      *
-     * @param attributePath 1 to N attribute Paths
+     * @param attributePath 1 to N attribute Paths, paths must not be null or empty
      * @return a projection that extracts the value of the given attributePaths.
      */
     public static <I> Projection<I, Object[]> multiAttribute(String... attributePath) {
