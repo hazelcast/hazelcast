@@ -19,12 +19,13 @@ package com.hazelcast.jet.stream;
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Distributed.Optional;
-import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
-import com.hazelcast.jet.stream.impl.collectors.DistributedStringJoiner;
-import com.hazelcast.jet.stream.impl.collectors.HazelcastGroupingMapCollector;
-import com.hazelcast.jet.stream.impl.collectors.HazelcastListCollector;
-import com.hazelcast.jet.stream.impl.collectors.HazelcastMapCollector;
-import com.hazelcast.jet.stream.impl.collectors.HazelcastMergingMapCollector;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
+import com.hazelcast.jet.stream.impl.reducers.DistributedStringJoiner;
+import com.hazelcast.jet.stream.impl.reducers.GroupingIMapReducer;
+import com.hazelcast.jet.stream.impl.reducers.IListReducer;
+import com.hazelcast.jet.stream.impl.reducers.IMapReducer;
+import com.hazelcast.jet.stream.impl.reducers.MergingIMapReducer;
 import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
 import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
 import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
@@ -959,171 +960,6 @@ public abstract class DistributedCollectors {
                 }, CH_ID);
     }
 
-    //** JET SPECIFIC **//
-
-    /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
-     * new Hazelcast {@code IMap} whose keys and values are the result of applying the provided
-     * mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>         the type of the input elements
-     * @param <K>         the output type of the key mapping function
-     * @param <U>         the output type of the value mapping function
-     * @param keyMapper   a mapping function to produce keys
-     * @param valueMapper a mapping function to produce values
-     * @return a {@code Distributed.Collector} which collects elements into a {@code IMap}
-     * whose keys and values are the result of applying mapping functions to
-     * the input elements
-     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
-     */
-    public static <T, K, U> DistributedCollector<T, ?, IStreamMap<K, U>>
-    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
-           Distributed.Function<? super T, ? extends U> valueMapper) {
-        return new HazelcastMapCollector<>(keyMapper, valueMapper);
-    }
-
-    /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
-     * new distributed Hazelcast {@code IMap} whose keys and values are the keys and values of
-     * the corresponding {@code Map.Entry}.
-     * <p>
-     * * <p>If the mapped keys contains duplicates (according to
-     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
-     * and the others will be dropped. If the mapped keys may have duplicates, use
-     * {@link #toMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)}
-     * instead.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <K> The type of the key in {@code Map.Entry}
-     * @param <U> The type of the value in {@code Map.Entry}
-     * @return a {@code Distributed.Collector} that accumulates elements into a
-     * Hazelcast {@code IMap} whose keys and values are the keys and values of the corresponding
-     * {@code Map.Entry}.
-     * @see #toIMap(Distributed.Function, Distributed.Function)
-     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
-     */
-    public static <K, U> DistributedCollector<Entry<K, U>, ?, IStreamMap<K, U>> toIMap() {
-        return toIMap(Map.Entry::getKey, Map.Entry::getValue);
-    }
-
-    /**
-     * Returns a {@code Distributed.Collector} that accumulates elements into a
-     * new distributed Hazelcast {@code IMap} whose keys and values are the result of applying
-     * the provided mapping functions to the input elements.
-     * <p>
-     * <p>If the mapped
-     * keys contains duplicates (according to {@link Object#equals(Object)}),
-     * the value mapping function is applied to each equal element, and the
-     * results are merged using the provided merging function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>           the type of the input elements
-     * @param <K>           the output type of the key mapping function
-     * @param <U>           the output type of the value mapping function
-     * @param keyMapper     a mapping function to produce keys
-     * @param valueMapper   a mapping function to produce values
-     * @param mergeFunction a merge function, used to resolve collisions between
-     *                      values associated with the same key, as supplied
-     *                      to {@link Map#merge(Object, Object,
-     *                      java.util.function.BiFunction)}
-     * @return a {@code Distributed.Collector} which collects elements into a distributed
-     * {@code IMap} whose keys are the result of applying a key mapping function to the input
-     * elements, and whose values are the result of applying a value mapping
-     * function to all input elements equal to the key and combining them
-     * using the merge function
-     * @see #toIMap(Distributed.Function, Distributed.Function)
-     */
-    public static <T, K, U> DistributedCollector<T, ?, IStreamMap<K, U>>
-    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
-           Distributed.Function<? super T, ? extends U> valueMapper,
-           Distributed.BinaryOperator<U> mergeFunction) {
-        return new HazelcastMergingMapCollector<>(keyMapper, valueMapper, mergeFunction);
-    }
-
-    /**
-     * Returns a {@code Distributed.Collector} that accumulates the input elements into a
-     * new Hazelcast {@code IList}.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T> the type of the input elements
-     * @return a {@code Distributed.Collector} which collects all the input elements into a
-     * Hazelcast {@code IList}, in encounter order
-     */
-    public static <T> DistributedCollector<T, ?, IStreamList<T>> toIList() {
-        return new HazelcastListCollector<>();
-    }
-
-    /**
-     * Returns a {@code Distributed.Collector} implementing a "group by" operation on
-     * input elements of type {@code T}, grouping elements according to a
-     * classification function, and returning the results in a
-     * new distributed Hazelcast {@code IMap}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The collector produces a {@code Map<K, List<T>>} whose keys are the
-     * values resulting from applying the classification function to the input
-     * elements, and whose corresponding values are {@code List}s containing the
-     * input elements which map to the associated key under the classification
-     * function.
-     * <p>
-     * The returned collector may not be used as a downstream collector.
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param classifier the classifier function mapping input elements to keys
-     * @return a {@code Distributed.Collector} implementing the group-by operation
-     * @see #groupingByToIMap(Distributed.Function, DistributedCollector)
-     */
-    public static <T, K> DistributedCollector<T, ?, IMap<K, List<T>>>
-    groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier) {
-        return groupingByToIMap(classifier, toList());
-    }
-
-    /**
-     * Returns a {@code Distributed.Collector} implementing a cascaded "group by" operation
-     * on input elements of type {@code T}, grouping elements according to a
-     * classification function, and then performing a reduction operation on
-     * the values associated with a given key using the specified downstream
-     * {@code Distributed.Collector}.
-     * <p>
-     * <p>The classification function maps elements to some key type {@code K}.
-     * The downstream collector operates on elements of type {@code T} and
-     * produces a result of type {@code D}. The resulting collector produces a new
-     * Hazelcast distributed {@code IMap<K, D>}.
-     * <p>
-     * <p>For example, to compute the set of last names of people in each city:
-     * <pre>{@code
-     *     IMap<City, Set<String>> namesByCity
-     *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              mapping(Person::getLastName, toSet())));
-     * }</pre>
-     *
-     * @param <T>        the type of the input elements
-     * @param <K>        the type of the keys
-     * @param <A>        the intermediate accumulation type of the downstream collector
-     * @param <D>        the result type of the downstream reduction
-     * @param classifier a classifier function mapping input elements to keys
-     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
-     * @return a {@code Distributed.Collector} implementing the cascaded group-by operation
-     * @see #groupingByToIMap(Distributed.Function)
-     */
-    public static <T, K, A, D>
-    DistributedCollector<T, ?, IMap<K, D>> groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier,
-                                                            DistributedCollector<? super T, A, D> downstream) {
-        return new HazelcastGroupingMapCollector<>(classifier, downstream);
-    }
-
     private static <K, V, M extends Map<K, V>>
     Distributed.BinaryOperator<M> mapMerger(Distributed.BinaryOperator<V> mergeFunction) {
         return (m1, m2) -> {
@@ -1192,5 +1028,170 @@ public abstract class DistributedCollectors {
                 }
             };
         }
+    }
+
+    //** JET SPECIFIC REDUCERS **//
+
+    /**
+     * Returns a {@code Reducer} that accumulates elements into a
+     * new Hazelcast {@code IMap} whose keys and values are the result of applying the provided
+     * mapping functions to the input elements.
+     * <p>
+     * <p>If the mapped keys contains duplicates (according to
+     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
+     * and the others will be dropped. If the mapped keys may have duplicates, use
+     * {@link #toMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)}
+     * instead.
+     * <p>
+     * The returned collector may not be used as a downstream collector.
+     *
+     * @param <T>         the type of the input elements
+     * @param <K>         the output type of the key mapping function
+     * @param <U>         the output type of the value mapping function
+     * @param keyMapper   a mapping function to produce keys
+     * @param valueMapper a mapping function to produce values
+     * @return a {@code Reducer} which collects elements into a {@code IMap}
+     * whose keys and values are the result of applying mapping functions to
+     * the input elements
+     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
+     */
+    public static <T, K, U> Reducer<T, IStreamMap<K, U>>
+    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
+           Distributed.Function<? super T, ? extends U> valueMapper) {
+        return new IMapReducer<>(keyMapper, valueMapper);
+    }
+
+    /**
+     * Returns a {@code Reducer} that accumulates elements into a
+     * new distributed Hazelcast {@code IMap} whose keys and values are the keys and values of
+     * the corresponding {@code Map.Entry}.
+     * <p>
+     * * <p>If the mapped keys contains duplicates (according to
+     * {@link Object#equals(Object)}), only one of the mapped values will be in the final map,
+     * and the others will be dropped. If the mapped keys may have duplicates, use
+     * {@link #toMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)}
+     * instead.
+     * <p>
+     * The returned collector may not be used as a downstream collector.
+     *
+     * @param <K> The type of the key in {@code Map.Entry}
+     * @param <U> The type of the value in {@code Map.Entry}
+     * @return a {@code Reducer} that accumulates elements into a
+     * Hazelcast {@code IMap} whose keys and values are the keys and values of the corresponding
+     * {@code Map.Entry}.
+     * @see #toIMap(Distributed.Function, Distributed.Function)
+     * @see #toIMap(Distributed.Function, Distributed.Function, Distributed.BinaryOperator)
+     */
+    public static <K, U> Reducer<Entry<K, U>, IStreamMap<K, U>> toIMap() {
+        return toIMap(Map.Entry::getKey, Map.Entry::getValue);
+    }
+
+    /**
+     * Returns a {@code Reducer} that accumulates elements into a
+     * new distributed Hazelcast {@code IMap} whose keys and values are the result of applying
+     * the provided mapping functions to the input elements.
+     * <p>
+     * <p>If the mapped
+     * keys contains duplicates (according to {@link Object#equals(Object)}),
+     * the value mapping function is applied to each equal element, and the
+     * results are merged using the provided merging function.
+     * <p>
+     * The returned collector may not be used as a downstream collector.
+     *
+     * @param <T>           the type of the input elements
+     * @param <K>           the output type of the key mapping function
+     * @param <U>           the output type of the value mapping function
+     * @param keyMapper     a mapping function to produce keys
+     * @param valueMapper   a mapping function to produce values
+     * @param mergeFunction a merge function, used to resolve collisions between
+     *                      values associated with the same key, as supplied
+     *                      to {@link Map#merge(Object, Object,
+     *                      java.util.function.BiFunction)}
+     * @return a {@code Reducer} which collects elements into a distributed
+     * {@code IMap} whose keys are the result of applying a key mapping function to the input
+     * elements, and whose values are the result of applying a value mapping
+     * function to all input elements equal to the key and combining them
+     * using the merge function
+     * @see #toIMap(Distributed.Function, Distributed.Function)
+     */
+    public static <T, K, U> Reducer<T, IStreamMap<K, U>>
+    toIMap(Distributed.Function<? super T, ? extends K> keyMapper,
+           Distributed.Function<? super T, ? extends U> valueMapper,
+           Distributed.BinaryOperator<U> mergeFunction) {
+        return new MergingIMapReducer<>(keyMapper, valueMapper, mergeFunction);
+    }
+
+    /**
+     * Returns a {@code Reducer} that accumulates the input elements into a
+     * new Hazelcast {@code IList}.
+     * <p>
+     * The returned collector may not be used as a downstream collector.
+     *
+     * @param <T> the type of the input elements
+     * @return a {@code Distributed.Collector} which collects all the input elements into a
+     * Hazelcast {@code IList}, in encounter order
+     */
+    public static <T> Reducer<T, IStreamList<T>> toIList() {
+        return new IListReducer<>();
+    }
+
+    /**
+     * Returns a {@code Reducer} implementing a "group by" operation on
+     * input elements of type {@code T}, grouping elements according to a
+     * classification function, and returning the results in a
+     * new distributed Hazelcast {@code IMap}.
+     * <p>
+     * <p>The classification function maps elements to some key type {@code K}.
+     * The collector produces a {@code Map<K, List<T>>} whose keys are the
+     * values resulting from applying the classification function to the input
+     * elements, and whose corresponding values are {@code List}s containing the
+     * input elements which map to the associated key under the classification
+     * function.
+     * <p>
+     * The returned collector may not be used as a downstream collector.
+     *
+     * @param <T>        the type of the input elements
+     * @param <K>        the type of the keys
+     * @param classifier the classifier function mapping input elements to keys
+     * @return a {@code Reducer} implementing the group-by operation
+     * @see #groupingByToIMap(Distributed.Function, DistributedCollector)
+     */
+    public static <T, K> Reducer<T, IMap<K, List<T>>>
+    groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier) {
+        return groupingByToIMap(classifier, toList());
+    }
+
+    /**
+     * Returns a {@code Reducer} implementing a cascaded "group by" operation
+     * on input elements of type {@code T}, grouping elements according to a
+     * classification function, and then performing a reduction operation on
+     * the values associated with a given key using the specified downstream
+     * {@code Distributed.Collector}.
+     * <p>
+     * <p>The classification function maps elements to some key type {@code K}.
+     * The downstream collector operates on elements of type {@code T} and
+     * produces a result of type {@code D}. The resulting collector produces a new
+     * Hazelcast distributed {@code IMap<K, D>}.
+     * <p>
+     * <p>For example, to compute the set of last names of people in each city:
+     * <pre>{@code
+     *     IMap<City, Set<String>> namesByCity
+     *         = people.stream().collect(groupingBy(Person::getCity,
+     *                                              mapping(Person::getLastName, toSet())));
+     * }</pre>
+     *
+     * @param <T>        the type of the input elements
+     * @param <K>        the type of the keys
+     * @param <A>        the intermediate accumulation type of the downstream collector
+     * @param <D>        the result type of the downstream reduction
+     * @param classifier a classifier function mapping input elements to keys
+     * @param downstream a {@code Distributed.Collector} implementing the downstream reduction
+     * @return a {@code Reducer} implementing the cascaded group-by operation
+     * @see #groupingByToIMap(Distributed.Function)
+     */
+    public static <T, K, A, D>
+    Reducer<T, IMap<K, D>> groupingByToIMap(Distributed.Function<? super T, ? extends K> classifier,
+                                            DistributedCollector<? super T, A, D> downstream) {
+        return new GroupingIMapReducer<>(classifier, downstream);
     }
 }

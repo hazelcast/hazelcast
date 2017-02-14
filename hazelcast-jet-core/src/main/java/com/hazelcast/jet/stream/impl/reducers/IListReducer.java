@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -23,15 +23,15 @@ import com.hazelcast.jet.stream.IStreamList;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
-public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, IStreamList<T>> {
+public class IListReducer<T> extends AbstractSinkReducer<T, IStreamList<T>> {
 
     private final String listName;
 
-    public HazelcastListCollector() {
+    public IListReducer() {
         this(uniqueListName());
     }
 
-    public HazelcastListCollector(String listName) {
+    private IListReducer(String listName) {
         this.listName = listName;
     }
 
@@ -41,7 +41,7 @@ public class HazelcastListCollector<T> extends AbstractHazelcastCollector<T, ISt
     }
 
     @Override
-    protected ProcessorMetaSupplier getSinkSupplier() {
+    protected ProcessorMetaSupplier getSupplier() {
         return ProcessorMetaSupplier.of(Processors.writeList(listName));
     }
 

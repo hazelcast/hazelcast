@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import java.io.Serializable;
 import java.util.Objects;

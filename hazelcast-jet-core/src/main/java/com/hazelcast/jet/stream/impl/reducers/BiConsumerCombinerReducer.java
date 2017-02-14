@@ -14,39 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
-import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
-import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.buildAccumulator;
-import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.buildCombiner;
-import static com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl.execute;
+import static com.hazelcast.jet.stream.impl.reducers.CollectorReducer.buildAccumulator;
+import static com.hazelcast.jet.stream.impl.reducers.CollectorReducer.buildCombiner;
+import static com.hazelcast.jet.stream.impl.reducers.CollectorReducer.execute;
 
-public class CustomStreamCollector<T, R> extends AbstractCollector<T, R, R> {
+/**
+ * A variation of {@link CollectorReducer} which has the combiner
+ * as a {@code BiConsumer} instead.
+ */
+public class BiConsumerCombinerReducer<T, R> implements Reducer<T, R> {
 
     private final Supplier<R> supplier;
     private final BiConsumer<R, ? super T> accumulator;
     private final BiConsumer<R, R> combiner;
 
-    public CustomStreamCollector(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator,
-                                 BiConsumer<R, R> combiner) {
-        checkSerializable(supplier, "supplier");
-        checkSerializable(accumulator, "accumulator");
-        checkSerializable(combiner, "combiner");
+    public BiConsumerCombinerReducer(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator,
+                                     BiConsumer<R, R> combiner) {
         this.supplier = supplier;
         this.accumulator = accumulator;
         this.combiner = combiner;
     }
 
     @Override
-    public R collect(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
         DAG dag = new DAG();
         Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
         Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, null);

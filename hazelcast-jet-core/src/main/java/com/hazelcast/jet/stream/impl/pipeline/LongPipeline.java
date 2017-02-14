@@ -24,7 +24,6 @@ import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.distributed.DistributedLongSummaryStatistics;
-import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -152,13 +151,13 @@ public class LongPipeline implements DistributedLongStream {
     @Override
     public long reduce(long identity, LongBinaryOperator op) {
         checkSerializable(op, "op");
-        return new Reducer(context).<Long>reduce(inner, identity, op::applyAsLong);
+        return inner.<Long>reduce(identity, op::applyAsLong);
     }
 
     @Override
     public OptionalLong reduce(LongBinaryOperator op) {
         checkSerializable(op, "op");
-        Optional<Long> result = new Reducer(context).reduce(inner, op::applyAsLong);
+        Optional<Long> result = inner.reduce(op::applyAsLong);
         return result.isPresent() ? OptionalLong.of(result.get()) : OptionalLong.empty();
     }
 

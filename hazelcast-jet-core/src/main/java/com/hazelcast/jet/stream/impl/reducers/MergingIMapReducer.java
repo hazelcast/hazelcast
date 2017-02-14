@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Processors;
@@ -33,11 +33,11 @@ import static com.hazelcast.jet.Partitioner.HASH_CODE;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
-public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector<T, K, V> {
+public class MergingIMapReducer<T, K, V> extends IMapReducer<T, K, V> {
 
     private final BinaryOperator<V> mergeFunction;
 
-    public HazelcastMergingMapCollector(
+    public MergingIMapReducer(
             Function<? super T, ? extends K> keyMapper,
             Function<? super T, ? extends V> valueMapper,
             BinaryOperator<V> mergeFunction
@@ -45,7 +45,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
         this(uniqueMapName(), keyMapper, valueMapper, mergeFunction);
     }
 
-    public HazelcastMergingMapCollector(
+    private MergingIMapReducer(
             String mapName,
             Function<? super T, ? extends K> keyMapper,
             Function<? super T, ? extends V> valueMapper,
@@ -56,7 +56,7 @@ public class HazelcastMergingMapCollector<T, K, V> extends HazelcastMapCollector
     }
 
     @Override
-    public IStreamMap<K, V> collect(StreamContext context, Pipeline<? extends T> upstream) {
+    public IStreamMap<K, V> reduce(StreamContext context, Pipeline<? extends T> upstream) {
         IStreamMap<K, V> target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex previous = upstream.buildDAG(dag);

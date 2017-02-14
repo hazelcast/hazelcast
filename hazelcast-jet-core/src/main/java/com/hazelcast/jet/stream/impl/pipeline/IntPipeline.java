@@ -24,7 +24,6 @@ import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.distributed.DistributedIntSummaryStatistics;
-import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -152,13 +151,14 @@ public class IntPipeline implements DistributedIntStream {
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
         checkSerializable(op, "op");
-        return new Reducer(context).<Integer>reduce(inner, identity, op::applyAsInt);
+        return inner.reduce(identity, op::applyAsInt);
     }
 
     @Override
     public OptionalInt reduce(IntBinaryOperator op) {
         checkSerializable(op, "op");
-        Optional<Integer> result = new Reducer(context).reduce(inner, op::applyAsInt);
+
+        Optional<Integer> result = inner.reduce(op::applyAsInt);
         return result.isPresent() ? OptionalInt.of(result.get()) : OptionalInt.empty();
     }
 

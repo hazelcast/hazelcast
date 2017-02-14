@@ -14,65 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Processor;
-import com.hazelcast.jet.Processors;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.stream.DistributedCollector;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.CollectorAccumulateP;
 import com.hazelcast.jet.stream.impl.processor.CollectorCombineP;
 import com.hazelcast.jet.stream.impl.processor.CombineP;
 
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueListName;
 
-public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T, A, R> {
+/**
+ * Performs a reduction using the functions from a {@link java.util.stream.Collector}
+ */
+public class CollectorReducer<T, A, R> implements Reducer<T, R> {
 
-    private final Distributed.Supplier<A> supplier;
-    private final Distributed.BiConsumer<A, T> accumulator;
-    private final Distributed.BinaryOperator<A> combiner;
-    private final Set<Characteristics> characteristics;
-    private final Distributed.Function<A, R> finisher;
+    private final Supplier<A> supplier;
+    private final BiConsumer<A, T> accumulator;
+    private final BinaryOperator<A> combiner;
+    private final Function<A, R> finisher;
 
-    public DistributedCollectorImpl(
-            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
-            Distributed.BinaryOperator<A> combiner, Distributed.Function<A, R> finisher,
-            Set<Characteristics> characteristics
-    ) {
+    public CollectorReducer(
+            Supplier<A> supplier, BiConsumer<A, T> accumulator,
+            BinaryOperator<A> combiner, Function<A, R> finisher) {
         this.supplier = supplier;
         this.accumulator = accumulator;
         this.combiner = combiner;
         this.finisher = finisher;
-        this.characteristics = characteristics;
-    }
-
-    public DistributedCollectorImpl(
-            Distributed.Supplier<A> supplier, Distributed.BiConsumer<A, T> accumulator,
-            Distributed.BinaryOperator<A> combiner, Set<Characteristics> characteristics
-    ) {
-        this(supplier, accumulator, combiner, castingIdentity(), characteristics);
-    }
-
-    static <I, R> Distributed.Function<I, R> castingIdentity() {
-        return i -> (R) i;
     }
 
     static <R> R execute(StreamContext context, DAG dag, Vertex combiner) {
         String listName = uniqueListName();
-        Vertex writer = dag.newVertex("write-list-" + listName, Processors.writeList(listName));
+        Vertex writer = dag.newVertex("write-" + listName, writeList(listName));
         dag.edge(between(combiner, writer));
         executeJob(context, dag);
         IList<R> list = context.getJetInstance().getList(listName);
@@ -83,29 +70,30 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
 
     static <T, R> Vertex buildAccumulator(DAG dag, Pipeline<T> upstream, Supplier<R> supplier,
                                           BiConsumer<R, ? super T> accumulator) {
-        Vertex accumulate = dag.newVertex("accumulate", () -> new CollectorAccumulateP<>(accumulator, supplier));
+        Vertex accumulatorVertex = dag.newVertex("accumulator",
+                () -> new CollectorAccumulateP<>(accumulator, supplier));
         if (upstream.isOrdered()) {
-            accumulate.localParallelism(1);
+            accumulatorVertex.localParallelism(1);
         }
         Vertex previous = upstream.buildDAG(dag);
 
-        if (previous != accumulate) {
-            dag.edge(between(previous, accumulate));
+        if (previous != accumulatorVertex) {
+            dag.edge(between(previous, accumulatorVertex));
         }
 
-        return accumulate;
+        return accumulatorVertex;
     }
 
     static <A, R> Vertex buildCombiner(DAG dag, Vertex accumulatorVertex,
                                        Object combiner, Function<A, R> finisher) {
         Distributed.Supplier<Processor> processorSupplier = getCombinerSupplier(combiner, finisher);
-        Vertex combine = dag.newVertex("combine", processorSupplier).localParallelism(1);
-        dag.edge(between(accumulatorVertex, combine)
+        Vertex combinerVertex = dag.newVertex("combiner", processorSupplier).localParallelism(1);
+        dag.edge(between(accumulatorVertex, combinerVertex)
                 .distributed()
                 .allToOne()
         );
 
-        return combine;
+        return combinerVertex;
     }
 
     private static <A, R> Distributed.Supplier<Processor> getCombinerSupplier(Object combiner, Function<A, R> finisher) {
@@ -119,35 +107,10 @@ public class DistributedCollectorImpl<T, A, R> implements DistributedCollector<T
     }
 
     @Override
-    public Distributed.Supplier<A> supplier() {
-        return supplier;
-    }
-
-    @Override
-    public Distributed.BiConsumer<A, T> accumulator() {
-        return accumulator;
-    }
-
-    @Override
-    public Distributed.BinaryOperator<A> combiner() {
-        return combiner;
-    }
-
-    @Override
-    public Distributed.Function<A, R> finisher() {
-        return finisher;
-    }
-
-    @Override
-    public Set<Characteristics> characteristics() {
-        return characteristics;
-    }
-
-    @Override
-    public R collect(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
         DAG dag = new DAG();
-        Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier(), accumulator());
-        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner(), finisher);
+        Vertex accumulatorVertex = buildAccumulator(dag, upstream, supplier, accumulator);
+        Vertex combinerVertex = buildCombiner(dag, accumulatorVertex, combiner, finisher);
 
         return execute(context, dag, combinerVertex);
     }

@@ -20,7 +20,7 @@ public abstract class AbstractIntermediatePipeline<E_IN, E_OUT> extends Abstract
 
     protected final Pipeline<E_IN> upstream;
 
-    public AbstractIntermediatePipeline(StreamContext context, boolean isOrdered, Pipeline<E_IN> upstream) {
+    AbstractIntermediatePipeline(StreamContext context, boolean isOrdered, Pipeline<E_IN> upstream) {
         super(context, isOrdered);
         this.upstream = upstream;
     }

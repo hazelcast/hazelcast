@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
@@ -25,20 +25,20 @@ import java.util.function.Function;
 
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
-public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T, IStreamMap<K, V>> {
+public class IMapReducer<T, K, V> extends AbstractSinkReducer<T, IStreamMap<K, V>> {
 
-    protected final String mapName;
-    protected final Function<? super T, ? extends K> keyMapper;
-    protected final Function<? super T, ? extends V> valueMapper;
+    final String mapName;
+    final Function<? super T, ? extends K> keyMapper;
+    final Function<? super T, ? extends V> valueMapper;
 
 
-    public HazelcastMapCollector(Function<? super T, ? extends K> keyMapper,
-                                 Function<? super T, ? extends V> valueMapper) {
+    public IMapReducer(Function<? super T, ? extends K> keyMapper,
+                       Function<? super T, ? extends V> valueMapper) {
         this(uniqueMapName(), keyMapper, valueMapper);
     }
 
-    public HazelcastMapCollector(String mapName, Function<? super T, ? extends K> keyMapper,
-                                 Function<? super T, ? extends V> valueMapper) {
+    IMapReducer(String mapName, Function<? super T, ? extends K> keyMapper,
+                Function<? super T, ? extends V> valueMapper) {
         this.mapName = mapName;
         this.keyMapper = keyMapper;
         this.valueMapper = valueMapper;
@@ -50,7 +50,7 @@ public class HazelcastMapCollector<T, K, V> extends AbstractHazelcastCollector<T
     }
 
     @Override
-    protected ProcessorMetaSupplier getSinkSupplier() {
+    protected ProcessorMetaSupplier getSupplier() {
         return Processors.writeMap(mapName);
     }
 

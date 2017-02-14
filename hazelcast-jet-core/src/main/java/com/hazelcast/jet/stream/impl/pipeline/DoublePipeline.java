@@ -24,7 +24,6 @@ import com.hazelcast.jet.stream.DistributedIntStream;
 import com.hazelcast.jet.stream.DistributedLongStream;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.distributed.DistributedDoubleSummaryStatistics;
-import com.hazelcast.jet.stream.impl.terminal.Reducer;
 
 import java.util.Iterator;
 import java.util.Optional;
@@ -150,13 +149,15 @@ public class DoublePipeline implements DistributedDoubleStream {
     @Override
     public double reduce(double identity, DoubleBinaryOperator op) {
         checkSerializable(op, "op");
-        return new Reducer(context).<Double>reduce(inner, identity, op::applyAsDouble);
+
+        return inner.reduce(identity, op::applyAsDouble);
     }
 
     @Override
     public OptionalDouble reduce(DoubleBinaryOperator op) {
         checkSerializable(op, "op");
-        Optional<Double> result = new Reducer(context).reduce(inner, op::applyAsDouble);
+
+        Optional<Double> result = inner.reduce(op::applyAsDouble);
         return result.isPresent() ? OptionalDouble.of(result.get()) : OptionalDouble.empty();
     }
 

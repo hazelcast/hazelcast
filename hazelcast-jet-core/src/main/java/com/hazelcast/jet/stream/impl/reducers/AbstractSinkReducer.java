@@ -14,29 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.Vertex;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 
-public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector<T, Object, R> {
+abstract class AbstractSinkReducer<T, R> implements Reducer<T, R> {
 
     @Override
-    public R collect(StreamContext context, Pipeline<? extends T> upstream) {
+    public R reduce(StreamContext context, Pipeline<? extends T> upstream) {
         R target = getTarget(context.getJetInstance());
         DAG dag = new DAG();
         Vertex vertex = upstream.buildDAG(dag);
-        Vertex writer = dag.newVertex("write-" + getName(), getSinkSupplier());
+        Vertex writer = dag.newVertex("write-" + getName(), getSupplier());
+
         if (localParallelism() > 0) {
             writer.localParallelism(localParallelism());
         }
+
         dag.edge(between(vertex, writer));
         executeJob(context, dag);
         return target;
@@ -44,7 +47,7 @@ public abstract class AbstractHazelcastCollector<T, R> extends AbstractCollector
 
     protected abstract R getTarget(JetInstance instance);
 
-    protected abstract ProcessorMetaSupplier getSinkSupplier();
+    protected abstract ProcessorMetaSupplier getSupplier();
 
     protected abstract int localParallelism();
 

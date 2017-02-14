@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.stream.impl.collectors;
+package com.hazelcast.jet.stream.impl.reducers;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedCollector;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 import com.hazelcast.jet.stream.impl.processor.CombineGroupsP;
@@ -36,27 +37,26 @@ import static com.hazelcast.jet.Processors.writeMap;
 import static com.hazelcast.jet.stream.impl.StreamUtil.executeJob;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueMapName;
 
-public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector<T, A, IMap<K, D>> {
+public class GroupingIMapReducer<T, A, K, D> implements Reducer<T, IMap<K, D>> {
 
     private final String mapName;
     private final Function<? super T, ? extends K> classifier;
     private final Collector<? super T, A, D> collector;
 
-    public HazelcastGroupingMapCollector(Distributed.Function<? super T, ? extends K> classifier,
-                                         DistributedCollector<? super T, A, D> collector) {
-        this(uniqueMapName(), classifier, collector);
+    public GroupingIMapReducer(Distributed.Function<? super T, ? extends K> classifier,
+                               DistributedCollector<? super T, A, D> downstream) {
+        this(uniqueMapName(), classifier, downstream);
     }
 
-    public HazelcastGroupingMapCollector(
-            String mapName, Function<? super T, ? extends K> classifier, Collector<? super T, A, D> collector
-    ) {
+    private GroupingIMapReducer(String mapName, Function<? super T, ? extends K> classifier,
+                                Collector<? super T, A, D> collector) {
         this.mapName = mapName;
         this.classifier = classifier;
         this.collector = collector;
     }
 
     @Override
-    public IMap<K, D> collect(StreamContext context, Pipeline<? extends T> upstream) {
+    public IMap<K, D> reduce(StreamContext context, Pipeline<? extends T> upstream) {
         IMap<K, D> target = context.getJetInstance().getMap(mapName);
 
         DAG dag = new DAG();
@@ -72,5 +72,4 @@ public class HazelcastGroupingMapCollector<T, A, K, D> extends AbstractCollector
         executeJob(context, dag);
         return target;
     }
-
 }

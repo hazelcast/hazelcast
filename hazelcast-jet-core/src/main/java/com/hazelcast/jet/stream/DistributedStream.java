@@ -17,6 +17,8 @@
 package com.hazelcast.jet.stream;
 
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.DistributedCollector.Reducer;
+import com.hazelcast.jet.stream.impl.reducers.CollectorReducer;
 
 import java.util.Comparator;
 import java.util.Optional;
@@ -30,7 +32,6 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -382,7 +383,7 @@ public interface DistributedStream<T> extends Stream<T> {
     default <U> U reduce(U identity,
                          Distributed.BiFunction<U, ? super T, U> accumulator,
                          Distributed.BinaryOperator<U> combiner) {
-        return reduce(identity, (BiFunction<U, ? super T, U>) accumulator,  combiner);
+        return reduce(identity, (BiFunction<U, ? super T, U>) accumulator, combiner);
     }
 
     /**
@@ -449,7 +450,24 @@ public interface DistributedStream<T> extends Stream<T> {
      * @see #collect(Supplier, BiConsumer, BiConsumer)
      * @see Collectors
      */
-    <R, A> R collect(DistributedCollector<? super T, A, R> collector);
+    default <R, A> R collect(DistributedCollector<? super T, A, R> collector) {
+        return collect(new CollectorReducer<>(collector.supplier(), collector.accumulator(),
+                collector.combiner(), collector.finisher()));
+    }
+
+    /**
+     * Terminate the stream using a reduction performed by {@link Reducer}
+     * and return the resulting value.
+     *
+     * A {@link Reducer} is specific to Jet, and is responsible for building
+     * and executing the underlying DAG. It can't be used as a downstream collector in a
+     * collector cascade.
+     *
+     * @param reducer the reducer
+     * @param <R> type of the return value
+     * @return the result of the reduction operation
+     */
+    <R> R collect(Reducer<? super T, R> reducer);
 
     /**
      * Returns the minimum element of this stream according to the provided
@@ -551,8 +569,7 @@ public interface DistributedStream<T> extends Stream<T> {
     @Override
     DistributedStream<T> filter(Predicate<? super T> predicate);
 
-    @Override
-    <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper);
+    @Override <R> DistributedStream<R> map(Function<? super T, ? extends R> mapper);
 
     @Override
     DistributedIntStream mapToInt(ToIntFunction<? super T> mapper);
@@ -563,8 +580,7 @@ public interface DistributedStream<T> extends Stream<T> {
     @Override
     DistributedDoubleStream mapToDouble(ToDoubleFunction<? super T> mapper);
 
-    @Override
-    <R> DistributedStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
+    @Override <R> DistributedStream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
 
     @Override
     DistributedIntStream flatMapToInt(Function<? super T, ? extends IntStream> mapper);
@@ -593,27 +609,14 @@ public interface DistributedStream<T> extends Stream<T> {
     @Override
     Optional<T> reduce(BinaryOperator<T> accumulator);
 
-    @Override
-    <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner);
+    @Override <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner);
 
-    @Override
-    <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner);
-
-    @Override
-    default <R, A> R collect(Collector<? super T, A, R> collector) {
-        if (!(collector instanceof DistributedCollector)) {
-            throw new IllegalArgumentException("You must use DistributedCollector");
-        }
-
-        //noinspection unchecked
-        return collect((DistributedCollector<? super T, A, R>) collector);
-    }
+    @Override <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner);
 
     @Override
     Optional<T> min(Comparator<? super T> comparator);
 
     @Override
-
     Optional<T> max(Comparator<? super T> comparator);
 
     @Override

@@ -16,11 +16,8 @@
 
 package com.hazelcast.jet.stream;
 
-import com.hazelcast.jet.Distributed.BiConsumer;
-import com.hazelcast.jet.Distributed.BinaryOperator;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Supplier;
-import com.hazelcast.jet.stream.impl.collectors.DistributedCollectorImpl;
+import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.stream.impl.reducers.DistributedCollectorImpl;
 import com.hazelcast.jet.stream.impl.pipeline.Pipeline;
 import com.hazelcast.jet.stream.impl.pipeline.StreamContext;
 
@@ -51,7 +48,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return a function which returns a new, mutable result container
      */
     @Override
-    Supplier<A> supplier();
+    Distributed.Supplier<A> supplier();
 
     /**
      * A function that folds a value into a mutable result container.
@@ -59,7 +56,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return a function which folds a value into a mutable result container
      */
     @Override
-    BiConsumer<A, T> accumulator();
+    Distributed.BiConsumer<A, T> accumulator();
 
     /**
      * A function that accepts two partial results and merges them.  The
@@ -70,12 +67,12 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * result
      */
     @Override
-    BinaryOperator<A> combiner();
+    Distributed.BinaryOperator<A> combiner();
 
     /**
      * Perform the final transformation from the intermediate accumulation type
      * {@code A} to the final result type {@code R}.
-     *
+     * <p>
      * <p>If the characteristic {@code IDENTITY_TRANSFORM} is
      * set, this function may be presumed to be an identity transform with an
      * unchecked cast from {@code A} to {@code R}.
@@ -84,7 +81,7 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * result
      */
     @Override
-    Function<A, R> finisher();
+    Distributed.Function<A, R> finisher();
 
     /**
      * Returns a new {@code Distributed.Collector} described by the given {@code supplier},
@@ -103,9 +100,9 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * @return the new {@code Distributed.Collector}
      * @throws NullPointerException if any argument is null
      */
-    static <T, R> DistributedCollector<T, R, R> of(Supplier<R> supplier,
-                                                   BiConsumer<R, T> accumulator,
-                                                   BinaryOperator<R> combiner,
+    static <T, R> DistributedCollector<T, R, R> of(Distributed.Supplier<R> supplier,
+                                                   Distributed.BiConsumer<R, T> accumulator,
+                                                   Distributed.BinaryOperator<R> combiner,
                                                    Characteristics... characteristics) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(accumulator);
@@ -122,22 +119,22 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
      * Returns a new {@code Distributed.Collector} described by the given {@code supplier},
      * {@code accumulator}, {@code combiner}, and {@code finisher} functions.
      *
-     * @param supplier The supplier function for the new collector
-     * @param accumulator The accumulator function for the new collector
-     * @param combiner The combiner function for the new collector
-     * @param finisher The finisher function for the new collector
+     * @param supplier        The supplier function for the new collector
+     * @param accumulator     The accumulator function for the new collector
+     * @param combiner        The combiner function for the new collector
+     * @param finisher        The finisher function for the new collector
      * @param characteristics The collector characteristics for the new
      *                        collector
-     * @param <T> The type of input elements for the new collector
-     * @param <A> The intermediate accumulation type of the new collector
-     * @param <R> The final result type of the new collector
-     * @throws NullPointerException if any argument is null
+     * @param <T>             The type of input elements for the new collector
+     * @param <A>             The intermediate accumulation type of the new collector
+     * @param <R>             The final result type of the new collector
      * @return the new {@code Distributed.Collector}
+     * @throws NullPointerException if any argument is null
      */
-    static <T, A, R> DistributedCollector<T, A, R> of(Supplier<A> supplier,
-                                                      BiConsumer<A, T> accumulator,
-                                                      BinaryOperator<A> combiner,
-                                                      Function<A, R> finisher,
+    static <T, A, R> DistributedCollector<T, A, R> of(Distributed.Supplier<A> supplier,
+                                                      Distributed.BiConsumer<A, T> accumulator,
+                                                      Distributed.BinaryOperator<A> combiner,
+                                                      Distributed.Function<A, R> finisher,
                                                       Characteristics... characteristics) {
         Objects.requireNonNull(supplier);
         Objects.requireNonNull(accumulator);
@@ -154,11 +151,22 @@ public interface DistributedCollector<T, A, R> extends java.util.stream.Collecto
     }
 
     /**
-     * Executes the collector with the given context and upstream pipeline.
+     * Interface for Jet specific distributed reducers which execute
+     * the terminal reduce operation over the current {@code DistributedStream}
+     * by building and executing a DAG. These reducers can't be used as downstream collectors.
      *
-     * @param context the context of the stream
-     * @param upstream the upstream pipeline to execute the stream on
-     * @return the result of the executed collector
+     * @param <T> the type of input elements to the reduction operation
+     * @param <R> the result type of the reduction operation
      */
-    R collect(StreamContext context, Pipeline<? extends T> upstream);
+    interface Reducer<T, R> extends Serializable {
+
+        /**
+         * Executes the reducer with the given context and upstream pipeline.
+         *
+         * @param context  the context of the stream
+         * @param upstream the upstream pipeline to execute the stream on
+         * @return the result of the executed collector
+         */
+        R reduce(StreamContext context, Pipeline<? extends T> upstream);
+    }
 }

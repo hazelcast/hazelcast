@@ -24,13 +24,17 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.stream.DistributedCollectors.groupingByToIMap;
+import static com.hazelcast.jet.stream.DistributedCollectors.toIList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class HazelcastCollectorTest extends AbstractStreamTest {
+public class JetCollectorTest extends AbstractStreamTest {
 
     @Test
     public void imapCollect_whenNoIntermediaries() throws Exception {
@@ -74,7 +78,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
         IMap<Integer, List<Integer>> collected = map
                 .stream()
                 .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.groupingByToIMap(m -> m % mod));
+                .collect(groupingByToIMap(m -> m % mod));
 
         assertEquals(mod, collected.size());
 
@@ -97,7 +101,7 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
         IMap<Integer, Map<Integer, List<Integer>>> collected = map
                 .stream()
                 .map(Map.Entry::getValue)
-                .collect(DistributedCollectors.groupingByToIMap(
+                .collect(groupingByToIMap(
                         m -> m < COUNT / 2 ? 0 : 1,
                         DistributedCollectors.groupingBy(m -> m % mod)));
 
@@ -119,14 +123,14 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
 
     @Test
     public void grouping_whenSourceList() throws Exception {
-        IList<Integer> list = getList();
+        IStreamList<Integer> list = getList();
         fillList(list);
 
         int mod = 10;
 
         IMap<Integer, List<Integer>> collected = list
                 .stream()
-                .collect(DistributedCollectors.groupingByToIMap(m -> m % mod));
+                .collect(groupingByToIMap(m -> m % mod));
 
         assertEquals(mod, collected.size());
 
@@ -179,10 +183,10 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
 
     @Test
     public void ilistCollect_whenNoIntermediaries() throws Exception {
-        IList<Integer> list = getList();
+        IStreamList<Integer> list = getList();
         fillList(list);
 
-        IList<Integer> collected = list.stream().collect(DistributedCollectors.toIList());
+        IStreamList<Integer> collected = list.stream().collect(toIList());
 
         assertArrayEquals(list.toArray(), collected.toArray());
     }
@@ -192,12 +196,12 @@ public class HazelcastCollectorTest extends AbstractStreamTest {
         IStreamMap<String, Integer> map = getMap();
         fillMap(map);
 
-        IList<Map.Entry<String, Integer>> collected = map.stream().collect(DistributedCollectors.toIList());
+        IList<Map.Entry<String, Integer>> collected = map.stream().collect(toIList());
 
         Map.Entry<String, Integer>[] expecteds = map.entrySet().toArray(new Map.Entry[0]);
         Map.Entry<String, Integer>[] actuals = collected.toArray(new Map.Entry[0]);
 
-        Comparator<Map.Entry<String, Integer>> entryComparator = (left, right) -> left.getKey().compareTo(right.getKey());
+        Comparator<Map.Entry<String, Integer>> entryComparator = Comparator.comparing(Entry::getKey);
         Arrays.sort(expecteds, entryComparator);
         Arrays.sort(actuals, entryComparator);
 
