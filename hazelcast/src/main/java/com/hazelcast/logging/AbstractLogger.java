@@ -41,13 +41,23 @@ public abstract class AbstractLogger implements ILogger {
     }
 
     @Override
+    public boolean isFinestEnabled() {
+        return isLoggable(Level.FINEST);
+    }
+
+    @Override
     public void fine(String message) {
         log(Level.FINE, message);
     }
 
     @Override
-    public boolean isFinestEnabled() {
-        return isLoggable(Level.FINEST);
+    public void fine(String message, Throwable thrown) {
+        log(Level.FINE, message, thrown);
+    }
+
+    @Override
+    public void fine(Throwable thrown) {
+        log(Level.FINE, thrown.getMessage(), thrown);
     }
 
     @Override
@@ -61,18 +71,8 @@ public abstract class AbstractLogger implements ILogger {
     }
 
     @Override
-    public void severe(String message) {
-        log(Level.SEVERE, message);
-    }
-
-    @Override
-    public void severe(Throwable thrown) {
-        log(Level.SEVERE, thrown.getMessage(), thrown);
-    }
-
-    @Override
-    public void severe(String message, Throwable thrown) {
-        log(Level.SEVERE, message, thrown);
+    public boolean isInfoEnabled() {
+        return isLoggable(Level.INFO);
     }
 
     @Override
@@ -88,5 +88,25 @@ public abstract class AbstractLogger implements ILogger {
     @Override
     public void warning(String message, Throwable thrown) {
         log(Level.WARNING, message, thrown);
+    }
+
+    @Override
+    public boolean isWarningEnabled() {
+        return isLoggable(Level.WARNING);
+    }
+
+    @Override
+    public void severe(String message) {
+        log(Level.SEVERE, message);
+    }
+
+    @Override
+    public void severe(Throwable thrown) {
+        log(Level.SEVERE, thrown.getMessage(), thrown);
+    }
+
+    @Override
+    public void severe(String message, Throwable thrown) {
+        log(Level.SEVERE, message, thrown);
     }
 }

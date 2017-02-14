@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 import static java.util.Collections.synchronizedList;
 
@@ -198,8 +197,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
     private ClientMessage prepareUnauthenticatedClientMessage() {
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
-        logger.log(Level.WARNING,
-                "Received auth from " + connection + " with principal " + principal + " , authentication failed");
+        logger.warning("Received auth from " + connection + " with principal " + principal + " , authentication failed");
         byte status = AuthenticationStatus.CREDENTIALS_FAILED.getId();
         return encodeAuth(status, null, null, null, serializationService.getVersion(), null);
     }

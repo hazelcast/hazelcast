@@ -57,7 +57,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
 
 class TestClientRegistry {
 
@@ -92,7 +91,7 @@ class TestClientRegistry {
                 try {
                     addressTranslator = new AwsAddressTranslator(awsConfig, client.getLoggingService());
                 } catch (NoClassDefFoundError e) {
-                    LOGGER.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
+                    LOGGER.warning("hazelcast-aws.jar might be missing!");
                     throw e;
                 }
             } else if (discoveryService != null) {

@@ -30,8 +30,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
-import java.util.logging.Level;
-
 public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
     public DefaultClientConnectionManagerFactory() {
@@ -49,7 +47,7 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
             try {
                 addressTranslator = new AwsAddressTranslator(awsConfig, loggingService);
             } catch (NoClassDefFoundError e) {
-                logger.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
+                logger.warning("hazelcast-aws.jar might be missing!");
                 throw e;
             }
         } else if (discoveryService != null) {

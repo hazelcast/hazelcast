@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -68,6 +67,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
             this.errors = errors;
         }
 
+        @Override
         public void run() {
             try {
                 for (; ; ) {
@@ -82,7 +82,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                     map.destroy();
 
                     if (index % 1000 == 0) {
-                        logger.log(Level.INFO, "At: " + index);
+                        logger.info("At: " + index);
                     }
                 }
             } catch (Throwable t) {

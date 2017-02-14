@@ -41,7 +41,6 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.logging.Level.WARNING;
 
 /**
  * {@code MetaDataFetcher} for member side usage
@@ -67,9 +66,8 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
             try {
                 futures.add(operationService.invokeOnTarget(SERVICE_NAME, operation, address));
             } catch (Exception e) {
-                if (logger.isLoggable(WARNING)) {
-                    logger.log(WARNING,
-                            "Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
+                if (logger.isWarningEnabled()) {
+                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
                 }
             }
         }
@@ -83,8 +81,8 @@ public class MemberMapMetaDataFetcher extends MetaDataFetcher {
             repairUuids(response.getPartitionUuidList().entrySet(), handlers);
             repairSequences(response.getNamePartitionSequenceList().entrySet(), handlers);
         } catch (Exception e) {
-            if (logger.isLoggable(WARNING)) {
-                logger.log(WARNING, "Cant fetch invalidation meta-data [" + e.getMessage() + "]");
+            if (logger.isWarningEnabled()) {
+                logger.warning("Cant fetch invalidation meta-data [" + e.getMessage() + "]");
             }
         }
     }

@@ -47,7 +47,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -284,7 +283,7 @@ public abstract class AbstractJoiner implements Joiner {
                 return false;
             }
         } catch (Exception e) {
-            logger.log(Level.FINE, "failure during validating join message", e);
+            logger.fine("failure during validating join message", e);
             return false;
         }
         return true;
@@ -399,7 +398,7 @@ public abstract class AbstractJoiner implements Joiner {
         try {
             return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
-            logger.log(Level.FINE, "Timeout during join check!", e);
+            logger.fine("Timeout during join check!", e);
         } catch (Exception e) {
             logger.warning("Error during join check!", e);
         }

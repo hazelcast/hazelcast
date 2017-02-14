@@ -46,7 +46,6 @@ import static com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvali
 import static com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec.encodeRequest;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.logging.Level.WARNING;
 
 /**
  * {@code MetaDataFetcher} for client side usage
@@ -76,9 +75,8 @@ public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
             try {
                 futures.add(invocation.invoke());
             } catch (Exception e) {
-                if (logger.isLoggable(WARNING)) {
-                    logger.log(WARNING, "Cant fetch invalidation meta-data from address + " + address
-                            + " + [" + e.getMessage() + "]");
+                if (logger.isWarningEnabled()) {
+                    logger.warning("Cant fetch invalidation meta-data from address + " + address + " + [" + e.getMessage() + "]");
                 }
             }
         }
@@ -93,8 +91,8 @@ public class ClientCacheMetaDataFetcher extends MetaDataFetcher {
             repairUuids(response.partitionUuidList, handlers);
             repairSequences(response.namePartitionSequenceList, handlers);
         } catch (Exception e) {
-            if (logger.isLoggable(WARNING)) {
-                logger.log(WARNING, "Cant fetch invalidation meta-data [" + e.getMessage() + "]");
+            if (logger.isWarningEnabled()) {
+                logger.warning("Cant fetch invalidation meta-data [" + e.getMessage() + "]");
             }
         }
     }

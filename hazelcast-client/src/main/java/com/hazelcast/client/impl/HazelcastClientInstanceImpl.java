@@ -154,7 +154,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import static java.lang.System.currentTimeMillis;
 
@@ -277,7 +276,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                 addressProviders.add(new AwsAddressProvider(awsConfig, loggingService));
             } catch (NoClassDefFoundError e) {
                 ILogger logger = loggingService.getLogger(HazelcastClient.class);
-                logger.log(Level.WARNING, "hazelcast-aws.jar might be missing!");
+                logger.warning("hazelcast-aws.jar might be missing!");
                 throw e;
             }
         }

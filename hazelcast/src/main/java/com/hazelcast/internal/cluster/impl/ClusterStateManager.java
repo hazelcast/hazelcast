@@ -45,7 +45,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
-import java.util.logging.Level;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -462,7 +461,7 @@ public class ClusterStateManager {
 
         private void log(Throwable cause) {
             if (logger.isFineEnabled()) {
-                logger.log(Level.FINE, "failure during cluster state change", cause);
+                logger.fine("failure during cluster state change", cause);
             }
         }
 

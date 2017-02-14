@@ -43,7 +43,6 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -444,7 +443,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 logger.warning("Cannot resolve hostname '" + addressHolder.getAddress()
                         + "'. Please make sure host is valid and reachable.");
                 if (logger.isFineEnabled()) {
-                    logger.log(Level.FINE, "Error during resolving possible target!", e);
+                    logger.fine("Error during resolving possible target!", e);
                 }
             }
         }

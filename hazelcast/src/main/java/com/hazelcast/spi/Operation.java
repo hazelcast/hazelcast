@@ -495,7 +495,7 @@ public abstract class Operation implements DataSerializable {
             }
         } else if (e instanceof OutOfMemoryError) {
             try {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e.getMessage(), e);
             } catch (Throwable ignored) {
                 ignore(ignored);
             }

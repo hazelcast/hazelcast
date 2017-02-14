@@ -35,7 +35,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
-import java.util.logging.Level;
 
 /**
  * Base Message task.
@@ -148,11 +147,11 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
     }
 
     private void logProcessingFailure(Throwable throwable) {
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isFinestEnabled()) {
             if (parameters == null) {
-                logger.log(Level.FINEST, throwable.getMessage(), throwable);
+                logger.finest(throwable.getMessage(), throwable);
             } else {
-                logger.log(Level.FINEST, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
+                logger.finest("While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
             }
         }
     }

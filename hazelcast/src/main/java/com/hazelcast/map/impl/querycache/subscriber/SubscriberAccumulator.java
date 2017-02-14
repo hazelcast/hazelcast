@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.map.impl.querycache.subscriber.EventPublisherHelper.publishEventLost;
 import static java.lang.String.format;
-import static java.util.logging.Level.WARNING;
 
 /**
  * If all incoming events are in the correct sequence order, this accumulator applies those events to
@@ -154,7 +153,7 @@ public class SubscriberAccumulator extends BasicAccumulator<QueryCacheEventData>
         boolean isNextSequence = foundSequence == expectedSequence;
 
         if (!isNextSequence) {
-            if (logger.isLoggable(WARNING)) {
+            if (logger.isWarningEnabled()) {
                 logger.warning(format("Event lost detected for partitionId=%d, expectedSequence=%d "
                                 + "but foundSequence=%d, cacheSize=%d",
                         partitionId, expectedSequence, foundSequence, getQueryCache().size()));

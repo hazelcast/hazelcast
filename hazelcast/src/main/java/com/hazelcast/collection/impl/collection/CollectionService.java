@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
 
 public abstract class CollectionService implements ManagedService, RemoteService,
         EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
@@ -88,7 +87,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         ItemEvent itemEvent = new DataAwareItemEvent(event.getName(), event.getEventType(), event.getData(),
                 member, nodeEngine.getSerializationService());
         if (member == null) {
-            if (logger.isLoggable(Level.INFO)) {
+            if (logger.isInfoEnabled()) {
                 logger.info("Dropping event " + itemEvent + " from unknown address:" + event.getCaller());
             }
             return;

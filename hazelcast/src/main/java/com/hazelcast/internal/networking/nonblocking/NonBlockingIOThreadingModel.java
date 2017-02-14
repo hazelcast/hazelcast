@@ -141,8 +141,7 @@ public class NonBlockingIOThreadingModel
                     + outputThreads.length + " output threads");
         }
 
-        logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE,
-                "IO threads selector mode is " + getSelectorMode());
+        logger.log(getSelectorMode() != SelectorMode.SELECT ? INFO : FINE, "IO threads selector mode is " + getSelectorMode());
 
         for (int i = 0; i < inputThreads.length; i++) {
             NonBlockingIOThread thread = new NonBlockingIOThread(

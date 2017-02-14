@@ -26,8 +26,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.spi.properties.GroupProperty;
 
-import java.util.logging.Level;
-
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.OFF;
 import static com.hazelcast.internal.diagnostics.HealthMonitorLevel.valueOf;
 import static com.hazelcast.util.StringUtil.LINE_SEPARATOR;
@@ -133,12 +131,12 @@ public class HealthMonitor {
                             if (healthMetrics.exceedsThreshold()) {
                                 logDiagnosticsHint();
                             }
-                            logger.log(Level.INFO, healthMetrics.render());
+                            logger.info(healthMetrics.render());
                             break;
                         case SILENT:
                             if (healthMetrics.exceedsThreshold()) {
                                 logDiagnosticsHint();
-                                logger.log(Level.INFO, healthMetrics.render());
+                                logger.info(healthMetrics.render());
                             }
                             break;
                         default:
