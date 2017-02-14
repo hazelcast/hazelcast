@@ -1,11 +1,16 @@
 package com.hazelcast.kubernetes;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
-
-import java.util.List;
-
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.NoLogFactory;
+import com.hazelcast.spi.discovery.DiscoveryNode;
+import io.fabric8.kubernetes.api.model.EndpointAddress;
+import io.fabric8.kubernetes.api.model.EndpointSubset;
+import io.fabric8.kubernetes.api.model.Endpoints;
+import io.fabric8.kubernetes.api.model.EndpointsList;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.dsl.ClientMixedOperation;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -13,19 +18,16 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.NoLogFactory;
-import com.hazelcast.spi.discovery.DiscoveryNode;
+import java.util.List;
 
-import io.fabric8.kubernetes.api.model.EndpointAddress;
-import io.fabric8.kubernetes.api.model.EndpointSubset;
-import io.fabric8.kubernetes.api.model.Endpoints;
-import io.fabric8.kubernetes.api.model.EndpointsList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ClientMixedOperation;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ServiceEndpointResolver.class)
+/**
+ * This test class sent by https://github.com/hazelcast/hazelcast-kubernetes/pull/30
+ */
 public class ServiceEndpointResolverTest {
     private static final ILogger LOGGER = new NoLogFactory().getLogger("no");
     private static final String SERVICE_NAME = "";
@@ -82,6 +84,7 @@ public class ServiceEndpointResolverTest {
     }
 
     @Test
+    @Ignore //enable when https://github.com/hazelcast/hazelcast-kubernetes/pull/30 is merged.
     public void resolveWithServiceLabelAndNodeInNamespace() {
         nodesInNamespace.getItems().add(createEndpoints(1));
 
