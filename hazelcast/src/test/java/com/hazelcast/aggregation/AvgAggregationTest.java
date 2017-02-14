@@ -92,6 +92,18 @@ public class AvgAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigDecimalAvg_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigDecimalAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerAvg() {
         List<BigInteger> values = sampleBigIntegers();
@@ -129,6 +141,18 @@ public class AvgAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigIntegerAvg_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigIntegerAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigIntegerAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigIntegerAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testDoubleAvg() {
         List<Double> values = sampleDoubles();
@@ -161,6 +185,18 @@ public class AvgAggregationTest {
         double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testDoubleAvg_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testDoubleAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -197,6 +233,18 @@ public class AvgAggregationTest {
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testIntegerAvg_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.integerAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testIntegerAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.integerAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongAvg() {
         List<Long> values = sampleLongs();
@@ -229,6 +277,18 @@ public class AvgAggregationTest {
         double result = resultAggregation.aggregate();
 
         assertThat(result, is(closeTo(expectation, ERROR)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testLongAvg_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.longAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testLongAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.longAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -268,4 +328,17 @@ public class AvgAggregationTest {
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testGenericAvg_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.numberAvg();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testGenericAvg_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.numberAvg("bigDecimal");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
 }
