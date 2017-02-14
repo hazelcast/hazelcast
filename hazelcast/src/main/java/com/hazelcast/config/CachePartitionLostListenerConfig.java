@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.Serializable;
+import java.util.EventListener;
 
 /**
  * Configuration for CachePartitionLostListener
@@ -45,20 +46,6 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
     public CachePartitionLostListenerConfig(CachePartitionLostListenerConfig config) {
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    @Override
-    public CachePartitionLostListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CachePartitionLostListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -93,5 +80,41 @@ public class CachePartitionLostListenerConfig extends ListenerConfig implements 
         result = 31 * result + (className != null ? className.hashCode() : 0);
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    CachePartitionLostListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new CachePartitionLostListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    @BinaryInterface
+    private static class CachePartitionLostListenerConfigReadOnly extends CachePartitionLostListenerConfig {
+
+        CachePartitionLostListenerConfigReadOnly(CachePartitionLostListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public CachePartitionLostListener getImplementation() {
+            return (CachePartitionLostListener) implementation;
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public CachePartitionLostListenerConfig setImplementation(CachePartitionLostListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
     }
 }

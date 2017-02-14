@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
@@ -157,16 +158,6 @@ public class JobTrackerConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public JobTrackerConfig getAsReadOnly() {
-        return new JobTrackerConfigReadOnly(this);
-    }
-
-    /**
      * Gets the maximum size of the queue; the maximum number of tasks that can wait to be processed. A
      * value of 0 means an unbounded queue.
      *
@@ -236,5 +227,52 @@ public class JobTrackerConfig {
      */
     public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         this.topologyChangedStrategy = topologyChangedStrategy;
+    }
+
+    @PrivateApi
+    public JobTrackerConfig getAsReadOnly() {
+        return new JobTrackerConfigReadOnly(this);
+    }
+
+    private static class JobTrackerConfigReadOnly extends JobTrackerConfig {
+
+        JobTrackerConfigReadOnly(JobTrackerConfig jobTrackerConfig) {
+            super(jobTrackerConfig);
+        }
+
+        @Override
+        public JobTrackerConfigReadOnly setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setMaxThreadSize(int maxThreadSize) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setRetryCount(int retryCount) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setChunkSize(int chunkSize) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setQueueSize(int queueSize) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setCommunicateStats(boolean communicateStats) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

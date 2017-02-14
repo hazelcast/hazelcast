@@ -105,16 +105,6 @@ public class LockConfig {
         return this;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public LockConfig getAsReadOnly() {
-        return new LockConfigReadonly(this);
-    }
-
     @Override
     public String toString() {
         return "LockConfig{"
@@ -123,9 +113,10 @@ public class LockConfig {
                 + '}';
     }
 
-    /**
-     * A readonly version of the {@link LockConfig}.
-     */
+    LockConfig getAsReadOnly() {
+        return new LockConfigReadonly(this);
+    }
+
     private static class LockConfigReadonly extends LockConfig {
 
         LockConfigReadonly(LockConfig config) {

@@ -109,19 +109,6 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public MaxSizeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MaxSizeConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Returns the size of the map.
      *
      * @return the size of the map
@@ -182,5 +169,30 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
                 + '\''
                 + ", size=" + size
                 + '}';
+    }
+
+    MaxSizeConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MaxSizeConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    @BinaryInterface
+    private static class MaxSizeConfigReadOnly extends MaxSizeConfig {
+
+        MaxSizeConfigReadOnly(MaxSizeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MaxSizeConfig setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

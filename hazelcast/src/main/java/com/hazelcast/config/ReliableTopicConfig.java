@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicOverloadPolicy;
 
 import java.util.LinkedList;
@@ -274,17 +275,12 @@ public class ReliableTopicConfig {
                 + '}';
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public ReliableTopicConfig getAsReadOnly() {
+    @PrivateApi
+    ReliableTopicConfig getAsReadOnly() {
         return new ReliableTopicConfigReadOnly(this);
     }
 
-    static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
+    private static class ReliableTopicConfigReadOnly extends ReliableTopicConfig {
 
         ReliableTopicConfigReadOnly(ReliableTopicConfig config) {
             super(config);

@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -257,16 +258,6 @@ public class ReplicatedMapConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public ReplicatedMapConfig getAsReadOnly() {
-        return new ReplicatedMapConfigReadOnly(this);
-    }
-
-    /**
      * Checks if statistics are enabled for this replicated map.
      *
      * @return True if statistics are enabled, false otherwise.
@@ -317,5 +308,62 @@ public class ReplicatedMapConfig {
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", mergePolicy='" + mergePolicy + '\''
                 + '}';
+    }
+
+    @PrivateApi
+    public ReplicatedMapConfig getAsReadOnly() {
+        return new ReplicatedMapConfigReadOnly(this);
+    }
+
+    private static class ReplicatedMapConfigReadOnly extends ReplicatedMapConfig {
+
+        ReplicatedMapConfigReadOnly(ReplicatedMapConfig replicatedMapConfig) {
+            super(replicatedMapConfig);
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setAsyncFillup(boolean asyncFillup) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

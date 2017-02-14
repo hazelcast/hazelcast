@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.ItemListener;
 
+import java.util.EventListener;
+
 /**
  * Contains the configuration for an Item Listener.
  */
@@ -44,20 +46,6 @@ public class ItemListenerConfig extends ListenerConfig {
         includeValue = config.isIncludeValue();
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    @Override
-    public ItemListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ItemListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -111,5 +99,40 @@ public class ItemListenerConfig extends ListenerConfig {
         int result = super.hashCode();
         result = 31 * result + (includeValue ? 1 : 0);
         return result;
+    }
+
+    @Override
+    ItemListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ItemListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class ItemListenerConfigReadOnly extends ItemListenerConfig {
+
+        ItemListenerConfigReadOnly(ItemListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public ItemListenerConfig setImplementation(ItemListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ItemListenerConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

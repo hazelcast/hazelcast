@@ -146,7 +146,7 @@ public class CardinalityEstimatorConfig {
                 + asyncBackupCount + ", readOnly=" + readOnly + '}';
     }
 
-    CardinalityEstimatorConfigReadOnly getAsReadOnly() {
+    CardinalityEstimatorConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CardinalityEstimatorConfigReadOnly(this);
         }

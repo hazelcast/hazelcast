@@ -45,19 +45,6 @@ public class PartitioningStrategyConfig {
         this.partitionStrategy = partitionStrategy;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public PartitioningStrategyConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PartitioningStrategyConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String getPartitioningStrategyClass() {
         return partitioningStrategyClass;
     }
@@ -82,5 +69,29 @@ public class PartitioningStrategyConfig {
                 + "partitioningStrategyClass='" + partitioningStrategyClass + '\''
                 + ", partitionStrategy=" + partitionStrategy
                 + '}';
+    }
+
+    PartitioningStrategyConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new PartitioningStrategyConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
+
+        PartitioningStrategyConfigReadOnly(PartitioningStrategyConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

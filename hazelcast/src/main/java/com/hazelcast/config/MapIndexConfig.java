@@ -60,19 +60,6 @@ public class MapIndexConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public MapIndexConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapIndexConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Gets the attribute that is going to be indexed. If no attribute is set, null is returned.
      *
      * @return the attribute to be indexed.
@@ -138,5 +125,29 @@ public class MapIndexConfig {
             }
         }
         return attribute;
+    }
+
+    MapIndexConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapIndexConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class MapIndexConfigReadOnly extends MapIndexConfig {
+
+        MapIndexConfigReadOnly(MapIndexConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapIndexConfig setAttribute(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapIndexConfig setOrdered(boolean ordered) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

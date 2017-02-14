@@ -17,6 +17,9 @@
 package com.hazelcast.config;
 
 
+import com.hazelcast.spi.annotation.PrivateApi;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -113,21 +116,78 @@ public class MemberAttributeConfig {
         attributes.remove(key);
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public MemberAttributeConfig asReadOnly() {
-        return new MemberAttributeConfigReadOnly(this);
-    }
-
     private Object getAttribute(String key) {
         return attributes.get(key);
     }
 
     private void setAttribute(String key, Object value) {
         attributes.put(key, value);
+    }
+
+    @PrivateApi
+    public MemberAttributeConfig getAsReadOnly() {
+        return new MemberAttributeConfigReadOnly(this);
+    }
+
+    private static class MemberAttributeConfigReadOnly extends MemberAttributeConfig {
+
+        MemberAttributeConfigReadOnly(MemberAttributeConfig source) {
+            super(source);
+        }
+
+        @Override
+        public void setStringAttribute(String key, String value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setBooleanAttribute(String key, boolean value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setByteAttribute(String key, byte value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setShortAttribute(String key, short value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setIntAttribute(String key, int value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setLongAttribute(String key, long value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setFloatAttribute(String key, float value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setDoubleAttribute(String key, double value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void removeAttribute(String key) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setAttributes(Map<String, Object> attributes) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public Map<String, Object> getAttributes() {
+            return Collections.unmodifiableMap(super.getAttributes());
+        }
     }
 }

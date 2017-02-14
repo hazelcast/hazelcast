@@ -119,22 +119,13 @@ public class RingbufferStoreConfig {
                 + '}';
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public RingbufferStoreConfigReadOnly getAsReadOnly() {
+    RingbufferStoreConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new RingbufferStoreConfigReadOnly(this);
         }
         return readOnly;
     }
 
-    /**
-     * A readonly version of the {@link RingbufferStoreConfig}.
-     */
     private static class RingbufferStoreConfigReadOnly extends RingbufferStoreConfig {
 
         RingbufferStoreConfigReadOnly(RingbufferStoreConfig config) {

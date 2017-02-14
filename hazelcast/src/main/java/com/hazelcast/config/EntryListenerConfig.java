@@ -72,20 +72,6 @@ public class EntryListenerConfig extends ListenerConfig {
         className = config.getClassName();
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    @Override
-    public EntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     @Override
     public ListenerConfig setImplementation(EventListener implementation) {
         isNotNull(implementation, "implementation");
@@ -248,5 +234,45 @@ public class EntryListenerConfig extends ListenerConfig {
         result = 31 * result + (local ? 1 : 0);
         result = 31 * result + (includeValue ? 1 : 0);
         return result;
+    }
+
+    @Override
+    EntryListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new EntryListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class EntryListenerConfigReadOnly extends EntryListenerConfig {
+
+        EntryListenerConfigReadOnly(EntryListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public EntryListenerConfig setImplementation(EntryListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public EntryListenerConfig setLocal(boolean local) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public EntryListenerConfig setIncludeValue(boolean includeValue) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
     }
 }

@@ -164,7 +164,7 @@ public class DurableExecutorConfig {
                 + '}';
     }
 
-    DurableExecutorConfigReadOnly getAsReadOnly() {
+    DurableExecutorConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new DurableExecutorConfigReadOnly(this);
         }

@@ -61,9 +61,6 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         this.statisticsEnabled = config.statisticsEnabled;
     }
 
-
-    public abstract T getAsReadOnly();
-
     /**
      * Gets the name of this collection.
      *
@@ -212,4 +209,6 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
     }
+
+    abstract T getAsReadOnly();
 }

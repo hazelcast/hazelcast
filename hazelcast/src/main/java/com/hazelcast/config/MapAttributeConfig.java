@@ -66,19 +66,6 @@ public class MapAttributeConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public MapAttributeConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapAttributeConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Gets the name of the attribute extracted by the extractor.
      *
      * @return the name of the attribute extracted by the extractor.
@@ -152,5 +139,29 @@ public class MapAttributeConfig {
                 + "name='" + name + '\''
                 + "extractor='" + extractor + '\''
                 + '}';
+    }
+
+    MapAttributeConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapAttributeConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class MapAttributeConfigReadOnly extends MapAttributeConfig {
+
+        MapAttributeConfigReadOnly(MapAttributeConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapAttributeConfig setName(String attribute) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapAttributeConfig setExtractor(String type) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }
