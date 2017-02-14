@@ -44,14 +44,16 @@ public class NearCacheLiteMemberTest {
 
     private HazelcastInstance instance;
 
-    private HazelcastInstance lite;
+    private HazelcastInstance lite1;
+    private HazelcastInstance lite2;
 
     @Before
     public void init() {
-        factory = new TestHazelcastInstanceFactory(2);
+        factory = new TestHazelcastInstanceFactory(3);
         mapName = randomMapName();
         instance = factory.newHazelcastInstance(createConfig(mapName, false));
-        lite = factory.newHazelcastInstance(createConfig(mapName, true));
+        lite1 = factory.newHazelcastInstance(createConfig(mapName, true));
+        lite2 = factory.newHazelcastInstance(createConfig(mapName, true));
     }
 
     @After
@@ -62,82 +64,82 @@ public class NearCacheLiteMemberTest {
     @Test
     public void testPut()
             throws Exception {
-        testPut(instance, lite, mapName);
+        testPut(instance, lite1, mapName);
     }
 
     @Test
     public void testPutAll()
             throws Exception {
-        testPutAll(instance, lite, mapName);
+        testPutAll(instance, lite1, mapName);
     }
 
     @Test
     public void testPutTransient()
             throws Exception {
-        testPutTransient(instance, lite, mapName);
+        testPutTransient(instance, lite1, mapName);
     }
 
     @Test
     public void testSet()
             throws Exception {
-        testSet(instance, lite, mapName);
+        testSet(instance, lite1, mapName);
     }
 
     @Test
     public void testUpdate() {
-        testUpdate(instance, lite, mapName);
+        testUpdate(instance, lite1, mapName);
     }
 
     @Test
     public void testUpdateWithSet() {
-        testUpdateWithSet(instance, lite, mapName);
+        testUpdateWithSet(instance, lite1, mapName);
     }
 
     @Test
     public void testUpdateWithPutAll()
             throws Exception {
-        testUpdateWithPutAll(instance, lite, mapName);
+        testUpdateWithPutAll(instance, lite1, mapName);
     }
 
     @Test
     public void testReplace() {
-        testReplace(instance, lite, mapName);
+        testReplace(instance, lite1, mapName);
     }
 
     @Test
     public void testEvict() {
-        testEvict(instance, lite, mapName);
+        testEvict(instance, lite1, mapName);
     }
 
     @Test
     public void testRemove() {
-        testRemove(instance, lite, mapName);
+        testRemove(instance, lite1, mapName);
     }
 
     @Test
     public void testDelete() {
-        testDelete(instance, lite, mapName);
+        testDelete(instance, lite1, mapName);
     }
 
     @Test
     public void testClear()
             throws Exception {
-        testClear(instance, lite, mapName);
+        testClear(instance, lite1, mapName);
     }
 
     @Test
     public void testEvictAll() {
-        testEvictAll(instance, lite, mapName);
+        testEvictAll(instance, lite1, mapName);
     }
 
     @Test
     public void testExecuteOnKey() {
-        testExecuteOnKey(instance, lite, mapName);
+        testExecuteOnKey(instance, lite1, mapName);
     }
 
     @Test
     public void testExecuteOnKeys() {
-        testExecuteOnKeys(instance, lite, mapName);
+        testExecuteOnKeys(instance, lite1, mapName);
     }
 
     public static void testPut(final HazelcastInstance instance, final HazelcastInstance lite, final String mapName)

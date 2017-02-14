@@ -48,8 +48,8 @@ import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.AwaitMapFlushOperation;
-import com.hazelcast.map.impl.operation.ClearOperation;
-import com.hazelcast.map.impl.operation.EvictAllOperation;
+import com.hazelcast.map.impl.operation.ClearOperationFactory;
+import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
 import com.hazelcast.map.impl.operation.IsEmptyOperationFactory;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
@@ -186,6 +186,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
+    private final OperationFactory clearOperationFactory;
+    private final OperationFactory evictAllOperationFactory;
 
     protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(nodeEngine, service);
@@ -209,6 +211,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+        this.clearOperationFactory = new ClearOperationFactory(name);
+        this.evictAllOperationFactory = new EvictAllOperationFactory(name);
     }
 
     @Override
@@ -460,7 +464,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 sendClientNearCacheClearEvent();
             }
 
-            runOnLiteMembers(new EvictAllOperation(name));
+            runOnLiteMembers(evictAllOperationFactory);
 
         } catch (Throwable t) {
             throw rethrow(t);
@@ -481,7 +485,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } finally {
             if (replaceExistingValues) {
                 sendClientNearCacheClearEvent();
-                runOnLiteMembers(new ClearOperation(name));
+                runOnLiteMembers(clearOperationFactory);
             }
         }
     }
@@ -505,7 +509,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } finally {
             if (replaceExistingValues) {
                 sendClientNearCacheClearEvent();
-                runOnLiteMembers(new ClearOperation(name));
+                runOnLiteMembers(clearOperationFactory);
             }
         }
     }
@@ -910,18 +914,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 publishMapEvent(clearedCount, EntryEventType.CLEAR_ALL);
                 sendClientNearCacheClearEvent();
             }
-
-            runOnLiteMembers(new ClearOperation(name));
-
+            runOnLiteMembers(clearOperationFactory);
         } catch (Throwable t) {
             throw rethrow(t);
         }
     }
 
-    protected void runOnLiteMembers(Operation operation) {
+    protected void runOnLiteMembers(OperationFactory factory) {
         MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
         for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
-            operationService.invokeOnTarget(SERVICE_NAME, operation, member.getAddress());
+            operationService.invokeOnTarget(SERVICE_NAME, factory.createOperation(), member.getAddress());
         }
     }
 
