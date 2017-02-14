@@ -270,4 +270,42 @@ public class MinAggregationTest {
 
         assertThat(result, is(equalTo(expectation)));
     }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testComparableMin_withNull() {
+        List<String> values = sampleStrings();
+        Collections.sort(values);
+        String expectation = values.get(0);
+        values.add(null);
+
+        Aggregator<Map.Entry<String, String>, String> aggregation = Aggregators.comparableMin();
+        for (String value : values) {
+            aggregation.accumulate(createEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<String, String>, String> resultAggregation = Aggregators.comparableMin();
+        resultAggregation.combine(aggregation);
+        String result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testComparableMin_withAttributePath_withNull() {
+        List<ValueContainer> values = sampleValueContainers(STRING);
+        Collections.sort(values);
+        String expectation = values.get(0).stringValue;
+        values.add(null);
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> aggregation = Aggregators.comparableMin("stringValue");
+        for (ValueContainer value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<ValueContainer, ValueContainer>, String> resultAggregation = Aggregators.comparableMin("stringValue");
+        resultAggregation.combine(aggregation);
+        String result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
 }
