@@ -77,6 +77,13 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
+*3.7.6 Fixes*
+
+- Hazelcast terminates listener incorrectly. [9766]
+- Connection exception is logged in `ClientListenerSupport` after the client disconnects. [9709]
+- IMap entry eviction issue; some keys stay forever. [9095]
+
+
 *3.7.5 Fixes*
 
 The following are the fixed issues for 3.7.5 release.
