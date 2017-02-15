@@ -21,30 +21,25 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
 
 import javax.annotation.Nonnull;
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class TransformP extends AbstractProcessor {
+public class TransformP<T, R> extends AbstractProcessor {
 
-    private final Consumer<Object> inputConsumer;
-    private final Traverser<?> outputTraverser;
+    private final Consumer<T> inputConsumer;
+    private final Traverser<R> outputTraverser;
     private boolean itemDone = true;
 
-    public TransformP(List<? extends Function<Traverser, Traverser>> transformOps) {
-        final ResettableSingletonTraverser<Object> input = new ResettableSingletonTraverser<>();
+    public TransformP(Function<Traverser<T>, Traverser<R>> transformer) {
+        final ResettableSingletonTraverser<T> input = new ResettableSingletonTraverser<>();
         this.inputConsumer = input;
-        Traverser<?> output = input;
-        for (Function<Traverser, Traverser> op : transformOps) {
-            output = op.apply(output);
-        }
-        this.outputTraverser = output;
+        this.outputTraverser = transformer.apply(input);
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         if (itemDone) {
-            inputConsumer.accept(item);
+            inputConsumer.accept((T) item);
         }
         return itemDone = emitCooperatively(outputTraverser);
     }
