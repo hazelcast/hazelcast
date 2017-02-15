@@ -19,6 +19,7 @@ package com.hazelcast.query.impl.getters;
 import com.hazelcast.util.CollectionUtil;
 import com.hazelcast.util.collection.ArrayUtils;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
@@ -138,12 +139,14 @@ public abstract class AbstractMultiValueGetter extends Getter {
 
 
     private Object getItemAtPositionOrNull(Object object, int position) {
-        if (object instanceof Collection) {
+        if (object == null) {
+            return null;
+        } else if (object instanceof Collection) {
             return CollectionUtil.getItemAtPositionOrNull((Collection) object, position);
         } else if (object instanceof Object[]) {
             return ArrayUtils.getItemAtPositionOrNull((Object[]) object, position);
-        } else if (object == null) {
-            return null;
+        } else if (object.getClass().isArray()) {
+            return Array.get(object, position);
         }
         throw new IllegalArgumentException("Cannot extract an element from class of type" + object.getClass()
                 + " Collections and Arrays are supported only");
@@ -161,6 +164,17 @@ public abstract class AbstractMultiValueGetter extends Getter {
         } else {
             for (int i = 0; i < array.length; i++) {
                 collector.add(array[i]);
+            }
+        }
+    }
+
+    private void reducePrimitiveArrayInto(MultiResult collector, Object primitiveArray) {
+        int length = Array.getLength(primitiveArray);
+        if (length == 0) {
+            collector.add(null);
+        } else {
+            for (int i = 0; i < length; i++) {
+                collector.add(Array.get(primitiveArray, i));
             }
         }
     }
@@ -183,18 +197,21 @@ public abstract class AbstractMultiValueGetter extends Getter {
             return;
         }
 
-        if (currentObject instanceof Collection) {
+        if (currentObject == null) {
+            // collect null since it's a valid result
+            collector.add(null);
+        } else if (currentObject instanceof Collection) {
             reduceCollectionInto(collector, (Collection) currentObject);
         } else if (currentObject instanceof Object[]) {
             reduceArrayInto(collector, (Object[]) currentObject);
-        } else if (currentObject == null) {
-            // collect null since it's a valid result
-            collector.add(null);
+        } else if (currentObject.getClass().isArray()) {
+            reducePrimitiveArrayInto(collector, currentObject);
         } else {
             throw new IllegalArgumentException("Can't reduce result from a type " + currentObject.getClass()
                     + " Only Collections and Arrays are supported.");
         }
     }
+
 
     private static int parseModifier(String modifier) {
         String stringValue = modifier.substring(1, modifier.length() - 1);
