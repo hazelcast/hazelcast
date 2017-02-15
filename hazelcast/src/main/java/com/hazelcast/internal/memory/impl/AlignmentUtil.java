@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.memory.impl;
 
+import com.hazelcast.util.collection.ArrayUtils;
+
 import java.nio.ByteOrder;
 
 import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
@@ -29,6 +31,13 @@ public final class AlignmentUtil {
 
     public static final int OBJECT_REFERENCE_MASK = OBJECT_REFERENCE_ALIGN - 1;
     public static final boolean IS_PLATFORM_BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
+
+    // We know these architectures allow unaligned memory access.
+    // There is a chance some other architectures allow it too, but it's
+    // better to stay conservative here.
+    // For example unaligned memory access on Sparc may crash JVM with SIGBUS
+    private static final String[] ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS = new String[]
+            {"i386", "x86", "amd64", "x86_64"};
 
     private AlignmentUtil() {
     }
@@ -75,10 +84,7 @@ public final class AlignmentUtil {
     }
 
     public static boolean isUnalignedAccessAllowed() {
-        // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
-        // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
-        String arch = System.getProperty("os.arch");
-        // list of architectures copied from OpenJDK - java.nio.Bits::unaligned
-        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64") || arch.equals("x86_64");
+        String currentArchitecture = System.getProperty("os.arch");
+        return ArrayUtils.contains(ARCHITECTURES_KNOWN_TO_ALLOW_UNALIGNED_ACCESS, currentArchitecture);
     }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry;
 import com.hazelcast.internal.memory.MemoryAccessor;
+import com.hazelcast.internal.memory.impl.AlignmentUtil;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import sun.misc.Unsafe;
@@ -199,11 +200,7 @@ public final class UnsafeHelper {
     }
 
     static boolean isUnalignedAccessAllowed() {
-        // we can't use Unsafe to access memory on platforms where unaligned access is not allowed
-        // see https://github.com/hazelcast/hazelcast/issues/5518 for details.
-        String arch = System.getProperty("os.arch");
-        // list of architectures copied from OpenJDK - java.nio.Bits::unaligned
-        return arch.equals("i386") || arch.equals("x86") || arch.equals("amd64") || arch.equals("x86_64");
+        return AlignmentUtil.isUnalignedAccessAllowed();
     }
 
     private static Unsafe findUnsafe() {

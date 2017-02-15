@@ -18,15 +18,11 @@ package com.hazelcast.internal.util;
 
 import java.security.SecureRandom;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A random number generator isolated to the current thread.
  */
 public final class ThreadLocalRandomProvider {
-
-    private static final AtomicLong SEED_UNIQUIFIER = new AtomicLong(8682522807148012L);
-    private static final long MOTHER_OF_MAGIC_NUMBERS = 181783497276652981L;
 
     private static final ThreadLocal<Random> THREAD_LOCAL_RANDOM = new ThreadLocal<Random>();
     private static final ThreadLocal<SecureRandom> THREAD_LOCAL_SECURE_RANDOM = new ThreadLocal<SecureRandom>();
@@ -42,9 +38,7 @@ public final class ThreadLocalRandomProvider {
     public static Random get() {
         Random random = THREAD_LOCAL_RANDOM.get();
         if (random == null) {
-            // using the same way as the OpenJDK version just to make sure this happens on every JDK
-            // implementation, since there are some out there that just use System.currentTimeMillis()
-            random = new Random(seedUniquifier() ^ System.nanoTime());
+            random = new Random();
             THREAD_LOCAL_RANDOM.set(random);
         }
         return random;
@@ -62,16 +56,5 @@ public final class ThreadLocalRandomProvider {
             THREAD_LOCAL_SECURE_RANDOM.set(random);
         }
         return random;
-    }
-
-    private static long seedUniquifier() {
-        // L'Ecuyer, "Tables of Linear Congruential Generators of Different Sizes and Good Lattice Structure", 1999
-        for (; ; ) {
-            long current = SEED_UNIQUIFIER.get();
-            long next = current * MOTHER_OF_MAGIC_NUMBERS;
-            if (SEED_UNIQUIFIER.compareAndSet(current, next)) {
-                return next;
-            }
-        }
     }
 }
