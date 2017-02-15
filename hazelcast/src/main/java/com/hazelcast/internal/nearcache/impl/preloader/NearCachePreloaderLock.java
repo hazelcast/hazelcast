@@ -41,18 +41,15 @@ class NearCachePreloaderLock {
 
         this.lockFile = new File(lockFilename);
         this.channel = openChannel(lockFile);
-        this.lock = acquireLock(lockFile);
+        this.lock = acquireLock(lockFile, channel);
     }
 
-    private FileChannel openChannel(File lockFile) {
-        try {
-            return new RandomAccessFile(lockFile, "rw").getChannel();
-        } catch (IOException e) {
-            throw new HazelcastException("Cannot create lock file " + lockFile.getAbsolutePath(), e);
-        }
+    void release() {
+        releaseInternal(lock, channel);
     }
 
-    private FileLock acquireLock(File lockFile) {
+    // package private for testing
+    FileLock acquireLock(File lockFile, FileChannel channel) {
         FileLock fileLock = null;
         try {
             fileLock = channel.tryLock();
@@ -73,7 +70,8 @@ class NearCachePreloaderLock {
         }
     }
 
-    void release() {
+    // package private for testing
+    void releaseInternal(FileLock lock, FileChannel channel) {
         try {
             lock.release();
             channel.close();
@@ -81,6 +79,14 @@ class NearCachePreloaderLock {
             logger.severe("Problem while releasing the lock and closing channel on " + lockFile, e);
         } finally {
             lockFile.deleteOnExit();
+        }
+    }
+
+    private FileChannel openChannel(File lockFile) {
+        try {
+            return new RandomAccessFile(lockFile, "rw").getChannel();
+        } catch (IOException e) {
+            throw new HazelcastException("Cannot create lock file " + lockFile.getAbsolutePath(), e);
         }
     }
 }
