@@ -2,11 +2,11 @@ package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -18,6 +18,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -30,21 +31,44 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
-
     @Test
     public void testMigrationListenerCalledOnlyOnceWhenMigrationHappens() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         Config config = new Config();
-        int partitionCount = 10;
+        // even partition count to make migration count deterministic
+        final int partitionCount = 10;
         config.setProperty(GroupProperty.PARTITION_COUNT.getName(), String.valueOf(partitionCount));
+
         HazelcastInstance instance = factory.newHazelcastInstance(config);
-        CountingMigrationListener migrationListener = new CountingMigrationListener(partitionCount);
+        final CountingMigrationListener migrationListener = new CountingMigrationListener(partitionCount);
         instance.getPartitionService().addMigrationListener(migrationListener);
-        IMap<Object, Object> aDefault = instance.getMap(randomName());
-        aDefault.put(1, 1);
-        factory.newHazelcastInstance(config);
-        assertAllLesserOrEquals(migrationListener.migrationStarted, 1);
-        assertAllLesserOrEquals(migrationListener.migrationCompleted, 1);
+
+        warmUpPartitions(instance);
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        waitAllForSafeState(instance2, instance);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                int startedTotal = getTotal(migrationListener.migrationStarted);
+                int completedTotal = getTotal(migrationListener.migrationCompleted);
+
+                assertEquals(partitionCount / 2, startedTotal);
+                assertEquals(startedTotal, completedTotal);
+            }
+        });
+
+        assertAllLessThanOrEqual(migrationListener.migrationStarted, 1);
+        assertAllLessThanOrEqual(migrationListener.migrationCompleted, 1);
+    }
+
+    private int getTotal(AtomicInteger[] integers) {
+        int total = 0;
+        for (AtomicInteger count : integers) {
+            total += count.get();
+        }
+        return total;
     }
 
     @Test(expected = NullPointerException.class)
@@ -110,19 +134,19 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     }
 
 
-    private void assertAllLesserOrEquals(AtomicInteger[] integers, int expected) {
+    private void assertAllLessThanOrEqual(AtomicInteger[] integers, int expected) {
         for (AtomicInteger integer : integers) {
             assertTrue(integer.get() <= expected);
         }
     }
 
-    class CountingMigrationListener implements MigrationListener {
+    private static class CountingMigrationListener implements MigrationListener {
 
         AtomicInteger[] migrationStarted;
         AtomicInteger[] migrationCompleted;
         AtomicInteger[] migrationFailed;
 
-        public CountingMigrationListener(int partitionCount) {
+        CountingMigrationListener(int partitionCount) {
             migrationStarted = new AtomicInteger[partitionCount];
             migrationCompleted = new AtomicInteger[partitionCount];
             migrationFailed = new AtomicInteger[partitionCount];
