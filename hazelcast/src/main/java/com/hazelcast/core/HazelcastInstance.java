@@ -107,6 +107,9 @@ public interface HazelcastInstance {
      * @param name name of the job tracker
      * @return job tracker instance with the specified name
      * @since 3.2
+     * @deprecated MapReduce is deprecated and will be removed in 3.9.
+     * For map aggregations, you can use {@link com.hazelcast.aggregation.Aggregator} on IMap.
+     * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
      */
     JobTracker getJobTracker(String name);
 
