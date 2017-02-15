@@ -26,6 +26,7 @@ import java.lang.management.ManagementFactory;
 import static com.hazelcast.logging.Logger.getLogger;
 import static com.hazelcast.nio.UnsafeHelper.UNSAFE;
 import static com.hazelcast.nio.UnsafeHelper.UNSAFE_AVAILABLE;
+import static java.lang.Math.abs;
 
 /**
  * Helper class for retrieving JVM specific information.
@@ -86,8 +87,6 @@ public final class JVMUtil {
 
     /**
      * Fallback when checking CompressedOopsEnabled.
-     * (not private for testing)
-     * Borrowed from http://openjdk.java.net/projects/code-tools/jol/
      */
     @SuppressFBWarnings("NP_BOOLEAN_RETURN_NULL")
     static Boolean isObjectLayoutCompressedOopsOrNull() {
@@ -95,25 +94,35 @@ public final class JVMUtil {
             return null;
         }
 
-        // when running with CompressedOops on 64-bit platform, the address size reported by Unsafe is still 8, while
-        // the real reference fields are 4 bytes long, so we try to guess the reference field size with this naive trick
-        int oopSize;
-        try {
-            long off1 = UNSAFE.objectFieldOffset(CompressedOopsClass.class.getField("obj1"));
-            long off2 = UNSAFE.objectFieldOffset(CompressedOopsClass.class.getField("obj2"));
-            oopSize = (int) Math.abs(off2 - off1);
-        } catch (Exception e) {
-            getLogger(JVMUtil.class).fine("Could not determine cost of reference using field offsets: " + e.getMessage());
+        // We can't rely on Unsafe to get a real reference size when oops compression is enabled.
+        // Hence we have to do a simple experiment: Let's have an object with 2 references.
+        // The difference between address offsets is a reference size in bytes.
+        // It is not bullet-proof, it assume certain object layout, but this happens
+        // to works for all JVMs tested.
+        Integer referenceSize = ReferenceSizeEstimator.getReferenceSizeOrNull();
+        if (referenceSize == null) {
             return null;
         }
 
-        return oopSize != UNSAFE.addressSize();
+        // When reference size does not equal address size then it's safe to assume references are compressed
+        return referenceSize != UNSAFE.addressSize();
     }
 
     @SuppressWarnings({"unused", "checkstyle:visibilitymodifier"})
-    private static class CompressedOopsClass {
+    private static class ReferenceSizeEstimator {
+        public Object firstField;
+        public Object secondField;
 
-        public Object obj1;
-        public Object obj2;
+        public static final Integer getReferenceSizeOrNull() {
+            Integer referenceSize = null;
+            try {
+                long firstFieldOffset = UNSAFE.objectFieldOffset(ReferenceSizeEstimator.class.getField("firstField"));
+                long secondFieldOffset = UNSAFE.objectFieldOffset(ReferenceSizeEstimator.class.getField("secondField"));
+                referenceSize = (int) abs(secondFieldOffset - firstFieldOffset);
+            } catch (Exception e) {
+                getLogger(JVMUtil.class).fine("Could not determine cost of reference using field offsets: " + e.getMessage());
+            }
+            return referenceSize;
+        }
     }
 }
