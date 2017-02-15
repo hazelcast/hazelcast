@@ -21,6 +21,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.CompositePredicate;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
@@ -275,6 +276,18 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertTrue(predicate.apply(createEntry("1", value)));
         e = new PredicateBuilder().getEntryObject();
         assertTrue(e.get("id").equal(12).apply(createEntry("1", value)));
+    }
+
+    @Test
+    public void testCriteriaAPI_compositePredicate() {
+        Object value = new Employee(12, "abc-123-xvz", 34, true, 10D);
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        EntryObject e2 = e.get("age");
+        Predicate predicate = new CompositePredicate(e2.greaterEqual(29).and(e2.lessEqual(36)));
+        assertTrue(predicate.apply(createEntry("1", value)));
+        e = new PredicateBuilder().getEntryObject();
+        Predicate compositePredicate = new CompositePredicate(e.get("id").equal(12));
+        assertTrue(compositePredicate.apply(createEntry("1", value)));
     }
 
     @Test(expected = NullPointerException.class)
