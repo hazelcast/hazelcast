@@ -188,16 +188,15 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         List<FrameworkMethod> befores = getTestClass().getAnnotatedMethods(
                 Before.class);
         List<TestRule> testRules = getTestRules(target);
+        Statement nextStatement = statement;
         if (!testRules.isEmpty()) {
             for (TestRule rule : testRules) {
                 if (rule instanceof BounceMemberRule) {
-                    Statement bounceMembersAfterBefores = ((BounceMemberRule) rule).startBouncing(statement);
-                    return befores.isEmpty() ? statement : new RunBefores(bounceMembersAfterBefores,
-                            befores, target);
+                    nextStatement = ((BounceMemberRule) rule).startBouncing(statement);
                 }
             }
         }
-        return befores.isEmpty() ? statement : new RunBefores(statement,
+        return befores.isEmpty() ? nextStatement : new RunBefores(nextStatement,
                 befores, target);
     }
 
