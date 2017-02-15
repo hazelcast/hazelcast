@@ -26,6 +26,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.util.AddressUtil;
 
 import java.io.IOException;
@@ -54,16 +55,18 @@ class DefaultAddressPicker implements AddressPicker {
     private static final int SOCKET_BACKLOG_LENGTH = 100;
     private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
 
-    private final Node node;
     private final ILogger logger;
+    private final HazelcastProperties hazelcastProperties;
+    private final Config config;
 
     private ServerSocketChannel serverSocketChannel;
     private Address publicAddress;
     private Address bindAddress;
 
-    public DefaultAddressPicker(Node node) {
-        this.node = node;
-        this.logger = node.getLogger(DefaultAddressPicker.class);
+    DefaultAddressPicker(Config config, HazelcastProperties hazelcastProperties, ILogger logger) {
+        this.config = config;
+        this.hazelcastProperties = hazelcastProperties;
+        this.logger = logger;
     }
 
     @Override
@@ -90,8 +93,8 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
-        NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        boolean bindAny = node.getProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
+        NetworkConfig networkConfig = config.getNetworkConfig();
+        boolean bindAny = hazelcastProperties.getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
 
         Throwable error = null;
         ServerSocket serverSocket = null;
@@ -100,12 +103,17 @@ class DefaultAddressPicker implements AddressPicker {
         boolean reuseAddress = networkConfig.isReuseAddress();
         logger.finest("inet reuseAddress:" + reuseAddress);
 
-        int portCount = networkConfig.getPortCount();
         int port = networkConfig.getPort();
-        AddressDefinition bindAddressDef = pickAddress(networkConfig);
+        // port = 0 means system will pick up an ephemeral port.
+        int portTrialCount = port > 0 && networkConfig.isPortAutoIncrement() ? networkConfig.getPortCount() : 1;
+        AddressDefinition bindAddressDef = pickAddressDef();
 
-        for (int i = 0; i < portCount; i++) {
-            /**
+        if (port == 0) {
+            logger.info("No explicit port is given, system will pick up an ephemeral port.");
+        }
+
+        for (int i = 0; i < portTrialCount; i++) {
+            /*
              * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
              * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
              * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to
@@ -118,51 +126,53 @@ class DefaultAddressPicker implements AddressPicker {
             serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
             try {
                 if (bindAny) {
-                    inetSocketAddress = new InetSocketAddress(port);
+                    inetSocketAddress = new InetSocketAddress(port + i);
                 } else {
-                    inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
+                    inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port + i);
                 }
-                logger.finest("Trying to bind inet socket address:" + inetSocketAddress);
+                logger.fine("Trying to bind inet socket address: " + inetSocketAddress);
                 serverSocket.bind(inetSocketAddress, SOCKET_BACKLOG_LENGTH);
-                logger.finest("Bind successful to inet socket address:" + inetSocketAddress);
+                logger.fine("Bind successful to inet socket address: " + serverSocket.getLocalSocketAddress());
                 break;
             } catch (Exception e) {
                 serverSocket.close();
                 serverSocketChannel.close();
-
-                if (networkConfig.isPortAutoIncrement()) {
-                    port++;
-                    error = e;
-                } else {
-                    String msg = "Port [" + port + "] is already in use and auto-increment is disabled."
-                            + " Hazelcast cannot start.";
-                    logger.severe(msg, e);
-                    throw new HazelcastException(msg, error);
-                }
+                error = e;
             }
         }
+
         if (serverSocket == null || !serverSocket.isBound()) {
-            throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!"
-                    + " config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
+            String message;
+            if (networkConfig.isPortAutoIncrement()) {
+                message = "ServerSocket bind has failed. Hazelcast cannot start. config-port: " + networkConfig.getPort()
+                                + ", latest-port: " + (port + portTrialCount);
+            } else {
+                message = "Port [" + port + "] is already in use and auto-increment is disabled."
+                        + " Hazelcast cannot start.";
+            }
+            throw new HazelcastException(message, error);
         }
+
+        // get the actual port that's bound by server socket
+        port = serverSocket.getLocalPort();
         serverSocketChannel.configureBlocking(false);
         bindAddress = createAddress(bindAddressDef, port);
 
         logger.info("Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
-        return getPublicAddress(node.getConfig(), port);
+        return getPublicAddress(port);
     }
 
-    private Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
+    private static Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
         if (addressDef.host == null) {
             return new Address(addressDef.inetAddress, port);
         }
         return new Address(addressDef.host, port);
     }
 
-    private AddressDefinition pickAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
-        AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
+    private AddressDefinition pickAddressDef() throws UnknownHostException, SocketException {
+        AddressDefinition addressDef = getSystemConfiguredAddress();
         if (addressDef == null) {
-            addressDef = pickInterfaceAddress(networkConfig);
+            addressDef = pickInterfaceAddressDef();
         }
         if (addressDef != null) {
             // check if scope id is set correctly
@@ -174,8 +184,8 @@ class DefaultAddressPicker implements AddressPicker {
         return addressDef;
     }
 
-    private AddressDefinition pickInterfaceAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
-        Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
+    private AddressDefinition pickInterfaceAddressDef() throws UnknownHostException, SocketException {
+        Collection<InterfaceDefinition> interfaces = getInterfaces();
         if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
                 || interfaces.contains(new InterfaceDefinition("localhost"))) {
             return pickLoopbackAddress();
@@ -189,6 +199,7 @@ class DefaultAddressPicker implements AddressPicker {
                 return addressDef;
             }
         }
+        NetworkConfig networkConfig = config.getNetworkConfig();
         if (networkConfig.getInterfaces().isEnabled()) {
             String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
                     + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
@@ -201,14 +212,15 @@ class DefaultAddressPicker implements AddressPicker {
         return pickMatchingAddress(null);
     }
 
-    private Collection<InterfaceDefinition> getInterfaces(NetworkConfig networkConfig) throws UnknownHostException {
+    private Collection<InterfaceDefinition> getInterfaces() throws UnknownHostException {
+        NetworkConfig networkConfig = config.getNetworkConfig();
         // address -> domain
         Map<String, String> addressDomainMap;
         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
             // LinkedHashMap is to guarantee order
             addressDomainMap = new LinkedHashMap<String, String>();
-            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(config);
             for (String possibleAddress : possibleAddresses) {
                 String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
                 if (AddressUtil.isIpAddress(addressHolder)) {
@@ -251,7 +263,7 @@ class DefaultAddressPicker implements AddressPicker {
         return interfaces;
     }
 
-    private String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {
+    private static String findHostnameMatchingInterface(Map<String, String> addressDomainMap, String configInterface) {
         String hostname = addressDomainMap.get(configInterface);
         if (hostname != null) {
             return hostname;
@@ -278,7 +290,7 @@ class DefaultAddressPicker implements AddressPicker {
         return addresses;
     }
 
-    private AddressDefinition getSystemConfiguredAddress(Config config) throws UnknownHostException {
+    private AddressDefinition getSystemConfiguredAddress() throws UnknownHostException {
         String address = config.getProperty("hazelcast.local.localAddress");
         if (address != null) {
             address = address.trim();
@@ -292,7 +304,7 @@ class DefaultAddressPicker implements AddressPicker {
         return null;
     }
 
-    private AddressDefinition getPublicAddress(Config config, int defaultPort) throws UnknownHostException {
+    private AddressDefinition getPublicAddress(int port) throws UnknownHostException {
         String address = config.getProperty("hazelcast.local.publicAddress");
         if (address == null) {
             address = config.getNetworkConfig().getPublicAddress();
@@ -300,23 +312,23 @@ class DefaultAddressPicker implements AddressPicker {
         if (address != null) {
             address = address.trim();
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
-                return pickLoopbackAddress(defaultPort);
+                return pickLoopbackAddress(address, port);
             } else {
                 // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234
-                AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, defaultPort);
+                AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, port);
                 return new AddressDefinition(holder.getAddress(), holder.getPort(), InetAddress.getByName(holder.getAddress()));
             }
         }
         return null;
     }
 
-    private AddressDefinition pickLoopbackAddress() throws UnknownHostException {
+    private static AddressDefinition pickLoopbackAddress() throws UnknownHostException {
         return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 
-    private AddressDefinition pickLoopbackAddress(int defaultPort) throws UnknownHostException {
+    private static AddressDefinition pickLoopbackAddress(String host, int defaultPort) throws UnknownHostException {
         InetAddress adddress = InetAddress.getByName("127.0.0.1");
-        return new AddressDefinition(adddress.getHostAddress(), defaultPort, adddress);
+        return new AddressDefinition(host, defaultPort, adddress);
     }
 
     private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
@@ -354,9 +366,9 @@ class DefaultAddressPicker implements AddressPicker {
 
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
-                || node.getProperties().getBoolean(GroupProperty.PREFER_IPv4_STACK);
+                || hazelcastProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
-        JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
+        JoinConfig join = config.getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
         return preferIPv4Stack || awsEnabled;
