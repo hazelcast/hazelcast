@@ -65,7 +65,7 @@ public class CountAggregationTest {
             aggregation.accumulate(createEntryWithValue(person));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count("age");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
@@ -101,7 +101,7 @@ public class CountAggregationTest {
             aggregation.accumulate(createEntryWithValue(person));
         }
 
-        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count();Aggregators.count("age");
+        Aggregator<Map.Entry<BigDecimal, BigDecimal>, Long> resultAggregation = Aggregators.count("age");
         resultAggregation.combine(aggregation);
         long result = resultAggregation.aggregate();
 
