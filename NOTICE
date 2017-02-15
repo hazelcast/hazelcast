@@ -1,7 +1,14 @@
-The package com.hazelcast.util.collection and the classes:
+The packages:
+
+com.hazelcast.util.collection
+com.hazelcast.internal.util.concurrent
+
+and the classes:
+
 com.hazelcast.util.QuickMath
 com.hazelcast.client.impl.protocol.util.UnsafeBuffer
 com.hazelcast.client.impl.protocol.util.BufferBuilder
+
 contain code originating from the Agrona project
 (https://github.com/real-logic/Agrona).
 
