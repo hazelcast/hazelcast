@@ -39,10 +39,7 @@ public final class UuidUtil {
     private static final ThreadLocal<Random> THREAD_LOCAL_UNSECURE_RANDOM = new ThreadLocal<Random>() {
         @Override
         protected Random initialValue() {
-            // Using the same way as the OpenJDK version just to
-            // make sure this happens on every JDK implementation
-            // since there are some out there that just use System.currentTimeMillis()
-            return new Random(seedUniquifier() ^ System.nanoTime());
+            return new Random();
         }
     };
 
