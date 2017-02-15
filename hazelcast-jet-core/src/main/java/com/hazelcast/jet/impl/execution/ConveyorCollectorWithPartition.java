@@ -20,9 +20,6 @@ import com.hazelcast.internal.util.concurrent.ConcurrentConveyor;
 import com.hazelcast.jet.impl.util.ObjectWithPartitionId;
 import com.hazelcast.jet.impl.util.ProgressState;
 
-/**
- * Javadoc pending.
- */
 public class ConveyorCollectorWithPartition extends ConveyorCollector {
 
     public ConveyorCollectorWithPartition(ConcurrentConveyor<Object> conveyor, int queueIndex, int[] partitions) {

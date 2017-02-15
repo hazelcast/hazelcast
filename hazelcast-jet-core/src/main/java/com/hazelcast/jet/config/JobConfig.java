@@ -23,71 +23,64 @@ import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
- * Javadoc pending.
+ * Job specific configuration options
  */
 public class JobConfig implements Serializable {
 
     private static final int DEFAULT_RESOURCE_PART_SIZE = 1 << 14;
     private final Set<ResourceConfig> resourceConfigs = new HashSet<>();
-    private final Properties properties = new Properties();
 
     /**
-     * @return engine specific properties
-     */
-    public Properties getProperties() {
-        return properties;
-    }
-
-    /**
-     * Javadoc pending
+     * Chunk size for resources when transmitting them over the wire
      */
     public int getResourcePartSize() {
         return DEFAULT_RESOURCE_PART_SIZE;
     }
 
     /**
-     * Add class to the job classLoader
-     *
-     * @param classes classes, which will be used during calculation
+     * The given classes will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      */
-    public void addClass(Class... classes) {
+    public JobConfig addClass(Class... classes) {
         checkNotNull(classes, "Classes can not be null");
 
         for (Class clazz : classes) {
             resourceConfigs.add(new ResourceConfig(clazz));
         }
+        return this;
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param url location of the JAR file
+     * The filename will be used as the ID of the resource.
      */
-    public void addJar(URL url) {
-        addJar(url, getFileName(url));
+    public JobConfig addJar(URL url) {
+        return addJar(url, getFileName(url));
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param url location of the JAR file
-     * @param id  identifier for the JAR file
+     * The provided ID will be assigned to the JAR file.
      */
-    public void addJar(URL url, String id) {
-        add(url, id, ResourceKind.JAR);
+    public JobConfig addJar(URL url, String id) {
+        return add(url, id, ResourceKind.JAR);
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param file the JAR file
+     * The filename will be used as the ID of the resource.
      */
     public void addJar(File file) {
         try {
@@ -98,10 +91,10 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param file the JAR file
-     * @param id   identifier for the JAR file
+     * The provided ID will be assigned to the JAR file.
      */
     public void addJar(File file, String id) {
         try {
@@ -112,9 +105,10 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param path path the JAR file
+     * The filename will be used as the ID of the resource.
      */
     public void addJar(String path) {
         try {
@@ -126,10 +120,10 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Add JAR to the job classLoader
+     * The given JAR file will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param path path the JAR file
-     * @param id   identifier for the JAR file
+     * The provided ID will be assigned to the JAR file.
      */
     public void addJar(String path, String id) {
         try {
@@ -141,33 +135,34 @@ public class JobConfig implements Serializable {
 
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param url source url with classes
+     * The filename will be used as the ID of the resource.
      */
-    public void addResource(URL url) {
-        addResource(url, getFileName(url));
-
+    public JobConfig addResource(URL url) {
+        return addResource(url, getFileName(url));
     }
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param url source url with classes
-     * @param id  identifier for the resource
+     * The provided ID will be assigned to the resource file.
      */
-    public void addResource(URL url, String id) {
-        add(url, id, ResourceKind.DATA);
+    public JobConfig addResource(URL url, String id) {
+        return add(url, id, ResourceKind.DATA);
     }
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param file resource file
+     * The filename will be used as the ID of the resource.
      */
-    public void addResource(File file) {
+    public JobConfig addResource(File file) {
         try {
-            addResource(file.toURI().toURL(), file.getName());
+            return addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
@@ -175,59 +170,61 @@ public class JobConfig implements Serializable {
     }
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param file resource file
-     * @param id   identifier for the resource
+     * The provided ID will be assigned to the resource file.
      */
-    public void addResource(File file, String id) {
+    public JobConfig addResource(File file, String id) {
         try {
-            add(file.toURI().toURL(), id, ResourceKind.DATA);
+            return add(file.toURI().toURL(), id, ResourceKind.DATA);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
     }
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param path path of the resource
+     * The filename will be used as the ID of the resource.
      */
-    public void addResource(String path) {
+    public JobConfig addResource(String path) {
         File file = new File(path);
         try {
-            addResource(file.toURI().toURL(), file.getName());
+            return addResource(file.toURI().toURL(), file.getName());
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
     }
 
     /**
-     * Add resource to the job classLoader
+     * The given resource will be deployed to all the nodes before job execution
+     * and available for the job specific class loader.
      *
-     * @param path path of the resource
-     * @param id   identifier for the resource
+     * The provided ID will be assigned to the resource file.
      */
-    public void addResource(String path, String id) {
+    public JobConfig addResource(String path, String id) {
         File file = new File(path);
         try {
-            addResource(file.toURI().toURL(), id);
+            return addResource(file.toURI().toURL(), id);
         } catch (MalformedURLException e) {
             throw rethrow(e);
         }
     }
 
     /**
-     * Returns all the deployment configurations
+     * Returns all the resource configurations
      *
-     * @return deployment configuration set
+     * @return resource configuration set
      */
     public Set<ResourceConfig> getResourceConfigs() {
         return resourceConfigs;
     }
 
-    private void add(URL url, String id, ResourceKind type) {
+    private JobConfig add(URL url, String id, ResourceKind type) {
         resourceConfigs.add(new ResourceConfig(url, id, type));
+        return this;
     }
 
     private String getFileName(URL url) {
