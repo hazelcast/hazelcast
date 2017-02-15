@@ -19,16 +19,11 @@ package com.hazelcast.jet.stream.impl.processor;
 import com.hazelcast.jet.AbstractProcessor;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers.ResettableSingletonTraverser;
-import com.hazelcast.jet.stream.impl.pipeline.TransformOperation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Stream;
-
-import static com.hazelcast.jet.Traversers.traverseStream;
 
 public class TransformP extends AbstractProcessor {
 
@@ -36,10 +31,14 @@ public class TransformP extends AbstractProcessor {
     private final Traverser<?> outputTraverser;
     private boolean itemDone = true;
 
-    public TransformP(List<TransformOperation> transformOps) {
+    public TransformP(List<? extends Function<Traverser, Traverser>> transformOps) {
         final ResettableSingletonTraverser<Object> input = new ResettableSingletonTraverser<>();
         this.inputConsumer = input;
-        this.outputTraverser = withOpsApplied(input, transformOps);
+        Traverser<?> output = input;
+        for (Function<Traverser, Traverser> op : transformOps) {
+            output = op.apply(output);
+        }
+        this.outputTraverser = output;
     }
 
     @Override
@@ -48,26 +47,5 @@ public class TransformP extends AbstractProcessor {
             inputConsumer.accept(item);
         }
         return itemDone = emitCooperatively(outputTraverser);
-    }
-
-    private static Traverser<?> withOpsApplied(Traverser<?> input, List<TransformOperation> transformOps) {
-        Traverser<?> composed = input;
-        for (TransformOperation op : transformOps) {
-            switch (op.getType()) {
-                case FILTER:
-                    composed = composed.filter((Predicate) op.getFunction());
-                    break;
-                case MAP:
-                    composed = composed.map((Function) op.getFunction());
-                    break;
-                case FLAT_MAP:
-                    composed = composed.flatMap(item -> traverseStream(
-                            ((Function<Object, Stream<?>>) op.getFunction()).apply(item)));
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown case: " + op.getType());
-            }
-        }
-        return composed;
     }
 }

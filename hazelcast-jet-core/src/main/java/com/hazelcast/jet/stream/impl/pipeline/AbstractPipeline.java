@@ -49,6 +49,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.stream.DistributedCollectors.toIList;
 import static com.hazelcast.jet.stream.impl.StreamUtil.checkSerializable;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -71,63 +72,60 @@ abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
     @Override
     public DistributedStream<E_OUT> filter(Predicate<? super E_OUT> predicate) {
         checkSerializable(predicate, "predicate");
-        return new TransformPipeline(context, this,
-                new TransformOperation(TransformOperation.Type.FILTER, predicate));
+        return new TransformPipeline<>(context, this, t -> t.filter(predicate));
     }
 
     @Override
     public <R> DistributedStream<R> map(Function<? super E_OUT, ? extends R> mapper) {
         checkSerializable(mapper, "mapper");
-        return new TransformPipeline(context, this,
-                new TransformOperation(TransformOperation.Type.MAP, mapper));
+        return new TransformPipeline<>(context, this, t -> t.map(mapper));
     }
 
     @Override
     public DistributedIntStream mapToInt(ToIntFunction<? super E_OUT> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Integer> map = (Pipeline<Integer>) this.map(mapper::applyAsInt);
+        Pipeline<Integer> map = (Pipeline<Integer>) map(mapper::applyAsInt);
         return new IntPipeline(context, map);
     }
 
     @Override
     public DistributedLongStream mapToLong(ToLongFunction<? super E_OUT> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Long> map = (Pipeline<Long>) this.map(mapper::applyAsLong);
+        Pipeline<Long> map = (Pipeline<Long>) map(mapper::applyAsLong);
         return new LongPipeline(context, map);
     }
 
     @Override
     public DistributedDoubleStream mapToDouble(ToDoubleFunction<? super E_OUT> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Double> map = (Pipeline<Double>) this.map(mapper::applyAsDouble);
+        Pipeline<Double> map = (Pipeline<Double>) map(mapper::applyAsDouble);
         return new DoublePipeline(context, map);
     }
 
     @Override
     public <R> DistributedStream<R> flatMap(Function<? super E_OUT, ? extends Stream<? extends R>> mapper) {
         checkSerializable(mapper, "mapper");
-        return new TransformPipeline(context, this,
-                new TransformOperation(TransformOperation.Type.FLAT_MAP, mapper));
+        return new TransformPipeline<>(context, this, t -> t.flatMap(item -> traverseStream(mapper.apply(item))));
     }
 
     @Override
     public DistributedIntStream flatMapToInt(Function<? super E_OUT, ? extends IntStream> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Integer> pipeline = (Pipeline<Integer>) this.flatMap(m -> mapper.apply(m).boxed());
+        Pipeline<Integer> pipeline = (Pipeline<Integer>) flatMap(m -> mapper.apply(m).boxed());
         return new IntPipeline(context, pipeline);
     }
 
     @Override
     public DistributedLongStream flatMapToLong(Function<? super E_OUT, ? extends LongStream> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Long> pipeline = (Pipeline<Long>) this.flatMap(m -> mapper.apply(m).boxed());
+        Pipeline<Long> pipeline = (Pipeline<Long>) flatMap(m -> mapper.apply(m).boxed());
         return new LongPipeline(context, pipeline);
     }
 
     @Override
     public DistributedDoubleStream flatMapToDouble(Function<? super E_OUT, ? extends DoubleStream> mapper) {
         checkSerializable(mapper, "mapper");
-        Pipeline<Double> pipeline = (Pipeline<Double>) this.flatMap(m -> mapper.apply(m).boxed());
+        Pipeline<Double> pipeline = (Pipeline<Double>) flatMap(m -> mapper.apply(m).boxed());
         return new DoublePipeline(context, pipeline);
     }
 

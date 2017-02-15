@@ -17,24 +17,28 @@
 package com.hazelcast.jet.stream.impl.pipeline;
 
 import com.hazelcast.jet.DAG;
-import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.Distributed;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.stream.DistributedStream;
 import com.hazelcast.jet.stream.impl.processor.TransformP;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Edge.between;
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.stream.impl.StreamUtil.uniqueVertexName;
 
-class TransformPipeline extends AbstractIntermediatePipeline {
+class TransformPipeline<E_IN, E_OUT> extends AbstractIntermediatePipeline<E_IN, E_OUT> {
 
-    private final List<TransformOperation> operations = new ArrayList<>();
+    private final List<Distributed.Function<Traverser, Traverser>> operations = new ArrayList<>();
 
-    TransformPipeline(StreamContext context, Pipeline upstream, TransformOperation operation) {
+    TransformPipeline(StreamContext context, Pipeline<E_IN> upstream,
+                      Distributed.Function<Traverser<E_IN>, Traverser<E_OUT>> operation) {
         super(context, upstream.isOrdered(), upstream);
-        operations.add(operation);
+        operations.add((Distributed.Function) operation);
     }
 
     @Override
@@ -42,7 +46,7 @@ class TransformPipeline extends AbstractIntermediatePipeline {
         Vertex previous = upstream.buildDAG(dag);
         // the lambda below must not capture `this`, therefore the instance variable
         // must first be loaded into a local variable
-        List<TransformOperation> ops = this.operations;
+        List<Distributed.Function<Traverser, Traverser>> ops = this.operations;
         Vertex transform = dag.newVertex(uniqueVertexName("transform"), () -> new TransformP(ops));
         if (upstream.isOrdered()) {
             transform.localParallelism(1);
@@ -52,22 +56,20 @@ class TransformPipeline extends AbstractIntermediatePipeline {
     }
 
     @Override
-    public DistributedStream filter(Distributed.Predicate predicate) {
-        operations.add(new TransformOperation(TransformOperation.Type.FILTER, predicate));
+    public DistributedStream<E_OUT> filter(Distributed.Predicate<? super E_OUT> predicate) {
+        operations.add(t -> t.filter(predicate));
         return this;
     }
 
     @Override
-    public DistributedStream map(Distributed.Function mapper) {
-        operations.add(new TransformOperation(TransformOperation.Type.MAP, mapper));
-        return this;
+    public <R> DistributedStream<R> map(Distributed.Function<? super E_OUT, ? extends R> mapper) {
+        operations.add(t -> t.map(mapper));
+        return (DistributedStream<R>) this;
     }
 
     @Override
-    public DistributedStream flatMap(Distributed.Function mapper) {
-        operations.add(new TransformOperation(TransformOperation.Type.FLAT_MAP, mapper));
-        return this;
+    public <R> DistributedStream<R> flatMap(Distributed.Function<? super E_OUT, ? extends Stream<? extends R>> mapper) {
+        operations.add(t -> t.flatMap(item -> traverseStream(mapper.apply((E_OUT) item))));
+        return (DistributedStream<R>) this;
     }
-
-
 }
