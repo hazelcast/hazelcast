@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.query.CompositePredicate;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
@@ -63,6 +64,9 @@ public class IndexesTest {
                 .and(entryObject.get("age").in(ages.toArray(new String[count])));
         Set<QueryableEntry> results = indexes.query(predicate);
         assertEquals(1, results.size());
+
+        Set<QueryableEntry> results1 = indexes.query(new CompositePredicate(predicate));
+        assertEquals(1, results1.size());
     }
 
     @Test
