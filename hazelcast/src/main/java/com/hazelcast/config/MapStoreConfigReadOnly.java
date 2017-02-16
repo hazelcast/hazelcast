@@ -21,7 +21,7 @@ import java.util.Properties;
 /**
  * Contains the configuration for a Map Store (read-only).
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class MapStoreConfigReadOnly extends MapStoreConfig {
 

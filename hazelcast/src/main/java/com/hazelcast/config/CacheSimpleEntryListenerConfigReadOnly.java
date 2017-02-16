@@ -19,7 +19,7 @@ package com.hazelcast.config;
 /**
  * Readonly version of CacheSimpleEntryListenerConfig
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class CacheSimpleEntryListenerConfigReadOnly
         extends CacheSimpleEntryListenerConfig {

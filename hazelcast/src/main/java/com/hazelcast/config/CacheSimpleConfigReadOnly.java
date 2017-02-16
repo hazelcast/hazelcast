@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Readonly version of {@link com.hazelcast.config.CacheSimpleConfig}
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class CacheSimpleConfigReadOnly
         extends CacheSimpleConfig {
