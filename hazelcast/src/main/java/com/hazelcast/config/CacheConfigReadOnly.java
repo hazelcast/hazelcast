@@ -33,7 +33,7 @@ import java.util.Set;
  * @param <K> type of the key
  * @param <V> type of the value
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 @BinaryInterface
 public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
