@@ -63,7 +63,7 @@ public class MapIndexConfig {
      * Gets immutable version of this configuration.
      *
      * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
      */
     public MapIndexConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {

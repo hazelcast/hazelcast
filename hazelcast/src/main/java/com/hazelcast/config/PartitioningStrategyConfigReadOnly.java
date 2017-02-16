@@ -21,7 +21,7 @@ import com.hazelcast.core.PartitioningStrategy;
 /**
  * Contains the configuration for strategy of partitioning
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class PartitioningStrategyConfigReadOnly extends PartitioningStrategyConfig {
 
