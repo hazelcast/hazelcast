@@ -19,7 +19,7 @@ package com.hazelcast.config;
 /**
  * Contains the configuration for a extractor of Map.
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class MapAttributeConfigReadOnly extends MapAttributeConfig {
 

@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}.
  *
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class QueueConfigReadOnly extends QueueConfig {
 

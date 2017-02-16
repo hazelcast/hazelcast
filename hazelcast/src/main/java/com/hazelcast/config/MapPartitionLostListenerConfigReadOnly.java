@@ -24,7 +24,7 @@ import java.util.EventListener;
  * Read-Only Configuration for MapPartitionLostListener
  *
  * @see com.hazelcast.map.listener.MapPartitionLostListener
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 public class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostListenerConfig {
 

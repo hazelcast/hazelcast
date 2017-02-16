@@ -24,7 +24,7 @@ import java.util.List;
  * Read only {@code QueryCacheConfig}
  *
  * @since 3.5
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 class QueryCacheConfigReadOnly extends QueryCacheConfig {
 

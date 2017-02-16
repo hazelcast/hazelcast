@@ -22,7 +22,7 @@ import com.hazelcast.query.Predicate;
  * Contains the configuration for a Predicate.
  *
  * @since 3.5
- * @deprecated this class will be removed in 3.8; it is meant for internal usage only.
+ * @deprecated this class will be removed in 4.0; it is meant for internal usage only.
  */
 class PredicateConfigReadOnly extends PredicateConfig {
 
