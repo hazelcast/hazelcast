@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.nio.Address;
 
 /**
- * This interface is deprecated and will be removed in 3.8. Look for the {@link com.hazelcast.spi.discovery}
+ * This interface is deprecated and will be removed in 4.0. Look for the {@link com.hazelcast.spi.discovery}
  * module as alternative.
  */
 @Deprecated

@@ -61,7 +61,7 @@ public class QueueStoreConfig {
      * Gets immutable version of this configuration.
      *
      * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 3.9; it is meant for internal usage only.
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
      */
     public QueueStoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
