@@ -24,7 +24,7 @@ import java.util.List;
  * This exception class is used to show stack traces of multiple failed
  * remote operations at once. This can happen if the {@link com.hazelcast.mapreduce.impl.operation.GetResultOperation}
  * fails to retrieve values for some reason.
- * @deprecated MapReduce is deprecated and will be removed in 3.9.
+ * @deprecated MapReduce is deprecated and will be removed in 4.0.
  * For map aggregations, you can use {@link com.hazelcast.aggregation.Aggregator} on IMap.
  * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
  */
