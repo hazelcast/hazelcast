@@ -501,7 +501,7 @@ public class ClusterJoinManager {
 
             node.setMasterAddress(thisAddress);
 
-            if (clusterService.getClusterVersion() == null) {
+            if (clusterService.getClusterVersion().isUnknown()) {
                 clusterService.getClusterStateManager().setClusterVersion(version.asVersion());
             }
 

@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -156,7 +155,7 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         };
-        nullifyClusterVersionAndVerifyListener(latch, failed, listener);
+        makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
     }
 
     @Test
@@ -175,23 +174,23 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
                 latch.countDown();
             }
         };
-        nullifyClusterVersionAndVerifyListener(latch, failed, listener);
+        makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
         System.clearProperty(GroupProperty.INIT_CLUSTER_VERSION.getName());
     }
 
-    private void nullifyClusterVersionAndVerifyListener(CountDownLatch latch, AtomicBoolean failed,
-                                                        ClusterVersionListener listener)
+    private void makeClusterVersionUnknownAndVerifyListener(CountDownLatch latch, AtomicBoolean failed,
+                                                            ClusterVersionListener listener)
             throws NoSuchFieldException, IllegalAccessException {
         // directly set clusterVersion field's value to null
         Field setClusterVersionMethod = ClusterStateManager.class.getDeclaredField("clusterVersion");
         setClusterVersionMethod.setAccessible(true);
-        setClusterVersionMethod.set(node.getClusterService().getClusterStateManager(), null);
+        setClusterVersionMethod.set(node.getClusterService().getClusterStateManager(), Version.UNKNOWN);
         // register listener and assert it's successful
         assertTrue(nodeExtension.registerListener(listener));
         // listener was executed
         assertOpenEventually(latch);
         // clusterVersion field's value was actually null
-        assertNull(node.getClusterService().getClusterStateManager().getClusterVersion());
+        assertTrue(node.getClusterService().getClusterStateManager().getClusterVersion().isUnknown());
         // listener received node's codebase version as new cluster version
         assertFalse(failed.get());
     }
