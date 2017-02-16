@@ -59,6 +59,22 @@ public abstract class AbstractProcessor implements Processor {
     private Outbox outbox;
     private Object pendingItem;
     private ILogger logger;
+    private boolean isCooperative;
+
+    /**
+     * Specifies what this processor's {@link #isCooperative} method will return.
+     * The method will have no effect if called after the processor has been
+     * submitted to the execution service; therefore it should be called from the
+     * {@link ProcessorSupplier} that creates it.
+     */
+    public final void setCooperative(boolean isCooperative) {
+        this.isCooperative = isCooperative;
+    }
+
+    @Override
+    public boolean isCooperative() {
+        return isCooperative;
+    }
 
     @Override
     public final void init(@Nonnull Outbox outbox, @Nonnull Context context) {

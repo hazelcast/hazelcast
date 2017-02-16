@@ -24,6 +24,7 @@ import com.hazelcast.jet.impl.connector.ReadIMapP;
 import com.hazelcast.jet.impl.connector.WriteIMapP;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -473,6 +474,20 @@ public final class Processors {
     @Nonnull
     public static <T> ProcessorSupplier countDistinct() {
         return ProcessorSupplier.of(() -> new CountDistinctP<>(x -> x));
+    }
+
+    /**
+     * Decorates a {@code ProcessorSupplier} into one that will declare all its
+     * processors non-cooperative. The wrapped supplier must return processors
+     * that are {@code instanceof} {@link AbstractProcessor}.
+     */
+    @Nonnull
+    public static ProcessorSupplier nonCooperative(ProcessorSupplier wrapped) {
+        return count -> {
+            final Collection<? extends Processor> ps = wrapped.get(count);
+            ps.forEach(p -> ((AbstractProcessor) p).setCooperative(false));
+            return ps;
+        };
     }
 
     /**
