@@ -6,7 +6,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.projection.Projections;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -14,21 +14,37 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import static com.hazelcast.spi.properties.GroupProperty.AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION;
 import static com.hazelcast.spi.properties.GroupProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class AggregatorsSpecTest extends HazelcastTestSupport {
+
+    @Parameterized.Parameter(0)
+    public InMemoryFormat inMemoryFormat;
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(new Object[][]{
+                {InMemoryFormat.BINARY},
+                {InMemoryFormat.OBJECT},
+        });
+    }
 
     @Test
     public void testAggregators_withParallelAccumulation() {
@@ -86,14 +102,14 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
         assertDistinctAggregators(map, postfix);
     }
 
-    private <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation) {
+    protected <K, V> IMap<K, V> getMapWithNodeCount(int nodeCount, boolean parallelAccumulation) {
         if (nodeCount < 1) {
             throw new IllegalArgumentException("node count < 1");
         }
 
         MapConfig mapConfig = new MapConfig()
                 .setName("aggr")
-                .setInMemoryFormat(InMemoryFormat.OBJECT);
+                .setInMemoryFormat(inMemoryFormat);
 
         Config config = new Config()
                 .setProperty(PARTITION_COUNT.getName(), String.valueOf(nodeCount))
@@ -183,20 +199,25 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
     public static void assertDistinctAggregators(IMap<Integer, Person> map, String p) {
         // projections do not support [any] but we have one element only so here we go.
         String projection = p.equals("[any]") ? "[0]" : "";
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Double>singleAttribute("doubleValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Double>distinct("doubleValue" + p)));
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute("longValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Long>singleAttribute("longValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Long>distinct("longValue" + p)));
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Integer>singleAttribute("intValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Integer>singleAttribute("intValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Integer>distinct("intValue" + p)));
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigDecimal>singleAttribute("bigDecimalValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigDecimal>singleAttribute("bigDecimalValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigDecimal>distinct("bigDecimalValue" + p)));
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigInteger>singleAttribute("bigIntegerValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, BigInteger>singleAttribute("bigIntegerValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, BigInteger>distinct("bigIntegerValue" + p)));
-        assertEquals(map.project(Projections.<Map.Entry<Integer, Person>, Comparable>singleAttribute("comparableValue" + projection)),
+        assertCollectionEquals(map.project(Projections.<Map.Entry<Integer, Person>, Comparable>singleAttribute("comparableValue" + projection)),
                 map.aggregate(Aggregators.<Map.Entry<Integer, Person>, Comparable>distinct("comparableValue" + p)));
     }
 
+    private static void assertCollectionEquals(Collection a, Collection b) {
+        TreeSet aSorted = new TreeSet(a);
+        TreeSet bSorted = new TreeSet(b);
+        assertEquals(aSorted, bSorted);
+    }
     public static void populateMapWithPersons(IMap<Integer, Person> map, String postfix) {
         for (int i = 1; i < 1000; i++) {
             map.put(i, postfix.equals("[any]") ? new PersonAny(i) : new Person(i));
