@@ -105,7 +105,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
                 value = tryPublishReserved(key, value, reservationId);
             } catch (Throwable throwable) {
                 invalidateCache(key);
-                rethrow(throwable);
+                throw rethrow(throwable);
             }
         }
 
@@ -128,7 +128,6 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
             future = super.getAsyncInternal(key);
         } catch (Throwable t) {
             invalidateCache(key);
-
             throw rethrow(t);
         }
 
