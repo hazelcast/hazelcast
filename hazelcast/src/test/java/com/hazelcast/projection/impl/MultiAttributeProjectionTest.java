@@ -38,6 +38,26 @@ public class MultiAttributeProjectionTest extends HazelcastTestSupport {
     @Rule
     public ExpectedException expected = ExpectedException.none();
 
+    @Test(expected = IllegalArgumentException.class)
+    public void multiAttribute_attributeNull() {
+        Projections.<Map.Entry<String, Person>>multiAttribute(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void multiAttribute_attributeEmpty() {
+        Projections.<Map.Entry<String, Person>>multiAttribute("");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void multiAttribute_attributeNullWithOther() {
+        Projections.<Map.Entry<String, Person>>multiAttribute("age", null, "height");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void multiAttribute_attributeEmptyWithOther() {
+        Projections.<Map.Entry<String, Person>>multiAttribute("age", "", "height");
+    }
+
     @Test
     public void multiAttribute() {
         IMap<String, Person> map = getMapWithNodeCount();

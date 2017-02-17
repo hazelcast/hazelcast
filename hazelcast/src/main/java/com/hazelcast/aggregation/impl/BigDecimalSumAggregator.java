@@ -24,7 +24,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.math.BigDecimal;
 
-public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigDecimal> implements IdentifiedDataSerializable {
+public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigDecimal, BigDecimal>
+        implements IdentifiedDataSerializable {
 
     private BigDecimal sum = BigDecimal.ZERO;
 
@@ -37,9 +38,8 @@ public final class BigDecimalSumAggregator<I> extends AbstractAggregator<I, BigD
     }
 
     @Override
-    public void accumulate(I entry) {
-        BigDecimal extractedValue = (BigDecimal) extract(entry);
-        sum = sum.add(extractedValue);
+    public void accumulateExtracted(BigDecimal value) {
+        sum = sum.add(value);
     }
 
     @Override

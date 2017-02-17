@@ -24,8 +24,14 @@ import com.hazelcast.query.impl.Extractable;
 
 import java.io.IOException;
 
+import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkHasText;
+
 /**
  * Projection that extracts the values of the given attribute and returns it.
+ * <p>
+ * The attributePath does not support the [any] operator.
+ * The input object has to be an instance of Extractable in order for the projection to work.
  *
  * @param <I> type of the input
  */
@@ -37,6 +43,8 @@ public final class SingleAttributeProjection<I, O> extends Projection<I, O> impl
     }
 
     public SingleAttributeProjection(String attributePath) {
+        checkHasText(attributePath, "attributePath must not be null or empty");
+        checkFalse(attributePath.contains("[any]"), "attributePath must not contain [any] operators");
         this.attributePath = attributePath;
     }
 

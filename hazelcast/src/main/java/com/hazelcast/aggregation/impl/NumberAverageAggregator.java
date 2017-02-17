@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class NumberAverageAggregator<I> extends AbstractAggregator<I, Double> implements IdentifiedDataSerializable {
+public final class NumberAverageAggregator<I> extends AbstractAggregator<I, Number, Double>
+        implements IdentifiedDataSerializable {
 
     private double sum;
 
@@ -38,10 +39,9 @@ public final class NumberAverageAggregator<I> extends AbstractAggregator<I, Doub
     }
 
     @Override
-    public void accumulate(I entry) {
+    public void accumulateExtracted(Number value) {
         count++;
-        Number extractedValue = (Number) extract(entry);
-        sum += extractedValue.doubleValue();
+        sum += value.doubleValue();
     }
 
     @Override
