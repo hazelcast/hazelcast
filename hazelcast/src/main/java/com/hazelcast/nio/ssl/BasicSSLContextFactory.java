@@ -17,7 +17,6 @@
 package com.hazelcast.nio.ssl;
 
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -32,7 +31,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
 
-@PrivateApi
 public class BasicSSLContextFactory implements SSLContextFactory {
 
     private static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
