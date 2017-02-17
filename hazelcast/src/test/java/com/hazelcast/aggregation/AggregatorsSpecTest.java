@@ -111,7 +111,7 @@ public class AggregatorsSpecTest extends HazelcastTestSupport {
                 .setName("aggr")
                 .setInMemoryFormat(inMemoryFormat);
 
-        Config config = new Config()
+        Config config = getConfig()
                 .setProperty(PARTITION_COUNT.getName(), String.valueOf(nodeCount))
                 .setProperty(AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION.getName(), String.valueOf(parallelAccumulation))
                 .addMapConfig(mapConfig);
