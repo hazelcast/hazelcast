@@ -90,6 +90,18 @@ public class SumAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigDecimalSum_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigDecimalSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, BigDecimal> aggregation = Aggregators.bigDecimalSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testBigIntegerSum() {
         List<BigInteger> values = sampleBigIntegers();
@@ -122,6 +134,18 @@ public class SumAggregationTest {
         BigInteger result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigIntegerSum_withNull() {
+        Aggregator<Map.Entry, BigInteger> aggregation = Aggregators.bigIntegerSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testBigIntegerSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, BigInteger> aggregation = Aggregators.bigIntegerSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -158,6 +182,18 @@ public class SumAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testDoubleSum_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testDoubleSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.doubleSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testIntegerSum() {
         List<Integer> values = sampleIntegers();
@@ -192,6 +228,18 @@ public class SumAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testIntegerSum_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.integerSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testIntegerSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.integerSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testLongSum() {
         List<Long> values = sampleLongs();
@@ -224,6 +272,18 @@ public class SumAggregationTest {
         long result = resultAggregation.aggregate();
 
         assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testLongSum_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.longSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testLongSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.longSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
@@ -264,6 +324,18 @@ public class SumAggregationTest {
         assertThat(result, is(equalTo(expectation)));
     }
 
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testFixedPointSum_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.fixedPointSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testFixedPointSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Long> aggregation = Aggregators.fixedPointSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
     @Test(timeout = TimeoutInMillis.MINUTE)
     public void testFloatingPointSum() {
         List<Number> values = new ArrayList<Number>();
@@ -301,4 +373,17 @@ public class SumAggregationTest {
 
         assertThat(result, is(closeTo(expectation, ERROR)));
     }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testFloatingPointSum_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.floatingPointSum();
+        aggregation.accumulate(createEntryWithValue(null));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE, expected = NullPointerException.class)
+    public void testFloatingPointSum_withAttributePath_withNull() {
+        Aggregator<Map.Entry, Double> aggregation = Aggregators.floatingPointSum("numberValue");
+        aggregation.accumulate(createExtractableEntryWithValue(null));
+    }
+
 }

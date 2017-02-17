@@ -24,12 +24,12 @@ import java.io.IOException;
 
 public class Person implements DataSerializable {
 
-    public double age;
+    public Double age;
 
     public Person() {
     }
 
-    public Person(double age) {
+    public Person(Double age) {
         this.age = age;
     }
 

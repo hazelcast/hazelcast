@@ -59,9 +59,48 @@ public class DistinctAggregationTest {
     }
 
     @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testCountAggregator_withNull() {
+        List<String> values = repeatTimes(3, sampleStrings());
+        values.add(null);
+        values.add(null);
+        Set<String> expectation = new HashSet<String>(values);
+
+        Aggregator<Map.Entry<String, String>, Set<String>> aggregation = Aggregators.distinct();
+        for (String value : values) {
+            aggregation.accumulate(createEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<String, String>, Set<String>> resultAggregation = Aggregators.distinct();
+        resultAggregation.combine(aggregation);
+        Set<String> result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
     public void testCountAggregator_withAttributePath() {
         Person[] people = {new Person(5.1), new Person(3.3)};
         Double[] ages = {5.1, 3.3};
+        List<Person> values = repeatTimes(3, Arrays.asList(people));
+        Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
+
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> aggregation = Aggregators.distinct("age");
+        for (Person value : values) {
+            aggregation.accumulate(createExtractableEntryWithValue(value));
+        }
+
+        Aggregator<Map.Entry<Person, Person>, Set<Double>> resultAggregation = Aggregators.distinct("age");
+        resultAggregation.combine(aggregation);
+        Set<Double> result = resultAggregation.aggregate();
+
+        assertThat(result, is(equalTo(expectation)));
+    }
+
+    @Test(timeout = TimeoutInMillis.MINUTE)
+    public void testCountAggregator_withAttributePath_withNull() {
+        Person[] people = {new Person(5.1), new Person(null)};
+        Double[] ages = {5.1, null};
         List<Person> values = repeatTimes(3, Arrays.asList(people));
         Set<Double> expectation = new HashSet<Double>(Arrays.asList(ages));
 
