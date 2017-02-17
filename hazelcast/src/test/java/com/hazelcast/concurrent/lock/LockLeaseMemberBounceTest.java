@@ -9,7 +9,6 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -44,11 +43,6 @@ public class LockLeaseMemberBounceTest {
                                                                .driverCount(DRIVER_COUNT).build();
     @Rule
     public JitterRule jitterRule = new JitterRule();
-
-    @Before
-    public void setup() {
-        // Needed because BounceMemberRule expects a before method or otherwise won't bounce, will be fixed
-    }
 
     @Test
     public void leaseShouldExpireWhenMemberBouncing() {
