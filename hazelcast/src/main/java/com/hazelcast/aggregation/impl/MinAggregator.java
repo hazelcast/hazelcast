@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> implements IdentifiedDataSerializable {
+public final class MinAggregator<I, R extends Comparable> extends AbstractAggregator<I, R, R>
+        implements IdentifiedDataSerializable {
 
     private R min;
 
@@ -36,11 +37,9 @@ public final class MinAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public void accumulate(I entry) {
-        R extractedValue = (R) extract(entry);
-
-        if (isCurrentlyGreaterThan(extractedValue)) {
-            min = extractedValue;
+    public void accumulateExtracted(R value) {
+        if (isCurrentlyGreaterThan(value)) {
+            min = value;
         }
     }
 

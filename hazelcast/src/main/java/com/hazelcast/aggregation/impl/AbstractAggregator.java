@@ -18,17 +18,30 @@ package com.hazelcast.aggregation.impl;
 
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.query.impl.Extractable;
+import com.hazelcast.query.impl.getters.MultiResult;
 
+import java.util.List;
 import java.util.Map;
 
 /**
  * Abstract class providing convenience for concrete implementations of an {@link Aggregator}
- * It also provides the extract() method that enables extracting values of the given attributePath from the input.
+ * It provides built-in extraction capabilities that may be used in the accumulation phase.
+ * <p>
+ * Extraction rules:
+ * <ul>
+ * <li>If the attributePath is not null and the input object is an instance of Extractable the value will be extracted
+ * from the attributePath in the input object and accumulated instead of the whole input object.
+ * </li>
+ * <li>If the attributePath is null and the input object is an instance of Map.Entry the Map.Entry.getValue() will be
+ * accumulated instead of the whole input object.
+ * </li>
+ * </ul>
  *
  * @param <I> input type
+ * @param <E> extracted value type
  * @param <R> result type
  */
-public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
+public abstract class AbstractAggregator<I, E, R> extends Aggregator<I, R> {
 
     protected String attributePath;
 
@@ -40,11 +53,25 @@ public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
         this.attributePath = attributePath;
     }
 
+    @Override
+    public final void accumulate(I entry) {
+        E extractedValue = extract(entry);
+        if (extractedValue instanceof MultiResult) {
+            @SuppressWarnings("unchecked")
+            List<E> results = ((MultiResult<E>) extractedValue).getResults();
+            for (E o : results) {
+                accumulateExtracted(o);
+            }
+        } else {
+            accumulateExtracted(extractedValue);
+        }
+    }
+
     /**
      * Extract the value of the given attributePath from the given entry.
      */
     @SuppressWarnings("unchecked")
-    protected final <T> T extract(I input) {
+    private <T> T extract(I input) {
         if (attributePath == null) {
             if (input instanceof Map.Entry) {
                 return (T) ((Map.Entry) input).getValue();
@@ -54,4 +81,15 @@ public abstract class AbstractAggregator<I, R> extends Aggregator<I, R> {
         }
         throw new IllegalArgumentException("Can't extract " + attributePath + " from the given input");
     }
+
+    /**
+     * Accumulates a single extracted value.
+     * This method may be called multiple times per accumulated entry if the attributePath contains [any] operator.
+     *
+     * @param value If attributePath is not null the methods accumulates the value extracted from the attributePath.
+     *              If attributePath is null and the input object is a Map.Entry the method accumulates Map.Entry.getValue().
+     *              Otherwise the method accumulates the input value as-is.
+     */
+    protected abstract void accumulateExtracted(E value);
+
 }

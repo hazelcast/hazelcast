@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class LongSumAggregator<I> extends AbstractAggregator<I, Long> implements IdentifiedDataSerializable {
+public final class LongSumAggregator<I> extends AbstractAggregator<I, Long, Long> implements IdentifiedDataSerializable {
 
     private long sum;
 
@@ -36,9 +36,8 @@ public final class LongSumAggregator<I> extends AbstractAggregator<I, Long> impl
     }
 
     @Override
-    public void accumulate(I entry) {
-        Long extractedValue = (Long) extract(entry);
-        sum += extractedValue;
+    public void accumulateExtracted(Long value) {
+        sum += value;
     }
 
     @Override

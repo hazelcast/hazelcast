@@ -23,7 +23,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I, R> implements IdentifiedDataSerializable {
+public final class MaxAggregator<I, R extends Comparable> extends AbstractAggregator<I, R, R>
+        implements IdentifiedDataSerializable {
 
     private R max;
 
@@ -36,19 +37,17 @@ public final class MaxAggregator<I, R extends Comparable> extends AbstractAggreg
     }
 
     @Override
-    public void accumulate(I entry) {
-        R extractedValue = (R) extract(entry);
-
-        if (isCurrentlyLessThan(extractedValue)) {
-            max = extractedValue;
+    public void accumulateExtracted(R value) {
+        if (isCurrentlyLessThan(value)) {
+            max = value;
         }
     }
 
-    private boolean isCurrentlyLessThan(R extractedValue) {
-        if (extractedValue == null) {
+    private boolean isCurrentlyLessThan(R otherValue) {
+        if (otherValue == null) {
             return false;
         }
-        return max == null || max.compareTo(extractedValue) < 0;
+        return max == null || max.compareTo(otherValue) < 0;
     }
 
     @Override
