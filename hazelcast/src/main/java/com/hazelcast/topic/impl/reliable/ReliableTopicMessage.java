@@ -19,6 +19,7 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
@@ -31,6 +32,7 @@ import static com.hazelcast.topic.impl.TopicDataSerializerHook.RELIABLE_TOPIC_ME
 /**
  * The Object that is going to be stored in the Ringbuffer. It contains the actual message payload and some metadata.
  */
+@BinaryInterface
 public class ReliableTopicMessage implements IdentifiedDataSerializable {
     private long publishTime;
     private Address publisherAddress;
