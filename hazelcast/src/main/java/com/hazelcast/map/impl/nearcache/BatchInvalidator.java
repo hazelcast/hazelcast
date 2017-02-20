@@ -129,10 +129,6 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
     }
 
     public void accumulateOrInvalidate(String mapName, Data key, List<Data> keys, String sourceUuid) {
-        if (!mapServiceContext.getMapContainer(mapName).isInvalidationEnabled()) {
-            return;
-        }
-
         InvalidationQueue invalidationQueue = getOrPutIfAbsent(invalidationQueues, mapName, invalidationQueueConstructor);
 
         if (key != null) {
@@ -195,21 +191,13 @@ public class BatchInvalidator extends AbstractNearCacheInvalidator {
 
     protected void invalidateMember(BatchNearCacheInvalidation batch) {
         String mapName = batch.getName();
-        if (!isMemberNearCacheInvalidationEnabled(mapName)) {
-            return;
-        }
-
-        Operation operation = null;
         Collection<Member> members = clusterService.getMembers();
         for (Member member : members) {
             if (member.localMember()) {
                 continue;
             }
 
-            if (operation == null) {
-                operation = createSingleOrBatchInvalidationOperation(mapName, null, getKeys(batch));
-            }
-
+            Operation operation = createSingleOrBatchInvalidationOperation(mapName, null, getKeys(batch));
             operationService.send(operation, member.getAddress());
         }
     }

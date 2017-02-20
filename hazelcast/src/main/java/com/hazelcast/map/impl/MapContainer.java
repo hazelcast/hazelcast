@@ -78,7 +78,6 @@ public class MapContainer {
         }
     };
     protected final ConstructorFunction<Void, RecordFactory> recordFactoryConstructor;
-    protected final boolean memberNearCacheInvalidationEnabled;
     /**
      * Holds number of registered {@link com.hazelcast.map.impl.nearcache.InvalidationListener} from clients.
      */
@@ -110,7 +109,6 @@ public class MapContainer {
         this.nearCacheSizeEstimator = createNearCacheSizeEstimator(mapConfig.getNearCacheConfig());
         this.extractors = new Extractors(mapConfig.getMapAttributeConfigs(), config.getClassLoader());
         this.indexes = new Indexes((InternalSerializationService) serializationService, extractors);
-        this.memberNearCacheInvalidationEnabled = hasMemberNearCache() && mapConfig.getNearCacheConfig().isInvalidateOnChange();
         this.mapStoreContext = createMapStoreContext(this);
         this.mapStoreContext.start();
         initEvictor();
@@ -278,10 +276,6 @@ public class MapContainer {
         return extractors;
     }
 
-    public boolean isMemberNearCacheInvalidationEnabled() {
-        return memberNearCacheInvalidationEnabled;
-    }
-
     public boolean hasInvalidationListener() {
         return invalidationListenerCount.get() > 0;
     }
@@ -292,10 +286,6 @@ public class MapContainer {
 
     public void decreaseInvalidationListenerCount() {
         invalidationListenerCount.decrementAndGet();
-    }
-
-    public boolean isInvalidationEnabled() {
-        return isMemberNearCacheInvalidationEnabled() || hasInvalidationListener();
     }
 
     public InterceptorRegistry getInterceptorRegistry() {

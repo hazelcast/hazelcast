@@ -52,7 +52,6 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
     private boolean hasMapListener;
     private boolean hasWanReplication;
     private boolean hasBackups;
-    private boolean hasInvalidation;
 
     private List<RecordInfo> backupRecordInfos;
     private List<Data> invalidationKeys;
@@ -71,14 +70,12 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         hasMapListener = mapEventPublisher.hasEventListener(name);
         hasWanReplication = hasWanReplication();
         hasBackups = hasBackups();
-        hasInvalidation = mapContainer.isInvalidationEnabled();
 
         if (hasBackups) {
             backupRecordInfos = new ArrayList<RecordInfo>(mapEntries.size());
         }
-        if (hasInvalidation) {
-            invalidationKeys = new ArrayList<Data>(mapEntries.size());
-        }
+
+        invalidationKeys = new ArrayList<Data>(mapEntries.size());
 
         for (int i = 0; i < mapEntries.size(); i++) {
             put(mapEntries.getKey(i), mapEntries.getValue(i));
@@ -114,9 +111,7 @@ public class PutAllOperation extends MapOperation implements PartitionAwareOpera
         }
 
         evict(dataKey);
-        if (hasInvalidation) {
-            invalidationKeys.add(dataKey);
-        }
+        invalidationKeys.add(dataKey);
     }
 
     /**

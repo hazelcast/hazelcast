@@ -113,21 +113,13 @@ public class NonStopInvalidator extends AbstractNearCacheInvalidator {
     }
 
     protected void invalidateMember(String mapName, Data key, List<Data> keys, String sourceUuid) {
-        if (!isMemberNearCacheInvalidationEnabled(mapName)) {
-            return;
-        }
-
-        Operation operation = null;
         Collection<Member> members = clusterService.getMembers();
         for (Member member : members) {
             if (member.localMember() || member.getUuid().equals(sourceUuid)) {
                 continue;
             }
 
-            if (operation == null) {
-                operation = createSingleOrBatchInvalidationOperation(mapName, key, keys);
-            }
-
+            Operation operation = createSingleOrBatchInvalidationOperation(mapName, key, keys);
             operationService.send(operation, member.getAddress());
         }
     }

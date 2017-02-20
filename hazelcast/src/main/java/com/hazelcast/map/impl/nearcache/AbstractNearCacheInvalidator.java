@@ -56,10 +56,6 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
 
 
     public void invalidateLocal(String mapName, Data key, List<Data> keys) {
-        if (!isMemberNearCacheInvalidationEnabled(mapName)) {
-            return;
-        }
-
         NearCache nearCache = nearCacheProvider.getOrNullNearCache(mapName);
         if (nearCache != null) {
             if (key != null) {
@@ -74,19 +70,10 @@ public abstract class AbstractNearCacheInvalidator implements NearCacheInvalidat
 
     @Override
     public void clearLocalNearCache(String mapName) {
-        if (!isMemberNearCacheInvalidationEnabled(mapName)) {
-            return;
-        }
-
         NearCache nearCache = nearCacheProvider.getOrNullNearCache(mapName);
         if (nearCache != null) {
             nearCache.clear();
         }
-    }
-
-    protected boolean isMemberNearCacheInvalidationEnabled(String mapName) {
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        return mapContainer.isMemberNearCacheInvalidationEnabled();
     }
 
     protected boolean hasInvalidationListener(String mapName) {
