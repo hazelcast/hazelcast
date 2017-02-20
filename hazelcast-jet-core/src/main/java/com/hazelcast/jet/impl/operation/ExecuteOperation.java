@@ -23,7 +23,6 @@ import java.util.concurrent.CompletionStage;
 class ExecuteOperation extends AsyncExecutionOperation {
 
     private volatile CompletionStage<Void> executionFuture;
-    private Throwable cachedExceptionResult;
 
     ExecuteOperation(long executionId) {
         super(executionId);
@@ -41,15 +40,6 @@ class ExecuteOperation extends AsyncExecutionOperation {
     }
 
     @Override
-    public void completeExceptionally(Throwable throwable) {
-        if (executionFuture == null) {
-            this.cachedExceptionResult = throwable;
-        } else {
-            executionFuture.toCompletableFuture().completeExceptionally(throwable);
-        }
-    }
-
-    @Override
     protected void doRun() throws Exception {
         JetService service = getService();
         getLogger().info("Start execution of plan for job " + executionId + " from caller " + getCallerAddress() + ".");
@@ -59,8 +49,5 @@ class ExecuteOperation extends AsyncExecutionOperation {
                                                     getLogger().fine("Execution of plan for job " + executionId + " completed.");
                                                     doSendResponse(value);
                                                 }));
-        if (cachedExceptionResult != null) {
-            executionFuture.toCompletableFuture().completeExceptionally(cachedExceptionResult);
-        }
     }
 }

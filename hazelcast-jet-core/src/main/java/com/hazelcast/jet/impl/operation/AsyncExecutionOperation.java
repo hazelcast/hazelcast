@@ -62,8 +62,6 @@ public abstract class AsyncExecutionOperation extends Operation {
 
     public abstract void cancel();
 
-    public abstract void completeExceptionally(Throwable throwable);
-
     protected abstract void doRun() throws Exception;
 
     public long getExecutionId() {

@@ -47,7 +47,6 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
 
     private DAG dag;
     private volatile CompletableFuture<Object> executionInvocationFuture;
-    private Throwable cachedExceptionResult;
 
     public ExecuteJobOperation(long executionId, DAG dag) {
         super(executionId);
@@ -99,9 +98,6 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
                     getLogger().info("Execution of job " + executionId + " completed in " + elapsed + "ms.");
                     doSendResponse(topologyChangeOrIdentity(e));
                 });
-        if (cachedExceptionResult != null) {
-            executionInvocationFuture.completeExceptionally(cachedExceptionResult);
-        }
     }
 
     private Throwable topologyChangeOrIdentity(Throwable e) {
@@ -142,16 +138,6 @@ public class ExecuteJobOperation extends AsyncExecutionOperation {
             executionInvocationFuture.cancel(true);
         }
     }
-
-    @Override
-    public void completeExceptionally(Throwable throwable) {
-        if (executionInvocationFuture == null) {
-            this.cachedExceptionResult = throwable;
-        } else {
-            executionInvocationFuture.completeExceptionally(throwable);
-        }
-    }
-
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
