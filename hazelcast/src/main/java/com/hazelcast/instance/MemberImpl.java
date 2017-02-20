@@ -172,7 +172,7 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
 
     @Override
     public void removeAttribute(String key) {
-        isLocalMember();
+        ensureLocalMember();
         isNotNull(key, "key");
 
         Object value = attributes.remove(key);
@@ -186,14 +186,14 @@ public final class MemberImpl extends AbstractMember implements Member, Hazelcas
         }
     }
 
-    private void isLocalMember() {
+    private void ensureLocalMember() {
         if (!localMember) {
             throw new UnsupportedOperationException("Attributes on remote members must not be changed");
         }
     }
 
     private void setAttribute(String key, Object value) {
-        isLocalMember();
+        ensureLocalMember();
         isNotNull(key, "key");
         isNotNull(value, "value");
 

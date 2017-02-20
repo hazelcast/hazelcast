@@ -38,13 +38,11 @@ public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
         out.writeUTF(failReasonMsg);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
         failReasonMsg = in.readUTF();
     }
 

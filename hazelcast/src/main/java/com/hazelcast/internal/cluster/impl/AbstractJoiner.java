@@ -327,8 +327,10 @@ public abstract class AbstractJoiner implements Joiner {
     private boolean checkMembershipIntersectionSetEmpty(SplitBrainJoinMessage joinMessage) {
         Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
         if (targetMemberAddresses.contains(node.getThisAddress())) {
+            // TODO [basri] join request is coming from master of the split and it thinks that I am its member.
+            // TODO [basri] So it should remove me first from its cluster.
             node.nodeEngine.getOperationService()
-                    .send(new MemberRemoveOperation(node.getThisAddress()), joinMessage.getAddress());
+                    .send(new MemberRemoveOperation(clusterService.getMemberListVersion(), node.getThisAddress()), joinMessage.getAddress());
             logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
                     + ", because it thinks this-node as its member.");
             return false;

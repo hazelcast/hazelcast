@@ -20,37 +20,42 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
-public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation, IdentifiedDataSerializable {
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
 
-    protected String targetUuid;
-    protected Collection<MemberInfo> memberInfos;
-    protected long masterTime = Clock.currentTimeMillis();
-    protected PartitionRuntimeState partitionRuntimeState;
-    protected boolean sendResponse;
+public class MembersUpdateOperation extends VersionedClusterOperation {
 
-    public MemberInfoUpdateOperation() {
-        memberInfos = new ArrayList<MemberInfo>();
+    long masterTime = Clock.currentTimeMillis();
+    private List<MemberInfo> memberInfos;
+    private String targetUuid;
+    private boolean returnResponse;
+    private PartitionRuntimeState partitionRuntimeState;
+
+    public MembersUpdateOperation() {
+        super(0);
+        memberInfos = emptyList();
     }
 
-    public MemberInfoUpdateOperation(String targetUuid, Collection<MemberInfo> memberInfos, long masterTime,
-                                     PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+    public MembersUpdateOperation(String targetUuid, MembersView membersView, long masterTime,
+                                     PartitionRuntimeState partitionRuntimeState, boolean returnResponse) {
+        super(membersView.getVersion());
         this.targetUuid = targetUuid;
         this.masterTime = masterTime;
-        this.memberInfos = memberInfos;
-        this.sendResponse = sendResponse;
+        this.memberInfos = membersView.getMembers();
+        this.returnResponse = returnResponse;
         this.partitionRuntimeState = partitionRuntimeState;
     }
 
@@ -60,9 +65,13 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
-        if (clusterService.updateMembers(memberInfos, callerAddress)) {
+        if (clusterService.updateMembers(getMembersView(), callerAddress)) {
             processPartitionState();
         }
+    }
+
+    final MembersView getMembersView() {
+        return new MembersView(getVersion(), unmodifiableList(memberInfos));
     }
 
     final Address getConnectionEndpointOrThisAddress() {
@@ -96,11 +105,11 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
 
     @Override
     public final boolean returnsResponse() {
-        return sendResponse;
+        return returnResponse;
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternalImpl(ObjectDataInput in) throws IOException {
         targetUuid = in.readUTF();
         masterTime = in.readLong();
         int size = in.readInt();
@@ -112,11 +121,11 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         }
 
         partitionRuntimeState = in.readObject();
-        sendResponse = in.readBoolean();
+        returnResponse = in.readBoolean();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         out.writeUTF(targetUuid);
         out.writeLong(masterTime);
         out.writeInt(memberInfos.size());
@@ -124,7 +133,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
             memberInfo.writeData(out);
         }
         out.writeObject(partitionRuntimeState);
-        out.writeBoolean(sendResponse);
+        out.writeBoolean(returnResponse);
     }
 
     @Override

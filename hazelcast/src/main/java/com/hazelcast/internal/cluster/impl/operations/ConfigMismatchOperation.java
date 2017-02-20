@@ -45,13 +45,11 @@ public class ConfigMismatchOperation extends AbstractClusterOperation {
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
         out.writeUTF(msg);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
         msg = in.readUTF();
     }
 

@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class JoinRequestOperation extends AbstractClusterOperation implements JoinOperation {
+public class JoinRequestOperation extends AbstractClusterOperation {
 
     private JoinRequest request;
 

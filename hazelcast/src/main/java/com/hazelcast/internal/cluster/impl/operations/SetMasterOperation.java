@@ -32,7 +32,7 @@ public class SetMasterOperation extends AbstractClusterOperation {
     public SetMasterOperation() {
     }
 
-    public SetMasterOperation(final Address originAddress) {
+    public SetMasterOperation(Address originAddress) {
         this.masterAddress = originAddress;
     }
 

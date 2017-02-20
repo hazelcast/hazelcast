@@ -26,7 +26,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -39,7 +39,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -165,11 +165,9 @@ public class MemberListTest {
         final Node n2 = TestUtil.getNode(h2);
 
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
-        List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap(), n2.getVersion()));
-        members.add(new MemberInfo(m3.getAddress(), m3.getUuid(), Collections.<String, Object>emptyMap(), n2.getVersion()));
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap(), n2.getVersion()));
-        n2.clusterService.updateMembers(members, n2.getMasterAddress());
+        MembersView membersView =
+                MembersView.createNew(n2.getClusterService().getMemberListVersion() + 1, Arrays.asList(m2, m3, m1));
+        n2.clusterService.updateMembers(membersView, n2.getMasterAddress());
         n2.setMasterAddress(m2.getAddress());
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
@@ -209,10 +207,9 @@ public class MemberListTest {
 
         final Node n2 = TestUtil.getNode(h2);
         // Simulates node2 getting an out of order member list. That causes node2 to think it's the master.
-        List<MemberInfo> members = new ArrayList<MemberInfo>();
-        members.add(new MemberInfo(m1.getAddress(), m1.getUuid(), Collections.<String, Object>emptyMap(), n2.getVersion()));
-        members.add(new MemberInfo(m2.getAddress(), m2.getUuid(), Collections.<String, Object>emptyMap(), n2.getVersion()));
-        n2.clusterService.updateMembers(members, n2.getMasterAddress());
+        MembersView membersView =
+                MembersView.createNew(n2.getClusterService().getMemberListVersion() + 1, Arrays.asList(m1, m2));
+        n2.clusterService.updateMembers(membersView, n2.getMasterAddress());
 
         // Give the cluster some time to figure things out. The merge and heartbeat code should have kicked in by this point
         sleepSeconds(30);

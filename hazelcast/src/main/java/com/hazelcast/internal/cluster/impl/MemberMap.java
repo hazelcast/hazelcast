@@ -19,14 +19,18 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.singletonMap;
 import static java.util.Collections.unmodifiableCollection;
 
@@ -36,11 +40,13 @@ import static java.util.Collections.unmodifiableCollection;
  */
 final class MemberMap {
 
+    private final int version;
     private final Map<Address, MemberImpl> addressToMemberMap;
     private final Map<String, MemberImpl> uuidToMemberMap;
     private final Set<MemberImpl> members;
 
-    MemberMap(Map<Address, MemberImpl> addressMap, Map<String, MemberImpl> uuidMap) {
+    MemberMap(int version, Map<Address, MemberImpl> addressMap, Map<String, MemberImpl> uuidMap) {
+        this.version = version;
         assert new HashSet<MemberImpl>(addressMap.values()).equals(new HashSet<MemberImpl>(uuidMap.values()))
                 : "Maps are different! AddressMap: " + addressMap + ", UuidMap: " + uuidMap;
 
@@ -55,7 +61,7 @@ final class MemberMap {
      * @return empty {@code MemberMap}
      */
     static MemberMap empty() {
-        return new MemberMap(Collections.<Address, MemberImpl>emptyMap(), Collections.<String, MemberImpl>emptyMap());
+        return new MemberMap(0, Collections.<Address, MemberImpl>emptyMap(), Collections.<String, MemberImpl>emptyMap());
     }
 
     /**
@@ -65,7 +71,7 @@ final class MemberMap {
      * @return singleton {@code MemberMap}
      */
     static MemberMap singleton(MemberImpl member) {
-        return new MemberMap(singletonMap(member.getAddress(), member), singletonMap(member.getUuid(), member));
+        return new MemberMap(0, singletonMap(member.getAddress(), member), singletonMap(member.getUuid(), member));
     }
 
     /**
@@ -75,6 +81,17 @@ final class MemberMap {
      * @return a new {@code MemberMap}
      */
     static MemberMap createNew(MemberImpl... members) {
+        return createNew(0, members);
+    }
+
+    /**
+     * Creates a new {@code MemberMap} including given members.
+     *
+     * @param version version
+     * @param members members
+     * @return a new {@code MemberMap}
+     */
+    static MemberMap createNew(int version, MemberImpl... members) {
         Map<Address, MemberImpl> addressMap = new LinkedHashMap<Address, MemberImpl>();
         Map<String, MemberImpl> uuidMap = new LinkedHashMap<String, MemberImpl>();
 
@@ -82,7 +99,7 @@ final class MemberMap {
             putMember(addressMap, uuidMap, member);
         }
 
-        return new MemberMap(addressMap, uuidMap);
+        return new MemberMap(version, addressMap, uuidMap);
     }
 
     /**
@@ -114,7 +131,7 @@ final class MemberMap {
             }
         }
 
-        return new MemberMap(addressMap, uuidMap);
+        return new MemberMap(source.version + 1, addressMap, uuidMap);
     }
 
     /**
@@ -132,7 +149,7 @@ final class MemberMap {
             putMember(addressMap, uuidMap, member);
         }
 
-        return new MemberMap(addressMap, uuidMap);
+        return new MemberMap(source.version + 1, addressMap, uuidMap);
     }
 
     private static void putMember(Map<Address, MemberImpl> addressMap,
@@ -176,4 +193,52 @@ final class MemberMap {
     int size() {
         return members.size();
     }
+
+    int getVersion() {
+        return version;
+    }
+
+    MembersView toMembersView() {
+        return MembersView.createNew(version, members);
+    }
+
+    MembersView toMembersViewWithFirstMember(MemberImpl first) {
+        final List<MemberImpl> filtered = new ArrayList<MemberImpl>();
+        Iterator<MemberImpl> it = this.members.iterator();
+        MemberImpl member = null;
+        while (it.hasNext()) {
+            MemberImpl m = it.next();
+            if (m.equals(first)) {
+                member = m;
+                break;
+            }
+        }
+
+        checkNotNull(member, "Member: " + first + " not found in member list!");
+
+        filtered.add(member);
+        while (it.hasNext()) {
+            filtered.add(it.next());
+        }
+
+        return MembersView.createNew(version, filtered);
+    }
+
+    Set<MemberImpl> toMembersViewBeforeMember(Address member) {
+        if (!addressToMemberMap.containsKey(member)) {
+            throw new IllegalArgumentException(member + " is not in the member list!");
+        }
+
+        final Set<MemberImpl> before = new LinkedHashSet<MemberImpl>();
+        for (MemberImpl m : this.members) {
+            if (m.getAddress().equals(member)) {
+                break;
+            } else {
+                before.add(m);
+            }
+        }
+
+        return before;
+    }
+
 }

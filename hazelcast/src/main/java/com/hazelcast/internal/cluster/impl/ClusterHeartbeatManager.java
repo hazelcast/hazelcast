@@ -19,10 +19,9 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
-import com.hazelcast.internal.cluster.impl.operations.MemberInfoUpdateOperation;
+import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOperation;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -37,13 +36,11 @@ import com.hazelcast.util.EmptyStatement;
 import java.net.ConnectException;
 import java.net.NetworkInterface;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NAME;
-import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.createMemberInfoList;
 import static com.hazelcast.util.StringUtil.timeToString;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -329,7 +326,8 @@ public class ClusterHeartbeatManager {
                             + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
                     timeToString(now), timeToString(heartbeatTime));
             logger.warning(reason);
-            clusterService.removeAddress(member.getAddress(), reason);
+            // TODO [basri] If I am the master, I can remove the member. Otherwise, I can only suspect it because I rely on my local information
+            clusterService.suspectAddress(member.getAddress(), reason);
             return true;
         }
         if (logger.isFineEnabled() && (now - heartbeatTime) > heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR) {
@@ -361,6 +359,7 @@ public class ClusterHeartbeatManager {
                     timeToString(now),
                     timeToString(lastConfirmation));
             logger.warning(reason);
+            // TODO [basri] I am the master so I can remove the member
             clusterService.removeAddress(member.getAddress(), reason);
             return true;
         }
@@ -441,7 +440,8 @@ public class ClusterHeartbeatManager {
                     // host not reachable
                     String reason = format("%s could not ping %s", node.getThisAddress(), address);
                     logger.warning(reason);
-                    clusterService.removeAddress(address, reason);
+                    // TODO [basri] If I am the master, I can remove the member. Otherwise, I should only suspect it
+                    clusterService.suspectAddress(address, reason);
                 } catch (Throwable ignored) {
                     EmptyStatement.ignore(ignored);
                 }
@@ -508,21 +508,21 @@ public class ClusterHeartbeatManager {
                 masterAddress);
     }
 
-    /** Invoked on the master to send the member list (see {@link MemberInfoUpdateOperation}) to non-master nodes. */
+    /** Invoked on the master to send the member list (see {@link MembersUpdateOperation}) to non-master nodes. */
     private void sendMemberListToOthers() {
         if (!node.isMaster()) {
             return;
         }
 
-        Collection<MemberImpl> members = clusterService.getMemberImpls();
-        List<MemberInfo> memberInfos = createMemberInfoList(members);
+        MemberMap memberMap = clusterService.getMemberMap();
+        MembersView membersView = memberMap.toMembersView();
 
-        for (MemberImpl member : members) {
+        for (MemberImpl member : memberMap.getMembers()) {
             if (member.localMember()) {
                 continue;
             }
 
-            MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(member.getUuid(), memberInfos,
+            MembersUpdateOperation op = new MembersUpdateOperation(member.getUuid(), membersView,
                     clusterClock.getClusterTime(), null, false);
             nodeEngine.getOperationService().send(op, member.getAddress());
         }

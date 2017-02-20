@@ -24,11 +24,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class MasterConfirmationOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
+public class MasterConfirmationOperation extends AbstractClusterOperation {
 
     private long timestamp;
 
@@ -53,7 +52,11 @@ public class MasterConfirmationOperation extends AbstractClusterOperation implem
             logger.warning("MasterConfirmation has been received from " + endpoint
                     + ", but it is not a member of this cluster!");
             OperationService operationService = getNodeEngine().getOperationService();
-            operationService.send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
+            // TODO [basri] This guy knows me as its master but I am not. I should explicitly tell it to remove me from its cluster.
+            // TODO [basri] So, it should remove me from its cluster and update its master address
+            // TODO [basri] IMPORTANT: I should not tell it to remove me from cluster while I am trying to claim my mastership
+            int memberListVersion = clusterService.getMemberListVersion();
+            operationService.send(new MemberRemoveOperation(memberListVersion, clusterService.getThisAddress()), endpoint);
         } else {
             if (clusterService.isMaster()) {
                 clusterService.getClusterHeartbeatManager().acceptMasterConfirmation(member, timestamp);
@@ -65,13 +68,11 @@ public class MasterConfirmationOperation extends AbstractClusterOperation implem
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
         out.writeLong(timestamp);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
         timestamp = in.readLong();
     }
 

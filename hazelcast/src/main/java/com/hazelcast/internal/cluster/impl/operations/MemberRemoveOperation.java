@@ -22,23 +22,25 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 
 import java.io.IOException;
 
-public class MemberRemoveOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
+public class MemberRemoveOperation extends VersionedClusterOperation {
 
     private Address address;
     private String memberUuid;
 
     public MemberRemoveOperation() {
+        super(0);
     }
 
-    public MemberRemoveOperation(Address address) {
+    public MemberRemoveOperation(int version, Address address) {
+        super(version);
         this.address = address;
     }
 
-    public MemberRemoveOperation(Address address, String uuid) {
+    public MemberRemoveOperation(int version, Address address, String uuid) {
+        super(version);
         this.address = address;
         this.memberUuid = uuid;
     }
@@ -88,14 +90,14 @@ public class MemberRemoveOperation extends AbstractClusterOperation implements A
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    protected void readInternalImpl(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         memberUuid = in.readUTF();
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(memberUuid);
     }

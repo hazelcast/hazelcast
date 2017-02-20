@@ -74,6 +74,7 @@ public class NodeMulticastListener implements MulticastListener {
             String message = "New join request has been received from current master. "
                     + "Removing " + node.getMasterAddress();
             logger.warning(message);
+            // TODO [basri] I am a slave and the master I follow says that it is gone. So, I can remove it instead of suspecting it.
             node.getClusterService().removeAddress(node.getMasterAddress(), message);
         }
     }

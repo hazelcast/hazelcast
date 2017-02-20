@@ -18,9 +18,9 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.Member;
-import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,7 +37,7 @@ import java.util.Collection;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
-public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
+public class FinalizeJoinOperation extends MembersUpdateOperation {
 
     public static final int FINALIZE_JOIN_TIMEOUT_FACTOR = 5;
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 60;
@@ -53,21 +53,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public FinalizeJoinOperation() {
     }
 
-    public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState,
-                                 Version clusterVersion, PartitionRuntimeState partitionRuntimeState) {
-        super(targetUuid, members, masterTime, partitionRuntimeState, true);
-        this.postJoinOp = postJoinOp;
-        this.clusterId = clusterId;
-        this.clusterStartTime = clusterStartTime;
-        this.clusterState = clusterState;
-        this.clusterVersion = clusterVersion;
-    }
-
-    public FinalizeJoinOperation(String targetUuid, Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime,
-                                 String clusterId, long clusterStartTime, ClusterState clusterState,
-                                 Version clusterVersion, PartitionRuntimeState partitionRuntimeState,
-                                 boolean sendResponse) {
+    public FinalizeJoinOperation(String targetUuid, MembersView members, PostJoinOperation postJoinOp,
+            long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
+            Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -83,8 +71,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
 
-        boolean finalized = clusterService.finalizeJoin(memberInfos, callerAddress, clusterId, clusterState,
-                                                        clusterVersion, clusterStartTime, masterTime);
+        boolean finalized = clusterService.finalizeJoin(getMembersView(), callerAddress,
+                clusterId, clusterState, clusterVersion, clusterStartTime, masterTime);
+        
         if (!finalized) {
             return;
         }
@@ -134,8 +123,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
+    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
+        super.writeInternalImpl(out);
+
         boolean hasPJOp = postJoinOp != null;
         out.writeBoolean(hasPJOp);
         if (hasPJOp) {
@@ -148,8 +138,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
+    protected void readInternalImpl(ObjectDataInput in) throws IOException {
+        super.readInternalImpl(in);
+        
         boolean hasPJOp = in.readBoolean();
         if (hasPJOp) {
             postJoinOp = new PostJoinOperation();

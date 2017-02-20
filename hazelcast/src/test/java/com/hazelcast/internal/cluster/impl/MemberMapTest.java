@@ -60,7 +60,7 @@ public class MemberMapTest {
         addressMap.put(addressMember.getAddress(), addressMember);
         uuidMap.put(uuidMember.getUuid(), uuidMember);
 
-        new MemberMap(addressMap, uuidMap);
+        new MemberMap(0, addressMap, uuidMap);
     }
 
     @Test
