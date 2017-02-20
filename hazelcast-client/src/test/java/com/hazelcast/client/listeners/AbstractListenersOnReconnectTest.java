@@ -520,6 +520,8 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                     produceEvent(event);
                 }
 
+                assertOpenEventually(eventsLatch);
+
                 assertTrueAllTheTime(new AssertTask() {
                     @Override
                     public void run()
