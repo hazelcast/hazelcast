@@ -16,6 +16,8 @@
 
 package com.hazelcast.memory;
 
+import com.hazelcast.internal.metrics.Probe;
+
 /**
  * Memory statistics for the JVM which current HazelcastInstance belongs to.
  * <p/>
@@ -84,6 +86,7 @@ public interface MemoryStats {
      *
      * @return the maximum amount of native memory in bytes.
      */
+    @Probe
     long getMaxNative();
 
     /**
@@ -92,6 +95,7 @@ public interface MemoryStats {
      *
      * @return the amount of committed native memory in bytes.
      */
+    @Probe
     long getCommittedNative();
 
     /**
@@ -99,6 +103,7 @@ public interface MemoryStats {
      *
      * @return the amount of used native memory in bytes
      */
+    @Probe
     long getUsedNative();
 
     /**
@@ -106,17 +111,20 @@ public interface MemoryStats {
      *
      * @return the amount of free native memory in bytes
      */
+    @Probe
     long getFreeNative();
 
     /**
      * Returns the amount of native memory reserved for metadata. This memory
      * is separate and not accounted for by the {@code ...NativeMemory} statistics.
      */
+    @Probe
     long getMaxMetadata();
 
     /**
      * @return amount of used metadata memory
      */
+    @Probe
     long getUsedMetadata();
 
     /**
