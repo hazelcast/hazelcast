@@ -66,7 +66,6 @@ public class ClusterAuthenticator implements Authenticator {
             clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false);
 
         }
-        connection.init();
 
         ClientMessage response;
         final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
