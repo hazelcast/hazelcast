@@ -4,142 +4,143 @@ import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MemberAttributeEvent;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.spi.properties.GroupProperty;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.util.ExceptionUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.SplitBrainTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(SlowTest.class)
-public class CacheSplitBrainTest extends HazelcastTestSupport {
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
+@SuppressWarnings("unchecked")
+public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
-    @Before
-    @After
-    public void killAllHazelcastInstances() {
-        HazelcastInstanceFactory.terminateAll();
+    @Parameterized.Parameters(name = "mergePolicy:{0}")
+    public static Collection<Object> parameters() {
+        return Arrays.asList(new Object[] {
+                LatestAccessCacheMergePolicy.class,
+                HigherHitsCacheMergePolicy.class,
+                PutIfAbsentCacheMergePolicy.class,
+                PassThroughCacheMergePolicy.class,
+                CustomCacheMergePolicy.class
+        });
     }
 
-    @Test
-    public void testLatestAccessCacheMergePolicy() {
-        String cacheName = randomMapName();
-        Config config = newConfig();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+    @Parameterized.Parameter
+    public Class<? extends CacheMergePolicy> mergePolicyClass;
 
-        warmUpPartitions(h1, h2);
+    private String cacheName = randomMapName();
+    private Cache cache1;
+    private Cache cache2;
+    private MergeLifecycleListener mergeLifecycleListener;
 
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
+    @Override
+    protected int[] brains() {
+        // second half should merge to first 
+        return new int[] {2, 1};
+    }
 
-        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
+    @Override
+    protected void onBeforeSplitBrainCreated(HazelcastInstance[] instances) throws Exception {
+        warmUpPartitions(instances);
+    }
 
-        closeConnectionBetween(h1, h2);
+    @Override
+    protected void onAfterSplitBrainCreated(HazelcastInstance[] firstBrain, HazelcastInstance[] secondBrain)
+            throws Exception {
 
-        assertOpenEventually(memberShipListener.memberRemovedLatch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
+        mergeLifecycleListener = new MergeLifecycleListener(secondBrain.length);
+        for (HazelcastInstance instance : secondBrain) {
+            instance.getLifecycleService().addLifecycleListener(mergeLifecycleListener);
+        }
 
-        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(h1);
-        CachingProvider cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(h2);
+        CacheConfig cacheConfig = newCacheConfig(cacheName, mergePolicyClass);
+        cache1 = createCache(firstBrain[0], cacheConfig);
+        cache2 = createCache(secondBrain[0], cacheConfig);
+        
+        if (mergePolicyClass == LatestAccessCacheMergePolicy.class) {
+            afterSplitLatestAccessCacheMergePolicy();
+        }
+        if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
+            afterSplitHigherHitsCacheMergePolicy();
+        }
+        if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
+            afterSplitPutIfAbsentCacheMergePolicy();
+        }
+        if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
+            afterSplitPassThroughCacheMergePolicy();
+        }
+        if (mergePolicyClass == CustomCacheMergePolicy.class) {
+            afterSplitCustomCacheMergePolicy();
+        }
+    }
 
-        CacheManager cacheManager1 = cachingProvider1.getCacheManager();
-        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+    @Override
+    protected void onAfterSplitBrainHealed(HazelcastInstance[] instances) throws Exception {
+        // wait until merge completes
+        mergeLifecycleListener.await();
 
-        CacheConfig cacheConfig = newCacheConfig(cacheName, LatestAccessCacheMergePolicy.class.getName());
+        if (mergePolicyClass == LatestAccessCacheMergePolicy.class) {
+            afterMergeLatestAccessCacheMergePolicy();
+        }
+        if (mergePolicyClass == HigherHitsCacheMergePolicy.class) {
+            afterMergeHigherHitsCacheMergePolicy();
+        }
+        if (mergePolicyClass == PutIfAbsentCacheMergePolicy.class) {
+            afterMergePutIfAbsentCacheMergePolicy();
+        }
+        if (mergePolicyClass == PassThroughCacheMergePolicy.class) {
+            afterMergePassThroughCacheMergePolicy();
+        }
+        if (mergePolicyClass == CustomCacheMergePolicy.class) {
+            afterMergeCustomCacheMergePolicy();
+        }
+    }
 
-        Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
-        Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
+    private void afterSplitLatestAccessCacheMergePolicy() {
         cache1.put("key1", "value");
         assertEquals("value", cache1.get("key1")); // Access to record
 
         // Prevent updating at the same time
-        sleepAtLeastMillis(1);
+        sleepAtLeastMillis(100);
 
-        cache2.put("key1", "LatestUpdatedValue");
-        assertEquals("LatestUpdatedValue", cache2.get("key1")); // Access to record
+        cache2.put("key1", "LatestAccessedValue");
+        assertEquals("LatestAccessedValue", cache2.get("key1")); // Access to record
 
         cache2.put("key2", "value2");
         assertEquals("value2", cache2.get("key2")); // Access to record
 
         // Prevent updating at the same time
-        sleepAtLeastMillis(1);
+        sleepAtLeastMillis(100);
 
-        cache1.put("key2", "LatestUpdatedValue2");
-        assertEquals("LatestUpdatedValue2", cache1.get("key2")); // Access to record
-
-        // Allow merge process to continue
-        mergeBlockingLatch.countDown();
-
-        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        Cache cacheTest = cacheManager1.getCache(cacheName);
-        assertEquals("LatestUpdatedValue", cacheTest.get("key1"));
-        assertEquals("LatestUpdatedValue2", cacheTest.get("key2"));
+        cache1.put("key2", "LatestAccessedValue2");
+        assertEquals("LatestAccessedValue2", cache1.get("key2")); // Access to record
     }
 
-    @Test
-    public void testHigherHitsCacheMergePolicy() {
-        String cacheName = randomMapName();
-        Config config = newConfig();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+    private void afterMergeLatestAccessCacheMergePolicy() {
+        assertEquals("LatestAccessedValue", cache1.get("key1"));
+        assertEquals("LatestAccessedValue", cache2.get("key1"));
 
-        warmUpPartitions(h1, h2);
+        assertEquals("LatestAccessedValue2", cache1.get("key2"));
+        assertEquals("LatestAccessedValue2", cache2.get("key2"));
+    }
 
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-
-        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.memberRemovedLatch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(h1);
-        CachingProvider cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(h2);
-
-        CacheManager cacheManager1 = cachingProvider1.getCacheManager();
-        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-
-        CacheConfig cacheConfig = newCacheConfig(cacheName, HigherHitsCacheMergePolicy.class.getName());
-
-        Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
-        Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
+    private void afterSplitHigherHitsCacheMergePolicy() {
         cache1.put("key1", "higherHitsValue");
         cache1.put("key2", "value2");
 
@@ -153,231 +154,62 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         // Increase hits number
         assertEquals("higherHitsValue2", cache2.get("key2"));
         assertEquals("higherHitsValue2", cache2.get("key2"));
-
-        // Allow merge process to continue
-        mergeBlockingLatch.countDown();
-
-        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        Cache cacheTest = cacheManager2.getCache(cacheName);
-        assertEquals("higherHitsValue", cacheTest.get("key1"));
-        assertEquals("higherHitsValue2", cacheTest.get("key2"));
     }
 
-    @Test
-    public void testPutIfAbsentCacheMergePolicy() {
-        String cacheName = randomMapName();
-        Config config = newConfig();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+    private void afterMergeHigherHitsCacheMergePolicy() {
+        assertEquals("higherHitsValue", cache1.get("key1"));
+        assertEquals("higherHitsValue", cache2.get("key1"));
 
-        warmUpPartitions(h1, h2);
+        assertEquals("higherHitsValue2", cache1.get("key2"));
+        assertEquals("higherHitsValue2", cache2.get("key2"));
+    }
 
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-
-        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.memberRemovedLatch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(h1);
-        CachingProvider cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(h2);
-
-        CacheManager cacheManager1 = cachingProvider1.getCacheManager();
-        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-
-        CacheConfig cacheConfig = newCacheConfig(cacheName, PutIfAbsentCacheMergePolicy.class.getName());
-
-        Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
-        Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
+    private void afterSplitPutIfAbsentCacheMergePolicy() {
         cache1.put("key1", "PutIfAbsentValue1");
 
         cache2.put("key1", "value");
         cache2.put("key2", "PutIfAbsentValue2");
-
-        // Allow merge process to continue
-        mergeBlockingLatch.countDown();
-
-        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        Cache cacheTest = cacheManager2.getCache(cacheName);
-        assertEquals("PutIfAbsentValue1", cacheTest.get("key1"));
-        assertEquals("PutIfAbsentValue2", cacheTest.get("key2"));
     }
 
-    @Test
-    public void testPassThroughCacheMergePolicy() {
-        String cacheName = randomMapName();
-        Config config = newConfig();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+    private void afterMergePutIfAbsentCacheMergePolicy() {
+        assertEquals("PutIfAbsentValue1", cache1.get("key1"));
+        assertEquals("PutIfAbsentValue1", cache2.get("key1"));
 
-        warmUpPartitions(h1, h2);
+        assertEquals("PutIfAbsentValue2", cache1.get("key2"));
+        assertEquals("PutIfAbsentValue2", cache2.get("key2"));
+    }
 
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
+    private void afterSplitPassThroughCacheMergePolicy() {
+        cache1.put("key", "value");
+        cache2.put("key", "passThroughValue");
+    }
 
-        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
+    private void afterMergePassThroughCacheMergePolicy() {
+        assertEquals("passThroughValue", cache1.get("key"));
+        assertEquals("passThroughValue", cache2.get("key"));
+    }
 
-        closeConnectionBetween(h1, h2);
+    private void afterSplitCustomCacheMergePolicy() {
+        cache1.put("key", "value");
+        cache2.put("key", 1);
+    }
 
-        assertOpenEventually(memberShipListener.memberRemovedLatch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
+    private void afterMergeCustomCacheMergePolicy() {
+        assertEquals(1, cache1.get("key"));
+        assertEquals(1, cache2.get("key"));
+    }
 
-        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(h1);
-        CachingProvider cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(h2);
-
+    private static Cache createCache(HazelcastInstance hazelcastInstance, CacheConfig cacheConfig) {
+        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
         CacheManager cacheManager1 = cachingProvider1.getCacheManager();
-        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-
-        CacheConfig cacheConfig = newCacheConfig(cacheName, PassThroughCacheMergePolicy.class.getName());
-
-        Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
-        Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
-        String key = generateKeyOwnedBy(h1);
-        cache1.put(key, "value");
-
-        cache2.put(key, "passThroughValue");
-
-        // Allow merge process to continue
-        mergeBlockingLatch.countDown();
-
-        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        Cache cacheTest = cacheManager2.getCache(cacheName);
-        assertEquals("passThroughValue", cacheTest.get(key));
+        return cacheManager1.createCache(cacheConfig.getName(), cacheConfig);
     }
 
-    @Test
-    public void testCustomCacheMergePolicy() {
-        String cacheName = randomMapName();
-        Config config = newConfig();
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-
-        warmUpPartitions(h1, h2);
-
-        TestMemberShipListener memberShipListener = new TestMemberShipListener(1);
-        h2.getCluster().addMembershipListener(memberShipListener);
-
-        CountDownLatch mergeBlockingLatch = new CountDownLatch(1);
-        TestLifeCycleListener lifeCycleListener = new TestLifeCycleListener(1, mergeBlockingLatch);
-        h2.getLifecycleService().addLifecycleListener(lifeCycleListener);
-
-        closeConnectionBetween(h1, h2);
-
-        assertOpenEventually(memberShipListener.memberRemovedLatch);
-        assertClusterSizeEventually(1, h1);
-        assertClusterSizeEventually(1, h2);
-
-        CachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(h1);
-        CachingProvider cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(h2);
-
-        CacheManager cacheManager1 = cachingProvider1.getCacheManager();
-        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
-
-        CacheConfig cacheConfig = newCacheConfig(cacheName, CustomCacheMergePolicy.class.getName());
-
-        Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
-        Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
-
-        String key = generateKeyOwnedBy(h1);
-        cache1.put(key, "value");
-
-        cache2.put(key, Integer.valueOf(1));
-
-        // Allow merge process to continue
-        mergeBlockingLatch.countDown();
-
-        assertOpenEventually(lifeCycleListener.mergeFinishedLatch);
-        assertClusterSizeEventually(2, h1);
-        assertClusterSizeEventually(2, h2);
-
-        Cache cacheTest = cacheManager2.getCache(cacheName);
-        assertNotNull(cacheTest.get(key));
-        assertTrue(cacheTest.get(key) instanceof Integer);
-    }
-
-    private Config newConfig() {
-        Config config = new Config();
-        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
-        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        config.getGroupConfig().setName(generateRandomString(10));
-        return config;
-    }
-
-    private CacheConfig newCacheConfig(String cacheName, String mergePolicy) {
+    private static CacheConfig newCacheConfig(String cacheName, Class<? extends CacheMergePolicy> mergePolicy) {
         CacheConfig cacheConfig = new CacheConfig();
         cacheConfig.setName(cacheName);
-        cacheConfig.setMergePolicy(mergePolicy);
+        cacheConfig.setMergePolicy(mergePolicy.getName());
         return cacheConfig;
-    }
-
-    private static class TestLifeCycleListener implements LifecycleListener {
-
-        final CountDownLatch mergeFinishedLatch;
-        final CountDownLatch mergeBlockingLatch;
-
-        TestLifeCycleListener(int countdown, CountDownLatch mergeBlockingLatch) {
-            this.mergeFinishedLatch = new CountDownLatch(countdown);
-            this.mergeBlockingLatch = mergeBlockingLatch;
-        }
-
-        @Override
-        public void stateChanged(LifecycleEvent event) {
-            if (event.getState() == LifecycleEvent.LifecycleState.MERGING) {
-                try {
-                    mergeBlockingLatch.await(30, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    ExceptionUtil.rethrow(e);
-                }
-            } else if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
-                mergeFinishedLatch.countDown();
-            }
-        }
-
-    }
-
-    private static class TestMemberShipListener implements MembershipListener {
-
-        final CountDownLatch memberRemovedLatch;
-
-        TestMemberShipListener(int countdown) {
-            memberRemovedLatch = new CountDownLatch(countdown);
-        }
-
-        @Override
-        public void memberAdded(MembershipEvent membershipEvent) {
-
-        }
-
-        @Override
-        public void memberRemoved(MembershipEvent membershipEvent) {
-            memberRemovedLatch.countDown();
-        }
-
-        @Override
-        public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
-
-        }
-
     }
 
     private static class CustomCacheMergePolicy implements CacheMergePolicy {
@@ -389,7 +221,24 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
             }
             return null;
         }
-
     }
 
+    private static class MergeLifecycleListener implements LifecycleListener {
+        private final CountDownLatch latch;
+
+        MergeLifecycleListener(int mergingClusterSize) {
+            latch = new CountDownLatch(mergingClusterSize);
+        }
+
+        @Override
+        public void stateChanged(LifecycleEvent event) {
+            if (event.getState() == LifecycleEvent.LifecycleState.MERGED) {
+                latch.countDown();
+            }
+        }
+
+        void await() {
+            assertOpenEventually(latch);
+        }
+    }
 }
