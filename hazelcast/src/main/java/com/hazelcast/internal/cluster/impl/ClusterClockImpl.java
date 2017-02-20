@@ -38,7 +38,7 @@ public class ClusterClockImpl implements ClusterClock {
         this.logger = logger;
     }
 
-    @Probe(name = "clusterTime")
+    @Probe
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + clusterTimeDiff;
@@ -67,12 +67,12 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = diff;
     }
 
-    @Probe(name = "clusterTimeDiff", level = MANDATORY)
+    @Probe(level = MANDATORY)
     long getClusterTimeDiff() {
         return clusterTimeDiff;
     }
 
-    @Probe(name = "clusterUpTime")
+    @Probe
     @Override
     public long getClusterUpTime() {
         return Clock.currentTimeMillis() - clusterStartTime;
@@ -84,12 +84,12 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe(name = "localClockTime")
+    @Probe
     private long getLocalClockTime() {
         return Clock.currentTimeMillis();
     }
 
-    @Probe(name = "clusterStartTime")
+    @Probe
     public long getClusterStartTime() {
         return clusterStartTime;
     }

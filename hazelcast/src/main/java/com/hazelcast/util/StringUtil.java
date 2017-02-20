@@ -24,6 +24,10 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.Character.isLetter;
+import static java.lang.Character.isLowerCase;
+import static java.lang.Character.toLowerCase;
+
 /**
  * Utility class for Strings.
  */
@@ -50,6 +54,8 @@ public final class StringUtil {
      */
     private static final Pattern VERSION_PATTERN
             = Pattern.compile("^([\\d]+)\\.([\\d]+)(\\.([\\d]+))?(-[\\w]+)?(-SNAPSHOT)?$");
+
+    private static final String GETTER_PREFIX = "get";
 
     private StringUtil() {
     }
@@ -246,5 +252,39 @@ public final class StringUtil {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Convert getter into a property name
+     * Example: 'getFoo' is converted into 'foo'
+     *
+     * It's written defensively, when output is not a getter then it
+     * return the original name.
+     *
+     * It converters name starting with the get- prefix only. When a getter
+     * starts with is- prefix (=boolean) then it does not convert it.
+     *
+     * @param getterName
+     * @return property matching the given getter
+     */
+    public static String getterIntoProperty(String getterName) {
+        if (getterName == null) {
+            return getterName;
+        }
+        int length = getterName.length();
+        if (!getterName.startsWith(GETTER_PREFIX) || length <= GETTER_PREFIX.length()) {
+            return getterName;
+        }
+
+        String propertyName = getterName.substring(GETTER_PREFIX.length(), length);
+        char firstChar = propertyName.charAt(0);
+        if (isLetter(firstChar)) {
+            if (isLowerCase(firstChar)) {
+                //ok, apparently this is not a JavaBean getter, better leave it untouched
+                return getterName;
+            }
+            propertyName = toLowerCase(firstChar) + propertyName.substring(1, propertyName.length());
+        }
+        return propertyName;
     }
 }

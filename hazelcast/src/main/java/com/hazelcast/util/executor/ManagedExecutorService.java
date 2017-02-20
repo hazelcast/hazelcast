@@ -26,18 +26,18 @@ public interface ManagedExecutorService extends ExecutorService {
 
     String getName();
 
-    @Probe(name = "completedTaskCount")
+    @Probe
     long getCompletedTaskCount();
 
-    @Probe(name = "maximumPoolSize")
+    @Probe
     int getMaximumPoolSize();
 
-    @Probe(name = "poolSize")
+    @Probe
     int getPoolSize();
 
-    @Probe(name = "queueSize", level = MANDATORY)
+    @Probe(level = MANDATORY)
     int getQueueSize();
 
-    @Probe(name = "remainingQueueCapacity")
+    @Probe
     int getRemainingQueueCapacity();
 }

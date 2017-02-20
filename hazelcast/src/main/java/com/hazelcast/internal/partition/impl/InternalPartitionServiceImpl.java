@@ -951,7 +951,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     @Override
-    @Probe(name = "migrationQueueSize")
+    @Probe
     public long getMigrationQueueSize() {
         return migrationManager.getMigrationQueueSize();
     }
