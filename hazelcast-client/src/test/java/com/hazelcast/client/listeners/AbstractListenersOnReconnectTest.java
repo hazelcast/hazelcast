@@ -519,7 +519,7 @@ public abstract class AbstractListenersOnReconnectTest extends ClientTestSupport
                 for (String event : events) {
                     produceEvent(event);
                 }
-
+                assertOpenEventually(eventsLatch);
                 assertTrueAllTheTime(new AssertTask() {
                     @Override
                     public void run()
