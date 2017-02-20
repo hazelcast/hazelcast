@@ -140,8 +140,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true);
 
             }
-            connection.init();
-
             ClientMessage response;
             final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
@@ -153,7 +151,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
 
             connection.setRemoteEndpoint(result.address);
-
+            connection.setAuthenticatedAsOwner();
             principal = new ClientPrincipal(result.uuid, result.ownerUuid);
         }
     }
@@ -240,7 +238,11 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("Trying to connect to " + address);
                 }
-                final Connection connection = connectionManager.getOrConnect(address, managerAuthenticator);
+                ClientConnection connection = (ClientConnection)
+                        connectionManager.getOrConnect(address, managerAuthenticator);
+                if (!connection.isAuthenticatedAsOwner()) {
+                    managerAuthenticator.authenticate(connection);
+                }
                 fireConnectionEvent(LifecycleEvent.LifecycleState.CLIENT_CONNECTED);
                 ownerConnectionAddress = connection.getEndPoint();
                 return true;

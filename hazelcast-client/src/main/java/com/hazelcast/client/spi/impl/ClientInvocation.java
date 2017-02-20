@@ -39,7 +39,6 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 
@@ -55,14 +54,13 @@ public class ClientInvocation implements Runnable {
     private final ClientListenerServiceImpl listenerService;
     private final ClientRequest request;
     private final EventHandler handler;
-    private final long retryCountLimit;
 
     private final ClientInvocationFuture clientInvocationFuture;
     private final int heartBeatInterval;
-    private final AtomicInteger reSendCount = new AtomicInteger();
     private final Address address;
     private final int partitionId;
     private final Connection connection;
+    private long retryTimeoutPointInMillis;
     private volatile ClientConnection sendConnection;
 
     private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
@@ -84,7 +82,7 @@ public class ClientInvocation implements Runnable {
                 : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
 
         clientInvocationFuture = new ClientInvocationFuture(this, client, request, handler);
-        this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
+        this.retryTimeoutPointInMillis = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(retryTimeoutInSeconds);
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
@@ -221,7 +219,7 @@ public class ClientInvocation implements Runnable {
         if (isBindToSingleConnection()) {
             return false;
         }
-        if (handler == null && reSendCount.incrementAndGet() > retryCountLimit) {
+        if (handler == null && System.currentTimeMillis() > retryTimeoutPointInMillis) {
             return false;
         }
         if (handler != null) {
