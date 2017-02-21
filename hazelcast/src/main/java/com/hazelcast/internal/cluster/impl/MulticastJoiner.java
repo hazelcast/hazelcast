@@ -24,6 +24,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.RandomPicker;
 
+import java.util.Set;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -47,7 +48,9 @@ public class MulticastJoiner extends AbstractJoiner {
     public MulticastJoiner(Node node) {
         super(node);
         maxTryCount = new AtomicInteger(calculateTryCount());
-        node.multicastService.addMulticastListener(new SplitBrainMulticastListener(node, splitBrainJoinMessages));
+        Set<String> trustedInterfaces = node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().getTrustedInterfaces();
+        JoinMessageTrustChecker trustChecker = new JoinMessageTrustChecker(trustedInterfaces);
+        node.multicastService.addMulticastListener(new SplitBrainMulticastListener(node, splitBrainJoinMessages, trustChecker));
     }
 
     @Override

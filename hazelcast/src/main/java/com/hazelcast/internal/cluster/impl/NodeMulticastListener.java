@@ -31,14 +31,14 @@ import static java.lang.String.format;
 public class NodeMulticastListener implements MulticastListener {
 
     private final Node node;
-    private final Set<String> trustedInterfaces;
+    private final JoinMessageTrustChecker joinMessageTrustChecker;
     private final ILogger logger;
     private ConfigCheck ourConfig;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
-        this.trustedInterfaces = node.getConfig().getNetworkConfig()
-                .getJoin().getMulticastConfig().getTrustedInterfaces();
+        Set<String> trustedInterfaces = node.getConfig().getNetworkConfig().getJoin().getMulticastConfig().getTrustedInterfaces();
+        this.joinMessageTrustChecker = new JoinMessageTrustChecker(trustedInterfaces);
         this.logger = node.getLogger(NodeMulticastListener.class.getName());
         this.ourConfig = node.createConfigCheck();
     }
@@ -99,13 +99,13 @@ public class NodeMulticastListener implements MulticastListener {
             }
 
             if (!node.joined() && node.getMasterAddress() == null) {
-                String masterHost = joinMessage.getAddress().getHost();
-                if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {
+                if (joinMessageTrustChecker.isTrusted(joinMessage)) {
                     ClusterJoinManager clusterJoinManager = node.getClusterService().getClusterJoinManager();
                     //todo: why are we making a copy here of address?
                     Address masterAddress = new Address(joinMessage.getAddress());
                     clusterJoinManager.setMasterAddress(masterAddress);
                 } else {
+                    String masterHost = joinMessage.getAddress().getHost();
                     logJoinMessageDropped(masterHost);
                 }
             } else {

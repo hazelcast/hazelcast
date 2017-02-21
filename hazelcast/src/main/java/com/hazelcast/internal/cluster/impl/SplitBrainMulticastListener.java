@@ -17,8 +17,12 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 
+import java.util.Set;
 import java.util.concurrent.BlockingDeque;
+
+import static com.hazelcast.util.AddressUtil.matchAnyInterface;
 
 /**
  * Listens for {@code SplitBrainJoinMessage}s and adds them for processing by split brain handler. Each messages is added
@@ -29,16 +33,20 @@ public class SplitBrainMulticastListener implements MulticastListener {
 
     private final Node node;
     private final BlockingDeque<SplitBrainJoinMessage> deque;
+    private final JoinMessageTrustChecker joinMessageTrustChecker;
 
-    public SplitBrainMulticastListener(Node node, BlockingDeque<SplitBrainJoinMessage> deque) {
+    public SplitBrainMulticastListener(Node node, BlockingDeque<SplitBrainJoinMessage> deque,
+                                       JoinMessageTrustChecker joinMessageTrustChecker) {
         this.node = node;
         this.deque = deque;
+        this.joinMessageTrustChecker = joinMessageTrustChecker;
     }
 
     public void onMessage(Object msg) {
         if (msg instanceof SplitBrainJoinMessage) {
             SplitBrainJoinMessage joinRequest = (SplitBrainJoinMessage) msg;
-            if (!node.getThisAddress().equals(joinRequest.getAddress())) {
+            Address thisAddress = node.getThisAddress();
+            if (!thisAddress.equals(joinRequest.getAddress()) && joinMessageTrustChecker.isTrusted(joinRequest)) {
                 deque.addFirst(joinRequest);
             }
         }
