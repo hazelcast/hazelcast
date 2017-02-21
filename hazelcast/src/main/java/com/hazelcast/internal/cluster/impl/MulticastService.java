@@ -36,6 +36,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +60,7 @@ public final class MulticastService implements Runnable {
     private final BufferObjectDataOutput sendOutput;
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
+    private final JoinMessageTrustChecker joinMessageTrustChecker;
 
     private long lastLoggedJoinSerializationFailure;
     private volatile boolean running = true;
@@ -75,6 +77,10 @@ public final class MulticastService implements Runnable {
         this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress.getByName(multicastConfig.getMulticastGroup()),
                 multicastConfig.getMulticastPort());
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
+
+        Set<String> trustedInterfaces = multicastConfig.getTrustedInterfaces();
+        ILogger logger = node.getLogger(JoinMessageTrustChecker.class);
+        joinMessageTrustChecker = new JoinMessageTrustChecker(trustedInterfaces, logger);
     }
 
     public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
@@ -173,7 +179,7 @@ public final class MulticastService implements Runnable {
             while (running) {
                 try {
                     final JoinMessage joinMessage = receive();
-                    if (joinMessage != null) {
+                    if (joinMessage != null && joinMessageTrustChecker.isTrusted(joinMessage)) {
                         for (MulticastListener multicastListener : listeners) {
                             try {
                                 multicastListener.onMessage(joinMessage);

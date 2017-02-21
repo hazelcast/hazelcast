@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -84,8 +85,8 @@ public class AbstractJoinTest extends HazelcastTestSupport {
     }
 
     protected static void assertIndependentClustersAndDoNotMergedEventually(Config config1, Config config2, int durationSeconds) {
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
 
         assertTrue(hz1.getLifecycleService().isRunning());
         assertClusterSize(1, hz1);
@@ -93,12 +94,12 @@ public class AbstractJoinTest extends HazelcastTestSupport {
         assertTrue(hz2.getLifecycleService().isRunning());
         assertClusterSize(1, hz2);
 
-        long deadLine = System.currentTimeMillis() + SECONDS.toMillis(durationSeconds);
-        while (System.currentTimeMillis() < deadLine) {
-            assertClusterSize(1, hz1);
-            assertClusterSize(1, hz2);
-
-            sleepAtLeastMillis(100);
-        }
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertClusterSize(1, hz1);
+                assertClusterSize(1, hz2);
+            }
+        }, durationSeconds);
     }
 }

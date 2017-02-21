@@ -1,5 +1,6 @@
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -18,42 +19,45 @@ import java.net.UnknownHostException;
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class JoinMessageTrustCheckerTest extends HazelcastTestSupport {
 
+    private ILogger logger = mock(ILogger.class);
+
     @Test
     public void givenNoInterfaceIsConfigured_whenMessageArrives_thenTrust() throws UnknownHostException {
-        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(EMPTY_SET);
+        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(EMPTY_SET, logger);
         JoinMessage message = createJoinMessage("127.0.0.1");
         assertTrue(joinMessageTrustChecker.isTrusted(message));
     }
 
     @Test
     public void givenInterfaceIsConfigured_whenMessageWithMatchingHost_thenTrust() throws UnknownHostException {
-        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1"));
+        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1"), logger);
         JoinMessage message = createJoinMessage("127.0.0.1");
         assertTrue(joinMessageTrustChecker.isTrusted(message));
     }
 
     @Test
     public void givenInterfaceIsConfigured_whenMessageWithNonMatchingHost_thenDoNotTrust() throws UnknownHostException {
-        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.2"));
+        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.2"), logger);
         JoinMessage message = createJoinMessage("127.0.0.1");
         assertFalse(joinMessageTrustChecker.isTrusted(message));
     }
 
     @Test
     public void givenInterfaceRangeIsConfigured_whenMessageWithMatchingHost_thenTrust() throws UnknownHostException {
-        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1-100"));
+        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1-100"), logger);
         JoinMessage message = createJoinMessage("127.0.0.2");
         assertTrue(joinMessageTrustChecker.isTrusted(message));
     }
 
     @Test
     public void givenInterfaceRangeIsConfigured_whenMessageWithNonMatchingHost_thenDoNotTrust() throws UnknownHostException {
-        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1-100"));
+        JoinMessageTrustChecker joinMessageTrustChecker = new JoinMessageTrustChecker(singleton("127.0.0.1-100"), logger);
         JoinMessage message = createJoinMessage("127.0.0.101");
         assertFalse(joinMessageTrustChecker.isTrusted(message));
     }

@@ -26,18 +26,25 @@ public class SlowMulticastJoinTest extends AbstractJoinTest {
 
     @Test
     public void testMembersStaysIndependentWhenHostIsNotTrusted() {
-        Config config1 = newConfig();
-        Config config2 = newConfig();
+        Config config1 = newConfig("8.8.8.8"); //8.8.8.8 is never a local address
+        Config config2 = newConfig("8.8.8.8");
 
         int testDurationSeconds = 30;
         assertIndependentClustersAndDoNotMergedEventually(config1, config2, testDurationSeconds);
     }
 
-    private Config newConfig() {
+    @Test
+    public void testMembersFormAClusterWhenHostIsTrusted() throws Exception {
+        Config config2 = newConfig("*.*.*.*"); //matching everything
+
+        testJoin(config2);
+    }
+
+    private Config newConfig(String trustedInterface) {
         Config config = new Config();
         config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "5");
         config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "3");
-        config.getNetworkConfig().getJoin().getMulticastConfig().addTrustedInterface("8.8.8.8");
+        config.getNetworkConfig().getJoin().getMulticastConfig().addTrustedInterface(trustedInterface);
         return config;
     }
 }
