@@ -4,8 +4,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -80,5 +82,24 @@ public class AbstractJoinTest extends HazelcastTestSupport {
 
         assertTrue(hz2.getLifecycleService().isRunning());
         assertClusterSize(1, hz2);
+    }
+
+    protected static void assertIndependentClustersAndDoNotMergedEventually(Config config1, Config config2, int durationSeconds) {
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+
+        assertTrue(hz1.getLifecycleService().isRunning());
+        assertClusterSize(1, hz1);
+
+        assertTrue(hz2.getLifecycleService().isRunning());
+        assertClusterSize(1, hz2);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertClusterSize(1, hz1);
+                assertClusterSize(1, hz2);
+            }
+        }, durationSeconds);
     }
 }

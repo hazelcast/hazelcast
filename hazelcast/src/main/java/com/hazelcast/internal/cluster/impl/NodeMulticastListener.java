@@ -25,20 +25,16 @@ import com.hazelcast.nio.Packet;
 
 import java.util.Set;
 
-import static com.hazelcast.util.AddressUtil.matchAnyInterface;
 import static java.lang.String.format;
 
 public class NodeMulticastListener implements MulticastListener {
 
     private final Node node;
-    private final Set<String> trustedInterfaces;
     private final ILogger logger;
     private ConfigCheck ourConfig;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
-        this.trustedInterfaces = node.getConfig().getNetworkConfig()
-                .getJoin().getMulticastConfig().getTrustedInterfaces();
         this.logger = node.getLogger(NodeMulticastListener.class.getName());
         this.ourConfig = node.createConfigCheck();
     }
@@ -99,15 +95,10 @@ public class NodeMulticastListener implements MulticastListener {
             }
 
             if (!node.joined() && node.getMasterAddress() == null) {
-                String masterHost = joinMessage.getAddress().getHost();
-                if (trustedInterfaces.isEmpty() || matchAnyInterface(masterHost, trustedInterfaces)) {
-                    ClusterJoinManager clusterJoinManager = node.getClusterService().getClusterJoinManager();
-                    //todo: why are we making a copy here of address?
-                    Address masterAddress = new Address(joinMessage.getAddress());
-                    clusterJoinManager.setMasterAddress(masterAddress);
-                } else {
-                    logJoinMessageDropped(masterHost);
-                }
+                ClusterJoinManager clusterJoinManager = node.getClusterService().getClusterJoinManager();
+                //todo: why are we making a copy here of address?
+                Address masterAddress = new Address(joinMessage.getAddress());
+                clusterJoinManager.setMasterAddress(masterAddress);
             } else {
                 logDroppedMessage(joinMessage);
             }
