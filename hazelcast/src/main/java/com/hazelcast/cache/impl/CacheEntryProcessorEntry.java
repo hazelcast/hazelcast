@@ -141,6 +141,10 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
         return (V) objValue;
     }
 
+    public R getRecord() {
+        return record;
+    }
+
     /**
      * Provides a similar functionality as committing a transaction. So, at the end of the process method, applyChanges
      * will be called to apply latest data into {@link CacheRecordStore}.
