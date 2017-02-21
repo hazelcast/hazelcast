@@ -21,18 +21,43 @@ import com.hazelcast.jet.DAG;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.ReadIMapP;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.serializer.Deserializer;
+import org.apache.hadoop.io.serializer.Serialization;
+import org.apache.hadoop.io.serializer.Serializer;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.FileOutputCommitter;
+import org.apache.hadoop.mapred.FileOutputFormat;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputFormat;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.TextInputFormat;
+import org.apache.hadoop.mapred.TextOutputFormat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
@@ -43,11 +68,27 @@ import static com.hazelcast.jet.Processors.readMap;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
 import static com.hazelcast.jet.connector.hadoop.WriteHdfsP.writeHdfs;
+import static org.apache.hadoop.fs.CommonConfigurationKeysPublic.IO_SERIALIZATIONS_KEY;
 import static org.junit.Assert.assertEquals;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class WriteHdfsPTest extends JetTestSupport {
+
+    @Parameterized.Parameter(0)
+    public Class<? extends OutputFormat> outputFormatClass;
+
+    @Parameterized.Parameter(1)
+    public Class<? extends InputFormat> inputFormatClass;
+
+    @Parameterized.Parameters(name = "Executing: {0} {1}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(
+                new Object[]{TextOutputFormat.class, TextInputFormat.class}, //
+                new Object[]{SequenceFileOutputFormat.class, SequenceFileInputFormat.class} //
+        );
+    }
 
     @Test
     public void testWriteFile() throws Exception {
@@ -56,7 +97,7 @@ public class WriteHdfsPTest extends JetTestSupport {
         JetInstance instance = createJetMember();
         createJetMember();
 
-        Map<Integer, Integer> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(m -> m, m -> m));
+        Map<IntWritable, IntWritable> map = IntStream.range(0, messageCount).boxed().collect(Collectors.toMap(IntWritable::new, IntWritable::new));
         instance.getMap(mapName).putAll(map);
 
         DAG dag = new DAG();
@@ -64,7 +105,17 @@ public class WriteHdfsPTest extends JetTestSupport {
                 .localParallelism(1);
 
         Path path = getPath();
-        Vertex consumer = dag.newVertex("consumer", writeHdfs(path.toString()))
+
+        JobConf conf = new JobConf();
+        conf.setOutputFormat(outputFormatClass);
+        conf.setOutputCommitter(FileOutputCommitter.class);
+        conf.setOutputKeyClass(IntWritable.class);
+        conf.setOutputValueClass(IntWritable.class);
+
+        FileOutputFormat.setOutputPath(conf, path);
+
+
+        Vertex consumer = dag.newVertex("consumer", writeHdfs(conf))
                 .localParallelism(4);
 
         dag.edge(between(producer, consumer));
@@ -74,7 +125,10 @@ public class WriteHdfsPTest extends JetTestSupport {
 
 
         dag = new DAG();
-        producer = dag.newVertex("producer", readHdfs(path.toString()))
+        JobConf readJobConf = new JobConf();
+        readJobConf.setInputFormat(inputFormatClass);
+        FileInputFormat.addInputPath(readJobConf, path);
+        producer = dag.newVertex("producer", readHdfs(readJobConf))
                 .localParallelism(8);
 
         consumer = dag.newVertex("consumer", writeList("results"))
@@ -89,11 +143,9 @@ public class WriteHdfsPTest extends JetTestSupport {
         assertEquals(messageCount, results.size());
     }
 
-    public Path getPath() throws IOException {
-        LocalFileSystem local = FileSystem.getLocal(new Configuration());
-        Path path = new Path(randomString());
-        local.mkdirs(path);
-        local.deleteOnExit(path);
-        return path;
+    private Path getPath() throws IOException {
+        String dirName = Files.createTempDirectory(getClass().getName()).toString();
+        return new Path(dirName);
     }
+
 }

@@ -18,95 +18,174 @@ package com.hazelcast.jet.connector.hadoop;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.jet.DAG;
+import com.hazelcast.jet.Distributed;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.JetTestSupport;
-import com.hazelcast.jet.Processors;
+import com.hazelcast.jet.Util;
 import com.hazelcast.jet.Vertex;
-import com.hazelcast.jet.impl.connector.WriteIListP;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
+import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Writer;
+import org.apache.hadoop.io.SequenceFile.Writer.Option;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.FileInputFormat;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.TextInputFormat;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.util.Map;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
+import static com.hazelcast.jet.impl.util.Util.uncheckCall;
+import static com.hazelcast.jet.impl.util.Util.uncheckRun;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(Parameterized.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ReadHdfsPTest extends JetTestSupport {
 
-    @Test
-    public void testReadFile() throws Exception {
-        Path path = writeToFile("key-1 value-1\n", "key-2 value-2\n", "key-3 value-3\n", "key-4 value-4\n");
+    private static String[] ENTRIES;
 
-        JetInstance instance = createJetMember();
-        createJetMember();
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readHdfs(path.toString()))
-                           .localParallelism(4);
-        Vertex sink = dag.newVertex("sink", writeList("sink"))
-                         .localParallelism(1);
-        dag.edge(between(source, sink));
+    @Parameterized.Parameter(0)
+    public Class<? extends InputFormat> inputFormatClass;
 
-        Future<Void> future = instance.newJob(dag).execute();
-        assertCompletesEventually(future);
+    @Parameterized.Parameter(1)
+    public Distributed.BiFunction mapper;
 
+    @Parameterized.Parameters(name = "Executing: {0} {1}")
+    public static Collection<Object[]> parameters() {
+        Distributed.BiFunction defaultMapper = Util::entry;
+        Distributed.BiFunction mapper = (k, v) -> v.toString();
 
-        IList<Map.Entry> list = instance.getList("sink");
-        assertEquals(4, list.size());
-        assertTrue(list.get(0).getValue().toString().contains("value"));
+        return Arrays.asList(
+                new Object[]{TextInputFormat.class, defaultMapper}, //
+                new Object[]{TextInputFormat.class, mapper}, //
+                new Object[]{SequenceFileInputFormat.class, defaultMapper}, //
+                new Object[]{SequenceFileInputFormat.class, mapper} //
+        );
     }
 
-    @Test
-    public void testReadFile_withMapping() throws Exception {
-        Path path = writeToFile("key-1 value-1\n", "key-2 value-2\n", "key-3 value-3\n", "key-4 value-4\n");
-
-        JetInstance instance = createJetMember();
-        createJetMember();
-        DAG dag = new DAG();
-        Vertex source = dag.newVertex("source", readHdfs(path.toString(), (k, v) -> v.toString()))
-                           .localParallelism(4);
-        Vertex sink = dag.newVertex("sink", writeList("sink"))
-                         .localParallelism(1);
-        dag.edge(between(source, sink));
-
-        Future<Void> future = instance.newJob(dag).execute();
-        assertCompletesEventually(future);
-
-
-        IList<String> list = instance.getList("sink");
-        assertEquals(4, list.size());
-        assertTrue(list.get(0).contains("key"));
+    @BeforeClass
+    public static void setupClass() {
+        ENTRIES = range(0, 4)
+                .mapToObj(i -> "key-" + i + " value-" + i + "\n")
+                .toArray(i -> new String[i]);
     }
 
-    private static Path writeToFile(String... values) throws IOException {
-        LocalFileSystem local = FileSystem.getLocal(new Configuration());
-        Path path = new Path(randomString());
-        local.createNewFile(path);
-        FSDataOutputStream outputStream = local.create(path);
-        local.deleteOnExit(path);
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(outputStream));
-        for (String value : values) {
-            writer.write(value);
+    private JobConf jobConf;
+
+    private JetInstance instance;
+
+    private Set<Path> paths = new HashSet<>();
+
+    @Before
+    public void setup() throws IOException {
+        instance = createJetMember();
+        createJetMember();
+
+        jobConf = new JobConf();
+        jobConf.setInputFormat(inputFormatClass);
+
+        writeToFile();
+        for (Path path : paths) {
+            FileInputFormat.addInputPath(jobConf, path);
         }
-        writer.flush();
-        writer.close();
-        outputStream.close();
-        return path;
+    }
+
+    @Test
+    public void testReadHdfs() throws IOException {
+        DAG dag = new DAG();
+
+        Vertex source = dag.newVertex("source", readHdfs(jobConf, mapper))
+                .localParallelism(4);
+        Vertex sink = dag.newVertex("sink", writeList("sink"))
+                .localParallelism(1);
+        dag.edge(between(source, sink));
+
+        Future<Void> future = instance.newJob(dag).execute();
+        assertCompletesEventually(future);
+
+
+        IList list = instance.getList("sink");
+        assertEquals(16, list.size());
+        assertTrue(list.get(0).toString().contains("value"));
+    }
+
+    private void writeToFile() throws IOException {
+        Configuration conf = new Configuration();
+        LocalFileSystem local = FileSystem.getLocal(conf);
+
+        IntStream.range(0, 4).mapToObj(this::createPath).forEach(path -> uncheckRun(() -> {
+            paths.add(path);
+            if (SequenceFileInputFormat.class.equals(inputFormatClass)) {
+                writeToSequenceFile(conf, path);
+            } else {
+                writeToTextFile(local, path);
+            }
+        }));
+    }
+
+    private void writeToTextFile(LocalFileSystem local, Path path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(local.create(path)))){
+            for (String value : ENTRIES) {
+                writer.write(value);
+                writer.flush();
+            }
+        }
+    }
+
+    private void writeToSequenceFile(Configuration conf, Path path) throws IOException {
+        IntWritable key = new IntWritable();
+        Text value = new Text();
+        Option fileOption = Writer.file(path);
+        Option keyClassOption = Writer.keyClass(key.getClass());
+        Option valueClassOption = Writer.valueClass(value.getClass());
+        try (Writer writer = SequenceFile.createWriter(conf, fileOption, keyClassOption, valueClassOption)){
+            for (int i = 0; i < ENTRIES.length; i++) {
+                key.set(i);
+                value.set(ENTRIES[i]);
+                writer.append(key, value);
+            }
+        }
+    }
+
+    private Path createPath(int ignored) {
+        try {
+            String fileName = Files.createTempFile(getClass().getName(), null).toString();
+            return new Path(fileName);
+        } catch (IOException e) {
+            throw ExceptionUtil.sneakyThrow(e);
+        }
     }
 }

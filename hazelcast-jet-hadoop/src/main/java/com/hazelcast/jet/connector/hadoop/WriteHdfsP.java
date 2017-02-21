@@ -22,8 +22,6 @@ import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.nio.Address;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContextImpl;
 import org.apache.hadoop.mapred.JobID;
@@ -32,7 +30,6 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.mapred.TextOutputFormat;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -88,22 +85,22 @@ public final class WriteHdfsP extends AbstractProcessor {
     /**
      * Returns a meta-supplier of processors that write HDFS files.
      *
-     * @param path output path for writing files
+     * @param jobConf JobConf for writing files with the appropriate output format and path
      * @return {@link ProcessorMetaSupplier} supplier
      */
-    public static ProcessorMetaSupplier writeHdfs(String path) {
-        return new MetaSupplier(path);
+    public static ProcessorMetaSupplier writeHdfs(JobConf jobConf) {
+        return new MetaSupplier(jobConf);
     }
 
     private static class MetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private final String path;
+        private final JobConfiguration configuration;
         private transient Address address;
 
-        MetaSupplier(String path) {
-            this.path = path;
+        MetaSupplier(JobConf jobConf) {
+            this.configuration = new JobConfiguration(jobConf);
         }
 
         @Override
@@ -113,7 +110,7 @@ public final class WriteHdfsP extends AbstractProcessor {
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new Supplier(address.equals(this.address), path);
+            return address -> new Supplier(address.equals(this.address), configuration);
         }
     }
 
@@ -121,31 +118,25 @@ public final class WriteHdfsP extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private final boolean commitJob;
-        private final String path;
+        private boolean commitJob;
+        private JobConfiguration configuration;
 
         private transient Context context;
         private transient OutputCommitter outputCommitter;
-        private transient JobConf conf;
         private transient JobID jobId;
         private transient JobContextImpl jobContext;
 
-        Supplier(boolean commitJob, String path) {
+        Supplier(boolean commitJob, JobConfiguration configuration) {
             this.commitJob = commitJob;
-            this.path = path;
+            this.configuration = configuration;
         }
 
         @Override
         public void init(@Nonnull Context context) {
             this.context = context;
-            conf = new JobConf();
-            conf.setOutputFormat(TextOutputFormat.class);
-            conf.setOutputCommitter(FileOutputCommitter.class);
-            TextOutputFormat.setOutputPath(conf, new Path(path));
-            outputCommitter = conf.getOutputCommitter();
+            outputCommitter = configuration.getOutputCommitter();
             jobId = new JobID();
-            jobContext = new JobContextImpl(conf, jobId);
-
+            jobContext = new JobContextImpl(configuration, jobId);
         }
 
         @Override
@@ -167,12 +158,12 @@ public final class WriteHdfsP extends AbstractProcessor {
                 String uuid = context.jetInstance().getCluster().getLocalMember().getUuid();
                 TaskAttemptID taskAttemptID = new TaskAttemptID("jet-node-" + uuid, jobId.getId(),
                         JOB_SETUP, i, 0);
-                conf.set("mapred.task.id", taskAttemptID.toString());
-                conf.setInt("mapred.task.partition", i);
+                configuration.set("mapred.task.id", taskAttemptID.toString());
+                configuration.setInt("mapred.task.partition", i);
 
-                TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(conf, taskAttemptID);
-                RecordWriter recordWriter = uncheckCall(() -> conf.getOutputFormat().getRecordWriter(null,
-                        conf, uuid + '-' + valueOf(i), Reporter.NULL));
+                TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(configuration, taskAttemptID);
+                RecordWriter recordWriter = uncheckCall(() -> configuration.getOutputFormat().getRecordWriter(null,
+                        configuration, uuid + '-' + valueOf(i), Reporter.NULL));
                 return new WriteHdfsP(recordWriter, taskAttemptContext, outputCommitter);
 
             }).collect(toList());
