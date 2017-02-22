@@ -43,6 +43,7 @@ import java.util.concurrent.Executor;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.TOPIC_RB_PREFIX;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
+import static com.hazelcast.util.ExceptionUtil.peel;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -166,10 +167,9 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
             }
 
             localTopicStats.incrementPublishes();
-        } catch (RuntimeException e) {
-            throw e;
         } catch (Exception e) {
-            throw new HazelcastException("Failed to publish message: " + payload + " to topic:" + getName(), e);
+            throw (RuntimeException) peel(e, null,
+                    "Failed to publish message: " + payload + " to topic:" + getName());
         }
     }
 
