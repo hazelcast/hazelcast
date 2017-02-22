@@ -745,6 +745,22 @@ public final class Distributed {
     }
 
     /**
+     * Represents a supplier of {@code double}-valued results.  This is the
+     * {@code double}-producing primitive specialization of {@link Distributed.Supplier}.
+     *
+     * <p>There is no requirement that a distinct result be returned each
+     * time the supplier is invoked.
+     *
+     * <p>This is a <a href="package-summary.html">functional interface</a>
+     * whose functional method is {@link #getAsDouble()}.
+     *
+     * @see Distributed.Supplier
+     */
+    @FunctionalInterface
+    public interface DoubleSupplier extends java.util.function.DoubleSupplier, Serializable {
+    }
+
+    /**
      * Represents a function that accepts a double-valued argument and produces an
      * int-valued result.  This is the {@code double}-to-{@code int} primitive
      * specialization for {@link Distributed.Function}.
@@ -1025,6 +1041,22 @@ public final class Distributed {
     }
 
     /**
+     * Represents a supplier of {@code int}-valued results.  This is the
+     * {@code int}-producing primitive specialization of {@link Distributed.Supplier}.
+     *
+     * <p>There is no requirement that a distinct result be returned each
+     * time the supplier is invoked.
+     *
+     * <p>This is a <a href="package-summary.html">functional interface</a>
+     * whose functional method is {@link #getAsInt()}.
+     *
+     * @see Distributed.Supplier
+     */
+    @FunctionalInterface
+    public interface IntSupplier extends java.util.function.IntSupplier, Serializable {
+    }
+
+    /**
      * Represents a function that accepts an int-valued argument and produces a
      * double-valued result.  This is the {@code int}-to-{@code double} primitive
      * specialization for {@link Distributed.Function}.
@@ -1237,6 +1269,22 @@ public final class Distributed {
             Objects.requireNonNull(other);
             return (value) -> test(value) || other.test(value);
         }
+    }
+
+    /**
+     * Represents a supplier of {@code long}-valued results.  This is the
+     * {@code long}-producing primitive specialization of {@link Distributed.Supplier}.
+     *
+     * <p>There is no requirement that a distinct result be returned each
+     * time the supplier is invoked.
+     *
+     * <p>This is a <a href="package-summary.html">functional interface</a>
+     * whose functional method is {@link #getAsLong()}.
+     *
+     * @see Distributed.Supplier
+     */
+    @FunctionalInterface
+    public interface LongSupplier extends java.util.function.LongSupplier, Serializable {
     }
 
     /**
@@ -1903,5 +1951,4 @@ public final class Distributed {
                     : "Optional.empty";
         }
     }
-
 }
