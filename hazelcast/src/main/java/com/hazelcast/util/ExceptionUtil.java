@@ -53,6 +53,24 @@ public final class ExceptionUtil {
     }
 
     public static <T extends Throwable> Throwable peel(final Throwable t, Class<T> allowedType) {
+        return peel(t, allowedType, null);
+    }
+
+    /**
+     * Processes {@code Throwable t} so that the returned {@code Throwable}'s type matches {@code allowedType} or
+     * {@code RuntimeException}. Processing may include unwrapping {@code t}'s cause hierarchy, wrapping it in a
+     * {@code HazelcastException} or just returning the same instance {@code t} if it is already an instance of
+     * {@code RuntimeException}.
+     *
+     * @param t             {@code Throwable} to be peeled
+     * @param allowedType   the type expected to be returned; when {@code null}, this method returns instances
+     *                      of {@code RuntimeException}
+     * @param message       if not {@code null}, used as the message in the {@code HazelcastException} that
+     *                      may wrap the peeled {@code Throwable}
+     * @param <T>           expected type of {@code Throwable}
+     * @return              the peeled {@code Throwable}
+     */
+    public static <T extends Throwable> Throwable peel(final Throwable t, Class<T> allowedType, String message) {
         if (t instanceof RuntimeException) {
             return t;
         }
@@ -70,7 +88,11 @@ public final class ExceptionUtil {
             return t;
         }
 
-        return new HazelcastException(t);
+        if (message != null) {
+            return new HazelcastException(message, t);
+        } else {
+            return new HazelcastException(t);
+        }
     }
 
     public static RuntimeException rethrow(final Throwable t) {
