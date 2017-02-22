@@ -119,98 +119,6 @@ public final class Distributed {
     }
 
     /**
-     * Represents an operation upon two operands of the same type, producing a result
-     * of the same type as the operands.  This is a specialization of
-     * {@link Distributed.BiFunction} for the case where the operands and the result are all of
-     * the same type.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(Object, Object)}.
-     *
-     * @param <T> the type of the operands and result of the operator
-     * @see Distributed.BiFunction
-     * @see Distributed.UnaryOperator
-     */
-    @FunctionalInterface
-    public interface BinaryOperator<T> extends java.util.function.BinaryOperator<T>, Serializable {
-
-        /**
-         * Returns a {@link Distributed.BinaryOperator} which returns the lesser of two elements
-         * according to the specified {@code Comparator}.
-         *
-         * @param <T>        the type of the input arguments of the comparator
-         * @param comparator a {@code Comparator} for comparing the two values
-         * @return a {@code BinaryOperator} which returns the lesser of its operands,
-         * according to the supplied {@code Comparator}
-         * @throws NullPointerException if the argument is null
-         */
-        static <T> BinaryOperator<T> minBy(java.util.Comparator<? super T> comparator) {
-            Objects.requireNonNull(comparator);
-            return (a, b) -> comparator.compare(a, b) <= 0 ? a : b;
-        }
-
-        /**
-         * Returns a {@link Distributed.BinaryOperator} which returns the greater of two elements
-         * according to the specified {@code Comparator}.
-         *
-         * @param <T>        the type of the input arguments of the comparator
-         * @param comparator a {@code Comparator} for comparing the two values
-         * @return a {@code BinaryOperator} which returns the greater of its operands,
-         * according to the supplied {@code Comparator}
-         * @throws NullPointerException if the argument is null
-         */
-        static <T> BinaryOperator<T> maxBy(java.util.Comparator<? super T> comparator) {
-            Objects.requireNonNull(comparator);
-            return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
-        }
-    }
-
-    /**
-     * Represents an operation upon two {@code int}-valued operands and producing an
-     * {@code int}-valued result.   This is the primitive type specialization of
-     * {@link Distributed.BinaryOperator} for {@code int}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(int, int)}.
-     *
-     * @see Distributed.BinaryOperator
-     * @see Distributed.IntUnaryOperator
-     */
-    @FunctionalInterface
-    public interface IntBinaryOperator extends java.util.function.IntBinaryOperator, Serializable {
-    }
-
-    /**
-     * Represents an operation upon two {@code double}-valued operands and producing a
-     * {@code double}-valued result.   This is the primitive type specialization of
-     * {@link Distributed.BinaryOperator} for {@code double}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(double, double)}.
-     *
-     * @see Distributed.BinaryOperator
-     * @see Distributed.DoubleUnaryOperator
-     */
-    @FunctionalInterface
-    public interface DoubleBinaryOperator extends java.util.function.DoubleBinaryOperator, Serializable {
-    }
-
-    /**
-     * Represents an operation upon two {@code long}-valued operands and producing a
-     * {@code long}-valued result.   This is the primitive type specialization of
-     * {@link Distributed.BinaryOperator} for {@code long}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(long, long)}.
-     *
-     * @see Distributed.BinaryOperator
-     * @see Distributed.LongUnaryOperator
-     */
-    @FunctionalInterface
-    public interface LongBinaryOperator extends java.util.function.LongBinaryOperator, Serializable {
-    }
-
-    /**
      * Represents a predicate (boolean-valued function) of two arguments.  This is
      * the two-arity specialization of {@link Distributed.Predicate}.
      *
@@ -279,6 +187,53 @@ public final class Distributed {
     }
 
     /**
+     * Represents an operation upon two operands of the same type, producing a result
+     * of the same type as the operands.  This is a specialization of
+     * {@link Distributed.BiFunction} for the case where the operands and the result are all of
+     * the same type.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(Object, Object)}.
+     *
+     * @param <T> the type of the operands and result of the operator
+     * @see Distributed.BiFunction
+     * @see Distributed.UnaryOperator
+     */
+    @FunctionalInterface
+    public interface BinaryOperator<T> extends java.util.function.BinaryOperator<T>, Serializable {
+
+        /**
+         * Returns a {@link Distributed.BinaryOperator} which returns the lesser of two elements
+         * according to the specified {@code Comparator}.
+         *
+         * @param <T>        the type of the input arguments of the comparator
+         * @param comparator a {@code Comparator} for comparing the two values
+         * @return a {@code BinaryOperator} which returns the lesser of its operands,
+         * according to the supplied {@code Comparator}
+         * @throws NullPointerException if the argument is null
+         */
+        static <T> BinaryOperator<T> minBy(java.util.Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            return (a, b) -> comparator.compare(a, b) <= 0 ? a : b;
+        }
+
+        /**
+         * Returns a {@link Distributed.BinaryOperator} which returns the greater of two elements
+         * according to the specified {@code Comparator}.
+         *
+         * @param <T>        the type of the input arguments of the comparator
+         * @param comparator a {@code Comparator} for comparing the two values
+         * @return a {@code BinaryOperator} which returns the greater of its operands,
+         * according to the supplied {@code Comparator}
+         * @throws NullPointerException if the argument is null
+         */
+        static <T> BinaryOperator<T> maxBy(java.util.Comparator<? super T> comparator) {
+            Objects.requireNonNull(comparator);
+            return (a, b) -> comparator.compare(a, b) >= 0 ? a : b;
+        }
+    }
+
+    /**
      * Represents a supplier of {@code boolean}-valued results.  This is the
      * {@code boolean}-producing primitive specialization of {@link Distributed.Supplier}.
      *
@@ -292,973 +247,6 @@ public final class Distributed {
      */
     @FunctionalInterface
     public interface BooleanSupplier extends java.util.function.BooleanSupplier, Serializable {
-    }
-
-    /**
-     * Represents an operation that accepts a single input argument and returns no
-     * result. Unlike most other functional interfaces, {@code Consumer} is expected
-     * to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(Object)}.
-     *
-     * @param <T> the type of the input to the operation
-     */
-    @FunctionalInterface
-    public interface Consumer<T> extends java.util.function.Consumer<T>, Serializable {
-
-        // TODO remove the override when IntelliJ fix released
-        @Override
-        void accept(T t);
-
-        /**
-         * Returns a composed {@code Consumer} that performs, in sequence, this
-         * operation followed by the {@code after} operation. If performing either
-         * operation throws an exception, it is relayed to the caller of the
-         * composed operation.  If performing this operation throws an exception,
-         * the {@code after} operation will not be performed.
-         *
-         * @param after the operation to perform after this operation
-         * @return a composed {@code Consumer} that performs in sequence this
-         * operation followed by the {@code after} operation
-         * @throws NullPointerException if {@code after} is null
-         */
-        default Consumer<T> andThen(Consumer<? super T> after) {
-            Objects.requireNonNull(after);
-            return (T t) -> {
-                accept(t);
-                after.accept(t);
-            };
-        }
-    }
-
-    /**
-     * Represents an operation that accepts a single {@code int}-valued argument and
-     * returns no result.  This is the primitive type specialization of
-     * {@link Distributed.Consumer} for {@code int}.  Unlike most other functional interfaces,
-     * {@code IntConsumer} is expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(int)}.
-     *
-     * @see Distributed.Consumer
-     */
-    @FunctionalInterface
-    public interface IntConsumer extends java.util.function.IntConsumer, Serializable {
-        /**
-         * Returns a composed {@code IntConsumer} that performs, in sequence, this
-         * operation followed by the {@code after} operation. If performing either
-         * operation throws an exception, it is relayed to the caller of the
-         * composed operation.  If performing this operation throws an exception,
-         * the {@code after} operation will not be performed.
-         *
-         * @param after the operation to perform after this operation
-         * @return a composed {@code IntConsumer} that performs in sequence this
-         * operation followed by the {@code after} operation
-         * @throws NullPointerException if {@code after} is null
-         */
-        default IntConsumer andThen(IntConsumer after) {
-            Objects.requireNonNull(after);
-            return (int t) -> {
-                accept(t);
-                after.accept(t);
-            };
-        }
-    }
-
-    /**
-     * Represents an operation that accepts a single {@code double}-valued argument and
-     * returns no result.  This is the primitive type specialization of
-     * {@link Distributed.Consumer} for {@code double}.  Unlike most other functional interfaces,
-     * {@code DoubleConsumer} is expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(double)}.
-     *
-     * @see Distributed.Consumer
-     */
-    @FunctionalInterface
-    public interface DoubleConsumer extends java.util.function.DoubleConsumer, Serializable {
-        /**
-         * Returns a composed {@code DoubleConsumer} that performs, in sequence, this
-         * operation followed by the {@code after} operation. If performing either
-         * operation throws an exception, it is relayed to the caller of the
-         * composed operation.  If performing this operation throws an exception,
-         * the {@code after} operation will not be performed.
-         *
-         * @param after the operation to perform after this operation
-         * @return a composed {@code DoubleConsumer} that performs in sequence this
-         * operation followed by the {@code after} operation
-         * @throws NullPointerException if {@code after} is null
-         */
-        default DoubleConsumer andThen(DoubleConsumer after) {
-            Objects.requireNonNull(after);
-            return (double t) -> {
-                accept(t);
-                after.accept(t);
-            };
-        }
-    }
-
-    /**
-     * Represents an operation that accepts a single {@code long}-valued argument and
-     * returns no result.  This is the primitive type specialization of
-     * {@link Distributed.Consumer} for {@code long}.  Unlike most other functional interfaces,
-     * {@code LongConsumer} is expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(long)}.
-     *
-     * @see Distributed.Consumer
-     */
-    @FunctionalInterface
-    public interface LongConsumer extends java.util.function.LongConsumer, Serializable {
-        /**
-         * Returns a composed {@code LongConsumer} that performs, in sequence, this
-         * operation followed by the {@code after} operation. If performing either
-         * operation throws an exception, it is relayed to the caller of the
-         * composed operation.  If performing this operation throws an exception,
-         * the {@code after} operation will not be performed.
-         *
-         * @param after the operation to perform after this operation
-         * @return a composed {@code LongConsumer} that performs in sequence this
-         * operation followed by the {@code after} operation
-         * @throws NullPointerException if {@code after} is null
-         */
-        default LongConsumer andThen(LongConsumer after) {
-            Objects.requireNonNull(after);
-            return (long t) -> {
-                accept(t);
-                after.accept(t);
-            };
-        }
-    }
-
-    /**
-     * Represents an operation that accepts an object-valued and a
-     * {@code int}-valued argument, and returns no result.  This is the
-     * {@code (reference, int)} specialization of {@link Distributed.BiConsumer}.
-     * Unlike most other functional interfaces, {@code ObjIntConsumer} is
-     * expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(Object, int)}.
-     *
-     * @param <T> the type of the object argument to the operation
-     * @see Distributed.BiConsumer
-     */
-    @FunctionalInterface
-    public interface ObjIntConsumer<T> extends java.util.function.ObjIntConsumer<T>, Serializable {
-    }
-
-    /**
-     * Represents an operation that accepts an object-valued and a
-     * {@code long}-valued argument, and returns no result.  This is the
-     * {@code (reference, long)} specialization of {@link Distributed.BiConsumer}.
-     * Unlike most other functional interfaces, {@code ObjLongConsumer} is
-     * expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(Object, long)}.
-     *
-     * @param <T> the type of the object argument to the operation
-     * @see Distributed.BiConsumer
-     */
-    @FunctionalInterface
-    public interface ObjLongConsumer<T> extends java.util.function.ObjLongConsumer<T>, Serializable {
-    }
-
-    /**
-     * Represents an operation that accepts an object-valued and a
-     * {@code double}-valued argument, and returns no result.  This is the
-     * {@code (reference, double)} specialization of {@link Distributed.BiConsumer}.
-     * Unlike most other functional interfaces, {@code ObjDoubleConsumer} is
-     * expected to operate via side-effects.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #accept(Object, double)}.
-     *
-     * @param <T> the type of the object argument to the operation
-     * @see Distributed.BiConsumer
-     */
-    @FunctionalInterface
-    public interface ObjDoubleConsumer<T> extends java.util.function.ObjDoubleConsumer<T>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a double-valued argument and produces a
-     * result.  This is the {@code double}-consuming primitive specialization for
-     * {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(double)}.
-     *
-     * @param <R> the type of the result of the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface DoubleFunction<R> extends java.util.function.DoubleFunction<R>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a double-valued argument and produces an
-     * int-valued result.  This is the {@code double}-to-{@code int} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(double)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface DoubleToIntFunction extends java.util.function.DoubleToIntFunction, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a double-valued argument and produces a
-     * long-valued result.  This is the {@code double}-to-{@code long} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(double)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface DoubleToLongFunction extends java.util.function.DoubleToLongFunction, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts one argument and produces a result.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(Object)}.
-     *
-     * @param <T> the type of the input to the function
-     * @param <R> the type of the result of the function
-     */
-    @FunctionalInterface
-    public interface Function<T, R> extends java.util.function.Function<T, R>, Serializable {
-
-        // TODO remove the override when IntelliJ fix released
-        @Override
-        R apply(T t);
-
-        /**
-         * Returns a composed function that first applies the {@code before}
-         * function to its input, and then applies this function to the result.
-         * If evaluation of either function throws an exception, it is relayed to
-         * the caller of the composed function.
-         *
-         * @param <V>    the type of input to the {@code before} function, and to the
-         *               composed function
-         * @param before the function to apply before this function is applied
-         * @return a composed function that first applies the {@code before}
-         * function and then applies this function
-         * @throws NullPointerException if before is null
-         * @see #andThen(Function)
-         */
-        default <V> Function<V, R> compose(Function<? super V, ? extends T> before) {
-            Objects.requireNonNull(before);
-            return (V v) -> apply(before.apply(v));
-        }
-
-        /**
-         * Returns a composed function that first applies this function to
-         * its input, and then applies the {@code after} function to the result.
-         * If evaluation of either function throws an exception, it is relayed to
-         * the caller of the composed function.
-         *
-         * @param <V>   the type of output of the {@code after} function, and of the
-         *              composed function
-         * @param after the function to apply after this function is applied
-         * @return a composed function that first applies this function and then
-         * applies the {@code after} function
-         * @throws NullPointerException if after is null
-         * @see #compose(Function)
-         */
-        default <V> Function<T, V> andThen(Function<? super R, ? extends V> after) {
-            Objects.requireNonNull(after);
-            return (T t) -> after.apply(apply(t));
-        }
-
-        /**
-         * Returns a function that always returns its input argument.
-         *
-         * @param <T> the type of the input and output objects to the function
-         * @return a function that always returns its input argument
-         */
-        static <T> Function<T, T> identity() {
-            return t -> t;
-        }
-    }
-
-    /**
-     * Represents a function that accepts an int-valued argument and produces a
-     * result.  This is the {@code int}-consuming primitive specialization for
-     * {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(int)}.
-     *
-     * @param <R> the type of the result of the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface IntFunction<R> extends java.util.function.IntFunction<R>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts an int-valued argument and produces a
-     * double-valued result.  This is the {@code int}-to-{@code double} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(int)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface IntToDoubleFunction extends java.util.function.IntToDoubleFunction, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts an int-valued argument and produces a
-     * long-valued result.  This is the {@code int}-to-{@code long} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(int)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface IntToLongFunction extends java.util.function.IntToLongFunction, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a long-valued argument and produces a
-     * result.  This is the {@code long}-consuming primitive specialization for
-     * {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(long)}.
-     *
-     * @param <R> the type of the result of the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface LongFunction<R> extends java.util.function.LongFunction<R>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a long-valued argument and produces a
-     * double-valued result.  This is the {@code long}-to-{@code double} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(long)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface LongToDoubleFunction extends java.util.function.LongToDoubleFunction, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts a long-valued argument and produces an
-     * int-valued result.  This is the {@code long}-to-{@code int} primitive
-     * specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(long)}.
-     *
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface LongToIntFunction extends java.util.function.LongToIntFunction, Serializable {
-    }
-
-    /**
-     * Represents a predicate (boolean-valued function) of one argument.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #test(Object)}.
-     *
-     * @param <T> the type of the input to the predicate
-     */
-    @FunctionalInterface
-    public interface Predicate<T> extends java.util.function.Predicate<T>, Serializable {
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * AND of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code false}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ANDed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * AND of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default Predicate<T> and(Predicate<? super T> other) {
-            Objects.requireNonNull(other);
-            return (t) -> test(t) && other.test(t);
-        }
-
-        /**
-         * Returns a predicate that represents the logical negation of this
-         * predicate.
-         *
-         * @return a predicate that represents the logical negation of this
-         * predicate
-         */
-        @Override
-        default Predicate<T> negate() {
-            return (t) -> !test(t);
-        }
-
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * OR of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code true}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ORed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * OR of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default Predicate<T> or(Predicate<? super T> other) {
-            Objects.requireNonNull(other);
-            return (t) -> test(t) || other.test(t);
-        }
-
-        /**
-         * Returns a predicate that tests if two arguments are equal according
-         * to {@link Objects#equals(Object, Object)}.
-         *
-         * @param <T>       the type of arguments to the predicate
-         * @param targetRef the object reference with which to compare for equality,
-         *                  which may be {@code null}
-         * @return a predicate that tests if two arguments are equal according
-         * to {@link Objects#equals(Object, Object)}
-         */
-        static <T> Predicate<T> isEqual(Object targetRef) {
-            return (null == targetRef)
-                    ? Objects::isNull
-                    : object -> targetRef.equals(object);
-        }
-    }
-
-    /**
-     * Represents a predicate (boolean-valued function) of one {@code int}-valued
-     * argument. This is the {@code int}-consuming primitive type specialization of
-     * {@link Distributed.Predicate}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #test(int)}.
-     *
-     * @see Distributed.Predicate
-     */
-    @FunctionalInterface
-    public interface IntPredicate extends java.util.function.IntPredicate, Serializable {
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * AND of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code false}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ANDed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * AND of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default IntPredicate and(IntPredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) && other.test(value);
-        }
-
-        /**
-         * Returns a predicate that represents the logical negation of this
-         * predicate.
-         *
-         * @return a predicate that represents the logical negation of this
-         * predicate
-         */
-        @Override
-        default IntPredicate negate() {
-            return (value) -> !test(value);
-        }
-
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * OR of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code true}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ORed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * OR of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default IntPredicate or(IntPredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) || other.test(value);
-        }
-    }
-
-    /**
-     * Represents a predicate (boolean-valued function) of one {@code double}-valued
-     * argument. This is the {@code double}-consuming primitive type specialization
-     * of {@link Distributed.Predicate}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #test(double)}.
-     *
-     * @see Distributed.Predicate
-     */
-    @FunctionalInterface
-    public interface DoublePredicate extends java.util.function.DoublePredicate, Serializable {
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * AND of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code false}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ANDed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * AND of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default DoublePredicate and(DoublePredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) && other.test(value);
-        }
-
-        /**
-         * Returns a predicate that represents the logical negation of this
-         * predicate.
-         *
-         * @return a predicate that represents the logical negation of this
-         * predicate
-         */
-        @Override
-        default DoublePredicate negate() {
-            return (value) -> !test(value);
-        }
-
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * OR of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code true}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ORed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * OR of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default DoublePredicate or(DoublePredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) || other.test(value);
-        }
-    }
-
-    /**
-     * Represents a predicate (boolean-valued function) of one {@code long}-valued
-     * argument. This is the {@code long}-consuming primitive type specialization of
-     * {@link Distributed.Predicate}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #test(long)}.
-     *
-     * @see Distributed.Predicate
-     */
-    @FunctionalInterface
-    public interface LongPredicate extends java.util.function.LongPredicate, Serializable {
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * AND of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code false}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ANDed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * AND of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default LongPredicate and(LongPredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) && other.test(value);
-        }
-
-        /**
-         * Returns a predicate that represents the logical negation of this
-         * predicate.
-         *
-         * @return a predicate that represents the logical negation of this
-         * predicate
-         */
-        @Override
-        default LongPredicate negate() {
-            return (value) -> !test(value);
-        }
-
-        /**
-         * Returns a composed predicate that represents a short-circuiting logical
-         * OR of this predicate and another.  When evaluating the composed
-         * predicate, if this predicate is {@code true}, then the {@code other}
-         * predicate is not evaluated.
-         *
-         * <p>Any exceptions thrown during evaluation of either predicate are relayed
-         * to the caller; if evaluation of this predicate throws an exception, the
-         * {@code other} predicate will not be evaluated.
-         *
-         * @param other a predicate that will be logically-ORed with this
-         *              predicate
-         * @return a composed predicate that represents the short-circuiting logical
-         * OR of this predicate and the {@code other} predicate
-         * @throws NullPointerException if other is null
-         */
-        default LongPredicate or(LongPredicate other) {
-            Objects.requireNonNull(other);
-            return (value) -> test(value) || other.test(value);
-        }
-    }
-
-    /**
-     * Represents a supplier of results.
-     *
-     * <p>There is no requirement that a new or distinct result be returned each
-     * time the supplier is invoked.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #get()}.
-     *
-     * @param <T> the type of results supplied by this supplier
-     */
-    @FunctionalInterface
-    public interface Supplier<T> extends java.util.function.Supplier<T>, Serializable {
-        // TODO remove the override when IntelliJ fix released
-        @Override
-        T get();
-    }
-
-    /**
-     * Represents a function that accepts two arguments and produces a double-valued
-     * result.  This is the {@code double}-producing primitive specialization for
-     * {@link Distributed.BiFunction}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(Object, Object)}.
-     *
-     * @param <T> the type of the first argument to the function
-     * @param <U> the type of the second argument to the function
-     * @see Distributed.BiFunction
-     */
-    @FunctionalInterface
-    public interface ToDoubleBiFunction<T, U> extends java.util.function.ToDoubleBiFunction<T, U>, Serializable {
-    }
-
-    /**
-     * Represents a function that produces a double-valued result.  This is the
-     * {@code double}-producing primitive specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(Object)}.
-     *
-     * @param <T> the type of the input to the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface ToDoubleFunction<T> extends java.util.function.ToDoubleFunction<T>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts two arguments and produces an int-valued
-     * result.  This is the {@code int}-producing primitive specialization for
-     * {@link Distributed.BiFunction}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(Object, Object)}.
-     *
-     * @param <T> the type of the first argument to the function
-     * @param <U> the type of the second argument to the function
-     * @see Distributed.BiFunction
-     */
-    @FunctionalInterface
-    public interface ToIntBiFunction<T, U> extends java.util.function.ToIntBiFunction<T, U>, Serializable {
-    }
-
-    /**
-     * Represents a function that accepts two arguments and produces a long-valued
-     * result.  This is the {@code long}-producing primitive specialization for
-     * {@link Distributed.BiFunction}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(Object, Object)}.
-     *
-     * @param <T> the type of the first argument to the function
-     * @param <U> the type of the second argument to the function
-     * @see Distributed.BiFunction
-     */
-    @FunctionalInterface
-    public interface ToLongBiFunction<T, U> extends java.util.function.ToLongBiFunction<T, U>, Serializable {
-    }
-
-    /**
-     * Represents a function that produces an int-valued result.  This is the
-     * {@code int}-producing primitive specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(Object)}.
-     *
-     * @param <T> the type of the input to the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface ToIntFunction<T> extends java.util.function.ToIntFunction<T>, Serializable {
-    }
-
-    /**
-     * Represents a function that produces a long-valued result.  This is the
-     * {@code long}-producing primitive specialization for {@link Distributed.Function}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(Object)}.
-     *
-     * @param <T> the type of the input to the function
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface ToLongFunction<T> extends java.util.function.ToLongFunction<T>, Serializable {
-    }
-
-    /**
-     * Represents an operation on a single operand that produces a result of the
-     * same type as its operand.  This is a specialization of {@code Function} for
-     * the case where the operand and result are of the same type.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #apply(Object)}.
-     *
-     * @param <T> the type of the operand and result of the operator
-     * @see Distributed.Function
-     */
-    @FunctionalInterface
-    public interface UnaryOperator<T> extends Function<T, T>, java.util.function.UnaryOperator<T>, Serializable {
-        /**
-         * Returns a unary operator that always returns its input argument.
-         *
-         * @param <T> the type of the input and output of the operator
-         * @return a unary operator that always returns its input argument
-         */
-        static <T> UnaryOperator<T> identity() {
-            return t -> t;
-        }
-    }
-
-    /**
-     * Represents an operation on a single {@code int}-valued operand that produces
-     * an {@code int}-valued result.  This is the primitive type specialization of
-     * {@link Distributed.UnaryOperator} for {@code int}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsInt(int)}.
-     *
-     * @see Distributed.UnaryOperator
-     */
-    @FunctionalInterface
-    public interface IntUnaryOperator extends java.util.function.IntUnaryOperator, Serializable {
-        /**
-         * Returns a composed operator that first applies the {@code before}
-         * operator to its input, and then applies this operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param before the operator to apply before this operator is applied
-         * @return a composed operator that first applies the {@code before}
-         * operator and then applies this operator
-         * @throws NullPointerException if before is null
-         * @see #andThen(IntUnaryOperator)
-         */
-        default IntUnaryOperator compose(IntUnaryOperator before) {
-            Objects.requireNonNull(before);
-            return (int v) -> applyAsInt(before.applyAsInt(v));
-        }
-
-        /**
-         * Returns a composed operator that first applies this operator to
-         * its input, and then applies the {@code after} operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param after the operator to apply after this operator is applied
-         * @return a composed operator that first applies this operator and then
-         * applies the {@code after} operator
-         * @throws NullPointerException if after is null
-         * @see #compose(IntUnaryOperator)
-         */
-        default IntUnaryOperator andThen(IntUnaryOperator after) {
-            Objects.requireNonNull(after);
-            return (int t) -> after.applyAsInt(applyAsInt(t));
-        }
-
-        /**
-         * Returns a unary operator that always returns its input argument.
-         *
-         * @return a unary operator that always returns its input argument
-         */
-        static IntUnaryOperator identity() {
-            return t -> t;
-        }
-    }
-
-    /**
-     * Represents an operation on a single {@code long}-valued operand that produces
-     * a {@code long}-valued result.  This is the primitive type specialization of
-     * {@link Distributed.UnaryOperator} for {@code long}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsLong(long)}.
-     *
-     * @see Distributed.UnaryOperator
-     */
-    @FunctionalInterface
-    public interface LongUnaryOperator extends java.util.function.LongUnaryOperator, Serializable {
-        /**
-         * Returns a composed operator that first applies the {@code before}
-         * operator to its input, and then applies this operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param before the operator to apply before this operator is applied
-         * @return a composed operator that first applies the {@code before}
-         * operator and then applies this operator
-         * @throws NullPointerException if before is null
-         * @see #andThen(LongUnaryOperator)
-         */
-        default LongUnaryOperator compose(LongUnaryOperator before) {
-            Objects.requireNonNull(before);
-            return (long v) -> applyAsLong(before.applyAsLong(v));
-        }
-
-        /**
-         * Returns a composed operator that first applies this operator to
-         * its input, and then applies the {@code after} operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param after the operator to apply after this operator is applied
-         * @return a composed operator that first applies this operator and then
-         * applies the {@code after} operator
-         * @throws NullPointerException if after is null
-         * @see #compose(LongUnaryOperator)
-         */
-        default LongUnaryOperator andThen(LongUnaryOperator after) {
-            Objects.requireNonNull(after);
-            return (long t) -> after.applyAsLong(applyAsLong(t));
-        }
-
-        /**
-         * Returns a unary operator that always returns its input argument.
-         *
-         * @return a unary operator that always returns its input argument
-         */
-        static LongUnaryOperator identity() {
-            return t -> t;
-        }
-    }
-
-    /**
-     * Represents an operation on a single {@code double}-valued operand that produces
-     * a {@code double}-valued result.  This is the primitive type specialization of
-     * {@link Distributed.UnaryOperator} for {@code double}.
-     *
-     * <p>This is a functional interface
-     * whose functional method is {@link #applyAsDouble(double)}.
-     *
-     * @see Distributed.UnaryOperator
-     */
-    @FunctionalInterface
-    public interface DoubleUnaryOperator extends java.util.function.DoubleUnaryOperator, Serializable {
-        /**
-         * Returns a composed operator that first applies the {@code before}
-         * operator to its input, and then applies this operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param before the operator to apply before this operator is applied
-         * @return a composed operator that first applies the {@code before}
-         * operator and then applies this operator
-         * @throws NullPointerException if before is null
-         * @see #andThen(DoubleUnaryOperator)
-         */
-        default DoubleUnaryOperator compose(DoubleUnaryOperator before) {
-            Objects.requireNonNull(before);
-            return (double v) -> applyAsDouble(before.applyAsDouble(v));
-        }
-
-        /**
-         * Returns a composed operator that first applies this operator to
-         * its input, and then applies the {@code after} operator to the result.
-         * If evaluation of either operator throws an exception, it is relayed to
-         * the caller of the composed operator.
-         *
-         * @param after the operator to apply after this operator is applied
-         * @return a composed operator that first applies this operator and then
-         * applies the {@code after} operator
-         * @throws NullPointerException if after is null
-         * @see #compose(DoubleUnaryOperator)
-         */
-        default DoubleUnaryOperator andThen(DoubleUnaryOperator after) {
-            Objects.requireNonNull(after);
-            return (double t) -> after.applyAsDouble(applyAsDouble(t));
-        }
-
-        /**
-         * Returns a unary operator that always returns its input argument.
-         *
-         * @return a unary operator that always returns its input argument
-         */
-        static DoubleUnaryOperator identity() {
-            return t -> t;
-        }
     }
 
     /**
@@ -1364,107 +352,6 @@ public final class Distributed {
         @SuppressWarnings("unchecked")
         static <T extends Comparable<? super T>> Distributed.Comparator<T> reverseOrder() {
             return (Comparator<T>) DistributedComparators.REVERSE_ORDER_COMPARATOR;
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.Comparator)
-         */
-        default Distributed.Comparator<T> thenComparing(java.util.Comparator<? super T> other) {
-            Objects.requireNonNull(other);
-            checkSerializable(other, "other");
-            return (c1, c2) -> {
-                int res = compare(c1, c2);
-                return (res != 0) ? res : other.compare(c1, c2);
-            };
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.Comparator)
-         */
-        default Distributed.Comparator<T> thenComparing(Distributed.Comparator<? super T> other) {
-            return thenComparing((java.util.Comparator<? super T>) other);
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
-         */
-        default <U> Distributed.Comparator<T> thenComparing(
-                java.util.function.Function<? super T, ? extends U> keyExtractor,
-                java.util.Comparator<? super U> keyComparator) {
-            checkSerializable(keyExtractor, "keyExtractor");
-            checkSerializable(keyComparator, "keyComparator");
-            return thenComparing(comparing(keyExtractor, keyComparator));
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
-         */
-        default <U> Distributed.Comparator<T> thenComparing(
-                Distributed.Function<? super T, ? extends U> keyExtractor,
-                Distributed.Comparator<? super U> keyComparator) {
-            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor, keyComparator);
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.function.Function)
-         */
-        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
-                java.util.function.Function<? super T, ? extends U> keyExtractor) {
-            checkSerializable(keyExtractor, "keyExtractor");
-            return thenComparing(comparing(keyExtractor));
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparing(java.util.function.Function)
-         */
-        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
-                Distributed.Function<? super T, ? extends U> keyExtractor) {
-            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor);
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
-         */
-        default Distributed.Comparator<T> thenComparingInt(java.util.function.ToIntFunction<? super T> keyExtractor) {
-            checkSerializable(keyExtractor, "keyExtractor");
-            return thenComparing(comparingInt(keyExtractor));
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
-         */
-        default Distributed.Comparator<T> thenComparingInt(Distributed.ToIntFunction<? super T> keyExtractor) {
-            return thenComparingInt((java.util.function.ToIntFunction<? super T>) keyExtractor);
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
-         */
-        default Distributed.Comparator<T> thenComparingLong(java.util.function.ToLongFunction<? super T> keyExtractor) {
-            checkSerializable(keyExtractor, "keyExtractor");
-            return thenComparing(comparingLong(keyExtractor));
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
-         */
-        default Distributed.Comparator<T> thenComparingLong(Distributed.ToLongFunction<? super T> keyExtractor) {
-            return thenComparingLong((java.util.function.ToLongFunction<? super T>) keyExtractor);
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
-         */
-        default Distributed.Comparator<T> thenComparingDouble(java.util.function.ToDoubleFunction<? super T> keyExtractor) {
-            checkSerializable(keyExtractor, "keyExtractor");
-            return thenComparing(comparingDouble(keyExtractor));
-        }
-
-        /**
-         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
-         */
-        default Distributed.Comparator<T> thenComparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
-            return thenComparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
         }
 
         /**
@@ -1584,6 +471,1119 @@ public final class Distributed {
          */
         static <T> Distributed.Comparator<T> comparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
             return comparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.Comparator)
+         */
+        default Distributed.Comparator<T> thenComparing(java.util.Comparator<? super T> other) {
+            Objects.requireNonNull(other);
+            checkSerializable(other, "other");
+            return (c1, c2) -> {
+                int res = compare(c1, c2);
+                return (res != 0) ? res : other.compare(c1, c2);
+            };
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.Comparator)
+         */
+        default Distributed.Comparator<T> thenComparing(Distributed.Comparator<? super T> other) {
+            return thenComparing((java.util.Comparator<? super T>) other);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
+         */
+        default <U> Distributed.Comparator<T> thenComparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor,
+                java.util.Comparator<? super U> keyComparator) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            checkSerializable(keyComparator, "keyComparator");
+            return thenComparing(comparing(keyExtractor, keyComparator));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function, java.util.Comparator)
+         */
+        default <U> Distributed.Comparator<T> thenComparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor,
+                Distributed.Comparator<? super U> keyComparator) {
+            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor, keyComparator);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function)
+         */
+        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
+                java.util.function.Function<? super T, ? extends U> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparing(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparing(java.util.function.Function)
+         */
+        default <U extends Comparable<? super U>> Distributed.Comparator<T> thenComparing(
+                Distributed.Function<? super T, ? extends U> keyExtractor) {
+            return thenComparing((java.util.function.Function<? super T, ? extends U>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
+         */
+        default Distributed.Comparator<T> thenComparingInt(java.util.function.ToIntFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingInt(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingInt(java.util.function.ToIntFunction)
+         */
+        default Distributed.Comparator<T> thenComparingInt(Distributed.ToIntFunction<? super T> keyExtractor) {
+            return thenComparingInt((java.util.function.ToIntFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
+         */
+        default Distributed.Comparator<T> thenComparingLong(java.util.function.ToLongFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingLong(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingLong(java.util.function.ToLongFunction)
+         */
+        default Distributed.Comparator<T> thenComparingLong(Distributed.ToLongFunction<? super T> keyExtractor) {
+            return thenComparingLong((java.util.function.ToLongFunction<? super T>) keyExtractor);
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
+         */
+        default Distributed.Comparator<T> thenComparingDouble(java.util.function.ToDoubleFunction<? super T> keyExtractor) {
+            checkSerializable(keyExtractor, "keyExtractor");
+            return thenComparing(comparingDouble(keyExtractor));
+        }
+
+        /**
+         * @see java.util.Comparator#thenComparingDouble(java.util.function.ToDoubleFunction)
+         */
+        default Distributed.Comparator<T> thenComparingDouble(Distributed.ToDoubleFunction<? super T> keyExtractor) {
+            return thenComparingDouble((java.util.function.ToDoubleFunction<? super T>) keyExtractor);
+        }
+    }
+
+    /**
+     * Represents an operation that accepts a single input argument and returns no
+     * result. Unlike most other functional interfaces, {@code Consumer} is expected
+     * to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(Object)}.
+     *
+     * @param <T> the type of the input to the operation
+     */
+    @FunctionalInterface
+    public interface Consumer<T> extends java.util.function.Consumer<T>, Serializable {
+
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        void accept(T t);
+
+        /**
+         * Returns a composed {@code Consumer} that performs, in sequence, this
+         * operation followed by the {@code after} operation. If performing either
+         * operation throws an exception, it is relayed to the caller of the
+         * composed operation.  If performing this operation throws an exception,
+         * the {@code after} operation will not be performed.
+         *
+         * @param after the operation to perform after this operation
+         * @return a composed {@code Consumer} that performs in sequence this
+         * operation followed by the {@code after} operation
+         * @throws NullPointerException if {@code after} is null
+         */
+        default Consumer<T> andThen(Consumer<? super T> after) {
+            Objects.requireNonNull(after);
+            return (T t) -> {
+                accept(t);
+                after.accept(t);
+            };
+        }
+    }
+
+    /**
+     * Represents an operation upon two {@code double}-valued operands and producing a
+     * {@code double}-valued result.   This is the primitive type specialization of
+     * {@link Distributed.BinaryOperator} for {@code double}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(double, double)}.
+     *
+     * @see Distributed.BinaryOperator
+     * @see Distributed.DoubleUnaryOperator
+     */
+    @FunctionalInterface
+    public interface DoubleBinaryOperator extends java.util.function.DoubleBinaryOperator, Serializable {
+    }
+
+    /**
+     * Represents an operation that accepts a single {@code double}-valued argument and
+     * returns no result.  This is the primitive type specialization of
+     * {@link Distributed.Consumer} for {@code double}.  Unlike most other functional interfaces,
+     * {@code DoubleConsumer} is expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(double)}.
+     *
+     * @see Distributed.Consumer
+     */
+    @FunctionalInterface
+    public interface DoubleConsumer extends java.util.function.DoubleConsumer, Serializable {
+        /**
+         * Returns a composed {@code DoubleConsumer} that performs, in sequence, this
+         * operation followed by the {@code after} operation. If performing either
+         * operation throws an exception, it is relayed to the caller of the
+         * composed operation.  If performing this operation throws an exception,
+         * the {@code after} operation will not be performed.
+         *
+         * @param after the operation to perform after this operation
+         * @return a composed {@code DoubleConsumer} that performs in sequence this
+         * operation followed by the {@code after} operation
+         * @throws NullPointerException if {@code after} is null
+         */
+        default DoubleConsumer andThen(DoubleConsumer after) {
+            Objects.requireNonNull(after);
+            return (double t) -> {
+                accept(t);
+                after.accept(t);
+            };
+        }
+    }
+
+    /**
+     * Represents a function that accepts a double-valued argument and produces a
+     * result.  This is the {@code double}-consuming primitive specialization for
+     * {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(double)}.
+     *
+     * @param <R> the type of the result of the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface DoubleFunction<R> extends java.util.function.DoubleFunction<R>, Serializable {
+    }
+
+    /**
+     * Represents a predicate (boolean-valued function) of one {@code double}-valued
+     * argument. This is the {@code double}-consuming primitive type specialization
+     * of {@link Distributed.Predicate}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #test(double)}.
+     *
+     * @see Distributed.Predicate
+     */
+    @FunctionalInterface
+    public interface DoublePredicate extends java.util.function.DoublePredicate, Serializable {
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * AND of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code false}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ANDed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * AND of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default DoublePredicate and(DoublePredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) && other.test(value);
+        }
+
+        /**
+         * Returns a predicate that represents the logical negation of this
+         * predicate.
+         *
+         * @return a predicate that represents the logical negation of this
+         * predicate
+         */
+        @Override
+        default DoublePredicate negate() {
+            return (value) -> !test(value);
+        }
+
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * OR of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code true}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ORed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * OR of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default DoublePredicate or(DoublePredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) || other.test(value);
+        }
+    }
+
+    /**
+     * Represents a function that accepts a double-valued argument and produces an
+     * int-valued result.  This is the {@code double}-to-{@code int} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(double)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface DoubleToIntFunction extends java.util.function.DoubleToIntFunction, Serializable {
+    }
+
+    /**
+     * Represents a function that accepts a double-valued argument and produces a
+     * long-valued result.  This is the {@code double}-to-{@code long} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(double)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface DoubleToLongFunction extends java.util.function.DoubleToLongFunction, Serializable {
+    }
+
+    /**
+     * Represents an operation on a single {@code double}-valued operand that produces
+     * a {@code double}-valued result.  This is the primitive type specialization of
+     * {@link Distributed.UnaryOperator} for {@code double}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(double)}.
+     *
+     * @see Distributed.UnaryOperator
+     */
+    @FunctionalInterface
+    public interface DoubleUnaryOperator extends java.util.function.DoubleUnaryOperator, Serializable {
+        /**
+         * Returns a unary operator that always returns its input argument.
+         *
+         * @return a unary operator that always returns its input argument
+         */
+        static DoubleUnaryOperator identity() {
+            return t -> t;
+        }
+
+        /**
+         * Returns a composed operator that first applies the {@code before}
+         * operator to its input, and then applies this operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param before the operator to apply before this operator is applied
+         * @return a composed operator that first applies the {@code before}
+         * operator and then applies this operator
+         * @throws NullPointerException if before is null
+         * @see #andThen(DoubleUnaryOperator)
+         */
+        default DoubleUnaryOperator compose(DoubleUnaryOperator before) {
+            Objects.requireNonNull(before);
+            return (double v) -> applyAsDouble(before.applyAsDouble(v));
+        }
+
+        /**
+         * Returns a composed operator that first applies this operator to
+         * its input, and then applies the {@code after} operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param after the operator to apply after this operator is applied
+         * @return a composed operator that first applies this operator and then
+         * applies the {@code after} operator
+         * @throws NullPointerException if after is null
+         * @see #compose(DoubleUnaryOperator)
+         */
+        default DoubleUnaryOperator andThen(DoubleUnaryOperator after) {
+            Objects.requireNonNull(after);
+            return (double t) -> after.applyAsDouble(applyAsDouble(t));
+        }
+    }
+
+    /**
+     * Represents a function that accepts one argument and produces a result.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(Object)}.
+     *
+     * @param <T> the type of the input to the function
+     * @param <R> the type of the result of the function
+     */
+    @FunctionalInterface
+    public interface Function<T, R> extends java.util.function.Function<T, R>, Serializable {
+
+        /**
+         * Returns a function that always returns its input argument.
+         *
+         * @param <T> the type of the input and output objects to the function
+         * @return a function that always returns its input argument
+         */
+        static <T> Function<T, T> identity() {
+            return t -> t;
+        }
+
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        R apply(T t);
+
+        /**
+         * Returns a composed function that first applies the {@code before}
+         * function to its input, and then applies this function to the result.
+         * If evaluation of either function throws an exception, it is relayed to
+         * the caller of the composed function.
+         *
+         * @param <V>    the type of input to the {@code before} function, and to the
+         *               composed function
+         * @param before the function to apply before this function is applied
+         * @return a composed function that first applies the {@code before}
+         * function and then applies this function
+         * @throws NullPointerException if before is null
+         * @see #andThen(Function)
+         */
+        default <V> Function<V, R> compose(Function<? super V, ? extends T> before) {
+            Objects.requireNonNull(before);
+            return (V v) -> apply(before.apply(v));
+        }
+
+        /**
+         * Returns a composed function that first applies this function to
+         * its input, and then applies the {@code after} function to the result.
+         * If evaluation of either function throws an exception, it is relayed to
+         * the caller of the composed function.
+         *
+         * @param <V>   the type of output of the {@code after} function, and of the
+         *              composed function
+         * @param after the function to apply after this function is applied
+         * @return a composed function that first applies this function and then
+         * applies the {@code after} function
+         * @throws NullPointerException if after is null
+         * @see #compose(Function)
+         */
+        default <V> Function<T, V> andThen(Function<? super R, ? extends V> after) {
+            Objects.requireNonNull(after);
+            return (T t) -> after.apply(apply(t));
+        }
+    }
+
+    /**
+     * Represents an operation upon two {@code int}-valued operands and producing an
+     * {@code int}-valued result.   This is the primitive type specialization of
+     * {@link Distributed.BinaryOperator} for {@code int}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(int, int)}.
+     *
+     * @see Distributed.BinaryOperator
+     * @see Distributed.IntUnaryOperator
+     */
+    @FunctionalInterface
+    public interface IntBinaryOperator extends java.util.function.IntBinaryOperator, Serializable {
+    }
+
+    /**
+     * Represents an operation that accepts a single {@code int}-valued argument and
+     * returns no result.  This is the primitive type specialization of
+     * {@link Distributed.Consumer} for {@code int}.  Unlike most other functional interfaces,
+     * {@code IntConsumer} is expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(int)}.
+     *
+     * @see Distributed.Consumer
+     */
+    @FunctionalInterface
+    public interface IntConsumer extends java.util.function.IntConsumer, Serializable {
+        /**
+         * Returns a composed {@code IntConsumer} that performs, in sequence, this
+         * operation followed by the {@code after} operation. If performing either
+         * operation throws an exception, it is relayed to the caller of the
+         * composed operation.  If performing this operation throws an exception,
+         * the {@code after} operation will not be performed.
+         *
+         * @param after the operation to perform after this operation
+         * @return a composed {@code IntConsumer} that performs in sequence this
+         * operation followed by the {@code after} operation
+         * @throws NullPointerException if {@code after} is null
+         */
+        default IntConsumer andThen(IntConsumer after) {
+            Objects.requireNonNull(after);
+            return (int t) -> {
+                accept(t);
+                after.accept(t);
+            };
+        }
+    }
+
+    /**
+     * Represents a function that accepts an int-valued argument and produces a
+     * result.  This is the {@code int}-consuming primitive specialization for
+     * {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(int)}.
+     *
+     * @param <R> the type of the result of the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface IntFunction<R> extends java.util.function.IntFunction<R>, Serializable {
+    }
+
+    /**
+     * Represents a predicate (boolean-valued function) of one {@code int}-valued
+     * argument. This is the {@code int}-consuming primitive type specialization of
+     * {@link Distributed.Predicate}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #test(int)}.
+     *
+     * @see Distributed.Predicate
+     */
+    @FunctionalInterface
+    public interface IntPredicate extends java.util.function.IntPredicate, Serializable {
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * AND of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code false}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ANDed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * AND of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default IntPredicate and(IntPredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) && other.test(value);
+        }
+
+        /**
+         * Returns a predicate that represents the logical negation of this
+         * predicate.
+         *
+         * @return a predicate that represents the logical negation of this
+         * predicate
+         */
+        @Override
+        default IntPredicate negate() {
+            return (value) -> !test(value);
+        }
+
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * OR of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code true}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ORed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * OR of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default IntPredicate or(IntPredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) || other.test(value);
+        }
+    }
+
+    /**
+     * Represents a function that accepts an int-valued argument and produces a
+     * double-valued result.  This is the {@code int}-to-{@code double} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(int)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface IntToDoubleFunction extends java.util.function.IntToDoubleFunction, Serializable {
+    }
+
+    /**
+     * Represents a function that accepts an int-valued argument and produces a
+     * long-valued result.  This is the {@code int}-to-{@code long} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(int)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface IntToLongFunction extends java.util.function.IntToLongFunction, Serializable {
+    }
+
+    /**
+     * Represents an operation on a single {@code int}-valued operand that produces
+     * an {@code int}-valued result.  This is the primitive type specialization of
+     * {@link Distributed.UnaryOperator} for {@code int}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(int)}.
+     *
+     * @see Distributed.UnaryOperator
+     */
+    @FunctionalInterface
+    public interface IntUnaryOperator extends java.util.function.IntUnaryOperator, Serializable {
+        /**
+         * Returns a unary operator that always returns its input argument.
+         *
+         * @return a unary operator that always returns its input argument
+         */
+        static IntUnaryOperator identity() {
+            return t -> t;
+        }
+
+        /**
+         * Returns a composed operator that first applies the {@code before}
+         * operator to its input, and then applies this operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param before the operator to apply before this operator is applied
+         * @return a composed operator that first applies the {@code before}
+         * operator and then applies this operator
+         * @throws NullPointerException if before is null
+         * @see #andThen(IntUnaryOperator)
+         */
+        default IntUnaryOperator compose(IntUnaryOperator before) {
+            Objects.requireNonNull(before);
+            return (int v) -> applyAsInt(before.applyAsInt(v));
+        }
+
+        /**
+         * Returns a composed operator that first applies this operator to
+         * its input, and then applies the {@code after} operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param after the operator to apply after this operator is applied
+         * @return a composed operator that first applies this operator and then
+         * applies the {@code after} operator
+         * @throws NullPointerException if after is null
+         * @see #compose(IntUnaryOperator)
+         */
+        default IntUnaryOperator andThen(IntUnaryOperator after) {
+            Objects.requireNonNull(after);
+            return (int t) -> after.applyAsInt(applyAsInt(t));
+        }
+    }
+
+    /**
+     * Represents an operation upon two {@code long}-valued operands and producing a
+     * {@code long}-valued result.   This is the primitive type specialization of
+     * {@link Distributed.BinaryOperator} for {@code long}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(long, long)}.
+     *
+     * @see Distributed.BinaryOperator
+     * @see Distributed.LongUnaryOperator
+     */
+    @FunctionalInterface
+    public interface LongBinaryOperator extends java.util.function.LongBinaryOperator, Serializable {
+    }
+
+    /**
+     * Represents an operation that accepts a single {@code long}-valued argument and
+     * returns no result.  This is the primitive type specialization of
+     * {@link Distributed.Consumer} for {@code long}.  Unlike most other functional interfaces,
+     * {@code LongConsumer} is expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(long)}.
+     *
+     * @see Distributed.Consumer
+     */
+    @FunctionalInterface
+    public interface LongConsumer extends java.util.function.LongConsumer, Serializable {
+        /**
+         * Returns a composed {@code LongConsumer} that performs, in sequence, this
+         * operation followed by the {@code after} operation. If performing either
+         * operation throws an exception, it is relayed to the caller of the
+         * composed operation.  If performing this operation throws an exception,
+         * the {@code after} operation will not be performed.
+         *
+         * @param after the operation to perform after this operation
+         * @return a composed {@code LongConsumer} that performs in sequence this
+         * operation followed by the {@code after} operation
+         * @throws NullPointerException if {@code after} is null
+         */
+        default LongConsumer andThen(LongConsumer after) {
+            Objects.requireNonNull(after);
+            return (long t) -> {
+                accept(t);
+                after.accept(t);
+            };
+        }
+    }
+
+    /**
+     * Represents a function that accepts a long-valued argument and produces a
+     * result.  This is the {@code long}-consuming primitive specialization for
+     * {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(long)}.
+     *
+     * @param <R> the type of the result of the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface LongFunction<R> extends java.util.function.LongFunction<R>, Serializable {
+    }
+
+    /**
+     * Represents a predicate (boolean-valued function) of one {@code long}-valued
+     * argument. This is the {@code long}-consuming primitive type specialization of
+     * {@link Distributed.Predicate}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #test(long)}.
+     *
+     * @see Distributed.Predicate
+     */
+    @FunctionalInterface
+    public interface LongPredicate extends java.util.function.LongPredicate, Serializable {
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * AND of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code false}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ANDed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * AND of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default LongPredicate and(LongPredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) && other.test(value);
+        }
+
+        /**
+         * Returns a predicate that represents the logical negation of this
+         * predicate.
+         *
+         * @return a predicate that represents the logical negation of this
+         * predicate
+         */
+        @Override
+        default LongPredicate negate() {
+            return (value) -> !test(value);
+        }
+
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * OR of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code true}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ORed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * OR of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default LongPredicate or(LongPredicate other) {
+            Objects.requireNonNull(other);
+            return (value) -> test(value) || other.test(value);
+        }
+    }
+
+    /**
+     * Represents a function that accepts a long-valued argument and produces a
+     * double-valued result.  This is the {@code long}-to-{@code double} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(long)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface LongToDoubleFunction extends java.util.function.LongToDoubleFunction, Serializable {
+    }
+
+    /**
+     * Represents a function that accepts a long-valued argument and produces an
+     * int-valued result.  This is the {@code long}-to-{@code int} primitive
+     * specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(long)}.
+     *
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface LongToIntFunction extends java.util.function.LongToIntFunction, Serializable {
+    }
+
+    /**
+     * Represents an operation on a single {@code long}-valued operand that produces
+     * a {@code long}-valued result.  This is the primitive type specialization of
+     * {@link Distributed.UnaryOperator} for {@code long}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(long)}.
+     *
+     * @see Distributed.UnaryOperator
+     */
+    @FunctionalInterface
+    public interface LongUnaryOperator extends java.util.function.LongUnaryOperator, Serializable {
+        /**
+         * Returns a unary operator that always returns its input argument.
+         *
+         * @return a unary operator that always returns its input argument
+         */
+        static LongUnaryOperator identity() {
+            return t -> t;
+        }
+
+        /**
+         * Returns a composed operator that first applies the {@code before}
+         * operator to its input, and then applies this operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param before the operator to apply before this operator is applied
+         * @return a composed operator that first applies the {@code before}
+         * operator and then applies this operator
+         * @throws NullPointerException if before is null
+         * @see #andThen(LongUnaryOperator)
+         */
+        default LongUnaryOperator compose(LongUnaryOperator before) {
+            Objects.requireNonNull(before);
+            return (long v) -> applyAsLong(before.applyAsLong(v));
+        }
+
+        /**
+         * Returns a composed operator that first applies this operator to
+         * its input, and then applies the {@code after} operator to the result.
+         * If evaluation of either operator throws an exception, it is relayed to
+         * the caller of the composed operator.
+         *
+         * @param after the operator to apply after this operator is applied
+         * @return a composed operator that first applies this operator and then
+         * applies the {@code after} operator
+         * @throws NullPointerException if after is null
+         * @see #compose(LongUnaryOperator)
+         */
+        default LongUnaryOperator andThen(LongUnaryOperator after) {
+            Objects.requireNonNull(after);
+            return (long t) -> after.applyAsLong(applyAsLong(t));
+        }
+    }
+
+    /**
+     * Represents an operation that accepts an object-valued and a
+     * {@code double}-valued argument, and returns no result.  This is the
+     * {@code (reference, double)} specialization of {@link Distributed.BiConsumer}.
+     * Unlike most other functional interfaces, {@code ObjDoubleConsumer} is
+     * expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(Object, double)}.
+     *
+     * @param <T> the type of the object argument to the operation
+     * @see Distributed.BiConsumer
+     */
+    @FunctionalInterface
+    public interface ObjDoubleConsumer<T> extends java.util.function.ObjDoubleConsumer<T>, Serializable {
+    }
+
+    /**
+     * Represents an operation that accepts an object-valued and a
+     * {@code int}-valued argument, and returns no result.  This is the
+     * {@code (reference, int)} specialization of {@link Distributed.BiConsumer}.
+     * Unlike most other functional interfaces, {@code ObjIntConsumer} is
+     * expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(Object, int)}.
+     *
+     * @param <T> the type of the object argument to the operation
+     * @see Distributed.BiConsumer
+     */
+    @FunctionalInterface
+    public interface ObjIntConsumer<T> extends java.util.function.ObjIntConsumer<T>, Serializable {
+    }
+
+    /**
+     * Represents an operation that accepts an object-valued and a
+     * {@code long}-valued argument, and returns no result.  This is the
+     * {@code (reference, long)} specialization of {@link Distributed.BiConsumer}.
+     * Unlike most other functional interfaces, {@code ObjLongConsumer} is
+     * expected to operate via side-effects.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #accept(Object, long)}.
+     *
+     * @param <T> the type of the object argument to the operation
+     * @see Distributed.BiConsumer
+     */
+    @FunctionalInterface
+    public interface ObjLongConsumer<T> extends java.util.function.ObjLongConsumer<T>, Serializable {
+    }
+
+    /**
+     * Represents a predicate (boolean-valued function) of one argument.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #test(Object)}.
+     *
+     * @param <T> the type of the input to the predicate
+     */
+    @FunctionalInterface
+    public interface Predicate<T> extends java.util.function.Predicate<T>, Serializable {
+        /**
+         * Returns a predicate that tests if two arguments are equal according
+         * to {@link Objects#equals(Object, Object)}.
+         *
+         * @param <T>       the type of arguments to the predicate
+         * @param targetRef the object reference with which to compare for equality,
+         *                  which may be {@code null}
+         * @return a predicate that tests if two arguments are equal according
+         * to {@link Objects#equals(Object, Object)}
+         */
+        static <T> Predicate<T> isEqual(Object targetRef) {
+            return (null == targetRef)
+                    ? Objects::isNull
+                    : object -> targetRef.equals(object);
+        }
+
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * AND of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code false}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ANDed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * AND of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default Predicate<T> and(Predicate<? super T> other) {
+            Objects.requireNonNull(other);
+            return (t) -> test(t) && other.test(t);
+        }
+
+        /**
+         * Returns a predicate that represents the logical negation of this
+         * predicate.
+         *
+         * @return a predicate that represents the logical negation of this
+         * predicate
+         */
+        @Override
+        default Predicate<T> negate() {
+            return (t) -> !test(t);
+        }
+
+        /**
+         * Returns a composed predicate that represents a short-circuiting logical
+         * OR of this predicate and another.  When evaluating the composed
+         * predicate, if this predicate is {@code true}, then the {@code other}
+         * predicate is not evaluated.
+         *
+         * <p>Any exceptions thrown during evaluation of either predicate are relayed
+         * to the caller; if evaluation of this predicate throws an exception, the
+         * {@code other} predicate will not be evaluated.
+         *
+         * @param other a predicate that will be logically-ORed with this
+         *              predicate
+         * @return a composed predicate that represents the short-circuiting logical
+         * OR of this predicate and the {@code other} predicate
+         * @throws NullPointerException if other is null
+         */
+        default Predicate<T> or(Predicate<? super T> other) {
+            Objects.requireNonNull(other);
+            return (t) -> test(t) || other.test(t);
+        }
+    }
+
+    /**
+     * Represents a supplier of results.
+     *
+     * <p>There is no requirement that a new or distinct result be returned each
+     * time the supplier is invoked.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #get()}.
+     *
+     * @param <T> the type of results supplied by this supplier
+     */
+    @FunctionalInterface
+    public interface Supplier<T> extends java.util.function.Supplier<T>, Serializable {
+        // TODO remove the override when IntelliJ fix released
+        @Override
+        T get();
+    }
+
+    /**
+     * Represents a function that accepts two arguments and produces a double-valued
+     * result.  This is the {@code double}-producing primitive specialization for
+     * {@link Distributed.BiFunction}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(Object, Object)}.
+     *
+     * @param <T> the type of the first argument to the function
+     * @param <U> the type of the second argument to the function
+     * @see Distributed.BiFunction
+     */
+    @FunctionalInterface
+    public interface ToDoubleBiFunction<T, U> extends java.util.function.ToDoubleBiFunction<T, U>, Serializable {
+    }
+
+    /**
+     * Represents a function that produces a double-valued result.  This is the
+     * {@code double}-producing primitive specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsDouble(Object)}.
+     *
+     * @param <T> the type of the input to the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface ToDoubleFunction<T> extends java.util.function.ToDoubleFunction<T>, Serializable {
+    }
+
+    /**
+     * Represents a function that accepts two arguments and produces an int-valued
+     * result.  This is the {@code int}-producing primitive specialization for
+     * {@link Distributed.BiFunction}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(Object, Object)}.
+     *
+     * @param <T> the type of the first argument to the function
+     * @param <U> the type of the second argument to the function
+     * @see Distributed.BiFunction
+     */
+    @FunctionalInterface
+    public interface ToIntBiFunction<T, U> extends java.util.function.ToIntBiFunction<T, U>, Serializable {
+    }
+
+    /**
+     * Represents a function that produces an int-valued result.  This is the
+     * {@code int}-producing primitive specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsInt(Object)}.
+     *
+     * @param <T> the type of the input to the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface ToIntFunction<T> extends java.util.function.ToIntFunction<T>, Serializable {
+    }
+
+    /**
+     * Represents a function that accepts two arguments and produces a long-valued
+     * result.  This is the {@code long}-producing primitive specialization for
+     * {@link Distributed.BiFunction}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(Object, Object)}.
+     *
+     * @param <T> the type of the first argument to the function
+     * @param <U> the type of the second argument to the function
+     * @see Distributed.BiFunction
+     */
+    @FunctionalInterface
+    public interface ToLongBiFunction<T, U> extends java.util.function.ToLongBiFunction<T, U>, Serializable {
+    }
+
+    /**
+     * Represents a function that produces a long-valued result.  This is the
+     * {@code long}-producing primitive specialization for {@link Distributed.Function}.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #applyAsLong(Object)}.
+     *
+     * @param <T> the type of the input to the function
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface ToLongFunction<T> extends java.util.function.ToLongFunction<T>, Serializable {
+    }
+
+    /**
+     * Represents an operation on a single operand that produces a result of the
+     * same type as its operand.  This is a specialization of {@code Function} for
+     * the case where the operand and result are of the same type.
+     *
+     * <p>This is a functional interface
+     * whose functional method is {@link #apply(Object)}.
+     *
+     * @param <T> the type of the operand and result of the operator
+     * @see Distributed.Function
+     */
+    @FunctionalInterface
+    public interface UnaryOperator<T> extends Function<T, T>, java.util.function.UnaryOperator<T>, Serializable {
+        /**
+         * Returns a unary operator that always returns its input argument.
+         *
+         * @param <T> the type of the input and output of the operator
+         * @return a unary operator that always returns its input argument
+         */
+        static <T> UnaryOperator<T> identity() {
+            return t -> t;
         }
     }
 
