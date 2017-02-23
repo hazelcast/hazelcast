@@ -20,11 +20,13 @@ import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
 import javax.cache.configuration.OptionalFeature;
 import javax.cache.spi.CachingProvider;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -203,6 +205,25 @@ public abstract class AbstractHazelcastCachingProvider
         return classLoader == null ? defaultClassLoader : classLoader;
     }
 
-    protected abstract <T extends AbstractHazelcastCacheManager> T createHazelcastCacheManager(URI uri, ClassLoader classLoader,
-                                                                                               Properties managerProperties);
+    protected <T extends AbstractHazelcastCacheManager> T createHazelcastCacheManager(URI uri, ClassLoader classLoader,
+                                                                                               Properties managerProperties) {
+        final HazelcastInstance instance;
+        try {
+            instance = getOrCreateInstance(uri, classLoader, managerProperties);
+            if (instance == null) {
+                throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        return createCacheManager(instance, uri, classLoader, managerProperties);
+    }
+
+    protected abstract HazelcastInstance getOrCreateInstance(URI uri, ClassLoader classLoader, Properties properties)
+            throws URISyntaxException, IOException;
+
+    protected abstract <T extends AbstractHazelcastCacheManager> T createCacheManager(HazelcastInstance instance,
+                                                                                      URI uri,
+                                                                                      ClassLoader classLoader,
+                                                                                      Properties properties);
 }
