@@ -81,6 +81,14 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     @Override
     boolean containsKey(Object key);
 
+    /**;
+     * Transactional implementation of {@link IMap#containsValue(Object)}
+     *
+     * @see IMap#containsValue(Object)
+     * @throws NullPointerException if the specified value is null.
+     */
+    boolean containsValue(Object value);
+
     /**
      * Transactional implementation of {@link IMap#get(Object)}.
      *

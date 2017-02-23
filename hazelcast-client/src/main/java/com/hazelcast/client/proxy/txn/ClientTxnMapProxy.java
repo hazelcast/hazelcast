@@ -73,6 +73,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     @Override
+    public boolean containsValue(Object value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public V get(Object key) {
         checkNotNull(key, "key can't be null");
 

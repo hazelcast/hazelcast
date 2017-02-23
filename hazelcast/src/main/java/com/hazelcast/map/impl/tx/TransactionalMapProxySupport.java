@@ -30,6 +30,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
 import com.hazelcast.spi.partition.IPartitionService;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionTimedOutException;
@@ -63,6 +64,7 @@ public abstract class TransactionalMapProxySupport
     protected final PartitioningStrategy partitionStrategy;
     protected final IPartitionService partitionService;
     protected final OperationService operationService;
+    protected final SerializationService serializationService;
     protected final boolean nearCacheEnabled;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
@@ -77,6 +79,7 @@ public abstract class TransactionalMapProxySupport
         this.partitionService = nodeEngine.getPartitionService();
         this.operationService = nodeEngine.getOperationService();
         this.nearCacheEnabled = mapContainer.getMapConfig().isNearCacheEnabled();
+        this.serializationService = nodeEngine.getSerializationService();
     }
 
     protected boolean isEquals(Object value1, Object value2) {
@@ -96,6 +99,22 @@ public abstract class TransactionalMapProxySupport
         try {
             Future future = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
             return (Boolean) future.get();
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    public boolean containsValueInternal(Data value) {
+        try {
+            OperationFactory operationFactory = operationProvider.createContainsValueOperationFactory(name, value);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, operationFactory);
+            for (Object result : results.values()) {
+                Boolean contains = toObject(result);
+                if (contains) {
+                    return true;
+                }
+            }
+            return false;
         } catch (Throwable t) {
             throw rethrow(t);
         }
@@ -289,6 +308,10 @@ public abstract class TransactionalMapProxySupport
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    protected <T> T toObject(Object object) {
+        return serializationService.toObject(object);
     }
 
     protected long getTimeInMillis(long time, TimeUnit timeunit) {

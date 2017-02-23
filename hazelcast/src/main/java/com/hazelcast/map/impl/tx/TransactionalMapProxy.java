@@ -55,10 +55,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  */
 public class TransactionalMapProxy extends TransactionalMapProxySupport implements TransactionalMap {
 
+    protected final SerializationService serializationService;
     private final Map<Data, TxnValueWrapper> txMap = new HashMap<Data, TxnValueWrapper>();
 
     public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(name, mapService, nodeEngine, transaction);
+        serializationService = nodeEngine.getSerializationService();
     }
 
     @Override
@@ -72,6 +74,23 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             return (valueWrapper.type != Type.REMOVED);
         }
         return containsKeyInternal(keyData);
+    }
+
+    @Override
+    public boolean containsValue(Object value) {
+        checkTransactionState();
+        checkNotNull(value, "value can't be null");
+
+        Data valueData = mapServiceContext.toData(value, partitionStrategy);
+        TxnValueWrapper valueWrapper = txMap.get(valueData);
+        if (valueWrapper != null) {
+            return (valueWrapper.type != Type.REMOVED);
+        }
+        return containsValueInternal(valueData);
+    }
+
+    protected <T> T toObject(Object object) {
+        return serializationService.toObject(object);
     }
 
     @Override
