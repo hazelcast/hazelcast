@@ -39,7 +39,7 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class GetCacheEntryRequest implements ConsoleRequest {
 
-    private static final GetCacheEntryViewEntryProcessor entryProcessor = new GetCacheEntryViewEntryProcessor();
+    private static final GetCacheEntryViewEntryProcessor ENTRY_PROCESSOR = new GetCacheEntryViewEntryProcessor();
     private String cacheName;
     private String type;
     private String key;
@@ -77,11 +77,11 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         CacheEntryView cacheEntry = null;
 
         if ("string".equals(type)) {
-            cacheEntry = cache.invoke(key, entryProcessor, cacheEntry);
+            cacheEntry = cache.invoke(key, ENTRY_PROCESSOR, cacheEntry);
         } else if ("long".equals(type)) {
-            cacheEntry = cache.invoke(Long.valueOf(key), entryProcessor, cacheEntry);
+            cacheEntry = cache.invoke(Long.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
         } else if ("integer".equals(type)) {
-            cacheEntry = cache.invoke(Integer.valueOf(key), entryProcessor, cacheEntry);
+            cacheEntry = cache.invoke(Integer.valueOf(key), ENTRY_PROCESSOR, cacheEntry);
         }
         JsonObject result = new JsonObject();
         if (cacheEntry != null) {
