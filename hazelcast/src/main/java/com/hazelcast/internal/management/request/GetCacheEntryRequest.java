@@ -39,6 +39,7 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class GetCacheEntryRequest implements ConsoleRequest {
 
+    private final GetCacheEntryViewEntryProcessor entryProcessor = new GetCacheEntryViewEntryProcessor();
     private String cacheName;
     private String type;
     private String key;
@@ -73,14 +74,13 @@ public class GetCacheEntryRequest implements ConsoleRequest {
         InternalSerializationService serializationService = mcs.getHazelcastInstance().getSerializationService();
         HazelcastInstanceCacheManager cacheManager = mcs.getHazelcastInstance().getCacheManager();
         ICache<Object, Object> cache = cacheManager.getCache(cacheName);
-        GetCacheEntryViewEntryProcessor entryProcessor = new GetCacheEntryViewEntryProcessor();
         CacheEntryView cacheEntry = null;
 
-        if (type.equals("string")) {
+        if ("string".equals(type)) {
             cacheEntry = cache.invoke(key, entryProcessor, cacheEntry);
-        } else if (type.equals("long")) {
+        } else if ("long".equals(type)) {
             cacheEntry = cache.invoke(Long.valueOf(key), entryProcessor, cacheEntry);
-        } else if (type.equals("integer")) {
+        } else if ("integer".equals(type)) {
             cacheEntry = cache.invoke(Integer.valueOf(key), entryProcessor, cacheEntry);
         }
         JsonObject result = new JsonObject();
@@ -118,6 +118,7 @@ public class GetCacheEntryRequest implements ConsoleRequest {
             final CacheEntryProcessorEntry entry = (CacheEntryProcessorEntry) mutableEntry;
             final CacheRecord record = entry.getRecord();
             CacheEntryView<Object, Object> cacheEntryView = new CacheEntryView<Object, Object>() {
+                //Key is defined by Management Center user
                 @Override
                 public String getKey() {
                     return null;
@@ -126,7 +127,6 @@ public class GetCacheEntryRequest implements ConsoleRequest {
                 public Object getValue() {
                     return record.getValue();
                 }
-
                 @Override
                 public long getExpirationTime() {
                     return record.getExpirationTime();
