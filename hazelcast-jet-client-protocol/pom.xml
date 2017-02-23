@@ -31,7 +31,7 @@
     </parent>
 
     <properties>
-        <hazelcast.protocol.version>1.4.0-SNAPSHOT</hazelcast.protocol.version>
+        <hazelcast.protocol.version>1.4.0</hazelcast.protocol.version>
         <main.basedir>${project.parent.basedir}</main.basedir>
     </properties>
 
