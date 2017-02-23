@@ -37,7 +37,6 @@ public class GetMapEntryRequestTest extends HazelcastTestSupport {
         JsonObject jsonObject = new JsonObject();
         request.writeResponse(managementCenterService, jsonObject);
         JsonObject result = (JsonObject) jsonObject.get("result");
-        System.out.println(result);
         assertEquals("value",result.get("browse_value").asString());
         assertEquals("java.lang.String",result.get("browse_class").asString());
     }

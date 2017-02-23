@@ -39,7 +39,7 @@ import static com.hazelcast.util.JsonUtil.getString;
  */
 public class GetCacheEntryRequest implements ConsoleRequest {
 
-    private final GetCacheEntryViewEntryProcessor entryProcessor = new GetCacheEntryViewEntryProcessor();
+    private static final GetCacheEntryViewEntryProcessor entryProcessor = new GetCacheEntryViewEntryProcessor();
     private String cacheName;
     private String type;
     private String key;
