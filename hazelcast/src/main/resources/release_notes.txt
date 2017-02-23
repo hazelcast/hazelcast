@@ -79,9 +79,12 @@ This section lists the fixed issues for Hazelcast 3.7 and 3.7.x releases.
 
 *3.7.6 Fixes*
 
+- In the case of using multiple lite members with near cache, when a `clear` is called it tries to use the same operation and results in `IllegalStateException`. [9879]
 - Hazelcast terminates listener incorrectly. [9766]
+- Near cache eviction does not work. [9723]
 - Connection exception is logged in `ClientListenerSupport` after the client disconnects. [9709]
 - IMap entry eviction issue; some keys stay forever. [9095]
+
 
 
 *3.7.5 Fixes*
