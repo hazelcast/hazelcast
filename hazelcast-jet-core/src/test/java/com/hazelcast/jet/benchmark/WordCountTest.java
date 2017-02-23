@@ -28,8 +28,6 @@ import com.hazelcast.jet.Processors.NoopP;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Vertex;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.jet.impl.connector.ReadIMapP;
-import com.hazelcast.jet.impl.connector.WriteIMapP;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -188,15 +186,15 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     public void testJetTwoPhaseAggregation() {
         DAG dag = new DAG();
         Vertex source = dag.newVertex("source", readMap("words"));
-        Vertex generate = dag.newVertex("generate", MapP::new);
-        Vertex accumulate = dag.newVertex("accumulate", ReduceP::new);
-        Vertex combine = dag.newVertex("combine", ReduceP::new);
+        Vertex mapReduce = dag.newVertex("map-reduce", MapReduceP::new);
+        Vertex combineLocal = dag.newVertex("combine-local", CombineP::new);
+        Vertex combineGlobal = dag.newVertex("combine-global", CombineP::new);
         Vertex sink = dag.newVertex("sink", writeMap("counts"));
 
-        dag.edge(between(source, generate))
-           .edge(between(generate, accumulate))
-           .edge(between(accumulate, combine).distributed().allToOne())
-           .edge(between(combine, sink));
+        dag.edge(between(source, mapReduce))
+           .edge(between(mapReduce, combineLocal))
+           .edge(between(combineLocal, combineGlobal).distributed().allToOne())
+           .edge(between(combineGlobal, sink));
 
         benchmark("jet", () -> uncheckedGet(instance.newJob(dag).execute()));
 
@@ -279,13 +277,13 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
     }
 
 
-    private static class MapP extends AbstractProcessor {
+    private static class MapReduceP extends AbstractProcessor {
 
         private static final Pattern PATTERN = Pattern.compile("\\w+");
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) {
             String text = ((Entry<Integer, String>) item).getValue().toLowerCase();
             Matcher m = PATTERN.matcher(text);
             while (m.find()) {
@@ -305,12 +303,12 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
     }
 
-    private static class ReduceP extends AbstractProcessor {
+    private static class CombineP extends AbstractProcessor {
 
         private Map<String, Long> counts = new HashMap<>();
 
         @Override
-        public boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
+        public boolean tryProcess(int ordinal, @Nonnull Object item) {
             Map<String, Long> counts = ((Entry<String, Map<String, Long>>) item).getValue();
             for (Entry<String, Long> entry : counts.entrySet()) {
                 accumulate(entry.getKey(), entry.getValue());
@@ -319,7 +317,7 @@ public class WordCountTest extends HazelcastTestSupport implements Serializable 
         }
 
         @Override
-        public boolean completeEdge(int ordinal) {
+        public boolean complete() {
             emit(entry("result", counts));
             return true;
         }
