@@ -90,7 +90,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         return bytesPending(urgentWriteQueue);
     }
 
-    @Probe(name = "idleTimeMs")
+    @Probe
     private long idleTimeMs() {
         return Math.max(currentTimeMillis() - lastWriteTime, 0);
     }

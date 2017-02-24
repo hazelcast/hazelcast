@@ -37,6 +37,7 @@ import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
 import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
+import static com.hazelcast.util.StringUtil.getterIntoProperty;
 import static java.lang.String.format;
 
 /**
@@ -63,8 +64,10 @@ abstract class MethodProbe implements ProbeFunction {
     }
 
     private String getName(String namePrefix) {
-        String name = method.getName();
-        if (!probe.name().equals("")) {
+        String name;
+        if (probe.name().equals("")) {
+            name = getterIntoProperty(method.getName());
+        } else {
             name = probe.name();
         }
 

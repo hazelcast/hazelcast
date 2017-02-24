@@ -293,24 +293,24 @@ public final class OperationExecutorImpl implements OperationExecutor, MetricsPr
         return size;
     }
 
-    @Probe(name = "genericQueueSize")
+    @Probe
     private int getGenericQueueSize() {
         return genericQueue.normalSize();
     }
 
-    @Probe(name = "genericPriorityQueueSize")
+    @Probe
     private int getGenericPriorityQueueSize() {
         return genericQueue.prioritySize();
     }
 
     @Override
-    @Probe(name = "partitionThreadCount")
+    @Probe
     public int getPartitionThreadCount() {
         return partitionThreads.length;
     }
 
     @Override
-    @Probe(name = "genericThreadCount")
+    @Probe
     public int getGenericThreadCount() {
         return genericThreads.length;
     }

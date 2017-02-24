@@ -125,12 +125,12 @@ public final class NonBlockingSocketWriter
         return bytesPending;
     }
 
-    @Probe(name = "idleTimeMs")
+    @Probe
     private long idleTimeMs() {
         return max(currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = "isScheduled", level = DEBUG)
+    @Probe(level = DEBUG)
     private long isScheduled() {
         return scheduled.get() ? 1 : 0;
     }
