@@ -18,6 +18,7 @@ package com.hazelcast.internal.management;
 
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.cache.impl.JCacheDetector;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.Member;
@@ -37,6 +38,7 @@ import com.hazelcast.internal.management.request.ConsoleCommandRequest;
 import com.hazelcast.internal.management.request.ConsoleRequest;
 import com.hazelcast.internal.management.request.ExecuteScriptRequest;
 import com.hazelcast.internal.management.request.ForceStartNodeRequest;
+import com.hazelcast.internal.management.request.GetCacheEntryRequest;
 import com.hazelcast.internal.management.request.GetClusterStateRequest;
 import com.hazelcast.internal.management.request.GetMapEntryRequest;
 import com.hazelcast.internal.management.request.GetMemberSystemPropertiesRequest;
@@ -435,6 +437,11 @@ public class ManagementCenterService {
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
             register(new GetMapEntryRequest());
+            if (JCacheDetector.isJCacheAvailable(instance.node.getNodeEngine().getConfigClassLoader(), logger)) {
+                register(new GetCacheEntryRequest());
+            } else {
+                logger.finest("javax.cache api is not detected on classpath.Skip registering GetCacheEntryRequest...");
+            }
             register(new GetClusterStateRequest());
             register(new ChangeClusterStateRequest());
             register(new ShutdownClusterRequest());
