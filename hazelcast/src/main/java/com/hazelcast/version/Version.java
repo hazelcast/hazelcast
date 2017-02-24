@@ -167,24 +167,72 @@ public final class Version implements IdentifiedDataSerializable, Comparable<Ver
         }
     }
 
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version equals {@code version}
+     */
     public boolean isEqualTo(Version version) {
         return this.equals(version);
     }
 
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is greater than {@code version}
+     */
     public boolean isGreaterThan(Version version) {
         return this.compareTo(version) > 0;
     }
 
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is unknown or if this version is greater than {@code version}
+     */
+    public boolean isUnknownOrGreaterThan(Version version) {
+        return this.isUnknown() || this.compareTo(version) > 0;
+    }
+
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is greater than or equal to {@code version}
+     */
     public boolean isGreaterOrEqual(Version version) {
         return this.compareTo(version) >= 0;
     }
 
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is unknown or if this version is greater than or equal to {@code version}
+     */
+    public boolean isUnknownGreaterOrEqual(Version version) {
+        return this.isUnknown() || this.compareTo(version) >= 0;
+    }
+
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is less than {@code version}
+     */
     public boolean isLessThan(Version version) {
         return this.compareTo(version) < 0;
     }
 
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is unknown or if this version is less than {@code version}
+     */
+    public boolean isUnknownOrLessThan(Version version) {
+        return this.isUnknown() || this.compareTo(version) < 0;
+    }
+
     public boolean isLessOrEqual(Version version) {
         return this.compareTo(version) <= 0;
+    }
+
+    /**
+     * @param version other version to compare to
+     * @return {@code true} if this version is unknown or if this version is less than or equal to {@code version}
+     */
+    public boolean isUnknownLessOrEqual(Version version) {
+        return this.isUnknown() || this.compareTo(version) <= 0;
     }
 
     /**
