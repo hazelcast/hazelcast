@@ -1730,7 +1730,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-
     private IMap<Long, MyData> setupImapForEntryProcessorWithIndex() {
         Config config = getConfig();
         MapConfig testMapConfig = config.getMapConfig(MAP_NAME);
@@ -1841,4 +1840,5 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
 }

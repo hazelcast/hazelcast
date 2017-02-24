@@ -68,6 +68,11 @@ public interface ExecutionService {
     String IO_EXECUTOR = "hz:io";
 
     /**
+     * Name of the offloadable executor.
+     */
+    String OFFLOADABLE_EXECUTOR = "hz:offloadable";
+
+    /**
      * Name of the map-loader executor that loads the {@link com.hazelcast.core.MapLoader#loadAll(java.util.Collection)}.
      *
      * This is the executor you want to configure when you want to load more data from the database in parallel.
