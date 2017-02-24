@@ -69,6 +69,8 @@ public interface MapOperationProvider {
 
     MapOperation createGetOperation(String name, Data dataKey);
 
+    MapOperation createGetWithProjectionOperation(String name, Data dataKey, Data projection);
+
     MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues);
 
     MapOperation createPutAllOperation(String name, MapEntries mapEntries);
