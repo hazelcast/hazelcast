@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,7 +77,14 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
         leaseTime = getLeaseTime(leaseTime);
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, referenceId, leaseTime, false, false);
+        return lock.lock(caller, threadId, referenceId, leaseTime, false, false, false);
+    }
+
+    @Override
+    public boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+        leaseTime = getLeaseTime(leaseTime);
+        LockResourceImpl lock = getLock(key);
+        return lock.lock(caller, threadId, referenceId, leaseTime, false, false, true);
     }
 
     private long getLeaseTime(long leaseTime) {
@@ -94,7 +102,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
     @Override
     public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime, boolean blockReads) {
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, referenceId, leaseTime, true, blockReads);
+        return lock.lock(caller, threadId, referenceId, leaseTime, true, blockReads, false);
     }
 
     @Override
@@ -207,6 +215,15 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     public Collection<LockResource> getLocks() {
         return Collections.<LockResource>unmodifiableCollection(locks.values());
+    }
+
+    public void removeLocalLocks() {
+        for (Iterator<Map.Entry<Data, LockResourceImpl>> iterator = locks.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<Data, LockResourceImpl> entry = iterator.next();
+            if (entry.getValue().isLocal()) {
+                iterator.remove();
+            }
+        }
     }
 
     @Override
@@ -347,11 +364,18 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
         out.writeObject(namespace);
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
-        int len = locks.size();
+        int len = 0;
+        for (LockResourceImpl lock : locks.values()) {
+            if (!lock.isLocal()) {
+                len++;
+            }
+        }
         out.writeInt(len);
         if (len > 0) {
             for (LockResourceImpl lock : locks.values()) {
-                lock.writeData(out);
+                if (!lock.isLocal()) {
+                    lock.writeData(out);
+                }
             }
         }
     }

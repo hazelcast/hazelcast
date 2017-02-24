@@ -223,6 +223,12 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
 
     boolean extendLock(Data key, String caller, long threadId, long ttl);
 
+    boolean localLock(Data key, String caller, long threadId, long referenceId, long ttl);
+
+    boolean lock(Data key, String caller, long threadId, long referenceId, long ttl);
+
+    boolean isLockedBy(Data key, String caller, long threadId);
+
     boolean unlock(Data key, String caller, long threadId, long referenceId);
 
     boolean isLocked(Data key);

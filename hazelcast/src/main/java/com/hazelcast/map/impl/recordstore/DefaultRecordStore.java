@@ -362,10 +362,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public boolean localLock(Data key, String caller, long threadId, long referenceId, long ttl) {
+        checkIfLoaded();
+        return lockStore != null && lockStore.localLock(key, caller, threadId, referenceId, ttl);
+    }
+
+    @Override
     public boolean unlock(Data key, String caller, long threadId, long referenceId) {
         checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
     }
+
+    @Override
+    public boolean lock(Data key, String caller, long threadId, long referenceId, long ttl) {
+        checkIfLoaded();
+        return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
+    }
+
 
     @Override
     public boolean forceUnlock(Data dataKey) {
@@ -385,6 +398,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean canAcquireLock(Data key, String caller, long threadId) {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
+    }
+
+    @Override
+    public boolean isLockedBy(Data key, String caller, long threadId) {
+        return lockStore != null && lockStore.isLockedBy(key, caller, threadId);
     }
 
     @Override

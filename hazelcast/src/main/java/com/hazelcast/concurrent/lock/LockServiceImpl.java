@@ -257,8 +257,17 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearLockStoresHavingLesserBackupCountThan(event.getPartitionId(), event.getNewReplicaIndex());
         } else {
-            int partitionId = event.getPartitionId();
-            scheduleEvictions(partitionId);
+            scheduleEvictions(event.getPartitionId());
+        }
+        // Local locks are local to the partition and replicaIndex where they have been acquired.
+        // That is the reason they are removed on any partition event on the destination.
+        removeLocalLocks(event.getPartitionId());
+    }
+
+    private void removeLocalLocks(int partitionId) {
+        LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl lockStore : container.getLockStores()) {
+            lockStore.removeLocalLocks();
         }
     }
 

@@ -79,6 +79,7 @@ final class TimedMemberStateFactoryHelper {
         final ManagedExecutorService clientExecutor = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR);
         final ManagedExecutorService queryExecutor = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR);
         final ManagedExecutorService ioExecutor = executionService.getExecutor(ExecutionService.IO_EXECUTOR);
+        final ManagedExecutorService offloadableExecutor = executionService.getExecutor(ExecutionService.OFFLOADABLE_EXECUTOR);
 
         final ManagedExecutorDTO systemExecutorDTO = new ManagedExecutorDTO(systemExecutor);
         final ManagedExecutorDTO asyncExecutorDTO = new ManagedExecutorDTO(asyncExecutor);
@@ -86,6 +87,7 @@ final class TimedMemberStateFactoryHelper {
         final ManagedExecutorDTO clientExecutorDTO = new ManagedExecutorDTO(clientExecutor);
         final ManagedExecutorDTO queryExecutorDTO = new ManagedExecutorDTO(queryExecutor);
         final ManagedExecutorDTO ioExecutorDTO = new ManagedExecutorDTO(ioExecutor);
+        final ManagedExecutorDTO offloadableExecutorDTO = new ManagedExecutorDTO(offloadableExecutor);
 
         beans.putManagedExecutor(ExecutionService.SYSTEM_EXECUTOR, systemExecutorDTO);
         beans.putManagedExecutor(ExecutionService.ASYNC_EXECUTOR, asyncExecutorDTO);
@@ -93,6 +95,7 @@ final class TimedMemberStateFactoryHelper {
         beans.putManagedExecutor(ExecutionService.CLIENT_EXECUTOR, clientExecutorDTO);
         beans.putManagedExecutor(ExecutionService.QUERY_EXECUTOR, queryExecutorDTO);
         beans.putManagedExecutor(ExecutionService.IO_EXECUTOR, ioExecutorDTO);
+        beans.putManagedExecutor(ExecutionService.OFFLOADABLE_EXECUTOR, offloadableExecutorDTO);
         memberState.setBeans(beans);
     }
 

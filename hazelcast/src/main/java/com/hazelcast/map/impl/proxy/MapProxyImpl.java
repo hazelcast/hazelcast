@@ -929,7 +929,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
     }
 
     private QueryCache<K, V> getQueryCacheInternal(String name, MapListener listener, Predicate<K, V> predicate,
-                                             Boolean includeValue, IMap<K, V> map) {
+                                                   Boolean includeValue, IMap<K, V> map) {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
 
         QueryCacheRequest request = newQueryCacheRequest()
