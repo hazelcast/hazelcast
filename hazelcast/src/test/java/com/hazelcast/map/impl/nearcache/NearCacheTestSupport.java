@@ -57,7 +57,7 @@ import static org.junit.Assert.assertTrue;
 
 public class NearCacheTestSupport extends HazelcastTestSupport {
 
-    protected static final int MAX_CACHE_SIZE = 50000;
+    protected static final int MAX_CACHE_SIZE = 5000;
     protected static final int MAX_TTL_SECONDS = 2;
     protected static final int MAX_IDLE_SECONDS = 1;
 
