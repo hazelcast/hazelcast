@@ -75,7 +75,9 @@ public class NodeMulticastListener implements MulticastListener {
                     + "Removing " + node.getMasterAddress();
             logger.warning(message);
             // TODO [basri] I am a slave and the master I follow says that it is gone. So, I can remove it instead of suspecting it.
-            node.getClusterService().removeAddress(node.getMasterAddress(), message);
+            // TODO [basri] I can only make a local suspicion. Since it is a multicast message, probably other nodes will eventually suspect as well.
+            // TODO [basri] Since I am not the master, I cannot change other members' opinions about suspicions.
+            node.getClusterService().suspectAddress(node.getMasterAddress(), message, false);
         }
     }
 

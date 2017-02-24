@@ -434,14 +434,14 @@ public class Node {
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
-            try {
-                clusterService.sendShutdownMessage();
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Shutdown message sent to other members");
-                }
-            } catch (Throwable t) {
-                EmptyStatement.ignore(t);
-            }
+//            try {
+//                clusterService.sendShutdownMessage();
+//                if (logger.isFinestEnabled()) {
+//                    logger.finest("Shutdown message sent to other members");
+//                }
+//            } catch (Throwable t) {
+//                EmptyStatement.ignore(t);
+//            }
         } else {
             logger.warning("Terminating forcefully...");
         }

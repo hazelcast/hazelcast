@@ -56,14 +56,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.logging.Level;
 
-import static com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_MAX_TIMEOUT;
-import static com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_TIMEOUT_FACTOR;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
-import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -668,8 +664,8 @@ public class ClusterJoinManager {
             logger.warning(msg);
 
             // TODO [basri] If I am the master, I will remove the "target" from the cluster.
-            // TODO [basri] If I am a slave, I will update my master address accordingly because current master shows that it is done
-            clusterService.doRemoveAddress(target, msg, false);
+            // TODO [basri] If I am a slave, I will suspect the current master.
+            clusterService.suspectAddress(target, msg, false);
             Connection existing = node.connectionManager.getConnection(target);
             if (existing != connection) {
                 if (existing != null) {
@@ -740,21 +736,22 @@ public class ClusterJoinManager {
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation finalizeJoinOperation = new FinalizeJoinOperation(member.getUuid(), newMembersView, postJoinOp, time,
-                            clusterService.getClusterId(), startTime,
-                            clusterStateManager.getState(), clusterService.getClusterVersion(), partitionRuntimeState, true);
+                            clusterService.getClusterId(), startTime, clusterStateManager.getState(),
+                            clusterService.getClusterVersion(), partitionRuntimeState, true);
                     calls.add(invokeClusterOperation(finalizeJoinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
                     if (member.localMember() || joiningMembers.containsKey(member.getAddress())) {
                         continue;
                     }
-                    Operation memberInfoUpdateOperation = new MembersUpdateOperation(member.getUuid(), newMembersView, time,
-                            partitionRuntimeState, true);
-                    calls.add(invokeClusterOperation(memberInfoUpdateOperation, member.getAddress()));
+                    Operation membersUpdateOperation = new MembersUpdateOperation(member.getUuid(), newMembersView,
+                            time, partitionRuntimeState, true);
+                    calls.add(invokeClusterOperation(membersUpdateOperation, member.getAddress()));
                 }
 
-                int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
-                waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
+                // TODO: Is blocking wait needed?
+//                int timeout = Math.min(calls.size() * FINALIZE_JOIN_TIMEOUT_FACTOR, FINALIZE_JOIN_MAX_TIMEOUT);
+//                waitWithDeadline(calls, timeout, TimeUnit.SECONDS, whileFinalizeJoinsExceptionHandler);
             } finally {
                 reset();
                 partitionService.resumeMigration();

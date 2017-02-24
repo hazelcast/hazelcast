@@ -19,7 +19,11 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,10 +37,13 @@ import static java.util.Collections.unmodifiableList;
 /**
  * TODO
  */
-public final class MembersView {
+public final class MembersView implements IdentifiedDataSerializable {
 
-    private final int version;
-    private final List<MemberInfo> members;
+    private int version;
+    private List<MemberInfo> members;
+
+    public MembersView() {
+    }
 
     public MembersView(int version, List<MemberInfo> members) {
         this.version = version;
@@ -59,7 +66,7 @@ public final class MembersView {
      * @return singleton {@code MemberMap}
      */
     static MembersView singleton(MemberImpl member) {
-        return new MembersView(0, singletonList(new MemberInfo(member)));
+        return new MembersView(1, singletonList(new MemberInfo(member)));
     }
 
 //    /**
@@ -91,7 +98,7 @@ public final class MembersView {
         list.addAll(source.getMembers());
         list.addAll(newMembers);
 
-        return new MembersView(source.version + 1, list);
+        return new MembersView(source.version + 1, unmodifiableList(list));
     }
 
     /**
@@ -142,6 +149,16 @@ public final class MembersView {
         return MemberMap.createNew(version, m);
     }
 
+    public boolean containsAddress(Address address) {
+        for (MemberInfo member : members) {
+            if (member.getAddress().equals(address)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public Set<Address> getAddresses() {
         Set<Address> addresses = new HashSet<Address>(members.size());
         for (MemberInfo member : members) {
@@ -151,7 +168,43 @@ public final class MembersView {
     }
 
     @Override
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBERS_VIEW;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out)
+            throws IOException {
+        out.writeInt(version);
+        out.writeInt(members.size());
+        for (MemberInfo member : members) {
+            member.writeData(out);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in)
+            throws IOException {
+        version = in.readInt();
+        int size = in.readInt();
+        List<MemberInfo> members = new ArrayList<MemberInfo>(size);
+        for (int i = 0; i < size; i++) {
+            MemberInfo member = new MemberInfo();
+            member.readData(in);
+            members.add(member);
+        }
+
+        this.members = unmodifiableList(members);
+    }
+
+    @Override
     public String toString() {
         return "MembersView{" + "version=" + version + ", members=" + members + '}';
     }
+
 }

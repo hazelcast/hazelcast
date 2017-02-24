@@ -71,7 +71,7 @@ public class MembersUpdateOperation extends VersionedClusterOperation {
     }
 
     final MembersView getMembersView() {
-        return new MembersView(getVersion(), unmodifiableList(memberInfos));
+        return new MembersView(getMemberListVersion(), unmodifiableList(memberInfos));
     }
 
     final Address getConnectionEndpointOrThisAddress() {

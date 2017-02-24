@@ -145,7 +145,7 @@ public class NodeIOService implements IOService {
             public void run() {
                 // we can safely pass null because removeEndpoint is triggered from the connectionManager after
                 // the connection is closed. So a reason is already set.
-                node.clusterService.suspectAddress(endPoint, null);
+                node.clusterService.suspectAddress(endPoint, null, true);
             }
         });
     }

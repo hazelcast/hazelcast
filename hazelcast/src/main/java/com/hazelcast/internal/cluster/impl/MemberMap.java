@@ -19,14 +19,12 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -71,7 +69,7 @@ final class MemberMap {
      * @return singleton {@code MemberMap}
      */
     static MemberMap singleton(MemberImpl member) {
-        return new MemberMap(0, singletonMap(member.getAddress(), member), singletonMap(member.getUuid(), member));
+        return new MemberMap(1, singletonMap(member.getAddress(), member), singletonMap(member.getUuid(), member));
     }
 
     /**
@@ -202,8 +200,8 @@ final class MemberMap {
         return MembersView.createNew(version, members);
     }
 
-    MembersView toMembersViewWithFirstMember(MemberImpl first) {
-        final List<MemberImpl> filtered = new ArrayList<MemberImpl>();
+    Set<MemberImpl> getMembersAfterFirstMember(MemberImpl first) {
+        final Set<MemberImpl> filtered = new LinkedHashSet<MemberImpl>();
         Iterator<MemberImpl> it = this.members.iterator();
         MemberImpl member = null;
         while (it.hasNext()) {
@@ -221,10 +219,10 @@ final class MemberMap {
             filtered.add(it.next());
         }
 
-        return MembersView.createNew(version, filtered);
+        return filtered;
     }
 
-    Set<MemberImpl> toMembersViewBeforeMember(Address member) {
+    Set<MemberImpl> getMembersBeforeMember(Address member) {
         if (!addressToMemberMap.containsKey(member)) {
             throw new IllegalArgumentException(member + " is not in the member list!");
         }

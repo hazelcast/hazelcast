@@ -34,11 +34,7 @@ public class MemberRemoveOperation extends VersionedClusterOperation {
         super(0);
     }
 
-    public MemberRemoveOperation(int version, Address address) {
-        super(version);
-        this.address = address;
-    }
-
+    // TODO [basri] only used in ClusterServiceImpl.sendMemberRemoveOperation(memberListVersion, deadMember)
     public MemberRemoveOperation(int version, Address address, String uuid) {
         super(version);
         this.address = address;
@@ -61,11 +57,7 @@ public class MemberRemoveOperation extends VersionedClusterOperation {
             logger.fine(msg);
         }
 
-        if (memberUuid != null) {
-            clusterService.removeAddress(address, memberUuid, msg);
-        } else {
-            clusterService.removeAddress(address, msg);
-        }
+        clusterService.removeAddress(address, memberUuid, msg);
     }
 
     private boolean isCallerValid(Address caller) {

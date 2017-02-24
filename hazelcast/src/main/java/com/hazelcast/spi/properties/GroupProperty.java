@@ -323,7 +323,7 @@ public final class GroupProperty {
      * The interval at which the master sends the member lists are sent to other non-master members
      */
     public static final HazelcastProperty MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
-            = new HazelcastProperty("hazelcast.member.list.publish.interval.seconds", 300, SECONDS);
+            = new HazelcastProperty("hazelcast.member.list.publish.interval.seconds", 60, SECONDS);
 
     public static final HazelcastProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.client.max.no.heartbeat.seconds", 300, SECONDS);

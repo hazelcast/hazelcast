@@ -8,6 +8,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
+// TODO [basri] ADD JAVADOC
 public class FetchMemberListStateOperation extends AbstractClusterOperation implements JoinOperation {
 
     private String masterUuid;
@@ -25,7 +26,7 @@ public class FetchMemberListStateOperation extends AbstractClusterOperation impl
     @Override
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
-        membersView = service.acceptMastershipClaim(getCallerAddress(), masterUuid);
+        membersView = service.handleMastershipClaim(getCallerAddress(), masterUuid);
     }
 
     @Override
@@ -40,7 +41,7 @@ public class FetchMemberListStateOperation extends AbstractClusterOperation impl
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE_OPERATION;
+        return ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE;
     }
 
     @Override

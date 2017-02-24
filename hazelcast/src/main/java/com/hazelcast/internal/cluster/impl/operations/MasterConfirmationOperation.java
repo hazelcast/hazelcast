@@ -16,14 +16,11 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.OperationService;
 
 import java.io.IOException;
 
@@ -46,24 +43,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
         }
 
         final ClusterServiceImpl clusterService = getService();
-        final ILogger logger = getLogger();
-        final MemberImpl member = clusterService.getMember(endpoint);
-        if (member == null) {
-            logger.warning("MasterConfirmation has been received from " + endpoint
-                    + ", but it is not a member of this cluster!");
-            OperationService operationService = getNodeEngine().getOperationService();
-            // TODO [basri] This guy knows me as its master but I am not. I should explicitly tell it to remove me from its cluster.
-            // TODO [basri] So, it should remove me from its cluster and update its master address
-            // TODO [basri] IMPORTANT: I should not tell it to remove me from cluster while I am trying to claim my mastership
-            int memberListVersion = clusterService.getMemberListVersion();
-            operationService.send(new MemberRemoveOperation(memberListVersion, clusterService.getThisAddress()), endpoint);
-        } else {
-            if (clusterService.isMaster()) {
-                clusterService.getClusterHeartbeatManager().acceptMasterConfirmation(member, timestamp);
-            } else {
-                logger.warning(endpoint + " has sent MasterConfirmation, but this node is not master!");
-            }
-        }
+        clusterService.handleMasterConfirmation(endpoint, timestamp);
     }
 
     @Override

@@ -33,14 +33,14 @@ import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
  */
 abstract class VersionedClusterOperation extends AbstractClusterOperation implements Versioned {
 
-    private int version;
+    private int memberListVersion;
 
-    VersionedClusterOperation(int version) {
-        this.version = version;
+    VersionedClusterOperation(int memberListVersion) {
+        this.memberListVersion = memberListVersion;
     }
 
-    int getVersion() {
-        return version;
+    int getMemberListVersion() {
+        return memberListVersion;
     }
 
     @Override
@@ -50,7 +50,7 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
         Version version = out.getVersion();
         // in OSS, version is unknown
         if (version.isUnknown() || version.isGreaterOrEqual(V3_9)) {
-            out.writeInt(this.version);
+            out.writeInt(this.memberListVersion);
         }
     }
 
@@ -63,7 +63,7 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
         Version version = in.getVersion();
         // in OSS, version is unknown
         if (version.isUnknown() || version.isGreaterOrEqual(V3_9)) {
-            this.version = in.readInt();
+            this.memberListVersion = in.readInt();
         }
     }
 

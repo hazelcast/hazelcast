@@ -23,6 +23,7 @@ import com.hazelcast.internal.cluster.impl.operations.AuthorizationOperation;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
 import com.hazelcast.internal.cluster.impl.operations.ChangeClusterStateOperation;
 import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
+import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOperation;
 import com.hazelcast.internal.cluster.impl.operations.FetchMemberListStateOperation;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOperation;
@@ -93,9 +94,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int CLUSTER_STATE_CHANGE = 33;
     public static final int SPLIT_BRAIN_JOIN_MESSAGE = 34;
     public static final int VERSION = 35;
-    public static final int FETCH_MEMBER_LIST_STATE_OPERATION = 36;
+    public static final int FETCH_MEMBER_LIST_STATE = 36;
+    public static final int EXPLICIT_SUSPICION = 37;
+    public static final int MEMBERS_VIEW = 38;
 
-    private static final int LEN = FETCH_MEMBER_LIST_STATE_OPERATION + 1;
+    private static final int LEN = MEMBERS_VIEW + 1;
 
     @Override
     public int getFactoryId() {
@@ -287,10 +290,22 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             }
         };
 
-        constructors[FETCH_MEMBER_LIST_STATE_OPERATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[FETCH_MEMBER_LIST_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new FetchMemberListStateOperation();
+            }
+        };
+        constructors[EXPLICIT_SUSPICION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ExplicitSuspicionOperation();
+            }
+        };
+        constructors[MEMBERS_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MembersView();
             }
         };
 

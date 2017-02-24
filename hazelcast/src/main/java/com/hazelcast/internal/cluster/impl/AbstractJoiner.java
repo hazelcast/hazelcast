@@ -24,7 +24,7 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
+import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
 import com.hazelcast.logging.ILogger;
@@ -328,9 +328,10 @@ public abstract class AbstractJoiner implements Joiner {
         Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
         if (targetMemberAddresses.contains(node.getThisAddress())) {
             // TODO [basri] join request is coming from master of the split and it thinks that I am its member.
+            // TODO [basri] this is partial split case and we are trying to convert it to a full split.
             // TODO [basri] So it should remove me first from its cluster.
             node.nodeEngine.getOperationService()
-                    .send(new MemberRemoveOperation(clusterService.getMemberListVersion(), node.getThisAddress()), joinMessage.getAddress());
+                    .send(new ExplicitSuspicionOperation(node.getThisAddress(), false), joinMessage.getAddress());
             logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
                     + ", because it thinks this-node as its member.");
             return false;

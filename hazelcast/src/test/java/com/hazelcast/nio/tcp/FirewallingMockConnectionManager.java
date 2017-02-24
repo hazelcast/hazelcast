@@ -29,9 +29,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class FirewallingMockConnectionManager extends MockConnectionManager {
 
@@ -39,7 +38,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private volatile PacketFilter droppingPacketFilter;
-    private volatile PacketFilter delayingPacketFilter;
+    private volatile DelayingPacketFilterWrapper delayingPacketFilter;
 
     public FirewallingMockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry,
                                             Set<Address> initiallyBlockedAddresses) {
@@ -84,11 +83,21 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
     }
 
     public void setDroppingPacketFilter(PacketFilter droppingPacketFilter) {
+        assert droppingPacketFilter != null;
         this.droppingPacketFilter = droppingPacketFilter;
     }
 
-    public void setDelayingPacketFilter(PacketFilter delayingPacketFilter) {
-        this.delayingPacketFilter = delayingPacketFilter;
+    public void removeDroppingPacketFilter() {
+        droppingPacketFilter = null;
+    }
+
+    public void setDelayingPacketFilter(PacketFilter delayingPacketFilter, long minDelayMs, long maxDelayMs) {
+        assert delayingPacketFilter != null;
+        this.delayingPacketFilter = new DelayingPacketFilterWrapper(delayingPacketFilter, minDelayMs, maxDelayMs);
+    }
+
+    public void removeDelayingPacketFilter() {
+        delayingPacketFilter = null;
     }
 
     private boolean isAllowed(Packet packet, Address target) {
@@ -100,13 +109,18 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         return allowed;
     }
 
-    private boolean isDelayed(Packet packet, Address target) {
-        boolean delayed = false;
-        PacketFilter filter = delayingPacketFilter;
-        if (filter != null) {
-            delayed = !filter.allow(packet, target);
+    private long getDelayMs(Packet packet, Address target) {
+        DelayingPacketFilterWrapper delayingFilter = delayingPacketFilter;
+        if (delayingFilter != null) {
+            if (!delayingFilter.packetFilter.allow(packet, target)) {
+                return getRandomBetween(delayingFilter.maxDelayMs, delayingFilter.minDelayMs);
+            }
         }
-        return delayed;
+        return 0;
+    }
+
+    private long getRandomBetween(long max, long min) {
+        return (long) ((max - min) * Math.random() + min);
     }
 
     @Override
@@ -115,8 +129,9 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
             if (!isAllowed(packet, connection.getEndPoint())) {
                 return false;
             }
-            if (isDelayed(packet, connection.getEndPoint())) {
-                scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), randomDelay(), NANOSECONDS);
+            long delayMs;
+            if ((delayMs = getDelayMs(packet, connection.getEndPoint())) > 0) {
+                scheduledExecutor.schedule(new DelayedPacketTask(packet, connection), delayMs, MILLISECONDS);
                 return true;
             }
         }
@@ -128,15 +143,12 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         if (!isAllowed(packet, target)) {
             return false;
         }
-        if (isDelayed(packet, target)) {
-            scheduledExecutor.schedule(new DelayedPacketTask(packet, target), randomDelay(), NANOSECONDS);
+        long delayMs;
+        if ((delayMs = getDelayMs(packet, target)) > 0) {
+            scheduledExecutor.schedule(new DelayedPacketTask(packet, target), delayMs, MILLISECONDS);
             return true;
         }
         return super.transmit(packet, target);
-    }
-
-    private static long randomDelay() {
-        return (long) (TimeUnit.SECONDS.toNanos(1) * Math.random());
     }
 
     @Override
@@ -169,6 +181,18 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
             } else {
                 FirewallingMockConnectionManager.super.transmit(packet, target);
             }
+        }
+    }
+
+    private static class DelayingPacketFilterWrapper {
+        final PacketFilter packetFilter;
+        final long minDelayMs;
+        final long maxDelayMs;
+
+        private DelayingPacketFilterWrapper(PacketFilter packetFilter, long minDelayMs, long maxDelayMs) {
+            this.packetFilter = packetFilter;
+            this.minDelayMs = minDelayMs;
+            this.maxDelayMs = maxDelayMs;
         }
     }
 }
