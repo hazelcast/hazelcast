@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.map.impl;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -27,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,8 +45,15 @@ public class LocalMapStatsUnderOnGoingClientUpdateTest extends HazelcastTestSupp
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
     private HazelcastInstance member = factory.newHazelcastInstance();
-    private HazelcastInstance client = factory.newHazelcastClient();
+    private HazelcastInstance client;
     private String mapName = "test";
+
+    @Before
+    public void setUp() throws Exception {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(100);
+        client = factory.newHazelcastClient(clientConfig);
+    }
 
     @After
     public void tearDown() throws Exception {
