@@ -25,7 +25,7 @@ import com.hazelcast.spi.BlockingOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
-public final class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
+public class GetOperation extends ReadonlyKeyBasedMapOperation implements BlockingOperation {
 
     private Data result;
 

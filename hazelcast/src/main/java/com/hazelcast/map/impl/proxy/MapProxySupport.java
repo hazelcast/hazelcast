@@ -302,6 +302,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return invokeOperation(key, operation);
     }
 
+    protected Object getInternalWithProjection(Data key, Data p) {
+        // todo action for read-backup true is not well tested.
+        if (getMapConfig().isReadBackupData()) {
+            Object fromBackup = readBackupDataOrNull(key);
+            if (fromBackup != null) {
+                return fromBackup;
+            }
+        }
+        MapOperation operation = operationProvider.createGetWithProjectionOperation(name, key, p);
+        operation.setThreadId(ThreadUtil.getThreadId());
+        return invokeOperation(key, operation);
+    }
+
     private Data readBackupDataOrNull(Data key) {
         int partitionId = partitionService.getPartitionId(key);
         IPartition partition = partitionService.getPartition(partitionId, false);

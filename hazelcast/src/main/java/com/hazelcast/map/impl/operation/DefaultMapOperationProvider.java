@@ -215,6 +215,11 @@ public class DefaultMapOperationProvider implements MapOperationProvider {
     }
 
     @Override
+    public MapOperation createGetWithProjectionOperation(String name, Data dataKey, Data projection) {
+        return new GetWithProjectionOperation(name, dataKey, projection);
+    }
+
+    @Override
     public MapOperation createLoadAllOperation(String name, List<Data> keys, boolean replaceExistingValues) {
         return new LoadAllOperation(name, keys, replaceExistingValues);
     }
