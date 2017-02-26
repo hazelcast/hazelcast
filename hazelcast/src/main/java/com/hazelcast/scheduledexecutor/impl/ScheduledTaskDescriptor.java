@@ -162,7 +162,7 @@ public class ScheduledTaskDescriptor implements IdentifiedDataSerializable {
     boolean isCancelled()
             throws ExecutionException, InterruptedException {
         ScheduledTaskResult result = resultRef.get();
-        boolean wasCancelled = result != null && result.isCancelled();
+        boolean wasCancelled = result != null && result.wasCancelled();
         return wasCancelled || (future != null && future.isCancelled());
     }
 

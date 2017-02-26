@@ -16,67 +16,16 @@
 
 package com.hazelcast.security.permission;
 
-import org.junit.Test;
-
 import java.security.Permission;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-/**
- * Abstract Permission Tests.
- *
- * A small selection of combinations are used here, using an array permutation algorithm.
- *
- * Could use <a href="http://docs.guava-libraries.googlecode.com/git/javadoc/com/google/common/collect/Collections2.html#permutations(java.util.Collection)">Google Guava Permutations</a>
- */
-public abstract class AbstractPermissionTest {
-
-    protected abstract String[] getActions();
+public abstract class PermissionTestSupport {
 
     protected abstract Permission createPermission(String name, String... actions);
 
-    @Test
-    public void willReturnFalseForNoPermOnPut() {
-        new CheckPermission().of("put").against("read", "create").expect(false).run();
-    }
-
-    @Test
-    public void willReturnFalseForNoPermOnListen() {
-        new CheckPermission().of("listen").against("read", "create", "put").expect(false).run();
-    }
-
-    @Test
-    public void willReturnTrueForPermOnPutOn() {
-        new CheckPermission().of("put").against("put", "read", "create").expect(true).run();
-    }
-
-    @Test
-    public void willReturnTrueForPermOnAll() {
-        new CheckPermission().of("put").against("all").expect(true).run();
-    }
-
-    @Test
-    public void willReturnTrueWhenNameUseMatchingWildcard() {
-        new CheckPermission()
-                .withAllowedName("myDataStructure.*")
-                .withRequestedName("myDataStructure.foo")
-                .of("put")
-                .against(getActions())
-                .expect(true).run();
-    }
-
-    @Test
-    public void willReturnFalseWhenNameUseNonNames() {
-        new CheckPermission()
-                .withAllowedName("myDataStructure")
-                .withRequestedName("myOtherDataStructure")
-                .of("put")
-                .against(getActions())
-                .expect(false).run();
-    }
-
-    class CheckPermission {
+    protected class CheckPermission {
 
         private static final String DEFAULT_ALLOWED_NAME = "someMapsPermission";
         private static final String DEFAULT_REQUESTED_NAME = "someMapsPermission";
@@ -126,4 +75,5 @@ public abstract class AbstractPermissionTest {
             }
         }
     }
+
 }

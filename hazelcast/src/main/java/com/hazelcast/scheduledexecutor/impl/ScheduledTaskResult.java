@@ -59,18 +59,14 @@ public class ScheduledTaskResult
         return exception;
     }
 
-    public boolean isCancelled() {
+    boolean wasCancelled() {
         return cancelled;
     }
 
-    public boolean isDone() {
-        return done || cancelled || exception != null;
-    }
-
-    public void checkErroneousState()
+    void checkErroneousState()
             throws ExecutionException {
 
-        if (isCancelled()) {
+        if (wasCancelled()) {
             throw new CancellationException();
         } else if (exception != null) {
             throw new ExecutionExceptionDecorator(new ExecutionException(exception));

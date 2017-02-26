@@ -25,22 +25,12 @@ import java.security.Permission;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CachePermissionTest extends AbstractMapPermissionTest {
-
-    @Override
-    protected String[] getActions() {
-        return new String[]{
-                "put",
-                "read",
-                "remove",
-                "listen",
-                "create",
-                "destroy"
-        };
-    }
+public class ScheduledExecutorPermissionTest
+        extends AbstractGenericPermissionTest {
 
     @Override
     protected Permission createPermission(String name, String... actions) {
-        return new CachePermission(name, actions);
+        return new ScheduledExecutorPermission(name, actions);
     }
+
 }

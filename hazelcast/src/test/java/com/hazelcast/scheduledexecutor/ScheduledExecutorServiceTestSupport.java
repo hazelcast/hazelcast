@@ -40,6 +40,10 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         return instances[0].getScheduledExecutorService(name);
     }
 
+    public int getPartitionIdFromPartitionAwareTask(HazelcastInstance instance, PartitionAware task) {
+        return instance.getPartitionService().getPartition(task.getPartitionKey()).getPartitionId();
+    }
+
     public HazelcastInstance[] createClusterWithCount(int count) {
         return createClusterWithCount(count, new Config());
     }
@@ -257,6 +261,33 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public String getPartitionKey() {
             return "TestKey";
+        }
+    }
+
+    static class PlainPartitionAwareRunnableTask
+            implements Runnable, Serializable, PartitionAware<String>, HazelcastInstanceAware {
+
+        private final String latchName;
+
+        private transient HazelcastInstance instance;
+
+        public PlainPartitionAwareRunnableTask(String latchName) {
+            this.latchName = latchName;
+        }
+
+        @Override
+        public void run() {
+            this.instance.getCountDownLatch(latchName).countDown();
+        }
+
+        @Override
+        public String getPartitionKey() {
+            return "TestKey";
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
         }
     }
 
