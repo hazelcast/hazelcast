@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
 
@@ -73,8 +72,7 @@ public class IntegerAvgAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class IntegerAvgCombinerFactory<Key>
+        static final class IntegerAvgCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Integer, AvgTuple<Integer, Integer>> {
 
         @Override
@@ -93,8 +91,7 @@ public class IntegerAvgAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class IntegerAvgReducerFactory<Key>
+        static final class IntegerAvgReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, AvgTuple<Integer, Integer>, AvgTuple<Integer, Integer>> {
 
         @Override

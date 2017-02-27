@@ -24,7 +24,6 @@ import com.hazelcast.mapreduce.impl.ListKeyValueSource;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.Closeable;
@@ -46,7 +45,6 @@ import java.util.Map;
  * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
  */
 @Deprecated
-@BinaryInterface
 public abstract class KeyValueSource<K, V>
         implements Closeable {
 

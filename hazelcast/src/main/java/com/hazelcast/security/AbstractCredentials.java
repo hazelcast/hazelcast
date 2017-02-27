@@ -19,14 +19,12 @@ package com.hazelcast.security;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 
 /**
  * Abstract implementation of {@link Credentials}
  */
-@BinaryInterface
 public abstract class AbstractCredentials implements Credentials, Portable {
 
     private static final long serialVersionUID = 3587995040707072446L;

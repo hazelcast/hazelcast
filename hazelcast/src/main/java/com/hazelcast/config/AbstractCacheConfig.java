@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.CompleteConfiguration;
@@ -35,7 +34,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Base class for {@link CacheConfig}
  */
-@BinaryInterface
 abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K, V>, DataSerializable {
 
     /**

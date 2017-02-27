@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 
 /**
@@ -33,7 +31,6 @@ import java.io.Serializable;
  * @since 3.2
  */
 
-@BinaryInterface
 public interface IFunction<T, R> extends Serializable {
 
     R apply(T input);

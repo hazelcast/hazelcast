@@ -17,7 +17,6 @@
 package com.hazelcast.mapreduce;
 
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 /**
  * An implementation of this interface contains current information about
@@ -29,7 +28,6 @@ import com.hazelcast.nio.serialization.impl.BinaryInterface;
  * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
  */
 @Deprecated
-@BinaryInterface
 public interface JobPartitionState {
 
     /**

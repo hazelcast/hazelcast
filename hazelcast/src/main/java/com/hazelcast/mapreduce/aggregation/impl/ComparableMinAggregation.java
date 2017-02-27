@@ -23,7 +23,6 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
 
@@ -73,8 +72,7 @@ public class ComparableMinAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class ComparableMinCombinerFactory<Key>
+        static final class ComparableMinCombinerFactory<Key>
             extends AbstractAggregationCombinerFactory<Key, Comparable, Comparable> {
 
         @Override
@@ -93,8 +91,7 @@ public class ComparableMinAggregation<Key, Value>
      *
      * @param <Key> the key type
      */
-    @BinaryInterface
-    static final class ComparableMinReducerFactory<Key>
+        static final class ComparableMinReducerFactory<Key>
             extends AbstractAggregationReducerFactory<Key, Comparable, Comparable> {
 
         @Override

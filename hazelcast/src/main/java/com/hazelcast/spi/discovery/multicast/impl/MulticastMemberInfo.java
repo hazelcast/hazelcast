@@ -16,11 +16,8 @@
 
 package com.hazelcast.spi.discovery.multicast.impl;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 import java.io.Serializable;
 
-@BinaryInterface
 public class MulticastMemberInfo implements Serializable {
 
     private String host;

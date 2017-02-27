@@ -16,9 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.nio.serialization.impl.BinaryInterface;
+
 /**
  * Storage format type of values stored in cluster
 */
+@BinaryInterface
 public enum InMemoryFormat {
     /**
      * As Binary

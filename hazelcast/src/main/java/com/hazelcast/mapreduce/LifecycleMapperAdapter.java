@@ -16,8 +16,6 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
-
 /**
  * <p>
  * The abstract LifecycleMapperAdapter superclass is used to ease building mappers for the {@link Job}.
@@ -54,7 +52,6 @@ import com.hazelcast.nio.serialization.impl.BinaryInterface;
  * For general data processing, it is superseded by <a href="http://jet.hazelcast.org">Hazelcast Jet</a>.
  */
 @Deprecated
-@BinaryInterface
 public abstract class LifecycleMapperAdapter<KeyIn, ValueIn, KeyOut, ValueOut>
         implements LifecycleMapper<KeyIn, ValueIn, KeyOut, ValueOut> {
 

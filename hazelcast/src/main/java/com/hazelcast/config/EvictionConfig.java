@@ -143,6 +143,7 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
     /**
      * Maximum Size Policy
      */
+    @BinaryInterface
     public enum MaxSizePolicy {
         /**
          * Policy based on maximum number of entries stored per data structure (map, cache etc)

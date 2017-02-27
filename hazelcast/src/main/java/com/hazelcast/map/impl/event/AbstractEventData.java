@@ -19,14 +19,12 @@ package com.hazelcast.map.impl.event;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.io.IOException;
 
 /**
  * Abstract event data.
  */
-@BinaryInterface
 abstract class AbstractEventData implements EventData {
 
     protected String source;
