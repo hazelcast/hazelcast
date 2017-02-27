@@ -59,7 +59,7 @@ public abstract class AbstractProcessor implements Processor {
     private Outbox outbox;
     private Object pendingItem;
     private ILogger logger;
-    private boolean isCooperative;
+    private boolean isCooperative = true;
 
     /**
      * Specifies what this processor's {@link #isCooperative} method will return.
