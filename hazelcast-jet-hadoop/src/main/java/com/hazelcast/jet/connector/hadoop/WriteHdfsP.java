@@ -18,6 +18,7 @@ package com.hazelcast.jet.connector.hadoop;
 
 
 import com.hazelcast.jet.AbstractProcessor;
+import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
@@ -34,8 +35,8 @@ import org.apache.hadoop.mapred.TaskAttemptID;
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
+import static com.hazelcast.jet.Distributed.Function.identity;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.lang.String.valueOf;
@@ -51,18 +52,22 @@ public final class WriteHdfsP extends AbstractProcessor {
     private final RecordWriter recordWriter;
     private final TaskAttemptContextImpl taskAttemptContext;
     private final OutputCommitter outputCommitter;
+    private final Function keyMapper;
+    private final Function valueMapper;
 
     private WriteHdfsP(RecordWriter recordWriter, TaskAttemptContextImpl taskAttemptContext,
-                       OutputCommitter outputCommitter) {
+                       OutputCommitter outputCommitter, Function keyMapper, Function valueMapper) {
         this.recordWriter = recordWriter;
         this.taskAttemptContext = taskAttemptContext;
         this.outputCommitter = outputCommitter;
+        this.keyMapper = keyMapper;
+        this.valueMapper = valueMapper;
     }
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         Map.Entry entry = (Map.Entry) item;
-        recordWriter.write(entry.getKey(), entry.getValue());
+        recordWriter.write(keyMapper.apply(entry.getKey()), valueMapper.apply(entry.getValue()));
         return true;
     }
 
@@ -89,18 +94,47 @@ public final class WriteHdfsP extends AbstractProcessor {
      * @return {@link ProcessorMetaSupplier} supplier
      */
     public static ProcessorMetaSupplier writeHdfs(JobConf jobConf) {
-        return new MetaSupplier(jobConf);
+        return new MetaSupplier(jobConf, identity(), identity());
     }
+
+    /**
+     * Returns a meta-supplier of processors that write HDFS files.
+     *
+     * <p>
+     * For some output formats (eg {@code SequenceFileOutputFormat}) key/value pairs should be {@code Writable}
+     * One can use key/value mappers for converting entries to {@code Writable}
+     * </p>
+     *
+     * @param jobConf     JobConf for writing files with the appropriate output format and path
+     * @param <K>     key type of the records
+     * @param <KR>     the type of the mapped key
+     * @param keyMapper   mapper which can be used to map the key to another value
+     * @param <V>     value type of the records
+     * @param <VR>     the type of the mapped value
+     * @param valueMapper mapper which can be used to map the value to another value
+     * @return {@link ProcessorMetaSupplier} supplier
+     */
+    public static <K, V, KR, VR> ProcessorMetaSupplier writeHdfs(JobConf jobConf,
+                                                               @Nonnull Function<K, KR> keyMapper,
+                                                               @Nonnull Function<V, VR> valueMapper) {
+        return new MetaSupplier(jobConf, keyMapper, valueMapper);
+    }
+
 
     private static class MetaSupplier implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final JobConfiguration configuration;
+        private final Function keyMapper;
+        private final Function valueMapper;
+
         private transient Address address;
 
-        MetaSupplier(JobConf jobConf) {
+        MetaSupplier(JobConf jobConf, Function keyMapper, Function valueMapper) {
             this.configuration = new JobConfiguration(jobConf);
+            this.keyMapper = keyMapper;
+            this.valueMapper = valueMapper;
         }
 
         @Override
@@ -110,7 +144,7 @@ public final class WriteHdfsP extends AbstractProcessor {
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new Supplier(address.equals(this.address), configuration);
+            return address -> new Supplier(address.equals(this.address), configuration, keyMapper, valueMapper);
         }
     }
 
@@ -120,15 +154,19 @@ public final class WriteHdfsP extends AbstractProcessor {
 
         private boolean commitJob;
         private JobConfiguration configuration;
+        private Function keyMapper;
+        private Function valueMapper;
 
         private transient Context context;
         private transient OutputCommitter outputCommitter;
         private transient JobID jobId;
         private transient JobContextImpl jobContext;
 
-        Supplier(boolean commitJob, JobConfiguration configuration) {
+        Supplier(boolean commitJob, JobConfiguration configuration, Function keyMapper, Function valueMapper) {
             this.commitJob = commitJob;
             this.configuration = configuration;
+            this.keyMapper = keyMapper;
+            this.valueMapper = valueMapper;
         }
 
         @Override
@@ -164,7 +202,7 @@ public final class WriteHdfsP extends AbstractProcessor {
                 TaskAttemptContextImpl taskAttemptContext = new TaskAttemptContextImpl(configuration, taskAttemptID);
                 RecordWriter recordWriter = uncheckCall(() -> configuration.getOutputFormat().getRecordWriter(null,
                         configuration, uuid + '-' + valueOf(i), Reporter.NULL));
-                return new WriteHdfsP(recordWriter, taskAttemptContext, outputCommitter);
+                return new WriteHdfsP(recordWriter, taskAttemptContext, outputCommitter, keyMapper, valueMapper);
 
             }).collect(toList());
         }
