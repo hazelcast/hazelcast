@@ -89,7 +89,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.8.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
                 .node("password", "****")
