@@ -48,10 +48,10 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
         test(ringbufferConfig);
     }
 
-    @Test
+    @Test(timeout = 15 * 60 * 1000)
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
-                .setCapacity(20 * 1000 * 1000)
+                .setCapacity(10 * 1000 * 1000)
                 .setTimeToLiveSeconds(2);
         test(ringbufferConfig);
     }
