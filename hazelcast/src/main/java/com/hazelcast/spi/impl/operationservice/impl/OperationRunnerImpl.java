@@ -135,19 +135,20 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         boolean publishCurrentTask = publishCurrentTask();
 
         if (publishCurrentTask) {
-            currentTask = task;
+            setCurrentTask(task);
         }
 
         try {
             task.run();
         } finally {
             if (publishCurrentTask) {
-                currentTask = null;
+                resetCurrentTask();
             }
         }
     }
 
     private boolean publishCurrentTask() {
+        Object currentTask = currentTask();
         boolean isClientRunnable = currentTask instanceof MessageTask;
         return getPartitionId() != AD_HOC_PARTITION_ID && (currentTask == null || isClientRunnable);
     }
@@ -163,7 +164,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         boolean publishCurrentTask = publishCurrentTask();
 
         if (publishCurrentTask) {
-            currentTask = op;
+            setCurrentTask(op);
         }
 
         try {
@@ -190,7 +191,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             handleOperationError(op, e);
         } finally {
             if (publishCurrentTask) {
-                currentTask = null;
+                resetCurrentTask();
             }
         }
     }
@@ -377,7 +378,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
         boolean publishCurrentTask = publishCurrentTask();
 
         if (publishCurrentTask) {
-            currentTask = packet;
+            setCurrentTask(packet);
         }
 
         Connection connection = packet.getConn();
@@ -396,7 +397,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             }
 
             if (publishCurrentTask) {
-                currentTask = null;
+                resetCurrentTask();
             }
             run(op);
         } catch (Throwable throwable) {
@@ -407,7 +408,7 @@ class OperationRunnerImpl extends OperationRunner implements MetricsProvider {
             throw ExceptionUtil.rethrow(throwable);
         } finally {
             if (publishCurrentTask) {
-                currentTask = null;
+                resetCurrentTask();
             }
         }
     }

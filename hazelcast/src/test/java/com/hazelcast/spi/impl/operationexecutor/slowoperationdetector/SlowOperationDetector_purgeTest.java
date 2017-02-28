@@ -81,7 +81,7 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         int invocationCount = invocations.size();
         assertTrue("Expected 1 or 2 invocations, but was " + invocationCount, invocationCount >= 1 && invocationCount <= 2);
         for (SlowOperationLog.Invocation invocation : invocations) {
-            assertInvocationDurationBetween(invocation, 1000, 3500);
+            assertInvocationDurationBetween(invocation, 2500, 4500);
         }
     }
 
