@@ -1,13 +1,29 @@
-package com.hazelcast.nio;
+/*
+ * Copyright (c) 2016-2017, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.version;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.version.Version;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.version.Version.UNKNOWN;
 import static com.hazelcast.version.Version.UNKNOWN_VERSION;
 import static com.hazelcast.version.Version.of;
 import static org.junit.Assert.assertEquals;
@@ -40,11 +56,28 @@ public class VersionTest {
     }
 
     @Test
+    public void isUnknownOrGreaterThan() throws Exception {
+        assertTrue(V3_0.isUnknownOrGreaterThan(of(2, 0)));
+        assertFalse(V3_0.isUnknownOrGreaterThan(of(3, 0)));
+        assertFalse(V3_0.isUnknownOrGreaterThan(of(4, 0)));
+        assertTrue(UNKNOWN.isUnknownOrGreaterThan(of(4, 0)));
+    }
+
+    @Test
     public void isGreaterOrEqual() throws Exception {
         assertTrue(V3_0.isGreaterOrEqual(of(2, 0)));
         assertTrue(V3_0.isGreaterOrEqual(of(3, 0)));
         assertTrue(V3_0.isGreaterOrEqual(of(3, 0)));
         assertFalse(V3_0.isGreaterOrEqual(of(4, 0)));
+    }
+
+    @Test
+    public void isUnknownGreaterOrEqual() throws Exception {
+        assertTrue(V3_0.isUnknownGreaterOrEqual(of(2, 0)));
+        assertTrue(V3_0.isUnknownGreaterOrEqual(of(3, 0)));
+        assertTrue(V3_0.isUnknownGreaterOrEqual(of(3, 0)));
+        assertFalse(V3_0.isUnknownGreaterOrEqual(of(4, 0)));
+        assertTrue(UNKNOWN.isUnknownGreaterOrEqual(of(4, 0)));
     }
 
     @Test
@@ -57,10 +90,28 @@ public class VersionTest {
     }
 
     @Test
+    public void isUnknownOrLessThan() throws Exception {
+        assertFalse(V3_0.isUnknownOrLessThan(of(2, 0)));
+        assertFalse(V3_0.isUnknownOrLessThan(of(3, 0)));
+        assertTrue(V3_0.isUnknownOrLessThan(of(3, 1)));
+        assertTrue(V3_0.isUnknownOrLessThan(of(4, 0)));
+        assertTrue(V3_0.isUnknownOrLessThan(of(200, 0)));
+        assertTrue(UNKNOWN.isUnknownOrLessThan(of(200, 0)));
+    }
+
+    @Test
     public void isLessOrEqual() throws Exception {
         assertFalse(V3_0.isLessOrEqual(of(2, 0)));
         assertTrue(V3_0.isLessOrEqual(of(3, 0)));
         assertTrue(V3_0.isLessOrEqual(of(4, 0)));
+    }
+
+    @Test
+    public void isUnknownLessOrEqual() throws Exception {
+        assertFalse(V3_0.isUnknownLessOrEqual(of(2, 0)));
+        assertTrue(V3_0.isUnknownLessOrEqual(of(3, 0)));
+        assertTrue(V3_0.isUnknownLessOrEqual(of(4, 0)));
+        assertTrue(UNKNOWN.isUnknownLessOrEqual(of(4, 0)));
     }
 
     @Test
@@ -98,5 +149,11 @@ public class VersionTest {
         assertEquals(Version.UNKNOWN.hashCode(), Version.UNKNOWN.hashCode());
 
         assertTrue(Version.UNKNOWN.hashCode() != Version.of(4, 0).hashCode());
+    }
+
+    @Test
+    public void test_ofString() {
+        Version v = of("3.0");
+        assertEquals(v, V3_0);
     }
 }

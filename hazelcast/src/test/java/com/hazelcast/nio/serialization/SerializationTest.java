@@ -38,6 +38,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -560,6 +561,22 @@ public class SerializationTest extends HazelcastTestSupport {
         } catch (IllegalAccessError expected) {
             // expected
         }
+    }
+
+    @Test
+    public void testVersionedDataSerializable_outputHasUnknownVersion() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        VersionedDataSerializable object = new VersionedDataSerializable();
+        ss.toData(object);
+        assertEquals("ObjectDataOutput.getVersion should be UNKNOWN", Version.UNKNOWN, object.getVersion());
+    }
+
+    @Test
+    public void testVersionedDataSerializable_inputHasUnknownVersion() {
+        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        VersionedDataSerializable object = new VersionedDataSerializable();
+        VersionedDataSerializable otherObject = ss.toObject(ss.toData(object));
+        assertEquals("ObjectDataInput.getVersion should be UNKNOWN", Version.UNKNOWN, otherObject.getVersion());
     }
 
     private static final class DynamicProxyTestClassLoader extends ClassLoader {
