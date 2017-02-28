@@ -70,8 +70,8 @@ public final class ConfigValidator {
         checkEvictionConfig(nearCacheConfig.getEvictionConfig(), true);
 
         if (isClient && nearCacheConfig.isCacheLocalEntries()) {
-            LOGGER.warning("The Near Cache option `cache-local-entries` is not supported in client configurations. "
-                    + "Remove this option from your client configuration, future versions may fail startup with an exception.");
+            throw new IllegalArgumentException("The Near Cache option `cache-local-entries` is not supported in "
+                    + "client configurations.");
         }
         checkPreloaderConfig(nearCacheConfig, isClient);
     }
