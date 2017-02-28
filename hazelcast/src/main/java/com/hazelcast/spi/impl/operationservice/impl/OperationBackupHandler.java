@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.map.impl.operation.EntrySetUnlockOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -253,7 +254,9 @@ final class OperationBackupHandler {
         // set service name of backup operation.
         // if getServiceName() method is overridden to return the same name
         // then this will have no effect.
-        backupOp.setServiceName(op.getServiceName());
+        if (!(op instanceof EntrySetUnlockOperation)) {
+            backupOp.setServiceName(op.getServiceName());
+        }
         return backupOp;
     }
 
