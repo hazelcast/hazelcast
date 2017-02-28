@@ -968,12 +968,12 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
 
     @Test
     public void receives_one_clearEvent_after_mapClear_call_from_member() {
-        // 1. Start new member and populate map.
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
-        IMap memberMap = member.getMap("test");
+        // start new member and populate map
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
+        IMap<Integer, Integer> memberMap = member.getMap("test");
         populateMap(memberMap, 1000);
 
-        // 2. Populate client near cache.
+        // populate client near cache
         NearCacheConfig nearCacheConfig = newNearCacheConfig();
         ClientConfig clientConfig = newClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
@@ -981,14 +981,14 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
         IMap<Integer, Integer> clientMap = client.getMap("test");
         populateNearCache(clientMap, 1000);
 
-        // 3. Add test listener to count clear events
+        // add test listener to count clear events
         final ClearEventCounterEventHandler handler = new ClearEventCounterEventHandler();
         ((NearCachedClientMapProxy) clientMap).addNearCacheInvalidationListener(handler);
 
-        // 4. Clear map from member side.
+        // clear map from member side
         memberMap.clear();
 
-        // 5. Sleep for a while to see there is another clear event coming
+        // sleep for a while to see there is another clear event coming
         sleepSeconds(2);
 
         assertTrueEventually(new AssertTask() {
