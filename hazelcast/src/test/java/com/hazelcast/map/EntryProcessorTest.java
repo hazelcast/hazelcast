@@ -29,6 +29,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.PostProcessingMapStore;
+import com.hazelcast.executor.Offloadable;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -412,6 +413,119 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         instance1.shutdown();
         assertEquals(expectedValue, map.get(key));
     }
+
+    @Test
+    public void testEntryProcessorWithKey_offloadable_setValue() {
+        Config cfg = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+        String key = generateKeyOwnedBy(instance1);
+        SimpleValue simpleValue = new SimpleValue(1);
+        // EntryProcessor contract difference between OBJECT and BINARY
+        SimpleValue expectedValue = new SimpleValue(2);
+
+        IMap<Object, Object> map = instance2.getMap(MAP_NAME);
+        map.put(key, simpleValue);
+        map.executeOnKey(key, new EntryIncOffloadable());
+        assertEquals(expectedValue, map.get(key));
+
+        instance1.shutdown();
+        assertEquals(expectedValue, map.get(key));
+    }
+
+    @Test
+    public void testEntryProcessorWithKey_offloadable_withoutSetValue() {
+        Config cfg = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+        String key = generateKeyOwnedBy(instance1);
+        SimpleValue simpleValue = new SimpleValue(1);
+        // EntryProcessor contract difference between OBJECT and BINARY
+        SimpleValue expectedValue = new SimpleValue(1);
+
+        IMap<Object, Object> map = instance2.getMap(MAP_NAME);
+        map.put(key, simpleValue);
+        map.executeOnKey(key, new EntryIncOffloadableNoSetValue());
+        assertEquals(expectedValue, map.get(key));
+
+        instance1.shutdown();
+        assertEquals(expectedValue, map.get(key));
+    }
+
+
+    @Test
+    public void testEntryProcessorWithKey_offloadable_setValue_SRAKA() throws InterruptedException {
+        Config cfg = getConfig();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+//        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+
+        final String key = generateKeyOwnedBy(instance1);
+        SimpleValue simpleValue = new SimpleValue(1);
+        // EntryProcessor contract difference between OBJECT and BINARY
+        SimpleValue expectedValue = new SimpleValue(3);
+
+        final IMap<Object, Object> map = instance1.getMap(MAP_NAME);
+        map.put(key, simpleValue);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        new Thread() {
+            public void run() {
+                map.executeOnKey(key, new EntryIncOffloadableSleeping(latch));
+                System.err.println("ExecuteOnKey FINISHED");
+            }
+        }.start();
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.err.println("SET INVOKED");
+        map.set(key, new SimpleValue(3));
+        System.err.println("SET INVOKED FINISHED");
+
+        assertEquals(expectedValue, map.get(key));
+
+        instance1.shutdown();
+    }
+
+    private static class EntryIncOffloadableSleeping extends AbstractEntryProcessor<String, SimpleValue> implements Offloadable {
+
+        private final CountDownLatch latch;
+
+        public EntryIncOffloadableSleeping(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            System.err.println("COUNTING DOWN");
+            latch.countDown();
+            final SimpleValue value = entry.getValue();
+            value.i++;
+            System.err.println("BEFORE SLEEP");
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.err.println("AFTER SLEEP");
+            entry.setValue(value);
+            return null;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return "";
+        }
+    }
+
 
     @Test
     public void testEntryProcessorWithKeys() {
@@ -1686,6 +1800,39 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+    private static class EntryIncOffloadable extends AbstractEntryProcessor<String, SimpleValue> implements Offloadable {
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            final SimpleValue value = entry.getValue();
+            value.i++;
+            entry.setValue(value);
+            return null;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return "";
+        }
+    }
+
+
+
+
+
+    private static class EntryIncOffloadableNoSetValue extends AbstractEntryProcessor<String, SimpleValue> implements Offloadable {
+        @Override
+        public Object process(final Map.Entry<String, SimpleValue> entry) {
+            final SimpleValue value = entry.getValue();
+            value.i++;
+            return null;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return "";
+        }
+    }
+
     private static class SimpleValue implements Serializable {
 
         public int i;
@@ -1841,4 +1988,5 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return null;
         }
     }
+
 }

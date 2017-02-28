@@ -20,7 +20,9 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.executor.Offloadable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -28,6 +30,7 @@ import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -35,21 +38,26 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Map;
 
+import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.REMOVED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
+import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
@@ -61,6 +69,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private EntryEventType eventType;
     private Object response;
     private transient Object dataValue;
+    private transient String offloadableExecutorName;
 
     public EntryOperation() {
     }
@@ -68,6 +77,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
         this.entryProcessor = entryProcessor;
+
     }
 
     @Override
@@ -82,11 +92,82 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     public void run() {
         final long now = getNow();
-        boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
         SerializationService serializationService = getNodeEngine().getSerializationService();
         oldValue = recordStore.get(dataKey, false);
-        Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
 
+        if (entryProcessor instanceof Offloadable) {
+            offloadableExecutorName = ((Offloadable) entryProcessor).getExecutorName();
+        }
+
+        if (offloadableExecutorName != null) {
+            boolean shouldCloneForOffloading = OBJECT.equals(mapContainer.getMapConfig().getInMemoryFormat());
+            Object value = shouldCloneForOffloading ? serializationService.toData(oldValue) : oldValue;
+            runOnOffloadedThread(now, value, offloadableExecutorName);
+        } else {
+            boolean shouldClone = mapContainer.shouldCloneOnEntryProcessing();
+            Object value = shouldClone ? serializationService.toObject(serializationService.toData(oldValue)) : oldValue;
+            runOnCallingThread(now, value);
+        }
+    }
+
+    private void runOnOffloadedThread(final long now, final Object value, String executorName) {
+        final OperationServiceImpl ops = (OperationServiceImpl) getNodeEngine().getOperationService();
+
+        final Data finalDataKey = dataKey;
+        final String finalCaller = getCallerUuid();
+        final long finalThreadId = threadId;
+        final long finalCallId = getCallId();
+
+        ops.onStartAsyncOperation(this);
+        executorName = executorName.equals("") ? ASYNC_EXECUTOR : executorName;
+
+        final ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+
+        // lock key - has to do it still on the partition-thread
+        recordStore.lock(finalDataKey, finalCaller, finalThreadId, finalCallId, Long.MAX_VALUE);
+
+        // execute for key
+        getNodeEngine().getExecutionService().execute(executorName, new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    final Map.Entry entry = createMapEntry(dataKey, value);
+                    final Data result = process(entry);
+                    if (!noOp(entry)) {
+                        // only case when we need to synchronize back with the partition-thread
+                        Data newValue = toData(entry.getValue());
+                        setUnlock(false, newValue, finalCaller, finalThreadId, result, namespace);
+                    } else {
+                        setUnlock(true, null, finalCaller, finalThreadId, result, namespace);
+                    }
+                } catch (Throwable t) {
+                    setUnlock(true, null, finalCaller, finalThreadId, t, namespace);
+                } finally {
+                    ops.onCompletionAsyncOperation(EntryOperation.this);
+                }
+            }
+
+        });
+    }
+
+    private void setUnlock(boolean onlyUnlock, Data newValue, String caller, long threadId, final Object result, final ObjectNamespace namespace) {
+        EntrySetUnlockOperation updateOperation = new EntrySetUnlockOperation(
+                namespace, name, dataKey, newValue, onlyUnlock, caller, threadId);
+        updateOperation.setPartitionId(getPartitionId());
+        getNodeEngine().getOperationService().invokeOnPartition(updateOperation).andThen(new ExecutionCallback<Object>() {
+            @Override
+            public void onResponse(Object response) {
+                getOperationResponseHandler().sendResponse(EntryOperation.this, result);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                getOperationResponseHandler().sendResponse(EntryOperation.this, t);
+            }
+        });
+    }
+
+    private void runOnCallingThread(long now, Object value) {
         Map.Entry entry = createMapEntry(dataKey, value);
 
         response = process(entry);
@@ -255,6 +336,12 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
             }
         }
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        // retry should not return response, since
+        return offloadableExecutorName == null;
     }
 
     @Override

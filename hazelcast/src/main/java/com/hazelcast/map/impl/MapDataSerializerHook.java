@@ -41,6 +41,7 @@ import com.hazelcast.map.impl.operation.ContainsValueOperationFactory;
 import com.hazelcast.map.impl.operation.DeleteOperation;
 import com.hazelcast.map.impl.operation.EntryBackupOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
+import com.hazelcast.map.impl.operation.EntrySetUnlockOperation;
 import com.hazelcast.map.impl.operation.EvictAllBackupOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperation;
 import com.hazelcast.map.impl.operation.EvictAllOperationFactory;
@@ -285,8 +286,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_FROM_LOAD_ALL = 134;
     public static final int ENTRY_REMOVING_PROCESSOR = 135;
     public static final int GET_WITH_PROJECTION = 136;
+    public static final int ENTRY_SET_UNLOCK = 137;
 
-    private static final int LEN = GET_WITH_PROJECTION + 1;
+    private static final int LEN = ENTRY_SET_UNLOCK + 1;
 
     @Override
     public int getFactoryId() {
@@ -960,6 +962,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[GET_WITH_PROJECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new GetWithProjectionOperation();
+            }
+        };
+        constructors[ENTRY_SET_UNLOCK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EntrySetUnlockOperation();
             }
         };
 
