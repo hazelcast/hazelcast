@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.connector.hadoop;
 
-import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Serializer;
@@ -25,56 +24,60 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 import org.apache.hadoop.io.Writable;
 
 import java.io.IOException;
+import java.util.function.Supplier;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+/**
+ * This class can be extended to quickly create strongly typed serializer hooks for
+ * {@code Writable} types. If a class which implements {@code Writable} is not
+ * registered explicitly with a {@code SerializerHook} then a default serialization
+ * mechanism will be used which fully writes the class name for each item.
+ */
+public abstract class WritableSerializerHook<T extends Writable> implements SerializerHook<T> {
 
-public class WritableSerializerHook {
+    private final Class<T> clazz;
+    private final Supplier<T> constructor;
+    private final int typeId;
 
-    private static final int WRITABLE = -400;
-
-    public static final class WritableSerializer implements SerializerHook<Writable> {
-
-        @Override
-        public Class<Writable> getSerializationType() {
-            return Writable.class;
-        }
-
-        @Override
-        public Serializer createSerializer() {
-            return new StreamSerializer<Writable>() {
-                @Override
-                public int getTypeId() {
-                    return WRITABLE;
-                }
-
-                @Override
-                public void destroy() {
-                }
-
-                @Override
-                public void write(ObjectDataOutput out, Writable writable) throws IOException {
-                    out.writeUTF(writable.getClass().getName());
-                    writable.write(out);
-                }
-
-                @Override
-                public Writable read(ObjectDataInput in) throws IOException {
-                    String className = in.readUTF();
-                    try {
-                        Writable instance = ClassLoaderUtil.newInstance(null, className);
-                        instance.readFields(in);
-                        return instance;
-                    } catch (Exception e) {
-                        throw rethrow(e);
-                    }
-                }
-            };
-        }
-
-        @Override
-        public boolean isOverwritable() {
-            return true;
-        }
+    protected WritableSerializerHook(Class<T> clazz, Supplier<T> constructor, int typeId) {
+        this.clazz = clazz;
+        this.constructor = constructor;
+        this.typeId = typeId;
     }
 
+    @Override
+    public Class<T> getSerializationType() {
+        return clazz;
+    }
+
+    @Override
+    public Serializer createSerializer() {
+        return new StreamSerializer<Writable>() {
+
+            @Override
+            public int getTypeId() {
+                return typeId;
+            }
+
+            @Override
+            public void destroy() {
+            }
+
+            @Override
+            public void write(ObjectDataOutput out, Writable writable) throws IOException {
+                writable.write(out);
+            }
+
+            @Override
+            public Writable read(ObjectDataInput in) throws IOException {
+                T writable = constructor.get();
+                writable.readFields(in);
+                return writable;
+            }
+        };
+    }
+
+    @Override
+    public boolean isOverwritable() {
+        return true;
+    }
 }

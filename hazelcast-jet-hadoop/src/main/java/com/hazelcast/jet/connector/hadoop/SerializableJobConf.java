@@ -28,13 +28,13 @@ import java.io.Serializable;
 /**
  * This class is used to make {@link JobConf} object serializable
  */
-final class JobConfiguration extends JobConf implements Serializable {
+final class SerializableJobConf extends JobConf implements Serializable {
 
-    JobConfiguration() {
+    SerializableJobConf() {
         //For deserialization
     }
 
-    JobConfiguration(JobConf jobConf) {
+    SerializableJobConf(JobConf jobConf) {
         super(jobConf);
     }
 
@@ -44,5 +44,9 @@ final class JobConfiguration extends JobConf implements Serializable {
 
     private void readObject(ObjectInputStream in) throws IOException {
         super.readFields(new DataInputStream(in));
+    }
+
+    static SerializableJobConf asSerializable(JobConf conf) {
+        return new SerializableJobConf(conf);
     }
 }

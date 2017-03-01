@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.connector.hadoop.SerializableJobConf.asSerializable;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.Util.uncheckCall;
@@ -69,11 +70,23 @@ import static java.util.stream.Stream.concat;
 import static org.apache.hadoop.mapred.Reporter.NULL;
 
 /**
- * HDFS reader for Jet, emits records read from HDFS file as Map.Entry
+ * A processor which reads and emits records from HDFS.
+ *
+ * The input according to the given {@code InputFormat} is split
+ * among the processor instances and each processor instance is responsible
+ * for reading a part of the input. The records by default are emitted as
+ * {@code Map.Entry<K,V>}, but this can also be transformed to another type
+ * using an optional mapper.
+ *
+ * Jet cluster should be run on the same nodes as the HDFS nodes for best
+ * read performance. If the hosts are aligned, each processor instance will
+ * try to read as much local data as possible. A heuristic algorithm is used
+ * to assign replicated blocks across the cluster to ensure a
+ * well-balanced work distribution between processor instances.
  *
  * @param <K> key type of the records
  * @param <V> value type of the records
- * @param <R> the type of the mapped value
+ * @param <R> the type of the emitted value
  */
 public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
@@ -112,8 +125,8 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
     }
 
     /**
-     * Returns a meta-supplier of processors that read HDFS files.
-     * It will emit entries of type {@code Map.Entry<K,V>}.
+     * Returns a meta-supplier of processors that reads from HDFS files.
+     * The processors emit entries of type {@code Map.Entry<K,V>}.
      *
      * @param <K>     key type of the records
      * @param <V>     value type of the records
@@ -122,7 +135,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
      */
     @Nonnull
     public static <K, V> MetaSupplier<K, V, Entry<K, V>> readHdfs(@Nonnull JobConf jobConf) {
-        return new MetaSupplier<>(jobConf, Util::entry);
+        return readHdfs(jobConf, Util::entry);
     }
 
     /**
@@ -138,22 +151,22 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
      */
     @Nonnull
     public static <K, V, R> MetaSupplier<K, V, R> readHdfs(@Nonnull JobConf jobConf, @Nonnull BiFunction<K, V, R> mapper) {
-        return new MetaSupplier<>(jobConf, mapper);
+        return new MetaSupplier<>(asSerializable(jobConf), mapper);
     }
 
     private static class MetaSupplier<K, V, R> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
 
-        private final JobConfiguration configuration;
+        private final SerializableJobConf jobConf;
         private final BiFunction<K, V, R> mapper;
 
         private transient Map<Address, List<IndexedInputSplit>> assigned;
         private transient ILogger logger;
 
 
-        MetaSupplier(JobConf jobConf, @Nonnull BiFunction<K, V, R> mapper) {
-            this.configuration = new JobConfiguration(jobConf);
+        MetaSupplier(@Nonnull SerializableJobConf jobConf, @Nonnull BiFunction<K, V, R> mapper) {
+            this.jobConf = jobConf;
             this.mapper = mapper;
         }
 
@@ -162,8 +175,8 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
             logger = context.jetInstance().getHazelcastInstance().getLoggingService().getLogger(ReadHdfsP.class);
             try {
                 int totalParallelism = context.totalParallelism();
-                InputFormat inputFormat = configuration.getInputFormat();
-                InputSplit[] splits = inputFormat.getSplits(configuration, totalParallelism);
+                InputFormat inputFormat = jobConf.getInputFormat();
+                InputSplit[] splits = inputFormat.getSplits(jobConf, totalParallelism);
                 IndexedInputSplit[] indexedInputSplits = new IndexedInputSplit[splits.length];
                 Arrays.setAll(indexedInputSplits, i -> new IndexedInputSplit(i, splits[i]));
 
@@ -181,7 +194,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
         @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             return address -> new Supplier<>(
-                    configuration,
+                    jobConf,
                     assigned.get(address) != null ? assigned.get(address) : emptyList(),
                     mapper);
         }
@@ -313,12 +326,12 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
 
         static final long serialVersionUID = 1L;
 
-        private JobConf configuration;
+        private SerializableJobConf jobConf;
         private List<IndexedInputSplit> assignedSplits;
         private BiFunction<K, V, R> mapper;
 
-        Supplier(JobConf configuration, Collection<IndexedInputSplit> assignedSplits, @Nonnull BiFunction<K, V, R> mapper) {
-            this.configuration = configuration;
+        Supplier(SerializableJobConf jobConf, Collection<IndexedInputSplit> assignedSplits, @Nonnull BiFunction<K, V, R> mapper) {
+            this.jobConf = jobConf;
             this.assignedSplits = assignedSplits.stream().collect(toList());
             this.mapper = mapper;
         }
@@ -332,7 +345,7 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
                                     mapping(Entry::getValue, toList())));
             range(0, count)
                     .forEach(processor -> processorToSplits.computeIfAbsent(processor, x -> emptyList()));
-            InputFormat inputFormat = configuration.getInputFormat();
+            InputFormat inputFormat = jobConf.getInputFormat();
 
             return processorToSplits
                     .values().stream()
@@ -341,20 +354,20 @@ public final class ReadHdfsP<K, V, R> extends AbstractProcessor {
                             : new ReadHdfsP<>(splits.stream()
                             .map(IndexedInputSplit::getSplit)
                             .map(split -> uncheckCall(() ->
-                                    inputFormat.getRecordReader(split, configuration, NULL)))
+                                    inputFormat.getRecordReader(split, jobConf, NULL)))
                             .collect(toList()), mapper)
                     ).collect(toList());
         }
 
         private void writeObject(ObjectOutputStream out) throws IOException {
-            configuration.write(out);
+            jobConf.write(out);
             out.writeObject(assignedSplits);
             out.writeObject(mapper);
         }
 
         private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-            configuration = new JobConf();
-            configuration.readFields(in);
+            jobConf = new SerializableJobConf();
+            jobConf.readFields(in);
             assignedSplits = (List<IndexedInputSplit>) in.readObject();
             mapper = (BiFunction<K, V, R>) in.readObject();
         }

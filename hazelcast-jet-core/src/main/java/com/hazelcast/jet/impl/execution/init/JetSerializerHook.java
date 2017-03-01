@@ -42,6 +42,8 @@ public final class JetSerializerHook {
     public static final int CUSTOM_CLASS_LOADED_OBJECT = -301;
     public static final int OBJECT_ARRAY = -302;
 
+    // reserved for hadoop module -380 to -390
+
     /**
      * End of reserved space for Jet-specific serializers.
      * Any ID less than this number might be used by some other Hazelcast serializer.

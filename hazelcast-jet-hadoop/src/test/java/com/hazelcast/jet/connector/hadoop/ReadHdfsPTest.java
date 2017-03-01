@@ -28,11 +28,9 @@ import com.hazelcast.test.HazelcastParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
@@ -64,7 +62,6 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Processors.writeList;
 import static com.hazelcast.jet.connector.hadoop.ReadHdfsP.readHdfs;
-import static com.hazelcast.jet.impl.util.Util.uncheckCall;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
@@ -112,8 +109,6 @@ public class ReadHdfsPTest extends JetTestSupport {
     @Before
     public void setup() throws IOException {
         instance = createJetMember();
-        createJetMember();
-
         jobConf = new JobConf();
         jobConf.setInputFormat(inputFormatClass);
 
@@ -128,9 +123,9 @@ public class ReadHdfsPTest extends JetTestSupport {
         DAG dag = new DAG();
 
         Vertex source = dag.newVertex("source", readHdfs(jobConf, mapper))
-                .localParallelism(4);
+                           .localParallelism(4);
         Vertex sink = dag.newVertex("sink", writeList("sink"))
-                .localParallelism(1);
+                         .localParallelism(1);
         dag.edge(between(source, sink));
 
         Future<Void> future = instance.newJob(dag).execute();
@@ -157,7 +152,7 @@ public class ReadHdfsPTest extends JetTestSupport {
     }
 
     private void writeToTextFile(LocalFileSystem local, Path path) throws IOException {
-        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(local.create(path)))){
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(local.create(path)))) {
             for (String value : ENTRIES) {
                 writer.write(value);
                 writer.flush();
@@ -171,7 +166,7 @@ public class ReadHdfsPTest extends JetTestSupport {
         Option fileOption = Writer.file(path);
         Option keyClassOption = Writer.keyClass(key.getClass());
         Option valueClassOption = Writer.valueClass(value.getClass());
-        try (Writer writer = SequenceFile.createWriter(conf, fileOption, keyClassOption, valueClassOption)){
+        try (Writer writer = SequenceFile.createWriter(conf, fileOption, keyClassOption, valueClassOption)) {
             for (int i = 0; i < ENTRIES.length; i++) {
                 key.set(i);
                 value.set(ENTRIES[i]);
