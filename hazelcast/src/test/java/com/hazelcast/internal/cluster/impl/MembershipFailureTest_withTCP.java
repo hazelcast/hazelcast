@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -27,6 +28,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static com.hazelcast.instance.HazelcastInstanceFactory.createInstanceName;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class})
@@ -39,18 +42,23 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @Override
     HazelcastInstance newHazelcastInstance() {
-        return HazelcastInstanceFactory.newHazelcastInstance(newConfig());
+        return newHazelcastInstance(new Config());
     }
 
-    private static Config newConfig() {
-        Config config = new Config();
+    @Override
+    HazelcastInstance newHazelcastInstance(Config config) {
+        initConfig(new Config());
+        return HazelcastInstanceFactory.newHazelcastInstance(config, createInstanceName(config), new FirewallingNodeContext());
+    }
+
+    private static Config initConfig(Config config) {
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);
 
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig().setEnabled(true).clear();
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 10; i++) {
             int port = 5701 + i;
             tcpIpConfig.addMember("127.0.0.1:" + port);
         }

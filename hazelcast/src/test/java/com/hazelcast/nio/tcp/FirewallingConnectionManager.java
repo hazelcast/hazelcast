@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008 - 2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,12 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.ConnectionListener;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.test.mocknetwork.MockConnectionManager;
-import com.hazelcast.test.mocknetwork.TestNodeRegistry;
+import com.hazelcast.spi.impl.PacketHandler;
 
 import java.util.Collections;
 import java.util.Set;
@@ -32,18 +31,24 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-public class FirewallingMockConnectionManager extends MockConnectionManager {
+/**
+ * A {@link ConnectionManager} wrapper which adds firewalling capabilities.
+ * All methods delegate to the original ConnectionManager.
+ */
+public class FirewallingConnectionManager implements ConnectionManager, PacketHandler {
 
+    private final ConnectionManager delegate;
     private final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final PacketHandler packetHandler;
 
     private volatile PacketFilter droppingPacketFilter;
     private volatile DelayingPacketFilterWrapper delayingPacketFilter;
 
-    public FirewallingMockConnectionManager(IOService ioService, Node node, TestNodeRegistry registry,
-                                            Set<Address> initiallyBlockedAddresses) {
-        super(ioService, node, registry);
+    public FirewallingConnectionManager(ConnectionManager delegate, Set<Address> initiallyBlockedAddresses) {
+        this.delegate = delegate;
         this.blockedAddresses.addAll(initiallyBlockedAddresses);
+        packetHandler = delegate instanceof PacketHandler ? (PacketHandler) delegate : null;
     }
 
     @Override
@@ -57,7 +62,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
             registerConnection(address, connection);
             return connection;
         } else {
-            return super.getOrConnect(address);
+            return delegate.getOrConnect(address);
         }
     }
 
@@ -135,7 +140,7 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
                 return true;
             }
         }
-        return super.transmit(packet, connection);
+        return delegate.transmit(packet, connection);
     }
 
     @Override
@@ -148,13 +153,55 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
             scheduledExecutor.schedule(new DelayedPacketTask(packet, target), delayMs, MILLISECONDS);
             return true;
         }
-        return super.transmit(packet, target);
+        return delegate.transmit(packet, target);
     }
 
     @Override
+    public int getCurrentClientConnections() {return delegate.getCurrentClientConnections();}
+
+    @Override
+    public void addConnectionListener(ConnectionListener listener) {delegate.addConnectionListener(listener);}
+
+    @Override
+    public int getAllTextConnections() {return delegate.getAllTextConnections();}
+
+    @Override
+    public int getConnectionCount() {return delegate.getConnectionCount();}
+
+    @Override
+    public int getActiveConnectionCount() {return delegate.getActiveConnectionCount();}
+
+    @Override
+    public Connection getConnection(Address address) {return delegate.getConnection(address);}
+
+    @Override
+    public boolean registerConnection(Address address, Connection connection) {
+        return delegate.registerConnection(address, connection);
+    }
+
+    @Override
+    public void onConnectionClose(Connection connection) {
+        delegate.onConnectionClose(connection);
+    }
+
+    @Override
+    public void start() {delegate.start();}
+
+    @Override
+    public void stop() {delegate.stop();}
+
+    @Override
     public void shutdown() {
-        super.shutdown();
+        delegate.shutdown();
         scheduledExecutor.shutdown();
+    }
+
+    @Override
+    public void handle(Packet packet) throws Exception {
+        if (packetHandler == null) {
+            throw new UnsupportedOperationException(delegate + " is not instance of PacketHandler!");
+        }
+        packetHandler.handle(packet);
     }
 
     private class DelayedPacketTask implements Runnable {
@@ -177,9 +224,9 @@ public class FirewallingMockConnectionManager extends MockConnectionManager {
         @Override
         public void run() {
             if (connection != null) {
-                FirewallingMockConnectionManager.super.transmit(packet, connection);
+                delegate.transmit(packet, connection);
             } else {
-                FirewallingMockConnectionManager.super.transmit(packet, target);
+                delegate.transmit(packet, target);
             }
         }
     }

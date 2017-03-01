@@ -42,6 +42,7 @@ import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOperat
 import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOperation;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
+import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -97,8 +98,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int FETCH_MEMBER_LIST_STATE = 36;
     public static final int EXPLICIT_SUSPICION = 37;
     public static final int MEMBERS_VIEW = 38;
+    public static final int TRIGGER_EXPLICIT_SUSPICION = 39;
 
-    public static final int LEN = MEMBERS_VIEW + 1;
+    public static final int LEN = TRIGGER_EXPLICIT_SUSPICION + 1;
 
     @Override
     public int getFactoryId() {
@@ -306,6 +308,12 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new MembersView();
+            }
+        };
+        constructors[TRIGGER_EXPLICIT_SUSPICION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TriggerExplicitSuspicionOp();
             }
         };
 

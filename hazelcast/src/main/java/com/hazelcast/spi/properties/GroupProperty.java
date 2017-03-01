@@ -709,6 +709,12 @@ public final class GroupProperty {
     public static final HazelcastProperty INIT_CLUSTER_VERSION
             = new HazelcastProperty("hazelcast.init.cluster.version");
 
+    /**
+     * TODO: javadoc
+     */
+    public static final HazelcastProperty USE_LEGACY_MEMBER_LIST_FORMAT
+            = new HazelcastProperty("hazelcast.legacy.memberlist.format.enabled", false);
+
     private GroupProperty() {
     }
 }

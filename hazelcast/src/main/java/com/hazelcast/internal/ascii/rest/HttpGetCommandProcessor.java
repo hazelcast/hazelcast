@@ -90,7 +90,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     private void handleCluster(HttpGetCommand command) {
         Node node = textCommandService.getNode();
-        StringBuilder res = new StringBuilder(node.getClusterService().memberListString());
+        StringBuilder res = new StringBuilder(node.getClusterService().getMemberListString());
         res.append("\n");
         ConnectionManager connectionManager = node.getConnectionManager();
         res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());

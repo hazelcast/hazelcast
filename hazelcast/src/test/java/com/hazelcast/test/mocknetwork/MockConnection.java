@@ -20,6 +20,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.nio.Packet;
@@ -117,12 +118,12 @@ public class MockConnection implements Connection {
             //this is a member-to-member connection
             NodeEngineImpl localNodeEngine = localConnection.nodeEngine;
             Node localNode = localNodeEngine.getNode();
-            MockConnectionManager connectionManager = (MockConnectionManager) localNode.connectionManager;
-            connectionManager.onClose(this);
+            ConnectionManager connectionManager = localNode.connectionManager;
+            connectionManager.onConnectionClose(this);
         } else {
             //this is a client-member connection. we need to notify NodeEngine about a client connection being closed.
-            MockConnectionManager connectionManager = (MockConnectionManager) nodeEngine.getNode().connectionManager;
-            connectionManager.onClose(this);
+            ConnectionManager connectionManager = nodeEngine.getNode().connectionManager;
+            connectionManager.onConnectionClose(this);
         }
 
     }

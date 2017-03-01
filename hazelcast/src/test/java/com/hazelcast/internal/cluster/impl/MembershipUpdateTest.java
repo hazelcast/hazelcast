@@ -19,7 +19,10 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,14 +34,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.delayOperationsFrom;
+import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsBetween;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.resetPacketFiltersFrom;
+import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -59,12 +65,14 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     // ✔ sequential member join and removal
     // ✔ concurrent member join and removal
     // ✔ existing members missing member updates (join), convergence
-    // - existing member missing member removal, then receives periodic member publish
-    // - existing member missing member removal, then receives new member join update
+    // ✔ existing member missing member removal, then receives periodic member publish
+    // ✔ existing member missing member removal, then receives new member join update
     // ✔ existing member receiving out-of-order member updates
     // ✔ new member receiving out-of-order finalize join & member updates
-    // - existing member receiving a member list that's not containing itself
+    // ✔ existing member receiving a member list that's not containing itself
     // - new member receiving a finalize join that's not containing itself
+    // ✔ existing member receives member update from non-master
+    // - new member receives finalize join from non-master
     // - byzantine member updates published
     // - so on...
 
@@ -296,7 +304,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void memberListsConverge_whenMemberUpdateMissed_withPeriodicUpdates() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -322,7 +330,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void memberListsConverge_whenMembershipUpdatesSent_outOfOrder() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
         
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         delayOperationsFrom(hz1, MEMBER_INFO_UPDATE);
@@ -347,7 +355,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void memberListsConverge_whenFinalizeJoinAndMembershipUpdatesSent_outOfOrder() {
         Config config = new Config();
-        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         delayOperationsFrom(hz1, MEMBER_INFO_UPDATE, FINALIZE_JOIN);
@@ -367,6 +375,106 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : instances) {
             assertMemberViewsAreSame(referenceMemberMap, getMemberMap(instance));
         }
+    }
+
+    @Test
+    public void memberListsConverge_whenExistingMemberMissesMemberRemove_withPeriodicUpdates() {
+        Config config = new Config();
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "1");
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz2);
+
+        dropOperationsBetween(hz1, hz3, MEMBER_INFO_UPDATE);
+        hz2.getLifecycleService().terminate();
+
+        assertClusterSizeEventually(2, hz1);
+        assertClusterSize(3, hz3);
+
+        resetPacketFiltersFrom(hz1);
+
+        assertClusterSizeEventually(2, hz3);
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+    }
+
+    @Test
+    public void memberListsConverge_whenExistingMemberMissesMemberRemove_afterNewMemberJoins() {
+        Config config = new Config();
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz2);
+
+        dropOperationsBetween(hz1, hz3, MEMBER_INFO_UPDATE);
+        hz2.getLifecycleService().terminate();
+
+        assertClusterSizeEventually(2, hz1);
+        assertClusterSize(3, hz3);
+
+        resetPacketFiltersFrom(hz1);
+
+        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, hz3);
+        
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
+    }
+
+    @Test
+    public void existingMemberReceives_memberUpdateNotContainingItself() {
+        Config config = new Config();
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        Node node = getNode(hz1);
+        ClusterServiceImpl clusterService = node.getClusterService();
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+        
+        MembersView membersView = MembersView.createNew(membershipManager.getMemberListVersion() + 1, 
+                Arrays.asList(membershipManager.getMember(getAddress(hz1)), membershipManager.getMember(getAddress(hz2))));
+
+        Operation memberUpdate = new MembersUpdateOperation(membershipManager.getMember(getAddress(hz3)).getUuid(),
+                membersView, clusterService.getClusterTime(), null, false);
+        node.getNodeEngine().getOperationService().send(memberUpdate, getAddress(hz3));
+
+        assertClusterSizeEventually(2, hz1);
+        assertClusterSizeEventually(2, hz2);
+
+        // TODO: hz3 should eventually split
+//        assertClusterSizeEventually(1, hz3);
+    }
+
+    @Test
+    public void existingMemberReceives_memberUpdateFromNonMaster() {
+        Config config = new Config();
+        config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+
+        Node node = getNode(hz1);
+        ClusterServiceImpl clusterService = node.getClusterService();
+        MembershipManager membershipManager = clusterService.getMembershipManager();
+        MembersView membersView = membershipManager.createMembersView();
+
+        Operation memberUpdate = new MembersUpdateOperation(membershipManager.getMember(getAddress(hz3)).getUuid(),
+                membersView, clusterService.getClusterTime(), null, false);
+
+        NodeEngineImpl nonMasterNodeEngine = getNodeEngineImpl(hz2);
+        nonMasterNodeEngine.getOperationService().send(memberUpdate, getAddress(hz3));
+
+        // TODO: assert eventually hz2 suspects hz3
     }
 
     static void assertMemberViewsAreSame(MemberMap expectedMemberMap, MemberMap actualMemberMap) {

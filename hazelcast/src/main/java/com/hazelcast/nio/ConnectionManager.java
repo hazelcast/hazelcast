@@ -85,6 +85,12 @@ public interface ConnectionManager extends ConnectionListenable {
     boolean registerConnection(Address address, Connection connection);
 
     /**
+     * Deals with cleaning up a closed connection. This method should only be called once by the
+     * {@link Connection#close(String, Throwable)} method where it is protected against multiple closes.
+     */
+    void onConnectionClose(Connection connection);
+
+    /**
      * Transmits a packet to a certain connection.
      *
      * If this method is called with a null connection, the call returns false

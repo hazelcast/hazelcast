@@ -48,10 +48,8 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
     protected final void writeInternal(ObjectDataOutput out) throws IOException {
         writeInternalImpl(out);
 
-        Version version = out.getVersion();
-        // in OSS, version is unknown
-        if (!BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9)) {
-            out.writeInt(this.memberListVersion);
+        if (isGreaterOrEqual_V3_9(out.getVersion())) {
+            out.writeInt(memberListVersion);
         }
     }
 
@@ -61,12 +59,15 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
     protected final void readInternal(ObjectDataInput in) throws IOException {
         readInternalImpl(in);
 
-        Version version = in.getVersion();
-        // in OSS, version is unknown
-        if (!BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9)) {
-            this.memberListVersion = in.readInt();
+        if (isGreaterOrEqual_V3_9(in.getVersion())) {
+            memberListVersion = in.readInt();
         }
     }
 
     abstract void readInternalImpl(ObjectDataInput in) throws IOException;
+
+    final boolean isGreaterOrEqual_V3_9(Version version) {
+        // in OSS, version is unknown
+        return !BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9);
+    }
 }

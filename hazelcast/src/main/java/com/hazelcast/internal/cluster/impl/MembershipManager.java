@@ -103,7 +103,7 @@ public class MembershipManager {
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
         executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
             public void run() {
-                sendMemberListToOthers();
+                publishMemberList();
             }
         }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
@@ -170,6 +170,17 @@ public class MembershipManager {
         MembersUpdateOperation op = new MembersUpdateOperation(memberUuid, memberMap.toMembersView(),
                 clusterService.getClusterTime(), null, false);
         nodeEngine.getOperationService().send(op, target);
+    }
+
+    private void publishMemberList() {
+        clusterServiceLock.lock();
+        try {
+            if (!clusterService.getClusterJoinManager().isMastershipClaimInProgress()) {
+                sendMemberListToOthers();
+            }
+        } finally {
+            clusterServiceLock.unlock();
+        }
     }
 
     /** Invoked on the master to send the member list (see {@link MembersUpdateOperation}) to non-master nodes. */
@@ -293,6 +304,45 @@ public class MembershipManager {
         }
     }
 
+    void triggerExplicitSuspicion(Address caller, int callerMemberListVersion,
+                                  Address endpoint, Address endpointMasterAddress, int endpointMemberListVersion) {
+        clusterServiceLock.lock();
+        try {
+            Address masterAddress = clusterService.getMasterAddress();
+            int memberListVersion = getMemberListVersion();
+
+            if (!(masterAddress.equals(caller) && memberListVersion == callerMemberListVersion)) {
+                logger.fine("Ignoring explicit suspicion trigger for endpoint: " + endpoint + " with endpoint master address: "
+                        + endpointMasterAddress + " and endpoint member list version: " + endpointMemberListVersion + "."
+                        + " caller: " + caller + " caller member list version: " + callerMemberListVersion
+                        + " current master: " + masterAddress + " current member list version: " + memberListVersion);
+                return;
+            }
+
+            clusterService.sendExplicitSuspicion(endpoint, endpointMasterAddress, endpointMemberListVersion);
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
+    void handleExplicitSuspicion(Address expectedMasterAddress, int expectedMemberListVersion, Address suspectedAddress) {
+        clusterServiceLock.lock();
+        try {
+            Address masterAddress = clusterService.getMasterAddress();
+            int memberListVersion = getMemberListVersion();
+            if (!(masterAddress.equals(expectedMasterAddress) && memberListVersion == expectedMemberListVersion)) {
+                logger.fine("Ignoring explicit suspicion of " + suspectedAddress + ". expected master address: "
+                        + expectedMasterAddress + ", expected member list version: " + expectedMemberListVersion
+                        + ", current master address: " + masterAddress + ", current member list version: " + memberListVersion);
+                return;
+            }
+
+            suspectAddress(suspectedAddress, null, "explicit suspicion", true);
+        } finally {
+            clusterServiceLock.unlock();
+        }
+    }
+
     void suspectAddress(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
         if (!ensureMemberIsRemovable(suspectedAddress)) {
             return;
@@ -339,18 +389,21 @@ public class MembershipManager {
 
         ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
         if (node.isMaster() && !clusterJoinManager.isMastershipClaimInProgress()) {
-            doRemoveAddress(suspectedAddress, reason, destroyConnection);
+            removeEndpoint(suspectedAddress, reason, destroyConnection);
             return false;
         } else {
-            if (suspectedMember == null || suspectedMembers.containsKey(suspectedAddress)) {
+            if (suspectedMember == null) {
+                logger.fine("Ignoring suspect request for " + suspectedAddress + " since it's not member.");
                 return false;
             }
 
-            suspectedMembers.put(suspectedAddress, 0L);
-            if (reason != null) {
-                logger.warning(suspectedAddress + " is suspected to be dead for reason: " + reason);
-            } else {
-                logger.warning(suspectedAddress + " is suspected to be dead");
+            if (!suspectedMembers.containsKey(suspectedAddress)) {
+                suspectedMembers.put(suspectedAddress, 0L);
+                if (reason != null) {
+                    logger.warning(suspectedAddress + " is suspected to be dead for reason: " + reason);
+                } else {
+                    logger.warning(suspectedAddress + " is suspected to be dead");
+                }
             }
 
             Connection conn = node.connectionManager.getConnection(suspectedAddress);
@@ -369,18 +422,15 @@ public class MembershipManager {
 
             logger.info("Starting mastership claim process...");
 
-            // TODO [basri] should be here or after the master address is updated?
-            // TODO [basri] We need to make sure that all pending join requests are cancelled temporarily.
+            // Make sure that all pending join requests are cancelled temporarily.
             clusterJoinManager.setMastershipClaimInProgress();
 
-            // TODO [basri] update master address
             node.setMasterAddress(node.getThisAddress());
             return true;
         }
     }
 
-    // TODO: called only on master 
-    private void doRemoveAddress(Address address, String reason, boolean destroyConnection) {
+    private void removeEndpoint(Address address, String reason, boolean destroyConnection) {
         if (!ensureMemberIsRemovable(address)) {
             return;
         }
@@ -397,13 +447,11 @@ public class MembershipManager {
             }
 
             removeMember(address);
-
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    // TODO [basri] should be called only within master
     private void removeMember(Address address) {
         assert clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9);
         assert node.isMaster() : "Master: " + node.getMasterAddress();
@@ -425,6 +473,7 @@ public class MembershipManager {
                 sendMemberListToOthers();
 
                 handleMemberRemove(newMembers, member);
+                clusterService.printMemberList();
             } else {
                 logger.fine("No member to remove with address: " + address);
             }

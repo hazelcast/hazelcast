@@ -157,7 +157,8 @@ public class MockConnectionManager implements ConnectionManager {
         connectionListeners.add(connectionListener);
     }
 
-    public void onClose(final Connection connection) {
+    @Override
+    public void onConnectionClose(final Connection connection) {
         final Address endPoint = connection.getEndPoint();
         if (mapConnections.remove(endPoint, connection)) {
             logger.info("Removed connection to endpoint: " + endPoint + ", connection: " + connection);

@@ -128,7 +128,7 @@ public final class HazelcastInstanceFactory {
         );
     }
 
-    private static String createInstanceName(Config config) {
+    public static String createInstanceName(Config config) {
         return "_hzInstance_" + FACTORY_ID_GEN.incrementAndGet() + "_" + config.getGroupConfig().getName();
     }
 

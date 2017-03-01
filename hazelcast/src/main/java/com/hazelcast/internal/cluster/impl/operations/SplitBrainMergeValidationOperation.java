@@ -122,7 +122,7 @@ public class SplitBrainMergeValidationOperation extends AbstractJoinOperation {
         if (removeCaller) {
             ClusterServiceImpl service = getService();
             Address caller = getCallerAddress();
-            // TODO [basri] I am the master. I can remove the member directly
+            // I am the master. I can remove the member directly
             String reason = "Removing " + caller + ", since it thinks it's already split from this cluster "
                     + "and looking to merge.";
             service.suspectAddress(caller, reason, true);

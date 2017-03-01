@@ -409,7 +409,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
      * Deals with cleaning up a closed connection. This method should only be called once by the
      * {@link TcpIpConnection#close(String, Throwable)} method where it is protected against multiple closes.
      */
-    void onClose(Connection connection) {
+    @Override
+    public void onConnectionClose(Connection connection) {
         closedCount.inc();
 
         if (activeConnections.remove(connection)) {

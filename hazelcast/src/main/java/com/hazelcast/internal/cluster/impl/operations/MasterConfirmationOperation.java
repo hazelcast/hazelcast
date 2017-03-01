@@ -24,14 +24,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MasterConfirmationOperation extends AbstractClusterOperation {
+public class MasterConfirmationOperation extends VersionedClusterOperation {
 
     private long timestamp;
 
     public MasterConfirmationOperation() {
+        super(0);
     }
 
-    public MasterConfirmationOperation(long timestamp) {
+    public MasterConfirmationOperation(int memberListVersion, long timestamp) {
+        super(memberListVersion);
         this.timestamp = timestamp;
     }
 
@@ -43,16 +45,18 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
         }
 
         final ClusterServiceImpl clusterService = getService();
-        clusterService.handleMasterConfirmation(endpoint, timestamp);
+        clusterService.handleMasterConfirmation(endpoint, getMemberListVersion(), timestamp);
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    void writeInternalImpl(ObjectDataOutput out)
+            throws IOException {
         out.writeLong(timestamp);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    void readInternalImpl(ObjectDataInput in)
+            throws IOException {
         timestamp = in.readLong();
     }
 

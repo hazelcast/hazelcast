@@ -26,7 +26,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -171,11 +171,11 @@ public class PartitionedCluster {
         Node n4 = getNode(h4);
         Node n5 = getNode(h5);
 
-        FirewallingMockConnectionManager cm1 = getConnectionManager(n1);
-        FirewallingMockConnectionManager cm2 = getConnectionManager(n2);
-        FirewallingMockConnectionManager cm3 = getConnectionManager(n3);
-        FirewallingMockConnectionManager cm4 = getConnectionManager(n4);
-        FirewallingMockConnectionManager cm5 = getConnectionManager(n5);
+        FirewallingConnectionManager cm1 = getConnectionManager(n1);
+        FirewallingConnectionManager cm2 = getConnectionManager(n2);
+        FirewallingConnectionManager cm3 = getConnectionManager(n3);
+        FirewallingConnectionManager cm4 = getConnectionManager(n4);
+        FirewallingConnectionManager cm5 = getConnectionManager(n5);
 
         cm1.block(n4.address);
         cm2.block(n4.address);
@@ -210,7 +210,7 @@ public class PartitionedCluster {
         n3.clusterService.removeAddress(n5.address, null);
     }
 
-    private static FirewallingMockConnectionManager getConnectionManager(Node node) {
-        return (FirewallingMockConnectionManager) node.getConnectionManager();
+    private static FirewallingConnectionManager getConnectionManager(Node node) {
+        return (FirewallingConnectionManager) node.getConnectionManager();
     }
 }

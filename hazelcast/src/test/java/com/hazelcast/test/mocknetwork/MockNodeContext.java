@@ -25,7 +25,7 @@ import com.hazelcast.instance.NodeExtensionFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.nio.tcp.FirewallingConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
@@ -38,7 +38,7 @@ public class MockNodeContext implements NodeContext {
     private final Set<Address> initiallyBlockedAddresses;
 
     protected MockNodeContext(TestNodeRegistry registry, Address thisAddress) {
-        this(registry, thisAddress, Collections.EMPTY_SET);
+        this(registry, thisAddress, Collections.<Address>emptySet());
     }
 
     protected MockNodeContext(TestNodeRegistry registry, Address thisAddress, Set<Address> initiallyBlockedAddresses) {
@@ -62,6 +62,7 @@ public class MockNodeContext implements NodeContext {
 
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        return new FirewallingMockConnectionManager(ioService, node, registry, initiallyBlockedAddresses);
+        ConnectionManager delegate = new MockConnectionManager(ioService, node, registry);
+        return new FirewallingConnectionManager(delegate, initiallyBlockedAddresses);
     }
 }

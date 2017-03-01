@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembershipManagerCompat;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -35,7 +36,11 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
     public MemberRemoveOperation() {
     }
 
-    // TODO [basri] only used in ClusterServiceImpl.sendMemberRemoveOperation(memberListVersion, deadMember)
+    public MemberRemoveOperation(Address address) {
+        this.address = address;
+    }
+
+    // used only in ClusterServiceImpl.sendMemberRemoveOperation(memberListVersion, deadMember)
     public MemberRemoveOperation(Address address, String uuid) {
         this.address = address;
         this.memberUuid = uuid;
@@ -57,7 +62,8 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
             logger.fine(msg);
         }
 
-        clusterService.getMembershipManagerCompat().removeMember(address, memberUuid, msg);
+        MembershipManagerCompat membershipManagerCompat = clusterService.getMembershipManagerCompat();
+        membershipManagerCompat.removeMember(address, memberUuid, msg);
     }
 
     private boolean isCallerValid(Address caller) {

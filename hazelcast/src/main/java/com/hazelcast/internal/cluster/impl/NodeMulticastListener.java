@@ -74,8 +74,7 @@ public class NodeMulticastListener implements MulticastListener {
             String message = "New join request has been received from current master. "
                     + "Removing " + node.getMasterAddress();
             logger.warning(message);
-            // TODO [basri] I am a slave and the master I follow says that it is gone. So, I can remove it instead of suspecting it.
-            // TODO [basri] I can only make a local suspicion. Since it is a multicast message, probably other nodes will eventually suspect as well.
+            // I just make a local suspicion. Probably other nodes will eventually suspect as well.
             // TODO [basri] Since I am not the master, I cannot change other members' opinions about suspicions.
             node.getClusterService().suspectAddress(node.getMasterAddress(), message, false);
         }

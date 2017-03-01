@@ -159,6 +159,16 @@ public final class MembersView implements IdentifiedDataSerializable {
         return false;
     }
 
+    public boolean containsAddress(Address address, String uuid) {
+        for (MemberInfo member : members) {
+            if (member.getAddress().equals(address)) {
+                return member.getUuid().equals(uuid);
+            }
+        }
+
+        return false;
+    }
+
     public Set<Address> getAddresses() {
         Set<Address> addresses = new HashSet<Address>(members.size());
         for (MemberInfo member : members) {

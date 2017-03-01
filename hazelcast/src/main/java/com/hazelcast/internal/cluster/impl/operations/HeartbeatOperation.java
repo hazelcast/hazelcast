@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
@@ -30,25 +31,42 @@ import java.io.IOException;
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
 public final class HeartbeatOperation extends VersionedClusterOperation {
 
+    private String targetUuid;
     private long timestamp;
 
     public HeartbeatOperation() {
         super(0);
     }
 
-    public HeartbeatOperation(int version, long timestamp) {
+    public HeartbeatOperation(String targetUuid, int version, long timestamp) {
         super(version);
+        this.targetUuid = targetUuid;
         this.timestamp = timestamp;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl service = getService();
+        if (!wasSentToThisMember(service)) {
+            getLogger().warning("Heartbeat was sent to " + targetUuid + ", but this is not our UUID anymore.");
+            return;
+        }
+
         MemberImpl member = getHeartBeatingMember(service);
         if (member != null) {
             checkMemberListVersion(service);
             service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
         }
+    }
+
+    private boolean wasSentToThisMember(ClusterServiceImpl service) {
+        Version clusterVersion = service.getClusterVersion();
+        if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
+            return true;
+        }
+        
+        Member localMember = service.getLocalMember();
+        return localMember.getUuid().equals(targetUuid);
     }
 
     private void checkMemberListVersion(ClusterServiceImpl service) {
@@ -84,6 +102,7 @@ public final class HeartbeatOperation extends VersionedClusterOperation {
         }
     }
 
+    // TODO [basri] If I am the master and I receive a heartbeat from a non-member address, I can tell it to suspect me
     private MemberImpl getHeartBeatingMember(ClusterServiceImpl service) {
         MemberImpl member = service.getMember(getCallerAddress());
         ILogger logger = getLogger();
@@ -117,11 +136,19 @@ public final class HeartbeatOperation extends VersionedClusterOperation {
 
     @Override
     void writeInternalImpl(ObjectDataOutput out) throws IOException {
+        if (isGreaterOrEqual_V3_9(out.getVersion())) {
+            out.writeUTF(targetUuid);
+        }
+
         out.writeLong(timestamp);
     }
 
     @Override
     void readInternalImpl(ObjectDataInput in) throws IOException {
+        if (isGreaterOrEqual_V3_9(in.getVersion())) {
+            targetUuid = in.readUTF();
+        }
+
         timestamp = in.readLong();
     }
 }
