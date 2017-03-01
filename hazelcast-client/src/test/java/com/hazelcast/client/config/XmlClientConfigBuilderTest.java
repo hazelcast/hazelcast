@@ -114,12 +114,12 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
 
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
-        String xml = HAZELCAST_CLIENT_START_TAG +
-                "    <group>\n" +
-                "        <name>foobar</name>\n" +
-                "        <password>dev-pass</password>\n" +
-                "    </group>" +
-                "</hazelcast-client>";
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <group>\n"
+                + "        <name>foobar</name>\n"
+                + "        <password>dev-pass</password>\n"
+                + "    </group>\n"
+                + "</hazelcast-client>";
 
         File file = File.createTempFile("foo", "bar");
         file.deleteOnExit();
