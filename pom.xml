@@ -437,6 +437,7 @@
                                 -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
+                                -Dlog4j.skipJansi=true
                             </argLine>
                             <includes>
                                 <include>**/YourTestFileHear.java</include>
@@ -471,6 +472,7 @@
                     -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                     -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                     -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
+                    -Dlog4j.skipJansi=true
                 </argLine>
             </properties>
             <build>
@@ -595,6 +597,7 @@
                                 -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
+                                -Dlog4j.skipJansi=true
                             </argLine>
 
                             <includes>
@@ -853,6 +856,7 @@
                                 -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
+                                -Dlog4j.skipJansi=true
                             </argLine>
                             <groups>
                                 com.hazelcast.test.annotation.NightlyTest,
@@ -887,6 +891,7 @@
                                 -Djavax.cache.Cache.Entry=${CacheEntryImpl}
                                 -Dorg.jsr107.tck.management.agentId=${org.jsr107.tck.management.agentId}
                                 -Djavax.cache.annotation.CacheInvocationContext=${javax.cache.annotation.CacheInvocationContext}
+                                -Dlog4j.skipJansi=true
                             </argLine>
                             <includes>
                                 <include>**/**.java</include>
