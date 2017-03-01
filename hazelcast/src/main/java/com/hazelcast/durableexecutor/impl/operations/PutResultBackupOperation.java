@@ -17,29 +17,24 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-public class PutResultOperation
-        extends AbstractDurableExecutorOperation
-        implements Notifier, BackupAwareOperation {
+public class PutResultBackupOperation
+        extends AbstractDurableExecutorOperation implements BackupOperation {
 
     private int sequence;
 
     private Object result;
 
 
-    public PutResultOperation() {
+    public PutResultBackupOperation() {
     }
 
-    public PutResultOperation(String name, int sequence, Object result) {
+    public PutResultBackupOperation(String name, int sequence, Object result) {
         super(name);
         this.sequence = sequence;
         this.result = result;
@@ -48,22 +43,6 @@ public class PutResultOperation
     @Override
     public void run() throws Exception {
         getExecutorContainer().putResult(sequence, result);
-    }
-
-    @Override
-    public boolean shouldNotify() {
-        return true;
-    }
-
-    @Override
-    public WaitNotifyKey getNotifiedKey() {
-        long uniqueId = Bits.combineToLong(getPartitionId(), sequence);
-        return new DurableExecutorWaitNotifyKey(name, uniqueId);
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new PutResultBackupOperation(name, sequence, result);
     }
 
     @Override
@@ -82,6 +61,6 @@ public class PutResultOperation
 
     @Override
     public int getId() {
-        return DurableExecutorDataSerializerHook.PUT_RESULT;
+        return DurableExecutorDataSerializerHook.PUT_RESULT_BACKUP;
     }
 }

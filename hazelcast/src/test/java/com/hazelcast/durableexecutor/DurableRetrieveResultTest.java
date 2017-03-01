@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.ExecutorServiceTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -30,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -111,6 +113,33 @@ public class DurableRetrieveResultTest extends ExecutorServiceTestSupport {
 
         Future<Object> resultFuture = executorService.retrieveResult(taskId);
         assertNull(resultFuture.get());
+    }
+
+    @Test
+    public void testSingleExecution_WhenMigratedAfterCompletion_WhenOwnerMemberKilled() throws Exception {
+        String name = randomString();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+        String key = generateKeyOwnedBy(instance1);
+
+        String runCounterName = "runCount";
+        IAtomicLong runCount = instance2.getAtomicLong(runCounterName);
+
+        DurableExecutorService executorService = instance1.getDurableExecutorService(name);
+        IncrementAtomicLongRunnable task = new IncrementAtomicLongRunnable(runCounterName);
+        DurableExecutorServiceFuture future = executorService.submitToKeyOwner(task, key);
+
+        future.get(); // Wait for it to finish
+
+        instance1.getLifecycleService().terminate();
+
+        executorService = instance2.getDurableExecutorService(name);
+        Future<Object> newFuture = executorService.retrieveResult(future.getTaskId());
+        newFuture.get(); // Make sure its completed
+
+        assertEquals(1, runCount.get());
     }
 
     @Test

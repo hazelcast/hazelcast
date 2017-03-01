@@ -18,6 +18,7 @@ package com.hazelcast.durableexecutor.impl;
 
 import com.hazelcast.durableexecutor.impl.operations.DisposeResultBackupOperation;
 import com.hazelcast.durableexecutor.impl.operations.DisposeResultOperation;
+import com.hazelcast.durableexecutor.impl.operations.PutResultBackupOperation;
 import com.hazelcast.durableexecutor.impl.operations.PutResultOperation;
 import com.hazelcast.durableexecutor.impl.operations.ReplicationOperation;
 import com.hazelcast.durableexecutor.impl.operations.RetrieveAndDisposeResultOperation;
@@ -46,6 +47,7 @@ public class DurableExecutorDataSerializerHook implements DataSerializerHook {
     public static final int SHUTDOWN = 6;
     public static final int TASK_BACKUP = 7;
     public static final int TASK = 8;
+    public static final int PUT_RESULT_BACKUP = 9;
 
     @Override
     public int getFactoryId() {
@@ -64,6 +66,8 @@ public class DurableExecutorDataSerializerHook implements DataSerializerHook {
                         return new DisposeResultOperation();
                     case PUT_RESULT:
                         return new PutResultOperation();
+                    case PUT_RESULT_BACKUP:
+                        return new PutResultBackupOperation();
                     case REPLICATION:
                         return new ReplicationOperation();
                     case RETRIEVE_DISPOSE_RESULT:
