@@ -237,28 +237,30 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         properties.put("second", Boolean.FALSE);
         properties.put("third", 100);
 
-        // System Property > System Environment > Configuration
-        // Property 'first' => "value-first"
-        // Property 'second' => true
+        // system property > system environment > configuration
+        // property 'first' => "value-first"
+        // property 'second' => true
         setEnvironment("test.second", "true");
-        // Property 'third' => 300
+        // property 'third' => 300
         setEnvironment("test.third", "200");
         System.setProperty("test.third", "300");
-        // Property 'fourth' => null
+        // property 'fourth' => null
 
         PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties);
 
-        // Without lookup of environment
+        // without lookup of environment
         assertEquals("value-first", strategy.getOrNull(first));
         assertEquals(Boolean.FALSE, strategy.getOrNull(second));
         assertEquals(100, strategy.getOrNull(third));
         assertNull(strategy.getOrNull(fourth));
 
-        // With lookup of environment
-        assertEquals("value-first", strategy.getOrNull("test", first));
-        assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
-        assertEquals(300, strategy.getOrNull("test", third));
-        assertNull(strategy.getOrNull("test", fourth));
+        // with lookup of environment (workaround to set environment doesn't work on all JDKs)
+        if (System.getenv("test.third") != null) {
+            assertEquals("value-first", strategy.getOrNull("test", first));
+            assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
+            assertEquals(300, strategy.getOrNull("test", third));
+            assertNull(strategy.getOrNull("test", fourth));
+        }
     }
 
     @Test
