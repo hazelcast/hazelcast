@@ -133,15 +133,15 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
 
     @Test(expected = InvalidConfigurationException.class)
     public void testTwoResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
+        File config1 = createConfigFile("hz1", ".xml");
+        File config2 = createConfigFile("hz2", ".xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         String config2Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -151,20 +151,20 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
 
     @Test(expected = InvalidConfigurationException.class)
     public void testThreeResourceCyclicImportThrowsException() throws Exception {
-        File config1 = createConfigFile("hz1", "xml");
-        File config2 = createConfigFile("hz2", "xml");
-        File config3 = createConfigFile("hz3", "xml");
+        File config1 = createConfigFile("hz1", ".xml");
+        File config2 = createConfigFile("hz2", ".xml");
+        File config3 = createConfigFile("hz3", ".xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         FileOutputStream os3 = new FileOutputStream(config2);
         String config1Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config2.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         String config2Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config3.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config3.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         String config3Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n"
+                + "    <import resource=\"file:///" + config1.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
         writeStringToStreamAndClose(os2, config2Xml);
@@ -174,13 +174,13 @@ public class XmlClientConfigImportVariableReplacementTest extends HazelcastTestS
 
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceContent() throws Exception {
-        File config = createConfigFile("hz1", "xml");
+        File config = createConfigFile("hz1", ".xml");
         FileOutputStream os = new FileOutputStream(config);
-        String config1Xml = HAZELCAST_CLIENT_START_TAG
-                + "    <import resource=\"file://" + config.getAbsolutePath() + "\"/>\n"
+        String configXml = HAZELCAST_CLIENT_START_TAG
+                + "    <import resource=\"file:///" + config.getAbsolutePath() + "\"/>\n"
                 + "</hazelcast-client>";
         writeStringToStreamAndClose(os, "");
-        buildConfig(config1Xml);
+        buildConfig(configXml);
     }
 
     @Test(expected = InvalidConfigurationException.class)
