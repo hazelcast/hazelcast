@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -72,7 +71,7 @@ public class ExecuteScriptRequestTest extends HazelcastTestSupport {
 
         JsonObject result = (JsonObject) jsonObject.get("result");
         String response = (String) request.readResponse(result);
-        assertEquals(format("error%nerror%n"), response);
+        assertEquals("error\nerror\n", response);
     }
 
     @Test
