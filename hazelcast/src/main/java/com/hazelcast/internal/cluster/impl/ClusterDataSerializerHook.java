@@ -98,7 +98,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int EXPLICIT_SUSPICION = 37;
     public static final int MEMBERS_VIEW = 38;
 
-    private static final int LEN = MEMBERS_VIEW + 1;
+    public static final int LEN = MEMBERS_VIEW + 1;
 
     @Override
     public int getFactoryId() {

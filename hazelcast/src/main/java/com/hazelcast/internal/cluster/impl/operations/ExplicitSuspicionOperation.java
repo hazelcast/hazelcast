@@ -1,5 +1,6 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,7 +32,7 @@ public class ExplicitSuspicionOperation extends AbstractClusterOperation {
 
     @Override
     public int getId() {
-        return 0;
+        return ClusterDataSerializerHook.EXPLICIT_SUSPICION;
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.internal.partition;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.nio.tcp.OperationPacketFilter;
 import com.hazelcast.nio.tcp.PacketFilter;
@@ -83,7 +84,7 @@ public class AntiEntropyCorrectnessTest extends PartitionCorrectnessTestSupport 
         }
 
         @Override
-        protected boolean allowOperation(int factory, int type) {
+        protected boolean allowOperation(Address endpoint, int factory, int type) {
             boolean isBackup = factory == SpiDataSerializerHook.F_ID && type == SpiDataSerializerHook.BACKUP;
             return !isBackup || Math.random() > blockRatio;
         }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -49,7 +50,7 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
 
         Version version = out.getVersion();
         // in OSS, version is unknown
-        if (version.isUnknown() || version.isGreaterOrEqual(V3_9)) {
+        if (!BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9)) {
             out.writeInt(this.memberListVersion);
         }
     }
@@ -62,7 +63,7 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
 
         Version version = in.getVersion();
         // in OSS, version is unknown
-        if (version.isUnknown() || version.isGreaterOrEqual(V3_9)) {
+        if (!BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9)) {
             this.memberListVersion = in.readInt();
         }
     }

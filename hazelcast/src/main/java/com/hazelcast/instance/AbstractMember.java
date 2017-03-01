@@ -207,9 +207,8 @@ public abstract class AbstractMember implements Member {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((address == null) ? 0 : address.hashCode());
+        int result = address.hashCode();
+        result = 31 * result + uuid.hashCode();
         return result;
     }
 
@@ -224,14 +223,8 @@ public abstract class AbstractMember implements Member {
         if (!(obj instanceof AbstractMember)) {
             return false;
         }
-        final AbstractMember other = (AbstractMember) obj;
-        if (address == null) {
-            if (other.address != null) {
-                return false;
-            }
-        } else if (!address.equals(other.address)) {
-            return false;
-        }
-        return true;
+
+        AbstractMember that = (AbstractMember) obj;
+        return address.equals(that.address) && uuid.equals(that.uuid);
     }
 }

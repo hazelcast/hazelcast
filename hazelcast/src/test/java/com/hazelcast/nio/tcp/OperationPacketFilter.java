@@ -36,10 +36,10 @@ public abstract class OperationPacketFilter implements PacketFilter {
 
     @Override
     public final boolean allow(Packet packet, Address endpoint) {
-        return packet.getPacketType() != Packet.Type.OPERATION || allowOperation(packet);
+        return packet.getPacketType() != Packet.Type.OPERATION || allowOperation(packet, endpoint);
     }
 
-    private boolean allowOperation(Packet packet) {
+    private boolean allowOperation(Packet packet, Address endpoint) {
         try {
             ObjectDataInput input = serializationService.createObjectDataInput(packet);
             byte header = input.readByte();
@@ -48,7 +48,7 @@ public abstract class OperationPacketFilter implements PacketFilter {
                 boolean compressed = (header & 1 << 2) != 0;
                 int factory = compressed ? input.readByte() : input.readInt();
                 int type = compressed ? input.readByte() : input.readInt();
-                return allowOperation(factory, type);
+                return allowOperation(endpoint, factory, type);
             }
         } catch (IOException e) {
             throw new HazelcastException(e);
@@ -56,5 +56,5 @@ public abstract class OperationPacketFilter implements PacketFilter {
         return true;
     }
 
-    protected abstract boolean allowOperation(int factory, int type);
+    protected abstract boolean allowOperation(Address endpoint, int factory, int type);
 }

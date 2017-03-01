@@ -66,6 +66,7 @@ public class ClusterStateManagerTest {
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);
+    private final MembershipManager membershipManager = mock(MembershipManager.class);
     private final ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
     private final Lock lock = mock(Lock.class);
 
@@ -82,6 +83,8 @@ public class ClusterStateManagerTest {
         when(node.getNodeExtension()).thenReturn(nodeExtension);
         when(node.getLogger(ClusterStateManager.class)).thenReturn(mock(ILogger.class));
         when(node.getVersion()).thenReturn(CURRENT_NODE_VERSION);
+
+        when(clusterService.getMembershipManager()).thenReturn(membershipManager);
 
         clusterStateManager = new ClusterStateManager(node, lock);
     }
@@ -319,7 +322,7 @@ public class ClusterStateManagerTest {
         clusterStateManager.commitClusterState(newState, initiator, TXN);
 
         assertEquals(newState.getNewState(), clusterStateManager.getState());
-        verify(clusterService, times(1)).removeMembersDeadWhileClusterIsNotActive();
+        verify(membershipManager, times(1)).removeMembersDeadWhileClusterIsNotActive();
     }
 
     private Address newAddress() throws UnknownHostException {

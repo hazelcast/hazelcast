@@ -25,18 +25,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MemberRemoveOperation extends VersionedClusterOperation {
+@Deprecated
+// not used on 3.9+
+public class MemberRemoveOperation extends AbstractClusterOperation {
 
     private Address address;
     private String memberUuid;
 
     public MemberRemoveOperation() {
-        super(0);
     }
 
     // TODO [basri] only used in ClusterServiceImpl.sendMemberRemoveOperation(memberListVersion, deadMember)
-    public MemberRemoveOperation(int version, Address address, String uuid) {
-        super(version);
+    public MemberRemoveOperation(Address address, String uuid) {
         this.address = address;
         this.memberUuid = uuid;
     }
@@ -57,7 +57,7 @@ public class MemberRemoveOperation extends VersionedClusterOperation {
             logger.fine(msg);
         }
 
-        clusterService.removeAddress(address, memberUuid, msg);
+        clusterService.getMembershipManagerCompat().removeMember(address, memberUuid, msg);
     }
 
     private boolean isCallerValid(Address caller) {
@@ -82,14 +82,14 @@ public class MemberRemoveOperation extends VersionedClusterOperation {
     }
 
     @Override
-    protected void readInternalImpl(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         memberUuid = in.readUTF();
     }
 
     @Override
-    protected void writeInternalImpl(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(memberUuid);
     }

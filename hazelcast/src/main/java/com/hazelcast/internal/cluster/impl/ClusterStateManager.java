@@ -269,7 +269,7 @@ public class ClusterStateManager {
 
             // if state remains ACTIVE after rollback, then remove all members which left during transaction.
             if (state == ClusterState.ACTIVE) {
-                node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
+                node.getClusterService().getMembershipManager().removeMembersDeadWhileClusterIsNotActive();
             }
             return true;
         } finally {
@@ -300,7 +300,7 @@ public class ClusterStateManager {
                 doSetClusterState(newState, isTransient);
                 // if state is changed to ACTIVE, then remove all members which left while not active.
                 if (newState == ClusterState.ACTIVE) {
-                    node.getClusterService().removeMembersDeadWhileClusterIsNotActive();
+                    node.getClusterService().getMembershipManager().removeMembersDeadWhileClusterIsNotActive();
                 }
             } else if (stateChange.isOfType(Version.class)) {
                 // version is validated on cluster-state-lock, thus we can commit without checking compatibility

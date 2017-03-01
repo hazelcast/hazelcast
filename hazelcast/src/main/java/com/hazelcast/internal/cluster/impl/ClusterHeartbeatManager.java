@@ -86,7 +86,7 @@ public class ClusterHeartbeatManager {
     private volatile long lastHeartbeat;
     private volatile long lastClusterTimeDiff;
 
-    public ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService) {
+    ClusterHeartbeatManager(Node node, ClusterServiceImpl clusterService) {
         this.node = node;
         this.clusterService = clusterService;
         this.nodeEngine = node.getNodeEngine();
@@ -115,7 +115,6 @@ public class ClusterHeartbeatManager {
      * <ul>
      * <li>heartbeat operation to the {@link #getHeartbeatInterval(HazelcastProperties)} interval</li>
      * <li>master confirmation to the {@link GroupProperty#MASTER_CONFIRMATION_INTERVAL_SECONDS} interval</li>
-     * <li>member list publication to the {@link GroupProperty#MEMBER_LIST_PUBLISH_INTERVAL_SECONDS} interval</li>
      * </ul>
      */
     void init() {
@@ -135,14 +134,6 @@ public class ClusterHeartbeatManager {
                 sendMasterConfirmation();
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
-
-        long memberListPublishInterval = hazelcastProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
-        memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
-        executionService.scheduleWithRepetition(EXECUTOR_NAME, new Runnable() {
-            public void run() {
-                clusterService.sendMemberListToOthers();
-            }
-        }, memberListPublishInterval, memberListPublishInterval, TimeUnit.SECONDS);
     }
 
     /**
@@ -184,7 +175,7 @@ public class ClusterHeartbeatManager {
      * @param member    the member sending the confirmation to the master node
      * @param timestamp the cluster timestamp when the confirmation was made
      */
-    public void acceptMasterConfirmation(MemberImpl member, long timestamp) {
+    void acceptMasterConfirmation(MemberImpl member, long timestamp) {
         if (member != null) {
             if (logger.isFineEnabled()) {
                 logger.fine("MasterConfirmation has been received from " + member);
@@ -293,7 +284,7 @@ public class ClusterHeartbeatManager {
             if (!member.localMember()) {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
-                    if (removeMemberIfNotHeartBeating(now, member)) {
+                    if (suspectMemberIfNotHeartBeating(now, member)) {
                         continue;
                     }
 
@@ -318,14 +309,17 @@ public class ClusterHeartbeatManager {
      * @param member the member which needs to be checked
      * @return if the member has been removed
      */
-    private boolean removeMemberIfNotHeartBeating(long now, MemberImpl member) {
+    private boolean suspectMemberIfNotHeartBeating(long now, MemberImpl member) {
+        if (clusterService.getMembershipManager().isMemberSuspected(member.getAddress())) {
+            return true;
+        }
+
         long heartbeatTime = getHeartbeatTime(member);
         if ((now - heartbeatTime) > maxNoHeartbeatMillis) {
             String reason = format("Removing %s because it has not sent any heartbeats for %d ms."
                             + " Now: %s, last heartbeat time was %s", member, maxNoHeartbeatMillis,
                     timeToString(now), timeToString(heartbeatTime));
             logger.warning(reason);
-            // TODO [basri] If I am the master, I can remove the member. Otherwise, I can only suspect it because I rely on my local information
             clusterService.suspectAddress(member.getAddress(), reason, true);
             return true;
         }
@@ -359,7 +353,7 @@ public class ClusterHeartbeatManager {
                     timeToString(lastConfirmation));
             logger.warning(reason);
             // TODO [basri] I am the master so I can remove the member
-            clusterService.removeAddress(member.getAddress(), reason);
+            clusterService.suspectAddress(member.getAddress(), reason, true);
             return true;
         }
         return false;
@@ -380,10 +374,8 @@ public class ClusterHeartbeatManager {
                 try {
                     logIfConnectionToEndpointIsMissing(now, member);
 
-                    if (isMaster(member)) {
-                        if (removeMemberIfNotHeartBeating(now, member)) {
-                            continue;
-                        }
+                    if (suspectMemberIfNotHeartBeating(now, member)) {
+                        continue;
                     }
 
                     pingMemberIfRequired(now, member);
@@ -454,7 +446,9 @@ public class ClusterHeartbeatManager {
             return;
         }
         try {
-            HeartbeatOperation heartbeat = new HeartbeatOperation(clusterService.getMemberListVersion(), clusterClock.getClusterTime());
+            int memberListVersion = clusterService.getMembershipManager().getMemberListVersion();
+            HeartbeatOperation heartbeat = new HeartbeatOperation(
+                    memberListVersion, clusterClock.getClusterTime());
             heartbeat.setCallerUuid(node.getThisUuid());
             node.nodeEngine.getOperationService().send(heartbeat, target);
         } catch (Exception e) {

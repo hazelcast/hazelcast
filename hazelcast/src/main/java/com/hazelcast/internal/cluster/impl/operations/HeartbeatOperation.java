@@ -46,19 +46,18 @@ public final class HeartbeatOperation extends VersionedClusterOperation {
         ClusterServiceImpl service = getService();
         MemberImpl member = getHeartBeatingMember(service);
         if (member != null) {
-            checkMemberListVersion();
+            checkMemberListVersion(service);
             service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
         }
     }
 
-    private void checkMemberListVersion() {
-        ClusterServiceImpl service = getService();
+    private void checkMemberListVersion(ClusterServiceImpl service) {
         Version clusterVersion = service.getClusterVersion();
         if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
             return;
         }
 
-        int localMemberListVersion = service.getMemberListVersion();
+        int localMemberListVersion = service.getMembershipManager().getMemberListVersion();
 
         ILogger logger = getLogger();
         if (service.isMaster()) {
@@ -93,6 +92,12 @@ public final class HeartbeatOperation extends VersionedClusterOperation {
                 logger.fine("Heartbeat received from an unknown endpoint: " + getCallerAddress());
             }
             return null;
+        }
+
+        Version clusterVersion = service.getClusterVersion();
+        if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
+            // uuid is not send explicitly pre-3.9
+            return member;
         }
 
         if (!member.getUuid().equals(getCallerUuid())) {

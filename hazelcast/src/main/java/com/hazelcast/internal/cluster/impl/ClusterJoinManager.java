@@ -45,7 +45,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
 
@@ -57,9 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
-import java.util.logging.Level;
 
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
@@ -88,13 +85,13 @@ public class ClusterJoinManager {
     private final Map<Address, MemberInfo> joiningMembers = new LinkedHashMap<Address, MemberInfo>();
     private final long maxWaitMillisBeforeJoin;
     private final long waitMillisBeforeJoin;
-    private final FutureUtil.ExceptionHandler whileFinalizeJoinsExceptionHandler;
+//    private final FutureUtil.ExceptionHandler whileFinalizeJoinsExceptionHandler;
 
     private long firstJoinRequest;
     private long timeToStartJoin;
     private volatile boolean joinInProgress;
 
-    public ClusterJoinManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
+    ClusterJoinManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
         this.node = node;
         this.clusterService = clusterService;
         this.clusterServiceLock = clusterServiceLock;
@@ -106,8 +103,8 @@ public class ClusterJoinManager {
 
         maxWaitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.getProperties().getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
-        whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...",
-                Level.WARNING);
+//        whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...",
+//                Level.WARNING);
     }
 
     boolean isJoinInProgress() {
@@ -307,7 +304,7 @@ public class ClusterJoinManager {
 
         if (clusterService.isMemberRemovedWhileClusterIsNotActive(target)) {
             MemberImpl memberRemovedWhileClusterIsNotActive =
-                    clusterService.getMemberRemovedWhileClusterIsNotActive(uuid);
+                    clusterService.getMembershipManager().getMemberRemovedWhileClusterIsNotActive(uuid);
 
             if (memberRemovedWhileClusterIsNotActive != null
                     && !target.equals(memberRemovedWhileClusterIsNotActive.getAddress())) {
@@ -478,8 +475,13 @@ public class ClusterJoinManager {
         clusterServiceLock.lock();
         try {
             if (node.joined()) {
-                logger.warning("Cannot set master address to " + master
-                        + " because node is already joined! Current master address: " + node.getMasterAddress());
+                Address currentMasterAddress = node.getMasterAddress();
+                if (master.equals(currentMasterAddress)) {
+                    logger.warning("Cannot set master address to " + master
+                            + " because node is already joined! Current master: " + currentMasterAddress);
+                } else {
+                    logger.fine("Master address is already set to " + master);
+                }
                 return false;
             }
 
@@ -646,9 +648,11 @@ public class ClusterJoinManager {
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
-                Operation operation = new FinalizeJoinOperation(member.getUuid(), clusterService.getMemberMap().toMembersView(), postJoinOp,
-                        clusterClock.getClusterTime(), clusterService.getClusterId(), clusterClock.getClusterStartTime(),
-                        clusterStateManager.getState(), clusterService.getClusterVersion(), partitionRuntimeState, false);
+                Operation operation = new FinalizeJoinOperation(member.getUuid(),
+                        clusterService.getMembershipManager().createMembersView(), postJoinOp,
+                        clusterClock.getClusterTime(), clusterService.getClusterId(),
+                        clusterClock.getClusterStartTime(), clusterStateManager.getState(),
+                        clusterService.getClusterVersion(), partitionRuntimeState, false);
                 nodeEngine.getOperationService().send(operation, target);
             }
             return true;
@@ -716,7 +720,7 @@ public class ClusterJoinManager {
 
                 // pause migrations until join, member-update and post-join operations are completed
                 partitionService.pauseMigration();
-                MemberMap memberMap = clusterService.getMemberMap();
+                MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
 
                 MembersView newMembersView = MembersView.cloneAdding(memberMap.toMembersView(), joiningMembers.values());
 

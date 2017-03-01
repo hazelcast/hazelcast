@@ -88,10 +88,7 @@ public class MemberMapTest {
 
     @Test
     public void createNew() {
-        MemberImpl[] members = new MemberImpl[5];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(5);
 
         MemberMap map = MemberMap.createNew(members);
         assertEquals(members.length, map.getMembers().size());
@@ -124,10 +121,7 @@ public class MemberMapTest {
 
     @Test
     public void cloneExcluding() {
-        MemberImpl[] members = new MemberImpl[6];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(6);
 
         MemberImpl exclude0 = members[0];
         MemberImpl exclude1 = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
@@ -170,10 +164,7 @@ public class MemberMapTest {
 
     @Test
     public void cloneAdding() {
-        MemberImpl[] members = new MemberImpl[5];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(5);
 
         MemberMap map = MemberMap.cloneAdding(MemberMap.createNew(members[0], members[1], members[2]), members[3], members[4]);
         assertEquals(members.length, map.getMembers().size());
@@ -192,10 +183,7 @@ public class MemberMapTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void cloneAdding_failsWithDuplicateAddress() {
-        MemberImpl[] members = new MemberImpl[3];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(3);
 
         MemberImpl member = newMember(5000);
         MemberMap.cloneAdding(MemberMap.createNew(members), member);
@@ -203,10 +191,7 @@ public class MemberMapTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void cloneAdding_failsWithDuplicateUuid() {
-        MemberImpl[] members = new MemberImpl[3];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(3);
 
         MemberImpl member = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
         MemberMap.cloneAdding(MemberMap.createNew(members), member);
@@ -214,10 +199,7 @@ public class MemberMapTest {
 
     @Test
     public void getMembers_ordered() {
-        MemberImpl[] members = new MemberImpl[10];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
+        MemberImpl[] members = newMembers(10);
 
         MemberMap map = MemberMap.createNew(members);
         Set<MemberImpl> memberSet = map.getMembers();
@@ -230,11 +212,7 @@ public class MemberMapTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void getMembers_unmodifiable() {
-        MemberImpl[] members = new MemberImpl[5];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
-
+        MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
         map.getMembers().add(newMember(9000));
@@ -242,14 +220,111 @@ public class MemberMapTest {
 
     @Test(expected = UnsupportedOperationException.class)
     public void getAddresses_unmodifiable() {
-        MemberImpl[] members = new MemberImpl[5];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = newMember(5000 + i);
-        }
-
+        MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
         map.getAddresses().add(newAddress(9000));
+    }
+
+    @Test
+    public void getMember_withAddressAndUuid_whenFound() {
+        MemberImpl[] members = newMembers(3);
+        MemberMap map = MemberMap.createNew(members);
+
+        MemberImpl member = members[0];
+        assertEquals(member, map.getMember(member.getAddress(), member.getUuid()));
+    }
+
+    @Test
+    public void getMember_withAddressAndUuid_whenOnlyAddressFound() {
+        MemberImpl[] members = newMembers(3);
+        MemberMap map = MemberMap.createNew(members);
+
+        assertNull(map.getMember(members[0].getAddress(), newUnsecureUuidString()));
+    }
+
+    @Test
+    public void getMember_withAddressAndUuid_whenOnlyUuidFound() {
+        MemberImpl[] members = newMembers(3);
+        MemberMap map = MemberMap.createNew(members);
+
+        assertNull(map.getMember(newAddress(6000), members[0].getUuid()));
+    }
+
+    @Test
+    public void getMember_withAddressAndUuid_whenNotFound() {
+        MemberImpl[] members = newMembers(3);
+        MemberMap map = MemberMap.createNew(members);
+
+        assertNull(map.getMember(newAddress(6000), newUnsecureUuidString()));
+    }
+
+    @Test
+    public void tailMemberSet_inclusive() {
+        MemberImpl[] members = newMembers(7);
+        MemberMap map = MemberMap.createNew(members);
+
+        MemberImpl member = members[3];
+        Set<MemberImpl> set = map.tailMemberSet(member, true);
+
+        assertEquals(4, set.size());
+        int k = 3;
+        for (MemberImpl m : set) {
+            assertEquals(members[k++], m);
+        }
+    }
+
+    @Test
+    public void tailMemberSet_exclusive() {
+        MemberImpl[] members = newMembers(7);
+        MemberMap map = MemberMap.createNew(members);
+
+        MemberImpl member = members[3];
+        Set<MemberImpl> set = map.tailMemberSet(member, false);
+
+        assertEquals(3, set.size());
+        int k = 4;
+        for (MemberImpl m : set) {
+            assertEquals(members[k++], m);
+        }
+    }
+
+    @Test
+    public void headMemberSet_inclusive() {
+        MemberImpl[] members = newMembers(7);
+        MemberMap map = MemberMap.createNew(members);
+
+        MemberImpl member = members[3];
+        Set<MemberImpl> set = map.headMemberSet(member, true);
+
+        assertEquals(4, set.size());
+        int k = 0;
+        for (MemberImpl m : set) {
+            assertEquals(members[k++], m);
+        }
+    }
+
+    @Test
+    public void headMemberSet_exclusive() {
+        MemberImpl[] members = newMembers(7);
+        MemberMap map = MemberMap.createNew(members);
+
+        MemberImpl member = members[3];
+        Set<MemberImpl> set = map.headMemberSet(member, false);
+
+        assertEquals(3, set.size());
+        int k = 0;
+        for (MemberImpl m : set) {
+            assertEquals(members[k++], m);
+        }
+    }
+
+    private MemberImpl[] newMembers(int count) {
+        MemberImpl[] members = new MemberImpl[count];
+        for (int i = 0; i < members.length; i++) {
+            members[i] = newMember(5000 + i);
+        }
+        return members;
     }
 
     private static MemberImpl newMember(int port) {
