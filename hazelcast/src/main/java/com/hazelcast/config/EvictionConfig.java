@@ -231,7 +231,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
 
     @Override
     public EvictionStrategyType getEvictionStrategyType() {
-        // TODO: add support for other/custom eviction strategies
         return EvictionStrategyType.DEFAULT_EVICTION_STRATEGY;
     }
 

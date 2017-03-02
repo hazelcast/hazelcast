@@ -20,15 +20,14 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.internal.config.ConfigValidator.checkEvictionConfig;
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
-import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 
 /**
  * Contains eviction specific functionality of a {@link QueryCacheRecordStore}.
@@ -40,7 +39,7 @@ public class EvictionOperator {
     private final MaxSizeChecker maxSizeChecker;
     private final EvictionPolicyEvaluator<Data, QueryCacheRecord> evictionPolicyEvaluator;
     private final EvictionChecker evictionChecker;
-    private final EvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> evictionStrategy;
+    private final SamplingBasedEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> evictionStrategy;
     private final EvictionListener<Data, QueryCacheRecord> listener;
     private final ClassLoader classLoader;
 
@@ -84,8 +83,8 @@ public class EvictionOperator {
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 
-    private EvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
-        return getEvictionStrategy(evictionConfig);
+    private SamplingBasedEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
+        return SamplingBasedEvictionStrategy.INSTANCE;
     }
 
     private EvictionChecker createEvictionChecker() {

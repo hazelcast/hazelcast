@@ -18,19 +18,48 @@ package com.hazelcast.internal.eviction.impl.strategy.sampling;
 
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
+import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.EvictionStrategy;
-import com.hazelcast.internal.eviction.impl.strategy.AbstractEvictionStrategy;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 
 /**
- * Sampling based {@link EvictionStrategy} implementation.
- * This strategy select sample {@link Evictable} entries from {@link SampleableEvictableStore}.
+ * This strategy samples {@link Evictable} entries from {@link SampleableEvictableStore}, orders candidates
+ * for eviction according to the provided EvictionPolicyEvaluator.
  */
-public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>>
-        extends AbstractEvictionStrategy<A, E, S> {
+public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>> {
+
+    public static final SamplingBasedEvictionStrategy INSTANCE = new SamplingBasedEvictionStrategy();
 
     private static final int SAMPLE_COUNT = 15;
+
+    private SamplingBasedEvictionStrategy() {
+    }
+
+    /**
+     * Does eviction if eviction is required by given {@link EvictionChecker}.
+     *
+     * @param evictableStore            Store that holds {@link Evictable} entries
+     * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
+     *                                  {@link com.hazelcast.config.EvictionPolicy} on entries
+     * @param evictionChecker           {@link EvictionChecker} to make a decision about if eviction is
+     *                                  required or not. If you want evict anyway,
+     *                                  you can use {@link EvictionChecker#EVICT_ALWAYS}
+     * @param evictionListener          {@link EvictionListener} to listen evicted entries
+     *
+     * @return evicted entry count
+     */
+    public int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+                     EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener) {
+        if (evictionChecker != null) {
+            if (evictionChecker.isEvictionRequired()) {
+                return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
+            } else {
+                return 0;
+            }
+        } else {
+            return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
+        }
+    }
 
     /**
      * Processes sampling based eviction logic on {@link SampleableEvictableStore}.
@@ -41,14 +70,11 @@ public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends Sam
      *
      * @return evicted entry count
      */
-    @Override
     protected int evictInternal(S sampleableEvictableStore,
             EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
             EvictionListener<A, E> evictionListener) {
-        final Iterable<EvictionCandidate<A, E>> samples =
-                sampleableEvictableStore.sample(SAMPLE_COUNT);
-        final Iterable<EvictionCandidate<A, E>> evictionCandidates =
-                evictionPolicyEvaluator.evaluate(samples);
+        final Iterable<EvictionCandidate<A, E>> samples = sampleableEvictableStore.sample(SAMPLE_COUNT);
+        final Iterable<EvictionCandidate<A, E>> evictionCandidates = evictionPolicyEvaluator.evaluate(samples);
         return sampleableEvictableStore.evict(evictionCandidates, evictionListener);
     }
 

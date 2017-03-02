@@ -17,7 +17,7 @@
 package com.hazelcast.internal.eviction;
 
 /**
- * Enum for types of {@link EvictionStrategy}
+ * Enum for Eviction Strategy types
  */
 public enum EvictionStrategyType {
 

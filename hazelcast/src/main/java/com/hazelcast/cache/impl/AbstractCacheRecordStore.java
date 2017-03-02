@@ -28,11 +28,10 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.internal.eviction.EvictionStrategy;
-import com.hazelcast.internal.eviction.EvictionStrategyProvider;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -89,7 +88,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final MaxSizeChecker maxSizeChecker;
     protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
-    protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
+    protected final SamplingBasedEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
     protected final boolean disablePerEntryInvalidationEvents;
     protected CRM records;
@@ -257,8 +256,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return new MaxSizeEvictionChecker();
     }
 
-    protected EvictionStrategy<Data, R, CRM> createEvictionStrategy(EvictionConfig cacheEvictionConfig) {
-        return EvictionStrategyProvider.getEvictionStrategy(cacheEvictionConfig);
+    protected SamplingBasedEvictionStrategy<Data, R, CRM> createEvictionStrategy(EvictionConfig cacheEvictionConfig) {
+        return SamplingBasedEvictionStrategy.INSTANCE;
     }
 
     protected boolean isEvictionEnabled() {

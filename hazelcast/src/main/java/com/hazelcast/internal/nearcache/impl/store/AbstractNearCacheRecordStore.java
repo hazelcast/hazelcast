@@ -21,13 +21,14 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
-import com.hazelcast.internal.eviction.EvictionStrategy;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
 import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
+import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
 import com.hazelcast.monitor.NearCacheStats;
@@ -39,7 +40,6 @@ import com.hazelcast.util.Clock;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator;
-import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM;
 import static com.hazelcast.internal.memory.GlobalMemoryAccessorRegistry.MEM_AVAILABLE;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.NOT_RESERVED;
@@ -51,7 +51,8 @@ import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
 @SuppressWarnings("checkstyle:methodcount")
-public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord, NCRM extends NearCacheRecordMap<KS, R>>
+public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord,
+        NCRM extends SampleableNearCacheRecordMap<KS, R>>
         implements NearCacheRecordStore<K, V>, EvictionListener<KS, R> {
 
     protected static final AtomicLongFieldUpdater<AbstractNearCacheRecordStore> RESERVATION_ID
@@ -93,7 +94,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected EvictionChecker evictionChecker;
-    protected EvictionStrategy<KS, R, NCRM> evictionStrategy;
+    protected SamplingBasedEvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyType evictionPolicyType;
     protected NCRM records;
 
@@ -180,8 +181,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 
-    protected EvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
-        return getEvictionStrategy(evictionConfig);
+    protected SamplingBasedEvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
+        return SamplingBasedEvictionStrategy.INSTANCE;
     }
 
     protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {

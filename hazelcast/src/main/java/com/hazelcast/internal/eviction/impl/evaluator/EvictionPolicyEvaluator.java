@@ -19,7 +19,6 @@ package com.hazelcast.internal.eviction.impl.evaluator;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
@@ -32,16 +31,14 @@ import java.util.Collections;
  * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
  *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
  */
-public class DefaultEvictionPolicyEvaluator<A, E extends Evictable>
-        implements EvictionPolicyEvaluator<A, E> {
+public class EvictionPolicyEvaluator<A, E extends Evictable> {
 
     private final EvictionPolicyComparator evictionPolicyComparator;
 
-    public DefaultEvictionPolicyEvaluator(EvictionPolicyComparator evictionPolicyComparator) {
+    public EvictionPolicyEvaluator(EvictionPolicyComparator evictionPolicyComparator) {
         this.evictionPolicyComparator = evictionPolicyComparator;
     }
 
-    @Override
     public EvictionPolicyComparator getEvictionPolicyComparator() {
         return evictionPolicyComparator;
     }
@@ -54,7 +51,6 @@ public class DefaultEvictionPolicyEvaluator<A, E extends Evictable>
      *
      * @return multiple {@link com.hazelcast.internal.eviction.EvictionCandidate} these are available to be evicted
      */
-    @Override
     public <C extends EvictionCandidate<A, E>> Iterable<C> evaluate(Iterable<C> evictionCandidates) {
         C selectedEvictionCandidate = null;
         long now = Clock.currentTimeMillis();

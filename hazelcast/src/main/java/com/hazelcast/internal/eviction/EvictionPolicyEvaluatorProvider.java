@@ -19,7 +19,7 @@ package com.hazelcast.internal.eviction;
 import com.hazelcast.internal.eviction.impl.comparator.LFUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.LRUEvictionPolicyComparator;
 import com.hazelcast.internal.eviction.impl.comparator.RandomEvictionPolicyComparator;
-import com.hazelcast.internal.eviction.impl.evaluator.DefaultEvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.StringUtil;
 
@@ -84,6 +84,6 @@ public final class EvictionPolicyEvaluatorProvider {
             }
         }
 
-        return new DefaultEvictionPolicyEvaluator<A, E>(evictionPolicyComparator);
+        return new EvictionPolicyEvaluator<A, E>(evictionPolicyComparator);
     }
 }

@@ -1,6 +1,7 @@
 package com.hazelcast.internal.eviction;
 
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
