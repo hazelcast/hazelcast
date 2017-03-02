@@ -16,15 +16,12 @@
 
 package com.hazelcast.nio.ssl;
 
-import com.hazelcast.spi.annotation.PrivateApi;
-
 import javax.net.ssl.SSLContext;
 import java.util.Properties;
 
 /**
  * Factory class for creating {@link javax.net.ssl.SSLContext}
  */
-@PrivateApi
 public interface SSLContextFactory {
 
     /**
