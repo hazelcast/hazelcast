@@ -111,22 +111,21 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         if (isShutdown) {
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
-        registerInvocation(invocation);
+
+        long correlationId;
+        if (invocation.isUrgent()) {
+            correlationId = callIdSequence.renew();
+        } else {
+            correlationId = callIdSequence.next();
+        }
 
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
-            final long callId = clientMessage.getCorrelationId();
-            ClientInvocation clientInvocation = deRegisterCallId(callId);
-            if (clientInvocation != null) {
-                callIdSequence.complete();
-                throw new IOException("Packet not send to " + connection.getEndPoint());
-            } else {
-                if (invocationLogger.isFinestEnabled()) {
-                    invocationLogger.finest("Invocation not found to deregister for call id " + callId);
-                }
-            }
+            callIdSequence.complete();
+            throw new IOException("Packet not send to " + connection.getEndPoint());
         }
 
+        registerInvocation(invocation, correlationId);
         invocation.setSendConnection(connection);
     }
 
@@ -151,14 +150,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         return true;
     }
 
-    private void registerInvocation(ClientInvocation clientInvocation) {
+    private void registerInvocation(ClientInvocation clientInvocation, long correlationId) {
         short protocolVersion = client.getProtocolVersion();
-        long correlationId;
-        if (clientInvocation.isUrgent()) {
-            correlationId = callIdSequence.renew();
-        } else {
-            correlationId = callIdSequence.next();
-        }
+
         clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
