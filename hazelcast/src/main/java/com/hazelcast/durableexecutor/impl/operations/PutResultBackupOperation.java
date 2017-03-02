@@ -24,7 +24,8 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 public class PutResultBackupOperation
-        extends AbstractDurableExecutorOperation implements BackupOperation {
+        extends AbstractDurableExecutorOperation
+        implements BackupOperation {
 
     private int sequence;
 
