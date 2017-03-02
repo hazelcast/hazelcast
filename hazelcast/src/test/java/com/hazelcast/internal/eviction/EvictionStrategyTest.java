@@ -24,7 +24,7 @@ import org.mockito.Matchers;
 import java.util.Collections;
 
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
-import static com.hazelcast.internal.eviction.MaxSizeChecker.ALWAYS_REACHED;
+import static com.hazelcast.internal.eviction.EvictionChecker.ALWAYS_REACHED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

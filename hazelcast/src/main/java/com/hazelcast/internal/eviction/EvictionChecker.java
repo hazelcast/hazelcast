@@ -17,13 +17,15 @@
 package com.hazelcast.internal.eviction;
 
 /**
- * Interface for implementations of {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}.
+ * Checks whether a specific max size threshold is exceeded or not
+ * according to configured {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy}
+ * and indicates whether eviction is required.
  */
-public interface MaxSizeChecker {
+public interface EvictionChecker {
 
-    MaxSizeChecker ALWAYS_REACHED = new MaxSizeChecker() {
+    EvictionChecker ALWAYS_REACHED = new EvictionChecker() {
         @Override
-        public boolean isReachedToMaxSize() {
+        public boolean isEvictionRequired() {
             return true;
         }
     };
@@ -34,6 +36,6 @@ public interface MaxSizeChecker {
      *
      * @return <code>true</code> if maximum size has been reached, <code>false</code> otherwise
      */
-    boolean isReachedToMaxSize();
+    boolean isEvictionRequired();
 
 }

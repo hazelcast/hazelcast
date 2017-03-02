@@ -17,13 +17,14 @@
 package com.hazelcast.cache.impl.maxsize.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecordMap;
-import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.EvictionChecker;
 
 /**
  * Cache max-size policy implementation for
  * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy#ENTRY_COUNT}
  */
-public class EntryCountCacheMaxSizeChecker implements MaxSizeChecker {
+public class EntryCountCacheEvictionChecker
+        implements EvictionChecker {
 
     private static final int MAX_ENTRY_COUNT_FOR_THRESHOLD_USAGE = 1000000;
     private static final int STD_DEV_OF_5_THRESHOLD = 4000;
@@ -33,8 +34,8 @@ public class EntryCountCacheMaxSizeChecker implements MaxSizeChecker {
     private final CacheRecordMap cacheRecordMap;
     private final int maxPartitionSize;
 
-    public EntryCountCacheMaxSizeChecker(final int size,
-            final CacheRecordMap cacheRecordMap, final int partitionCount) {
+    public EntryCountCacheEvictionChecker(final int size,
+                                          final CacheRecordMap cacheRecordMap, final int partitionCount) {
         this.cacheRecordMap = cacheRecordMap;
         this.maxPartitionSize = calculateMaxPartitionSize(size, partitionCount);
     }
@@ -64,7 +65,7 @@ public class EntryCountCacheMaxSizeChecker implements MaxSizeChecker {
     }
 
     @Override
-    public boolean isReachedToMaxSize() {
+    public boolean isEvictionRequired() {
         return cacheRecordMap.size() >= maxPartitionSize;
     }
 

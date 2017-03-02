@@ -19,14 +19,14 @@ package com.hazelcast.internal.eviction.impl.strategy.sampling;
 import com.hazelcast.internal.eviction.Evictable;
 import com.hazelcast.internal.eviction.EvictionCandidate;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 
 /**
  * This strategy samples {@link Evictable} entries from {@link SampleableEvictableStore}, orders candidates
  * for eviction according to the provided EvictionPolicyEvaluator.
  */
-public class SamplingEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>> {
+public final class SamplingEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>> {
 
     public static final SamplingEvictionStrategy INSTANCE = new SamplingEvictionStrategy();
 
@@ -41,16 +41,16 @@ public class SamplingEvictionStrategy<A, E extends Evictable, S extends Sampleab
      * @param evictableStore            Store that holds {@link Evictable} entries
      * @param evictionPolicyEvaluator   {@link EvictionPolicyEvaluator} to evaluate
      *                                  {@link com.hazelcast.config.EvictionPolicy} on entries
-     * @param maxSizeChecker            {@link MaxSizeChecker} to check whether max size is reached, therefore
+     * @param evictionChecker            {@link EvictionChecker} to check whether max size is reached, therefore
      *                                  eviction is required or not.
      * @param evictionListener          {@link EvictionListener} to listen evicted entries
      *
      * @return evicted entry count
      */
     public int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
-                     MaxSizeChecker maxSizeChecker, EvictionListener<A, E> evictionListener) {
-        if (maxSizeChecker != null) {
-            if (maxSizeChecker.isReachedToMaxSize()) {
+                     EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener) {
+        if (evictionChecker != null) {
+            if (evictionChecker.isEvictionRequired()) {
                 return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
             } else {
                 return 0;

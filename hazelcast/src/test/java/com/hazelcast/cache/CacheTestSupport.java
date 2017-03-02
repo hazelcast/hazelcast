@@ -18,7 +18,7 @@ import javax.cache.CacheManager;
 import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
-import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker.calculateMaxPartitionSize;
+import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker.calculateMaxPartitionSize;
 import static org.junit.Assert.assertEquals;
 
 public abstract class CacheTestSupport extends HazelcastTestSupport {

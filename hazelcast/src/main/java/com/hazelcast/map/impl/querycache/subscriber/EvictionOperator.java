@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.querycache.subscriber;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
@@ -35,7 +35,7 @@ public class EvictionOperator {
 
     private final QueryCacheRecordHashMap cache;
     private final EvictionConfig evictionConfig;
-    private final MaxSizeChecker maxSizeChecker;
+    private final EvictionChecker evictionChecker;
     private final EvictionPolicyEvaluator<Data, QueryCacheRecord> evictionPolicyEvaluator;
     private final SamplingEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> evictionStrategy;
     private final EvictionListener<Data, QueryCacheRecord> listener;
@@ -47,7 +47,7 @@ public class EvictionOperator {
                             ClassLoader classLoader) {
         this.cache = cache;
         this.evictionConfig = config.getEvictionConfig();
-        this.maxSizeChecker = createCacheMaxSizeChecker();
+        this.evictionChecker = createCacheEvictionChecker();
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator();
         this.evictionStrategy = createEvictionStrategy();
         this.listener = listener;
@@ -61,15 +61,15 @@ public class EvictionOperator {
     int evictIfRequired() {
         int evictedCount = 0;
         if (isEvictionEnabled()) {
-            evictedCount = evictionStrategy.evict(cache, evictionPolicyEvaluator, maxSizeChecker, listener);
+            evictedCount = evictionStrategy.evict(cache, evictionPolicyEvaluator, evictionChecker, listener);
         }
         return evictedCount;
     }
 
-    private MaxSizeChecker createCacheMaxSizeChecker() {
-        return new MaxSizeChecker() {
+    private EvictionChecker createCacheEvictionChecker() {
+        return new EvictionChecker() {
             @Override
-            public boolean isReachedToMaxSize() {
+            public boolean isEvictionRequired() {
                 return cache.size() > evictionConfig.getSize();
             }
         };
