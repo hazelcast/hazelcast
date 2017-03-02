@@ -21,6 +21,13 @@ package com.hazelcast.internal.eviction;
  */
 public interface MaxSizeChecker {
 
+    MaxSizeChecker ALWAYS_REACHED = new MaxSizeChecker() {
+        @Override
+        public boolean isReachedToMaxSize() {
+            return true;
+        }
+    };
+
     /**
      * Checks the state to see if it has reached its maximum configured size
      * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}

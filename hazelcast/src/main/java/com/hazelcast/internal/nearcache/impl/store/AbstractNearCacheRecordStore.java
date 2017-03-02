@@ -19,7 +19,6 @@ package com.hazelcast.internal.nearcache.impl.store;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
@@ -92,7 +91,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
     protected MaxSizeChecker maxSizeChecker;
 
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
-    protected EvictionChecker evictionChecker;
     protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyType evictionPolicyType;
     protected NCRM records;
@@ -123,7 +121,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         this.records = createNearCacheRecordMap(nearCacheConfig);
         this.maxSizeChecker = createNearCacheMaxSizeChecker(evictionConfig, nearCacheConfig);
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        this.evictionChecker = createEvictionChecker(nearCacheConfig);
         this.evictionStrategy = createEvictionStrategy(evictionConfig);
         this.evictionPolicyType = evictionConfig.getEvictionPolicyType();
     }
@@ -182,10 +179,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected SamplingEvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
         return SamplingEvictionStrategy.INSTANCE;
-    }
-
-    protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {
-        return new MaxSizeEvictionChecker();
     }
 
     protected boolean isAvailable() {
@@ -340,7 +333,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (!isEvictionEnabled() && maxSizeChecker.isReachedToMaxSize() && !containsRecordKey(key)) {
             return;
         }
 
@@ -425,7 +418,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
 
         if (isEvictionEnabled()) {
-            evictionStrategy.evict(records, evictionPolicyEvaluator, evictionChecker, this);
+            evictionStrategy.evict(records, evictionPolicyEvaluator, maxSizeChecker, this);
         }
     }
 
@@ -443,7 +436,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
         // if there is no eviction configured we return if the Near Cache is full and it's a new key
         // (we have to check the key, otherwise we might lose updates on existing keys)
-        if (!isEvictionEnabled() && evictionChecker.isEvictionRequired() && !containsRecordKey(key)) {
+        if (!isEvictionEnabled() && maxSizeChecker.isReachedToMaxSize() && !containsRecordKey(key)) {
             return NOT_RESERVED;
         }
 
@@ -479,13 +472,5 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected long nextReservationId() {
         return RESERVATION_ID.incrementAndGet(this);
-    }
-
-    private class MaxSizeEvictionChecker implements EvictionChecker {
-
-        @Override
-        public boolean isEvictionRequired() {
-            return maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize();
-        }
     }
 }

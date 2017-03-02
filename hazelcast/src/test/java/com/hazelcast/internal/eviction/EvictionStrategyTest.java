@@ -23,8 +23,8 @@ import org.mockito.Matchers;
 
 import java.util.Collections;
 
-import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
+import static com.hazelcast.internal.eviction.MaxSizeChecker.ALWAYS_REACHED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -152,7 +152,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
         assertTrue(cacheRecordMap.containsKey(expectedData));
         assertTrue(cacheRecordMap.containsValue(expectedEvictedRecord));
 
-        int evictedCount = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, EVICT_ALWAYS, NO_LISTENER);
+        int evictedCount = evictionStrategy.evict((S) cacheRecordMap, evictionPolicyEvaluator, ALWAYS_REACHED, NO_LISTENER);
         assertEquals(EXPECTED_EVICTED_COUNT, evictedCount);
         assertEquals(RECORD_COUNT - EXPECTED_EVICTED_COUNT, cacheRecordMap.size());
         assertFalse(cacheRecordMap.containsKey(expectedData));
