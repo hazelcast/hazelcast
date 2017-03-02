@@ -43,6 +43,7 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
     private final ClientMessageDecoder clientMessageDecoder;
     private final V defaultValue;
     private final Object mutex = new Object();
+    private final Executor userExecutor;
     private Throwable error;
     private V deserializedValue;
     /**
@@ -58,23 +59,26 @@ public class ClientDelegatingFuture<V> implements InternalCompletableFuture<V> {
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;
         this.defaultValue = defaultValue;
+        this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;
+        this.userExecutor = clientInvocationFuture.getInvocation().getUserExecutor();
         this.defaultValue = null;
     }
 
-    public <R> void andThenInternal(final ExecutionCallback<R> callback) {
-        future.andThen(new DelegatingExecutionCallback<R>(callback, false));
+    public <T> void  andThenInternal(final ExecutionCallback<T> callback, boolean shouldDeserializeData) {
+        future.andThen(new DelegatingExecutionCallback<T>(callback, shouldDeserializeData));
     }
 
     @Override
     public void andThen(final ExecutionCallback<V> callback) {
-        future.andThen(new DelegatingExecutionCallback<V>(callback, true));
+        future.andThen(new DelegatingExecutionCallback<V>(callback, true), userExecutor);
     }
 
     @Override

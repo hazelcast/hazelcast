@@ -31,6 +31,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -77,7 +78,7 @@ public class ClientInvocation implements Runnable {
         this.connection = connection;
         this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
-        this.clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, executionService, clientMessage, logger);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -196,8 +197,7 @@ public class ClientInvocation implements Runnable {
     }
 
     private void rescheduleInvocation() {
-        ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     private boolean shouldRetry() {
@@ -245,5 +245,9 @@ public class ClientInvocation implements Runnable {
 
     public static boolean isRetryable(Throwable t) {
         return t instanceof IOException || t instanceof HazelcastInstanceNotActiveException;
+    }
+
+    public Executor getUserExecutor() {
+        return executionService.getUserExecutor();
     }
 }

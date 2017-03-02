@@ -132,10 +132,10 @@ public class ClientMapReduceProxy
                 final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
                 final ClientInvocationFuture future = clientInvocation.invoke();
 
-                future.andThen(new ExecutionCallback() {
+                future.andThen(new ExecutionCallback<ClientMessage>() {
                     @Override
-                    public void onResponse(Object res) {
-                        Map map = toObjectMap((ClientMessage) res);
+                    public void onResponse(ClientMessage res) {
+                        Map map = toObjectMap(res);
 
                         Object response = map;
                         try {
@@ -235,7 +235,7 @@ public class ClientMapReduceProxy
         private final String jobId;
 
         protected ClientCompletableFuture(String jobId) {
-            super(getContext().getExecutionService().getAsyncExecutor(),
+            super(getContext().getExecutionService().getUserExecutor(),
                     getContext().getLoggingService().getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
         }

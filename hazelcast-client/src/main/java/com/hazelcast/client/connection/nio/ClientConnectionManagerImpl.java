@@ -341,7 +341,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationFuture callback = new AuthenticationFuture();
         AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
         if (firstCallback == null) {
-            executionService.executeInternal(new InitConnectionTask(target, asOwner, callback));
+            executionService.execute(new InitConnectionTask(target, asOwner, callback));
             return callback;
         }
         return firstCallback;
@@ -481,7 +481,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                                 logger.warning("Error receiving heartbeat for connection: " + connection, t);
                             }
                         }
-                    }, executionService.getInternalExecutor());
+                    });
                 } else {
                     if (!connection.isHeartBeating()) {
                         logger.warning("Heartbeat is back to healthy for connection : " + connection);
@@ -573,7 +573,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 onAuthenticationFailed(target, connection, t);
                 callback.onFailure(t);
             }
-        }, executionService.getInternalExecutor());
+        });
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, byte serializationVersion,

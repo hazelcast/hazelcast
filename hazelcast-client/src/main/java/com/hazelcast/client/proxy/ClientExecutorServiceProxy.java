@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -381,10 +381,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         for (Callable<T> task : tasks) {
             futures.add(submitToRandomInternal(task, null, true));
         }
-        ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
+        Executor userExecutor = getContext().getExecutionService().getUserExecutor();
         for (Future<T> future : futures) {
             Object value = retrieveResult(future);
-            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, asyncExecutor));
+            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, userExecutor));
         }
         return result;
     }
@@ -505,8 +505,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
+            Executor userExecutor = getContext().getExecutionService().getUserExecutor();
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue
                     , SUBMIT_TO_ADDRESS_DECODER);
@@ -518,8 +518,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
+            Executor userExecutor = getContext().getExecutionService().getUserExecutor();
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue
                     , SUBMIT_TO_PARTITION_DECODER);

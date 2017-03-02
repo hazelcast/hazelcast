@@ -52,7 +52,7 @@ public class ClientExecutionServiceImplTest {
     public void testExecuteInternal() {
         TestRunnable runnable = new TestRunnable();
 
-        executionService.executeInternal(runnable);
+        executionService.execute(runnable);
 
         runnable.await();
     }
@@ -61,7 +61,7 @@ public class ClientExecutionServiceImplTest {
     public void testSubmitInternal() throws Exception {
         TestRunnable runnable = new TestRunnable();
 
-        Future<?> future = executionService.submitInternal(runnable);
+        Future<?> future = executionService.submit(null, runnable);
         future.get();
 
         assertTrue(runnable.isExecuted());
@@ -80,7 +80,7 @@ public class ClientExecutionServiceImplTest {
     public void testSubmit_withRunnable() throws Exception {
         TestRunnable runnable = new TestRunnable();
 
-        Future<?> future = executionService.submit(runnable);
+        Future<?> future = executionService.submit(null, runnable);
         future.get();
 
         assertTrue(runnable.isExecuted());
@@ -90,7 +90,7 @@ public class ClientExecutionServiceImplTest {
     public void testSubmit_withCallable() throws Exception {
         TestCallable callable = new TestCallable();
 
-        Future<Integer> future = executionService.submit(callable);
+        Future<Integer> future = executionService.submit(null, callable);
         int result = future.get();
 
         assertTrue(callable.isExecuted());
@@ -203,12 +203,7 @@ public class ClientExecutionServiceImplTest {
 
     @Test
     public void testGetAsyncExecutor() {
-        assertNotNull(executionService.getAsyncExecutor());
-    }
-
-    @Test
-    public void testGetInternalExecutor() {
-        assertNotNull(executionService.getInternalExecutor());
+        assertNotNull(executionService.getUserExecutor());
     }
 
     private static class TestRunnable implements Runnable {
