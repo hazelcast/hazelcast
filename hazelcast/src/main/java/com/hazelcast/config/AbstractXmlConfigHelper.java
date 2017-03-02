@@ -210,7 +210,7 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected String getReleaseVersion() {
-        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        BuildInfo buildInfo = BuildInfoProvider.BUILD_INFO;
         return buildInfo.getVersion().substring(0, 3);
     }
 

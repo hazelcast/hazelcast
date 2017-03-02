@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
@@ -233,4 +234,8 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     @Override
     public abstract Object[] getParameters();
+
+    protected final BuildInfo getMemberBuildInfo() {
+        return node.getBuildInfo();
+    }
 }

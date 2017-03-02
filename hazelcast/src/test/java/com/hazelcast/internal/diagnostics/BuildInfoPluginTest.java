@@ -36,7 +36,7 @@ public class BuildInfoPluginTest extends AbstractDiagnosticsPluginTest {
     public void test() throws IOException {
         plugin.run(logWriter);
 
-        BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
+        BuildInfo buildInfo = BuildInfoProvider.BUILD_INFO;
 
         assertContains("BuildNumber=" + buildInfo.getBuildNumber());
         assertContains("Build=" + buildInfo.getBuild());

@@ -86,7 +86,7 @@ public class RawProtocolAuthenticationTest {
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
         final ClientMessage authMessage = ClientAuthenticationCodec.encodeRequest(username, pass, null, null,
-                true, ClientTypes.JAVA, InternalSerializationService.VERSION_1, BuildInfoProvider.getBuildInfo().getVersion());
+                true, ClientTypes.JAVA, InternalSerializationService.VERSION_1, BuildInfoProvider.BUILD_INFO.getVersion());
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = authMessage.buffer();
@@ -119,7 +119,7 @@ public class RawProtocolAuthenticationTest {
 
         final ClientMessage authMessage = ClientAuthenticationCodec
                 .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, InternalSerializationService.VERSION_1,
-                        BuildInfoProvider.getBuildInfo().getVersion());
+                        BuildInfoProvider.BUILD_INFO.getVersion());
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = authMessage.buffer();
@@ -152,7 +152,7 @@ public class RawProtocolAuthenticationTest {
 
         final ClientMessage authMessage = ClientAuthenticationCodec
                 .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, (byte) 0,
-                        BuildInfoProvider.getBuildInfo().getVersion());
+                        BuildInfoProvider.BUILD_INFO.getVersion());
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = authMessage.buffer();
@@ -185,7 +185,7 @@ public class RawProtocolAuthenticationTest {
 
         final ClientMessage authMessage = ClientAuthenticationCodec
                 .encodeRequest(username, pass, null, null, true, ClientTypes.JAVA, (byte) 0,
-                        BuildInfoProvider.getBuildInfo().getVersion());
+                        BuildInfoProvider.BUILD_INFO.getVersion());
         authMessage.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         //set invalid message size

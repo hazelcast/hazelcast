@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.ENTRY_COUNT;
-import static com.hazelcast.instance.BuildInfoProvider.getBuildInfo;
+import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MAP_INVALIDATION_MESSAGE_BATCH_SIZE;
@@ -152,7 +152,7 @@ public class NearCacheTestSupport extends HazelcastTestSupport {
         // the Near Cache is filled, we should see some memory costs now
         assertTrue("The Near Cache is filled, there should be some owned entry memory costs",
                 getNearCacheStats(map).getOwnedEntryMemoryCost() > 0);
-        if (isMember && !getBuildInfo().isEnterprise()) {
+        if (isMember && !BUILD_INFO.isEnterprise()) {
             // the heap costs are just calculated on member on-heap maps
             assertTrue("The Near Cache is filled, there should be some heap costs", map.getLocalMapStats().getHeapCost() > 0);
         }

@@ -61,8 +61,8 @@ public class ClusterStateManagerTest {
 
     private static final String TXN = "txn";
     private static final String ANOTHER_TXN = "another-txn";
-    private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.getBuildInfo().getVersion());
-    private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.getBuildInfo().getVersion());
+    private static final MemberVersion CURRENT_NODE_VERSION = MemberVersion.of(BuildInfoProvider.BUILD_INFO.getVersion());
+    private static final Version CURRENT_CLUSTER_VERSION = Version.of(BuildInfoProvider.BUILD_INFO.getVersion());
 
     private final Node node = mock(Node.class);
     private final InternalPartitionService partitionService = mock(InternalPartitionService.class);

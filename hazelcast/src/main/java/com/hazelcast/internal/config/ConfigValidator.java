@@ -150,7 +150,7 @@ public final class ConfigValidator {
      * @param inMemoryFormat supplied inMemoryFormat
      */
     private static void checkNotNative(InMemoryFormat inMemoryFormat) {
-        if (inMemoryFormat == NATIVE && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
+        if (inMemoryFormat == NATIVE && !BuildInfoProvider.BUILD_INFO.isEnterprise()) {
             throw new IllegalArgumentException("NATIVE storage format is supported in Hazelcast Enterprise only."
                     + " Make sure you have Hazelcast Enterprise JARs on your classpath!");
         }

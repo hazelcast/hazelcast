@@ -38,7 +38,7 @@ public class ClientExecutionServiceImplTest {
         ThreadGroup threadGroup = new ThreadGroup(name);
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         HazelcastProperties properties = new HazelcastProperties(new Config());
-        ClientLoggingService loggingService = new ClientLoggingService(name, "jdk", BuildInfoProvider.getBuildInfo(), name);
+        ClientLoggingService loggingService = new ClientLoggingService(name, "jdk", BuildInfoProvider.BUILD_INFO, name);
 
         executionService = new ClientExecutionServiceImpl(name, threadGroup, classLoader, properties, 1, loggingService);
     }

@@ -51,7 +51,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         addressB = new Address("127.0.0.1", 5702);
         addressC = new Address("127.0.0.1", 5703);
 
-        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.getBuildInfo());
+        loggingService = new LoggingServiceImpl("somegroup", "log4j2", BuildInfoProvider.BUILD_INFO);
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
 
         metricsRegistryA = newMetricsRegistry();
