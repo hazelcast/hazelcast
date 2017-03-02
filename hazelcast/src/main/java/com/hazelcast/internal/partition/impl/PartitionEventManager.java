@@ -54,6 +54,12 @@ public class PartitionEventManager {
     }
 
     void sendMigrationEvent(final MigrationInfo migrationInfo, final MigrationEvent.MigrationStatus status) {
+        if (migrationInfo.getSourceCurrentReplicaIndex() != 0
+                && migrationInfo.getDestinationNewReplicaIndex() != 0) {
+            // only fire events for 0th replica migrations
+            return;
+        }
+
         ClusterServiceImpl clusterService = node.getClusterService();
         MemberImpl current = clusterService.getMember(migrationInfo.getSource());
         MemberImpl newOwner = clusterService.getMember(migrationInfo.getDestination());
