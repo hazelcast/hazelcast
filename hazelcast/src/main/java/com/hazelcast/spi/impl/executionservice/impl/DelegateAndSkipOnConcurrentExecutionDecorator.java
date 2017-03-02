@@ -24,10 +24,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * If this task is running on a thread and another thread calls attempt the execute it concurrently
  * then the 2nd execution will be skipped.
- *
  */
-public class DelegateAndSkipOnConcurrentExecutionDecorator
-        implements Runnable {
+public class DelegateAndSkipOnConcurrentExecutionDecorator implements Runnable {
 
     private final AtomicBoolean isAlreadyRunning = new AtomicBoolean();
     private final Runnable runnable;
@@ -54,8 +52,7 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator
                 + '}';
     }
 
-    private class DelegateDecorator
-            implements Runnable {
+    private class DelegateDecorator implements Runnable {
 
         private final Runnable runnable;
 
@@ -72,5 +69,9 @@ public class DelegateAndSkipOnConcurrentExecutionDecorator
             }
         }
 
+        @Override
+        public String toString() {
+            return "DelegateDecorator{runnable=" + runnable + '}';
+        }
     }
 }
