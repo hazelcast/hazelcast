@@ -24,10 +24,9 @@ import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.EvictionPolicyType;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
 import com.hazelcast.internal.nearcache.NearCacheRecordStore;
-import com.hazelcast.internal.nearcache.impl.NearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.internal.nearcache.impl.invalidation.MetaDataContainer;
 import com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetector;
@@ -94,7 +93,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected EvictionPolicyEvaluator<KS, R> evictionPolicyEvaluator;
     protected EvictionChecker evictionChecker;
-    protected SamplingBasedEvictionStrategy<KS, R, NCRM> evictionStrategy;
+    protected SamplingEvictionStrategy<KS, R, NCRM> evictionStrategy;
     protected EvictionPolicyType evictionPolicyType;
     protected NCRM records;
 
@@ -181,8 +180,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 
-    protected SamplingBasedEvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
-        return SamplingBasedEvictionStrategy.INSTANCE;
+    protected SamplingEvictionStrategy<KS, R, NCRM> createEvictionStrategy(EvictionConfig evictionConfig) {
+        return SamplingEvictionStrategy.INSTANCE;
     }
 
     protected EvictionChecker createEvictionChecker(NearCacheConfig nearCacheConfig) {

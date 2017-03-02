@@ -22,7 +22,7 @@ import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.internal.eviction.MaxSizeChecker;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
-import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.map.impl.querycache.subscriber.record.QueryCacheRecord;
 import com.hazelcast.nio.serialization.Data;
 
@@ -39,7 +39,7 @@ public class EvictionOperator {
     private final MaxSizeChecker maxSizeChecker;
     private final EvictionPolicyEvaluator<Data, QueryCacheRecord> evictionPolicyEvaluator;
     private final EvictionChecker evictionChecker;
-    private final SamplingBasedEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> evictionStrategy;
+    private final SamplingEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> evictionStrategy;
     private final EvictionListener<Data, QueryCacheRecord> listener;
     private final ClassLoader classLoader;
 
@@ -83,8 +83,8 @@ public class EvictionOperator {
         return getEvictionPolicyEvaluator(evictionConfig, classLoader);
     }
 
-    private SamplingBasedEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
-        return SamplingBasedEvictionStrategy.INSTANCE;
+    private SamplingEvictionStrategy<Data, QueryCacheRecord, QueryCacheRecordHashMap> createEvictionStrategy() {
+        return SamplingEvictionStrategy.INSTANCE;
     }
 
     private EvictionChecker createEvictionChecker() {

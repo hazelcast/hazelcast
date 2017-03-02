@@ -26,13 +26,13 @@ import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
  * This strategy samples {@link Evictable} entries from {@link SampleableEvictableStore}, orders candidates
  * for eviction according to the provided EvictionPolicyEvaluator.
  */
-public class SamplingBasedEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>> {
+public class SamplingEvictionStrategy<A, E extends Evictable, S extends SampleableEvictableStore<A, E>> {
 
-    public static final SamplingBasedEvictionStrategy INSTANCE = new SamplingBasedEvictionStrategy();
+    public static final SamplingEvictionStrategy INSTANCE = new SamplingEvictionStrategy();
 
     private static final int SAMPLE_COUNT = 15;
 
-    private SamplingBasedEvictionStrategy() {
+    private SamplingEvictionStrategy() {
     }
 
     /**

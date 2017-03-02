@@ -9,7 +9,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
-import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -122,7 +122,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEv
                 return null;
             }
         };
-        SamplingBasedEvictionStrategy<K, V, S> evictionStrategy = SamplingBasedEvictionStrategy.INSTANCE;
+        SamplingEvictionStrategy<K, V, S> evictionStrategy = SamplingEvictionStrategy.INSTANCE;
         CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(serializationService, 1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
