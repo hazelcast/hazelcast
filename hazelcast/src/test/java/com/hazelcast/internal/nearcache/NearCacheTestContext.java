@@ -28,17 +28,58 @@ import javax.cache.CacheManager;
  */
 public class NearCacheTestContext<K, V, NK, NV> {
 
+    /**
+     * The {@link SerializationService} used by the configured Near Cache.
+     */
     public final SerializationService serializationService;
+    /**
+     * The {@link HazelcastInstance} which has the configured Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the client.
+     */
     public final HazelcastInstance nearCacheInstance;
+    /**
+     * The {@link HazelcastInstance} which holds backing data structure for the Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the member.
+     */
     public final HazelcastInstance dataInstance;
+    /**
+     * The {@link DataStructureAdapter} which has the configured Near Cache.
+     *
+     * In a scenario with Hazelcast client and member, this will be the near cached data structure on the client.
+     */
     public final DataStructureAdapter<K, V> nearCacheAdapter;
+    /**
+     * The {@link DataStructureAdapter} which has the original data.
+     *
+     * In a scenario with Hazelcast client and member, this will be the original data structure on the member.
+     */
     public final DataStructureAdapter<K, V> dataAdapter;
+    /**
+     * Specifies if the we are able to retrieve {@link DataStructureAdapter#getLocalMapStats()}.
+     */
     public final boolean hasLocalData;
 
+    /**
+     * The configured {@link NearCache}.
+     */
     public final NearCache<NK, NV> nearCache;
+    /**
+     * The {@link NearCacheStats} of the configured Near Cache.
+     */
     public final NearCacheStats stats;
+    /**
+     * The {@link NearCacheManager} which manages the configured Near Cache.
+     */
     public final NearCacheManager nearCacheManager;
+    /**
+     * The {@link CacheManager} if the configured {@link DataStructureAdapter} is a JCache implementation.
+     */
     public final CacheManager cacheManager;
+    /**
+     * The {@link HazelcastServerCacheManager} if the configured {@link DataStructureAdapter} is a JCache implementation.
+     */
     public final HazelcastServerCacheManager memberCacheManager;
 
     public NearCacheTestContext(SerializationService serializationService,

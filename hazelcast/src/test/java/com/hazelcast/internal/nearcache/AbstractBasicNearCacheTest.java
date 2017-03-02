@@ -30,7 +30,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Contains the logic code for Near Cache tests.
+ * Contains the logic code for unified Near Cache tests.
  *
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
@@ -346,7 +346,7 @@ public abstract class AbstractBasicNearCacheTest<NK, NV> extends HazelcastTestSu
         testNearCacheMemoryCostCalculation(10);
     }
 
-    protected void testNearCacheMemoryCostCalculation(int threadCount) {
+    private void testNearCacheMemoryCostCalculation(int threadCount) {
         nearCacheConfig.setInvalidateOnChange(true);
         final NearCacheTestContext<Integer, String, NK, NV> context = createContext();
 
