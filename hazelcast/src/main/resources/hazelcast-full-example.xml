@@ -1473,7 +1473,7 @@ It has the following sub-elements:
     	default unit is MEGABYTES.
     - <min-block-size>:
     	Minimum size of the blocks in bytes to split and fragment a page block to assign to an allocation request. 
-    	It is used only by the POOLED memory allocator. Its default value is 16.
+    	It is used only by the POOLED memory allocator. The value has to be power of two.  Default value is 16.
     - <page-size>:
     	Size of the page in bytes to allocate memory as a block. It is used only by the POOLED memory allocator. Its 
     	default value is 1 << 22 (about 4 MB).
@@ -1483,7 +1483,7 @@ It has the following sub-elements:
 -->
     <native-memory allocator-type="POOLED" enabled="true">
         <size unit="MEGABYTES" value="256"/>
-        <min-block-size>24</min-block-size>
+        <min-block-size>32</min-block-size>
         <page-size>4194304</page-size>
         <metadata-space-percentage>12.5</metadata-space-percentage>
     </native-memory>
