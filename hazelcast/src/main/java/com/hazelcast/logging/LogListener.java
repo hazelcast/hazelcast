@@ -17,5 +17,6 @@
 package com.hazelcast.logging;
 
 public interface LogListener {
+
     void log(LogEvent logEvent);
 }

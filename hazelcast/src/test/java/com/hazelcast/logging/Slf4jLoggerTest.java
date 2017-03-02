@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Slf4jLoggerTest {
+public class Slf4jLoggerTest extends AbstractLoggerTest {
 
     private Logger mockLogger;
     private ILogger hazelcastLogger;
@@ -53,44 +53,97 @@ public class Slf4jLoggerTest {
 
     @Test
     public void logWithThrowable_shouldCallLogWithThrowable() {
-        final Exception thrown = new Exception();
-        hazelcastLogger.warning("message", thrown);
-        verify(mockLogger, times(1)).warn("message", thrown);
+        hazelcastLogger.warning(MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).warn(MESSAGE, THROWABLE);
     }
 
     @Test
     public void logAtLevelOff_shouldNotLog() {
-        hazelcastLogger.log(Level.OFF, "message");
+        hazelcastLogger.log(Level.OFF, MESSAGE);
         verifyZeroInteractions(mockLogger);
     }
 
     @Test
+    public void logAtLevelOff_shouldNotLog_withThrowable() {
+        hazelcastLogger.log(Level.OFF, MESSAGE, THROWABLE);
+        verifyZeroInteractions(mockLogger);
+    }
+
+    @Test
+    public void logAtLevelAll_shouldLogInfo() {
+        hazelcastLogger.log(Level.ALL, MESSAGE);
+        verify(mockLogger, times(1)).info(MESSAGE);
+    }
+
+    @Test
+    public void logAtLevelAll_shouldLogInfo_withThrowable() {
+        hazelcastLogger.log(Level.ALL, MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).info(MESSAGE, THROWABLE);
+    }
+
+    @Test
     public void logFinest_shouldLogTrace() {
-        hazelcastLogger.finest("message");
-        verify(mockLogger, times(1)).trace("message");
+        hazelcastLogger.finest(MESSAGE);
+        verify(mockLogger, times(1)).trace(MESSAGE);
+    }
+
+    @Test
+    public void logFinest_shouldLogTrace_withThrowable() {
+        hazelcastLogger.finest(MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).trace(MESSAGE, THROWABLE);
     }
 
     @Test
     public void logFine_shouldLogDebug() {
-        hazelcastLogger.fine("message");
-        verify(mockLogger, times(1)).debug("message");
+        hazelcastLogger.fine(MESSAGE);
+        verify(mockLogger, times(1)).debug(MESSAGE);
+    }
+
+    @Test
+    public void logFine_shouldLogDebug_withThrowable() {
+        hazelcastLogger.fine(MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).debug(MESSAGE, THROWABLE);
     }
 
     @Test
     public void logInfo_shouldLogInfo() {
-        hazelcastLogger.info("message");
-        verify(mockLogger, times(1)).info("message");
+        hazelcastLogger.info(MESSAGE);
+        verify(mockLogger, times(1)).info(MESSAGE);
+    }
+
+    @Test
+    public void logInfo_shouldLogInfo_withThrowable() {
+        hazelcastLogger.log(Level.INFO, MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).info(MESSAGE, THROWABLE);
     }
 
     @Test
     public void logWarning_shouldLogWarn() {
-        hazelcastLogger.warning("message");
-        verify(mockLogger, times(1)).warn("message");
+        hazelcastLogger.warning(MESSAGE);
+        verify(mockLogger, times(1)).warn(MESSAGE);
+    }
+
+    @Test
+    public void logWarning_shouldLogWarn_withThrowable() {
+        hazelcastLogger.warning(MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).warn(MESSAGE, THROWABLE);
     }
 
     @Test
     public void logSevere_shouldLogError() {
-        hazelcastLogger.severe("message");
-        verify(mockLogger, times(1)).error("message");
+        hazelcastLogger.severe(MESSAGE);
+        verify(mockLogger, times(1)).error(MESSAGE);
+    }
+
+    @Test
+    public void logSevere_shouldLogError_withThrowable() {
+        hazelcastLogger.severe(MESSAGE, THROWABLE);
+        verify(mockLogger, times(1)).error(MESSAGE, THROWABLE);
+    }
+
+    @Test
+    public void logEvent_shouldLogWithCorrectLevel() {
+        hazelcastLogger.log(LOG_EVENT);
+        verify(mockLogger, times(1)).warn(MESSAGE, THROWABLE);
     }
 }

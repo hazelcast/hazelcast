@@ -22,8 +22,9 @@ import java.util.EventObject;
 import java.util.logging.LogRecord;
 
 public class LogEvent extends EventObject {
-    final LogRecord logRecord;
-    final Member member;
+
+    private final LogRecord logRecord;
+    private final Member member;
 
     public LogEvent(LogRecord logRecord, Member member) {
         super(member);

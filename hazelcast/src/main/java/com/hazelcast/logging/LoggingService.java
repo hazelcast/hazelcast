@@ -19,6 +19,7 @@ package com.hazelcast.logging;
 import java.util.logging.Level;
 
 public interface LoggingService {
+
     void addLogListener(Level level, LogListener logListener);
 
     void removeLogListener(LogListener logListener);

@@ -31,10 +31,11 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
     }
 
     static class Log4jLogger extends AbstractLogger {
+
         private final Logger logger;
         private final Level level;
 
-        public Log4jLogger(Logger logger) {
+        Log4jLogger(Logger logger) {
             this.logger = logger;
             org.apache.log4j.Level log4jLevel = logger.getLevel();
             this.level = toStandardLevel(log4jLevel);
@@ -63,12 +64,13 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         @Override
         public void log(LogEvent logEvent) {
             LogRecord logRecord = logEvent.getLogRecord();
-            if (logRecord.getLevel() == Level.OFF) {
+            Level eventLevel = logRecord.getLevel();
+            if (eventLevel == Level.OFF) {
                 return;
             }
             String name = logEvent.getLogRecord().getLoggerName();
             org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(name);
-            org.apache.log4j.Level level = toLog4jLevel(logRecord.getLevel());
+            org.apache.log4j.Level level = toLog4jLevel(eventLevel);
             String message = logRecord.getMessage();
             Throwable throwable = logRecord.getThrown();
             logger.callAppenders(new LoggingEvent(name, logger, level, message, throwable));

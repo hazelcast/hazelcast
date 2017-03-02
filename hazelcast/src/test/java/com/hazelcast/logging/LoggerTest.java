@@ -13,8 +13,6 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertEquals;
-
 /**
  * Unit tests for {@link com.hazelcast.logging.Logger} class.
  */
@@ -26,6 +24,9 @@ public class LoggerTest extends HazelcastTestSupport {
     private static final String LOGGING_CLASS_PROPERTY_NAME = "hazelcast.logging.class";
     private static final String LOGGING_TYPE_LOG4J = "log4j";
     private static final String LOGGING_TYPE_LOG4J2 = "log4j2";
+    private static final String LOGGING_TYPE_SLF4J = "slf4j";
+    private static final String LOGGING_TYPE_JDK = "jdk";
+    private static final String LOGGING_TYPE_NONE = "none";
 
     private static Field LOGGER_FACTORY_FIELD;
 
@@ -46,7 +47,7 @@ public class LoggerTest extends HazelcastTestSupport {
     @Before
     public void before() {
         try {
-            // Reset logger factory field
+            // reset logger factory field
             LOGGER_FACTORY_FIELD.set(null, null);
         } catch (IllegalAccessException e) {
             throw new IllegalStateException(
@@ -56,15 +57,48 @@ public class LoggerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testLog4jLogger() {
-        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J);
-        assertEquals(Logger.getLogger(getClass()).getClass(), Log4jFactory.Log4jLogger.class);
+    public void testConstructor() {
+        assertUtilityConstructor(Logger.class);
     }
 
     @Test
-    public void testLog4j2Logger() {
-        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J2);
-        assertEquals(Logger.getLogger(getClass()).getClass(), Log4j2Factory.Log4j2Logger.class);
+    public void getLogger_thenLog4j_thenReturnLog4jLogger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J);
+        assertInstanceOf(Log4jFactory.Log4jLogger.class, Logger.getLogger(getClass()));
     }
 
+    @Test
+    public void getLogger_thenLog4j2_thenReturnLog4j2Logger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_LOG4J2);
+        assertInstanceOf(Log4j2Factory.Log4j2Logger.class, Logger.getLogger(getClass()));
+    }
+
+    @Test
+    public void getLogger_whenSlf4j_thenReturnSlf4jLogger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_SLF4J);
+        assertInstanceOf(Slf4jFactory.Slf4jLogger.class, Logger.getLogger(getClass()));
+    }
+
+    @Test
+    public void getLogger_whenJdk_thenReturnStandardLogger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_JDK);
+        assertInstanceOf(StandardLoggerFactory.StandardLogger.class, Logger.getLogger(getClass()));
+    }
+
+    @Test
+    public void getLogger_whenNone_thenReturnNoLogger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, LOGGING_TYPE_NONE);
+        assertInstanceOf(NoLogFactory.NoLogger.class, Logger.getLogger(getClass()));
+    }
+
+    @Test
+    public void getLogger_whenInvalidConfiguration_thenCreateStandardLogger() {
+        System.setProperty(LOGGING_TYPE_PROPERTY_NAME, "invalid");
+        assertInstanceOf(StandardLoggerFactory.StandardLogger.class, Logger.getLogger(getClass()));
+    }
+
+    @Test
+    public void noLogger() {
+        assertInstanceOf(NoLogFactory.NoLogger.class, Logger.noLogger());
+    }
 }

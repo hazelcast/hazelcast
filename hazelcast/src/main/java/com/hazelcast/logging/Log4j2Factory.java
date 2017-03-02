@@ -34,9 +34,10 @@ public class Log4j2Factory extends LoggerFactorySupport {
     }
 
     static class Log4j2Logger extends AbstractLogger {
+
         private final ExtendedLogger logger;
 
-        public Log4j2Logger(ExtendedLogger logger) {
+        Log4j2Logger(ExtendedLogger logger) {
             this.logger = logger;
         }
 

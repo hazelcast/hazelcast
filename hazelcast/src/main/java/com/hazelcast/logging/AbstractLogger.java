@@ -18,7 +18,6 @@ package com.hazelcast.logging;
 
 import java.util.logging.Level;
 
-
 /**
  * Abstract {@link ILogger} implementation that provides implementations for the convenience methods like
  * finest,info,warning and severe.

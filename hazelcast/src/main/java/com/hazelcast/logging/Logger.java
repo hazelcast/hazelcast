@@ -54,20 +54,20 @@ public final class Logger {
                 // init static logger with user-specified custom logger class
                 String loggerClass = System.getProperty("hazelcast.logging.class");
                 if (!StringUtil.isNullOrEmpty(loggerClass)) {
-                    //ok, there is a custom logging factory class -> let's use it now and store it for next time
+                    // ok, there is a custom logging factory class -> let's use it now and store it for next time
                     loggerFactoryToUse = loadLoggerFactory(loggerClass);
                     loggerFactory = loggerFactoryToUse;
                 } else {
                     String loggerType = System.getProperty("hazelcast.logging.type");
                     loggerFactoryToUse = newLoggerFactory(loggerType);
-                    //store the factory only when the type was set explicitly. we do not want to store default type.
+                    // store the factory only when the type was set explicitly. we do not want to store default type.
                     if (!StringUtil.isNullOrEmpty(loggerType)) {
                         loggerFactory = loggerFactoryToUse;
                     }
                 }
             }
         }
-        //loggerFactory was initialized by other thread before we acquired the lock->loggerFactoryToUse was left to null
+        // loggerFactory was initialized by other thread before we acquired the lock -> loggerFactoryToUse was left to null
         if (loggerFactoryToUse == null) {
             loggerFactoryToUse = loggerFactory;
         }
@@ -123,7 +123,7 @@ public final class Logger {
         try {
             return ClassLoaderUtil.newInstance(null, className);
         } catch (Exception e) {
-            //since we don't have a logger available, lets log it to the System.err
+            // since we don't have a logger available, lets log it to the System.err
             e.printStackTrace();
             return null;
         }

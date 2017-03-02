@@ -32,15 +32,14 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.withSettings;
 
-
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class LoggerStressTest extends HazelcastTestSupport {
+
     private static final int TEST_DURATION_SECONDS = 5;
     private static final int THREAD_COUNT = 4;
 
     private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
-
 
     private String originalLoggingClass;
     private String originalLoggingType;
@@ -49,9 +48,8 @@ public class LoggerStressTest extends HazelcastTestSupport {
     @Before
     public void setUp() throws Exception {
         originalLoggingClass = System.getProperty(LOGGING_CLASS_PROP_NAME);
-        originalLoggingType =  System.getProperty(LOGGING_TYPE.getName());
+        originalLoggingType = System.getProperty(LOGGING_TYPE.getName());
         originLoggerFactory = (LoggerFactory) getLoggerFactoryField().get(null);
-
     }
 
     @After
@@ -79,7 +77,26 @@ public class LoggerStressTest extends HazelcastTestSupport {
         assertThreadsEventuallyFinishesWithoutException(threads);
     }
 
-    private StressThread[] startStressThreads(long deadLine) {
+    private static Field getLoggerFactoryField() {
+        Field loggerFactoryField;
+        try {
+            loggerFactoryField = Logger.class.getDeclaredField("loggerFactory");
+        } catch (NoSuchFieldException e) {
+            throw new AssertionError("LoggerFactory field not found");
+        }
+        loggerFactoryField.setAccessible(true);
+        return loggerFactoryField;
+    }
+
+    private static void restoreProperty(String name, String value) {
+        if (value == null) {
+            System.clearProperty(name);
+        } else {
+            System.setProperty(name, value);
+        }
+    }
+
+    private static StressThread[] startStressThreads(long deadLine) {
         StressThread[] threads = new StressThread[THREAD_COUNT];
         for (int i = 0; i < THREAD_COUNT; i++) {
             threads[i] = new StressThread(deadLine);
@@ -90,7 +107,7 @@ public class LoggerStressTest extends HazelcastTestSupport {
         return threads;
     }
 
-    private void assertThreadsEventuallyFinishesWithoutException(StressThread[] threads) throws Exception {
+    private static void assertThreadsEventuallyFinishesWithoutException(StressThread[] threads) throws Exception {
         for (StressThread thread : threads) {
             thread.join();
             Exception exception = thread.e;
@@ -100,11 +117,19 @@ public class LoggerStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class StressThread extends Thread {
+    private static class LoggingFactoryStub implements LoggerFactory {
+        @Override
+        public ILogger getLogger(String name) {
+            return mock(ILogger.class, withSettings().stubOnly());
+        }
+    }
+
+    private static class StressThread extends Thread {
+
         private final long deadLine;
         private Exception e;
 
-        public StressThread(long deadLine) {
+        StressThread(long deadLine) {
             this.deadLine = deadLine;
         }
 
@@ -117,32 +142,6 @@ public class LoggerStressTest extends HazelcastTestSupport {
             } catch (Exception e) {
                 this.e = e;
             }
-        }
-    }
-
-    private Field getLoggerFactoryField() {
-        Field loggerFactoryField;
-        try {
-            loggerFactoryField = Logger.class.getDeclaredField("loggerFactory");
-        } catch (NoSuchFieldException e) {
-            throw new AssertionError("LoggerFactory field not found");
-        }
-        loggerFactoryField.setAccessible(true);
-        return loggerFactoryField;
-    }
-
-    public static class LoggingFactoryStub implements LoggerFactory {
-        @Override
-        public ILogger getLogger(String name) {
-            return mock(ILogger.class, withSettings().stubOnly());
-        }
-    }
-
-    private void restoreProperty(String name, String value) {
-        if (value == null) {
-            System.clearProperty(name);
-        } else {
-            System.setProperty(name, value);
         }
     }
 }
