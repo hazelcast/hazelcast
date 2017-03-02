@@ -125,9 +125,8 @@ public class ReplicatedRecord<K, V> {
         lastAccessTime = Clock.currentTimeMillis();
     }
 
-    // CheckStyle is deactivated due to complexity of the equals method
-    //CHECKSTYLE:OFF
     @Override
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -150,7 +149,6 @@ public class ReplicatedRecord<K, V> {
 
         return true;
     }
-    //CHECKSTYLE:ON
 
     @Override
     public int hashCode() {

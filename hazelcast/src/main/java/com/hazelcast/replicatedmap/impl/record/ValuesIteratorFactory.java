@@ -41,7 +41,7 @@ class ValuesIteratorFactory<K, V> implements IteratorFactory<K, V, V> {
 
         private Map.Entry<K, ReplicatedRecord<K, V>> entry;
 
-        public ValuesIterator(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
+        ValuesIterator(Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator) {
             this.iterator = iterator;
         }
 
