@@ -62,7 +62,6 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -100,7 +99,7 @@ import static java.util.Collections.emptyMap;
  * @param <V> the value type of map.
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
-public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
+public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V> {
 
     public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine, MapConfig mapConfig) {
         super(name, mapService, nodeEngine, mapConfig);
