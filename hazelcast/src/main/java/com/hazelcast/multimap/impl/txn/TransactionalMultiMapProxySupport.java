@@ -17,6 +17,7 @@
 package com.hazelcast.multimap.impl.txn;
 
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.CountOperation;
@@ -27,11 +28,10 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalDistributedObject;
+import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
-import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
@@ -43,33 +43,75 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public abstract class TransactionalMultiMapProxySupport extends TransactionalDistributedObject<MultiMapService>
-        implements TransactionalObject {
+public abstract class TransactionalMultiMapProxySupport<K, V>
+        extends TransactionalDistributedObject<MultiMapService>
+        implements TransactionalMultiMap<K, V> {
 
     private static final double TIMEOUT_EXTEND_MULTIPLIER = 1.5;
+
     protected final String name;
     protected final MultiMapConfig config;
 
     private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
 
-    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine,
-                                                MultiMapService service,
-                                                String name,
-                                                Transaction tx) {
+    private final OperationService operationService;
+    private final IPartitionService partitionService;
+
+    TransactionalMultiMapProxySupport(NodeEngine nodeEngine, MultiMapService service, String name, Transaction tx) {
         super(nodeEngine, service, tx);
         this.name = name;
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);
+        this.operationService = nodeEngine.getOperationService();
+        this.partitionService = nodeEngine.getPartitionService();
     }
 
-    protected void checkTransactionActive() {
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public final String getServiceName() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
+    public int size() {
+        checkTransactionActive();
+
+        try {
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(MultiMapService.SERVICE_NAME,
+                    new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
+            int size = 0;
+            for (Object obj : results.values()) {
+                if (obj == null) {
+                    continue;
+                }
+                Integer result = getNodeEngine().toObject(obj);
+                size += result;
+            }
+            for (Data key : txMap.keySet()) {
+                MultiMapTransactionLogRecord log = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
+                if (log != null) {
+                    size += log.size();
+                }
+            }
+            return size;
+        } catch (Throwable t) {
+            throw rethrow(t);
+        }
+    }
+
+    void checkTransactionActive() {
         if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
 
-    protected boolean putInternal(Data key, Data value) {
+    boolean putInternal(Data key, Data value) {
         checkObjectNotNull(key);
         checkObjectNotNull(value);
 
@@ -104,7 +146,7 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
         return false;
     }
 
-    protected boolean removeInternal(Data key, Data value) {
+    boolean removeInternal(Data key, Data value) {
         checkObjectNotNull(key);
         checkObjectNotNull(value);
 
@@ -138,12 +180,12 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
         if (recordId != -1) {
             TxnRemoveOperation operation = new TxnRemoveOperation(name, key, recordId, value);
             logRecord.addOperation(operation);
-            return recordId != -1;
+            return true;
         }
         return false;
     }
 
-    protected Collection<MultiMapRecord> removeAllInternal(Data key) {
+    Collection<MultiMapRecord> removeAllInternal(Data key) {
         checkObjectNotNull(key);
 
         long timeout = tx.getTimeoutMillis();
@@ -167,7 +209,7 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
         return coll;
     }
 
-    protected Collection<MultiMapRecord> getInternal(Data key) {
+    Collection<MultiMapRecord> getInternal(Data key) {
         checkObjectNotNull(key);
 
         Collection<MultiMapRecord> coll = txMap.get(key);
@@ -175,24 +217,19 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
             GetAllOperation operation = new GetAllOperation(name, key);
             operation.setThreadId(ThreadUtil.getThreadId());
             try {
-                int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-                final OperationService operationService = getNodeEngine().getOperationService();
-                Future<MultiMapResponse> f = operationService.invokeOnPartition(
-                        MultiMapService.SERVICE_NAME,
-                        operation,
-                        partitionId
-                );
-                MultiMapResponse response = f.get();
+                int partitionId = partitionService.getPartitionId(key);
+                Future<MultiMapResponse> future = operationService
+                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                MultiMapResponse response = future.get();
                 coll = response.getRecordCollection(getNodeEngine());
             } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+                throw rethrow(t);
             }
-
         }
         return coll;
     }
 
-    protected int valueCountInternal(Data key) {
+    int valueCountInternal(Data key) {
         checkObjectNotNull(key);
 
         Collection<MultiMapRecord> coll = txMap.get(key);
@@ -200,53 +237,18 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
             CountOperation operation = new CountOperation(name, key);
             operation.setThreadId(ThreadUtil.getThreadId());
             try {
-                int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
-                final OperationService operationService = getNodeEngine().getOperationService();
-                Future<Integer> f = operationService
-                        .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-                return f.get();
+                int partitionId = partitionService.getPartitionId(key);
+                Future<Integer> future = operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+                return future.get();
             } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+                throw rethrow(t);
             }
         }
         return coll.size();
     }
 
-    public int size() {
-        checkTransactionActive();
-
-        try {
-            final OperationService operationService = getNodeEngine().getOperationService();
-            final Map<Integer, Object> results = operationService.invokeOnAllPartitions(MultiMapService.SERVICE_NAME,
-                    new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
-            int size = 0;
-            for (Object obj : results.values()) {
-                if (obj == null) {
-                    continue;
-                }
-                Integer result = getNodeEngine().toObject(obj);
-                size += result;
-            }
-            for (Data key : txMap.keySet()) {
-                MultiMapTransactionLogRecord log = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
-                if (log != null) {
-                    size += log.size();
-                }
-            }
-
-            return size;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
     private TransactionRecordKey getRecordLogKey(Data key) {
         return new TransactionRecordKey(name, key);
-    }
-
-    @Override
-    public final String getServiceName() {
-        return MultiMapService.SERVICE_NAME;
     }
 
     private void checkObjectNotNull(Object o) {
@@ -258,30 +260,26 @@ public abstract class TransactionalMultiMapProxySupport extends TransactionalDis
     }
 
     private MultiMapResponse lockAndGet(Data key, long timeout, long ttl) {
-        final NodeEngine nodeEngine = getNodeEngine();
         boolean blockReads = tx.getTransactionType() == TransactionType.ONE_PHASE;
         TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId(), blockReads);
         try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            final OperationService operationService = nodeEngine.getOperationService();
-            Future<MultiMapResponse> f = operationService.
-                    invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-            return f.get();
+            int partitionId = partitionService.getPartitionId(key);
+            Future<MultiMapResponse> future = operationService
+                    .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            return future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
     private long nextId(Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
         TxnGenerateRecordIdOperation operation = new TxnGenerateRecordIdOperation(name, key);
         try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            final OperationService operationService = nodeEngine.getOperationService();
-            Future<Long> f = operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-            return f.get();
+            int partitionId = partitionService.getPartitionId(key);
+            Future<Long> future = operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
+            return future.get();
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
+            throw rethrow(t);
         }
     }
 
