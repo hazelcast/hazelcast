@@ -49,6 +49,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.scheduledexecutor.TaskUtils.named;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -429,6 +430,20 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
                 named(taskName, new PlainCallableTask()), delay, SECONDS);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void schedule_thenCancelInterrupted()
+            throws ExecutionException, InterruptedException {
+        int delay = 1;
+        String taskName = "Test";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> first = executorService.schedule(
+                named(taskName, new PlainCallableTask()), delay, TimeUnit.MINUTES);
+
+        first.cancel(true);
+    }
+
     @Test(expected = CancellationException.class)
     public void schedule_thenCancelAndGet()
             throws ExecutionException, InterruptedException {
@@ -442,6 +457,20 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         first.cancel(false);
         first.get();
+    }
+
+    @Test(expected = TimeoutException.class)
+    public void schedule_thenGetWithTimeout()
+            throws ExecutionException, InterruptedException, TimeoutException {
+        int delay = 5;
+        String taskName = "Test";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> first = executorService.schedule(
+                named(taskName, new PlainCallableTask()), delay, TimeUnit.MINUTES);
+
+        first.get(2, TimeUnit.SECONDS);
     }
 
     @Test()
@@ -475,7 +504,22 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
     }
 
     @Test()
-    public void schedule_cancel()
+    public void scheduleOnMember_getDelay()
+            throws ExecutionException, InterruptedException {
+        int delay = 20;
+        String taskName = "Test";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> first = executorService.scheduleOnMember(
+                named(taskName, new PlainCallableTask()), instances[0].getCluster().getLocalMember(), delay, TimeUnit.MINUTES);
+
+        assertEquals(19, first.getDelay(TimeUnit.MINUTES));
+    }
+
+    @Test()
+    public void schedule_andCancel()
             throws ExecutionException, InterruptedException {
 
         HazelcastInstance[] instances = createClusterWithCount(2);
@@ -487,6 +531,31 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture future = executorService.scheduleAtFixedRate(
                 new ICountdownLatchRunnableTask("latch"), 1, 1, SECONDS);
 
+
+        Thread.sleep(5000);
+
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        future.cancel(false);
+
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test()
+    public void schedule_andCancel_onMember()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+
+        ICountDownLatch latch = instances[0].getCountDownLatch("latch");
+        latch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture future = executorService.scheduleOnMemberAtFixedRate(
+                new ICountdownLatchRunnableTask("latch"), instances[0].getCluster().getLocalMember(),
+                1, 1, SECONDS);
 
         Thread.sleep(5000);
 
@@ -555,6 +624,21 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> first = executorService.schedule(
                 named(taskName, new PlainCallableTask()), delay, SECONDS);
+
+        first.dispose();
+        first.get();
+    }
+
+    @Test(expected = StaleTaskException.class)
+    public void schedule_thenDisposeThenGet_onMember()
+            throws ExecutionException, InterruptedException {
+        int delay = 1;
+        String taskName = "Test";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture<Double> first = executorService.scheduleOnMember(
+                named(taskName, new PlainCallableTask()), instances[0].getCluster().getLocalMember(), delay, SECONDS);
 
         first.dispose();
         first.get();
@@ -632,12 +716,32 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
 
         ScheduledTaskHandler handler = first.getHandler();
-        int expectedPartition = instances[0].getPartitionService()
-                                            .getPartition(((PartitionAware<String>) task).getPartitionKey())
-                                            .getPartitionId();
+        int expectedPartition = getPartitionIdFromPartitionAwareTask(instances[0], (PartitionAware) task);
+
         assertEquals(expectedPartition, handler.getPartitionId());
     }
 
+    @Test()
+    public void schedule_partitionAware_runnable()
+            throws ExecutionException, InterruptedException {
+        int delay = 1;
+        String completionLatchName = "completionLatch";
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+        ICountDownLatch completionLatch = instances[0].getCountDownLatch(completionLatchName);
+        completionLatch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        Runnable task = new PlainPartitionAwareRunnableTask(completionLatchName);
+        IScheduledFuture first = executorService.schedule(
+                task, delay, SECONDS);
+
+        completionLatch.await(10, SECONDS);
+
+        ScheduledTaskHandler handler = first.getHandler();
+        int expectedPartition = getPartitionIdFromPartitionAwareTask(instances[0], (PartitionAware) task);
+        assertEquals(expectedPartition, handler.getPartitionId());
+    }
 
     @Test
     public void schedule_withStatefulRunnable()
@@ -889,7 +993,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         latch.await(10, SECONDS);
         expected.expect(ExecutionException.class);
         expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
-        Object result = future.get();
+        future.get();
     }
 
     @Test
@@ -914,6 +1018,6 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
 
         expected.expect(ExecutionException.class);
         expected.expectCause(new RootCauseMatcher(IllegalStateException.class, "Erroneous task"));
-        Object result = future.get();
+        future.get();
     }
 }

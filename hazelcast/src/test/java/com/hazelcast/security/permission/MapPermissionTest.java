@@ -26,7 +26,8 @@ import java.security.Permission;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MapPermissionTest extends AbstractPermissionTest {
+public class MapPermissionTest
+        extends AbstractMapPermissionTest {
 
     @Override
     protected String[] getActions() {
