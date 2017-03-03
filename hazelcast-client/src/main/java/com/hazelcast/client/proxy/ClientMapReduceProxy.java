@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -132,10 +133,10 @@ public class ClientMapReduceProxy
                 final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request);
                 final ClientInvocationFuture future = clientInvocation.invoke();
 
-                future.andThen(new ExecutionCallback() {
+                future.andThen(new ExecutionCallback<ClientMessage>() {
                     @Override
-                    public void onResponse(Object res) {
-                        Map map = toObjectMap((ClientMessage) res);
+                    public void onResponse(ClientMessage res) {
+                        Map map = toObjectMap(res);
 
                         Object response = map;
                         try {
@@ -235,7 +236,7 @@ public class ClientMapReduceProxy
         private final String jobId;
 
         protected ClientCompletableFuture(String jobId) {
-            super(getContext().getExecutionService().getAsyncExecutor(),
+            super(getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR),
                     getContext().getLoggingService().getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
         }

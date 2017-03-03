@@ -31,9 +31,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
@@ -58,6 +58,7 @@ import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.Clock;
@@ -112,7 +113,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final SocketOptions socketOptions;
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
-    private final ClientExecutionServiceImpl executionService;
+    private final ExecutionService executionService;
     private final AddressTranslator addressTranslator;
     private final ConcurrentMap<Address, ClientConnection> activeConnections
             = new ConcurrentHashMap<Address, ClientConnection>();
@@ -144,7 +145,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         long interval = hazelcastProperties.getMillis(HEARTBEAT_INTERVAL);
         this.heartbeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
-        this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
+        this.executionService = client.getExecutionService();
         this.socketOptions = networkConfig.getSocketOptions();
 
         initIOThreads(client);
@@ -218,7 +219,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         alive = true;
         startIOThreads();
         Heartbeat heartbeat = new Heartbeat();
-        executionService.scheduleWithRepetition(heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
+        executionService.scheduleWithRepetition(ClientExecutorConstants.INTERNAL_EXECUTOR,
+                heartbeat, heartbeatInterval, heartbeatInterval, TimeUnit.MILLISECONDS);
     }
 
     protected void startIOThreads() {
@@ -341,7 +343,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         AuthenticationFuture callback = new AuthenticationFuture();
         AuthenticationFuture firstCallback = connectionsInProgress.putIfAbsent(target, callback);
         if (firstCallback == null) {
-            executionService.executeInternal(new InitConnectionTask(target, asOwner, callback));
+            executionService.execute(ClientExecutorConstants.INTERNAL_EXECUTOR,
+                    new InitConnectionTask(target, asOwner, callback));
             return callback;
         }
         return firstCallback;
@@ -481,7 +484,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                                 logger.warning("Error receiving heartbeat for connection: " + connection, t);
                             }
                         }
-                    }, executionService.getInternalExecutor());
+                    });
                 } else {
                     if (!connection.isHeartBeating()) {
                         logger.warning("Heartbeat is back to healthy for connection : " + connection);
@@ -573,7 +576,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 onAuthenticationFailed(target, connection, t);
                 callback.onFailure(t);
             }
-        }, executionService.getInternalExecutor());
+        });
     }
 
     private ClientMessage encodeAuthenticationRequest(boolean asOwner, SerializationService ss, byte serializationVersion,

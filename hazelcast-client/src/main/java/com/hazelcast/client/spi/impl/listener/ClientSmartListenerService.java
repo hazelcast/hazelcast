@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -61,7 +62,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
-        Future<String> future = registrationExecutor.submit(new Callable<String>() {
+        Future<String> future = executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Callable<String>() {
             @Override
             public String call() {
                 String userRegistrationId = UuidUtil.newUnsecureUuidString();
@@ -89,7 +90,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     private void invoke(ClientRegistrationKey registrationKey, Connection connection) throws Exception {
         //This method should only be called from registrationExecutor
-        assert (Thread.currentThread().getName().contains("eventRegistration"));
+        assert (Thread.currentThread().getName().contains("registrationExecutor"));
 
         Map<Connection, ClientEventRegistration> registrationMap = registrations.get(registrationKey);
         if (registrationMap.containsKey(connection)) {
@@ -123,7 +124,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public boolean deregisterListener(final String userRegistrationId) {
-        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+        Future<Boolean> future = executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
@@ -167,7 +168,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
         clientConnectionManager.addConnectionListener(this);
         clientConnectionManager.addConnectionHeartbeatListener(this);
         final ClientClusterService clientClusterService = client.getClientClusterService();
-        registrationExecutor.scheduleWithFixedDelay(new Runnable() {
+        executionService.scheduleWithRepetition(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 Collection<Member> memberList = clientClusterService.getMemberList();
@@ -180,7 +181,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void connectionAdded(final Connection connection) {
-        registrationExecutor.submit(new Runnable() {
+        executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 for (ClientRegistrationKey registrationKey : registrations.keySet()) {
@@ -192,7 +193,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void connectionRemoved(final Connection connection) {
-        registrationExecutor.submit(new Runnable() {
+        executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 failedRegistrations.remove(connection);
@@ -208,7 +209,7 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     @Override
     public void heartbeatResumed(final Connection connection) {
-        registrationExecutor.submit(new Runnable() {
+        executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 Collection<ClientRegistrationKey> registrationKeys = failedRegistrations.get(connection);
@@ -245,7 +246,8 @@ public class ClientSmartListenerService extends ClientListenerServiceImpl
 
     //For Testing
     public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
-        Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
+        Future<Collection<ClientEventRegistration>> future =
+                executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR,
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
                     public Collection<ClientEventRegistration> call() {

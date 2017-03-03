@@ -18,8 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
+import com.hazelcast.util.ConfigLookupUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -27,13 +26,29 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.util.ConfigLookupUtil.CACHE_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.CARD_EST_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.DURABLE_EXECUTOR_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.EXECUTOR_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.JOB_TRACKER_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.LIST_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.LOCK_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.MAP_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.MULTI_MAP_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.QUEUE_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.QUORUM_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.RELIABLE_TOPIC_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.REP_MAP_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.RING_BUFFER_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.SCHEDULED_EXECUTOR_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.SEMAPHORE_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.SET_CONFIG_CONSTRUCTOR;
+import static com.hazelcast.util.ConfigLookupUtil.TOPIC_CONFIG_CONSTRUCTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -45,8 +60,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 public class Config {
-
-    private static final ILogger LOGGER = Logger.getLogger(Config.class);
 
     private URL configurationUrl;
 
@@ -248,32 +261,11 @@ public class Config {
     }
 
     public MapConfig findMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MapConfig config = lookupByPattern(mapConfigs, baseName);
-        if (config != null) {
-            initDefaultMaxSizeForOnHeapMaps(config.getNearCacheConfig());
-            return config.getAsReadOnly();
-        }
-        return getMapConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(mapConfigs, name, MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public MapConfig getMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MapConfig config = lookupByPattern(mapConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        MapConfig defConfig = mapConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new MapConfig();
-            defConfig.setName("default");
-            initDefaultMaxSizeForOnHeapMaps(defConfig.getNearCacheConfig());
-            addMapConfig(defConfig);
-        }
-        config = new MapConfig(defConfig);
-        config.setName(name);
-        addMapConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(mapConfigs, name, MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addMapConfig(MapConfig mapConfig) {
@@ -292,11 +284,7 @@ public class Config {
      * @param mapConfigs the mapConfigs to set
      */
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
-        this.mapConfigs.clear();
-        this.mapConfigs.putAll(mapConfigs);
-        for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.mapConfigs, mapConfigs);
         return this;
     }
 
@@ -306,21 +294,7 @@ public class Config {
     }
 
     public CacheSimpleConfig getCacheConfig(String name) {
-        String baseName = getBaseName(name);
-        CacheSimpleConfig config = lookupByPattern(cacheConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        CacheSimpleConfig defConfig = cacheConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new CacheSimpleConfig();
-            defConfig.setName("default");
-            addCacheConfig(defConfig);
-        }
-        config = new CacheSimpleConfig(defConfig);
-        config.setName(name);
-        addCacheConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(cacheConfigs, name, CACHE_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addCacheConfig(CacheSimpleConfig cacheConfig) {
@@ -339,39 +313,16 @@ public class Config {
      * @param cacheConfigs the cacheConfigs to set
      */
     public Config setCacheConfigs(Map<String, CacheSimpleConfig> cacheConfigs) {
-        this.cacheConfigs.clear();
-        this.cacheConfigs.putAll(cacheConfigs);
-        for (final Entry<String, CacheSimpleConfig> entry : this.cacheConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.cacheConfigs, cacheConfigs);
         return this;
     }
 
     public QueueConfig findQueueConfig(String name) {
-        String baseName = getBaseName(name);
-        QueueConfig config = lookupByPattern(queueConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getQueueConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(queueConfigs, name, QUEUE_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public QueueConfig getQueueConfig(String name) {
-        String baseName = getBaseName(name);
-        QueueConfig config = lookupByPattern(queueConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        QueueConfig defConfig = queueConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new QueueConfig();
-            defConfig.setName("default");
-            addQueueConfig(defConfig);
-        }
-        config = new QueueConfig(defConfig);
-        config.setName(name);
-        addQueueConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(queueConfigs, name, QUEUE_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addQueueConfig(QueueConfig queueConfig) {
@@ -384,39 +335,16 @@ public class Config {
     }
 
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        this.queueConfigs.clear();
-        this.queueConfigs.putAll(queueConfigs);
-        for (Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.queueConfigs, queueConfigs);
         return this;
     }
 
     public LockConfig findLockConfig(String name) {
-        final String baseName = getBaseName(name);
-        final LockConfig config = lookupByPattern(lockConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getLockConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(lockConfigs, name, LOCK_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public LockConfig getLockConfig(String name) {
-        final String baseName = getBaseName(name);
-        LockConfig config = lookupByPattern(lockConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        LockConfig defConfig = lockConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new LockConfig();
-            defConfig.setName("default");
-            addLockConfig(defConfig);
-        }
-        config = new LockConfig(defConfig);
-        config.setName(name);
-        addLockConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(lockConfigs, name, LOCK_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addLockConfig(LockConfig lockConfig) {
@@ -429,39 +357,16 @@ public class Config {
     }
 
     public Config setLockConfigs(Map<String, LockConfig> lockConfigs) {
-        this.lockConfigs.clear();
-        this.lockConfigs.putAll(lockConfigs);
-        for (Entry<String, LockConfig> entry : lockConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.lockConfigs, lockConfigs);
         return this;
     }
 
     public ListConfig findListConfig(String name) {
-        String baseName = getBaseName(name);
-        ListConfig config = lookupByPattern(listConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getListConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(listConfigs, name, LIST_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public ListConfig getListConfig(String name) {
-        String baseName = getBaseName(name);
-        ListConfig config = lookupByPattern(listConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        ListConfig defConfig = listConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ListConfig();
-            defConfig.setName("default");
-            addListConfig(defConfig);
-        }
-        config = new ListConfig(defConfig);
-        config.setName(name);
-        addListConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(listConfigs, name, LIST_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addListConfig(ListConfig listConfig) {
@@ -474,39 +379,16 @@ public class Config {
     }
 
     public Config setListConfigs(Map<String, ListConfig> listConfigs) {
-        this.listConfigs.clear();
-        this.listConfigs.putAll(listConfigs);
-        for (Entry<String, ListConfig> entry : listConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.listConfigs, listConfigs);
         return this;
     }
 
     public SetConfig findSetConfig(String name) {
-        String baseName = getBaseName(name);
-        SetConfig config = lookupByPattern(setConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getSetConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(setConfigs, name, SET_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public SetConfig getSetConfig(String name) {
-        String baseName = getBaseName(name);
-        SetConfig config = lookupByPattern(setConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        SetConfig defConfig = setConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new SetConfig();
-            defConfig.setName("default");
-            addSetConfig(defConfig);
-        }
-        config = new SetConfig(defConfig);
-        config.setName(name);
-        addSetConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(setConfigs, name, SET_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addSetConfig(SetConfig setConfig) {
@@ -519,39 +401,16 @@ public class Config {
     }
 
     public Config setSetConfigs(Map<String, SetConfig> setConfigs) {
-        this.setConfigs.clear();
-        this.setConfigs.putAll(setConfigs);
-        for (Entry<String, SetConfig> entry : setConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.setConfigs, setConfigs);
         return this;
     }
 
     public MultiMapConfig findMultiMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MultiMapConfig config = lookupByPattern(multiMapConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getMultiMapConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(multiMapConfigs, name, MULTI_MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public MultiMapConfig getMultiMapConfig(String name) {
-        String baseName = getBaseName(name);
-        MultiMapConfig config = lookupByPattern(multiMapConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        MultiMapConfig defConfig = multiMapConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new MultiMapConfig();
-            defConfig.setName("default");
-            addMultiMapConfig(defConfig);
-        }
-        config = new MultiMapConfig(defConfig);
-        config.setName(name);
-        addMultiMapConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(multiMapConfigs, name, MULTI_MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
@@ -564,37 +423,16 @@ public class Config {
     }
 
     public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
-        this.multiMapConfigs.clear();
-        this.multiMapConfigs.putAll(multiMapConfigs);
-        for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.multiMapConfigs, multiMapConfigs);
         return this;
     }
 
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        ReplicatedMapConfig config = lookupByPattern(replicatedMapConfigs, name);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getReplicatedMapConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(replicatedMapConfigs, name, REP_MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
-        ReplicatedMapConfig config = lookupByPattern(replicatedMapConfigs, name);
-        if (config != null) {
-            return config;
-        }
-        ReplicatedMapConfig defConfig = replicatedMapConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ReplicatedMapConfig();
-            defConfig.setName("default");
-            addReplicatedMapConfig(defConfig);
-        }
-        config = new ReplicatedMapConfig(defConfig);
-        config.setName(name);
-        addReplicatedMapConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(replicatedMapConfigs, name, REP_MAP_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addReplicatedMapConfig(ReplicatedMapConfig replicatedMapConfig) {
@@ -607,37 +445,16 @@ public class Config {
     }
 
     public Config setReplicatedMapConfigs(Map<String, ReplicatedMapConfig> replicatedMapConfigs) {
-        this.replicatedMapConfigs.clear();
-        this.replicatedMapConfigs.putAll(replicatedMapConfigs);
-        for (final Entry<String, ReplicatedMapConfig> entry : this.replicatedMapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.replicatedMapConfigs, replicatedMapConfigs);
         return this;
     }
 
     public RingbufferConfig findRingbufferConfig(String name) {
-        String baseName = getBaseName(name);
-        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getRingbufferConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(ringbufferConfigs, name, RING_BUFFER_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public RingbufferConfig getRingbufferConfig(String name) {
-        String baseName = getBaseName(name);
-        RingbufferConfig config = lookupByPattern(ringbufferConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        RingbufferConfig defConfig = ringbufferConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new RingbufferConfig("default");
-            addRingBufferConfig(defConfig);
-        }
-        config = new RingbufferConfig(name, defConfig);
-        addRingBufferConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(ringbufferConfigs, name, RING_BUFFER_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addRingBufferConfig(RingbufferConfig ringbufferConfig) {
@@ -650,39 +467,16 @@ public class Config {
     }
 
     public Config setRingbufferConfigs(Map<String, RingbufferConfig> ringbufferConfigs) {
-        this.ringbufferConfigs.clear();
-        this.ringbufferConfigs.putAll(ringbufferConfigs);
-        for (Entry<String, RingbufferConfig> entry : ringbufferConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.ringbufferConfigs, ringbufferConfigs);
         return this;
     }
 
     public TopicConfig findTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        TopicConfig config = lookupByPattern(topicConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getTopicConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(topicConfigs, name, TOPIC_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public TopicConfig getTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        TopicConfig config = lookupByPattern(topicConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        TopicConfig defConfig = topicConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new TopicConfig();
-            defConfig.setName("default");
-            addTopicConfig(defConfig);
-        }
-        config = new TopicConfig(defConfig);
-        config.setName(name);
-        addTopicConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(topicConfigs, name, TOPIC_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addTopicConfig(TopicConfig topicConfig) {
@@ -691,28 +485,11 @@ public class Config {
     }
 
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        ReliableTopicConfig config = lookupByPattern(reliableTopicConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getReliableTopicConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(reliableTopicConfigs, name, RELIABLE_TOPIC_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public ReliableTopicConfig getReliableTopicConfig(String name) {
-        String baseName = getBaseName(name);
-        ReliableTopicConfig config = lookupByPattern(reliableTopicConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        ReliableTopicConfig defConfig = reliableTopicConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ReliableTopicConfig("default");
-            addReliableTopicConfig(defConfig);
-        }
-        config = new ReliableTopicConfig(defConfig, name);
-        addReliableTopicConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(reliableTopicConfigs, name, RELIABLE_TOPIC_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     /**
@@ -728,11 +505,7 @@ public class Config {
     }
 
     public Config setReliableTopicConfigs(Map<String, ReliableTopicConfig> reliableTopicConfigs) {
-        this.reliableTopicConfigs.clear();
-        this.reliableTopicConfigs.putAll(reliableTopicConfigs);
-        for (Entry<String, ReliableTopicConfig> entry : reliableTopicConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.reliableTopicConfigs, reliableTopicConfigs);
         return this;
     }
 
@@ -745,52 +518,31 @@ public class Config {
     }
 
     /**
-     * @param mapTopicConfigs the topicConfigs to set
+     * @param topicConfigs the topicConfigs to set
      */
-    public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
-        this.topicConfigs.clear();
-        this.topicConfigs.putAll(mapTopicConfigs);
-        for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+    public Config setTopicConfigs(Map<String, TopicConfig> topicConfigs) {
+        ConfigLookupUtil.setConfig(this.topicConfigs, topicConfigs);
         return this;
     }
 
     public ExecutorConfig findExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ExecutorConfig config = lookupByPattern(executorConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getExecutorConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(executorConfigs, name, EXECUTOR_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        DurableExecutorConfig config = lookupByPattern(durableExecutorConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getDurableExecutorConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(durableExecutorConfigs, name,
+                DURABLE_EXECUTOR_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ScheduledExecutorConfig config = lookupByPattern(scheduledExecutorConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getScheduledExecutorConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(scheduledExecutorConfigs, name,
+                SCHEDULED_EXECUTOR_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
-        String baseName = getBaseName(name);
-        CardinalityEstimatorConfig config = lookupByPattern(cardinalityEstimatorConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getCardinalityEstimatorConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(cardinalityEstimatorConfigs, name, CARD_EST_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
+
     /**
      * Returns the ExecutorConfig for the given name
      *
@@ -798,21 +550,7 @@ public class Config {
      * @return ExecutorConfig
      */
     public ExecutorConfig getExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ExecutorConfig config = lookupByPattern(executorConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        ExecutorConfig defConfig = executorConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ExecutorConfig();
-            defConfig.setName("default");
-            addExecutorConfig(defConfig);
-        }
-        config = new ExecutorConfig(defConfig);
-        config.setName(name);
-        addExecutorConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(executorConfigs, name, EXECUTOR_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     /**
@@ -822,21 +560,8 @@ public class Config {
      * @return DurableExecutorConfig
      */
     public DurableExecutorConfig getDurableExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        DurableExecutorConfig config = lookupByPattern(durableExecutorConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        DurableExecutorConfig defConfig = durableExecutorConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new DurableExecutorConfig();
-            defConfig.setName("default");
-            addDurableExecutorConfig(defConfig);
-        }
-        config = new DurableExecutorConfig(defConfig);
-        config.setName(name);
-        addDurableExecutorConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(durableExecutorConfigs, name, DURABLE_EXECUTOR_CONFIG_CONSTRUCTOR,
+                configPatternMatcher);
     }
 
     /**
@@ -846,21 +571,8 @@ public class Config {
      * @return ScheduledExecutorConfig
      */
     public ScheduledExecutorConfig getScheduledExecutorConfig(String name) {
-        String baseName = getBaseName(name);
-        ScheduledExecutorConfig config = lookupByPattern(scheduledExecutorConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        ScheduledExecutorConfig defConfig = scheduledExecutorConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new ScheduledExecutorConfig();
-            defConfig.setName("default");
-            addScheduledExecutorConfig(defConfig);
-        }
-        config = new ScheduledExecutorConfig(defConfig);
-        config.setName(name);
-        addScheduledExecutorConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(scheduledExecutorConfigs, name, SCHEDULED_EXECUTOR_CONFIG_CONSTRUCTOR,
+                configPatternMatcher);
     }
 
     /**
@@ -870,21 +582,7 @@ public class Config {
      * @return CardinalityEstimatorConfig
      */
     public CardinalityEstimatorConfig getCardinalityEstimatorConfig(String name) {
-        String baseName = getBaseName(name);
-        CardinalityEstimatorConfig config = lookupByPattern(cardinalityEstimatorConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        CardinalityEstimatorConfig defConfig = cardinalityEstimatorConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new CardinalityEstimatorConfig();
-            defConfig.setName("default");
-            addCardinalityEstimatorConfig(defConfig);
-        }
-        config = new CardinalityEstimatorConfig(defConfig);
-        config.setName(name);
-        addCardinalityEstimatorConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(cardinalityEstimatorConfigs, name, CARD_EST_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     /**
@@ -936,11 +634,7 @@ public class Config {
     }
 
     public Config setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
-        this.executorConfigs.clear();
-        this.executorConfigs.putAll(executorConfigs);
-        for (Entry<String, ExecutorConfig> entry : executorConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.executorConfigs, executorConfigs);
         return this;
     }
 
@@ -949,11 +643,7 @@ public class Config {
     }
 
     public Config setDurableExecutorConfigs(Map<String, DurableExecutorConfig> durableExecutorConfigs) {
-        this.durableExecutorConfigs.clear();
-        this.durableExecutorConfigs.putAll(durableExecutorConfigs);
-        for (Entry<String, DurableExecutorConfig> entry : durableExecutorConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.durableExecutorConfigs, durableExecutorConfigs);
         return this;
     }
 
@@ -962,11 +652,7 @@ public class Config {
     }
 
     public Config setScheduledExecutorConfigs(Map<String, ScheduledExecutorConfig> scheduledExecutorConfigs) {
-        this.scheduledExecutorConfigs.clear();
-        this.scheduledExecutorConfigs.putAll(scheduledExecutorConfigs);
-        for (Entry<String, ScheduledExecutorConfig> entry : scheduledExecutorConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.scheduledExecutorConfigs, scheduledExecutorConfigs);
         return this;
     }
 
@@ -975,21 +661,12 @@ public class Config {
     }
 
     public Config setCardinalityEstimatorConfigs(Map<String, CardinalityEstimatorConfig> cardinalityEstimatorConfigs) {
-        this.cardinalityEstimatorConfigs.clear();
-        this.cardinalityEstimatorConfigs.putAll(cardinalityEstimatorConfigs);
-        for (Entry<String, CardinalityEstimatorConfig> entry : cardinalityEstimatorConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.cardinalityEstimatorConfigs, cardinalityEstimatorConfigs);
         return this;
     }
 
     public SemaphoreConfig findSemaphoreConfig(String name) {
-        String baseName = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(semaphoreConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getSemaphoreConfig("default").getAsReadOnly();
+        return ConfigLookupUtil.findConfig(semaphoreConfigs, name, SEMAPHORE_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     /**
@@ -999,21 +676,7 @@ public class Config {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
-        String baseName = getBaseName(name);
-        SemaphoreConfig config = lookupByPattern(semaphoreConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        SemaphoreConfig defConfig = semaphoreConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new SemaphoreConfig();
-            defConfig.setName("default");
-            addSemaphoreConfig(defConfig);
-        }
-        config = new SemaphoreConfig(defConfig);
-        config.setName(name);
-        addSemaphoreConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(semaphoreConfigs, name, SEMAPHORE_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     /**
@@ -1037,11 +700,7 @@ public class Config {
     }
 
     public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        this.semaphoreConfigs.clear();
-        this.semaphoreConfigs.putAll(semaphoreConfigs);
-        for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.semaphoreConfigs, semaphoreConfigs);
         return this;
     }
 
@@ -1065,30 +724,11 @@ public class Config {
     }
 
     public JobTrackerConfig findJobTrackerConfig(String name) {
-        String baseName = getBaseName(name);
-        JobTrackerConfig config = lookupByPattern(jobTrackerConfigs, baseName);
-        if (config != null) {
-            return config.getAsReadOnly();
-        }
-        return getJobTrackerConfig(name);
+        return ConfigLookupUtil.findConfig(jobTrackerConfigs, name, JOB_TRACKER_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public JobTrackerConfig getJobTrackerConfig(String name) {
-        String baseName = getBaseName(name);
-        JobTrackerConfig config = lookupByPattern(jobTrackerConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        JobTrackerConfig defConfig = jobTrackerConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new JobTrackerConfig();
-            defConfig.setName("default");
-            addJobTrackerConfig(defConfig);
-        }
-        config = new JobTrackerConfig(defConfig);
-        config.setName(name);
-        addJobTrackerConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(jobTrackerConfigs, name, JOB_TRACKER_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config addJobTrackerConfig(JobTrackerConfig jobTrackerConfig) {
@@ -1101,11 +741,7 @@ public class Config {
     }
 
     public Config setJobTrackerConfigs(Map<String, JobTrackerConfig> jobTrackerConfigs) {
-        this.jobTrackerConfigs.clear();
-        this.jobTrackerConfigs.putAll(jobTrackerConfigs);
-        for (final Entry<String, JobTrackerConfig> entry : this.jobTrackerConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.jobTrackerConfigs, jobTrackerConfigs);
         return this;
     }
 
@@ -1114,38 +750,15 @@ public class Config {
     }
 
     public QuorumConfig getQuorumConfig(String name) {
-        String baseName = getBaseName(name);
-        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        QuorumConfig defConfig = quorumConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new QuorumConfig();
-            defConfig.setName("default");
-            addQuorumConfig(defConfig);
-        }
-        config = new QuorumConfig(defConfig);
-        config.setName(name);
-        addQuorumConfig(config);
-        return config;
+        return ConfigLookupUtil.getConfig(quorumConfigs, name, QUORUM_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public QuorumConfig findQuorumConfig(String name) {
-        String baseName = getBaseName(name);
-        QuorumConfig config = lookupByPattern(quorumConfigs, baseName);
-        if (config != null) {
-            return config;
-        }
-        return getQuorumConfig("default");
+        return ConfigLookupUtil.findConfig(quorumConfigs, name, QUORUM_CONFIG_CONSTRUCTOR, configPatternMatcher);
     }
 
     public Config setQuorumConfigs(Map<String, QuorumConfig> quorumConfigs) {
-        this.quorumConfigs.clear();
-        this.quorumConfigs.putAll(quorumConfigs);
-        for (final Entry<String, QuorumConfig> entry : this.quorumConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
+        ConfigLookupUtil.setConfig(this.quorumConfigs, quorumConfigs);
         return this;
     }
 
@@ -1324,7 +937,6 @@ public class Config {
      * Get current configuration of User Code Deployment.
      *
      * @since 3.8
-     *
      */
     public UserCodeDeploymentConfig getUserCodeDeploymentConfig() {
         return userCodeDeploymentConfig;
@@ -1334,8 +946,8 @@ public class Config {
      * Set User Code Deployment configuration
      *
      * @param userCodeDeploymentConfig
-     * @since 3.8
      * @return User Code Deployment configuration
+     * @since 3.8
      */
     public Config setUserCodeDeploymentConfig(UserCodeDeploymentConfig userCodeDeploymentConfig) {
         this.userCodeDeploymentConfig = userCodeDeploymentConfig;
@@ -1343,18 +955,7 @@ public class Config {
     }
 
     <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
-        T candidate = configPatterns.get(itemName);
-        if (candidate != null) {
-            return candidate;
-        }
-        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
-        if (configPatternKey != null) {
-            return configPatterns.get(configPatternKey);
-        }
-        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
-            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
-        }
-        return null;
+        return ConfigLookupUtil.lookupByPattern(configPatterns, itemName, configPatternMatcher);
     }
 
     @Override

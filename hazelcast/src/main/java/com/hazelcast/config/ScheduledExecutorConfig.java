@@ -16,13 +16,15 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
  * Configuration options for the {@link com.hazelcast.scheduledexecutor.IScheduledExecutorService}
  */
-public class ScheduledExecutorConfig {
+public class ScheduledExecutorConfig implements NamedConfig<ScheduledExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -64,7 +66,11 @@ public class ScheduledExecutorConfig {
     }
 
     public ScheduledExecutorConfig(ScheduledExecutorConfig config) {
-        this(config.getName(), config.getDurability(), config.getCapacity(), config.getPoolSize());
+        this(config != null ? config.getName() : "default",
+                config != null ? config.getDurability() : DEFAULT_DURABILITY,
+                config != null ? config.getCapacity() : DEFAULT_CAPACITY,
+                config != null ? config.getPoolSize() : DEFAULT_POOL_SIZE);
+
     }
 
     /**
@@ -165,7 +171,7 @@ public class ScheduledExecutorConfig {
                 + '}';
     }
 
-    ScheduledExecutorConfig getAsReadOnly() {
+    public ScheduledExecutorConfig getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new ScheduledExecutorConfig.ScheduledExecutorConfigReadOnly(this);
         }

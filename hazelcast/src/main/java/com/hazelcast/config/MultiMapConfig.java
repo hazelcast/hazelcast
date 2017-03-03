@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 /**
  * Configuration for MultiMap.
  */
-public class MultiMapConfig {
+public class MultiMapConfig implements NamedConfig<MultiMapConfig> {
 
     /**
      * The default number of synchronous backups for this MultiMap.

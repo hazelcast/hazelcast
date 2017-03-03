@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.HazelcastOverloadException;
@@ -28,15 +28,17 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Handles the routing of a request from a Hazelcast client.
- *
+ * <p>
  * 1) Where should request be send?
  * 2) Should it be retried?
  * 3) How many times it is retried?
@@ -51,9 +53,9 @@ public class ClientInvocation implements Runnable {
     private final ILogger logger;
     private final LifecycleService lifecycleService;
     private final ClientInvocationServiceSupport invocationService;
-    private final ClientExecutionService executionService;
+    private final ExecutionService executionService;
     private final ClientMessage clientMessage;
-
+    private final Executor userExecutor;
     private final Address address;
     private final int partitionId;
     private final Connection connection;
@@ -70,14 +72,15 @@ public class ClientInvocation implements Runnable {
                                Connection connection) {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = (ClientInvocationServiceSupport) client.getInvocationService();
-        this.executionService = client.getClientExecutionService();
+        this.executionService = client.getExecutionService();
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;
         this.address = address;
         this.connection = connection;
         this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
-        this.clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, logger);
+        this.userExecutor = executionService.getExecutor(ClientExecutorConstants.USER_EXECUTOR);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, userExecutor, clientMessage, logger);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -196,8 +199,8 @@ public class ClientInvocation implements Runnable {
     }
 
     private void rescheduleInvocation() {
-        ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
-        executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+        executionService.schedule(ClientExecutorConstants.INTERNAL_EXECUTOR, this,
+                RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
     }
 
     private boolean shouldRetry() {
@@ -245,5 +248,9 @@ public class ClientInvocation implements Runnable {
 
     public static boolean isRetryable(Throwable t) {
         return t instanceof IOException || t instanceof HazelcastInstanceNotActiveException;
+    }
+
+    public Executor getUserExecutor() {
+        return userExecutor;
     }
 }

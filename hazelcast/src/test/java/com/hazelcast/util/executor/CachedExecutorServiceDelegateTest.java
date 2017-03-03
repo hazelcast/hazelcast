@@ -22,6 +22,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.Supplier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -412,6 +413,11 @@ public class CachedExecutorServiceDelegateTest {
     }
 
     private ManagedExecutorService newManagedExecutorService(int maxPoolSize, int queueCapacity) {
-        return new CachedExecutorServiceDelegate(nodeEngine, NAME, cachedExecutorService, maxPoolSize, queueCapacity);
+        return new CachedExecutorServiceDelegate(new Supplier<ExecutorService>() {
+            @Override
+            public ExecutorService get() {
+                return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+            }
+        }, NAME, cachedExecutorService, maxPoolSize, queueCapacity);
     }
 }

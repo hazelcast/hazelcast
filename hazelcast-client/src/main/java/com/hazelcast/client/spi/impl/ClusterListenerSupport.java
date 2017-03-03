@@ -32,7 +32,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
+import com.hazelcast.util.executor.ExecutorType;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -42,10 +42,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.client.spi.ClientExecutorConstants.CLUSTER_EXECUTOR;
 import static com.hazelcast.client.spi.properties.ClientProperty.SHUFFLE_MEMBER_LIST;
 
 public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
@@ -70,15 +69,8 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         this.logger = client.getLoggingService().getLogger(ClusterListenerSupport.class);
         this.addressProviders = addressProviders;
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.clusterExecutor = createSingleThreadExecutorService(client);
-    }
-
-    private ExecutorService createSingleThreadExecutorService(HazelcastClientInstanceImpl client) {
-        ThreadGroup threadGroup = client.getThreadGroup();
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-        SingleExecutorThreadFactory threadFactory =
-                new SingleExecutorThreadFactory(threadGroup, classLoader, client.getName() + ".cluster-");
-        return Executors.newSingleThreadExecutor(threadFactory);
+        this.clusterExecutor = client.getExecutionService().register(CLUSTER_EXECUTOR, 1,
+                Integer.MAX_VALUE, ExecutorType.CONCRETE);
     }
 
     protected void init() {
@@ -95,19 +87,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     public void setOwnerConnectionAddress(Address ownerConnectionAddress) {
         this.ownerConnectionAddress = ownerConnectionAddress;
-    }
-
-    public void shutdown() {
-        clusterExecutor.shutdown();
-        try {
-            boolean success = clusterExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                logger.warning("cluster executor awaitTermination could not completed in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
-            }
-        } catch (InterruptedException e) {
-            logger.warning("cluster executor await termination is interrupted", e);
-        }
     }
 
     private Collection<InetSocketAddress> getSocketAddresses() {

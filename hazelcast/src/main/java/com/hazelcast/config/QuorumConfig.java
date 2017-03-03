@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.util.NamedConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import static com.hazelcast.quorum.QuorumType.READ_WRITE;
 /**
  * Contains the configuration for cluster quorum.
  */
-public class QuorumConfig {
+public class QuorumConfig implements NamedConfig<QuorumConfig> {
 
     private String name;
     private boolean enabled;
@@ -36,6 +37,7 @@ public class QuorumConfig {
     private QuorumType type = READ_WRITE;
     private String quorumFunctionClassName;
     private QuorumFunction quorumFunctionImplementation;
+    private QuorumConfigReadOnly readOnly;
 
     public QuorumConfig() {
     }
@@ -141,5 +143,61 @@ public class QuorumConfig {
                 + ", quorumFunctionClassName=" + quorumFunctionClassName
                 + ", quorumFunctionImplementation=" + quorumFunctionImplementation
                 + ", type=" + type + '}';
+    }
+
+    /**
+     * Gets immutable version of this configuration.
+     *
+     * @return Immutable version of this configuration.
+     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
+     */
+    @Override
+    public NamedConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new QuorumConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private class QuorumConfigReadOnly extends QuorumConfig {
+
+        public QuorumConfigReadOnly(QuorumConfig quorumConfig) {
+            super(quorumConfig);
+        }
+
+        @Override
+        public QuorumConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setEnabled(boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setType(QuorumType type) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setListenerConfigs(List<QuorumListenerConfig> listenerConfigs) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setQuorumFunctionClassName(String quorumFunctionClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public QuorumConfig setQuorumFunctionImplementation(QuorumFunction quorumFunctionImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

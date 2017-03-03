@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IList}.
  */
-public class ListConfig extends CollectionConfig<ListConfig> {
+public class ListConfig extends CollectionConfig<ListConfig> implements NamedConfig<ListConfig> {
 
     private ListConfigReadOnly readOnly;
 

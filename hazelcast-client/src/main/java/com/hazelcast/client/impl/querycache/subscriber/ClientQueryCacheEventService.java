@@ -45,7 +45,7 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.eventservice.impl.TrueEventFilter;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.StripedRunnable;
 import com.hazelcast.util.executor.TimeoutRunnable;
 
@@ -81,7 +81,7 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             };
 
     private final ILogger logger = Logger.getLogger(getClass());
-    private final StripedExecutor executor;
+    private final ManagedExecutorService executor;
     private final ConcurrentMap<String, QueryCacheToListenerMapper> registrations;
     private final SerializationService serializationService;
     private final ClientListenerService listenerService;

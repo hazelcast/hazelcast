@@ -18,6 +18,7 @@ package com.hazelcast.client.spi.impl.listener;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -49,7 +50,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public String registerListener(final ListenerMessageCodec codec, final EventHandler handler) {
-        Future<String> future = registrationExecutor.submit(new Callable<String>() {
+        Future<String> future = executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Callable<String>() {
             @Override
             public String call() throws Exception {
                 String userRegistrationId = UuidUtil.newUnsecureUuidString();
@@ -87,7 +88,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public boolean deregisterListener(final String userRegistrationId) {
-        Future<Boolean> future = registrationExecutor.submit(new Callable<Boolean>() {
+        Future<Boolean> future = executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 ClientRegistrationKey key = new ClientRegistrationKey(userRegistrationId);
@@ -123,7 +124,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionAdded(final Connection connection) {
-        registrationExecutor.submit(new Runnable() {
+        executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 Map<ClientRegistrationKey, ClientEventRegistration> tempMap =
@@ -145,7 +146,7 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     @Override
     public void connectionRemoved(Connection connection) {
-        registrationExecutor.submit(new Runnable() {
+        executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR, new Runnable() {
             @Override
             public void run() {
                 for (ClientEventRegistration registration : registrations.values()) {
@@ -157,7 +158,8 @@ public class ClientNonSmartListenerService extends ClientListenerServiceImpl imp
 
     //For Testing
     public Collection<ClientEventRegistration> getActiveRegistrations(final String uuid) {
-        Future<Collection<ClientEventRegistration>> future = registrationExecutor.submit(
+        Future<Collection<ClientEventRegistration>> future =
+                executionService.submit(ClientExecutorConstants.REGISTRATION_EXECUTOR,
                 new Callable<Collection<ClientEventRegistration>>() {
                     @Override
                     public Collection<ClientEventRegistration> call() throws Exception {

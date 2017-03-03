@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
 import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -142,7 +143,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                     public void onFailure(Throwable t) {
                         invalidateNearCache(keyData);
                     }
-                });
+                }, false);
             }
             return delegatingFuture;
         } else {
@@ -166,7 +167,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private Object asCompletedFutureOrValue(Object value, boolean async) {
         if (async) {
             return new CompletedFuture(clientContext.getSerializationService(), value,
-                    clientContext.getExecutionService().getAsyncExecutor());
+                    clientContext.getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR));
         }
 
         return value;

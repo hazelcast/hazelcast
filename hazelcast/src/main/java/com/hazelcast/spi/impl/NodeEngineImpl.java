@@ -82,6 +82,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -89,6 +90,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 import static com.hazelcast.internal.diagnostics.Diagnostics.METRICS_LEVEL;
+import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -132,7 +134,8 @@ public class NodeEngineImpl implements NodeEngine {
         this.metricsRegistry = newMetricRegistry(node);
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
-        this.executionService = new ExecutionServiceImpl(this);
+        ExecutionServiceImpl executionService = initExecutionService();
+        this.executionService = executionService;
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
         this.operationParker = new OperationParkerImpl(this);
@@ -157,6 +160,16 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager.registerService(InternalOperationService.SERVICE_NAME, operationService);
         serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
         serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
+    }
+
+    private ExecutionServiceImpl initExecutionService() {
+        ExecutionServiceImpl executionService = new ExecutionServiceImpl(getHazelcastThreadGroup(), metricsRegistry, logger,
+                getConfig().getExecutorConfigs(),
+                getConfig().getDurableExecutorConfigs(),
+                getConfig().getScheduledExecutorConfigs(), getConfig().getConfigPatternMatcher());
+        int coreSize = Runtime.getRuntime().availableProcessors();
+        executionService.register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE, ExecutorType.CACHED);
+        return executionService;
     }
 
     private PacketHandler newJetPacketHandler() {

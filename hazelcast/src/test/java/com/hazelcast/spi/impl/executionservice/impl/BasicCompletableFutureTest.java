@@ -2,8 +2,6 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -28,12 +26,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -258,12 +254,7 @@ public class BasicCompletableFutureTest {
     }
 
     private static <V> BasicCompletableFuture<V> basicCompletableFuture(Future<V> future) {
-        NodeEngine engine = mock(NodeEngine.class);
-        when(engine.getLogger(BasicCompletableFuture.class)).thenReturn(mock(ILogger.class));
-        ExecutionService executionService = mock(ExecutionService.class);
-        when(engine.getExecutionService()).thenReturn(executionService);
-        when(executionService.getExecutor(anyString())).thenReturn(new TestCurrentThreadExecutor());
-        return new BasicCompletableFuture<V>(future, engine);
+        return new BasicCompletableFuture<V>(future, new TestCurrentThreadExecutor(), mock(ILogger.class));
     }
 
     private static class TestCurrentThreadExecutor extends ThreadPoolExecutor implements ManagedExecutorService {

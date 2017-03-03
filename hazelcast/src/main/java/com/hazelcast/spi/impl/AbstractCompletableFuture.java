@@ -19,8 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -61,10 +59,6 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     private final ILogger logger;
     private final Executor defaultExecutor;
-
-    protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
-        this(nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR), logger);
-    }
 
     protected AbstractCompletableFuture(Executor defaultExecutor, ILogger logger) {
         this.defaultExecutor = defaultExecutor;

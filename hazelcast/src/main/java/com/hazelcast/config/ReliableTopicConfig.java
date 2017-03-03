@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.TopicOverloadPolicy;
+import com.hazelcast.util.NamedConfig;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -43,7 +44,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * messages.
  */
 @Beta
-public class ReliableTopicConfig {
+public class ReliableTopicConfig implements NamedConfig<ReliableTopicConfig> {
 
     /**
      * The default read batch size.
@@ -82,7 +83,7 @@ public class ReliableTopicConfig {
      *
      * @param config the ReliableTopicConfig to clone.
      */
-    ReliableTopicConfig(ReliableTopicConfig config) {
+    public ReliableTopicConfig(ReliableTopicConfig config) {
         this.name = config.name;
         this.statisticsEnabled = config.statisticsEnabled;
         this.readBatchSize = config.readBatchSize;

@@ -30,6 +30,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.util.ConstructorFunction;
@@ -50,7 +51,7 @@ public final class ClientContext {
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
     private final ClientInvocationService invocationService;
-    private final ClientExecutionService executionService;
+    private final ExecutionService executionService;
     private final ClientListenerService listenerService;
     private final ClientTransactionManagerService transactionManager;
     private final ProxyManager proxyManager;
@@ -73,7 +74,7 @@ public final class ClientContext {
         this.clusterService = client.getClientClusterService();
         this.partitionService = client.getClientPartitionService();
         this.invocationService = client.getInvocationService();
-        this.executionService = client.getClientExecutionService();
+        this.executionService = client.getExecutionService();
         this.listenerService = client.getListenerService();
         this.proxyManager = proxyManager;
         this.clientConfig = client.getClientConfig();
@@ -148,7 +149,7 @@ public final class ClientContext {
         return transactionManager;
     }
 
-    public ClientExecutionService getExecutionService() {
+    public ExecutionService getExecutionService() {
         return executionService;
     }
 

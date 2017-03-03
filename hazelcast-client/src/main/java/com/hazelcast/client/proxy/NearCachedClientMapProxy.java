@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerMessageCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
@@ -147,7 +148,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
             return new CompletedFuture<V>(getContext().getSerializationService(),
-                    value, getContext().getExecutionService().getAsyncExecutor());
+                    value, getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR));
         }
 
         final long reservationId = nearCache.tryReserveForUpdate(key);
@@ -169,7 +170,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             public void onFailure(Throwable t) {
                 invalidateNearCache(key);
             }
-        });
+        }, false);
 
         return future;
     }

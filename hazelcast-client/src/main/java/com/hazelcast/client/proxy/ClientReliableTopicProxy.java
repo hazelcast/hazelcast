@@ -18,6 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
@@ -88,7 +89,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private Executor getExecutor(ClientReliableTopicConfig config, HazelcastClientInstanceImpl client) {
         Executor executor = config.getExecutor();
         if (executor == null) {
-            executor = client.getClientExecutionService();
+            executor = client.getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR);
         }
         return executor;
     }

@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.merge.PassThroughCacheMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.util.NamedConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  * CacheConfig depends on the JCache API. If the JCache API is not in the classpath,
  * you can use CacheSimpleConfig as a communicator between the code and CacheConfig.
  */
-public class CacheSimpleConfig {
+public class CacheSimpleConfig implements NamedConfig<CacheSimpleConfig> {
 
     /**
      * The minimum number of backups.
@@ -384,7 +385,6 @@ public class CacheSimpleConfig {
      *
      * @param cacheWriter classname to be used as {@link javax.cache.integration.CacheWriter}.
      * @return The current cache config instance.
-     *
      */
     public CacheSimpleConfig setCacheWriter(String cacheWriter) {
         if (cacheWriter != null && cacheWriterFactory != null) {

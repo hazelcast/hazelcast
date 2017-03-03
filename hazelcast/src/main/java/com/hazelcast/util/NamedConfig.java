@@ -14,22 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.executionservice.impl;
+package com.hazelcast.util;
 
-import com.hazelcast.logging.ILogger;
+/**
+ * Interface for config classes
+ * @param <E> type of config class itself
+ */
+public interface NamedConfig<E> {
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
+    E setName(String name);
 
-final class CompletableFutureEntry<V> {
+    NamedConfig getAsReadOnly();
 
-    final BasicCompletableFuture<V> completableFuture;
-
-    CompletableFutureEntry(Future<V> future, Executor asyncExecutor, ILogger logger) {
-        this.completableFuture = new BasicCompletableFuture<V>(future, asyncExecutor, logger);
-    }
-
-    boolean processState() {
-        return completableFuture.isDone();
-    }
 }

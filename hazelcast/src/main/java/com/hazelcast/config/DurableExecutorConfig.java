@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.durableexecutor.DurableExecutorService;
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.util.NamedConfig;
 
 import static com.hazelcast.util.Preconditions.checkNotNegative;
 import static com.hazelcast.util.Preconditions.checkPositive;
@@ -26,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * Contains the configuration for an {@link DurableExecutorService}.
  */
 @Beta
-public class DurableExecutorConfig {
+public class DurableExecutorConfig implements NamedConfig<DurableExecutorConfig> {
 
     /**
      * The number of executor threads per Member for the Executor based on this configuration.
@@ -164,7 +165,7 @@ public class DurableExecutorConfig {
                 + '}';
     }
 
-    DurableExecutorConfigReadOnly getAsReadOnly() {
+    public DurableExecutorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new DurableExecutorConfigReadOnly(this);
         }

@@ -16,12 +16,13 @@
 
 package com.hazelcast.spi.impl.executionservice.impl;
 
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -40,10 +41,10 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
  */
 class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
-    final Future<V> delegate;
+    private final Future<V> delegate;
 
-    BasicCompletableFuture(Future<V> delegate, NodeEngine nodeEngine) {
-        super(nodeEngine, nodeEngine.getLogger(BasicCompletableFuture.class));
+    BasicCompletableFuture(Future<V> delegate, Executor asyncExecutor, ILogger ilogger) {
+        super(asyncExecutor, ilogger);
         this.delegate = delegate;
     }
 

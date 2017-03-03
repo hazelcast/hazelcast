@@ -22,10 +22,12 @@ import com.hazelcast.map.eviction.MapEvictionPolicy;
 import com.hazelcast.map.eviction.RandomEvictionPolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.util.NamedConfig;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.config.NearCacheConfigAccessor.initDefaultMaxSizeForOnHeapMaps;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkFalse;
@@ -35,7 +37,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IMap}.
  */
-public class MapConfig {
+public class MapConfig implements NamedConfig<MapConfig> {
 
     /**
      * The number of minimum backup counter
@@ -203,6 +205,7 @@ public class MapConfig {
      * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
      */
     public MapConfigReadOnly getAsReadOnly() {
+        initDefaultMaxSizeForOnHeapMaps(getNearCacheConfig());
         if (readOnly == null) {
             readOnly = new MapConfigReadOnly(this);
         }
@@ -326,7 +329,7 @@ public class MapConfig {
      * When maximum size is reached, the specified percentage of the map will be evicted.
      * Any integer between 0 and 100 is allowed.
      * For example, if 25 is set, 25% of the entries will be evicted.
-     *
+     * <p>
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -348,7 +351,7 @@ public class MapConfig {
 
     /**
      * Returns the minimum milliseconds which should pass before asking if a partition of this map is evictable or not.
-     *
+     * <p>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
      *
      * @return number of milliseconds that should pass before asking for the next eviction.
@@ -362,9 +365,9 @@ public class MapConfig {
 
     /**
      * Sets the minimum time in milliseconds which should pass before asking if a partition of this map is evictable or not.
-     *
+     * <p>
      * Default value is {@value #DEFAULT_MIN_EVICTION_CHECK_MILLIS} milliseconds.
-     *
+     * <p>
      * Beware that eviction mechanism is different for NATIVE in-memory format (It uses a probabilistic algorithm
      * based on sampling. Please see documentation for further details) and this parameter has no effect.
      *
@@ -482,7 +485,7 @@ public class MapConfig {
 
     /**
      * Sets custom eviction policy implementation for this map.
-     *
+     * <p>
      * Internal eviction algorithm finds most appropriate entry to evict from this map by using supplied policy.
      *
      * @param mapEvictionPolicy custom eviction policy implementation
