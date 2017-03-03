@@ -30,7 +30,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletableFutureTask;
 
 import javax.cache.CacheException;
@@ -39,7 +38,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Future;
@@ -47,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 /**
  * Abstract class providing cache open/close operations and {@link NodeEngine}, {@link CacheService} and
@@ -59,9 +58,9 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
  */
 abstract class AbstractCacheProxyBase<K, V>
         extends AbstractDistributedObject<ICacheService>
-        implements PrefixedDistributedObject {
+        implements ICacheInternal<K, V>, PrefixedDistributedObject {
 
-    static final int TIMEOUT = 10;
+    private static final int TIMEOUT = 10;
 
     protected final ILogger logger;
     protected final CacheConfig<K, V> cacheConfig;
@@ -78,7 +77,7 @@ abstract class AbstractCacheProxyBase<K, V>
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
     private final AtomicBoolean isDestroyed = new AtomicBoolean(false);
 
-    protected AbstractCacheProxyBase(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    AbstractCacheProxyBase(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(nodeEngine, cacheService);
         this.name = cacheConfig.getName();
         this.nameWithPrefix = cacheConfig.getNameWithPrefix();
@@ -92,20 +91,10 @@ abstract class AbstractCacheProxyBase<K, V>
                 cacheService.getCacheOperationProvider(nameWithPrefix, cacheConfig.getInMemoryFormat());
     }
 
-    protected void injectDependencies(Object obj) {
+    void injectDependencies(Object obj) {
         if (obj instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) obj).setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
-    }
-
-    @Override
-    public String getServiceName() {
-        return ICacheService.SERVICE_NAME;
-    }
-
-    @Override
-    protected String getDistributedObjectName() {
-        return nameWithPrefix;
     }
 
     @Override
@@ -114,16 +103,29 @@ abstract class AbstractCacheProxyBase<K, V>
     }
 
     @Override
+    protected String getDistributedObjectName() {
+        return nameWithPrefix;
+    }
+
+    @Override
     public String getPrefixedName() {
         return nameWithPrefix;
     }
 
-    protected void ensureOpen() {
-        if (isClosed()) {
-            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
-        }
+    @Override
+    public String getServiceName() {
+        return ICacheService.SERVICE_NAME;
     }
 
+    @Override
+    public void open() {
+        if (isDestroyed.get()) {
+            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
+        }
+        isClosed.compareAndSet(true, false);
+    }
+
+    @Override
     public void close() {
         if (!isClosed.compareAndSet(false, true)) {
             return;
@@ -157,29 +159,29 @@ abstract class AbstractCacheProxyBase<K, V>
         return true;
     }
 
+    @Override
     public boolean isClosed() {
         return isClosed.get();
     }
 
+    @Override
     public boolean isDestroyed() {
         return isDestroyed.get();
     }
 
-    public void open() {
-        if (isDestroyed.get()) {
-            throw new IllegalStateException("Cache is already destroyed! Cannot be reopened");
-        }
-        if (!isClosed.compareAndSet(true, false)) {
-            return;
+    abstract void closeListeners();
+
+    void ensureOpen() {
+        if (isClosed()) {
+            throw new IllegalStateException("Cache operations can not be performed. The cache closed");
         }
     }
 
-    protected abstract void closeListeners();
-
-    protected void submitLoadAllTask(LoadAllTask loadAllTask) {
-        final ExecutionService executionService = nodeEngine.getExecutionService();
-        final CompletableFutureTask<?> future =
-                (CompletableFutureTask<?>) executionService.submit("loadAll-" + nameWithPrefix, loadAllTask);
+    @SuppressWarnings("unchecked")
+    void submitLoadAllTask(LoadAllTask loadAllTask) {
+        ExecutionService executionService = nodeEngine.getExecutionService();
+        final CompletableFutureTask<Object> future =
+                (CompletableFutureTask<Object>) executionService.submit("loadAll-" + nameWithPrefix, loadAllTask);
         loadAllTasks.add(future);
         future.andThen(new ExecutionCallback() {
             @Override
@@ -195,16 +197,41 @@ abstract class AbstractCacheProxyBase<K, V>
         });
     }
 
-    protected final class LoadAllTask
-            implements Runnable {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        AbstractCacheProxyBase that = (AbstractCacheProxyBase) o;
+        if (nameWithPrefix != null ? !nameWithPrefix.equals(that.nameWithPrefix) : that.nameWithPrefix != null) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return nameWithPrefix != null ? nameWithPrefix.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getName() + '{' + "name=" + name + ", nameWithPrefix=" + nameWithPrefix + '}';
+    }
+
+    final class LoadAllTask implements Runnable {
 
         private final CompletionListener completionListener;
         private final CacheOperationProvider operationProvider;
         private final Set<Data> keysData;
         private final boolean replaceExistingValues;
 
-        public LoadAllTask(CacheOperationProvider operationProvider, Set<Data> keysData,
-                           boolean replaceExistingValues, CompletionListener completionListener) {
+        LoadAllTask(CacheOperationProvider operationProvider, Set<Data> keysData,
+                    boolean replaceExistingValues, CompletionListener completionListener) {
             this.operationProvider = operationProvider;
             this.keysData = keysData;
             this.replaceExistingValues = replaceExistingValues;
@@ -223,7 +250,7 @@ abstract class AbstractCacheProxyBase<K, V>
                 Map<Address, List<Integer>> memberPartitionsMap = partitionService.getMemberPartitionsMap();
                 Map<Integer, Object> results = new HashMap<Integer, Object>();
 
-                for (Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
+                for (Map.Entry<Address, List<Integer>> memberPartitions : memberPartitionsMap.entrySet()) {
                     Set<Integer> partitions = new HashSet<Integer>(memberPartitions.getValue());
                     Set<Data> ownerKeys = filterOwnerKeys(partitionService, partitions);
                     operationFactory = operationProvider.createLoadAllOperationFactory(ownerKeys, replaceExistingValues);
@@ -242,7 +269,7 @@ abstract class AbstractCacheProxyBase<K, V>
                 }
             } catch (Throwable t) {
                 if (t instanceof OutOfMemoryError) {
-                    ExceptionUtil.rethrow(t);
+                    throw rethrow(t);
                 } else {
                     if (completionListener != null) {
                         completionListener.onException(new CacheException(t));
@@ -253,7 +280,7 @@ abstract class AbstractCacheProxyBase<K, V>
 
         private Set<Data> filterOwnerKeys(IPartitionService partitionService, Set<Integer> partitions) {
             Set<Data> ownerKeys = new HashSet<Data>();
-            for (Data key: keysData) {
+            for (Data key : keysData) {
                 int keyPartitionId = partitionService.getPartitionId(key);
                 if (partitions.contains(keyPartitionId)) {
                     ownerKeys.add(key);
@@ -261,34 +288,5 @@ abstract class AbstractCacheProxyBase<K, V>
             }
             return ownerKeys;
         }
-
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        AbstractCacheProxyBase that = (AbstractCacheProxyBase) o;
-        if (nameWithPrefix != null ? !nameWithPrefix.equals(that.nameWithPrefix) : that.nameWithPrefix != null) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return nameWithPrefix != null ? nameWithPrefix.hashCode() : 0;
-    }
-
-    @Override
-    public String toString() {
-        return getClass().getName() + '{' + "name=" + name + ", nameWithPrefix=" + nameWithPrefix + '}';
-    }
-
 }

@@ -30,7 +30,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -40,16 +39,15 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
@@ -75,7 +73,7 @@ public class CacheProxy<K, V>
 
     protected final ILogger logger;
 
-    CacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    CacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
         logger = getNodeEngine().getLogger(getClass());
     }
@@ -94,12 +92,12 @@ public class CacheProxy<K, V>
     public boolean containsKey(K key) {
         ensureOpen();
         validateNotNull(key);
-        final Data k = serializationService.toData(key);
-        Operation operation = operationProvider.createContainsKeyOperation(k);
+        Data dataKey = serializationService.toData(key);
+        Operation operation = operationProvider.createContainsKeyOperation(dataKey);
         OperationService operationService = getNodeEngine().getOperationService();
-        int partitionId = getPartitionId(k);
-        InternalCompletableFuture<Boolean> f = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
-        return f.join();
+        int partitionId = getPartitionId(dataKey);
+        InternalCompletableFuture<Boolean> future = operationService.invokeOnPartition(getServiceName(), operation, partitionId);
+        return future.join();
     }
 
     @Override
@@ -146,31 +144,31 @@ public class CacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, false, true);
         try {
-            return f.get();
+            InternalCompletableFuture<Boolean> future = removeAsyncInternal(key, null, false, false, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final InternalCompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, false, true);
         try {
-            return f.get();
+            InternalCompletableFuture<Boolean> future = removeAsyncInternal(key, oldValue, true, false, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public V getAndRemove(K key) {
-        final InternalCompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
         try {
-            return f.get();
+            InternalCompletableFuture<V> future = removeAsyncInternal(key, null, false, true, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -181,8 +179,7 @@ public class CacheProxy<K, V>
 
     @Override
     public boolean replace(K key, V value) {
-        final ExpiryPolicy expiryPolicy = null;
-        return replace(key, value, expiryPolicy);
+        return replace(key, value, (ExpiryPolicy) null);
     }
 
     @Override
@@ -218,19 +215,18 @@ public class CacheProxy<K, V>
     }
 
     @Override
-    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments)
-            throws EntryProcessorException {
+    public <T> T invoke(K key, EntryProcessor<K, V, T> entryProcessor, Object... arguments) throws EntryProcessorException {
         ensureOpen();
         validateNotNull(key);
         checkNotNull(entryProcessor, "Entry Processor is null");
-        final Data keyData = serializationService.toData(key);
-        final Integer completionId = registerCompletionLatch(1);
+        Data keyData = serializationService.toData(key);
+        Integer completionId = registerCompletionLatch(1);
         Operation op = operationProvider.createEntryProcessorOperation(keyData, completionId, entryProcessor, arguments);
         try {
             OperationService operationService = getNodeEngine().getOperationService();
             int partitionId = getPartitionId(keyData);
-            final InternalCompletableFuture<T> f = operationService.invokeOnPartition(getServiceName(), op, partitionId);
-            final T safely = f.join();
+            InternalCompletableFuture<T> future = operationService.invokeOnPartition(getServiceName(), op, partitionId);
+            T safely = future.join();
             waitCompletionLatch(completionId);
             return safely;
         } catch (CacheException ce) {
@@ -245,7 +241,7 @@ public class CacheProxy<K, V>
     @Override
     public <T> Map<K, EntryProcessorResult<T>> invokeAll(Set<? extends K> keys, EntryProcessor<K, V, T> entryProcessor,
                                                          Object... arguments) {
-        // TODO Implement a multiple (batch) invoke operation and its factory
+        // TODO: implement a multiple (batch) invoke operation and its factory
         ensureOpen();
         validateNotNull(keys);
         checkNotNull(entryProcessor, "Entry Processor is null");
@@ -253,7 +249,7 @@ public class CacheProxy<K, V>
         for (K key : keys) {
             CacheEntryProcessorResult<T> ceResult;
             try {
-                final T result = invoke(key, entryProcessor, arguments);
+                T result = invoke(key, entryProcessor, arguments);
                 ceResult = result != null ? new CacheEntryProcessorResult<T>(result) : null;
             } catch (Exception e) {
                 ceResult = new CacheEntryProcessorResult<T>(e);
@@ -284,14 +280,11 @@ public class CacheProxy<K, V>
         ensureOpen();
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
-        final ICacheService service = getService();
-        final CacheEventListenerAdaptor<K, V> entryListener =
-                new CacheEventListenerAdaptor<K, V>(this,
-                        cacheEntryListenerConfiguration,
-                        getNodeEngine().getSerializationService(),
-                        getNodeEngine().getHazelcastInstance());
-        final String regId =
-                service.registerListener(getDistributedObjectName(), entryListener, entryListener, false);
+        CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
+                cacheEntryListenerConfiguration,
+                getNodeEngine().getSerializationService(),
+                getNodeEngine().getHazelcastInstance());
+        String regId = getService().registerListener(getDistributedObjectName(), entryListener, entryListener, false);
         if (regId != null) {
             if (addToConfig) {
                 cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -307,10 +300,9 @@ public class CacheProxy<K, V>
     public void deregisterCacheEntryListener(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
-        final ICacheService service = getService();
-        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
+        String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
-            if (service.deregisterListener(getDistributedObjectName(), regId)) {
+            if (getService().deregisterListener(getDistributedObjectName(), regId)) {
                 removeListenerLocally(cacheEntryListenerConfiguration);
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
@@ -318,19 +310,15 @@ public class CacheProxy<K, V>
         }
     }
 
-    protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
-                                                         boolean isRegister) {
-        final OperationService operationService = getNodeEngine().getOperationService();
-        final Collection<Member> members = getNodeEngine().getClusterService().getMembers();
-        Collection<Future> futures = new ArrayList<Future>();
+    private void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+                                                       boolean isRegister) {
+        OperationService operationService = getNodeEngine().getOperationService();
+        Collection<Member> members = getNodeEngine().getClusterService().getMembers();
         for (Member member : members) {
             if (!member.localMember()) {
-                final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
-                        cacheEntryListenerConfiguration,
+                Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(), cacheEntryListenerConfiguration,
                         isRegister);
-                final InternalCompletableFuture<Object> future =
-                        operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
-                futures.add(future);
+                operationService.invokeOnTarget(CacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
     }
@@ -355,15 +343,12 @@ public class CacheProxy<K, V>
     @Override
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         checkNotNull(listener, "CachePartitionLostListener can't be null");
-        final InternalCachePartitionLostListenerAdapter listenerAdapter =
-                new InternalCachePartitionLostListenerAdapter(listener);
 
-        final EventFilter filter = new CachePartitionLostEventFilter();
-        final ICacheService service = getService();
+        EventFilter filter = new CachePartitionLostEventFilter();
+        InternalCachePartitionLostListenerAdapter listenerAdapter = new InternalCachePartitionLostListenerAdapter(listener);
         injectDependencies(listener);
-        final EventRegistration registration =
-                service.getNodeEngine().getEventService()
-                        .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+        EventRegistration registration = getService().getNodeEngine().getEventService()
+                .registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
 
         return registration.getId();
     }
@@ -371,9 +356,7 @@ public class CacheProxy<K, V>
     @Override
     public boolean removePartitionLostListener(String id) {
         checkNotNull(id, "Listener id should not be null!");
-        final ICacheService service = getService();
-        return service.getNodeEngine().getEventService()
+        return getService().getNodeEngine().getEventService()
                 .deregisterListener(AbstractCacheService.SERVICE_NAME, name, id);
     }
-
 }
