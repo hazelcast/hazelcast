@@ -31,6 +31,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -55,7 +56,7 @@ import static org.junit.Assert.assertTrue;
  * the numbers are added in the correct order and also whether there's any data loss as nodes leave or join the cluster.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class EntryProcessorBouncingNodesTest extends HazelcastTestSupport {
 
     private static final int ENTRIES = 10;
