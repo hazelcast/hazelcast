@@ -11,6 +11,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -37,7 +38,7 @@ import static org.junit.Assert.fail;
  * Thansk Lukas Blunschi for this test (https://github.com/lukasblu).
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class NearCacheStaleReadTest extends HazelcastTestSupport {
 
     private static final int NUM_GETTERS = 7;
