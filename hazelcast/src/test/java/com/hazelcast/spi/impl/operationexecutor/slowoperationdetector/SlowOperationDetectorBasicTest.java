@@ -23,7 +23,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -40,7 +40,7 @@ import static com.hazelcast.spi.properties.GroupProperty.SLOW_OPERATION_DETECTOR
 import static java.lang.String.valueOf;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class SlowOperationDetectorBasicTest extends SlowOperationDetectorAbstractTest {
 
     private HazelcastInstance instance;
