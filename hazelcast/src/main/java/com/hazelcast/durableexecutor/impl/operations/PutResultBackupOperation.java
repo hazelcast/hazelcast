@@ -17,32 +17,25 @@
 package com.hazelcast.durableexecutor.impl.operations;
 
 import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
-import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.version.Version;
+import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
-import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
-
-public class PutResultOperation
+public class PutResultBackupOperation
         extends AbstractDurableExecutorOperation
-        implements Notifier, BackupAwareOperation {
+        implements BackupOperation {
 
     private int sequence;
 
     private Object result;
 
 
-    public PutResultOperation() {
+    public PutResultBackupOperation() {
     }
 
-    public PutResultOperation(String name, int sequence, Object result) {
+    public PutResultBackupOperation(String name, int sequence, Object result) {
         super(name);
         this.sequence = sequence;
         this.result = result;
@@ -51,25 +44,6 @@ public class PutResultOperation
     @Override
     public void run() throws Exception {
         getExecutorContainer().putResult(sequence, result);
-    }
-
-    @Override
-    public boolean shouldNotify() {
-        return true;
-    }
-
-    @Override
-    public WaitNotifyKey getNotifiedKey() {
-        long uniqueId = Bits.combineToLong(getPartitionId(), sequence);
-        return new DurableExecutorWaitNotifyKey(name, uniqueId);
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        Version version = getNodeEngine().getClusterService().getClusterVersion();
-        return version.isGreaterOrEqual(V3_9)
-                ? new PutResultBackupOperation(name, sequence, result)
-                : new PutResultOperation(name, sequence, result);
     }
 
     @Override
@@ -88,6 +62,6 @@ public class PutResultOperation
 
     @Override
     public int getId() {
-        return DurableExecutorDataSerializerHook.PUT_RESULT;
+        return DurableExecutorDataSerializerHook.PUT_RESULT_BACKUP;
     }
 }
