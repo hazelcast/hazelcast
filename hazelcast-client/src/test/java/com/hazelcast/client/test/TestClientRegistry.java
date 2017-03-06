@@ -30,6 +30,7 @@ import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.client.spi.properties.ClientProperty;
+import com.hazelcast.client.test.TwoWayBlockableExecutor.LockPair;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -109,7 +110,7 @@ class TestClientRegistry {
         private final String host;
         private final AtomicInteger ports;
         private final HazelcastClientInstanceImpl client;
-        private final ConcurrentHashMap<Address, TwoWayBlockableExecutor.LockPair> addressBlockMap = new ConcurrentHashMap<Address, TwoWayBlockableExecutor.LockPair>();
+        private final ConcurrentHashMap<Address, LockPair> addressBlockMap = new ConcurrentHashMap<Address, LockPair>();
 
         MockClientConnectionManager(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator,
                                     String host, AtomicInteger ports) {
@@ -143,13 +144,7 @@ class TestClientRegistry {
                 }
                 Node node = TestUtil.getNode(instance);
                 Address localAddress = new Address(host, ports.incrementAndGet());
-                TwoWayBlockableExecutor.LockPair lockPair = ConcurrencyUtil.getOrPutIfAbsent(addressBlockMap, address,
-                        new ConstructorFunction<Address, TwoWayBlockableExecutor.LockPair>() {
-                            @Override
-                            public TwoWayBlockableExecutor.LockPair createNew(Address arg) {
-                                return new TwoWayBlockableExecutor.LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
-                            }
-                        });
+                LockPair lockPair = getLockPair(address);
 
                 MockedClientConnection connection = new MockedClientConnection(client,
                         connectionIdGen.incrementAndGet(), node.nodeEngine, address, localAddress, lockPair);
@@ -160,12 +155,22 @@ class TestClientRegistry {
             }
         }
 
+        private LockPair getLockPair(Address address) {
+            return ConcurrencyUtil.getOrPutIfAbsent(addressBlockMap, address,
+                    new ConstructorFunction<Address, LockPair>() {
+                        @Override
+                        public LockPair createNew(Address arg) {
+                            return new LockPair(new ReentrantReadWriteLock(), new ReentrantReadWriteLock());
+                        }
+                    });
+        }
+
         /**
          * Blocks incoming messages to client from given address
          */
         void blockFrom(Address address) {
             LOGGER.info("Blocked messages from " + address);
-            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            LockPair lockPair = getLockPair(address);
             lockPair.blockIncoming();
         }
 
@@ -174,7 +179,7 @@ class TestClientRegistry {
          */
         void unblockFrom(Address address) {
             LOGGER.info("Unblocked messages from " + address);
-            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            LockPair lockPair = getLockPair(address);
             lockPair.unblockIncoming();
         }
 
@@ -183,7 +188,7 @@ class TestClientRegistry {
          */
         void blockTo(Address address) {
             LOGGER.info("Blocked messages to " + address);
-            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            LockPair lockPair = getLockPair(address);
             lockPair.blockOutgoing();
         }
 
@@ -192,7 +197,7 @@ class TestClientRegistry {
          */
         void unblockTo(Address address) {
             LOGGER.info("Unblocked messages to " + address);
-            TwoWayBlockableExecutor.LockPair lockPair = addressBlockMap.get(address);
+            LockPair lockPair = getLockPair(address);
             lockPair.unblockOutgoing();
         }
 
@@ -210,7 +215,7 @@ class TestClientRegistry {
         MockedClientConnection(HazelcastClientInstanceImpl client,
                                int connectionId, NodeEngineImpl serverNodeEngine,
                                Address address, Address localAddress,
-                               TwoWayBlockableExecutor.LockPair lockPair) throws IOException {
+                               LockPair lockPair) throws IOException {
 
             super(client, connectionId);
             this.serverNodeEngine = serverNodeEngine;
