@@ -28,12 +28,18 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
 
+    public enum KeyType {
+        INTEGER,
+        STRING,
+    }
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
     protected static final int TEST_TIMEOUT = 120000;
     protected static final int KEY_COUNT = 10023;
-    protected static final String DEFAULT_NEAR_CACHE_NAME = "defaultNearCache";
+
+    protected final String defaultNearCache = randomName();
 
     private final File preloadDir10kInt = getFileFromResources("nearcache-10k-int");
     private final File preloadDir10kString = getFileFromResources("nearcache-10k-string");
@@ -44,8 +50,8 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
     @After
     public void deleteFiles() {
-        deleteQuietly(getDefaultStoreFile());
-        deleteQuietly(getDefaultStoreLockFile());
+        deleteQuietly(getStoreFile());
+        deleteQuietly(getStoreLockFile());
     }
 
     /**
@@ -78,41 +84,41 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
      *
      * @return the default store file
      */
-    protected abstract File getDefaultStoreFile();
+    protected abstract File getStoreFile();
 
     /**
      * Returns the default store lock file used for the current implementation (IMap or JCache)
      *
      * @return the default store lock file
      */
-    protected abstract File getDefaultStoreLockFile();
+    protected abstract File getStoreLockFile();
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys_withInMemoryFormatBinary() {
-        storeAndLoad(2342, false, InMemoryFormat.BINARY);
+        storeAndLoad(2342, KeyType.INTEGER, InMemoryFormat.BINARY);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withIntegerKeys_withInMemoryFormatObject() {
-        storeAndLoad(2342, false, InMemoryFormat.OBJECT);
+        storeAndLoad(2342, KeyType.INTEGER, InMemoryFormat.OBJECT);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withStringKeys_withInMemoryFormatBinary() {
-        storeAndLoad(4223, true, InMemoryFormat.BINARY);
+        storeAndLoad(4223, KeyType.STRING, InMemoryFormat.BINARY);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testStoreAndLoad_withStringKeys_withInMemoryFormatObject() {
-        storeAndLoad(4223, true, InMemoryFormat.OBJECT);
+        storeAndLoad(4223, KeyType.STRING, InMemoryFormat.OBJECT);
     }
 
     @SuppressWarnings("WeakerAccess")
-    protected void storeAndLoad(int keyCount, boolean useStringKey, InMemoryFormat inMemoryFormat) {
+    protected void storeAndLoad(int keyCount, KeyType keyType, InMemoryFormat inMemoryFormat) {
         nearCacheConfig.setInMemoryFormat(inMemoryFormat);
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(3)
@@ -120,9 +126,9 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
 
-        populateNearCache(context, keyCount, useStringKey);
+        populateNearCache(context, keyCount, keyType);
         waitForNearCachePersistence(context, 1);
-        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
+        assertLastNearCachePersistence(context, getStoreFile(), keyCount);
 
         // shutdown the first client
         context.nearCacheInstance.shutdown();
@@ -144,7 +150,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setStoreIntervalSeconds(1)
                 .setDirectory(directory);
 
-        expectedException.expectMessage("Cannot create lock file " + directory + getDefaultStoreFile().getName());
+        expectedException.expectMessage("Cannot create lock file " + directory + getStoreFile().getName());
         expectedException.expect(HazelcastException.class);
 
         createContext(true);
@@ -153,31 +159,31 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withStringKey() {
-        createStoreFile(KEY_COUNT, true);
+        createStoreFile(KEY_COUNT, KeyType.STRING);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withIntegerKey() {
-        createStoreFile(KEY_COUNT, false);
+        createStoreFile(KEY_COUNT, KeyType.INTEGER);
     }
 
     @Test(timeout = TEST_TIMEOUT)
     @Category(SlowTest.class)
     public void testCreateStoreFile_withEmptyNearCache() {
-        createStoreFile(0, false);
+        createStoreFile(0, KeyType.INTEGER);
     }
 
-    private void createStoreFile(int keyCount, boolean useStringKey) {
+    private void createStoreFile(int keyCount, KeyType keyType) {
         nearCacheConfig.getPreloaderConfig()
                 .setStoreInitialDelaySeconds(2)
                 .setStoreIntervalSeconds(1);
 
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
 
-        populateNearCache(context, keyCount, useStringKey);
+        populateNearCache(context, keyCount, keyType);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, getDefaultStoreFile(), keyCount);
+        assertLastNearCachePersistence(context, getStoreFile(), keyCount);
     }
 
     @Test(timeout = TEST_TIMEOUT)
@@ -191,12 +197,12 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         NearCacheTestContext<Object, String, NK, NV> context = createContext(true);
 
         // assure that the pre-loader is working on the first client
-        populateNearCache(context, KEY_COUNT, false);
+        populateNearCache(context, KEY_COUNT, KeyType.INTEGER);
         waitForNearCachePersistence(context, 3);
-        assertLastNearCachePersistence(context, getDefaultStoreFile(), KEY_COUNT);
+        assertLastNearCachePersistence(context, getStoreFile(), KEY_COUNT);
 
         // the second client cannot acquire the lock, so it fails with an exception
-        expectedException.expectMessage("Cannot acquire lock on " + getDefaultStoreFile());
+        expectedException.expectMessage("Cannot acquire lock on " + getStoreFile());
         expectedException.expect(HazelcastException.class);
         createClientContext();
     }
@@ -232,8 +238,9 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
     }
 
     private void preloadNearCache(File preloaderDir, int keyCount, boolean useStringKey) {
-        nearCacheConfig.getPreloaderConfig()
-                .setDirectory(preloaderDir.getAbsolutePath());
+        nearCacheConfig
+                .setName("defaultNearCache")
+                .getPreloaderConfig().setDirectory(preloaderDir.getAbsolutePath());
         NearCacheTestContext<Object, String, NK, NV> context = createContext(false);
 
         // populate the member side data structure, so we have the values to populate the client side Near Cache
@@ -257,6 +264,7 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
                 .setEvictionPolicy(EvictionPolicy.LRU);
 
         NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.BINARY)
+                .setName(defaultNearCache)
                 .setInvalidateOnChange(invalidationOnChange)
                 .setEvictionConfig(evictionConfig);
 
@@ -267,11 +275,22 @@ public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTe
         return nearCacheConfig;
     }
 
-    private void populateNearCache(NearCacheTestContext<Object, String, NK, NV> context, int keyCount, boolean useStringKey) {
+    private void populateNearCache(NearCacheTestContext<Object, String, NK, NV> context, int keyCount, KeyType keyType) {
         for (int i = 0; i < keyCount; i++) {
-            Object key = useStringKey ? "key-" + i : i;
+            Object key = createKey(keyType, i);
             context.nearCacheAdapter.put(key, "value-" + i);
             context.nearCacheAdapter.get(key);
+        }
+    }
+
+    private static Object createKey(KeyType keyType, int i) {
+        switch (keyType) {
+            case STRING:
+                return "key-" + i;
+            case INTEGER:
+                return i;
+            default:
+                throw new IllegalArgumentException("Unknown keyType: " + keyType);
         }
     }
 

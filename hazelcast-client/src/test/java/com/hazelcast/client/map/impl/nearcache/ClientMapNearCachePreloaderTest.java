@@ -12,6 +12,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -21,6 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.File;
 import java.util.Arrays;
@@ -32,12 +34,12 @@ import static java.lang.Thread.currentThread;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 
 @RunWith(Parameterized.class)
-@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderTest<Data, String> {
 
-    private static final File DEFAULT_STORE_FILE = new File("nearCache-" + DEFAULT_NEAR_CACHE_NAME + ".store").getAbsoluteFile();
-    private static final File DEFAULT_STORE_LOCK_FILE = new File(DEFAULT_STORE_FILE.getName() + ".lock").getAbsoluteFile();
+    private final File storeFile = new File("nearCache-" + defaultNearCache + ".store").getAbsoluteFile();
+    private final File storeLockFile = new File(storeFile.getName() + ".lock").getAbsoluteFile();
 
     @Parameter
     public boolean invalidationOnChange;
@@ -54,7 +56,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
 
     @Before
     public void setUp() {
-        nearCacheConfig = getNearCacheConfig(invalidationOnChange, KEY_COUNT, DEFAULT_STORE_FILE.getParent());
+        nearCacheConfig = getNearCacheConfig(invalidationOnChange, KEY_COUNT, storeFile.getParent());
     }
 
     @After
@@ -83,7 +85,7 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                         currentThread().interrupt();
                     }
 
-                    IMap<String, String> map = context.nearCacheInstance.getMap(DEFAULT_NEAR_CACHE_NAME + currentThread());
+                    IMap<String, String> map = context.nearCacheInstance.getMap(nearCacheConfig.getName() + currentThread());
                     for (int i = 0; i < 100; i++) {
                         map.put("key-" + currentThread() + "-" + i, "value-" + currentThread() + "-" + i);
                     }
@@ -98,19 +100,19 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
     }
 
     @Override
-    protected File getDefaultStoreFile() {
-        return DEFAULT_STORE_FILE;
+    protected File getStoreFile() {
+        return storeFile;
     }
 
     @Override
-    protected File getDefaultStoreLockFile() {
-        return DEFAULT_STORE_LOCK_FILE;
+    protected File getStoreLockFile() {
+        return storeLockFile;
     }
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext(boolean createClient) {
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(getConfig());
-        IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> memberMap = member.getMap(nearCacheConfig.getName());
 
         if (!createClient) {
             return new NearCacheTestContext<K, V, Data, String>(
@@ -140,10 +142,10 @@ public class ClientMapNearCachePreloaderTest extends AbstractNearCachePreloaderT
                 .addNearCacheConfig(nearCacheConfig);
 
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
-        IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> clientMap = client.getMap(nearCacheConfig.getName());
 
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(nearCacheConfig.getName());
 
         return new NearCacheTestContext<K, V, Data, String>(
                 client.getSerializationService(),
