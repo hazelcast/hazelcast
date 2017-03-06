@@ -17,14 +17,11 @@
 package com.hazelcast.jet.connector.kafka;
 
 import com.hazelcast.jet.AbstractProcessor;
-import com.hazelcast.jet.Distributed.Function;
-import com.hazelcast.jet.Distributed.Optional;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -37,23 +34,30 @@ import static java.util.stream.Collectors.toList;
 /**
  * Kafka Writer for Jet
  *
- * @param <K>                    type of keys written
- * @param <V>                    type of values written
+ * @param <K> type of keys written
+ * @param <V> type of values written
  */
 public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
-    private final Function<K, byte[]> serializeKey;
-    private final Function<V, byte[]> serializeValue;
     private final String topic;
-    private final KafkaProducer<byte[], byte[]> producer;
+    private final KafkaProducer<K, V> producer;
 
-    WriteKafkaP(String topic, KafkaProducer producer,
-                Function<K, byte[]> serializeKey, Function<V, byte[]> serializeValue) {
-
+    WriteKafkaP(String topic, KafkaProducer<K, V> producer) {
         this.topic = topic;
         this.producer = producer;
-        this.serializeKey = serializeKey;
-        this.serializeValue = serializeValue;
+    }
+
+    /**
+     * Returns a meta-supplier of processors that publish messages to kafka topics.
+     * It expects items of type {@code Map.Entry}.
+     *
+     * @param <K>        type of keys written
+     * @param <V>        type of values written
+     * @param topicId    kafka topic name
+     * @param properties producer properties which should contain broker address and key/value serializers
+     */
+    public static <K, V> ProcessorMetaSupplier writeKafka(String topicId, Properties properties) {
+        return ProcessorMetaSupplier.of(new Supplier<K, V>(topicId, properties));
     }
 
     @Override
@@ -64,9 +68,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) throws Exception {
         Map.Entry<K, V> entry = (Map.Entry<K, V>) item;
-        byte[] key = Optional.ofNullable(entry.getKey()).map(serializeKey).orElse(null);
-        byte[] value = serializeValue.apply(entry.getValue());
-        producer.send(new ProducerRecord<>(topic, null, key, value));
+        producer.send(new ProducerRecord<>(topic, entry.getKey(), entry.getValue()));
         return true;
     }
 
@@ -76,53 +78,18 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
         return true;
     }
 
-    private static Properties getProperties(String zkAddress, String groupId, String brokerConnectionString) {
-        Properties props = new Properties();
-        props.put("zookeeper.connect", zkAddress);
-        props.put("group.id", groupId);
-        props.put("bootstrap.servers", brokerConnectionString);
-        props.put("key.serializer", ByteArraySerializer.class.getCanonicalName());
-        props.put("value.serializer", ByteArraySerializer.class.getCanonicalName());
-        return props;
-    }
-
-    /**
-     * Returns a meta-supplier of processors that publish messages to kafka topics.
-     * It expects items of type {@code Map.Entry}.
-     *
-     * @param <K>                    type of keys written
-     * @param <V>                    type of values written
-     * @param zkAddress              zookeeper address
-     * @param groupId                kafka consumer group name
-     * @param topicId                kafka topic name
-     * @param brokerConnectionString kafka broker address
-     * @param serializeKey           function for serializing keys
-     * @param serializeValue         function for serializing values
-     */
-    public static <K, V> ProcessorMetaSupplier writeKafka(String zkAddress, String groupId, String topicId,
-                                                          String brokerConnectionString, Function<K, byte[]> serializeKey,
-                                                          Function<V, byte[]> serializeValue) {
-        Properties properties = getProperties(zkAddress, groupId, brokerConnectionString);
-        return ProcessorMetaSupplier.of(new Supplier<>(topicId, properties, serializeKey, serializeValue));
-    }
-
     private static class Supplier<K, V> implements ProcessorSupplier {
 
         static final long serialVersionUID = 1L;
 
         private final String topicId;
         private final Properties properties;
-        private final Function<K, byte[]> serializeKey;
-        private final Function<V, byte[]> serializeValue;
 
-        private transient KafkaProducer producer;
+        private transient KafkaProducer<K, V> producer;
 
-        Supplier(String topicId, Properties properties,
-                 Function<K, byte[]> serializeKey, Function<V, byte[]> serializeValue) {
+        Supplier(String topicId, Properties properties) {
             this.topicId = topicId;
             this.properties = properties;
-            this.serializeKey = serializeKey;
-            this.serializeValue = serializeValue;
         }
 
         @Override
@@ -132,7 +99,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
 
         @Override @Nonnull
         public List<Processor> get(int count) {
-            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer, serializeKey, serializeValue))
+            return Stream.generate(() -> new WriteKafkaP<>(topicId, producer))
                          .limit(count)
                          .collect(toList());
         }
