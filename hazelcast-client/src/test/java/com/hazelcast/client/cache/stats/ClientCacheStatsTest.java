@@ -11,6 +11,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -21,7 +22,7 @@ import javax.cache.spi.CachingProvider;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheStatsTest extends CacheStatsTest {
 
     private final TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
