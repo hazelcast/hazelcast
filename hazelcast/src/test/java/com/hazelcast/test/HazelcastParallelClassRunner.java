@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Runtime.getRuntime;
 import static java.lang.String.format;
 
@@ -46,8 +47,21 @@ import static java.lang.String.format;
  */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
-    private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
-    private static final int DEFAULT_MAX_THREADS = max(getRuntime().availableProcessors(), 8);
+    private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork();
+    private static final int DEFAULT_MAX_THREADS = getDefaultMaxThreads();
+
+    private static int getDefaultMaxThreads() {
+        int cpuWorkers = max(getRuntime().availableProcessors(), 8);
+        //the parallel profile can spawn multiple JVMs
+        boolean multipleJVM = Boolean.getBoolean("multipleJVM");
+        if (multipleJVM) {
+            // when running tests in multiple JVMs in parallel then we want to put a cap
+            // on parallelism inside each JVM. otherwise it's easy to use too much resource
+            // and the test duration is actually longer and not shorter.
+            cpuWorkers = min(4, cpuWorkers);
+        }
+        return cpuWorkers;
+    }
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
     private final int maxThreads;
