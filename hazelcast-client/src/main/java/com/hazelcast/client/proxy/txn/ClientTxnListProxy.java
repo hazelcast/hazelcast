@@ -25,7 +25,8 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.ThreadUtil;
+
+import static com.hazelcast.util.ThreadUtil.getThreadId;
 
 /**
  * Proxy implementation of {@link TransactionalList}.
@@ -47,8 +48,7 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy impl
     public boolean add(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
-        ClientMessage request = TransactionalListAddCodec.encodeRequest(name, getTransactionId()
-                , ThreadUtil.getThreadId(), value);
+        ClientMessage request = TransactionalListAddCodec.encodeRequest(name, getTransactionId(), getThreadId(), value);
         ClientMessage response = invoke(request);
         return TransactionalListAddCodec.decodeResponse(response).response;
     }
@@ -57,18 +57,15 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy impl
     public boolean remove(E e) {
         Preconditions.checkNotNull(e);
         Data value = toData(e);
-        ClientMessage request = TransactionalListRemoveCodec.encodeRequest(name, getTransactionId()
-                , ThreadUtil.getThreadId(), value);
+        ClientMessage request = TransactionalListRemoveCodec.encodeRequest(name, getTransactionId(), getThreadId(), value);
         ClientMessage response = invoke(request);
         return TransactionalListRemoveCodec.decodeResponse(response).response;
     }
 
     @Override
     public int size() {
-        ClientMessage request = TransactionalListSizeCodec.encodeRequest(name, getTransactionId()
-                , ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalListSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalListSizeCodec.decodeResponse(response).response;
     }
-
 }

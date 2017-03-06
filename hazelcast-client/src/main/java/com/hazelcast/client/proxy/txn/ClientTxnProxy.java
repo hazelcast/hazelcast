@@ -40,6 +40,25 @@ abstract class ClientTxnProxy implements TransactionalObject {
         this.transactionContext = transactionContext;
     }
 
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String getPartitionKey() {
+        return StringPartitioningStrategy.getPartitionKey(name);
+    }
+
+    @Override
+    public final void destroy() {
+        onDestroy();
+        ClientMessage request = ClientDestroyProxyCodec.encodeRequest(name, getServiceName());
+        invoke(request);
+    }
+
+    abstract void onDestroy();
+
     final ClientMessage invoke(ClientMessage request) {
         try {
             HazelcastClientInstanceImpl client = transactionContext.getClient();
@@ -52,27 +71,8 @@ abstract class ClientTxnProxy implements TransactionalObject {
         }
     }
 
-    protected String getTransactionId() {
+    String getTransactionId() {
         return transactionContext.getTxnId();
-    }
-
-    abstract void onDestroy();
-
-    @Override
-    public final void destroy() {
-        onDestroy();
-        ClientMessage request = ClientDestroyProxyCodec.encodeRequest(name, getServiceName());
-        invoke(request);
-    }
-
-    @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
-    public String getPartitionKey() {
-        return StringPartitioningStrategy.getPartitionKey(name);
     }
 
     Data toData(Object obj) {

@@ -61,6 +61,7 @@ public class XATransactionContextProxy implements ClientTransactionContext {
     final HazelcastClientInstanceImpl client;
     final XATransactionProxy transaction;
     final ClientConnection connection;
+
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
             new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
