@@ -64,15 +64,17 @@ public class ReadSocketTextStreamPTest extends JetTestSupport {
         factory.shutdownAll();
     }
 
-
     @Test
-    public void when_dataWrittenToSocket_then_dataReadFromReader() throws Exception {
+    public void when_dataWrittenToSocket_then_dataImmediatelyEmitted() throws Exception {
+        CountDownLatch latch = new CountDownLatch(1);
         // Given
         ServerSocket socket = new ServerSocket(PORT);
         new Thread(() -> uncheckRun(() -> {
             Socket accept = socket.accept();
             PrintWriter writer = new PrintWriter(accept.getOutputStream());
             writer.write("hello \n");
+            writer.flush();
+            assertOpenEventually(latch);
             writer.write("world \n");
             writer.write("jet \n");
             writer.flush();
@@ -86,10 +88,13 @@ public class ReadSocketTextStreamPTest extends JetTestSupport {
         dag.edge(between(producer, consumer));
 
         // When
-        instance.newJob(dag).execute().get();
-
+        Future<Void> job = instance.newJob(dag).execute();
         IList<Object> list = instance.getList("consumer");
-        assertTrueEventually(() -> assertEquals(3, list.size()));
+
+        assertTrueEventually(() -> assertEquals(1, list.size()));
+        latch.countDown();
+        job.get();
+        assertEquals(3, list.size());
     }
 
     @Test

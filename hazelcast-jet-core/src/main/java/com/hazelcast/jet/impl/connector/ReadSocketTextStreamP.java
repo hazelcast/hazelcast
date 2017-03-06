@@ -45,7 +45,6 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
     private final String host;
     private final int port;
     private BufferedReader bufferedReader;
-    private Socket socket;
 
     ReadSocketTextStreamP(String host, int port) {
         this.host = host;
@@ -55,7 +54,7 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         getLogger().info("Connecting to socket " + hostAndPort());
-        socket = new Socket(host, port);
+        Socket socket = new Socket(host, port);
         getLogger().info("Connected to socket " + hostAndPort());
         bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
     }
@@ -66,13 +65,12 @@ public class ReadSocketTextStreamP extends AbstractProcessor implements Closeabl
     }
 
     private boolean tryComplete() throws IOException {
-        for (String inputLine; (inputLine = bufferedReader.readLine()) != null; ) {
-            emit(inputLine);
-            if (getOutbox().isHighWater()) {
-                return false;
-            }
+        String line = bufferedReader.readLine();
+        if (line == null) {
+            return true;
         }
-        return true;
+        emit(line);
+        return false;
     }
 
     @Override
