@@ -20,12 +20,16 @@ import com.hazelcast.durableexecutor.impl.DurableExecutorDataSerializerHook;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
-public class PutResultOperation extends AbstractDurableExecutorOperation implements Notifier {
+public class PutResultOperation
+        extends AbstractDurableExecutorOperation
+        implements Notifier, BackupAwareOperation {
 
     private int sequence;
 
@@ -55,6 +59,11 @@ public class PutResultOperation extends AbstractDurableExecutorOperation impleme
     public WaitNotifyKey getNotifiedKey() {
         long uniqueId = Bits.combineToLong(getPartitionId(), sequence);
         return new DurableExecutorWaitNotifyKey(name, uniqueId);
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new PutResultOperation(name, sequence, result);
     }
 
     @Override
