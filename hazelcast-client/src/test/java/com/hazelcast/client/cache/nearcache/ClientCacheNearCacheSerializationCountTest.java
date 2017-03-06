@@ -14,16 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.impl.nearcache;
+package com.hazelcast.client.cache.nearcache;
 
+import com.hazelcast.cache.ICache;
+import com.hazelcast.cache.impl.HazelcastServerCacheManager;
+import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
+import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
+import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
 import com.hazelcast.internal.nearcache.AbstractNearCacheSerializationCountTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
@@ -41,20 +47,24 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import javax.cache.spi.CachingProvider;
 import java.util.Collection;
 
+import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.BINARY;
+import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
 import static java.util.Arrays.asList;
 
 /**
- * Near Cache serialization count tests for {@link IMap} on Hazelcast clients.
+ * Near Cache serialization count tests for {@link ICache} on Hazelcast clients.
  */
 @RunWith(Parameterized.class)
 @UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
+public class ClientCacheNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
 
     @Parameter
     public int[] expectedSerializationCounts;
@@ -63,30 +73,38 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     public int[] expectedDeserializationCounts;
 
     @Parameter(value = 2)
-    public InMemoryFormat mapInMemoryFormat;
+    public InMemoryFormat cacheInMemoryFormat;
 
     @Parameter(value = 3)
     public InMemoryFormat nearCacheInMemoryFormat;
 
+    @Parameter(value = 4)
+    public LocalUpdatePolicy localUpdatePolicy;
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Parameters(name = "mapFormat:{2} nearCacheFormat:{3}")
+    @Parameters(name = "cacheFormat:{2} nearCacheFormat:{3} localUpdatePolicy:{4}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null, null,},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, LocalUpdatePolicy.INVALIDATE,},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE,},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT, LocalUpdatePolicy.INVALIDATE,},
+                {new int[]{1, 0, 0}, new int[]{0, 0, 0}, BINARY, OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE,},
 
-                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT,},
+                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null, null,},
+                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, LocalUpdatePolicy.INVALIDATE,},
+                {new int[]{1, 0, 0}, new int[]{1, 1, 1}, OBJECT, BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE,},
+                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT, LocalUpdatePolicy.INVALIDATE,},
+                {new int[]{1, 0, 0}, new int[]{1, 0, 0}, OBJECT, OBJECT, LocalUpdatePolicy.CACHE_ON_UPDATE,},
         });
     }
 
     @Before
     public void setUp() {
         if (nearCacheInMemoryFormat != null) {
-            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat);
+            nearCacheConfig = createNearCacheConfig(nearCacheInMemoryFormat)
+                    .setLocalUpdatePolicy(localUpdatePolicy);
         }
     }
 
@@ -108,8 +126,6 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
         Config config = getConfig();
-        config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(mapInMemoryFormat);
         prepareSerializationConfig(config.getSerializationConfig());
 
         ClientConfig clientConfig = getClientConfig();
@@ -118,27 +134,54 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
         }
         prepareSerializationConfig(clientConfig.getSerializationConfig());
 
+        CacheConfig<K, V> cacheConfig = createCacheConfig(cacheInMemoryFormat);
+
         HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
         HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
 
-        IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
+        CachingProvider memberProvider = HazelcastServerCachingProvider.createCachingProvider(member);
+        HazelcastServerCacheManager memberCacheManager = (HazelcastServerCacheManager) memberProvider.getCacheManager();
 
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
-        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
+        CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
+        HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
+        String cacheNameWithPrefix = cacheManager.getCacheNameWithPrefix(DEFAULT_NEAR_CACHE_NAME);
+
+        ICache<K, V> clientCache = cacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
+        ICache<K, V> memberCache = memberCacheManager.createCache(DEFAULT_NEAR_CACHE_NAME, cacheConfig);
+
+        NearCache<Data, String> nearCache = nearCacheManager.getNearCache(cacheNameWithPrefix);
 
         return new NearCacheTestContext<K, V, Data, String>(
                 client.getSerializationService(),
                 client,
                 member,
-                new IMapDataStructureAdapter<K, V>(clientMap),
-                new IMapDataStructureAdapter<K, V>(memberMap),
+                new ICacheDataStructureAdapter<K, V>(clientCache),
+                new ICacheDataStructureAdapter<K, V>(memberCache),
                 false,
                 nearCache,
-                nearCacheManager);
+                nearCacheManager,
+                cacheManager,
+                memberCacheManager
+        );
     }
 
     protected ClientConfig getClientConfig() {
         return new ClientConfig();
+    }
+
+    private <K, V> CacheConfig<K, V> createCacheConfig(InMemoryFormat inMemoryFormat) {
+        CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>()
+                .setName(DEFAULT_NEAR_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
+
+        if (inMemoryFormat == NATIVE) {
+            cacheConfig.getEvictionConfig()
+                    .setEvictionPolicy(LRU)
+                    .setMaximumSizePolicy(USED_NATIVE_MEMORY_PERCENTAGE)
+                    .setSize(90);
+        }
+
+        return cacheConfig;
     }
 }
