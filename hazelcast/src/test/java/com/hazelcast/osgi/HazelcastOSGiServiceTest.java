@@ -7,7 +7,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.osgi.impl.HazelcastInternalOSGiService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class HazelcastOSGiServiceTest extends HazelcastTestSupport {
 
     private TestBundle bundle;
