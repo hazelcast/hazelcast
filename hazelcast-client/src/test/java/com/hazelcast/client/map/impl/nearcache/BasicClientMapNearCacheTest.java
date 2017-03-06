@@ -13,6 +13,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -32,7 +33,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
  */
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class BasicClientMapNearCacheTest extends AbstractBasicNearCacheTest<Data, String> {
 
     @Parameter
