@@ -17,7 +17,6 @@
 package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.CacheStatistics;
-import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -70,7 +69,7 @@ import static java.util.Collections.emptyMap;
  * @param <V> the type of value
  */
 @SuppressWarnings("checkstyle:npathcomplexity")
-abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> implements ICacheInternal<K, V> {
+abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCacheProxy<K, V> {
 
     @SuppressWarnings("unchecked")
     private static ClientMessageDecoder cacheGetResponseDecoder = new ClientMessageDecoder() {
