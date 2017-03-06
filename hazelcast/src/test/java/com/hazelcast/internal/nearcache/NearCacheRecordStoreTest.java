@@ -6,6 +6,7 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -19,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
 
     @Parameterized.Parameter
