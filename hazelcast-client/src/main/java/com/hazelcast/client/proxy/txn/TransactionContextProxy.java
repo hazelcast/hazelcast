@@ -54,6 +54,7 @@ public class TransactionContextProxy implements ClientTransactionContext {
     final HazelcastClientInstanceImpl client;
     final TransactionProxy transaction;
     final ClientConnection connection;
+
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap =
             new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 

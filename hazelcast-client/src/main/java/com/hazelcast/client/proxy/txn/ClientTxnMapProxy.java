@@ -39,7 +39,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
-import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,6 +48,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.ThreadUtil.getThreadId;
 
 /**
  * Proxy implementation of {@link TransactionalMap} interface.
@@ -66,8 +66,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public boolean containsKey(Object key) {
         checkNotNull(key, "key can't be null");
 
-        ClientMessage request = TransactionalMapContainsKeyCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMapContainsKeyCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return TransactionalMapContainsKeyCodec.decodeResponse(response).response;
     }
@@ -76,8 +76,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public V get(Object key) {
         checkNotNull(key, "key can't be null");
 
-        ClientMessage request = TransactionalMapGetCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMapGetCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapGetCodec.decodeResponse(response).response);
     }
@@ -86,16 +85,15 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public V getForUpdate(Object key) {
         checkNotNull(key, "key can't be null");
 
-        ClientMessage request = TransactionalMapGetForUpdateCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMapGetForUpdateCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapGetForUpdateCodec.decodeResponse(response).response);
     }
 
     @Override
     public int size() {
-        ClientMessage request = TransactionalMapSizeCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMapSizeCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalMapSizeCodec.decodeResponse(response).response;
     }
@@ -115,8 +113,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        ClientMessage request = TransactionalMapPutCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value), timeunit.toMillis(ttl));
+        ClientMessage request = TransactionalMapPutCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value), timeunit.toMillis(ttl));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapPutCodec.decodeResponse(response).response);
     }
@@ -126,8 +124,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        ClientMessage request = TransactionalMapSetCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMapSetCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         invoke(request);
     }
 
@@ -136,8 +134,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        ClientMessage request = TransactionalMapPutIfAbsentCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMapPutIfAbsentCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapPutIfAbsentCodec.decodeResponse(response).response);
     }
@@ -147,8 +145,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        ClientMessage request = TransactionalMapReplaceCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMapReplaceCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapReplaceCodec.decodeResponse(response).response);
     }
@@ -159,8 +157,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(oldValue, "oldValue can't be null");
         checkNotNull(newValue, "newValue can't be null");
 
-        ClientMessage request = TransactionalMapReplaceIfSameCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(oldValue), toData(newValue));
+        ClientMessage request = TransactionalMapReplaceIfSameCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(oldValue), toData(newValue));
         ClientMessage response = invoke(request);
         return TransactionalMapReplaceIfSameCodec.decodeResponse(response).response;
     }
@@ -169,8 +167,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public V remove(Object key) {
         checkNotNull(key, "key can't be null");
 
-        ClientMessage request = TransactionalMapRemoveCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMapRemoveCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return (V) toObject(TransactionalMapRemoveCodec.decodeResponse(response).response);
     }
@@ -179,8 +176,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public void delete(Object key) {
         checkNotNull(key, "key can't be null");
 
-        ClientMessage request = TransactionalMapDeleteCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key));
+        ClientMessage request = TransactionalMapDeleteCodec.encodeRequest(name, getTransactionId(), getThreadId(), toData(key));
         invoke(request);
     }
 
@@ -189,8 +185,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         checkNotNull(key, "key can't be null");
         checkNotNull(value, "value can't be null");
 
-        ClientMessage request = TransactionalMapRemoveIfSameCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(key), toData(value));
+        ClientMessage request = TransactionalMapRemoveIfSameCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return TransactionalMapRemoveIfSameCodec.decodeResponse(response).response;
     }
@@ -198,7 +194,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet() {
-        ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMapKeySetCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         Collection<Data> dataKeySet = TransactionalMapKeySetCodec.decodeResponse(response).response;
 
@@ -214,8 +210,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "predicate can't null");
 
-        ClientMessage request = TransactionalMapKeySetWithPredicateCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(predicate));
+        ClientMessage request = TransactionalMapKeySetWithPredicateCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
         Collection<Data> dataKeySet = TransactionalMapKeySetWithPredicateCodec.decodeResponse(response).response;
 
@@ -229,7 +225,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     @Override
     @SuppressWarnings("unchecked")
     public Collection<V> values() {
-        ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
+        ClientMessage request = TransactionalMapValuesCodec.encodeRequest(name, getTransactionId(), getThreadId());
         ClientMessage response = invoke(request);
         List dataValues = TransactionalMapValuesCodec.decodeResponse(response).response;
         return new UnmodifiableLazyList<V>(dataValues, getSerializationService());
@@ -240,8 +236,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, "predicate can't be null");
 
-        ClientMessage request = TransactionalMapValuesWithPredicateCodec.encodeRequest(name, getTransactionId(),
-                ThreadUtil.getThreadId(), toData(predicate));
+        ClientMessage request = TransactionalMapValuesWithPredicateCodec
+                .encodeRequest(name, getTransactionId(), getThreadId(), toData(predicate));
         ClientMessage response = invoke(request);
         Collection<Data> dataValues = TransactionalMapValuesWithPredicateCodec.decodeResponse(response).response;
 

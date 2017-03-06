@@ -28,7 +28,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.Future;
@@ -41,6 +40,7 @@ import static com.hazelcast.transaction.impl.Transaction.State.COMMIT_FAILED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 
 final class TransactionProxy {
 
@@ -90,7 +90,7 @@ final class TransactionProxy {
             state = ACTIVE;
         } catch (Exception e) {
             TRANSACTION_EXISTS.set(null);
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
@@ -107,7 +107,7 @@ final class TransactionProxy {
             state = COMMITTED;
         } catch (Exception e) {
             state = COMMIT_FAILED;
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         } finally {
             TRANSACTION_EXISTS.set(null);
         }
@@ -150,7 +150,7 @@ final class TransactionProxy {
             final Future<ClientMessage> future = clientInvocation.invoke();
             return future.get();
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 }
