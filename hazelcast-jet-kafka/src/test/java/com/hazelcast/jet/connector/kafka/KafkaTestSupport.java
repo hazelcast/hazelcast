@@ -21,8 +21,8 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.After;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.Future;
@@ -33,7 +33,6 @@ public class KafkaTestSupport extends JetTestSupport {
 
     private static final String ZK_HOST = "127.0.0.1";
     private static final String BROKER_HOST = "127.0.0.1";
-    private static final int BROKER_PORT = 9092;
     private static final int SESSION_TIMEOUT = 30000;
     private static final int CONNECTION_TIMEOUT = 30000;
 
@@ -41,6 +40,7 @@ public class KafkaTestSupport extends JetTestSupport {
     private ZkUtils zkUtils;
     private KafkaServer kafkaServer;
     private KafkaProducer<Integer, String> producer;
+    private int brokerPort = -1;
 
     @After
     public void shutdownKafkaCluster() {
@@ -59,17 +59,18 @@ public class KafkaTestSupport extends JetTestSupport {
         String zkConnect = ZK_HOST + ":" + zkServer.port();
         ZkClient zkClient = new ZkClient(zkConnect, SESSION_TIMEOUT, CONNECTION_TIMEOUT, ZKStringSerializer$.MODULE$);
         zkUtils = ZkUtils.apply(zkClient, false);
+        brokerPort = getRandomPort();
 
         Properties brokerProps = new Properties();
         brokerProps.setProperty("zookeeper.connect", zkConnect);
         brokerProps.setProperty("broker.id", "0");
         brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
-        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":" + BROKER_PORT);
+        brokerProps.setProperty("listeners", "PLAINTEXT://" + BROKER_HOST + ":" + brokerPort);
         KafkaConfig config = new KafkaConfig(brokerProps);
         Time mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);
 
-        return BROKER_HOST + ":" + BROKER_PORT;
+        return BROKER_HOST + ":" + brokerPort;
     }
 
     protected void createTopic(String topicId, int partitions, int replicationFactor) {
@@ -77,13 +78,13 @@ public class KafkaTestSupport extends JetTestSupport {
     }
 
     protected Future<RecordMetadata> produce(String topic, Integer key, String value) {
-        return getProducer().send(new ProducerRecord<Integer, String>(topic, key, value));
+        return getProducer().send(new ProducerRecord<>(topic, key, value));
     }
 
     protected KafkaProducer<Integer, String> getProducer() {
         if (producer == null) {
             Properties producerProps = new Properties();
-            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ":" + BROKER_PORT);
+            producerProps.setProperty("bootstrap.servers", BROKER_HOST + ":" + brokerPort);
             producerProps.setProperty("key.serializer", IntegerSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
             producer = new KafkaProducer<>(producerProps);
@@ -102,5 +103,17 @@ public class KafkaTestSupport extends JetTestSupport {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
         consumer.subscribe(Collections.singleton(topic));
         return consumer;
+    }
+
+    private static int getRandomPort() throws IOException {
+        ServerSocket server = null;
+        try {
+            server = new ServerSocket(0);
+            return server.getLocalPort();
+        } finally {
+            if (server != null) {
+                server.close();
+            }
+        }
     }
 }

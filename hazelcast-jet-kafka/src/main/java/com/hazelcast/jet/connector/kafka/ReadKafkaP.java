@@ -32,7 +32,7 @@ import org.apache.kafka.common.TopicPartition;
 import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.util.AbstractMap;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
@@ -51,11 +51,11 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
 
     private static final int POLL_TIMEOUT_MS = 100;
     private final Properties properties;
-    private final String topic;
+    private final String[] topicIds;
     private KafkaConsumer<K, V> consumer;
 
-    private ReadKafkaP(String topic, Properties properties) {
-        this.topic = topic;
+    private ReadKafkaP(String[] topicIds, Properties properties) {
+        this.topicIds = topicIds;
         this.properties = properties;
 
     }
@@ -71,19 +71,19 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
      *
      * @param <K>        type of keys read
      * @param <V>        type of values read
-     * @param topicId    kafka topic name
+     * @param topicIds   kafka topic names
      * @param properties consumer properties which should contain consumer group name,
      *                   broker address and key/value deserializers
      */
-    public static <K, V> ProcessorMetaSupplier readKafka(String topicId, Properties properties) {
-        return new MetaSupplier<>(topicId, properties);
+    public static <K, V> ProcessorMetaSupplier readKafka(Properties properties, String... topicIds) {
+        return new MetaSupplier<>(topicIds, properties);
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         properties.put("enable.auto.commit", false);
         consumer = new KafkaConsumer<>(properties);
-        consumer.subscribe(Collections.singleton(topic));
+        consumer.subscribe(Arrays.asList(topicIds));
     }
 
     @Override
@@ -129,11 +129,11 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
     private static final class MetaSupplier<K, V> implements ProcessorMetaSupplier {
 
         static final long serialVersionUID = 1L;
-        private final String topicId;
+        private final String[] topicIds;
         private Properties properties;
 
-        private MetaSupplier(String topicId, Properties properties) {
-            this.topicId = topicId;
+        private MetaSupplier(String[] topicIds, Properties properties) {
+            this.topicIds = topicIds;
             this.properties = properties;
             this.properties.put("enable.auto.commit", false);
         }
@@ -144,7 +144,7 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
 
         @Override @Nonnull
         public Function<Address, ProcessorSupplier> get(@Nonnull List<Address> addresses) {
-            return address -> new Supplier<>(topicId, properties);
+            return address -> new Supplier<>(topicIds, properties);
         }
     }
 
@@ -152,19 +152,19 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
 
         static final long serialVersionUID = 1L;
 
-        private final String topicId;
+        private final String[] topicIds;
         private final Properties properties;
         private transient List<Processor> processors;
 
-        Supplier(String topicId, Properties properties) {
+        Supplier(String[] topicIds, Properties properties) {
             this.properties = properties;
-            this.topicId = topicId;
+            this.topicIds = topicIds;
         }
 
         @Override @Nonnull
         public List<Processor> get(int count) {
             return processors = range(0, count)
-                    .mapToObj(i -> new ReadKafkaP<>(topicId, properties))
+                    .mapToObj(i -> new ReadKafkaP<>(topicIds, properties))
                     .collect(toList());
         }
 

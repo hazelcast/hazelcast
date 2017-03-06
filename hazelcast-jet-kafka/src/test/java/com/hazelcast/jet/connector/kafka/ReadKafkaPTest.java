@@ -30,7 +30,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.AbstractMap;
+import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.jet.Edge.between;
@@ -48,21 +49,15 @@ public class ReadKafkaPTest extends KafkaTestSupport {
     public void testReadTopic() throws Exception {
         String brokerConnectionString = createKafkaCluster();
 
-        final String topic = randomName();
+        final String topic1 = randomString();
+        final String topic2 = randomString();
         int messageCount = 20;
-        final String consumerGroupId = "test";
         JetInstance instance = createJetMember();
         DAG dag = new DAG();
 
-        Properties properties = new Properties();
-        properties.setProperty("group.id", consumerGroupId);
-        properties.setProperty("bootstrap.servers", brokerConnectionString);
-        properties.setProperty("key.deserializer", IntegerDeserializer.class.getName());
-        properties.setProperty("value.deserializer", StringDeserializer.class.getName());
-        properties.setProperty("auto.offset.reset", "earliest");
-
+        Properties properties = getProperties(brokerConnectionString, IntegerDeserializer.class, StringDeserializer.class);
         Vertex source = dag.newVertex("source",
-                readKafka(topic, properties)).localParallelism(4);
+                readKafka(properties, topic1, topic2)).localParallelism(4);
 
         Vertex sink = dag.newVertex("sink", writeList("sink"))
                          .localParallelism(1);
@@ -71,15 +66,35 @@ public class ReadKafkaPTest extends KafkaTestSupport {
 
         instance.newJob(dag).execute();
         sleepAtLeastSeconds(3);
-        range(0, messageCount).forEach(i -> produce(topic, i, Integer.toString(i)));
+        range(0, messageCount).forEach(i -> {
+            produce(topic1, i, Integer.toString(i));
+            produce(topic2, i - messageCount, Integer.toString(i - messageCount));
+        });
         IList<Object> list = instance.getList("sink");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(messageCount, list.size());
-                range(0, messageCount).forEach(i -> assertTrue(list.contains(new AbstractMap.SimpleImmutableEntry<>(i, Integer.toString(i)))));
+                assertEquals(messageCount * 2, list.size());
+                range(0, messageCount).forEach(i -> {
+                    assertTrue(list.contains(createEntry(i)));
+                    assertTrue(list.contains(createEntry(i - messageCount)));
+                });
             }
         });
+    }
+
+    private Properties getProperties(String brokerConnectionString, Class keyDeserializer, Class valueDeserializer) {
+        Properties properties = new Properties();
+        properties.setProperty("group.id", "group0");
+        properties.setProperty("bootstrap.servers", brokerConnectionString);
+        properties.setProperty("key.deserializer", keyDeserializer.getCanonicalName());
+        properties.setProperty("value.deserializer", valueDeserializer.getCanonicalName());
+        properties.setProperty("auto.offset.reset", "earliest");
+        return properties;
+    }
+
+    private static Map.Entry<Integer, String> createEntry(int i) {
+        return new SimpleImmutableEntry<>(i, Integer.toString(i));
     }
 }
