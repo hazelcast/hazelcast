@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.proxy.NearCachedMapProxyImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,7 @@ import static com.hazelcast.util.RandomPicker.getInt;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelTest.class})
 public class NearCacheStalenessTest extends HazelcastTestSupport {
 
     private final int ENTRY_COUNT = 1;
