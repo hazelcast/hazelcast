@@ -12,6 +12,7 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  * This test can't run with test-hazelcast instances since we rely on a real TcpIpConnectionManager.
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class OverloadedConnectionsPluginTest extends AbstractDiagnosticsPluginTest {
 
     private OverloadedConnectionsPlugin plugin;
