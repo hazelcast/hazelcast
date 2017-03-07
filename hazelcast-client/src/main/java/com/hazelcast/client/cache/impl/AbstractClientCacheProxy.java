@@ -115,7 +115,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
         ClientMessage request = CacheGetCodec.encodeRequest(nameWithPrefix, keyData, expiryPolicyData);
         ClientInvocationFuture future;
         try {
-            final int partitionId = clientContext.getPartitionService().getPartitionId(key);
+            final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
             final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             future = clientInvocation.invoke();
