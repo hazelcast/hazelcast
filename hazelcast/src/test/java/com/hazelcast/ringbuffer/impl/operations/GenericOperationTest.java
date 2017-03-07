@@ -28,7 +28,8 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class GenericOperationTest extends HazelcastTestSupport {
-    private final static int CAPACITY = 10;
+
+    private static final int CAPACITY = 10;
 
     private HazelcastInstance hz;
     private NodeEngineImpl nodeEngine;

@@ -88,8 +88,8 @@ public class DefaultPortableReaderTestStructure {
 
     public static class PrimitivePortable implements Portable {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 10;
+        static final int FACTORY_ID = 1;
+        static final int ID = 10;
 
         enum Init {
             FULL, NONE, NULL
@@ -315,8 +315,8 @@ public class DefaultPortableReaderTestStructure {
 
     static class GroupPortable implements Portable {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 11;
+        static final int FACTORY_ID = 1;
+        static final int ID = 11;
 
         Portable portable;
         Portable[] portables;
@@ -396,8 +396,8 @@ public class DefaultPortableReaderTestStructure {
 
     static class NestedGroupPortable implements Portable {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 12;
+        static final int FACTORY_ID = 1;
+        static final int ID = 12;
 
         Portable portable;
         Portable[] portables;
@@ -477,7 +477,7 @@ public class DefaultPortableReaderTestStructure {
     }
 
     static class TestPortableFactory implements PortableFactory {
-        final static int ID = 1;
+        static final int ID = 1;
 
         @Override
         public Portable create(int classId) {

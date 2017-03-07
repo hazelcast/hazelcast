@@ -402,8 +402,8 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     static class CarPortable implements Portable {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 5;
+        static final int FACTORY_ID = 1;
+        static final int ID = 5;
 
         int power;
         String name;
@@ -476,8 +476,8 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     static class EnginePortable implements Portable, Comparable<EnginePortable> {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 8;
+        static final int FACTORY_ID = 1;
+        static final int ID = 8;
 
         Integer power;
         ChipPortable chip;
@@ -539,8 +539,8 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     static class ChipPortable implements Portable, Comparable<ChipPortable> {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 6;
+        static final int FACTORY_ID = 1;
+        static final int ID = 6;
 
         Integer power;
 
@@ -598,8 +598,8 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     static class WheelPortable implements Portable, Comparable<WheelPortable> {
 
-        final static int FACTORY_ID = 1;
-        final static int ID = 7;
+        static final int FACTORY_ID = 1;
+        static final int ID = 7;
 
         String name;
         ChipPortable chip;
@@ -685,7 +685,7 @@ public class DefaultPortableReaderQuickTest extends HazelcastTestSupport {
 
     public static class TestPortableFactory implements PortableFactory {
 
-        public final static int ID = 1;
+        public static final int ID = 1;
 
         @Override
         public Portable create(int classId) {

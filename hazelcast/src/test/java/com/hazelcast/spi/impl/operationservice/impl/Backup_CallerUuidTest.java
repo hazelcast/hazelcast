@@ -28,8 +28,9 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class Backup_CallerUuidTest extends HazelcastTestSupport {
 
+    private static final AtomicReference CALLER_UUID = new AtomicReference();
+
     private HazelcastInstance hz;
-    private final static AtomicReference CALLER_UUID = new AtomicReference();
 
     @Before
     public void setup() {

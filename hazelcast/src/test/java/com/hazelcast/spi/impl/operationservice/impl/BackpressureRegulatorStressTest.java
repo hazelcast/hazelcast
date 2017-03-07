@@ -191,7 +191,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 //        System.out.println("Backpressure count: " + count);
     }
 
-    private final static AtomicLong THREAD_ID_GENERATOR = new AtomicLong();
+    private static final AtomicLong THREAD_ID_GENERATOR = new AtomicLong();
 
     private class StressThread extends TestThread {
 

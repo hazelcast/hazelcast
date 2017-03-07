@@ -143,7 +143,7 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
         assertNoErrors(threads);
     }
 
-    public final static AtomicLong ID_GENERATOR = new AtomicLong(1);
+    public static final AtomicLong ID_GENERATOR = new AtomicLong(1);
 
     public abstract class TestThread extends Thread {
         private volatile Throwable error;

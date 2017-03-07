@@ -11,8 +11,9 @@ import java.util.Arrays;
 public class PortableDataStructure {
 
     static class CarPortable implements Portable {
-        final static int FACTORY_ID = 1;
-        final static int ID = 5;
+
+        static final int FACTORY_ID = 1;
+        static final int ID = 5;
 
         public String name;
         public EnginePortable engine;
@@ -78,8 +79,8 @@ public class PortableDataStructure {
     }
 
     static class EnginePortable implements Portable, Comparable<EnginePortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 8;
+        static final int FACTORY_ID = 1;
+        static final int ID = 8;
         public Integer power;
         public ChipPortable chip;
 
@@ -131,8 +132,8 @@ public class PortableDataStructure {
     }
 
     static class ChipPortable implements Portable, Comparable<ChipPortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 6;
+        static final int FACTORY_ID = 1;
+        static final int ID = 6;
         public Integer power;
 
         public ChipPortable(int power) {
@@ -180,8 +181,8 @@ public class PortableDataStructure {
     }
 
     static class WheelPortable implements Portable, Comparable<WheelPortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 7;
+        static final int FACTORY_ID = 1;
+        static final int ID = 7;
         public String name;
         public ChipPortable chip;
         public Portable chips[];
@@ -243,8 +244,8 @@ public class PortableDataStructure {
     }
 
     static class XPortable implements Portable, Comparable<XPortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 10;
+        static final int FACTORY_ID = 1;
+        static final int ID = 10;
         public Portable chips[];
 
         public XPortable() {
@@ -284,8 +285,8 @@ public class PortableDataStructure {
     }
 
     static class YPortable implements Portable, Comparable<YPortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 9;
+        static final int FACTORY_ID = 1;
+        static final int ID = 9;
         public int serial[];
 
         public YPortable() {
@@ -325,7 +326,7 @@ public class PortableDataStructure {
     }
 
     static class CarPortableFactory implements PortableFactory {
-        final static int ID = 1;
+        static final int ID = 1;
 
         @Override
         public Portable create(int classId) {

@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
-    private final static int TEN_MB = 10 * 1024 * 1024;
+    private static final int TEN_MB = 10 * 1024 * 1024;
 
     private MetricsRegistryImpl metricsRegistry;
     private Runtime runtime;

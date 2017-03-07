@@ -88,9 +88,9 @@ public class ConcurrencyUtilTest extends HazelcastTestSupport {
         assertEquals(1, constructorFunction.getConstructions());
     }
 
-    private final static class LongValue {
+    private static final class LongValue {
 
-        final static AtomicLongFieldUpdater UPDATER = AtomicLongFieldUpdater.newUpdater(LongValue.class, "value");
+        static final AtomicLongFieldUpdater UPDATER = AtomicLongFieldUpdater.newUpdater(LongValue.class, "value");
 
         volatile long value;
     }
