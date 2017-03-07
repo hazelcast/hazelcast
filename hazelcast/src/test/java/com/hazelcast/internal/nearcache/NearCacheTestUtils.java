@@ -35,7 +35,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      */
     public static NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         NearCacheConfig nearCacheConfig = new NearCacheConfig()
-                .setName(AbstractBasicNearCacheTest.DEFAULT_NEAR_CACHE_NAME + "*")
+                .setName(AbstractNearCacheBasicTest.DEFAULT_NEAR_CACHE_NAME + "*")
                 .setInMemoryFormat(inMemoryFormat)
                 .setInvalidateOnChange(false);
 

@@ -14,7 +14,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.adapter.ICacheDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractBasicNearCacheTest;
+import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
@@ -33,13 +33,13 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.cache.spi.CachingProvider;
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.config.EvictionConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static java.util.Arrays.asList;
 
 /**
  * Basic Near Cache tests for {@link ICache} on Hazelcast clients.
@@ -47,7 +47,7 @@ import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCach
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class BasicClientCacheNearCacheTest extends AbstractBasicNearCacheTest<Data, String> {
+public class ClientCacheNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter
     public InMemoryFormat inMemoryFormat;
@@ -59,7 +59,7 @@ public class BasicClientCacheNearCacheTest extends AbstractBasicNearCacheTest<Da
 
     @Parameters(name = "format:{0} {1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY, LocalUpdatePolicy.INVALIDATE},
                 {InMemoryFormat.BINARY, LocalUpdatePolicy.CACHE_ON_UPDATE},
                 {InMemoryFormat.OBJECT, LocalUpdatePolicy.INVALIDATE},

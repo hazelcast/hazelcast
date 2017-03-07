@@ -8,7 +8,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.internal.adapter.ReplicatedMapDataStructureAdapter;
-import com.hazelcast.internal.nearcache.AbstractBasicNearCacheTest;
+import com.hazelcast.internal.nearcache.AbstractNearCacheBasicTest;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
@@ -25,15 +25,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static java.util.Arrays.asList;
 
 @RunWith(Parameterized.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class BasicClientReplicatedMapNearCacheTest extends AbstractBasicNearCacheTest<Data, String> {
+public class ClientReplicatedMapNearCacheBasicTest extends AbstractNearCacheBasicTest<Data, String> {
 
     @Parameter
     public InMemoryFormat inMemoryFormat;
@@ -42,7 +42,7 @@ public class BasicClientReplicatedMapNearCacheTest extends AbstractBasicNearCach
 
     @Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][]{
+        return asList(new Object[][]{
                 {InMemoryFormat.BINARY},
                 {InMemoryFormat.OBJECT},
         });
