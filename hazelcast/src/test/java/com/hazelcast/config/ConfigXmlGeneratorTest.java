@@ -33,6 +33,33 @@ import static org.junit.Assert.assertEquals;
 public class ConfigXmlGeneratorTest {
 
     @Test
+    public void testIfSensitiveDataIsMasked(){
+        Config cfg = new Config();
+        SSLConfig sslConfig = new SSLConfig();
+        sslConfig.setProperty("keyStorePassword","Hazelcast");
+        cfg.getNetworkConfig().setSSLConfig(sslConfig);
+
+        SymmetricEncryptionConfig symmetricEncryptionConfig = new SymmetricEncryptionConfig();
+        symmetricEncryptionConfig.setPassword("Hazelcast");
+        symmetricEncryptionConfig.setSalt("theSalt");
+
+        cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
+        cfg.setLicenseKey("HazelcastLicenseKey");
+
+        Config newConfigViaXMLGenerator = getNewConfigViaXMLGenerator(cfg);
+        SSLConfig generatedSSLConfig = newConfigViaXMLGenerator.getNetworkConfig().getSSLConfig();
+
+        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+
+        String secPassword = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
+        String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
+        assertEquals(secPassword, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(theSalt, ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getLicenseKey(),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+        assertEquals(newConfigViaXMLGenerator.getGroupConfig().getPassword(),ConfigXmlGenerator.MASK_FOR_SESITIVE_DATA);
+    }
+
+    @Test
     public void testReplicatedMapConfigGenerator() {
         Config config = new Config();
         ReplicatedMapConfig replicatedMapConfig = new ReplicatedMapConfig();
