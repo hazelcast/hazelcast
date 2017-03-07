@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
  * @param <NK> key type of the tested Near Cache
  * @param <NV> value type of the tested Near Cache
  */
-public abstract class AbstractBasicNearCacheTest<NK, NV> extends HazelcastTestSupport {
+public abstract class AbstractNearCacheBasicTest<NK, NV> extends HazelcastTestSupport {
 
     /**
      * The default count to be inserted into the Near Caches.
