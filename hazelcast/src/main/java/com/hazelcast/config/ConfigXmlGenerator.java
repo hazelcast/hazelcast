@@ -51,6 +51,8 @@ import static com.hazelcast.util.StringUtil.isNullOrEmpty;
  */
 public class ConfigXmlGenerator {
 
+    protected static final String MASK_FOR_SESITIVE_DATA = "****";
+
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
 
     private static final int INDENT = 5;
@@ -92,9 +94,9 @@ public class ConfigXmlGenerator {
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.9.xsd\">");
         gen.open("group")
                 .node("name", config.getGroupConfig().getName())
-                .node("password", "****")
+                .node("password", MASK_FOR_SESITIVE_DATA)
                 .close()
-                .node("license-key", config.getLicenseKey())
+                .node("license-key", MASK_FOR_SESITIVE_DATA)
                 .node("instance-name", config.getInstanceName());
 
         if (config.getManagementCenterConfig() != null) {
@@ -848,9 +850,17 @@ public class ConfigXmlGenerator {
         final SSLConfig ssl = netCfg.getSSLConfig();
         gen.open("ssl", "enabled", ssl != null && ssl.isEnabled());
         if (ssl != null) {
+
+            Properties props = new Properties();
+            props.putAll(ssl.getProperties());
+
+            if (props.containsKey("keyStorePassword")) {
+                props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
+            }
+
             gen.node("factory-class-name",
                     classNameOrImplClass(ssl.getFactoryClassName(), ssl.getFactoryImplementation()))
-                    .appendProperties(ssl.getProperties());
+               .appendProperties(props);
         }
         gen.close();
     }
@@ -872,8 +882,8 @@ public class ConfigXmlGenerator {
         }
         gen.open("symmetric-encryption", "enabled", sec.isEnabled())
                 .node("algorithm", sec.getAlgorithm())
-                .node("salt", sec.getSalt())
-                .node("password", sec.getPassword())
+                .node("salt", MASK_FOR_SESITIVE_DATA)
+                .node("password", MASK_FOR_SESITIVE_DATA)
                 .node("iteration-count", sec.getIterationCount())
                 .close();
     }
