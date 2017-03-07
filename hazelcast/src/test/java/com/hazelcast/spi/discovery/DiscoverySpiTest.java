@@ -251,14 +251,14 @@ public class DiscoverySpiTest extends HazelcastTestSupport {
         // without lookup of environment
         assertEquals("value-first", strategy.getOrNull(first));
         assertEquals(Boolean.FALSE, strategy.getOrNull(second));
-        assertEquals(100, strategy.getOrNull(third));
+        assertEquals(100, ((Long) strategy.getOrNull(third)).longValue());
         assertNull(strategy.getOrNull(fourth));
 
         // with lookup of environment (workaround to set environment doesn't work on all JDKs)
         if (System.getenv("test.third") != null) {
             assertEquals("value-first", strategy.getOrNull("test", first));
             assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
-            assertEquals(300, strategy.getOrNull("test", third));
+            assertEquals(300, ((Long) strategy.getOrNull("test", third)).longValue());
             assertNull(strategy.getOrNull("test", fourth));
         }
     }
