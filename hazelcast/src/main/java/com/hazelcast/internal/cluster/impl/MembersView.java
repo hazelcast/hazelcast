@@ -177,6 +177,10 @@ public final class MembersView implements IdentifiedDataSerializable {
         return addresses;
     }
 
+    public boolean isLaterThan(MembersView other) {
+        return version > other.version;
+    }
+
     @Override
     public int getFactoryId() {
         return ClusterDataSerializerHook.F_ID;

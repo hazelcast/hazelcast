@@ -19,28 +19,34 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.version.MemberVersion;
 import com.hazelcast.version.Version;
 
 import java.io.IOException;
 import java.util.Collection;
 
+import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
+
 /**
  * A {@code JoinMessage} issued by the master node of a subcluster to the master of another subcluster
  * while searching for other clusters for split brain recovery.
  */
-public class SplitBrainJoinMessage extends JoinMessage {
+public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
 
-    protected Version clusterVersion;
+    private Version clusterVersion;
+
+    private int memberListVersion;
 
     public SplitBrainJoinMessage() {
     }
 
     public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
                                  boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses,
-                                 int dataMemberCount, Version clusterVersion) {
+                                 int dataMemberCount, Version clusterVersion, int memberListVersion) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, configCheck, memberAddresses, dataMemberCount);
         this.clusterVersion = clusterVersion;
+        this.memberListVersion = memberListVersion;
     }
 
     @Override
@@ -48,6 +54,9 @@ public class SplitBrainJoinMessage extends JoinMessage {
             throws IOException {
         super.readData(in);
         clusterVersion = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(V3_9)) {
+            memberListVersion = in.readInt();
+        }
     }
 
     @Override
@@ -55,6 +64,9 @@ public class SplitBrainJoinMessage extends JoinMessage {
             throws IOException {
         super.writeData(out);
         out.writeObject(clusterVersion);
+        if (out.getVersion().isGreaterOrEqual(V3_9)) {
+            out.writeInt(memberListVersion);
+        }
     }
 
     @Override
@@ -69,6 +81,7 @@ public class SplitBrainJoinMessage extends JoinMessage {
                 + ", liteMember=" + liteMember
                 + ", memberCount=" + getMemberCount()
                 + ", dataMemberCount=" + dataMemberCount
+                + ", memberListVersion=" + memberListVersion
                 + '}';
     }
 
@@ -84,5 +97,9 @@ public class SplitBrainJoinMessage extends JoinMessage {
 
     public Version getClusterVersion() {
         return clusterVersion;
+    }
+
+    public int getMemberListVersion() {
+        return memberListVersion;
     }
 }

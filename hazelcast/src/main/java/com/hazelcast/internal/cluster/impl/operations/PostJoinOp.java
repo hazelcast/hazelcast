@@ -32,14 +32,15 @@ import java.util.Arrays;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public class PostJoinOperation extends AbstractJoinOperation implements UrgentSystemOperation {
+public class PostJoinOp
+        extends AbstractJoinOperation implements UrgentSystemOperation {
 
     private Operation[] operations;
 
-    public PostJoinOperation() {
+    public PostJoinOp() {
     }
 
-    public PostJoinOperation(final Operation... ops) {
+    public PostJoinOp(final Operation... ops) {
         for (Operation op : ops) {
             checkNotNull(op, "op can't be null");
             checkNegative(op.getPartitionId(), "Post join operation can not have a partition-id!");

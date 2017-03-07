@@ -32,11 +32,11 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOperation;
+import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
-import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOperation;
+import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
-import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
+import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
@@ -57,6 +57,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalObject;
@@ -136,7 +137,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManagerCompat = new MembershipManagerCompat(node, this, lock);
         clusterStateManager = new ClusterStateManager(node, lock);
         clusterJoinManager = new ClusterJoinManager(node, this, lock);
-        clusterHeartbeatManager = new ClusterHeartbeatManager(node, this, lock);
+        clusterHeartbeatManager = new ClusterHeartbeatManager(node, this);
 
         node.connectionManager.addConnectionListener(this);
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
@@ -181,13 +182,13 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         membershipManager.triggerExplicitSuspicion(caller, callerMemberListVersion, endpoint, endpointMasterAddress, endpointMemberListVersion);
     }
 
-    public void suspectAddress(Address suspectedAddress, String reason, boolean destroyConnection) {
-        suspectAddress(suspectedAddress, null, reason, destroyConnection);
+    public void suspectMember(Address suspectedAddress, String reason, boolean destroyConnection) {
+        suspectMember(suspectedAddress, null, reason, destroyConnection);
     }
 
-    public void suspectAddress(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
+    public void suspectMember(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
         if (getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            membershipManager.suspectAddress(suspectedAddress, suspectedUuid, reason, destroyConnection);
+            membershipManager.suspectMember(suspectedAddress, suspectedUuid, reason, destroyConnection);
         } else {
             membershipManagerCompat.removeMember(suspectedAddress, suspectedUuid, reason);
         }
@@ -244,7 +245,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         OperationService operationService = nodeEngine.getOperationService();
 
         if (getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
-            Operation op = new ExplicitSuspicionOperation(endpointMasterAddress, endpointMemberListVersion, getThisAddress());
+            Operation op = new ExplicitSuspicionOp(endpointMasterAddress, endpointMemberListVersion, getThisAddress());
             operationService.send(op, endpoint);
         } else {
             // TODO: we can completely get rid of this member remove part
@@ -307,12 +308,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return !membershipManager.isMemberSuspected(candidate.getAddress());
     }
 
-    // TODO: Called by tests only, can be removed
-    public void removeAddress(Address deadAddress, String reason) {
-//        membershipManager.doRemoveAddress(deadAddress, reason, true);
-        throw new UnsupportedOperationException();
-    }
-
     public void merge(Address newTargetAddress) {
         node.getJoiner().setTargetAddress(newTargetAddress);
         LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
@@ -355,9 +350,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return false;
             }
 
-            if (!checkMemberUpdateContainsLocalMember(membersView, callerAddress)) {
-                return false;
-            }
+            assertMemberUpdateContainsLocalMember(membersView);
 
             initialClusterState(clusterState, clusterVersion);
             setClusterId(clusterId);
@@ -390,9 +383,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 return false;
             }
 
-            if (!checkMemberUpdateContainsLocalMember(membersView, callerAddress)) {
-                return false;
-            }
+            assertMemberUpdateContainsLocalMember(membersView);
 
             // TODO: should we move this into membershipManager?
             if (!shouldProcessMemberUpdate(membersView)) {
@@ -406,15 +397,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    private boolean checkMemberUpdateContainsLocalMember(MembersView membersView, Address callerAddress) {
-        Member localMember = getLocalMember();
-        if (!membersView.containsAddress(localMember.getAddress(), localMember.getUuid())) {
-            logger.warning("Not updating members because member list doesn't contain us! -> " + membersView);
-            sendExplicitSuspicion(callerAddress, callerAddress, membersView.getVersion());
-            // TODO: suspect from callerAddress (with UUID)?
-            return false;
+    private void assertMemberUpdateContainsLocalMember(MembersView membersView) {
+        if (!ASSERTION_ENABLED) {
+             return;
         }
-        return true;
+
+        Member localMember = getLocalMember();
+        assert membersView.containsAddress(localMember.getAddress(), localMember.getUuid())
+                : "Not applying member update because member list doesn't contain us! -> " + membersView;
     }
 
     private boolean checkValidMaster(Address callerAddress) {
@@ -486,14 +476,14 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
      * @deprecated in 3.9
      */
     @Deprecated
-    private boolean shouldProcessMemberUpdate(MemberMap currentMembers,
-                                              Collection<MemberInfo> newMemberInfos) {
+    private boolean shouldProcessMemberUpdate(MemberMap currentMembers, Collection<MemberInfo> newMemberInfos) {
         int currentMembersSize = currentMembers.size();
         int newMembersSize = newMemberInfos.size();
+        InternalOperationService operationService = nodeEngine.getOperationService();
 
         if (currentMembersSize > newMembersSize) {
             logger.warning("Received an older member update, no need to process...");
-            nodeEngine.getOperationService().send(new TriggerMemberListPublishOperation(), getMasterAddress());
+            operationService.send(new TriggerMemberListPublishOp(), getMasterAddress());
             return false;
         }
 
@@ -506,7 +496,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 logger.warning("Received an inconsistent member update "
                         + "which contains new members and removes some of the current members! "
                         + "Ignoring and requesting a new member update...");
-                nodeEngine.getOperationService().send(new TriggerMemberListPublishOperation(), getMasterAddress());
+                operationService.send(new TriggerMemberListPublishOp(), getMasterAddress());
             }
             return false;
         }
@@ -519,7 +509,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             logger.warning("Received an inconsistent member update."
                     + " It has more members but also removes some of the current members!"
                     + " Ignoring and requesting a new member update...");
-            nodeEngine.getOperationService().send(new TriggerMemberListPublishOperation(), getMasterAddress());
+            operationService.send(new TriggerMemberListPublishOp(), getMasterAddress());
             return false;
         }
     }
@@ -620,11 +610,17 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     @Override
     public MemberImpl getMember(Address address) {
+        if (address == null) {
+            return null;
+        }
         return membershipManager.getMember(address);
     }
 
     @Override
     public MemberImpl getMember(String uuid) {
+        if (uuid == null) {
+            return null;
+        }
         return membershipManager.getMember(uuid);
     }
 
@@ -668,7 +664,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         return thisAddress;
     }
 
-    public Member getLocalMember() {
+    @Override
+    public MemberImpl getLocalMember() {
         return node.getLocalMember();
     }
 
@@ -824,8 +821,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void changeClusterState(ClusterState newState, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), partitionStateVersion,
-                isTransient);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
+                partitionStateVersion, isTransient);
     }
 
     @Override
@@ -835,8 +832,8 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private void changeClusterState(ClusterState newState, TransactionOptions options, boolean isTransient) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), getMembers(), options, partitionStateVersion,
-                isTransient);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
+                options, partitionStateVersion, isTransient);
     }
 
     @Override
@@ -852,14 +849,15 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void changeClusterVersion(Version version) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), partitionStateVersion, false);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
+                partitionStateVersion, false);
     }
 
     @Override
     public void changeClusterVersion(Version version, TransactionOptions options) {
         int partitionStateVersion = node.getPartitionService().getPartitionStateVersion();
-        clusterStateManager.changeClusterState(ClusterStateChange.from(version), getMembers(), options, partitionStateVersion,
-                false);
+        clusterStateManager.changeClusterState(ClusterStateChange.from(version), membershipManager.getMemberMap(),
+                options, partitionStateVersion,false);
     }
 
     void addMembersRemovedInNotActiveState(Collection<MemberImpl> members) {
@@ -879,7 +877,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     private void shutdownNodes() {
-        final Operation op = new ShutdownNodeOperation();
+        final Operation op = new ShutdownNodeOp();
 
         logger.info("Sending shutting down operations to all members...");
 

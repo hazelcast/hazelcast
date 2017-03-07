@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class ShutdownNodeOperation extends AbstractClusterOperation implements AllowedDuringPassiveState {
+public class ShutdownNodeOp extends AbstractClusterOperation implements AllowedDuringPassiveState {
 
     @Override
     public void run() {

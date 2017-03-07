@@ -32,17 +32,17 @@ import java.io.IOException;
 /**
  * Validate whether clusters may merge to recover from a split brain, based on configuration & cluster version.
  */
-public class SplitBrainMergeValidationOperation extends AbstractJoinOperation {
+public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     private SplitBrainJoinMessage request;
     private SplitBrainJoinMessage response;
 
     private transient boolean removeCaller;
 
-    public SplitBrainMergeValidationOperation() {
+    public SplitBrainMergeValidationOp() {
     }
 
-    public SplitBrainMergeValidationOperation(SplitBrainJoinMessage request) {
+    public SplitBrainMergeValidationOp(SplitBrainJoinMessage request) {
         this.request = request;
     }
 
@@ -125,7 +125,7 @@ public class SplitBrainMergeValidationOperation extends AbstractJoinOperation {
             // I am the master. I can remove the member directly
             String reason = "Removing " + caller + ", since it thinks it's already split from this cluster "
                     + "and looking to merge.";
-            service.suspectAddress(caller, reason, true);
+            service.suspectMember(caller, reason, true);
         }
     }
 

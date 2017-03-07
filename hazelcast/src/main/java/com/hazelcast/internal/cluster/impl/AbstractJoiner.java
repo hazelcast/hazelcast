@@ -24,8 +24,8 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
-import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
-import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
+import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
+import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -325,13 +325,13 @@ public abstract class AbstractJoiner implements Joiner {
 
     private boolean checkMembershipIntersectionSetEmpty(SplitBrainJoinMessage joinMessage) {
         Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
+        Address joinMessageAddress = joinMessage.getAddress();
         if (targetMemberAddresses.contains(node.getThisAddress())) {
             // Join request is coming from master of the split and it thinks that I am its member.
             // This is partial split case and we want to convert it to a full split.
             // So it should remove me from its cluster.
-//            clusterService.sendExplicitSuspicion(joinMessage.getAddress());
-            // TODO [basri[ fix this. we need member list version here
-            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+            clusterService.sendExplicitSuspicion(joinMessageAddress, joinMessageAddress, joinMessage.getMemberListVersion());
+            logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
                     + ", because it thinks this-node as its member.");
             return false;
         }
@@ -339,7 +339,7 @@ public abstract class AbstractJoiner implements Joiner {
         Collection<Address> thisMemberAddresses = clusterService.getMemberAddresses();
         for (Address address : thisMemberAddresses) {
             if (targetMemberAddresses.contains(address)) {
-                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
                         + ", because it thinks " + address + " as its member. "
                         + "But " + address + " is member of this cluster.");
                 return false;
@@ -395,7 +395,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         NodeEngine nodeEngine = node.nodeEngine;
         Future future = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                new SplitBrainMergeValidationOperation(node.createSplitBrainJoinMessage()), target)
+                new SplitBrainMergeValidationOp(node.createSplitBrainJoinMessage()), target)
                 .setTryCount(1).invoke();
         try {
             return (SplitBrainJoinMessage) future.get(SPLIT_BRAIN_JOIN_CHECK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
@@ -425,7 +425,7 @@ public abstract class AbstractJoiner implements Joiner {
         Collection<Future> futures = new ArrayList<Future>(memberList.size());
         for (Member member : memberList) {
             if (!member.localMember()) {
-                Operation op = new MergeClustersOperation(targetAddress);
+                Operation op = new MergeClustersOp(targetAddress);
                 Future<Object> future =
                         operationService.invokeOnTarget(ClusterServiceImpl.SERVICE_NAME, op, member.getAddress());
                 futures.add(future);
@@ -434,10 +434,9 @@ public abstract class AbstractJoiner implements Joiner {
 
         waitWithDeadline(futures, SPLIT_BRAIN_MERGE_TIMEOUT_SECONDS, TimeUnit.SECONDS, splitBrainMergeExceptionHandler);
 
-        Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
-        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
-                .setOperationResponseHandler(createEmptyResponseHandler());
-        operationService.run(mergeClustersOperation);
+        Operation op = new MergeClustersOp(targetAddress);
+        op.setNodeEngine(node.nodeEngine).setService(clusterService).setOperationResponseHandler(createEmptyResponseHandler());
+        operationService.run(op);
     }
 
     /**

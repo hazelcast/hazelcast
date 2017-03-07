@@ -20,7 +20,6 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
-import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
@@ -76,10 +75,12 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PhoneHome;
 import com.hazelcast.util.UuidUtil;
 import com.hazelcast.version.MemberVersion;
+import com.hazelcast.version.Version;
 
 import java.lang.reflect.Constructor;
 import java.nio.channels.ServerSocketChannel;
 import java.security.PrivilegedAction;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -87,6 +88,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
 import static com.hazelcast.internal.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.spi.properties.GroupProperty.DISCOVERY_SPI_ENABLED;
@@ -193,7 +195,7 @@ public class Node {
             nodeExtension = nodeContext.createNodeExtension(this);
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
             localMember = new MemberImpl(address, version, true, nodeExtension.createMemberUuid(address),
-                    hazelcastInstance, memberAttributes, liteMember);
+                    memberAttributes, liteMember, hazelcastInstance);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
@@ -671,9 +673,13 @@ public class Node {
     }
 
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
+        boolean liteMember = localMember.isLiteMember();
+        Collection<Address> memberAddresses = clusterService.getMemberAddresses();
+        int dataMemberCount = clusterService.getSize(DATA_MEMBER_SELECTOR);
+        Version clusterVersion = clusterService.getClusterVersion();
+        int memberListVersion = clusterService.getMembershipManager().getMemberListVersion();
         return new SplitBrainJoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), version, address, localMember.getUuid(),
-                localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses(),
-                clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR), clusterService.getClusterVersion());
+                liteMember, createConfigCheck(), memberAddresses, dataMemberCount, clusterVersion, memberListVersion);
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
@@ -768,7 +774,7 @@ public class Node {
         String newUuid = UuidUtil.createMemberUuid(address);
         logger.warning("Setting new local member. old uuid: " + localMember.getUuid() + " new uuid: " + newUuid);
         Map<String, Object> memberAttributes = localMember.getAttributes();
-        localMember = new MemberImpl(address, version, true, newUuid, hazelcastInstance, memberAttributes, liteMember);
+        localMember = new MemberImpl(address, version, true, newUuid, memberAttributes, liteMember, hazelcastInstance);
 
         assert !joined() : "Node should not join concurrently while setting member uuid!";
     }

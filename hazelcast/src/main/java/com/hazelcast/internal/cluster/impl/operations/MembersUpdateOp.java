@@ -36,7 +36,7 @@ import java.util.List;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 
-public class MembersUpdateOperation extends VersionedClusterOperation {
+public class MembersUpdateOp extends VersionedClusterOperation {
 
     long masterTime = Clock.currentTimeMillis();
     private List<MemberInfo> memberInfos;
@@ -44,13 +44,13 @@ public class MembersUpdateOperation extends VersionedClusterOperation {
     private boolean returnResponse;
     private PartitionRuntimeState partitionRuntimeState;
 
-    public MembersUpdateOperation() {
+    public MembersUpdateOp() {
         super(0);
         memberInfos = emptyList();
     }
 
-    public MembersUpdateOperation(String targetUuid, MembersView membersView, long masterTime,
-                                     PartitionRuntimeState partitionRuntimeState, boolean returnResponse) {
+    public MembersUpdateOp(String targetUuid, MembersView membersView, long masterTime,
+                           PartitionRuntimeState partitionRuntimeState, boolean returnResponse) {
         super(membersView.getVersion());
         this.targetUuid = targetUuid;
         this.masterTime = masterTime;

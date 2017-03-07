@@ -24,15 +24,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MasterConfirmationOperation extends VersionedClusterOperation {
+public class MasterConfirmationOp extends VersionedClusterOperation {
 
     private long timestamp;
 
-    public MasterConfirmationOperation() {
+    public MasterConfirmationOp() {
         super(0);
     }
 
-    public MasterConfirmationOperation(int memberListVersion, long timestamp) {
+    public MasterConfirmationOp(int memberListVersion, long timestamp) {
         super(memberListVersion);
         this.timestamp = timestamp;
     }

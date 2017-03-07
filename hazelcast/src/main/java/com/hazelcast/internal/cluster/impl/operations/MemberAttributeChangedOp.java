@@ -26,16 +26,16 @@ import java.io.IOException;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
-public class MemberAttributeChangedOperation extends AbstractClusterOperation {
+public class MemberAttributeChangedOp extends AbstractClusterOperation {
 
     private MemberAttributeOperationType operationType;
     private String key;
     private Object value;
 
-    public MemberAttributeChangedOperation() {
+    public MemberAttributeChangedOp() {
     }
 
-    public MemberAttributeChangedOperation(MemberAttributeOperationType operationType, String key, Object value) {
+    public MemberAttributeChangedOp(MemberAttributeOperationType operationType, String key, Object value) {
         this.operationType = operationType;
         this.key = key;
         this.value = value;

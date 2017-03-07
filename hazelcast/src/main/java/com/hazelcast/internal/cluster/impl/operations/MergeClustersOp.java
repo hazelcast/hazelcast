@@ -27,14 +27,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class MergeClustersOperation extends AbstractClusterOperation {
+public class MergeClustersOp extends AbstractClusterOperation {
 
     private Address newTargetAddress;
 
-    public MergeClustersOperation() {
+    public MergeClustersOp() {
     }
 
-    public MergeClustersOperation(Address newTargetAddress) {
+    public MergeClustersOp(Address newTargetAddress) {
         this.newTargetAddress = newTargetAddress;
     }
 

@@ -33,17 +33,17 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class ChangeClusterStateOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class CommitClusterStateOp extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
 
     private ClusterStateChange stateChange;
     private Address initiator;
     private String txnId;
     private boolean isTransient;
 
-    public ChangeClusterStateOperation() {
+    public CommitClusterStateOp() {
     }
 
-    public ChangeClusterStateOperation(ClusterStateChange stateChange, Address initiator, String txnId, boolean isTransient) {
+    public CommitClusterStateOp(ClusterStateChange stateChange, Address initiator, String txnId, boolean isTransient) {
         this.stateChange = stateChange;
         this.initiator = initiator;
         this.txnId = txnId;

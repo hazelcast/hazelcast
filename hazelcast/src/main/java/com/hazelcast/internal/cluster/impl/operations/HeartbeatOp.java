@@ -29,16 +29,16 @@ import com.hazelcast.version.Version;
 import java.io.IOException;
 
 /** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
-public final class HeartbeatOperation extends VersionedClusterOperation {
+public final class HeartbeatOp extends VersionedClusterOperation {
 
     private String targetUuid;
     private long timestamp;
 
-    public HeartbeatOperation() {
+    public HeartbeatOp() {
         super(0);
     }
 
-    public HeartbeatOperation(String targetUuid, int version, long timestamp) {
+    public HeartbeatOp(String targetUuid, int version, long timestamp) {
         super(version);
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;

@@ -39,6 +39,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -57,10 +58,10 @@ public class MemberSelectingIteratorTest extends HazelcastTestSupport {
     public void before()
             throws Exception {
         MemberVersion version = new MemberVersion(BuildInfoProvider.BUILD_INFO.getVersion());
-        thisMember = new MemberImpl(new Address("localhost", 5701), version, true, true);
-        matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, true);
-        matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, true);
-        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), version, false, false);
+        thisMember = new MemberImpl(new Address("localhost", 5701), version, true, newUnsecureUuidString(), null, true);
+        matchingMember = new MemberImpl(new Address("localhost", 5702), version, false, newUnsecureUuidString(), null, true);
+        matchingMember2 = new MemberImpl(new Address("localhost", 5703), version, false, newUnsecureUuidString(), null, true);
+        nonMatchingMember = new MemberImpl(new Address("localhost", 5704), version, false, newUnsecureUuidString(), null, false);
     }
 
     private Set<MemberImpl> createMembers() {

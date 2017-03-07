@@ -85,6 +85,7 @@ public class ClusterStateManagerTest {
         when(node.getVersion()).thenReturn(CURRENT_NODE_VERSION);
 
         when(clusterService.getMembershipManager()).thenReturn(membershipManager);
+        when(clusterService.getClusterJoinManager()).thenReturn(mock(ClusterJoinManager.class));
 
         clusterStateManager = new ClusterStateManager(node, lock);
     }

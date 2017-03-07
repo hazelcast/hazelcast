@@ -24,7 +24,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.AbstractJoiner;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
-import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
+import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.properties.GroupProperty;
@@ -199,8 +199,8 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             if (node.getConnectionManager().getConnection(address) != null) {
                 Future<Boolean> future = node.nodeEngine.getOperationService()
-                        .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                                new MasterClaimOperation(), address).setTryCount(1).invoke();
+                                                        .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                                new JoinMastershipClaimOp(), address).setTryCount(1).invoke();
                 responses.add(future);
             }
         }

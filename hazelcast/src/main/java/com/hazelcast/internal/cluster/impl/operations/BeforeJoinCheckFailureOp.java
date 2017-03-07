@@ -25,14 +25,14 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 
-public class BeforeJoinCheckFailureOperation extends AbstractClusterOperation {
+public class BeforeJoinCheckFailureOp extends AbstractClusterOperation {
 
     private String failReasonMsg;
 
-    public BeforeJoinCheckFailureOperation() {
+    public BeforeJoinCheckFailureOp() {
     }
 
-    public BeforeJoinCheckFailureOperation(String failReasonMsg) {
+    public BeforeJoinCheckFailureOp(String failReasonMsg) {
         this.failReasonMsg = failReasonMsg;
     }
 

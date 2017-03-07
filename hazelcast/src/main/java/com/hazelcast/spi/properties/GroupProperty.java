@@ -302,6 +302,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.max.join.merge.target.seconds", 20, SECONDS);
     public static final HazelcastProperty HEARTBEAT_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.heartbeat.interval.seconds", 5, SECONDS);
+    public static final HazelcastProperty MASTERSHIP_CLAIM_TIMEOUT_SECONDS
+            = new HazelcastProperty("hazelcast.mastership.claim.timeout.seconds", 120, SECONDS);
     /**
      * The timeout which defines when a cluster member is removed because it has not sent any heartbeats.
      */

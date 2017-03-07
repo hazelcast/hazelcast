@@ -193,21 +193,21 @@ public class PartitionedCluster {
         cm5.block(n2.address);
         cm5.block(n3.address);
 
-        n4.clusterService.removeAddress(n1.address, null);
-        n4.clusterService.removeAddress(n2.address, null);
-        n4.clusterService.removeAddress(n3.address, null);
+        n4.clusterService.suspectMember(n1.address, null, true);
+        n4.clusterService.suspectMember(n2.address, null, true);
+        n4.clusterService.suspectMember(n3.address, null, true);
 
-        n5.clusterService.removeAddress(n1.address, null);
-        n5.clusterService.removeAddress(n2.address, null);
-        n5.clusterService.removeAddress(n3.address, null);
+        n5.clusterService.suspectMember(n1.address, null, true);
+        n5.clusterService.suspectMember(n2.address, null, true);
+        n5.clusterService.suspectMember(n3.address, null, true);
 
-        n1.clusterService.removeAddress(n4.address, null);
-        n2.clusterService.removeAddress(n4.address, null);
-        n3.clusterService.removeAddress(n4.address, null);
+        n1.clusterService.suspectMember(n4.address, null, true);
+        n2.clusterService.suspectMember(n4.address, null, true);
+        n3.clusterService.suspectMember(n4.address, null, true);
 
-        n1.clusterService.removeAddress(n5.address, null);
-        n2.clusterService.removeAddress(n5.address, null);
-        n3.clusterService.removeAddress(n5.address, null);
+        n1.clusterService.suspectMember(n5.address, null, true);
+        n2.clusterService.suspectMember(n5.address, null, true);
+        n3.clusterService.suspectMember(n5.address, null, true);
     }
 
     private static FirewallingConnectionManager getConnectionManager(Node node) {

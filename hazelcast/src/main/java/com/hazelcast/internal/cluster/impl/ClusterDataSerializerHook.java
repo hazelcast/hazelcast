@@ -18,32 +18,32 @@ package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOperation;
-import com.hazelcast.internal.cluster.impl.operations.AuthorizationOperation;
-import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOperation;
-import com.hazelcast.internal.cluster.impl.operations.ChangeClusterStateOperation;
-import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOperation;
-import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOperation;
-import com.hazelcast.internal.cluster.impl.operations.FetchMemberListStateOperation;
-import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOperation;
-import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOperation;
-import com.hazelcast.internal.cluster.impl.operations.HeartbeatOperation;
-import com.hazelcast.internal.cluster.impl.operations.JoinRequestOperation;
-import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOperation;
-import com.hazelcast.internal.cluster.impl.operations.MasterClaimOperation;
-import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOperation;
-import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOperation;
-import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOperation;
-import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOperation;
+import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
+import com.hazelcast.internal.cluster.impl.operations.AuthorizationOp;
+import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
+import com.hazelcast.internal.cluster.impl.operations.CommitClusterStateOp;
+import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
+import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
+import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
+import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
+import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
+import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
+import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOp;
+import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
+import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
-import com.hazelcast.internal.cluster.impl.operations.MergeClustersOperation;
-import com.hazelcast.internal.cluster.impl.operations.PostJoinOperation;
-import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOperation;
-import com.hazelcast.internal.cluster.impl.operations.SetMasterOperation;
-import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOperation;
-import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOperation;
+import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
+import com.hazelcast.internal.cluster.impl.operations.PostJoinOp;
+import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
+import com.hazelcast.internal.cluster.impl.operations.SetMasterOp;
+import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
+import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
-import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
+import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.partition.MigrationInfo;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
@@ -113,7 +113,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
         constructors[AUTH_FAILURE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AuthenticationFailureOperation();
+                return new AuthenticationFailureOp();
             }
         };
         constructors[ADDRESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -128,7 +128,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         };
         constructors[HEARTBEAT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new HeartbeatOperation();
+                return new HeartbeatOp();
             }
         };
         constructors[CONFIG_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -143,72 +143,72 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         };
         constructors[MEMBER_INFO_UPDATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MembersUpdateOperation();
+                return new MembersUpdateOp();
             }
         };
         constructors[FINALIZE_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FinalizeJoinOperation();
+                return new FinalizeJoinOp();
             }
         };
         constructors[AUTHORIZATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AuthorizationOperation();
+                return new AuthorizationOp();
             }
         };
         constructors[BEFORE_JOIN_CHECK_FAILURE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new BeforeJoinCheckFailureOperation();
+                return new BeforeJoinCheckFailureOp();
             }
         };
         constructors[CHANGE_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ChangeClusterStateOperation();
+                return new CommitClusterStateOp();
             }
         };
         constructors[CONFIG_MISMATCH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ConfigMismatchOperation();
+                return new ConfigMismatchOp();
             }
         };
         constructors[GROUP_MISMATCH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GroupMismatchOperation();
+                return new GroupMismatchOp();
             }
         };
         constructors[SPLIT_BRAIN_MERGE_VALIDATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SplitBrainMergeValidationOperation();
+                return new SplitBrainMergeValidationOp();
             }
         };
         constructors[JOIN_REQUEST_OP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new JoinRequestOperation();
+                return new JoinRequestOp();
             }
         };
         constructors[LOCK_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new LockClusterStateOperation();
+                return new LockClusterStateOp();
             }
         };
         constructors[MASTER_CLAIM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MasterClaimOperation();
+                return new JoinMastershipClaimOp();
             }
         };
         constructors[MASTER_CONFIRM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MasterConfirmationOperation();
+                return new MasterConfirmationOp();
             }
         };
         constructors[MASTER_DISCOVERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MasterDiscoveryOperation();
+                return new MasterDiscoveryOp();
             }
         };
         constructors[MEMBER_ATTR_CHANGED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MemberAttributeChangedOperation();
+                return new MemberAttributeChangedOp();
             }
         };
         constructors[MEMBER_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -218,32 +218,32 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         };
         constructors[MERGE_CLUSTERS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MergeClustersOperation();
+                return new MergeClustersOp();
             }
         };
         constructors[POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PostJoinOperation();
+                return new PostJoinOp();
             }
         };
         constructors[ROLLBACK_CLUSTER_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RollbackClusterStateOperation();
+                return new RollbackClusterStateOp();
             }
         };
         constructors[SET_MASTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetMasterOperation();
+                return new SetMasterOp();
             }
         };
         constructors[SHUTDOWN_NODE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ShutdownNodeOperation();
+                return new ShutdownNodeOp();
             }
         };
         constructors[TRIGGER_MEMBER_LIST_PUBLISH] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new TriggerMemberListPublishOperation();
+                return new TriggerMemberListPublishOp();
             }
         };
         constructors[CLUSTER_STATE_TRANSACTION_LOG_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -295,13 +295,13 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         constructors[FETCH_MEMBER_LIST_STATE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new FetchMemberListStateOperation();
+                return new FetchMembersViewOp();
             }
         };
         constructors[EXPLICIT_SUSPICION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ExplicitSuspicionOperation();
+                return new ExplicitSuspicionOp();
             }
         };
         constructors[MEMBERS_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

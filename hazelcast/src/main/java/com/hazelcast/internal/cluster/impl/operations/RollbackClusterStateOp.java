@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.ClusterStateChange;
 import com.hazelcast.internal.cluster.impl.ClusterStateManager;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -30,60 +28,40 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
-import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class LockClusterStateOperation extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
+public class RollbackClusterStateOp extends Operation implements AllowedDuringPassiveState, IdentifiedDataSerializable {
 
-    private ClusterStateChange stateChange;
     private Address initiator;
     private String txnId;
-    private long leaseTime;
-    private int partitionStateVersion;
 
-    public LockClusterStateOperation() {
+    private boolean response;
+
+    public RollbackClusterStateOp() {
     }
 
-    public LockClusterStateOperation(ClusterStateChange stateChange, Address initiator, String txnId,
-                                     long leaseTime, int partitionStateVersion) {
-        this.stateChange = stateChange;
+    public RollbackClusterStateOp(Address initiator, String txnId) {
         this.initiator = initiator;
         this.txnId = txnId;
-        this.leaseTime = leaseTime;
-        this.partitionStateVersion = partitionStateVersion;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-        if (stateChange == null) {
-            throw new IllegalArgumentException("Invalid null cluster state");
-        }
-        stateChange.validate();
     }
 
     @Override
     public void run() throws Exception {
         ClusterServiceImpl service = getService();
         ClusterStateManager clusterStateManager = service.getClusterStateManager();
-        ClusterState state = clusterStateManager.getState();
-        if (state == ClusterState.IN_TRANSITION) {
-            getLogger().info("Extending cluster state lock. Initiator: " + initiator
-                    + ", lease-time: " + leaseTime);
-        } else {
-            getLogger().info("Locking cluster state. Initiator: " + initiator
-                    + ", lease-time: " + leaseTime);
-        }
-        clusterStateManager.lockClusterState(stateChange, initiator, txnId, leaseTime, partitionStateVersion);
+        getLogger().info("Rolling back cluster state! Initiator: " + initiator);
+        response = clusterStateManager.rollbackClusterState(txnId);
     }
 
     @Override
-    public void logError(Throwable e) {
-        if (e instanceof TransactionException) {
-            getLogger().severe(e.getMessage());
-        } else {
-            super.logError(e);
-        }
+    public Object getResponse() {
+        return response;
+    }
+
+    @Override
+    public String getServiceName() {
+        return ClusterServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -95,29 +73,18 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
     }
 
     @Override
-    public String getServiceName() {
-        return ClusterServiceImpl.SERVICE_NAME;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(stateChange);
         initiator.writeData(out);
         out.writeUTF(txnId);
-        out.writeLong(leaseTime);
-        out.writeInt(partitionStateVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        stateChange = in.readObject();
         initiator = new Address();
         initiator.readData(in);
         txnId = in.readUTF();
-        leaseTime = in.readLong();
-        partitionStateVersion = in.readInt();
     }
 
     @Override
@@ -127,7 +94,6 @@ public class LockClusterStateOperation extends Operation implements AllowedDurin
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.LOCK_CLUSTER_STATE;
+        return ClusterDataSerializerHook.ROLLBACK_CLUSTER_STATE;
     }
-
 }

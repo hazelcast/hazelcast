@@ -18,53 +18,48 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.JoinRequest;
+import com.hazelcast.internal.cluster.impl.JoinMessage;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class JoinRequestOperation extends AbstractClusterOperation {
+public class MasterDiscoveryOp extends AbstractClusterOperation {
 
-    private JoinRequest request;
+    private JoinMessage joinMessage;
 
-    public JoinRequestOperation() {
+    public MasterDiscoveryOp() {
     }
 
-    public JoinRequestOperation(JoinRequest request) {
-        this.request = request;
+    public MasterDiscoveryOp(JoinMessage joinMessage) {
+        this.joinMessage = joinMessage;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.getClusterJoinManager().handleJoinRequest(request, getConnection());
-    }
-
-    public JoinRequest getRequest() {
-        return request;
+        cm.getClusterJoinManager().answerMasterQuestion(joinMessage, getConnection());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        request = new JoinRequest();
-        request.readData(in);
+        joinMessage = new JoinMessage();
+        joinMessage.readData(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        request.writeData(out);
+        joinMessage.writeData(out);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-
-        sb.append(", message=").append(request);
+        sb.append(", message=").append(joinMessage);
     }
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.JOIN_REQUEST_OP;
+        return ClusterDataSerializerHook.MASTER_DISCOVERY;
     }
 }

@@ -24,7 +24,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOperation;
+import com.hazelcast.internal.cluster.impl.operations.TriggerMemberListPublishOp;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.partition.InternalPartition;
@@ -683,7 +683,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             // If node is shutting down, master can be null.
             if (masterAddress != null && !masterAddress.equals(node.getThisAddress())) {
                 // unknown addresses found in partition table, request a new member-list from master
-                nodeEngine.getOperationService().send(new TriggerMemberListPublishOperation(), masterAddress);
+                nodeEngine.getOperationService().send(new TriggerMemberListPublishOp(), masterAddress);
             }
         }
     }

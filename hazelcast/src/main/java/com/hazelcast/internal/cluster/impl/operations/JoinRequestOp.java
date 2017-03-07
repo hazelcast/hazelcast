@@ -18,48 +18,53 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.internal.cluster.impl.JoinMessage;
+import com.hazelcast.internal.cluster.impl.JoinRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MasterDiscoveryOperation extends AbstractClusterOperation {
+public class JoinRequestOp extends AbstractClusterOperation {
 
-    private JoinMessage joinMessage;
+    private JoinRequest request;
 
-    public MasterDiscoveryOperation() {
+    public JoinRequestOp() {
     }
 
-    public MasterDiscoveryOperation(JoinMessage joinMessage) {
-        this.joinMessage = joinMessage;
+    public JoinRequestOp(JoinRequest request) {
+        this.request = request;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.getClusterJoinManager().answerMasterQuestion(joinMessage, getConnection());
+        cm.getClusterJoinManager().handleJoinRequest(request, getConnection());
+    }
+
+    public JoinRequest getRequest() {
+        return request;
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        joinMessage = new JoinMessage();
-        joinMessage.readData(in);
+        request = new JoinRequest();
+        request.readData(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        joinMessage.writeData(out);
+        request.writeData(out);
     }
 
     @Override
     protected void toString(StringBuilder sb) {
         super.toString(sb);
-        sb.append(", message=").append(joinMessage);
+
+        sb.append(", message=").append(request);
     }
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.MASTER_DISCOVERY;
+        return ClusterDataSerializerHook.JOIN_REQUEST_OP;
     }
 }

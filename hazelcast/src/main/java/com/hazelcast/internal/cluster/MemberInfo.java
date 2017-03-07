@@ -78,7 +78,7 @@ public class MemberInfo implements IdentifiedDataSerializable {
     }
 
     public MemberImpl toMember() {
-        return new MemberImpl(address, version, false, uuid, null, attributes, liteMember);
+        return new MemberImpl(address, version, false, uuid,  attributes, liteMember);
     }
 
     @Override

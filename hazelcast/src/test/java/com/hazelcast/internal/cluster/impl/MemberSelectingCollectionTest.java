@@ -38,6 +38,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,10 +68,10 @@ public class MemberSelectingCollectionTest extends HazelcastTestSupport {
     @Before
     public void before()
             throws Exception {
-        thisMember = new MemberImpl(new Address("localhost", 5701), MemberVersion.of("3.8.0"), true, true);
-        liteMember = new MemberImpl(new Address("localhost", 5702), MemberVersion.of("3.8.0"), false, true);
-        dataMember = new MemberImpl(new Address("localhost", 5704), MemberVersion.of("3.8.0"), false, false);
-        nonExistingMember = new MemberImpl(new Address("localhost", 5705), MemberVersion.of("3.8.0"), false, false);
+        thisMember = new MemberImpl(new Address("localhost", 5701), MemberVersion.of("3.8.0"), true, newUnsecureUuidString(), null, true);
+        liteMember = new MemberImpl(new Address("localhost", 5702), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, true);
+        dataMember = new MemberImpl(new Address("localhost", 5704), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
+        nonExistingMember = new MemberImpl(new Address("localhost", 5705), MemberVersion.of("3.8.0"), false, newUnsecureUuidString(), null, false);
 
         members = createMembers();
     }

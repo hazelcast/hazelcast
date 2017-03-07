@@ -16,25 +16,27 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
+import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
-/**
- * Requests member list publish from master node
- */
-public class TriggerMemberListPublishOperation extends AbstractClusterOperation {
+public class AuthenticationFailureOp extends AbstractClusterOperation {
 
-    public TriggerMemberListPublishOperation() {
+    public AuthenticationFailureOp() {
     }
 
     @Override
-    public void run() throws Exception {
-        final ClusterServiceImpl clusterService = getService();
-        clusterService.getMembershipManager().sendMemberListToMember(getCallerAddress());
+    public void run() {
+        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final Node node = nodeEngine.getNode();
+        final ILogger logger = nodeEngine.getLogger("com.hazelcast.security");
+        logger.severe("Node could not join cluster. Authentication failed on master node! Node is going to shutdown now!");
+        node.shutdown(true);
     }
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.TRIGGER_MEMBER_LIST_PUBLISH;
+        return ClusterDataSerializerHook.AUTH_FAILURE;
     }
 }

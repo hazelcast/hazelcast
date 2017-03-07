@@ -37,25 +37,25 @@ import java.util.Collection;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
-public class FinalizeJoinOperation extends MembersUpdateOperation {
+public class FinalizeJoinOp extends MembersUpdateOp {
 
     public static final int FINALIZE_JOIN_TIMEOUT_FACTOR = 5;
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 60;
 
     private static final int POST_JOIN_TRY_COUNT = 100;
 
-    private PostJoinOperation postJoinOp;
+    private PostJoinOp postJoinOp;
     private String clusterId;
     private long clusterStartTime;
     private ClusterState clusterState;
     private Version clusterVersion;
 
-    public FinalizeJoinOperation() {
+    public FinalizeJoinOp() {
     }
 
-    public FinalizeJoinOperation(String targetUuid, MembersView members, PostJoinOperation postJoinOp,
-            long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
-            Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
+    public FinalizeJoinOp(String targetUuid, MembersView members, PostJoinOp postJoinOp,
+                          long masterTime, String clusterId, long clusterStartTime, ClusterState clusterState,
+                          Version clusterVersion, PartitionRuntimeState partitionRuntimeState, boolean sendResponse) {
         super(targetUuid, members, masterTime, partitionRuntimeState, sendResponse);
         this.postJoinOp = postJoinOp;
         this.clusterId = clusterId;
@@ -114,7 +114,7 @@ public class FinalizeJoinOperation extends MembersUpdateOperation {
             final Collection<Member> members = clusterService.getMembers();
             for (Member member : members) {
                 if (!member.localMember()) {
-                    PostJoinOperation operation = new PostJoinOperation(postJoinOperations);
+                    PostJoinOp operation = new PostJoinOp(postJoinOperations);
                     operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                             operation, member.getAddress()).setTryCount(POST_JOIN_TRY_COUNT).invoke();
                 }
@@ -143,7 +143,7 @@ public class FinalizeJoinOperation extends MembersUpdateOperation {
         
         boolean hasPJOp = in.readBoolean();
         if (hasPJOp) {
-            postJoinOp = new PostJoinOperation();
+            postJoinOp = new PostJoinOp();
             postJoinOp.readData(in);
         }
         clusterId = in.readUTF();

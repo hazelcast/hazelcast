@@ -49,23 +49,12 @@ public abstract class AbstractMember implements Member {
     protected AbstractMember() {
     }
 
-    protected AbstractMember(Address address, MemberVersion version) {
-        this(address, version, null, null);
-    }
-
-    protected AbstractMember(Address address, MemberVersion version, String uuid) {
-        this(address, version, uuid, null);
-    }
-
-    protected AbstractMember(Address address, MemberVersion version, String uuid, Map<String, Object> attributes) {
-        this(address, version, uuid, attributes, false);
-    }
-
     protected AbstractMember(Address address, MemberVersion version, String uuid, Map<String, Object> attributes,
                              boolean liteMember) {
+        assert address != null : "Address is required!";
         this.address = address;
         this.version = version;
-        this.uuid = uuid;
+        this.uuid = uuid != null ? uuid : "<" + address.toString() + ">";
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }

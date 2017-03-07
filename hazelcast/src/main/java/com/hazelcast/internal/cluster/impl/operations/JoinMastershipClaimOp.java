@@ -24,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class MasterClaimOperation extends AbstractJoinOperation {
+public class JoinMastershipClaimOp extends AbstractJoinOperation {
 
     private transient boolean approvedAsMaster;
 

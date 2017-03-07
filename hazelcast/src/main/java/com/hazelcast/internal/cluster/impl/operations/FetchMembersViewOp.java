@@ -5,11 +5,11 @@ import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
 
 // TODO [basri] ADD JAVADOC
-public class FetchMemberListStateOperation extends AbstractClusterOperation implements JoinOperation {
+public class FetchMembersViewOp extends AbstractClusterOperation implements JoinOperation {
 
     private MembersView membersView;
 
-    public FetchMemberListStateOperation() {
+    public FetchMembersViewOp() {
     }
 
     @Override

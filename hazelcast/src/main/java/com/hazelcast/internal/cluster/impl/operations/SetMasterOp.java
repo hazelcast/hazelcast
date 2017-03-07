@@ -25,14 +25,14 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /** Operation sent by any node to set the master address on the receiver */
-public class SetMasterOperation extends AbstractClusterOperation {
+public class SetMasterOp extends AbstractClusterOperation {
 
     protected Address masterAddress;
 
-    public SetMasterOperation() {
+    public SetMasterOp() {
     }
 
-    public SetMasterOperation(Address originAddress) {
+    public SetMasterOp(Address originAddress) {
         this.masterAddress = originAddress;
     }
 

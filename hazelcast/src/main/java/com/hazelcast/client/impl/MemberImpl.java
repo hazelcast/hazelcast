@@ -39,11 +39,11 @@ public final class MemberImpl extends AbstractMember implements Member {
     }
 
     public MemberImpl(Address address, MemberVersion version) {
-        super(address, version);
+        super(address, version, null, null, false);
     }
 
     public MemberImpl(Address address, MemberVersion version, String uuid) {
-        super(address, version, uuid);
+        super(address, version, uuid, null, false);
     }
 
     public MemberImpl(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {

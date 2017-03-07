@@ -11,7 +11,7 @@ import java.io.IOException;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.EXPLICIT_SUSPICION;
 
 // TODO [basri] ADD JAVADOC
-public class ExplicitSuspicionOperation extends AbstractClusterOperation {
+public class ExplicitSuspicionOp extends AbstractClusterOperation {
 
     private Address masterAddress;
 
@@ -19,10 +19,10 @@ public class ExplicitSuspicionOperation extends AbstractClusterOperation {
 
     private Address suspectedAddress;
 
-    public ExplicitSuspicionOperation() {
+    public ExplicitSuspicionOp() {
     }
 
-    public ExplicitSuspicionOperation(Address masterAddress, int memberListVersion, Address suspectedAddress) {
+    public ExplicitSuspicionOp(Address masterAddress, int memberListVersion, Address suspectedAddress) {
         this.masterAddress = masterAddress;
         this.memberListVersion = memberListVersion;
         this.suspectedAddress = suspectedAddress;

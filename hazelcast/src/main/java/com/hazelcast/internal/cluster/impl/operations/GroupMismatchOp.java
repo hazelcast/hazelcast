@@ -22,9 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-public class GroupMismatchOperation extends AbstractClusterOperation {
+public class GroupMismatchOp extends AbstractClusterOperation {
 
-    public GroupMismatchOperation() {
+    public GroupMismatchOp() {
     }
 
     @Override

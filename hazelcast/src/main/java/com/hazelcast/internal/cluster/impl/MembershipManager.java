@@ -23,8 +23,8 @@ import com.hazelcast.hotrestart.InternalHotRestartService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.MemberInfo;
-import com.hazelcast.internal.cluster.impl.operations.FetchMemberListStateOperation;
-import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOperation;
+import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
+import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -38,10 +38,10 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
-import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,8 +49,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,6 +63,7 @@ import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.EXECUTOR_NA
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.MEMBERSHIP_EVENT_EXECUTOR_NAME;
 import static com.hazelcast.internal.cluster.impl.ClusterServiceImpl.SERVICE_NAME;
 import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
+import static com.hazelcast.spi.properties.GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS;
 import static java.util.Collections.unmodifiableSet;
 
 /**
@@ -79,7 +83,7 @@ public class MembershipManager {
     private final AtomicReference<MemberMap> membersRemovedInNotActiveStateRef
             = new AtomicReference<MemberMap>(MemberMap.empty());
 
-    private final Map<Address, Long> suspectedMembers = new HashMap<Address, Long>();
+    private final Set<Address> suspectedMembers = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
     MembershipManager(Node node, ClusterServiceImpl clusterService, Lock clusterServiceLock) {
         this.node = node;
@@ -126,7 +130,7 @@ public class MembershipManager {
         return memberMap.getMember(uuid);
     }
 
-    MemberImpl getMember(Address address, String uuid) {
+    public MemberImpl getMember(Address address, String uuid) {
         assert address != null : "Address required!";
         assert uuid != null : "UUID required!";
 
@@ -165,9 +169,12 @@ public class MembershipManager {
 
         MemberMap memberMap = memberMapRef.get();
         MemberImpl member = memberMap.getMember(target);
-        String memberUuid = member != null ? member.getUuid() : null;
+        if (member == null) {
+            logger.fine("Not member: " + target + ", cannot send member list.");
+            return;
+        }
 
-        MembersUpdateOperation op = new MembersUpdateOperation(memberUuid, memberMap.toMembersView(),
+        MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), memberMap.toMembersView(),
                 clusterService.getClusterTime(), null, false);
         nodeEngine.getOperationService().send(op, target);
     }
@@ -183,7 +190,7 @@ public class MembershipManager {
         }
     }
 
-    /** Invoked on the master to send the member list (see {@link MembersUpdateOperation}) to non-master nodes. */
+    /** Invoked on the master to send the member list (see {@link MembersUpdateOp}) to non-master nodes. */
     private void sendMemberListToOthers() {
         if (!node.isMaster()) {
             return;
@@ -197,7 +204,7 @@ public class MembershipManager {
                 continue;
             }
 
-            MembersUpdateOperation op = new MembersUpdateOperation(member.getUuid(), membersView,
+            MembersUpdateOp op = new MembersUpdateOp(member.getUuid(), membersView,
                     clusterService.getClusterTime(), null, false);
             nodeEngine.getOperationService().send(op, member.getAddress());
         }
@@ -268,7 +275,7 @@ public class MembershipManager {
         boolean localMember = thisAddress.equals(address);
         
         return new MemberImpl(address, memberInfo.getVersion(), localMember, memberInfo.getUuid(),
-                node.hazelcastInstance, memberInfo.getAttributes(), memberInfo.isLiteMember());
+                memberInfo.getAttributes(), memberInfo.isLiteMember(), node.hazelcastInstance);
     }
 
     void setMembers(MemberMap memberMap) {
@@ -278,30 +285,40 @@ public class MembershipManager {
         clusterServiceLock.lock();
         try {
             memberMapRef.set(memberMap);
-            retainSuspectedMembers();
+            retainSuspectedMembers(memberMap);
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
     // called under cluster service lock
-    private void retainSuspectedMembers() {
-        Iterator<Map.Entry<Address, Long>> it = suspectedMembers.entrySet().iterator();
+    private void retainSuspectedMembers(MemberMap memberMap) {
+        Iterator<Address> it = suspectedMembers.iterator();
         while (it.hasNext()) {
-            Address suspectedAddress = it.next().getKey();
-            if (getMember(suspectedAddress) == null) {
+            Address suspectedAddress = it.next();
+            if (memberMap.getMember(suspectedAddress) == null) {
                 it.remove();
             }
         }
     }
 
     boolean isMemberSuspected(Address address) {
-        clusterServiceLock.lock();
-        try {
-            return suspectedMembers.containsKey(address);
-        } finally {
-            clusterServiceLock.unlock();
+        return suspectedMembers.contains(address);
+    }
+
+    boolean tryRemoveMemberSuspicion(Address address) {
+        if (!suspectedMembers.contains(address)) {
+             return false;
         }
+        
+        if (clusterServiceLock.tryLock()) {
+            try {
+                return suspectedMembers.remove(address);
+            } finally {
+                clusterServiceLock.unlock();
+            }
+        }
+        return false;
     }
 
     void triggerExplicitSuspicion(Address caller, int callerMemberListVersion,
@@ -337,23 +354,33 @@ public class MembershipManager {
                 return;
             }
 
-            suspectAddress(suspectedAddress, null, "explicit suspicion", true);
+            suspectMember(suspectedAddress, null, "explicit suspicion", true);
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    void suspectAddress(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
+    void suspectMember(Address suspectedAddress, String suspectedUuid, String reason, boolean shouldCloseConn) {
         if (!ensureMemberIsRemovable(suspectedAddress)) {
             return;
         }
 
         final MembersView localMemberView;
         final Set<Address> membersToAsk;
+        
         clusterServiceLock.lock();
         try {
-            boolean claimMastership = doSuspectAddress(suspectedAddress, suspectedUuid, reason, destroyConnection);
-            if (!claimMastership) {
+            ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
+            if (node.isMaster() && !clusterJoinManager.isMastershipClaimInProgress()) {
+                removeMember(suspectedAddress, reason, shouldCloseConn);
+                return;
+            }
+
+            if (!addSuspectedMember(suspectedAddress, suspectedUuid, reason, shouldCloseConn)) {
+                return;
+            }
+
+            if (!tryStartMastershipClaim()) {
                 return;
             }
 
@@ -361,7 +388,7 @@ public class MembershipManager {
             localMemberView = memberMap.toMembersView();
             membersToAsk = new HashSet<Address>();
             for (MemberImpl member : memberMap.getMembers()) {
-                if (member.localMember() || suspectedMembers.containsKey(member.getAddress())) {
+                if (member.localMember() || suspectedMembers.contains(member.getAddress())) {
                     continue;
                 }
 
@@ -371,114 +398,114 @@ public class MembershipManager {
             clusterServiceLock.unlock();
         }
 
-        logger.info("Local " + localMemberView + " with suspected members: "  + suspectedMembers.keySet() + " and initial addresses to ask: " + membersToAsk);
-        ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
-        executor.submit(new FetchMostRecentMemberListTask(localMemberView, membersToAsk));
+        logger.info("Local " + localMemberView + " with suspected members: "  + suspectedMembers
+                + " and initial addresses to ask: " + membersToAsk);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(SYSTEM_EXECUTOR);
+        executor.submit(new DecideNewMembersViewTask(localMemberView, membersToAsk));
     }
 
-    // called under cluster service lock
-    private boolean doSuspectAddress(Address suspectedAddress, String suspectedUuid, String reason, boolean destroyConnection) {
+    private boolean tryStartMastershipClaim() {
+        ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
+        if (clusterJoinManager.isMastershipClaimInProgress()) {
+            return false;
+        }
+
+        MemberMap memberMap = memberMapRef.get();
+        if (!shouldClaimMastership(memberMap)) {
+            return false;
+        }
+
+        logger.info("Starting mastership claim process...");
+
+        // Make sure that all pending join requests are cancelled temporarily.
+        clusterJoinManager.setMastershipClaimInProgress();
+
+        node.setMasterAddress(node.getThisAddress());
+        return true;
+    }
+
+    private boolean addSuspectedMember(Address suspectedAddress, String suspectedUuid, String reason,
+            boolean shouldCloseConn) {
+
+        MemberImpl suspectedMember = getSuspectedMember(suspectedAddress, suspectedUuid);
+        if (suspectedMember == null) {
+            logger.fine("Ignoring suspect request for " + suspectedAddress + " since it's not member.");
+            return false;
+        }
+
+        if (suspectedMembers.add(suspectedAddress)) {
+            if (reason != null) {
+                logger.warning(suspectedAddress + " is suspected to be dead for reason: " + reason);
+            } else {
+                logger.warning(suspectedAddress + " is suspected to be dead");
+            }
+        }
+
+        if (shouldCloseConn) {
+            closeConnection(suspectedAddress, reason);
+        }
+        return true;
+    }
+
+    private MemberImpl getSuspectedMember(Address suspectedAddress, String suspectedUuid) {
         MemberImpl suspectedMember = getMember(suspectedAddress);
         if (suspectedUuid != null && (suspectedMember == null || !suspectedUuid.equals(suspectedMember.getUuid()))) {
             if (logger.isFineEnabled()) {
                 logger.fine("Cannot suspect " + suspectedAddress + ", either member is not present "
                         + "or uuid is not matching. Uuid: " + suspectedUuid + ", member: " + suspectedMember);
             }
-            return false;
+            return null;
         }
-
-        ClusterJoinManager clusterJoinManager = clusterService.getClusterJoinManager();
-        if (node.isMaster() && !clusterJoinManager.isMastershipClaimInProgress()) {
-            removeEndpoint(suspectedAddress, reason, destroyConnection);
-            return false;
-        } else {
-            if (suspectedMember == null) {
-                logger.fine("Ignoring suspect request for " + suspectedAddress + " since it's not member.");
-                return false;
-            }
-
-            if (!suspectedMembers.containsKey(suspectedAddress)) {
-                suspectedMembers.put(suspectedAddress, 0L);
-                if (reason != null) {
-                    logger.warning(suspectedAddress + " is suspected to be dead for reason: " + reason);
-                } else {
-                    logger.warning(suspectedAddress + " is suspected to be dead");
-                }
-            }
-
-            Connection conn = node.connectionManager.getConnection(suspectedAddress);
-            if (destroyConnection && conn != null) {
-                conn.close(reason, null);
-            }
-
-            if (clusterJoinManager.isMastershipClaimInProgress()) {
-                return false;
-            }
-
-            MemberMap memberMap = memberMapRef.get();
-            if (!shouldClaimMastership(memberMap)) {
-                return false;
-            }
-
-            logger.info("Starting mastership claim process...");
-
-            // Make sure that all pending join requests are cancelled temporarily.
-            clusterJoinManager.setMastershipClaimInProgress();
-
-            node.setMasterAddress(node.getThisAddress());
-            return true;
-        }
+        return suspectedMember;
     }
 
-    private void removeEndpoint(Address address, String reason, boolean destroyConnection) {
+    private void removeMember(Address address, String reason, boolean shouldCloseConn) {
+        assert node.isMaster() : "Master: " + node.getMasterAddress();
+        assert clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9);
+
         if (!ensureMemberIsRemovable(address)) {
             return;
         }
-
-        assert node.isMaster() : "Master: " + node.getMasterAddress();
 
         clusterServiceLock.lock();
         try {
             clusterService.getClusterJoinManager().removeJoin(address);
 
-            Connection conn = node.connectionManager.getConnection(address);
-            if (destroyConnection && conn != null) {
-                conn.close(reason, null);
+            if (shouldCloseConn) {
+                closeConnection(address, reason);
             }
 
-            removeMember(address);
+            MemberMap currentMembers = memberMapRef.get();
+            MemberImpl member = currentMembers.getMember(address);
+
+            if (member == null) {
+                logger.fine("No member to remove with address: " + address);
+                return;
+            }
+
+            logger.info("Removing " + member);
+            ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
+            clusterHeartbeatManager.removeMember(member);
+
+            MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, member);
+            setMembers(newMembers);
+
+            if (logger.isFineEnabled()) {
+                logger.fine(member + " is removed. Publishing new member list.");
+            }
+            sendMemberListToOthers();
+
+            handleMemberRemove(newMembers, member);
+            clusterService.printMemberList();
         } finally {
             clusterServiceLock.unlock();
         }
     }
 
-    private void removeMember(Address address) {
-        assert clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9);
-        assert node.isMaster() : "Master: " + node.getMasterAddress();
-
-        clusterServiceLock.lock();
-        try {
-            ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
-            MemberMap currentMembers = memberMapRef.get();
-            MemberImpl member = currentMembers.getMember(address);
-            if (member != null) {
-                logger.info("Removing " + member);
-                clusterHeartbeatManager.removeMember(member);
-                MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, member);
-                setMembers(newMembers);
-
-                if (logger.isFineEnabled()) {
-                    logger.fine(member + " is removed. Publishing new member list.");
-                }
-                sendMemberListToOthers();
-
-                handleMemberRemove(newMembers, member);
-                clusterService.printMemberList();
-            } else {
-                logger.fine("No member to remove with address: " + address);
-            }
-        } finally {
-            clusterServiceLock.unlock();
+    private void closeConnection(Address address, String reason) {
+        Connection conn = node.connectionManager.getConnection(address);
+        if (conn != null) {
+            conn.close(reason, null);
         }
     }
 
@@ -568,8 +595,6 @@ public class MembershipManager {
             return false;
         }
 
-        // TODO [basri] what if I am shutting down?
-
         for (MemberImpl m : memberMap.headMemberSet(node.getLocalMember(), false)) {
             if (!isMemberSuspected(m.getAddress())) {
                 return false;
@@ -581,38 +606,33 @@ public class MembershipManager {
 
     private MembersView decideNewMembersView(MembersView localMembersView, Set<Address> addresses) {
         Map<Address, Future<MembersView>> futures = new HashMap<Address, Future<MembersView>>();
+        MembersView latestMembersView = fetchLatestMembersView(localMembersView, addresses, futures);
 
-        MembersView mostRecentMembersView = fetchMembersViews(localMembersView, addresses, futures);
-
-        logger.fine("Most recent " + mostRecentMembersView + " before final decision...");
+        logger.fine("Latest " + latestMembersView + " before final decision...");
 
         // within the most recent members view, select the members that have reported their members view successfully
-        int finalVersion = mostRecentMembersView.getVersion() + 1;
+        int finalVersion = latestMembersView.getVersion() + 1;
         List<MemberInfo> finalMembers = new ArrayList<MemberInfo>();
-        for (MemberInfo memberInfo : mostRecentMembersView.getMembers()) {
+        for (MemberInfo memberInfo : latestMembersView.getMembers()) {
             Address address = memberInfo.getAddress();
-            if (clusterService.getThisAddress().equals(address)) {
+            if (node.getThisAddress().equals(address)) {
                 finalMembers.add(memberInfo);
                 continue;
             }
 
-            // if we are not sure that a member has accepted my mastership claim, ignore its result
+            // if it is not certain if a member has accepted the mastership claim, its response will be ignored
 
-            Future<MembersView> membersViewFuture = futures.get(address);
-            // TODO [basri] could it be that `membersViewFuture == null` ?
+            Future<MembersView> future = futures.get(address);
             if (isMemberSuspected(address)) {
                 logger.fine(memberInfo + " is excluded because suspected");
                 continue;
-            } else if (membersViewFuture == null) {
-                logger.fine(memberInfo + " is excluded because I haven't asked to it");
-                continue;
-            } else if (!membersViewFuture.isDone()) {
+            } else if (!future.isDone()) {
                 logger.fine(memberInfo + " is excluded because I don't know its response");
                 continue;
             }
 
             try {
-                membersViewFuture.get();
+                future.get();
                 finalMembers.add(memberInfo);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
@@ -624,49 +644,46 @@ public class MembershipManager {
         return new MembersView(finalVersion, finalMembers);
     }
 
-    private MembersView fetchMembersViews(MembersView localMembersView,
-            Set<Address> addresses,
-            Map<Address, Future<MembersView>> futures) {
-        MembersView mostRecentMembersView = localMembersView;
+    private MembersView fetchLatestMembersView(MembersView localMembersView,
+                                               Set<Address> addresses,
+                                               Map<Address, Future<MembersView>> futures) {
+        MembersView latestMembersView = localMembersView;
 
         // once an address is put into the futures map,
         // we wait until either we suspect of that address or find its result in the futures.
 
         for (Address address : addresses) {
-            futures.put(address, invokeFetchMemberListStateOperation(address));
+            futures.put(address, invokeFetchMembersViewOp(address));
         }
 
         while (true) {
             boolean done = true;
 
-            for (Map.Entry<Address, Future<MembersView>> e : new ArrayList<Map.Entry<Address, Future<MembersView>>>(futures.entrySet())) {
+            for (Entry<Address, Future<MembersView>> e : new ArrayList<Entry<Address, Future<MembersView>>>(futures.entrySet())) {
                 Address address = e.getKey();
                 Future<MembersView> future = e.getValue();
 
-                // If we started to suspect a member after asking its member list, we don't need to wait for its result.
-                if (!isMemberSuspected(address)) {
-                    // If there is no suspicion yet, we just keep waiting till we have a successful or failed result.
-                    if (future.isDone()) {
-                        try {
-                            MembersView membersView = future.get();
-                            if (membersView.getVersion() > mostRecentMembersView.getVersion()) {
-                                logger.fine("A more recent " + membersView + " is received from " + address);
-                                mostRecentMembersView = membersView;
+                if (future.isDone()) {
+                    try {
+                        MembersView membersView = future.get();
+                        if (membersView.isLaterThan(latestMembersView)) {
+                            logger.fine("A more recent " + membersView + " is received from " + address);
+                            latestMembersView = membersView;
 
-                                // If we discover a new member via a fetched member list, we should also ask for its members view.
-                                if (checkFetchedMembersView(membersView, futures)) {
-                                    // there are some new addresses added to the futures map. lets wait for their results.
-                                    done = false;
-                                }
+                            // If we discover a new member via a fetched member list, we should also ask for its members view.
+                            if (checkFetchedMembersView(membersView, futures)) {
+                                // there are some new addresses added to the futures map. lets wait for their results.
+                                done = false;
                             }
-                        } catch (InterruptedException ignored) {
-                            Thread.currentThread().interrupt();
-                        } catch (ExecutionException ignored) {
-                            // we couldn't fetch MembersView of 'address'. It will be removed from the cluster.
                         }
-                    } else if (mostRecentMembersView.containsAddress(address)) {
-                        done = false;
+                    } catch (InterruptedException ignored) {
+                        Thread.currentThread().interrupt();
+                    } catch (ExecutionException ignored) {
+                        // we couldn't learn MembersView of 'address'. It will be removed from the cluster.
                     }
+                } else if (!isMemberSuspected(address) && latestMembersView.containsAddress(address)) {
+                    // we don't suspect from 'address' and we need to learn its response
+                    done = false;
                 }
             }
 
@@ -681,34 +698,33 @@ public class MembershipManager {
             }
         }
 
-        return mostRecentMembersView;
+        return latestMembersView;
     }
 
     private boolean checkFetchedMembersView(MembersView membersView, Map<Address, Future<MembersView>> futures) {
-        boolean done = false;
+        boolean isNewMemberPresent = false;
 
         for (MemberInfo memberInfo : membersView.getMembers()) {
             Address memberAddress = memberInfo.getAddress();
             if (!(node.getThisAddress().equals(memberAddress) || isMemberSuspected(memberAddress) || futures.containsKey(memberAddress))) {
                 // this is a new member for us. lets ask its members view
                 logger.fine("Asking MembersView of " + memberAddress);
-                futures.put(memberAddress, invokeFetchMemberListStateOperation(memberAddress));
-                done = true;
+                futures.put(memberAddress, invokeFetchMembersViewOp(memberAddress));
+                isNewMemberPresent = true;
             }
         }
 
-        return done;
+        return isNewMemberPresent;
     }
 
-    private Future<MembersView> invokeFetchMemberListStateOperation(Address target) {
-        // TODO [basri] define config param
-        long fetchMemberListStateTimeoutMs = TimeUnit.SECONDS.toMillis(30);
-        Operation op = new FetchMemberListStateOperation().setCallerUuid(node.getThisUuid());
+    private Future<MembersView> invokeFetchMembersViewOp(Address target) {
+        long mastershipClaimTimeoutMs = node.getProperties().getMillis(MASTERSHIP_CLAIM_TIMEOUT_SECONDS);
+        Operation op = new FetchMembersViewOp().setCallerUuid(node.getThisUuid());
 
         return nodeEngine.getOperationService()
                 .createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(Integer.MAX_VALUE)
-                .setCallTimeout(fetchMemberListStateTimeoutMs).invoke();
+                .setCallTimeout(mastershipClaimTimeoutMs).invoke();
     }
 
     private boolean ensureMemberIsRemovable(Address deadAddress) {
@@ -810,12 +826,12 @@ public class MembershipManager {
         }
     }
 
-    private class FetchMostRecentMemberListTask implements Runnable {
+    private class DecideNewMembersViewTask implements Runnable {
 
         final MembersView localMemberView;
         final Set<Address> membersToAsk;
 
-        FetchMostRecentMemberListTask(MembersView localMemberView, Set<Address> membersToAsk) {
+        DecideNewMembersViewTask(MembersView localMemberView, Set<Address> membersToAsk) {
             this.localMemberView = localMemberView;
             this.membersToAsk = membersToAsk;
         }

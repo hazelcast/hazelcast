@@ -115,7 +115,7 @@ public class MemberMapTest {
     @Test(expected = IllegalArgumentException.class)
     public void create_failsWithDuplicateUuid() {
         MemberImpl member1 = newMember(5000);
-        MemberImpl member2 = new MemberImpl(newAddress(5001), VERSION, false, member1.getUuid(), null);
+        MemberImpl member2 = new MemberImpl(newAddress(5001), VERSION, false, member1.getUuid());
         MemberMap.createNew(member1, member2);
     }
 
@@ -124,8 +124,8 @@ public class MemberMapTest {
         MemberImpl[] members = newMembers(6);
 
         MemberImpl exclude0 = members[0];
-        MemberImpl exclude1 = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
-        MemberImpl exclude2 = new MemberImpl(members[2].getAddress(), VERSION, false, newUnsecureUuidString(), null);
+        MemberImpl exclude1 = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid());
+        MemberImpl exclude2 = new MemberImpl(members[2].getAddress(), VERSION, false, newUnsecureUuidString());
 
         MemberMap map = MemberMap.cloneExcluding(MemberMap.createNew(members), exclude0, exclude1, exclude2);
 
@@ -193,7 +193,7 @@ public class MemberMapTest {
     public void cloneAdding_failsWithDuplicateUuid() {
         MemberImpl[] members = newMembers(3);
 
-        MemberImpl member = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid(), null);
+        MemberImpl member = new MemberImpl(newAddress(6000), VERSION, false, members[1].getUuid());
         MemberMap.cloneAdding(MemberMap.createNew(members), member);
     }
 
@@ -328,7 +328,7 @@ public class MemberMapTest {
     }
 
     private static MemberImpl newMember(int port) {
-        return new MemberImpl(newAddress(port), VERSION, false, newUnsecureUuidString(), null);
+        return new MemberImpl(newAddress(port), VERSION, false, newUnsecureUuidString());
     }
 
     private static Address newAddress(int port) {

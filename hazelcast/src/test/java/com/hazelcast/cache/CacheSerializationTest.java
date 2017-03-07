@@ -147,7 +147,7 @@ public class CacheSerializationTest extends HazelcastTestSupport {
     @Test
     public void testCachePartitionEventData() throws UnknownHostException {
         Address address = new Address("127.0.0.1", 5701);
-        Member member = new MemberImpl(address, MemberVersion.UNKNOWN, true, false);
+        Member member = new MemberImpl(address, MemberVersion.UNKNOWN, true);
         CachePartitionEventData cachePartitionEventData = new CachePartitionEventData("test", 1, member);
         CachePartitionEventData deserialized = service.toObject(cachePartitionEventData);
         assertEquals(cachePartitionEventData, deserialized);

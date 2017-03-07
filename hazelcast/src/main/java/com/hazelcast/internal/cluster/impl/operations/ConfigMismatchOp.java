@@ -30,16 +30,16 @@ import java.io.IOException;
  * If the ConfigCheck fails, this operation is send to that node to trigger him to shutdown himself. This
  * way he will not join the cluster.
  *
- * @see AuthenticationFailureOperation
+ * @see AuthenticationFailureOp
  */
-public class ConfigMismatchOperation extends AbstractClusterOperation {
+public class ConfigMismatchOp extends AbstractClusterOperation {
 
     private String msg;
 
-    public ConfigMismatchOperation() {
+    public ConfigMismatchOp() {
     }
 
-    public ConfigMismatchOperation(String msg) {
+    public ConfigMismatchOp(String msg) {
         this.msg = msg;
     }
 

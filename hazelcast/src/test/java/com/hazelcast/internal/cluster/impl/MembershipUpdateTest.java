@@ -20,12 +20,15 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOperation;
+import com.hazelcast.internal.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,7 +38,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
@@ -45,8 +50,11 @@ import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperatio
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.dropOperationsFrom;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.resetPacketFiltersFrom;
 import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -428,7 +436,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void existingMemberReceives_memberUpdateNotContainingItself() {
+    @RequireAssertEnabled
+    public void memberReceives_memberUpdateNotContainingItself() throws Exception {
         Config config = new Config();
         config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
 
@@ -443,19 +452,22 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         MembersView membersView = MembersView.createNew(membershipManager.getMemberListVersion() + 1, 
                 Arrays.asList(membershipManager.getMember(getAddress(hz1)), membershipManager.getMember(getAddress(hz2))));
 
-        Operation memberUpdate = new MembersUpdateOperation(membershipManager.getMember(getAddress(hz3)).getUuid(),
-                membersView, clusterService.getClusterTime(), null, false);
-        node.getNodeEngine().getOperationService().send(memberUpdate, getAddress(hz3));
+        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
+                membersView, clusterService.getClusterTime(), null, true);
 
-        assertClusterSizeEventually(2, hz1);
-        assertClusterSizeEventually(2, hz2);
+        Future<Object> future =
+                node.getNodeEngine().getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
 
-        // TODO: hz3 should eventually split
-//        assertClusterSizeEventually(1, hz3);
+        try {
+            future.get();
+            fail("Membership update should fail!");
+        } catch (AssertionError error) {
+            // AssertionError expected (requires assertions enabled)
+        }
     }
 
     @Test
-    public void existingMemberReceives_memberUpdateFromNonMaster() {
+    public void memberReceives_memberUpdateFromInvalidMaster() throws Exception {
         Config config = new Config();
         config.setProperty(MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), String.valueOf(Integer.MAX_VALUE));
 
@@ -466,15 +478,27 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         Node node = getNode(hz1);
         ClusterServiceImpl clusterService = node.getClusterService();
         MembershipManager membershipManager = clusterService.getMembershipManager();
-        MembersView membersView = membershipManager.createMembersView();
 
-        Operation memberUpdate = new MembersUpdateOperation(membershipManager.getMember(getAddress(hz3)).getUuid(),
-                membersView, clusterService.getClusterTime(), null, false);
+        MemberInfo newMemberInfo = new MemberInfo(new Address("127.0.0.1", 6000), newUnsecureUuidString(),
+                Collections.<String, Object>emptyMap(), node.getVersion());
+        MembersView membersView =
+                MembersView.cloneAdding(membershipManager.createMembersView(), singleton(newMemberInfo));
+
+        Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
+                membersView, clusterService.getClusterTime(), null, true);
 
         NodeEngineImpl nonMasterNodeEngine = getNodeEngineImpl(hz2);
-        nonMasterNodeEngine.getOperationService().send(memberUpdate, getAddress(hz3));
+        Future<Object> future =
+                nonMasterNodeEngine.getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
+        future.get();
 
-        // TODO: assert eventually hz2 suspects hz3
+        // member update should not be applied
+        assertClusterSize(3, hz1);
+        assertClusterSize(3, hz2);
+        assertClusterSize(3, hz3);
+
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz2));
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
     }
 
     static void assertMemberViewsAreSame(MemberMap expectedMemberMap, MemberMap actualMemberMap) {

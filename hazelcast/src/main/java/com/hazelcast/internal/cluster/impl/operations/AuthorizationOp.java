@@ -23,16 +23,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class AuthorizationOperation extends AbstractJoinOperation {
+public class AuthorizationOp extends AbstractJoinOperation {
 
     private String groupName;
     private String groupPassword;
     private Boolean response = Boolean.TRUE;
 
-    public AuthorizationOperation() {
+    public AuthorizationOp() {
     }
 
-    public AuthorizationOperation(String groupName, String groupPassword) {
+    public AuthorizationOp(String groupName, String groupPassword) {
         this.groupName = groupName;
         this.groupPassword = groupPassword;
     }
