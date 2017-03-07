@@ -201,7 +201,17 @@ public class ScheduledExecutorContainer {
 
         descriptor.setState(newState);
         descriptor.setStats(stats);
-        descriptor.setTaskResult(resolution);
+
+        if (descriptor.getTaskResult() != null) {
+            // Task result previously populated - ie. through cancel
+            // Ignore all subsequent results
+            if (logger.isFineEnabled()) {
+                logger.fine(String.format("[Scheduler: " + name + "][Partition: " + partitionId + "] syncState result skipped. "
+                                        + "Current: %s New: %s", descriptor.getTaskResult(), resolution));
+            }
+        } else {
+            descriptor.setTaskResult(resolution);
+        }
     }
 
     public boolean shouldParkGetResult(String taskName)
