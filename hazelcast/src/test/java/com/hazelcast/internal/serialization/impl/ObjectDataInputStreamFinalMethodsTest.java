@@ -33,7 +33,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @Category({QuickTest.class, ParallelTest.class})
 public class ObjectDataInputStreamFinalMethodsTest {
 
-    final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     private InternalSerializationService mockSerializationService;
     private ObjectDataInputStream in;

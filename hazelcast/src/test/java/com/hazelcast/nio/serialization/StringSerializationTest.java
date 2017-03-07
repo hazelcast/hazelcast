@@ -46,13 +46,13 @@ public class StringSerializationTest {
 
     private InternalSerializationService serializationService;
 
-    private final static String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
-    private final static String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
-    private final static String TEST_DATA_ASCII = "The quick brown fox jumps over the lazy dog";
-    private final static String TEST_DATA_ALL = TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII;
-    private final static int TEST_STR_SIZE = 1 << 20;
+    private static final String TEST_DATA_TURKISH = "Pijamalı hasta, yağız şoföre çabucak güvendi.";
+    private static final String TEST_DATA_JAPANESE = "イロハニホヘト チリヌルヲ ワカヨタレソ ツネナラム";
+    private static final String TEST_DATA_ASCII = "The quick brown fox jumps over the lazy dog";
+    private static final String TEST_DATA_ALL = TEST_DATA_TURKISH + TEST_DATA_JAPANESE + TEST_DATA_ASCII;
+    private static final int TEST_STR_SIZE = 1 << 20;
 
-    private final static byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
+    private static final byte[] TEST_DATA_BYTES_ALL = TEST_DATA_ALL.getBytes(Charset.forName("utf8"));
 
     private static final char[] allChars;
 

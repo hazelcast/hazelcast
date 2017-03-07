@@ -36,10 +36,10 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 @Category({QuickTest.class, ParallelTest.class})
 public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
-    private final static Object RESULT = "foobar";
+    private static final Object RESULT = "foobar";
 
-    private final static String EXCEPTION_MESSAGE = "You screwed buddy!";
-    private final static Exception EXCEPTION = new RuntimeException(EXCEPTION_MESSAGE);
+    private static final String EXCEPTION_MESSAGE = "You screwed buddy!";
+    private static final Exception EXCEPTION = new RuntimeException(EXCEPTION_MESSAGE);
 
     private HazelcastInstance hz;
     private ILogger logger;

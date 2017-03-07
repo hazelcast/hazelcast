@@ -36,7 +36,7 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_TimeoutTest extends HazelcastTestSupport {
 
-    private final static Object RESPONSE = "someresponse";
+    private static final Object RESPONSE = "someresponse";
 
     /**
      * Tests if the get is called with a timeout, and the operation takes more time to execute then the timeout, that the call

@@ -56,8 +56,9 @@ public class ComplexDataStructure {
     }
 
     public static class PersonPortable implements Serializable, Portable {
-        final static int FACTORY_ID = 1;
-        final static int ID = 10;
+
+        static final int FACTORY_ID = 1;
+        static final int ID = 10;
 
         String name;
         Portable[] limbs_portable;
@@ -140,8 +141,8 @@ public class ComplexDataStructure {
     }
 
     public static class LimbPortable implements Serializable, Portable, Comparable<LimbPortable> {
-        final static int FACTORY_ID = 1;
-        final static int ID = 11;
+        static final int FACTORY_ID = 1;
+        static final int ID = 11;
 
         String name;
         Portable[] fingers_portable;
@@ -219,8 +220,8 @@ public class ComplexDataStructure {
     }
 
     public static class FingerPortable implements Serializable, Comparable<FingerPortable>, Portable {
-        final static int FACTORY_ID = 1;
-        final static int ID = 12;
+        static final int FACTORY_ID = 1;
+        static final int ID = 12;
 
         String name;
 
@@ -354,7 +355,7 @@ public class ComplexDataStructure {
     }
 
     static class PersonPortableFactory implements PortableFactory {
-        final static int ID = 1;
+        static final int ID = 1;
 
         @Override
         public Portable create(int classId) {

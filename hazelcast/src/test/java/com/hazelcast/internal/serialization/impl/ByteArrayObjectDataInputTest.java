@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelTest.class})
 public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
-    final static byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    static final byte[] INIT_DATA = new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     protected InternalSerializationService mockSerializationService;
     protected ByteArrayObjectDataInput in;

@@ -54,8 +54,8 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientQueueTest extends HazelcastTestSupport {
 
-    private final static int MAX_SIZE_FOR_QUEUE = 8;
-    private final static String QUEUE_WITH_MAX_SIZE = "queueWithMaxSize*";
+    private static final int MAX_SIZE_FOR_QUEUE = 8;
+    private static final String QUEUE_WITH_MAX_SIZE = "queueWithMaxSize*";
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;

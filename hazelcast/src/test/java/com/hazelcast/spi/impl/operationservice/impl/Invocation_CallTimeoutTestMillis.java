@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelTest.class})
 public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
 
-    private final static long callTimeout = 12345;
+    private static final long CALL_TIMEOUT = 12345;
 
     private HazelcastInstance hz;
     private InternalOperationService opService;
@@ -33,7 +33,7 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + callTimeout);
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS.getName(), "" + CALL_TIMEOUT);
 
         hz = createHazelcastInstance(config);
         opService = getOperationService(hz);
@@ -45,8 +45,8 @@ public class Invocation_CallTimeoutTestMillis extends HazelcastTestSupport {
         Operation op = new DummyOperation();
         InvocationFuture future = (InvocationFuture) opService.invokeOnTarget(null, op, thisAddress);
 
-        assertEquals(callTimeout, future.invocation.callTimeoutMillis);
-        assertEquals(callTimeout, future.invocation.op.getCallTimeout());
+        assertEquals(CALL_TIMEOUT, future.invocation.callTimeoutMillis);
+        assertEquals(CALL_TIMEOUT, future.invocation.op.getCallTimeout());
     }
 
     @Ignore

@@ -17,9 +17,10 @@ import static org.junit.Assert.assertEquals;
 @Category(NightlyTest.class)
 public class DefaultOperationQueueStressTest extends HazelcastTestSupport {
 
+    private static final Object POISON_PILL = new Object();
+
     private final DefaultOperationQueue queue = new DefaultOperationQueue();
     private final AtomicBoolean stop = new AtomicBoolean();
-    private final static Object POISON_PILL = new Object();
 
     @Test
     public void testMultipleConsumers() {

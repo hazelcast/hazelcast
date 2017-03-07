@@ -27,7 +27,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class BackpressureRegulatorTest extends HazelcastTestSupport {
 
-    private final static int SYNC_WINDOW = 100;
+    private static final int SYNC_WINDOW = 100;
 
     private ILogger logger;
 
