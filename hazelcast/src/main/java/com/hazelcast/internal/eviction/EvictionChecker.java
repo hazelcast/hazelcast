@@ -23,7 +23,7 @@ package com.hazelcast.internal.eviction;
  */
 public interface EvictionChecker {
 
-    EvictionChecker ALWAYS_REACHED = new EvictionChecker() {
+    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
         @Override
         public boolean isEvictionRequired() {
             return true;
