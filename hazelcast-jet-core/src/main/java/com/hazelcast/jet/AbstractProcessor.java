@@ -272,11 +272,15 @@ public abstract class AbstractProcessor implements Processor {
     /**
      * Emits the items obtained from the traverser to the outbox bucket with the
      * supplied ordinal, in a cooperative fashion: if the outbox reports a
-     * high-water condition, backs off and returns {@code false}.
-     * <p>
-     * If this method returns {@code false}, then the same traverser must be
+     * {@link Outbox#isHighWater() high-water condition}, backs off and returns
+     * {@code false}.
+     *
+     * <p>If this method returns {@code false}, then the same traverser must be
      * retained by the caller and passed again in the subsequent invocation of
      * this method, so as to resume emitting where it left off.
+     *
+     * <p>For simplified usage from {@link #tryProcess(int, Object) tryProcess()}
+     * methods, see {@link FlatMapper}.
      *
      * @param ordinal ordinal of the target bucket
      * @param traverser traverser over items to emit
@@ -331,11 +335,25 @@ public abstract class AbstractProcessor implements Processor {
 
     /**
      * A helper that simplifies the implementation of
-     * {@link AbstractProcessor#tryProcess(int, Object)} for {@code flatMap}-like
-     * behavior. User supplies a {@code mapper} which takes an item and
+     * {@link AbstractProcessor#tryProcess(int, Object) tryProcess()} for emitting
+     * collections. User supplies a {@code mapper} which takes an item and
      * returns a traverser over all output items that should be emitted. The
      * {@link #tryProcess(Object)} method obtains and passes the traverser to
      * {@link #emitCooperatively(int, Traverser)}.
+     *
+     * Example:
+     * <pre>
+     * public static class WordSplitterP extends AbstractProcessor {
+     *
+     *     private FlatMapper&lt;String, String> flatMapper =
+     *             flatMapper((String item) -> Traverser.over(item.split("\\W")));
+     *
+     *     &#064;Override
+     *     protected boolean tryProcess(int ordinal, Object item) throws Exception {
+     *         return flatMapper.tryProcess((String) item);
+     *     }
+     * }
+     * </pre>
      *
      * @param <T> type of the input item
      * @param <R> type of the emitted item
