@@ -29,6 +29,8 @@ import com.hazelcast.internal.eviction.EvictionStrategy;
  */
 public abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>>
         implements EvictionStrategy<A, E, S> {
+    private static final int MAX_EVICTION_COUNT_BATCH = 10;
+
 
     /**
      * Does eviction if eviction is required by given {@link EvictionChecker}.
@@ -47,11 +49,15 @@ public abstract class AbstractEvictionStrategy<A, E extends Evictable, S extends
     public int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
             EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener) {
         if (evictionChecker != null) {
-            if (evictionChecker.isEvictionRequired()) {
-                return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
-            } else {
-                return 0;
+            int totalEvicted = 0;
+            for (int i = 0; i < MAX_EVICTION_COUNT_BATCH && evictionChecker.isEvictionRequired(); i++) {
+                int evictedNow = evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
+                if (evictedNow == 0) {
+                    break;
+                }
+                totalEvicted += evictedNow;
             }
+            return totalEvicted;
         } else {
             return evictInternal(evictableStore, evictionPolicyEvaluator, evictionListener);
         }
