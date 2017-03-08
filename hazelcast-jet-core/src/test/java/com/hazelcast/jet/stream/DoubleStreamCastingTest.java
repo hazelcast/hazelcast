@@ -49,16 +49,6 @@ public class DoubleStreamCastingTest extends AbstractStreamTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void forEach() {
-        stream.forEach(System.out::println);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void forEachOrdered() {
-        stream.forEachOrdered(System.out::println);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void allMatch() {
         stream.allMatch(m -> true);
     }

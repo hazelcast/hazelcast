@@ -163,7 +163,6 @@ abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
 
     @Override
     public void forEach(Consumer<? super E_OUT> action) {
-        checkSerializable(action, "action");
         IList<E_OUT> list = this.collect(toIList());
         list.forEach(action::accept);
         list.destroy();
@@ -171,8 +170,6 @@ abstract class AbstractPipeline<E_OUT> implements Pipeline<E_OUT> {
 
     @Override
     public void forEachOrdered(Consumer<? super E_OUT> action) {
-        checkSerializable(action, "action");
-
         forEach(action);
     }
 

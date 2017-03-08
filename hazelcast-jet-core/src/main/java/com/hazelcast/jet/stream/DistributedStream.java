@@ -241,32 +241,6 @@ public interface DistributedStream<T> extends Stream<T> {
     DistributedStream<T> skip(long n);
 
     /**
-     * Performs an action for each element of this stream.
-     *
-     * <p>This is a terminal operation.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     */
-    default void forEach(Distributed.Consumer<? super T> action) {
-        forEach((Consumer<? super T>) action);
-    }
-
-    /**
-     * Performs an action for each element of this stream, in the encounter
-     * order of the stream if the stream has a defined encounter order.
-     *
-     * <p>This is a terminal operation.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     * @see #forEach(Consumer)
-     */
-    default void forEachOrdered(Distributed.Consumer<? super T> action) {
-        forEachOrdered((Consumer<? super T>) action);
-    }
-
-    /**
      * Performs a reduction on the
      * elements of this stream, using the provided identity value and an
      * associative
@@ -596,12 +570,6 @@ public interface DistributedStream<T> extends Stream<T> {
 
     @Override
     DistributedStream<T> peek(Consumer<? super T> action);
-
-    @Override
-    void forEach(Consumer<? super T> action);
-
-    @Override
-    void forEachOrdered(Consumer<? super T> action);
 
     @Override
     T reduce(T identity, BinaryOperator<T> accumulator);
