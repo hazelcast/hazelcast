@@ -41,7 +41,7 @@ public class SyncStateOperation
 
     protected ScheduledTaskResult result;
 
-    protected boolean shouldRun;
+    private boolean shouldRun;
 
     public SyncStateOperation() {
     }
