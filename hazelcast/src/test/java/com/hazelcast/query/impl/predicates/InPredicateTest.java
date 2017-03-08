@@ -52,5 +52,4 @@ public class InPredicateTest {
         assertFalse(Double.NaN == -Float.NaN);
         assertFalse(Float.NaN == -Double.NaN);
     }
-
 }

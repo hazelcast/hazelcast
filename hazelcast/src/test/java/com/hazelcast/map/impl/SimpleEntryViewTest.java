@@ -60,5 +60,4 @@ public class SimpleEntryViewTest extends HazelcastTestSupport {
                 + ", ttl=" + entryView.getTtl()
                 + '}';
     }
-
 }

@@ -22,9 +22,6 @@ import java.util.UUID;
 import static com.hazelcast.instance.BuildInfoProvider.BUILD_INFO;
 import static org.junit.Assert.assertEquals;
 
-/**
- *
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class ClusterDataSerializationTest {
@@ -33,7 +30,6 @@ public class ClusterDataSerializationTest {
     private static final ClusterStateChange<MemberVersion> VERSION_CLUSTER_STATE_CHANGE = ClusterStateChange.from(MemberVersion.of(
             BUILD_INFO.getVersion()));
     private static final ClusterStateChange<ClusterState> CLUSTER_STATE_CHANGE = ClusterStateChange.from(ClusterState.FROZEN);
-
 
     @Test
     public void testSerializationOf_clusterStateChange_fromVersion() {

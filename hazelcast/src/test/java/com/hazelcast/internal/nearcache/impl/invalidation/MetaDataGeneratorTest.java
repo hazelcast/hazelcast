@@ -72,5 +72,4 @@ public class MetaDataGeneratorTest extends HazelcastTestSupport {
         Invalidator invalidator = mapNearCacheManager.getInvalidator();
         return invalidator.getMetaDataGenerator();
     }
-
 }

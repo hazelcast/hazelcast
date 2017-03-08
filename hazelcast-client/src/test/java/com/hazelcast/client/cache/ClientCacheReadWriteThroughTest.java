@@ -123,7 +123,6 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
                 throw new IllegalStateException("This factory can only be used at server side!");
             }
         }
-
     }
 
     private static class ServerSideCacheLoader implements CacheLoader<Integer, String> {
@@ -146,7 +145,5 @@ public class ClientCacheReadWriteThroughTest extends CacheReadWriteThroughTest {
             }
             return result;
         }
-
     }
-
 }

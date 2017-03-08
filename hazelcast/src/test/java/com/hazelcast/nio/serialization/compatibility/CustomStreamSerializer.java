@@ -24,7 +24,6 @@ import java.io.IOException;
 
 public class CustomStreamSerializer implements StreamSerializer<CustomStreamSerializable> {
 
-
     @Override
     public void write(ObjectDataOutput out, CustomStreamSerializable object) throws IOException {
         out.writeInt(object.i);
@@ -43,6 +42,5 @@ public class CustomStreamSerializer implements StreamSerializer<CustomStreamSeri
 
     @Override
     public void destroy() {
-
     }
 }

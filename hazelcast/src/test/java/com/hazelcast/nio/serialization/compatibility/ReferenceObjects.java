@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization.compatibility;
 
-
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.Data;
@@ -147,5 +146,4 @@ class ReferenceObjects {
             aDate, aBigInteger, aBigDecimal, aClass, anEnum,
             serializable, externalizable,
             arrayList, linkedList};
-
 }

@@ -29,7 +29,6 @@ public class VersionedObjectDataInputAndOutputTest {
 
         input.setVersion(version);
         assertEquals(version, input.getVersion());
-
     }
 
     @Test
@@ -39,7 +38,5 @@ public class VersionedObjectDataInputAndOutputTest {
 
         output.setVersion(version);
         assertEquals(version, output.getVersion());
-
     }
-
 }

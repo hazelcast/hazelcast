@@ -92,7 +92,6 @@ public class ClientMultiMapListenersTest {
         assertTrue(mm.removeEntryListener(id));
     }
 
-
     @Test
     public void testRemoveListener_whenNotExist() throws InterruptedException {
         final MultiMap mm = client.getMultiMap(randomString());
@@ -429,5 +428,4 @@ public class ClientMultiMapListenersTest {
             clearLatch.countDown();
         }
     }
-
 }

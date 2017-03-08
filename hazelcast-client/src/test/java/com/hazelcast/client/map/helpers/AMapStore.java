@@ -1,6 +1,5 @@
 package com.hazelcast.client.map.helpers;
 
-
 import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
@@ -10,6 +9,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class AMapStore implements MapStore<Object, Object> {
+
     public final Map store = new ConcurrentHashMap();
 
     public AMapStore(){}

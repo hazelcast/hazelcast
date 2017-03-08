@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 
 public class CustomByteArraySerializer implements ByteArraySerializer<CustomByteArraySerializable> {
 
-
     @Override
     public int getTypeId() {
         return ReferenceObjects.CUSTOM_BYTE_ARRAY_SERILAZABLE_ID;
@@ -46,6 +45,5 @@ public class CustomByteArraySerializer implements ByteArraySerializer<CustomByte
 
     @Override
     public void destroy() {
-
     }
 }

@@ -257,6 +257,7 @@ public class MemberAttributeTest extends HazelcastTestSupport {
     }
 
     private static class LatchMembershipListener implements MembershipListener {
+
         private final CountDownLatch latch;
 
         private LatchMembershipListener(CountDownLatch latch) {
@@ -276,5 +277,4 @@ public class MemberAttributeTest extends HazelcastTestSupport {
             latch.countDown();
         }
     }
-
 }

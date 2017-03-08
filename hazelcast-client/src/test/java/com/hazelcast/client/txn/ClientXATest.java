@@ -285,6 +285,5 @@ public class ClientXATest {
             tm.rollback();
         else
             tm.commit();
-
     }
 }

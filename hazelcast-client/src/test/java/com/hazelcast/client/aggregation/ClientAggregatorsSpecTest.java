@@ -62,5 +62,4 @@ public class ClientAggregatorsSpecTest extends AggregatorsSpecTest {
     public void teardown() {
         factory.terminateAll();
     }
-
 }

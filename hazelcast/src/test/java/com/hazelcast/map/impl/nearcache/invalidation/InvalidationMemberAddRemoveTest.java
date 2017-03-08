@@ -181,5 +181,4 @@ public class InvalidationMemberAddRemoveTest extends NearCacheTestSupport {
                 .setEvictionPolicy(EvictionPolicy.NONE);
         return nearCacheConfig;
     }
-
 }

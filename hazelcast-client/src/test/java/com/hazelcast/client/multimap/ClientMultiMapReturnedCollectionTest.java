@@ -101,7 +101,6 @@ public class ClientMultiMapReturnedCollectionTest {
         assertEquals(0, collection.size());
     }
 
-
     @Test
     public void testRemove_withSetBackedValueCollection() throws Exception {
         MultiMap<Integer, Integer> multiMap = client.getMultiMap(SET_MAP);

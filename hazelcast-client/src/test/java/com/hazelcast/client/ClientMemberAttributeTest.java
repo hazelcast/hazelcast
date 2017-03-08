@@ -56,7 +56,6 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         hazelcastFactory.terminateAll();
     }
 
-
     @Test
     public void testChangeMemberAttributes() throws Exception {
         final int count = 10;
@@ -113,7 +112,6 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
         for (Member m : members) {
             assertEquals(123, (int) m.getIntAttribute("Test"));
         }
-
     }
 
     @Test(timeout = 120000)
@@ -323,6 +321,7 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
     }
 
     private static class LatchMembershipListener implements MembershipListener {
+
         private final CountDownLatch latch;
 
         private LatchMembershipListener(CountDownLatch latch) {
@@ -342,5 +341,4 @@ public class ClientMemberAttributeTest extends HazelcastTestSupport {
             latch.countDown();
         }
     }
-
 }

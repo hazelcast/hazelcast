@@ -52,5 +52,4 @@ public class BetweenPredicateTest {
         assertFalse(Double.NaN == -Float.NaN);
         assertFalse(Float.NaN == -Double.NaN);
     }
-
 }

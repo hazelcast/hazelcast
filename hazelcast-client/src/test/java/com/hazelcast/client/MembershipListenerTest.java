@@ -31,19 +31,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class MembershipListenerTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
     }
-
 
     private class MemberShipEventLogger implements MembershipListener {
 
@@ -177,7 +174,6 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertFalse(client.getCluster().removeMembershipListener(null));
     }
 
-
     @Test(expected = java.lang.NullPointerException.class)
     public void addNullListener_thenException() throws Exception {
         hazelcastFactory.newHazelcastInstance();
@@ -270,6 +266,4 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         assertInstanceOf(MembershipEvent.class, eventObject);
         assertEquals(MembershipEvent.MEMBER_ADDED, ((MembershipEvent) eventObject).getEventType());
     }
-
-
 }

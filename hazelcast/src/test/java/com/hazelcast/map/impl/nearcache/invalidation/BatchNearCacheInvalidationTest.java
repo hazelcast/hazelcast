@@ -73,8 +73,5 @@ public class BatchNearCacheInvalidationTest extends HazelcastTestSupport {
             assertEquals(mapName, invalidation.getName());
             assertEquals(partitionUuid, invalidation.getPartitionUuid());
         }
-
-
     }
-
 }

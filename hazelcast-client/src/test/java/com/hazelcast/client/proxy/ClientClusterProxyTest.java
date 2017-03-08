@@ -102,5 +102,4 @@ public class ClientClusterProxyTest extends HazelcastTestSupport {
     public void shutdownWithOptions() throws Exception {
         client().getCluster().shutdown(new TransactionOptions());
     }
-
 }

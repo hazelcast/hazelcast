@@ -118,6 +118,4 @@ public class PostJoinCacheOperationTest {
         verify(nodeEngine).getService(CacheService.SERVICE_NAME);
         verify(logger, never()).warning(anyString());
     }
-
-
 }

@@ -128,7 +128,6 @@ public class ExpirationManagerTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void testCleanupOperationCount_set_viaSystemProperty() throws Exception {
         String previous = getProperty(SYS_PROP_EXPIRATION_CLEANUP_OPERATION_COUNT);
