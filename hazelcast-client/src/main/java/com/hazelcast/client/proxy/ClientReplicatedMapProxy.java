@@ -515,7 +515,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                            int eventTypeId, String uuid, int numberOfAffectedEntries) {
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent(member, eventTypeId, name, keyData,
+            EntryEvent<K, V> entryEvent = new DataAwareEntryEvent<K, V>(member, eventTypeId, name, keyData,
                     valueData, oldValueData, null, getContext().getSerializationService());
             switch (eventType) {
                 case ADDED:

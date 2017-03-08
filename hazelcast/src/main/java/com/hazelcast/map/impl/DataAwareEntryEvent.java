@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 
-public class DataAwareEntryEvent extends EntryEvent {
+public class DataAwareEntryEvent<K, V> extends EntryEvent<K, V> {
 
     private static final long serialVersionUID = 1;
 
@@ -69,7 +69,7 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     @Override
-    public Object getKey() {
+    public K getKey() {
         if (key == null && dataKey != null) {
             key = serializationService.toObject(dataKey);
         }
@@ -77,7 +77,7 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     @Override
-    public Object getOldValue() {
+    public V getOldValue() {
         if (oldValue == null && dataOldValue != null) {
             oldValue = serializationService.toObject(dataOldValue);
         }
@@ -85,7 +85,7 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     @Override
-    public Object getValue() {
+    public V getValue() {
         if (value == null && dataNewValue != null) {
             value = serializationService.toObject(dataNewValue);
         }
@@ -93,7 +93,7 @@ public class DataAwareEntryEvent extends EntryEvent {
     }
 
     @Override
-    public Object getMergingValue() {
+    public V getMergingValue() {
         if (mergingValue == null && dataMergingValue != null) {
             mergingValue = serializationService.toObject(dataMergingValue);
         }
