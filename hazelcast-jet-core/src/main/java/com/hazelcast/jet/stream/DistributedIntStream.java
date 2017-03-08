@@ -214,42 +214,6 @@ public interface DistributedIntStream extends IntStream {
     DistributedIntStream skip(long n);
 
     /**
-     * Performs an action for each element of this stream.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * <p>For parallel stream pipelines, this operation does <em>not</em>
-     * guarantee to respect the encounter order of the stream, as doing so
-     * would sacrifice the benefit of parallelism.  For any given element, the
-     * action may be performed at whatever time and in whatever thread the
-     * library chooses.  If the action accesses shared state, it is
-     * responsible for providing the required synchronization.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     */
-    default void forEach(Distributed.IntConsumer action) {
-        forEach((IntConsumer) action);
-    }
-
-    /**
-     * Performs an action for each element of this stream, guaranteeing that
-     * each element is processed in encounter order for streams that have a
-     * defined encounter order.
-     *
-     * <p>This is a terminal
-     * operation.
-     *
-     * @param action a
-     *               non-interfering action to perform on the elements
-     * @see #forEach(Distributed.IntConsumer)
-     */
-    default void forEachOrdered(Distributed.IntConsumer action) {
-        forEachOrdered((IntConsumer) action);
-    }
-
-    /**
      * Performs a reduction on the
      * elements of this stream, using the provided identity value and an
      * associative
@@ -509,12 +473,6 @@ public interface DistributedIntStream extends IntStream {
 
     @Override
     DistributedIntStream peek(IntConsumer action);
-
-    @Override
-    void forEach(IntConsumer action);
-
-    @Override
-    void forEachOrdered(IntConsumer action);
 
     @Override
     int reduce(int identity, IntBinaryOperator op);

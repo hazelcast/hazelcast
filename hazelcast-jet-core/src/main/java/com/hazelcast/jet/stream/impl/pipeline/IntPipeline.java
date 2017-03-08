@@ -109,7 +109,6 @@ class IntPipeline implements DistributedIntStream {
 
     @Override
     public DistributedIntStream peek(IntConsumer action) {
-        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -125,13 +124,11 @@ class IntPipeline implements DistributedIntStream {
 
     @Override
     public void forEach(IntConsumer action) {
-        checkSerializable(action, "action");
         inner.forEach(action::accept);
     }
 
     @Override
     public void forEachOrdered(IntConsumer action) {
-        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -150,14 +147,11 @@ class IntPipeline implements DistributedIntStream {
 
     @Override
     public int reduce(int identity, IntBinaryOperator op) {
-        checkSerializable(op, "op");
         return inner.reduce(identity, op::applyAsInt);
     }
 
     @Override
     public OptionalInt reduce(IntBinaryOperator op) {
-        checkSerializable(op, "op");
-
         Optional<Integer> result = inner.reduce(op::applyAsInt);
         return result.isPresent() ? OptionalInt.of(result.get()) : OptionalInt.empty();
     }
@@ -166,7 +160,6 @@ class IntPipeline implements DistributedIntStream {
     public <R> R collect(Supplier<R> supplier,
                          ObjIntConsumer<R> accumulator,
                          BiConsumer<R, R> combiner) {
-        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Integer> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -215,19 +208,16 @@ class IntPipeline implements DistributedIntStream {
 
     @Override
     public boolean anyMatch(IntPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
     public boolean allMatch(IntPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
     public boolean noneMatch(IntPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 

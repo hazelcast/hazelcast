@@ -109,7 +109,6 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public DistributedLongStream peek(LongConsumer action) {
-        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -125,13 +124,11 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public void forEach(LongConsumer action) {
-        checkSerializable(action, "action");
         inner.forEach(action::accept);
     }
 
     @Override
     public void forEachOrdered(LongConsumer action) {
-        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -150,13 +147,11 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public long reduce(long identity, LongBinaryOperator op) {
-        checkSerializable(op, "op");
         return inner.<Long>reduce(identity, op::applyAsLong);
     }
 
     @Override
     public OptionalLong reduce(LongBinaryOperator op) {
-        checkSerializable(op, "op");
         Optional<Long> result = inner.reduce(op::applyAsLong);
         return result.isPresent() ? OptionalLong.of(result.get()) : OptionalLong.empty();
     }
@@ -165,7 +160,6 @@ class LongPipeline implements DistributedLongStream {
     public <R> R collect(Supplier<R> supplier,
                          ObjLongConsumer<R> accumulator,
                          BiConsumer<R, R> combiner) {
-        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Long> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -214,19 +208,16 @@ class LongPipeline implements DistributedLongStream {
 
     @Override
     public boolean anyMatch(LongPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
     public boolean allMatch(LongPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
     public boolean noneMatch(LongPredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 

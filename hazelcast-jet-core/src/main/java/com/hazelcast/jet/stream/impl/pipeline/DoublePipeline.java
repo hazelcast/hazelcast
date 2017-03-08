@@ -108,7 +108,6 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public DistributedDoubleStream peek(DoubleConsumer action) {
-        checkSerializable(action, "action");
         return wrap(inner.peek(action::accept));
     }
 
@@ -129,7 +128,6 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public void forEachOrdered(DoubleConsumer action) {
-        checkSerializable(action, "action");
         inner.forEachOrdered(action::accept);
     }
 
@@ -148,15 +146,11 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public double reduce(double identity, DoubleBinaryOperator op) {
-        checkSerializable(op, "op");
-
         return inner.reduce(identity, op::applyAsDouble);
     }
 
     @Override
     public OptionalDouble reduce(DoubleBinaryOperator op) {
-        checkSerializable(op, "op");
-
         Optional<Double> result = inner.reduce(op::applyAsDouble);
         return result.isPresent() ? OptionalDouble.of(result.get()) : OptionalDouble.empty();
     }
@@ -165,7 +159,6 @@ class DoublePipeline implements DistributedDoubleStream {
     public <R> R collect(Supplier<R> supplier,
                          ObjDoubleConsumer<R> accumulator,
                          BiConsumer<R, R> combiner) {
-        checkSerializable(accumulator, "accumulator");
         Distributed.BiConsumer<R, Double> boxedAccumulator = accumulator::accept;
         return inner.collect(supplier, boxedAccumulator, combiner);
     }
@@ -214,19 +207,16 @@ class DoublePipeline implements DistributedDoubleStream {
 
     @Override
     public boolean anyMatch(DoublePredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.anyMatch(predicate::test);
     }
 
     @Override
     public boolean allMatch(DoublePredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.allMatch(predicate::test);
     }
 
     @Override
     public boolean noneMatch(DoublePredicate predicate) {
-        checkSerializable(predicate, "predicate");
         return inner.noneMatch(predicate::test);
     }
 
