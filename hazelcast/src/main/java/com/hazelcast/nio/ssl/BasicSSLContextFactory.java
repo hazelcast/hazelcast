@@ -35,7 +35,7 @@ import java.util.Properties;
 @PrivateApi
 public class BasicSSLContextFactory implements SSLContextFactory {
 
-    private static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
+    public static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
 
     private SSLContext sslContext;
 
@@ -87,7 +87,7 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         }
     }
 
-    private static String getProperty(Properties properties, String property) {
+    public static String getProperty(Properties properties, String property) {
         String value = properties.getProperty(property);
         if (value == null) {
             value = properties.getProperty(JAVA_NET_SSL_PREFIX + property);
