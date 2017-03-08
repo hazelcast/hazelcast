@@ -22,9 +22,9 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.core.IBiFunction;
 import com.hazelcast.internal.adapter.DataStructureAdapter;
-import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.nearcache.NearCacheRecord;
-import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheMaxSizeChecker;
+import com.hazelcast.internal.nearcache.impl.maxsize.EntryCountNearCacheEvictionChecker;
 import com.hazelcast.internal.nearcache.impl.preloader.NearCachePreloader;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
@@ -49,14 +49,14 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
     }
 
     @Override
-    protected MaxSizeChecker createNearCacheMaxSizeChecker(EvictionConfig evictionConfig,
-                                                           NearCacheConfig nearCacheConfig) {
+    protected EvictionChecker createNearCacheEvictionChecker(EvictionConfig evictionConfig,
+                                                             NearCacheConfig nearCacheConfig) {
         MaxSizePolicy maxSizePolicy = evictionConfig.getMaximumSizePolicy();
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
         if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountNearCacheMaxSizeChecker(evictionConfig.getSize(), records);
+            return new EntryCountNearCacheEvictionChecker(evictionConfig.getSize(), records);
         }
         throw new IllegalArgumentException("Invalid max-size policy "
                 + '(' + maxSizePolicy + ") for " + getClass().getName() + "! Only "

@@ -7,6 +7,9 @@ import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -16,20 +19,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 
 import java.util.Collections;
 
-import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static com.hazelcast.internal.eviction.EvictionListener.NO_LISTENER;
-import static com.hazelcast.internal.eviction.EvictionStrategyProvider.getEvictionStrategy;
+import static com.hazelcast.internal.eviction.EvictionChecker.EVICT_ALWAYS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class EvictionStrategyTest<K, V extends Evictable, S extends EvictableStore<K, V>> extends HazelcastTestSupport {
+public class EvictionStrategyTest<K, V extends Evictable, S extends SampleableEvictableStore<K, V>> extends HazelcastTestSupport {
 
     private HazelcastInstance instance;
 
@@ -117,7 +122,7 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends EvictableSto
                 return null;
             }
         };
-        EvictionStrategy<K, V, S> evictionStrategy = getEvictionStrategy(evictionConfig);
+        SamplingEvictionStrategy<K, V, S> evictionStrategy = SamplingEvictionStrategy.INSTANCE;
         CacheRecordHashMap cacheRecordMap = new CacheRecordHashMap(serializationService, 1000, cacheContext);
         CacheObjectRecord expectedEvictedRecord = null;
         Data expectedData = null;
@@ -138,18 +143,10 @@ public class EvictionStrategyTest<K, V extends Evictable, S extends EvictableSto
         final SimpleEvictionCandidate evictionCandidate
                 = new SimpleEvictionCandidate((K) expectedData, (V) expectedEvictedRecord);
         // we are testing "EvictionStrategy" in this test, so we mock "EvictionPolicyEvaluator" (it's tested in another test)
-        EvictionPolicyEvaluator evictionPolicyEvaluator =
-                new EvictionPolicyEvaluator() {
-                    @Override
-                    public Iterable<SimpleEvictionCandidate> evaluate(Iterable evictionCandidates) {
-                        return Collections.singleton(evictionCandidate);
-                    }
-
-                    @Override
-                    public EvictionPolicyComparator getEvictionPolicyComparator() {
-                        return null;
-                    }
-                };
+        EvictionPolicyEvaluator evictionPolicyEvaluator = mock(EvictionPolicyEvaluator.class);
+        when(evictionPolicyEvaluator.evaluate(Matchers.any(Iterable.class))).
+                thenReturn(Collections.singleton(evictionCandidate));
+        when(evictionPolicyEvaluator.getEvictionPolicyComparator()).thenReturn(null);
 
         assertEquals(RECORD_COUNT, cacheRecordMap.size());
         assertTrue(cacheRecordMap.containsKey(expectedData));

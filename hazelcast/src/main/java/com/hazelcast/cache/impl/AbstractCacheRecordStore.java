@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
+import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheEvictionChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
@@ -26,13 +26,11 @@ import com.hazelcast.config.EvictionConfig.MaxSizePolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.internal.diagnostics.StoreLatencyPlugin;
-import com.hazelcast.internal.eviction.EvictionChecker;
 import com.hazelcast.internal.eviction.EvictionListener;
-import com.hazelcast.internal.eviction.EvictionPolicyEvaluator;
 import com.hazelcast.internal.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.internal.eviction.EvictionStrategy;
-import com.hazelcast.internal.eviction.EvictionStrategyProvider;
-import com.hazelcast.internal.eviction.MaxSizeChecker;
+import com.hazelcast.internal.eviction.EvictionChecker;
+import com.hazelcast.internal.eviction.impl.evaluator.EvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SamplingEvictionStrategy;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -86,10 +84,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected final CacheConfig cacheConfig;
     protected final EvictionConfig evictionConfig;
     protected final Map<CacheEventType, Set<CacheEventData>> batchEvent = new HashMap<CacheEventType, Set<CacheEventData>>();
-    protected final MaxSizeChecker maxSizeChecker;
-    protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
     protected final EvictionChecker evictionChecker;
-    protected final EvictionStrategy<Data, R, CRM> evictionStrategy;
+    protected final EvictionPolicyEvaluator<Data, R> evictionPolicyEvaluator;
+    protected final SamplingEvictionStrategy<Data, R, CRM> evictionStrategy;
     protected final boolean wanReplicationEnabled;
     protected final boolean disablePerEntryInvalidationEvents;
     protected CRM records;
@@ -147,9 +144,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         cacheContext = cacheService.getOrCreateCacheContext(name);
         records = createRecordCacheMap();
-        maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
+        evictionChecker = createCacheEvictionChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
-        evictionChecker = createEvictionChecker(evictionConfig);
         evictionStrategy = createEvictionStrategy(evictionConfig);
 
         injectDependencies(evictionPolicyEvaluator.getEvictionPolicyComparator());
@@ -238,12 +234,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
      * {@code maxSizePolicy} is not {@link MaxSizePolicy#ENTRY_COUNT}
      * @throws IllegalArgumentException if the {@code maxSizePolicy} is null
      */
-    protected MaxSizeChecker createCacheMaxSizeChecker(int size, MaxSizePolicy maxSizePolicy) {
+    protected EvictionChecker createCacheEvictionChecker(int size, MaxSizePolicy maxSizePolicy) {
         if (maxSizePolicy == null) {
             throw new IllegalArgumentException("Max-Size policy cannot be null");
         }
         if (maxSizePolicy == MaxSizePolicy.ENTRY_COUNT) {
-            return new EntryCountCacheMaxSizeChecker(size, records, partitionCount);
+            return new EntryCountCacheEvictionChecker(size, records, partitionCount);
         }
         return null;
     }
@@ -253,12 +249,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         return EvictionPolicyEvaluatorProvider.getEvictionPolicyEvaluator(evictionConfig, nodeEngine.getConfigClassLoader());
     }
 
-    protected EvictionChecker createEvictionChecker(EvictionConfig cacheEvictionConfig) {
-        return new MaxSizeEvictionChecker();
-    }
-
-    protected EvictionStrategy<Data, R, CRM> createEvictionStrategy(EvictionConfig cacheEvictionConfig) {
-        return EvictionStrategyProvider.getEvictionStrategy(cacheEvictionConfig);
+    protected SamplingEvictionStrategy<Data, R, CRM> createEvictionStrategy(EvictionConfig cacheEvictionConfig) {
+        return SamplingEvictionStrategy.INSTANCE;
     }
 
     protected boolean isEvictionEnabled() {
@@ -1516,12 +1508,5 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean isWanReplicationEnabled() {
         return wanReplicationEnabled;
-    }
-
-    protected class MaxSizeEvictionChecker implements EvictionChecker {
-        @Override
-        public boolean isEvictionRequired() {
-            return maxSizeChecker != null && maxSizeChecker.isReachedToMaxSize();
-        }
     }
 }

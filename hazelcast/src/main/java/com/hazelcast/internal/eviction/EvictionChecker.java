@@ -17,25 +17,24 @@
 package com.hazelcast.internal.eviction;
 
 /**
- * Interface for checking about if eviction is required or not.
+ * Checks whether a specific max size threshold is exceeded or not
+ * according to configured {@link com.hazelcast.config.MaxSizeConfig.MaxSizePolicy}
+ * and indicates whether eviction is required.
  */
 public interface EvictionChecker {
 
-    /**
-     * Empty {@link} EvictionChecker to allow eviction always.
-     */
     EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
         @Override
         public boolean isEvictionRequired() {
-            // Evict always at any case
             return true;
         }
     };
 
     /**
-     * Checks for if eviction is required or not.
+     * Checks the state to see if it has reached its maximum configured size
+     * {@link com.hazelcast.config.EvictionConfig.MaxSizePolicy}
      *
-     * @return <code>true</code> if eviction is required, otherwise <code>false</code>
+     * @return <code>true</code> if maximum size has been reached, <code>false</code> otherwise
      */
     boolean isEvictionRequired();
 
