@@ -64,6 +64,4 @@ public class CallerRunsPartitionScanExecutorTest {
         expected.expect(RetryableHazelcastException.class);
         executor.execute("Map", predicate, asList(1, 2, 3));
     }
-
-
 }

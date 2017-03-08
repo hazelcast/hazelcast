@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -84,6 +83,4 @@ public class ContainsValueOperationTest extends HazelcastTestSupport {
         InternalOperationService operationService = getOperationService(member1);
         return operationService.createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).invoke();
     }
-
-
 }

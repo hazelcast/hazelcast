@@ -91,7 +91,6 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
         assertTrue(imbalanceDetected);
     }
 
-
     @Test
     public void testFindHandlerToMigrate() throws Exception {
         NonBlockingIOThread sourceSelector = mock(NonBlockingIOThread.class);
@@ -114,5 +113,4 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
         MigratableHandler handlerToMigrate = strategy.findHandlerToMigrate(imbalance);
         assertEquals(handler3, handlerToMigrate);
     }
-
 }

@@ -60,8 +60,8 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
         assertInstanceOf(PartitionAwareOperationFactory.class, extractedFactory);
     }
 
-
     private static class RawOpFactory implements OperationFactory {
+
         @Override
         public int getFactoryId() {
             return 0;
@@ -69,7 +69,6 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-
         }
 
         @Override
@@ -84,11 +83,11 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-
         }
     }
 
     private static class PartitionAwareOpFactory extends PartitionAwareOperationFactory {
+
         @Override
         public int getFactoryId() {
             return 0;
@@ -96,7 +95,6 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
-
         }
 
         @Override
@@ -116,7 +114,6 @@ public class PartitionAwareFactoryAccessorTest extends HazelcastTestSupport {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-
         }
     }
 }

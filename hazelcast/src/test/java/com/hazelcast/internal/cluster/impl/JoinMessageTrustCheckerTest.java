@@ -68,5 +68,4 @@ public class JoinMessageTrustCheckerTest extends HazelcastTestSupport {
         ConfigCheck configCheck = new ConfigCheck();
         return new JoinMessage(Packet.VERSION, 0, MemberVersion.UNKNOWN, address, "uuid", false, configCheck);
     }
-
 }

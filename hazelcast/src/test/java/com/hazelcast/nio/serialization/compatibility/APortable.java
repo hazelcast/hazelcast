@@ -124,7 +124,6 @@ public class APortable implements Portable {
     }
 
     public APortable() {
-
     }
 
     public int getClassId() {
@@ -315,7 +314,6 @@ public class APortable implements Portable {
         if (o == null || getClass() != o.getClass()) return false;
 
         APortable that = (APortable) o;
-
         if (bool != that.bool) return false;
         if (b != that.b) return false;
         if (c != that.c) return false;
@@ -361,7 +359,6 @@ public class APortable implements Portable {
         if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null)
             return false;
       return  !(data != null ? !data.equals(that.data) : that.data != null);
-
     }
 
     @Override

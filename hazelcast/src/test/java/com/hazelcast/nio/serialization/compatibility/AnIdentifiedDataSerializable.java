@@ -120,8 +120,6 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
     }
 
     public AnIdentifiedDataSerializable() {
-
-
     }
 
     @Override
@@ -239,7 +237,6 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         data = dataInput.readData();
     }
 
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -290,7 +287,6 @@ public class AnIdentifiedDataSerializable implements IdentifiedDataSerializable 
         if (customByteArraySerializableObject != null ? !customByteArraySerializableObject.equals(that.customByteArraySerializableObject) : that.customByteArraySerializableObject != null)
             return false;
         return  !(data != null ? !data.equals(that.data) : that.data != null);
-
     }
 
     @Override

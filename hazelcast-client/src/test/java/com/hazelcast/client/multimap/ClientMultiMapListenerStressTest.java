@@ -34,7 +34,6 @@ public class ClientMultiMapListenerStressTest {
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance server;
 
-
     @After
     public void tearDown() {
         hazelcastFactory.terminateAll();
@@ -71,7 +70,6 @@ public class ClientMultiMapListenerStressTest {
         final int expectedSize = PutItemsThread.MAX_ITEMS * putThreads.length;
         assertEquals(expectedSize, multiMap.size());
         assertReceivedEventsSize(expectedSize, putThreads);
-
     }
 
     private void assertReceivedEventsSize(final int expectedSize, final PutItemsThread[] putThreads) {
@@ -118,5 +116,4 @@ public class ClientMultiMapListenerStressTest {
             add.incrementAndGet();
         }
     }
-
 }

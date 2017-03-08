@@ -90,7 +90,6 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
     }
 
     protected void onTearDown() {
-
     }
 
     @After
@@ -365,9 +364,7 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         public void deleteAll(Collection<?> keys)
                 throws CacheWriterException {
         }
-
     }
-
 
     public interface ValueChecker extends Serializable {
 
@@ -402,7 +399,5 @@ public class CacheReadWriteThroughTest extends HazelcastTestSupport {
         public boolean isAcceptableValue(int value) {
             return value < maxValue;
         }
-
     }
-
 }

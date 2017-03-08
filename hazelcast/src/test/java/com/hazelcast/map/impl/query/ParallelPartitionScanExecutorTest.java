@@ -84,5 +84,4 @@ public class ParallelPartitionScanExecutorTest {
         expected.expect(RetryableHazelcastException.class);
         executor.execute("Map", predicate, asList(1, 2, 3));
     }
-
 }

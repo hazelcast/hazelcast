@@ -32,6 +32,4 @@ public class LiteMemberTest {
     public void shouldBeLiteMember() throws InterruptedException {
         assertTrue(instance.getConfig().isLiteMember());
     }
-
-
 }

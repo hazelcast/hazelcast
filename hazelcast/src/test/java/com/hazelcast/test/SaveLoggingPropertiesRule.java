@@ -11,6 +11,7 @@ import org.junit.runners.model.Statement;
  *
  */
 public class SaveLoggingPropertiesRule implements TestRule {
+
     private static final String LOGGING_TYPE_PROP_NAME = "hazelcast.logging.type";
     private static final String LOGGING_CLASS_PROP_NAME = "hazelcast.logging.class";
 

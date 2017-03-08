@@ -133,5 +133,4 @@ public class ScheduledExecutorWaitNotifyKeyTest {
 
         assertNotEquals(keyA.hashCode(), keyB.hashCode());
     }
-
 }

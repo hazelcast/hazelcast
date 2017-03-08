@@ -244,5 +244,4 @@ public class PortablePathCursorTest {
         }
 
     }
-
 }

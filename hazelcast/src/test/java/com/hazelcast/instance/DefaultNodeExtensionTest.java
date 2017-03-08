@@ -213,5 +213,4 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
             return instance;
         }
     }
-
 }

@@ -74,6 +74,4 @@ public class Employee implements Serializable, Comparable<Employee> {
     public int compareTo(Employee employee) {
         return id - employee.id;
     }
-
-
 }

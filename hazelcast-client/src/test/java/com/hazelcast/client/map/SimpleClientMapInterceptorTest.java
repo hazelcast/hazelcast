@@ -28,7 +28,6 @@ public class SimpleClientMapInterceptorTest {
 
     private SimpleClientInterceptor interceptor;
 
-
     @Before
     public void setup() {
         Config config = new Config();
@@ -50,7 +49,6 @@ public class SimpleClientMapInterceptorTest {
 
     @Test
     public void clientMapInterceptorTestIssue1238() throws InterruptedException {
-
         final IMap<Object, Object> map = client.getMap("clientMapInterceptorTest");
 
         String id = map.addInterceptor(interceptor);
@@ -94,5 +92,4 @@ public class SimpleClientMapInterceptorTest {
         assertEquals(map.get(6), "CAIRO");
         assertEquals(map.get(7), "HONG KONG");
     }
-
 }

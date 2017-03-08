@@ -63,7 +63,6 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         assertEquals("Callers UUID should not be changed", expectedCallersUUID, actualCallersUUID);
     }
 
-
     private class GetCallersUUIDOperationFactory implements OperationFactory {
 
         public GetCallersUUIDOperationFactory() {
@@ -95,7 +94,6 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         }
     }
 
-
     private class GetCallersUUIDOperation extends Operation {
 
         public GetCallersUUIDOperation() {
@@ -109,7 +107,5 @@ public class OperationFactoryWrapperTest extends HazelcastTestSupport {
         public Object getResponse() {
             return getCallerUuid();
         }
-
     }
-
 }

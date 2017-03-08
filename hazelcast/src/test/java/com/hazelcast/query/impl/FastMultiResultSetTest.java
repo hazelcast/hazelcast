@@ -115,5 +115,4 @@ public class FastMultiResultSetTest {
         values.put(entry.getKeyData(), entry);
         result.addResultSet(values);
     }
-
 }

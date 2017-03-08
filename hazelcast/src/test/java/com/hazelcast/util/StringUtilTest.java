@@ -49,5 +49,4 @@ public class StringUtilTest extends HazelcastTestSupport {
     public void getterIntoProperty_whenPropertyIsLowerCase_DoNotChange() throws Exception {
         assertEquals("getfoo", StringUtil.getterIntoProperty("getfoo"));
     }
-
 }

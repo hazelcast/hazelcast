@@ -33,7 +33,6 @@ public class AnInnerPortable implements Portable {
     }
 
     public AnInnerPortable() {
-
     }
 
     @Override
@@ -64,10 +63,8 @@ public class AnInnerPortable implements Portable {
         if (o == null || getClass() != o.getClass()) return false;
 
         AnInnerPortable that = (AnInnerPortable) o;
-
         if (anInt != that.anInt) return false;
         return Float.compare(that.aFloat, aFloat) == 0;
-
     }
 
     @Override

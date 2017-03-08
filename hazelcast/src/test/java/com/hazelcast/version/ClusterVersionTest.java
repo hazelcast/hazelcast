@@ -70,5 +70,4 @@ public class ClusterVersionTest {
     public void toStringTest() throws Exception {
         assertEquals("3.8", Version.of(3, 8).toString());
     }
-
 }

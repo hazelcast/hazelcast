@@ -172,5 +172,4 @@ public class LazyEntryViewFromRecordTest {
 
         assertEquals(expected, view.toString());
     }
-
 }

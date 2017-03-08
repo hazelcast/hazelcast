@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.nearcache.impl.invalidation;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

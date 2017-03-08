@@ -127,5 +127,4 @@ public class ClientCacheMetaDataFetcherTest extends HazelcastTestSupport {
     private String getPrefixedName(String cacheName) {
         return "/hz/" + cacheName;
     }
-
 }

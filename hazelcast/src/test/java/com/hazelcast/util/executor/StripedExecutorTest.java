@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
@@ -14,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.util.executor;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;

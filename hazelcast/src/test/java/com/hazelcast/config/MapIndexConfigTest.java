@@ -28,5 +28,4 @@ public class MapIndexConfigTest {
     public void testValidation_withKeyKeyword() {
         assertEquals("__key#value", validateIndexAttribute("__key#value"));
     }
-
 }

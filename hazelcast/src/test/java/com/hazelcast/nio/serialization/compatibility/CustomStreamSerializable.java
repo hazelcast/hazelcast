@@ -31,10 +31,8 @@ public class CustomStreamSerializable {
         if (o == null || getClass() != o.getClass()) return false;
 
         CustomStreamSerializable that = (CustomStreamSerializable) o;
-
         if (i != that.i) return false;
         return Float.compare(that.f, f) == 0;
-
     }
 
     @Override
