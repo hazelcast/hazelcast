@@ -343,17 +343,16 @@ public abstract class AbstractProcessor implements Processor {
      *
      * Example:
      * <pre>
-     * public static class WordSplitterP extends AbstractProcessor {
+     * public static class SplitWordsP extends AbstractProcessor {
      *
-     *     private FlatMapper&lt;String, String> flatMapper =
-     *             flatMapper((String item) -> Traverser.over(item.split("\\W")));
+     *    {@code private FlatMapper<String, String> flatMapper =
+     *             flatMapper((String item) -> Traverser.over(item.split("\\W")));}
      *
-     *     &#064;Override
+     *    {@code @Override}
      *     protected boolean tryProcess(int ordinal, Object item) throws Exception {
      *         return flatMapper.tryProcess((String) item);
      *     }
-     * }
-     * </pre>
+     * }</pre>
      *
      * @param <T> type of the input item
      * @param <R> type of the emitted item
