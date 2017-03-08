@@ -30,6 +30,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.sleep;
+
 /**
  * Common methods used in ScheduledExecutorService tests
  */
@@ -122,7 +125,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public Double call() {
             try {
-                Thread.sleep(sleepPeriod);
+                sleep(sleepPeriod);
             } catch (InterruptedException e) {
                 Thread.interrupted();
             }
@@ -175,7 +178,8 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class ICountdownLatchRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+    static class ICountdownLatchRunnableTask
+            implements Runnable, Serializable, HazelcastInstanceAware {
 
         final String runsCountlatchName;
 
@@ -196,7 +200,40 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class PlainCallableTask implements Callable<Double>, Serializable {
+    static class HotLoopBusyTask
+            implements Runnable, HazelcastInstanceAware, Serializable {
+
+        private final String runFinishedLatchName;
+        private transient HazelcastInstance instance;
+
+        HotLoopBusyTask(String runFinishedLatchName) {
+            this.runFinishedLatchName = runFinishedLatchName;
+        }
+
+        @Override
+        public void run() {
+            long start = currentTimeMillis();
+            while (true) {
+                try {
+                    sleep(5000);
+                    if (currentTimeMillis() - start >= 30000) {
+                        instance.getCountDownLatch(runFinishedLatchName).countDown();
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
+    }
+
+    static class PlainCallableTask
+            implements Callable<Double>, Serializable {
 
         private int delta = 0;
 
@@ -215,7 +252,8 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     }
 
-    static class ErroneousCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
+    static class ErroneousCallableTask
+            implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
         private String completionLatchName;
 
@@ -245,7 +283,8 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class PlainPartitionAwareCallableTask implements Callable<Double>, Serializable, PartitionAware<String> {
+    static class PlainPartitionAwareCallableTask
+            implements Callable<Double>, Serializable, PartitionAware<String> {
 
         @Override
         public Double call()
@@ -259,8 +298,36 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class HazelcastInstanceAwareRunnable implements Callable<Boolean>, HazelcastInstanceAware, Serializable,
-                                                                  NamedTask {
+    static class PlainPartitionAwareRunnableTask
+            implements Runnable, Serializable, PartitionAware<String>, HazelcastInstanceAware {
+
+        private final String latchName;
+
+        private transient HazelcastInstance instance;
+
+        public PlainPartitionAwareRunnableTask(String latchName) {
+            this.latchName = latchName;
+        }
+
+        @Override
+        public void run() {
+            this.instance.getCountDownLatch(latchName).countDown();
+        }
+
+        @Override
+        public String getPartitionKey() {
+            return "TestKey";
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.instance = hazelcastInstance;
+        }
+    }
+
+    public static class HazelcastInstanceAwareRunnable
+            implements Callable<Boolean>, HazelcastInstanceAware, Serializable, NamedTask {
+
         private transient volatile HazelcastInstance instance;
         private final String name;
 
