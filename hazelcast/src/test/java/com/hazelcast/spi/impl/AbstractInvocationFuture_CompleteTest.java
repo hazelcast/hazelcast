@@ -30,7 +30,7 @@ import static org.junit.Assert.assertSame;
 public class AbstractInvocationFuture_CompleteTest extends AbstractInvocationFuture_AbstractTest {
 
     @Test
-    public void whenAlreadyCompleted_thenIgnored(){
+    public void whenAlreadyCompleted_thenIgnored() {
         future.complete(value);
 
         Object newValue = new Object();

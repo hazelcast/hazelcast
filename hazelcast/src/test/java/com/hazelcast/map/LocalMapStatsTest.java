@@ -298,7 +298,9 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(getConfig());
         Map<Integer, Integer> map = new HashMap<Integer, Integer>();
-        for (int i = 1; i <= 5000; i++) map.put(i, i);
+        for (int i = 1; i <= 5000; i++) {
+            map.put(i, i);
+        }
 
         IMap<Integer, Integer> iMap = instances[0].getMap("example");
         iMap.putAll(map);

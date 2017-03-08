@@ -80,7 +80,7 @@ public class ClientMessageSplitAndBuildTest {
     }
 
     @Test
-    public void splitAndBuild_multipleMessages() throws Exception{
+    public void splitAndBuild_multipleMessages() throws Exception {
         int FRAME_SIZE = 50;
         int NUMBER_OF_MESSAGES = 5;
 
@@ -100,13 +100,13 @@ public class ClientMessageSplitAndBuildTest {
 
         ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
                 new ClientMessageReadHandler.MessageHandler() {
-            @Override
-            public void handleMessage(ClientMessage message) {
-                int correlationId = (int) message.getCorrelationId();
-                message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-                assertEquals(expectedClientMessages.get(correlationId), message);
-            }
-        });
+                    @Override
+                    public void handleMessage(ClientMessage message) {
+                        int correlationId = (int) message.getCorrelationId();
+                        message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+                        assertEquals(expectedClientMessages.get(correlationId), message);
+                    }
+                });
 
 
         int currentFrameIndex[] = new int[NUMBER_OF_MESSAGES];
@@ -133,12 +133,12 @@ public class ClientMessageSplitAndBuildTest {
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
                 new ClientMessageReadHandler.MessageHandler() {
-            @Override
-            public void handleMessage(ClientMessage message) {
-                message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
-                assertEquals(expectedClientMessage, message);
-            }
-        });
+                    @Override
+                    public void handleMessage(ClientMessage message) {
+                        message.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
+                        assertEquals(expectedClientMessage, message);
+                    }
+                });
         for (ClientMessage subFrame : subFrames) {
             clientMessageReadHandler.onRead(ByteBuffer.wrap(subFrame.buffer().byteArray(), 0, subFrame.getFrameLength()));
         }

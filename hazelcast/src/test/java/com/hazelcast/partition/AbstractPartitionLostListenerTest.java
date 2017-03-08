@@ -85,7 +85,7 @@ public abstract class AbstractPartitionLostListenerTest extends HazelcastTestSup
                     if (nodeLeaveType == NodeLeaveType.SHUTDOWN) {
                         instance.getLifecycleService().shutdown();
                         latch.countDown();
-                    } else if (nodeLeaveType == NodeLeaveType.TERMINATE ){
+                    } else if (nodeLeaveType == NodeLeaveType.TERMINATE) {
                         instance.getLifecycleService().terminate();
                         latch.countDown();
                     } else {

@@ -280,16 +280,18 @@ public class HazelcastXATest extends HazelcastTestSupport {
         // get the current tx
         Transaction tx = tm.getTransaction();
         // closeConnection
-        if (error)
+        if (error) {
             flag = XAResource.TMFAIL;
+        }
         for (XAResource resource : xaResource) {
             tx.delistResource(resource, flag);
         }
 
-        if (error)
+        if (error) {
             tm.rollback();
-        else
+        } else {
             tm.commit();
+        }
 
     }
 

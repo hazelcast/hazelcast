@@ -55,7 +55,7 @@ public class WaitNotifySplitBrainTest extends SplitBrainTestSupport {
         assertWaitingOperationCountEventually(0, instances);
     }
 
-    private void assertOnlyOwnerHasWaitingOperationsEventually(String name, HazelcastInstance...instances) {
+    private void assertOnlyOwnerHasWaitingOperationsEventually(String name, HazelcastInstance... instances) {
         for (HazelcastInstance hz : instances) {
             Member owner = hz.getPartitionService().getPartition(name).getOwner();
             int expectedWaitingOps = owner.equals(hz.getCluster().getLocalMember()) ? POLLERS_COUNT : 0;

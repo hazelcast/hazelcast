@@ -28,7 +28,7 @@ import org.junit.runner.RunWith;
 public class OneToOneConcurrentArrayQueueTest extends AbstractConcurrentArrayQueueTest {
 
     @Before
-    public void setUp()  {
+    public void setUp() {
         queue = new OneToOneConcurrentArrayQueue<Integer>(CAPACITY);
     }
 }

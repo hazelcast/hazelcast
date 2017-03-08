@@ -1416,11 +1416,11 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     public void testUserCodeDeployment() {
         String xml = HAZELCAST_START_TAG
                 + "<user-code-deployment enabled=\"true\">"
-                    + "<class-cache-mode>OFF</class-cache-mode>"
-                    + "<provider-mode>LOCAL_CLASSES_ONLY</provider-mode>"
-                    + "<blacklist-prefixes>com.blacklisted,com.other.blacklisted</blacklist-prefixes>"
-                    + "<whitelist-prefixes>com.whitelisted,com.other.whitelisted</whitelist-prefixes>"
-                    + "<provider-filter>HAS_ATTRIBUTE:foo</provider-filter>"
+                + "<class-cache-mode>OFF</class-cache-mode>"
+                + "<provider-mode>LOCAL_CLASSES_ONLY</provider-mode>"
+                + "<blacklist-prefixes>com.blacklisted,com.other.blacklisted</blacklist-prefixes>"
+                + "<whitelist-prefixes>com.whitelisted,com.other.whitelisted</whitelist-prefixes>"
+                + "<provider-filter>HAS_ATTRIBUTE:foo</provider-filter>"
                 + "</user-code-deployment>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);

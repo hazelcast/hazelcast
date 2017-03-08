@@ -74,7 +74,7 @@ public class PartitionedCluster {
     }
 
     private PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
-         Config config = createClusterConfig()
+        Config config = createClusterConfig()
                 .addMapConfig(mapConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -82,7 +82,7 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-         Config config = createClusterConfig()
+        Config config = createClusterConfig()
                 .addCacheConfig(cacheSimpleConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -90,7 +90,7 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster createFiveMemberCluster(QueueConfig queueConfig, QuorumConfig quorumConfig) {
-         Config config = createClusterConfig()
+        Config config = createClusterConfig()
                 .addQueueConfig(queueConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);
@@ -98,7 +98,7 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster createFiveMemberCluster(LockConfig lockConfig, QuorumConfig quorumConfig) {
-         Config config = createClusterConfig()
+        Config config = createClusterConfig()
                 .addLockConfig(lockConfig)
                 .addQuorumConfig(quorumConfig);
         createInstances(config);

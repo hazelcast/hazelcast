@@ -312,7 +312,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownAndTerminateMembers_concurrently(HazelcastInstance[] instances, int shutdownIndex,
-            int terminateIndex) {
+                                                          int terminateIndex) {
 
         warmUpPartitions(instances);
 
@@ -327,7 +327,9 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
         // spin until node starts to shut down
         Node shuttingDownNode = getNode(shuttingDownInstance);
-        while (shuttingDownNode.isRunning());
+        while (shuttingDownNode.isRunning()) {
+            ;
+        }
 
         terminateInstance(instances[terminateIndex]);
 
@@ -376,7 +378,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
     }
 
     private void shutdownMember_whenClusterNotActive(boolean shutdownMaster, boolean initializePartitions,
-            ClusterState state) throws Exception {
+                                                     ClusterState state) throws Exception {
 
         Config config = new Config();
         HazelcastInstance master = factory.newHazelcastInstance(config);
@@ -432,7 +434,7 @@ public class GracefulShutdownTest extends HazelcastTestSupport {
 
     @Test
     public void shutdownMemberAndCluster_concurrently_withPartitionInitialization() throws Exception {
-       shutdownMemberAndCluster_concurrently(true);
+        shutdownMemberAndCluster_concurrently(true);
     }
 
     private void shutdownMemberAndCluster_concurrently(boolean initializePartitions) throws Exception {

@@ -55,8 +55,8 @@ public class LockLeaseMemberBounceTest {
 
     @Rule
     public BounceMemberRule bounceMemberRule = BounceMemberRule.with(getConfig())
-                                                               .clusterSize(MEMBER_COUNT)
-                                                               .driverCount(DRIVER_COUNT).build();
+            .clusterSize(MEMBER_COUNT)
+            .driverCount(DRIVER_COUNT).build();
     @Rule
     public JitterRule jitterRule = new JitterRule();
 

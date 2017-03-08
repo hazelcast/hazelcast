@@ -141,14 +141,14 @@ public class TestHazelcastInstanceFactory {
     /**
      * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
      * <ul>
-     *     <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
-     *     <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
+     * <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
+     * <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
      * </ul>
      * This is handy in split-brain tests, when a new instance should be started on a specific network partition
      * of the split brain.
      *
-     * @param config            the config to use; use {@code null} to get the default config
-     * @param blockedAddresses  addresses to which the new instance is allowed to communicate
+     * @param config           the config to use; use {@code null} to get the default config
+     * @param blockedAddresses addresses to which the new instance is allowed to communicate
      */
     public HazelcastInstance newHazelcastInstance(Config config, Address[] blockedAddresses) {
         return newHazelcastInstance(null, config, blockedAddresses);
@@ -157,15 +157,15 @@ public class TestHazelcastInstanceFactory {
     /**
      * Creates a new test Hazelcast instance which is only allowed to connect to specified addresses:
      * <ul>
-     *     <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
-     *     <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
+     * <li>{@code blockedAddresses} are blacklisted in its {@code MockJoiner}</li>
+     * <li>connections to {@code blockedAddresses} are blocked by its {@code FirewallingConnectionManager}</li>
      * </ul>
      * This is handy in split-brain tests, when a new instance should be started on a specific network partition
      * of the split brain.
      *
-     * @param address           the address to use as Member's address; if {@code null}, then uses the next address
-     * @param config            the config to use; use {@code null} to get the default config
-     * @param blockedAddresses  addresses to which the new instance is allowed to communicate
+     * @param address          the address to use as Member's address; if {@code null}, then uses the next address
+     * @param config           the config to use; use {@code null} to get the default config
+     * @param blockedAddresses addresses to which the new instance is allowed to communicate
      */
     public HazelcastInstance newHazelcastInstance(Address address, Config config, Address[] blockedAddresses) {
         final String instanceName = config != null ? config.getInstanceName() : null;

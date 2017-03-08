@@ -65,7 +65,7 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
     public void givenMemberAttributeFilterIsUsed_whenMemberAttributeIsPresent_thenFilterMatches() {
         Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter("HAS_ATTRIBUTE:foo");
         Map<String, Object> attributes = ImmutableMap.of(
-                "foo", (Object)"bar"
+                "foo", (Object) "bar"
         );
         Member mockMember = createMockMemberWithAttributes(attributes);
         assertTrue(memberFilter.accept(mockMember));
@@ -75,7 +75,7 @@ public class MemberProviderFilterParserTest extends HazelcastTestSupport {
     public void givenMemberAttributeFilterIsUsed_whenMemberAttributeIsNotPresent_thenFilterDoesNotMatch() {
         Filter<Member> memberFilter = MemberProviderFilterParser.parseMemberFilter("HAS_ATTRIBUTE:foo");
         Map<String, Object> attributes = ImmutableMap.of(
-                "bar", (Object)"other"
+                "bar", (Object) "other"
         );
         Member mockMember = createMockMemberWithAttributes(attributes);
         assertFalse(memberFilter.accept(mockMember));

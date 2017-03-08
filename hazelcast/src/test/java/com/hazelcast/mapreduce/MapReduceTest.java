@@ -115,9 +115,9 @@ public class MapReduceTest extends HazelcastTestSupport {
 
             ICompletableFuture<Map<String, List<Integer>>> future =
                     job.mapper(new TestMapper())
-                       .combiner(new FinalizingCombinerFactory())
-                       .reducer(new ListBasedReducerFactory())
-                       .submit();
+                            .combiner(new FinalizingCombinerFactory())
+                            .reducer(new ListBasedReducerFactory())
+                            .submit();
 
             Map<String, List<Integer>> result = future.get();
 
@@ -189,9 +189,9 @@ public class MapReduceTest extends HazelcastTestSupport {
             Job<Integer, Integer> job = tracker.newJob(wrapper);
             ICompletableFuture<Map<String, List<Integer>>> future =
                     job.mapper(new TestMapper())
-                       .combiner(new ListResultingCombinerFactory())
-                       .reducer(new ListBasedReducerFactory())
-                       .submit();
+                            .combiner(new ListResultingCombinerFactory())
+                            .reducer(new ListBasedReducerFactory())
+                            .submit();
 
             Map<String, List<Integer>> result = future.get();
 
@@ -603,7 +603,7 @@ public class MapReduceTest extends HazelcastTestSupport {
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                    .submit(new TestCollator());
+                    .submit(new TestCollator());
 
             int result = future.get();
 
@@ -753,7 +753,7 @@ public class MapReduceTest extends HazelcastTestSupport {
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper())
-                                                                 .reducer(new TestReducerFactory()).submit();
+                    .reducer(new TestReducerFactory()).submit();
 
             future.andThen(new ExecutionCallback<Map<String, Integer>>() {
                 @Override
@@ -871,7 +871,7 @@ public class MapReduceTest extends HazelcastTestSupport {
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(integerKvSource(m1));
             ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).reducer(new TestReducerFactory())
-                                                    .submit(new TestCollator());
+                    .submit(new TestCollator());
 
             future.andThen(new ExecutionCallback<Integer>() {
                 @Override
@@ -926,8 +926,8 @@ public class MapReduceTest extends HazelcastTestSupport {
             JobTracker jobTracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
-                                                                      .combiner(new ObjectCombinerFactory())
-                                                                      .reducer(new ObjectReducerFactory()).submit();
+                    .combiner(new ObjectCombinerFactory())
+                    .reducer(new ObjectReducerFactory()).submit();
 
             int[] expectedResults = new int[4];
             for (int i = 0; i < 100; i++) {
@@ -965,8 +965,8 @@ public class MapReduceTest extends HazelcastTestSupport {
             JobTracker jobTracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
             JobCompletableFuture<Map<String, BigInteger>> future = job.chunkSize(10).mapper(new GroupingTestMapper())
-                                                                      .combiner(new ObjectCombinerFactory())
-                                                                      .reducer(new NullReducerFactory()).submit();
+                    .combiner(new ObjectCombinerFactory())
+                    .reducer(new NullReducerFactory()).submit();
 
             Map<String, BigInteger> map = future.get();
             assertEquals(0, map.size());
@@ -995,9 +995,9 @@ public class MapReduceTest extends HazelcastTestSupport {
         JobTracker jobTracker = h1.getJobTracker("default");
         Job<Integer, Integer> job = jobTracker.newJob(integerKvSource(m1));
         ICompletableFuture<Integer> future = job.mapper(new TestMapper())
-                                                .combiner(new DataSerializableIntermediateCombinerFactory())
-                                                .reducer(new DataSerializableIntermediateReducerFactory())
-                                                .submit(new DataSerializableIntermediateCollator());
+                .combiner(new DataSerializableIntermediateCombinerFactory())
+                .reducer(new DataSerializableIntermediateReducerFactory())
+                .submit(new DataSerializableIntermediateCollator());
 
         // pre-calculate result
         int expectedResult = 0;

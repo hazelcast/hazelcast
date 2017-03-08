@@ -37,7 +37,7 @@ public class CountDownLatchSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected int[] brains() {
         // 2nd merges to the 1st
-        return new int[] {2, 1};
+        return new int[]{2, 1};
     }
 
     @Override

@@ -62,7 +62,7 @@ public class ClusterUpgradeTest extends HazelcastTestSupport {
     public void setup() {
         System.setProperty(HAZELCAST_INTERNAL_OVERRIDE_VERSION, VERSION_2_1_0.toString());
         clusterMembers = new HazelcastInstance[CLUSTER_MEMBERS_COUNT];
-        for (int i=0; i < CLUSTER_MEMBERS_COUNT; i++) {
+        for (int i = 0; i < CLUSTER_MEMBERS_COUNT; i++) {
             clusterMembers[i] = factory.newHazelcastInstance(getConfig());
         }
         clusterService = (ClusterService) clusterMembers[0].getCluster();

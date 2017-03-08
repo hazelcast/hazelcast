@@ -274,6 +274,7 @@ public class QueueStoreTest extends HazelcastTestSupport {
 
     private static class MyQueueStore implements QueueStore<Object>, Serializable {
         static final Map<Long, Object> map = new HashMap<Long, Object>();
+
         static {
             map.put(1L, "hola");
             map.put(3L, "dias");
@@ -453,7 +454,9 @@ public class QueueStoreTest extends HazelcastTestSupport {
         public Set<Long> loadAllKeys() {
             callCount.incrementAndGet();
             latchLoadAllKeys.countDown();
-            if (!loadAllKeys) return null;
+            if (!loadAllKeys) {
+                return null;
+            }
             return store.keySet();
         }
 

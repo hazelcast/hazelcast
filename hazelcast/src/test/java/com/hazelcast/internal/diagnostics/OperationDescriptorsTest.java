@@ -73,7 +73,7 @@ public class OperationDescriptorsTest extends HazelcastTestSupport {
         assertEquals(format("PartitionIteratingOperation(%s)", DummyOperationFactory.class.getName()), result);
     }
 
-    static class DummyOperationFactory implements OperationFactory{
+    static class DummyOperationFactory implements OperationFactory {
         @Override
         public Operation createOperation() {
             return new DummyOperation();

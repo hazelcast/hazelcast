@@ -291,7 +291,7 @@ public class ReplicatedMapHitsAndLastAccessTimeTest extends ReplicatedMapAbstrac
                     assertEquals(1, record1.getHits());
                     final ReplicatedRecord<String, String> record2 = getReplicatedRecord(map2, key);
                     assertNotNull(record2);
-                    assertEquals(0,  record2.getHits());
+                    assertEquals(0, record2.getHits());
                 }
             }
         });

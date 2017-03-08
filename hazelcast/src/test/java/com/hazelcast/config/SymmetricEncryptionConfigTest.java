@@ -70,7 +70,7 @@ public class SymmetricEncryptionConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testSetKey() {
-        byte[] key = new byte[] {23, 42};
+        byte[] key = new byte[]{23, 42};
         config.setKey(key);
 
         assertEquals(key[0], config.getKey()[0]);

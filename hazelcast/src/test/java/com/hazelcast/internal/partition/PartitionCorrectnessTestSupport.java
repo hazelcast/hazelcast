@@ -212,7 +212,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private void assertNoMissingData(TestMigrationAwareService service, InternalPartition[] partitions,
-            Address thisAddress) {
+                                     Address thisAddress) {
         for (InternalPartition partition : partitions) {
             int replicaIndex = partition.getReplicaIndex(thisAddress);
             if (replicaIndex >= 0 && replicaIndex <= backupCount) {
@@ -224,7 +224,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
     }
 
     private void assertPartitionVersionsAndBackupValues(int actualBackupCount, TestMigrationAwareService service,
-            Node node, InternalPartition[] partitions, boolean allowDirty) throws InterruptedException {
+                                                        Node node, InternalPartition[] partitions, boolean allowDirty) throws InterruptedException {
         Address thisAddress = node.getThisAddress();
 
         for (InternalPartition partition : partitions) {
@@ -255,7 +255,7 @@ public abstract class PartitionCorrectnessTestSupport extends HazelcastTestSuppo
 
                     if (!allowDirty) {
                         assertFalse("Backup replica is dirty! Owner: " + thisAddress + ", Backup: " + address
-                                        + ", Partition: " + partition, backupReplicaVersionsView.isDirty());
+                                + ", Partition: " + partition, backupReplicaVersionsView.isDirty());
                     }
 
                     TestMigrationAwareService backupService = getService(backupInstance);

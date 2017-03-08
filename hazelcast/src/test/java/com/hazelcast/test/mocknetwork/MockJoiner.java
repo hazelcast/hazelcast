@@ -152,7 +152,7 @@ class MockJoiner extends AbstractJoiner {
         possibleAddresses.remove(node.getThisAddress());
         possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
         for (Address address : possibleAddresses) {
-            SplitBrainJoinMessage  response = sendSplitBrainJoinMessage(address);
+            SplitBrainJoinMessage response = sendSplitBrainJoinMessage(address);
             if (shouldMerge(response)) {
                 startClusterMerge(address);
             }

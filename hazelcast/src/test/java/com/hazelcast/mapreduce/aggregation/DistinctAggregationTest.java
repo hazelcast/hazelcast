@@ -72,12 +72,18 @@ public class DistinctAggregationTest extends AbstractAggregationTest {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Car)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Car)) {
+                return false;
+            }
 
             Car car = (Car) o;
 
-            if (buildYear != car.buildYear) return false;
+            if (buildYear != car.buildYear) {
+                return false;
+            }
             return brand.equals(car.brand);
 
         }

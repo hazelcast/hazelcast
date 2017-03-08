@@ -52,7 +52,7 @@ public class HazelcastOSGiIntegrationTest {
 
     private static final String MAVEN_REPOSITORIES_PROP = ServiceConstants.PID + MavenConstants.PROPERTY_REPOSITORIES;
     private static final String MAVEN_REPOSITORIES = "https://osgi.sonatype.org/content/groups/pax-runner@id=paxrunner,"
-                                                   + "https://repo1.maven.org/maven2@id=central";
+            + "https://repo1.maven.org/maven2@id=central";
     private String oldMavenRepoProperty;
 
     @Configuration

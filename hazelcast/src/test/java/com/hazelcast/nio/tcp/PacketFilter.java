@@ -28,7 +28,7 @@ public interface PacketFilter {
      * Filters a packet inspecting its content and/or endpoint and decides
      * whether this packet should be filtered.
      *
-     * @param packet packet
+     * @param packet   packet
      * @param endpoint target endpoint which packet is sent to
      * @return returns true if packet should pass through intact, false otherwise
      */

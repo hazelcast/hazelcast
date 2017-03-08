@@ -213,7 +213,7 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
                 // The record in the middle will be minimum access hit.
                 // So, it will be selected for eviction
                 record.setAccessHit(0);
-            }  else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
+            } else if (i == EXPECTED_EXPIRED_RECORD_VALUE) {
                 record.setExpirationTime(System.currentTimeMillis());
             } else {
                 record.setAccessHit(i + 1);

@@ -28,12 +28,18 @@ public class CustomByteArraySerializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         CustomByteArraySerializable that = (CustomByteArraySerializable) o;
 
-        if (i != that.i) return false;
+        if (i != that.i) {
+            return false;
+        }
         return Float.compare(that.f, f) == 0;
 
     }

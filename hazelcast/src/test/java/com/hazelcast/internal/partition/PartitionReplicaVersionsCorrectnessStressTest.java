@@ -49,17 +49,17 @@ public class PartitionReplicaVersionsCorrectnessStressTest extends AbstractParti
     @Parameterized.Parameters(name = "numberOfNodesToCrash:{0},nodeCount:{1},nodeLeaveType:{2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(new Object[][]{{1, 7, NodeLeaveType.SHUTDOWN},
-                                            {1, 7, NodeLeaveType.TERMINATE},
-                                            {3, 7, NodeLeaveType.SHUTDOWN},
-                                            {3, 7, NodeLeaveType.TERMINATE},
-                                            {6, 7, NodeLeaveType.SHUTDOWN},
-                                            {6, 7, NodeLeaveType.TERMINATE},
-                                            {1, 10, NodeLeaveType.SHUTDOWN},
-                                            {1, 10, NodeLeaveType.TERMINATE},
-                                            {3, 10, NodeLeaveType.SHUTDOWN},
-                                            {3, 10, NodeLeaveType.TERMINATE},
-                                            {6, 10, NodeLeaveType.SHUTDOWN},
-                                            {6, 10, NodeLeaveType.TERMINATE}
+                {1, 7, NodeLeaveType.TERMINATE},
+                {3, 7, NodeLeaveType.SHUTDOWN},
+                {3, 7, NodeLeaveType.TERMINATE},
+                {6, 7, NodeLeaveType.SHUTDOWN},
+                {6, 7, NodeLeaveType.TERMINATE},
+                {1, 10, NodeLeaveType.SHUTDOWN},
+                {1, 10, NodeLeaveType.TERMINATE},
+                {3, 10, NodeLeaveType.SHUTDOWN},
+                {3, 10, NodeLeaveType.TERMINATE},
+                {6, 10, NodeLeaveType.SHUTDOWN},
+                {6, 10, NodeLeaveType.TERMINATE}
         });
     }
 

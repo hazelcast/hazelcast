@@ -39,22 +39,22 @@ public class WanReplicationRefReadOnlyTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setMergePolicyOnReadOnlyWanReplicationRefShouldFail()  {
+    public void setMergePolicyOnReadOnlyWanReplicationRefShouldFail() {
         getReadOnlyRef().setMergePolicy("myMergePolicy");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setFiltersOnReadOnlyWanReplicationRefShouldFail()  {
+    public void setFiltersOnReadOnlyWanReplicationRefShouldFail() {
         getReadOnlyRef().setFilters(Collections.<String>emptyList());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void addFilterOnReadOnlyWanReplicationRefShouldFail()  {
+    public void addFilterOnReadOnlyWanReplicationRefShouldFail() {
         getReadOnlyRef().addFilter("myFilter");
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void setRepublishingEnabledOnReadOnlyWanReplicationRefShouldFail()  {
+    public void setRepublishingEnabledOnReadOnlyWanReplicationRefShouldFail() {
         getReadOnlyRef().setRepublishingEnabled(true);
     }
 }

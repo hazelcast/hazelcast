@@ -106,7 +106,7 @@ public class Long2LongMapHsaTest {
         map.putAll(entries);
         assertEquals(count, map.size());
 
-        for (LongLongCursor cursor = map.cursor(); cursor.advance();) {
+        for (LongLongCursor cursor = map.cursor(); cursor.advance(); ) {
             assertEquals(map.get(cursor.key()), cursor.value());
         }
     }

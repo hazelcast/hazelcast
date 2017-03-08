@@ -126,7 +126,8 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
             this.limb = limb;
         }
 
-        Body() {}
+        Body() {
+        }
 
         String getName() {
             return name;
@@ -205,7 +206,8 @@ public class NestedPredicateVersionedPortablesTest extends HazelcastTestSupport 
             this.name = name;
         }
 
-        Limb() {}
+        Limb() {
+        }
 
         String getName() {
             return name;

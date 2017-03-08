@@ -47,70 +47,70 @@ import static java.lang.System.currentTimeMillis;
 /**
  * JUnit rule for testing behavior of cluster while members bounce (shutdown & startup). Key concepts:
  * <ul>
- *     <li>BounceMemberRule sets up a cluster before the test's {@code @Before} methods are executed and tears
- *     it down after its {@code @After} methods. One member of the cluster is kept running for the duration of
- *     the test, while other members are shutdown and replaced by new instances. For example, if the
- *     BounceMemberRule is configured to setup a cluster of 5 members, one will stay up while the rest 4 will
- *     be shutting down and replaced by new ones while the test tasks are executed. Use
- *     {@link #getSteadyMember()} to obtain a reference to the member that is always up.<br/>
- *     <b>Defaults: </b>cluster size 6 members<br/>
- *     <b>Configuration: </b>
- *     <ul>
- *         <li>Cluster members configuration must be provided in {@link BounceMemberRule#with(Config)} which
- *         returns a {@link Builder} to obtain a configured {@code BounceMemberRule}</li>
- *         <li>Set cluster size with {@link Builder#clusterSize(int)}</li>
- *     </ul>
- *     </li>
- *     <li>BounceMemberRule also initializes {@code HazelcastInstance}s to be used as test drivers. References
- *     to test drivers can be obtained by invoking {@link #getNextTestDriver()}. Choices for test drivers
- *     include:
- *     <ul>
- *         <li>{@code ALWAYS_UP_MEMBER}: use as test driver the cluster member that is never shutdown during
- *         the test.</li>
- *         <li>{@code MEMBER}: prepare a set of members, apart from the configured cluster members, to be used
- *         as test drivers.</li>
- *         <li>{@code CLIENT}: use clients as test drivers</li>
- *     </ul>
- *     <b>Defaults: </b> when {@code com.hazelcast.client.test.TestHazelcastFactory} is available on the
- *     classpath, then defaults to preparing 5 {@code CLIENT} test drivers, otherwise uses
- *     {@code ALWAYS_UP_MEMBER} as test driver.<br/>
- *     <b>Configuration: </b>test driver type and count can be configured with the
- *     {@link Builder#driverType(DriverType)} and {@link Builder#driverCount(int)} methods. For more control
- *     over the configuration of test drivers, you may also specify a {@link DriverFactory} with
- *     {@link Builder#driverFactory(DriverFactory)}.</li>
- *     <li>The test case can be directly coded in your {@code @Test} methods, as with regular tests.
- *     Alternatively, {@code Runnable}s can be submitted for concurrent execution in a fixed thread pool
- *     initialized with as many threads as the number of {@code Runnable}s submitted:
- *     <ul>
- *         <li>{@link #testRepeatedly(int, Runnable, long)} submits the given {@code Runnable} to be executed
- *         with the given number of concurrent threads. The submitted {@code Runnable} must be thread safe.
- *         The {@code Runnable} is executed repeatedly until either the configured duration in seconds has
- *         passed or its execution throws a {@code Throwable}, in which case the test is failed and the
- *         exception is rethrown.</li>
- *         <li>{@link #testRepeatedly(Runnable[], long)} same as above, however instead of submitting the same
- *         {@code Runnable} to several threads, submits an array of {@code Runnable}s, allowing for concurrent
- *         execution of heterogeneous {@code Runnable}s (e.g. several producers & consumers in an
- *         {@code ITopic} test). {@code Runnable}s do not have to be thread-safe in this case.</li>
- *         <li>{@link #test(Runnable[])} submits an array of {@code Runnable}s to be executed concurrently and
- *         blocks until all {@code Runnable}s have been completed. If an exception was thrown during a
- *         {@code Runnable}'s execution, the test will fail.</li>
- *     </ul>
- *     </li>
+ * <li>BounceMemberRule sets up a cluster before the test's {@code @Before} methods are executed and tears
+ * it down after its {@code @After} methods. One member of the cluster is kept running for the duration of
+ * the test, while other members are shutdown and replaced by new instances. For example, if the
+ * BounceMemberRule is configured to setup a cluster of 5 members, one will stay up while the rest 4 will
+ * be shutting down and replaced by new ones while the test tasks are executed. Use
+ * {@link #getSteadyMember()} to obtain a reference to the member that is always up.<br/>
+ * <b>Defaults: </b>cluster size 6 members<br/>
+ * <b>Configuration: </b>
+ * <ul>
+ * <li>Cluster members configuration must be provided in {@link BounceMemberRule#with(Config)} which
+ * returns a {@link Builder} to obtain a configured {@code BounceMemberRule}</li>
+ * <li>Set cluster size with {@link Builder#clusterSize(int)}</li>
+ * </ul>
+ * </li>
+ * <li>BounceMemberRule also initializes {@code HazelcastInstance}s to be used as test drivers. References
+ * to test drivers can be obtained by invoking {@link #getNextTestDriver()}. Choices for test drivers
+ * include:
+ * <ul>
+ * <li>{@code ALWAYS_UP_MEMBER}: use as test driver the cluster member that is never shutdown during
+ * the test.</li>
+ * <li>{@code MEMBER}: prepare a set of members, apart from the configured cluster members, to be used
+ * as test drivers.</li>
+ * <li>{@code CLIENT}: use clients as test drivers</li>
+ * </ul>
+ * <b>Defaults: </b> when {@code com.hazelcast.client.test.TestHazelcastFactory} is available on the
+ * classpath, then defaults to preparing 5 {@code CLIENT} test drivers, otherwise uses
+ * {@code ALWAYS_UP_MEMBER} as test driver.<br/>
+ * <b>Configuration: </b>test driver type and count can be configured with the
+ * {@link Builder#driverType(DriverType)} and {@link Builder#driverCount(int)} methods. For more control
+ * over the configuration of test drivers, you may also specify a {@link DriverFactory} with
+ * {@link Builder#driverFactory(DriverFactory)}.</li>
+ * <li>The test case can be directly coded in your {@code @Test} methods, as with regular tests.
+ * Alternatively, {@code Runnable}s can be submitted for concurrent execution in a fixed thread pool
+ * initialized with as many threads as the number of {@code Runnable}s submitted:
+ * <ul>
+ * <li>{@link #testRepeatedly(int, Runnable, long)} submits the given {@code Runnable} to be executed
+ * with the given number of concurrent threads. The submitted {@code Runnable} must be thread safe.
+ * The {@code Runnable} is executed repeatedly until either the configured duration in seconds has
+ * passed or its execution throws a {@code Throwable}, in which case the test is failed and the
+ * exception is rethrown.</li>
+ * <li>{@link #testRepeatedly(Runnable[], long)} same as above, however instead of submitting the same
+ * {@code Runnable} to several threads, submits an array of {@code Runnable}s, allowing for concurrent
+ * execution of heterogeneous {@code Runnable}s (e.g. several producers & consumers in an
+ * {@code ITopic} test). {@code Runnable}s do not have to be thread-safe in this case.</li>
+ * <li>{@link #test(Runnable[])} submits an array of {@code Runnable}s to be executed concurrently and
+ * blocks until all {@code Runnable}s have been completed. If an exception was thrown during a
+ * {@code Runnable}'s execution, the test will fail.</li>
+ * </ul>
+ * </li>
  * </ul>
  *
  * For examples on how to use this rule, see {@code BounceMemberRuleTest} and {@code QueryBounceTest}.
  *
  * {@code BounceMemberRule} integrates with test lifecycle as described below:
  * <ol>
- *     <li>{@code BounceMemberRule} creates the cluster and test drivers</li>
- *     <li>the test's {@code @Before} method(s) are executed to prepare the test. Use
- *     {@link #getSteadyMember()} to obtain the {@code HazelcastInstace} that is kept running during the test
- *     and prepare the test's environment.</li>
- *     <li>{@code BounceMemberRule} spawns a separate thread that starts bouncing cluster members</li>
- *     <li>the {@code @Test} method is executed</li>
- *     <li>{@code BounceMemberRule} stops bouncing cluster members</li>
- *     <li>the test's {@code @After} methods are executed</li>
- *     <li>{@code BounceMemberRule} tears down test drivers and cluster members</li>
+ * <li>{@code BounceMemberRule} creates the cluster and test drivers</li>
+ * <li>the test's {@code @Before} method(s) are executed to prepare the test. Use
+ * {@link #getSteadyMember()} to obtain the {@code HazelcastInstace} that is kept running during the test
+ * and prepare the test's environment.</li>
+ * <li>{@code BounceMemberRule} spawns a separate thread that starts bouncing cluster members</li>
+ * <li>the {@code @Test} method is executed</li>
+ * <li>{@code BounceMemberRule} stops bouncing cluster members</li>
+ * <li>the test's {@code @After} methods are executed</li>
+ * <li>{@code BounceMemberRule} tears down test drivers and cluster members</li>
  * </ol>
  */
 public class BounceMemberRule implements TestRule {

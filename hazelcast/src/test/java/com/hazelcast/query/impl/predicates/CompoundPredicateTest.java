@@ -67,7 +67,7 @@ public class CompoundPredicateTest {
 
         CompoundPredicate o = klass.newInstance();
         Predicate truePredicate = new TruePredicate();
-        o.setPredicates(new Predicate[] {truePredicate});
+        o.setPredicates(new Predicate[]{truePredicate});
         assertEquals(truePredicate, o.getPredicates()[0]);
     }
 
@@ -77,10 +77,10 @@ public class CompoundPredicateTest {
 
         CompoundPredicate o = klass.newInstance();
         Predicate truePredicate = new TruePredicate();
-        o.setPredicates(new Predicate[] {truePredicate});
+        o.setPredicates(new Predicate[]{truePredicate});
 
         Predicate falsePredicate = new FalsePredicate();
-        o.setPredicates(new Predicate[] {falsePredicate});
+        o.setPredicates(new Predicate[]{falsePredicate});
 
         fail();
     }

@@ -316,11 +316,11 @@ public class MemcacheTest extends HazelcastTestSupport {
         final String key = "key";
         client.set(key, 3, "value").get();
         assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(null, client.get(key));
-                }
-            });
+            @Override
+            public void run() throws Exception {
+                assertEquals(null, client.get(key));
+            }
+        });
     }
 
     @Test
@@ -358,7 +358,7 @@ public class MemcacheTest extends HazelcastTestSupport {
     }
 
     private void checkStats(int sets, int gets, int getHits, int getMisses, int deleteHits, int deleteMisses,
-            int incHits, int incMisses, int decHits, int decMisses) {
+                            int incHits, int incMisses, int decHits, int decMisses) {
         InetSocketAddress address = instance.getCluster().getLocalMember().getSocketAddress();
         Map<String, String> stats = client.getStats().get(address);
 

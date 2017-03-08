@@ -51,7 +51,7 @@ public class SlowMigrationCorrectnessTest extends AbstractMigrationCorrectnessTe
 
     @Parameters(name = "backups:{0},nodes:{1}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {1, 2},
                 {1, InternalPartition.MAX_REPLICA_COUNT},
                 {2, 3},

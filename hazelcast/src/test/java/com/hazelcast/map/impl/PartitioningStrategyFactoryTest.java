@@ -56,7 +56,7 @@ public class PartitioningStrategyFactoryTest extends HazelcastTestSupport {
     @Rule
     public TestName testName = new TestName();
 
-    private IMap<String, String>  map;
+    private IMap<String, String> map;
     private String mapName;
     private PartitioningStrategyFactory partitioningStrategyFactory;
 

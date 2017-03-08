@@ -28,13 +28,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import static java.util.Collections.EMPTY_SET;
 import static java.util.Collections.singleton;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)

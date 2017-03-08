@@ -63,7 +63,7 @@ public class BufferingInputStreamTest {
         int streamPos = 0;
 
         // when - then
-        for (int count; (count = in.read(buf)) != -1;) {
+        for (int count; (count = in.read(buf)) != -1; ) {
             for (int i = 0; i < count; i++) {
                 assertEquals(mockInput[streamPos++], buf[i]);
             }

@@ -48,7 +48,7 @@ public class BounceTestConfiguration {
     }
 
     BounceTestConfiguration(int clusterSize, DriverType driverType,
-                                   Config memberConfig, int driverCount, DriverFactory driverFactory) {
+                            Config memberConfig, int driverCount, DriverFactory driverFactory) {
         this.clusterSize = clusterSize;
         this.driverType = driverType;
         this.memberConfig = memberConfig;

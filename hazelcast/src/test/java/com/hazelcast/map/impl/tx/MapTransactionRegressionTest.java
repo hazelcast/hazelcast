@@ -50,7 +50,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
-public class MapTransactionRegressionTest  extends HazelcastTestSupport {
+public class MapTransactionRegressionTest extends HazelcastTestSupport {
 
     private final TransactionOptions options = new TransactionOptions()
             .setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
@@ -204,6 +204,7 @@ public class MapTransactionRegressionTest  extends HazelcastTestSupport {
         h1.shutdown();
         h2.shutdown();
     }
+
     @Test
     public void test_Issue615_values() throws TransactionException {
         Config config = getConfig();

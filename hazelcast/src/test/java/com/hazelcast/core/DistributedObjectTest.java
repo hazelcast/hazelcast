@@ -198,7 +198,9 @@ public class DistributedObjectTest extends HazelcastTestSupport {
             Operation postJoinOperation = proxyService.getPostJoinOperation();
 
             for (int j = 0; j < nodeCount; j++) {
-                if (i == j) continue;
+                if (i == j) {
+                    continue;
+                }
 
                 Node node2 = TestUtil.getNode(instances[j]);
                 node.nodeEngine.getOperationService().send(postJoinOperation, node2.address);

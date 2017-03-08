@@ -106,33 +106,40 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
         ClientMessage responseMessage = ClientMessage.createForDecode(exceptionMessage.buffer(), 0);
         Throwable resurrectedThrowable = exceptionFactory.createException(responseMessage);
 
-        if (!exceptionEquals(throwable, resurrectedThrowable))
+        if (!exceptionEquals(throwable, resurrectedThrowable)) {
             assertEquals(throwable, resurrectedThrowable);
+        }
     }
 
     private boolean exceptionEquals(Throwable expected, Throwable actual) {
-        if (expected == null && actual == null)
+        if (expected == null && actual == null) {
             return true;
+        }
 
-        if (expected == null || actual == null)
+        if (expected == null || actual == null) {
             return false;
+        }
 
         if (exceptionFactory.isKnownClass(expected.getClass())) {
-            if (!expected.getClass().equals(actual.getClass()))
+            if (!expected.getClass().equals(actual.getClass())) {
                 return false;
+            }
 
             // We compare the message only for known exceptions.
             // We also ignore it for URISyntaxException, as it is not possible to restore it without special, probably JVM-version specific logic.
-            if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage()))
+            if (expected.getClass() != URISyntaxException.class && !equals(expected.getMessage(), actual.getMessage())) {
                 return false;
+            }
         } else {
             if (!UndefinedErrorCodeException.class.equals(actual.getClass())
-                    || !expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName()))
+                    || !expected.getClass().getName().equals(((UndefinedErrorCodeException) actual).getOriginClassName())) {
                 return false;
+            }
         }
 
-        if (!stackTraceArrayEquals(expected.getStackTrace(), actual.getStackTrace()))
+        if (!stackTraceArrayEquals(expected.getStackTrace(), actual.getStackTrace())) {
             return false;
+        }
 
         // recursion to cause
         return exceptionEquals(expected.getCause(), actual.getCause());
@@ -151,10 +158,11 @@ public class ClientExceptionFactoryTest extends HazelcastTestSupport {
             //Not using stackTraceElement.equals
             //because in IBM JDK stacktraceElements with null method name are not equal
             if (!equals(stackTraceElement1.getClassName(), stackTraceElement2.getClassName())
-                || !equals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName())
+                    || !equals(stackTraceElement1.getMethodName(), stackTraceElement2.getMethodName())
                     || !equals(stackTraceElement1.getFileName(), stackTraceElement2.getFileName())
-                    || !equals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber()))
+                    || !equals(stackTraceElement1.getLineNumber(), stackTraceElement2.getLineNumber())) {
                 return false;
+            }
         }
         return true;
     }

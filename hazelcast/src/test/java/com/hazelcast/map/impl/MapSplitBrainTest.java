@@ -41,18 +41,18 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * Given:
- *   3-members cluster, maps configured with custom merge policy that subtracts merging from existing value (if exists)
- *   or the merging value itself
+ * 3-members cluster, maps configured with custom merge policy that subtracts merging from existing value (if exists)
+ * or the merging value itself
  *
  * When:
- *   cluster splits in two subclusters with {1, 2} members respectively, on each brain put values:
- *      on first brain, keys 0..1999 -> value 1
- *      on second brain, keys 1000..2999 -> value 3
+ * cluster splits in two subclusters with {1, 2} members respectively, on each brain put values:
+ * on first brain, keys 0..1999 -> value 1
+ * on second brain, keys 1000..2999 -> value 3
  * Then:
- *   custom merge policy's merge method is invoked for all entries of the map, assert final map values as follows:
- *      keys 0..999 -> value 1 (merged, no existing value)
- *      keys 1000..1999 -> value 2 (merged, result of (3-1))
- *      keys 2000..2999 -> value 3 (not merged)
+ * custom merge policy's merge method is invoked for all entries of the map, assert final map values as follows:
+ * keys 0..999 -> value 1 (merged, no existing value)
+ * keys 1000..1999 -> value 2 (merged, result of (3-1))
+ * keys 2000..2999 -> value 3 (not merged)
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -71,7 +71,7 @@ public class MapSplitBrainTest extends SplitBrainTestSupport {
     protected Config config() {
         Config config = super.config();
         config.getMapConfig(TEST_MAPS_PREFIX + "*")
-              .setMergePolicy(SubtractingMergePolicy.class.getName());
+                .setMergePolicy(SubtractingMergePolicy.class.getName());
         return config;
     }
 

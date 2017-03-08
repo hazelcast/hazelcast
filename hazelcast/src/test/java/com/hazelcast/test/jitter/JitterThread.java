@@ -32,7 +32,7 @@ public class JitterThread extends Thread {
     public void run() {
         long beforeNanos = System.nanoTime();
         long shortestHiccup = Long.MAX_VALUE;
-        for (;;) {
+        for (; ; ) {
             long beforeMillis = System.currentTimeMillis();
             sleepNanos(RESOLUTION_NANOS);
             long after = System.nanoTime();

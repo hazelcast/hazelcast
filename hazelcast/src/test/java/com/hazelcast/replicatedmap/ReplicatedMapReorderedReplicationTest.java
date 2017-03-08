@@ -145,8 +145,8 @@ public class ReplicatedMapReorderedReplicationTest extends HazelcastTestSupport 
 
         PutOperation putOperation = new PutOperation(mapName, dataKey, dataValue);
         InternalCompletableFuture<Object> future = nodeEngine.getOperationService()
-                                                             .invokeOnPartition(ReplicatedMapService.SERVICE_NAME, putOperation,
-                                                                     partitionId);
+                .invokeOnPartition(ReplicatedMapService.SERVICE_NAME, putOperation,
+                        partitionId);
         VersionResponsePair result = (VersionResponsePair) future.join();
         return nodeEngine.toObject(result.getResponse());
     }

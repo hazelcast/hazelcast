@@ -111,7 +111,7 @@ public class CachingProviderTest extends HazelcastTestSupport {
     @Test(expected = CacheException.class)
     public void whenOtherURI_noInstanceName_thenFails() throws URISyntaxException {
         HazelcastCacheManager cacheManager = (HazelcastCacheManager) cachingProvider.getCacheManager(
-                new URI("other-uri"),null);
+                new URI("other-uri"), null);
     }
 
     @Test

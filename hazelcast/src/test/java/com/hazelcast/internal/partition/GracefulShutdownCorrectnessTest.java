@@ -33,7 +33,7 @@ public class GracefulShutdownCorrectnessTest extends AbstractGracefulShutdownCor
 
     @Parameterized.Parameters(name = "backups:{0},nodes:{1},shutdown:{2}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {0, 2, 1},
                 {1, 2, 1},
                 {2, 3, 1},

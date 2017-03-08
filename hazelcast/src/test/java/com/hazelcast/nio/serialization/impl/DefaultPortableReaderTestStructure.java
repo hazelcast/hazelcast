@@ -235,8 +235,12 @@ public class DefaultPortableReaderTestStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             PrimitivePortable that = (PrimitivePortable) o;
             return byte_ == that.byte_;
         }
@@ -375,8 +379,12 @@ public class DefaultPortableReaderTestStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             GroupPortable that = (GroupPortable) o;
             return Arrays.equals(portables, that.portables);
         }
@@ -457,8 +465,12 @@ public class DefaultPortableReaderTestStructure {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             GroupPortable that = (GroupPortable) o;
             return Arrays.equals(portables, that.portables);
         }
@@ -497,12 +509,13 @@ public class DefaultPortableReaderTestStructure {
 
         @Override
         public Portable create(int classId) {
-            if (PrimitivePortable.ID == classId)
+            if (PrimitivePortable.ID == classId) {
                 return new PrimitivePortable();
-            else if (GroupPortable.ID == classId)
+            } else if (GroupPortable.ID == classId) {
                 return new GroupPortable();
-            else if (NestedGroupPortable.ID == classId)
+            } else if (NestedGroupPortable.ID == classId) {
                 return new NestedGroupPortable();
+            }
             return null;
         }
     }

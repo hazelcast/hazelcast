@@ -46,14 +46,14 @@ public class GetMapEntryRequestTest extends HazelcastTestSupport {
 
     @Test
     public void testGetMapEntry() throws Exception {
-        GetMapEntryRequest request = new GetMapEntryRequest("string","map","key");
+        GetMapEntryRequest request = new GetMapEntryRequest("string", "map", "key");
         IMap<String, String> map = hz.getMap("map");
-        map.put("key","value");
+        map.put("key", "value");
 
         JsonObject jsonObject = new JsonObject();
         request.writeResponse(managementCenterService, jsonObject);
         JsonObject result = (JsonObject) jsonObject.get("result");
-        assertEquals("value",result.get("browse_value").asString());
-        assertEquals("java.lang.String",result.get("browse_class").asString());
+        assertEquals("value", result.get("browse_value").asString());
+        assertEquals("java.lang.String", result.get("browse_class").asString());
     }
 }

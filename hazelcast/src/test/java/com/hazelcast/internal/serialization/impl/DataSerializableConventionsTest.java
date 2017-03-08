@@ -121,8 +121,7 @@ public class DataSerializableConventionsTest {
             // if in public packages and not @PrivateApi ==> exclude from checks
             if (isPublicClass(klass)) {
                 publicClasses.add(klass);
-            }
-            else {
+            } else {
                 // if not a public class but inherits Serializable from a public class, also exclude
                 if (inheritsClassFromPublicClass(klass, Serializable.class)) {
                     publicClasses.add(klass);
@@ -271,7 +270,6 @@ public class DataSerializableConventionsTest {
     }
 
     /**
-     *
      * @param klass
      * @param inheritedClass
      * @return {@code true} when klass has a superclass that implements or is itself of type {@code inheritedClass}
@@ -288,7 +286,7 @@ public class DataSerializableConventionsTest {
                 }
             }
         }
-        
+
         // use hierarchyIteratingClass to iterate up the klass hierarchy
         Class hierarchyIteratingClass = klass;
         while (hierarchyIteratingClass.getSuperclass() != null) {

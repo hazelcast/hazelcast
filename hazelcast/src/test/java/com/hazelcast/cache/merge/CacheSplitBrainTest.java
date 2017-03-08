@@ -48,7 +48,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
 
     @Parameterized.Parameters(name = "mergePolicy:{0}")
     public static Collection<Object> parameters() {
-        return Arrays.asList(new Object[] {
+        return Arrays.asList(new Object[]{
                 LatestAccessCacheMergePolicy.class,
                 HigherHitsCacheMergePolicy.class,
                 PutIfAbsentCacheMergePolicy.class,
@@ -68,7 +68,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
     @Override
     protected int[] brains() {
         // second half should merge to first 
-        return new int[] {2, 1};
+        return new int[]{2, 1};
     }
 
     @Override
@@ -88,7 +88,7 @@ public class CacheSplitBrainTest extends SplitBrainTestSupport {
         CacheConfig cacheConfig = newCacheConfig(cacheName, mergePolicyClass);
         cache1 = createCache(firstBrain[0], cacheConfig);
         cache2 = createCache(secondBrain[0], cacheConfig);
-        
+
         if (mergePolicyClass == LatestAccessCacheMergePolicy.class) {
             afterSplitLatestAccessCacheMergePolicy();
         }
