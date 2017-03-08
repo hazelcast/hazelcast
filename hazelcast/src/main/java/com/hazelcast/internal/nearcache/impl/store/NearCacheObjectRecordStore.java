@@ -25,7 +25,14 @@ import static com.hazelcast.internal.nearcache.NearCache.CACHED_AS_NULL;
 import static com.hazelcast.internal.nearcache.NearCacheRecord.TIME_NOT_SET;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
-public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord> {
+/**
+ * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches
+ * with {@link com.hazelcast.config.InMemoryFormat#OBJECT} in-memory-format.
+ *
+ * @param <K> the type of the key stored in Near Cache
+ * @param <V> the type of the value stored in Near Cache
+ */
+public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheObjectRecord<V>> {
 
     public NearCacheObjectRecordStore(String name,
                                       NearCacheConfig nearCacheConfig,
@@ -47,7 +54,7 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     }
 
     @Override
-    protected NearCacheObjectRecord valueToRecord(V value) {
+    protected NearCacheObjectRecord<V> valueToRecord(V value) {
         value = toValue(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
@@ -58,18 +65,17 @@ public class NearCacheObjectRecordStore<K, V> extends BaseHeapNearCacheRecordSto
     }
 
     @Override
-    protected void updateRecordValue(NearCacheObjectRecord record, V value) {
+    protected void updateRecordValue(NearCacheObjectRecord<V> record, V value) {
         record.setValue(toValue(value));
     }
 
     @Override
-    protected V recordToValue(NearCacheObjectRecord record) {
+    protected V recordToValue(NearCacheObjectRecord<V> record) {
         if (record.getValue() == null) {
             nearCacheStats.incrementMisses();
             return (V) CACHED_AS_NULL;
         }
-
-        return (V) record.getValue();
+        return record.getValue();
     }
 
     @Override

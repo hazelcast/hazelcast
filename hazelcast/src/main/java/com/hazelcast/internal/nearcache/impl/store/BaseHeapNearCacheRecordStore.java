@@ -31,6 +31,13 @@ import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Map;
 
+/**
+ * Base implementation of {@link AbstractNearCacheRecordStore} for on-heap Near Caches.
+ *
+ * @param <K> the type of the key stored in Near Cache
+ * @param <V> the type of the value stored in Near Cache
+ * @param <R> the type of the value of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ */
 public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheRecord>
         extends AbstractNearCacheRecordStore<K, V, K, R, HeapNearCacheRecordMap<K, R>> {
 
@@ -38,8 +45,8 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
 
     private final NearCachePreloader<K> nearCachePreloader;
 
-    public BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
-                                        ClassLoader classLoader) {
+    BaseHeapNearCacheRecordStore(String name, NearCacheConfig nearCacheConfig, SerializationService serializationService,
+                                 ClassLoader classLoader) {
         super(nearCacheConfig, serializationService, classLoader);
 
         NearCachePreloaderConfig preloaderConfig = nearCacheConfig.getPreloaderConfig();
@@ -158,6 +165,4 @@ public abstract class BaseHeapNearCacheRecordStore<K, V, R extends NearCacheReco
         Object cachedValue = existingRecord.getValue();
         return cachedValue instanceof Data ? toValue(cachedValue) : (V) existingRecord.getValue();
     }
-
-
 }

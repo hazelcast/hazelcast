@@ -27,6 +27,13 @@ import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheReco
 import static com.hazelcast.internal.nearcache.impl.record.AbstractNearCacheRecord.NUMBER_OF_LONG_FIELD_TYPES;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
+/**
+ * {@link com.hazelcast.internal.nearcache.NearCacheRecordStore} implementation for Near Caches
+ * with {@link com.hazelcast.config.InMemoryFormat#BINARY} in-memory-format.
+ *
+ * @param <K> the type of the key stored in Near Cache
+ * @param <V> the type of the value stored in Near Cache
+ */
 public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore<K, V, NearCacheDataRecord> {
 
     public NearCacheDataRecordStore(String name,
@@ -50,34 +57,33 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
         }
     }
 
-    // TODO: we don't handle object header (mark, class definition) for heap memory cost
     @Override
     protected long getRecordStorageMemoryCost(NearCacheDataRecord record) {
         if (record == null) {
             return 0L;
         }
+        // TODO: we don't handle object header (mark, class definition) for heap memory cost
         Data value = record.getValue();
-        return
-                // reference to this record inside map ("store" field)
-                REFERENCE_SIZE
-                        // reference to "value" field
-                        + REFERENCE_SIZE
-                        // "uuid" ref size + 2 long in uuid
-                        + REFERENCE_SIZE + (2 * (Long.SIZE / Byte.SIZE))
-                        // heap cost of this value data
-                        + (value != null ? value.getHeapCost() : 0)
-                        + NUMBER_OF_LONG_FIELD_TYPES * (Long.SIZE / Byte.SIZE)
-                        + NUMBER_OF_INTEGER_FIELD_TYPES * (Integer.SIZE / Byte.SIZE);
+        // reference to this record inside map ("store" field)
+        return REFERENCE_SIZE
+                // reference to "value" field
+                + REFERENCE_SIZE
+                // "uuid" ref size + 2 long in uuid
+                + REFERENCE_SIZE + (2 * (Long.SIZE / Byte.SIZE))
+                // heap cost of this value data
+                + (value != null ? value.getHeapCost() : 0)
+                + NUMBER_OF_LONG_FIELD_TYPES * (Long.SIZE / Byte.SIZE)
+                + NUMBER_OF_INTEGER_FIELD_TYPES * (Integer.SIZE / Byte.SIZE);
     }
 
     @Override
     protected NearCacheDataRecord valueToRecord(V value) {
-        Data data = toData(value);
+        Data dataValue = toData(value);
         long creationTime = currentTimeMillis();
         if (timeToLiveMillis > 0) {
-            return new NearCacheDataRecord(data, creationTime, creationTime + timeToLiveMillis);
+            return new NearCacheDataRecord(dataValue, creationTime, creationTime + timeToLiveMillis);
         } else {
-            return new NearCacheDataRecord(data, creationTime, TIME_NOT_SET);
+            return new NearCacheDataRecord(dataValue, creationTime, TIME_NOT_SET);
         }
     }
 
@@ -87,8 +93,7 @@ public class NearCacheDataRecordStore<K, V> extends BaseHeapNearCacheRecordStore
             nearCacheStats.incrementMisses();
             return (V) CACHED_AS_NULL;
         }
-        Data data = record.getValue();
-        return dataToValue(data);
+        return dataToValue(record.getValue());
     }
 
     @Override

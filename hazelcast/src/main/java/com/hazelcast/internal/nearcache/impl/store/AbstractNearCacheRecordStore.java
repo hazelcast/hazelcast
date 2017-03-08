@@ -48,6 +48,15 @@ import static com.hazelcast.internal.nearcache.impl.invalidation.StaleReadDetect
 import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 
+/**
+ * Abstract implementation of {@link NearCacheRecordStore} and {@link EvictionListener}.
+ *
+ * @param <K>    the type of the key stored in Near Cache
+ * @param <V>    the type of the value stored in Near Cache
+ * @param <KS>   the type of the key of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ * @param <R>    the type of the value of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ * @param <NCRM> the type of the underlying {@link com.hazelcast.internal.nearcache.impl.NearCacheRecordMap}
+ */
 @SuppressWarnings("checkstyle:methodcount")
 public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCacheRecord,
         NCRM extends SampleableNearCacheRecordMap<KS, R>>
@@ -103,7 +112,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         this(nearCacheConfig, new NearCacheStatsImpl(), serializationService, classLoader);
     }
 
-    // extended in ee.
+    // extended in EE
     protected AbstractNearCacheRecordStore(NearCacheConfig nearCacheConfig, NearCacheStatsImpl nearCacheStats,
                                            SerializationService serializationService, ClassLoader classLoader) {
         this.nearCacheConfig = nearCacheConfig;
@@ -150,7 +159,7 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
 
     protected abstract V recordToValue(R record);
 
-    // public for tests.
+    // public for tests
     public abstract R getRecord(K key);
 
     protected abstract R getOrCreateToReserve(K key);
@@ -250,24 +259,31 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         record.incrementAccessHit();
     }
 
+    @SuppressWarnings("unused")
     protected void onGet(K key, V value, R record) {
     }
 
+    @SuppressWarnings("unused")
     protected void onGetError(K key, V value, R record, Throwable error) {
     }
 
+    @SuppressWarnings("unused")
     protected void onPut(K key, V value, R record, R oldRecord) {
     }
 
+    @SuppressWarnings("unused")
     protected void onPutError(K key, V value, R record, R oldRecord, Throwable error) {
     }
 
+    @SuppressWarnings("unused")
     protected void onRemove(K key, R record, boolean removed) {
     }
 
+    @SuppressWarnings("unused")
     protected void onRemoveError(K key, R record, boolean removed, Throwable error) {
     }
 
+    @SuppressWarnings("unused")
     protected void onExpire(K key, R record) {
         nearCacheStats.incrementExpirations();
     }
@@ -373,10 +389,6 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         }
     }
 
-    protected void clearRecords() {
-        records.clear();
-    }
-
     @Override
     public void clear() {
         checkAvailable();
@@ -386,8 +398,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         nearCacheStats.setOwnedEntryMemoryCost(0L);
     }
 
-    protected void destroyStore() {
-        clearRecords();
+    protected void clearRecords() {
+        records.clear();
     }
 
     @Override
@@ -399,11 +411,8 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         nearCacheStats.setOwnedEntryMemoryCost(0L);
     }
 
-    @Override
-    public int size() {
-        checkAvailable();
-
-        return records.size();
+    protected void destroyStore() {
+        clearRecords();
     }
 
     @Override
@@ -411,6 +420,13 @@ public abstract class AbstractNearCacheRecordStore<K, V, KS, R extends NearCache
         checkAvailable();
 
         return nearCacheStats;
+    }
+
+    @Override
+    public int size() {
+        checkAvailable();
+
+        return records.size();
     }
 
     @Override
