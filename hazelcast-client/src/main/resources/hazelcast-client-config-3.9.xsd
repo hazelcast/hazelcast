@@ -385,6 +385,7 @@
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
+            <xs:enumeration value="RANDOM"/>
         </xs:restriction>
     </xs:simpleType>
 

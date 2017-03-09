@@ -172,6 +172,7 @@
                         NONE (no eviction).
                         LRU (Least Recently Used).
                         LFU (Least Frequently Used).
+                        RANDOM (evict random entry).
                         NONE is the default.
                     </xs:documentation>
                 </xs:annotation>
@@ -2794,6 +2795,7 @@
             <xs:enumeration value="NONE"/>
             <xs:enumeration value="LRU"/>
             <xs:enumeration value="LFU"/>
+            <xs:enumeration value="RANDOM"/>
         </xs:restriction>
     </xs:simpleType>
 
