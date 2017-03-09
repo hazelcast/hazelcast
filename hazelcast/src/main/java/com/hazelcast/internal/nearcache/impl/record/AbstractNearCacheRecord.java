@@ -22,10 +22,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
-
 /**
- * Abstract implementation of {@link NearCacheRecord} with value and
- * expiration time as internal state.
+ * Abstract implementation of {@link NearCacheRecord} with value and expiration time as internal state.
  *
  * @param <V> the type of the value stored by this {@link AbstractNearCacheRecord}
  */

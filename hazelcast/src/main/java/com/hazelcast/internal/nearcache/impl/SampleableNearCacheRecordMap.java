@@ -22,7 +22,7 @@ import com.hazelcast.internal.nearcache.NearCacheRecord;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Contract point for all record maps these supports entry sampling to be used for storage in Near Cache.
+ * Contract point for all record maps which support entry sampling to be used for storage in Near Cache.
  *
  * @param <K> type of the key
  * @param <V> type of the {@link NearCacheRecord} to be stored
