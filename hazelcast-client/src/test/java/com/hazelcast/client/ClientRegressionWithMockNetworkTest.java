@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.properties.ClientProperty;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
@@ -828,7 +828,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     public void testMemberAddedWithListeners_thenCheckOperationsNotHanging() throws Exception {
         hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(ClientExecutionServiceImpl.INTERNAL_EXECUTOR_POOL_SIZE.getName(), "1");
+        clientConfig.setProperty(ClientExecutorConstants.INTERNAL_EXECUTOR_POOL_SIZE.getName(), "1");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IMap map = client.getMap("map");
         map.addEntryListener(mock(MapListener.class), true);

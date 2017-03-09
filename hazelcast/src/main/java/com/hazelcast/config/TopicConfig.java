@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +27,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
  */
-public class TopicConfig {
+public class TopicConfig implements NamedConfig<TopicConfig> {
 
     /**
      * Default global ordering configuration.

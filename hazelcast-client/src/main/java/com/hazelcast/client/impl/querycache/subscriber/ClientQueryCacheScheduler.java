@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.impl.querycache.subscriber;
 
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.map.impl.querycache.QueryCacheScheduler;
+import com.hazelcast.spi.ExecutionService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,20 +30,21 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientQueryCacheScheduler implements QueryCacheScheduler {
 
-    private final ClientExecutionService executionService;
+    private final ExecutionService executionService;
 
-    public ClientQueryCacheScheduler(ClientExecutionService executionService) {
+    public ClientQueryCacheScheduler(ExecutionService executionService) {
         this.executionService = executionService;
     }
 
     @Override
     public void execute(Runnable task) {
-        executionService.execute(task);
+        executionService.execute(ClientExecutorConstants.INTERNAL_EXECUTOR, task);
     }
 
     @Override
     public ScheduledFuture<?> scheduleWithRepetition(Runnable task, long delaySeconds) {
-        return executionService.scheduleWithRepetition(task, 1, delaySeconds, TimeUnit.SECONDS);
+        return executionService.scheduleWithRepetition(ClientExecutorConstants.INTERNAL_EXECUTOR,
+                task, 1, delaySeconds, TimeUnit.SECONDS);
     }
 
     @Override

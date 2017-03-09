@@ -17,11 +17,12 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
+import com.hazelcast.util.NamedConfig;
 
 /**
  * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
  */
-public class JobTrackerConfig {
+public class JobTrackerConfig implements NamedConfig<JobTrackerConfig> {
 
     /**
      * Default size of thread.

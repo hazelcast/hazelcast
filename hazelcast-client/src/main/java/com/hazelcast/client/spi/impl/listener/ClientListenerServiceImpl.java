@@ -19,26 +19,24 @@ package com.hazelcast.client.spi.impl.listener;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.internal.metrics.MetricsProvider;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.serialization.SerializationService;
-import com.hazelcast.util.executor.SingleExecutorThreadFactory;
-import com.hazelcast.util.executor.StripedExecutor;
+import com.hazelcast.util.executor.ExecutorType;
+import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 
 import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 
@@ -46,27 +44,22 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     protected final HazelcastClientInstanceImpl client;
     protected final SerializationService serializationService;
-    protected final ScheduledExecutorService registrationExecutor;
     protected final ILogger logger;
-
+    protected final ExecutionService executionService;
     @Probe(name = "eventHandlerCount", level = MANDATORY)
     private final ConcurrentMap<Long, EventHandler> eventHandlerMap
             = new ConcurrentHashMap<Long, EventHandler>();
-
-    private final StripedExecutor eventExecutor;
+    private final ManagedExecutorService eventExecutor;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client, int eventThreadCount, int eventQueueCapacity) {
         this.client = client;
         serializationService = client.getSerializationService();
         logger = client.getLoggingService().getLogger(ClientListenerService.class);
-        ThreadGroup threadGroup = client.getThreadGroup();
-        String name = client.getName();
-        eventExecutor = new StripedExecutor(logger, name + ".event",
-                threadGroup, eventThreadCount, eventQueueCapacity);
-        ClassLoader classLoader = client.getClientConfig().getClassLoader();
-
-        ThreadFactory threadFactory = new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".eventRegistration-");
-        registrationExecutor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        executionService = client.getExecutionService();
+        eventExecutor = executionService.register(ClientExecutorConstants.EVENT_EXECUTOR,
+                eventThreadCount, eventQueueCapacity, ExecutorType.CONCRETE);
+        executionService.register(ClientExecutorConstants.REGISTRATION_EXECUTOR, 1, Integer.MAX_VALUE,
+                ExecutorType.CONCRETE);
     }
 
     @Override
@@ -76,12 +69,12 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
 
     @Probe(level = MANDATORY)
     private int eventQueueSize() {
-        return eventExecutor.getWorkQueueSize();
+        return eventExecutor.getQueueSize();
     }
 
     @Probe(level = MANDATORY)
     private long eventsProcessed() {
-        return eventExecutor.processedCount();
+        return eventExecutor.getCompletedTaskCount();
     }
 
     public void addEventHandler(long callId, EventHandler handler) {
@@ -104,13 +97,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
         }
     }
 
-    public void shutdown() {
-        eventExecutor.shutdown();
-        ClientExecutionServiceImpl.shutdownExecutor("registrationExecutor", registrationExecutor, logger);
-    }
-
-    public void start() {
-    }
+    public abstract void start();
 
     private final class ClientEventProcessor implements StripedRunnable {
         final ClientMessage clientMessage;
@@ -145,7 +132,7 @@ public abstract class ClientListenerServiceImpl implements ClientListenerService
     }
 
     //called from ee.
-    public StripedExecutor getEventExecutor() {
+    public ManagedExecutorService getEventExecutor() {
         return eventExecutor;
     }
 

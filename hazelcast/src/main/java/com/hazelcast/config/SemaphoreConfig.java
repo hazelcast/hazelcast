@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkHasText;
@@ -24,7 +26,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISemaphore}.
  */
-public class SemaphoreConfig {
+public class SemaphoreConfig implements NamedConfig<SemaphoreConfig> {
 
     /**
      * Default synchronous backup count

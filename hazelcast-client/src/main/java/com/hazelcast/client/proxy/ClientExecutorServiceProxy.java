@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -55,7 +56,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -381,10 +382,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         for (Callable<T> task : tasks) {
             futures.add(submitToRandomInternal(task, null, true));
         }
-        ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
+        Executor userExecutor = getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR);
         for (Future<T> future : futures) {
             Object value = retrieveResult(future);
-            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, asyncExecutor));
+            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value, userExecutor));
         }
         return result;
     }
@@ -505,8 +506,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
+            Executor userExecutor = getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR);
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue
                     , SUBMIT_TO_ADDRESS_DECODER);
@@ -518,8 +519,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
-            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
-            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
+            Executor userExecutor = getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR);
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, userExecutor);
         } else {
             return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue
                     , SUBMIT_TO_PARTITION_DECODER);

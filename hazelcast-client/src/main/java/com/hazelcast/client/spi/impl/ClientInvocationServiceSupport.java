@@ -22,7 +22,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ErrorCodec;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
@@ -32,6 +32,7 @@ import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -98,8 +99,9 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
-        ClientExecutionService executionService = client.getClientExecutionService();
-        executionService.scheduleWithRepetition(new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
+        ExecutionService executionService = client.getExecutionService();
+        executionService.scheduleWithRepetition(ClientExecutorConstants.INTERNAL_EXECUTOR,
+                new CleanResourcesTask(), 1, 1, TimeUnit.SECONDS);
     }
 
     @Override

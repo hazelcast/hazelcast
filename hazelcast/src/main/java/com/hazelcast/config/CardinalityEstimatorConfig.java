@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -23,7 +25,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 /**
  * Configuration options for the {@link com.hazelcast.cardinality.CardinalityEstimator}
  */
-public class CardinalityEstimatorConfig {
+public class CardinalityEstimatorConfig implements NamedConfig<CardinalityEstimatorConfig> {
 
     /**
      * The number of sync backups per estimator
@@ -146,7 +148,7 @@ public class CardinalityEstimatorConfig {
                 + asyncBackupCount + ", readOnly=" + readOnly + '}';
     }
 
-    CardinalityEstimatorConfigReadOnly getAsReadOnly() {
+    public CardinalityEstimatorConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new CardinalityEstimatorConfigReadOnly(this);
         }

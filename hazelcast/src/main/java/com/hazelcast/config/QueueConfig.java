@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.IQueue}
  */
-public class QueueConfig {
+public class QueueConfig implements NamedConfig<QueueConfig> {
 
     /**
      * Default value for the maximum size of the Queue.

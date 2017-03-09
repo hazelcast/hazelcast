@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveResultCod
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientExecutorConstants;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -45,7 +46,6 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -215,7 +215,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
             ClientMessage response = invokeOnPartition(request, partitionId);
             sequence = DurableExecutorSubmitToPartitionCodec.decodeResponse(response).response;
         } catch (Throwable t) {
-            return new ClientDurableExecutorServiceCompletedFuture<T>(t, getAsyncExecutor());
+            return new ClientDurableExecutorServiceCompletedFuture<T>(t, getUserExecutor());
         }
         ClientMessage clientMessage = DurableExecutorRetrieveResultCodec.encodeRequest(name, sequence);
         ClientInvocationFuture future = new ClientInvocation(getClient(), clientMessage, partitionId).invoke();
@@ -223,8 +223,8 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
         return new ClientDurableExecutorServiceDelegatingFuture<T>(future, serService, RETRIEVE_RESPONSE_DECODER, result, taskId);
     }
 
-    private ExecutorService getAsyncExecutor() {
-        return getContext().getExecutionService().getAsyncExecutor();
+    private Executor getUserExecutor() {
+        return getContext().getExecutionService().getExecutor(ClientExecutorConstants.USER_EXECUTOR);
     }
 
     private <T> RunnableAdapter<T> createRunnableAdapter(Runnable command) {

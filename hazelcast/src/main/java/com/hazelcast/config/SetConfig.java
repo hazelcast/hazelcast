@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ISet}.
  */
-public class SetConfig extends CollectionConfig<SetConfig> {
+public class SetConfig extends CollectionConfig<SetConfig> implements NamedConfig<SetConfig> {
 
     private SetConfigReadOnly readOnly;
 

@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.util.NamedConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ import java.util.concurrent.ScheduledExecutorService;
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
-public class ReplicatedMapConfig {
+public class ReplicatedMapConfig implements NamedConfig<ReplicatedMapConfig> {
 
     /**
      * Default value of concurrency level

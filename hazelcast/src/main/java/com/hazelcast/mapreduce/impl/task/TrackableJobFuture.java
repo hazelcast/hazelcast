@@ -25,6 +25,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.TrackableJob;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -53,7 +54,8 @@ public class TrackableJobFuture<V>
     private final MapReduceService mapReduceService;
 
     public TrackableJobFuture(String name, String jobId, JobTracker jobTracker, NodeEngine nodeEngine, Collator collator) {
-        super(nodeEngine, nodeEngine.getLogger(TrackableJobFuture.class));
+        super(nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR),
+                nodeEngine.getLogger(TrackableJobFuture.class));
         this.name = name;
         this.jobId = jobId;
         this.jobTracker = jobTracker;

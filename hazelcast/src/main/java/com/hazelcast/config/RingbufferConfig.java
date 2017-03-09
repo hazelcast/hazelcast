@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.util.NamedConfig;
 
 import static com.hazelcast.config.InMemoryFormat.NATIVE;
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
@@ -34,7 +35,7 @@ import static com.hazelcast.util.Preconditions.checkPositive;
  * in the cluster and its backup in another member in the cluster.
  */
 @Beta
-public class RingbufferConfig {
+public class RingbufferConfig implements NamedConfig<RingbufferConfig> {
 
     /**
      * Default value of capacity of the RingBuffer.

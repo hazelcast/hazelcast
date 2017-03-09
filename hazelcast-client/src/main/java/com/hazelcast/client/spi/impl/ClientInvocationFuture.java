@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -33,9 +33,9 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     protected final ClientMessage request;
     private final ClientInvocation invocation;
 
-    public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
+    public ClientInvocationFuture(ClientInvocation invocation, Executor internalExecutor,
                                   ClientMessage request, ILogger logger) {
-        super(client.getClientExecutionService(), logger);
+        super(internalExecutor, logger);
         this.request = request;
         this.invocation = invocation;
     }

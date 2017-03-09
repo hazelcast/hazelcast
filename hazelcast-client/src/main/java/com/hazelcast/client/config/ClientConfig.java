@@ -116,6 +116,10 @@ public class ClientConfig {
         this.configPatternMatcher = configPatternMatcher;
     }
 
+    public ConfigPatternMatcher getConfigPatternMatcher() {
+        return configPatternMatcher;
+    }
+
     /**
      * Gets a named property already set or from system properties if not exists.
      *

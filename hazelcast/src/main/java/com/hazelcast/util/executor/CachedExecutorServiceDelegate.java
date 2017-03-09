@@ -16,9 +16,8 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.function.Supplier;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collection;
@@ -53,13 +52,14 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     private final String name;
     private final int maxPoolSize;
     private final ExecutorService cachedExecutor;
-    private final NodeEngine nodeEngine;
     private final BlockingQueue<Runnable> taskQ;
     private final Lock lock = new ReentrantLock();
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
+    private final Supplier<ExecutorService> asyncExecutorSupplier;
     private volatile int size;
 
-    public CachedExecutorServiceDelegate(NodeEngine nodeEngine, String name, ExecutorService cachedExecutor,
+    public CachedExecutorServiceDelegate(Supplier<ExecutorService> asyncExecutorSupplier, String name,
+                                         ExecutorService cachedExecutor,
                                          int maxPoolSize, int queueCapacity) {
         if (maxPoolSize <= 0) {
             throw new IllegalArgumentException("Max pool size must be positive!");
@@ -71,7 +71,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
-        this.nodeEngine = nodeEngine;
+        this.asyncExecutorSupplier = asyncExecutorSupplier;
     }
 
     @Override
@@ -213,7 +213,7 @@ public final class CachedExecutorServiceDelegate implements ExecutorService, Man
     }
 
     private ExecutorService getAsyncExecutor() {
-        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
+        return asyncExecutorSupplier.get();
     }
 
     private class Worker implements Runnable {

@@ -16,13 +16,15 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.NamedConfig;
+
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Contains the configuration for the {@link com.hazelcast.core.ILock}.
  */
-public class LockConfig {
+public class LockConfig implements NamedConfig<LockConfig> {
 
     private String name;
     private String quorumName;

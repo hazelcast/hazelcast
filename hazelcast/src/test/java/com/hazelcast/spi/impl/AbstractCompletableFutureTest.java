@@ -4,6 +4,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -488,7 +489,7 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
 
     private class TestFutureImpl extends AbstractCompletableFuture<Object> {
         protected TestFutureImpl(NodeEngine nodeEngine, ILogger logger) {
-            super(nodeEngine, logger);
+            super(nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR), logger);
         }
     }
 }
