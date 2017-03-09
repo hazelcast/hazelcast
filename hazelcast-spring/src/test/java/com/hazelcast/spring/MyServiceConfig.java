@@ -16,10 +16,6 @@
 
 package com.hazelcast.spring;
 
-/**
- * @author mdogan 6/24/13
- */
-
 class MyServiceConfig {
 
     String stringProp;

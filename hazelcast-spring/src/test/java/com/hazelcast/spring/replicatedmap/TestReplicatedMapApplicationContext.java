@@ -66,5 +66,4 @@ public class TestReplicatedMapApplicationContext {
         assertEquals(1, listenerConfigs.size());
         assertEquals("com.hazelcast.spring.DummyEntryListener", listenerConfigs.get(0).getClassName());
     }
-
 }

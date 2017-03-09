@@ -22,12 +22,14 @@ import com.hazelcast.core.MembershipListener;
 
 public class DummyMembershipListener implements MembershipListener {
 
+    @Override
     public void memberAdded(MembershipEvent membershipEvent) {
-//        System.err.println(membershipEvent);
+        //System.err.println(membershipEvent);
     }
 
+    @Override
     public void memberRemoved(MembershipEvent membershipEvent) {
-//        System.err.println(membershipEvent);
+        //System.err.println(membershipEvent);
     }
 
     @Override

@@ -24,28 +24,27 @@ import java.util.Map;
 
 public class DummyLoginModule implements LoginModule {
 
-	@Override
-	public boolean abort() throws LoginException {
-		return false;
-	}
+    @Override
+    public boolean abort() throws LoginException {
+        return false;
+    }
 
-	@Override
-	public boolean commit() throws LoginException {
-		return false;
-	}
+    @Override
+    public boolean commit() throws LoginException {
+        return false;
+    }
 
-	@Override
-	public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
-	}
+    @Override
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+    }
 
-	@Override
-	public boolean login() throws LoginException {
-		return false;
-	}
+    @Override
+    public boolean login() throws LoginException {
+        return false;
+    }
 
-	@Override
-	public boolean logout() throws LoginException {
-		return false;
-	}
-
+    @Override
+    public boolean logout() throws LoginException {
+        return false;
+    }
 }

@@ -33,7 +33,6 @@ public class ServiceBeanWithTransactionalContext {
         this.otherService = otherService;
     }
 
-
     public void put(DummyObject object) {
         transactionalContext.getMap("dummyObjectMap").put(object.getId(), object);
     }

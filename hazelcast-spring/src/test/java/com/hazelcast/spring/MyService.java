@@ -18,9 +18,6 @@ package com.hazelcast.spring;
 
 import com.hazelcast.spi.ConfigurableService;
 
-/**
- * @author mdogan 6/24/13
- */
 class MyService implements ConfigurableService<MyServiceConfig> {
 
     MyServiceConfig config;

@@ -31,7 +31,6 @@ import org.springframework.test.context.ContextConfiguration;
 import static org.junit.Assert.assertNotNull;
 
 /**
- *
  * Tests if hazelcast instance can be used/injected in a class with an {@code @Autowired}
  * annotation. This test specifically for {@code @Autowired} case, not other annotations like
  * {@code @Resource}. Because they are using different annotation bean post processors so they may
@@ -39,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
  *
  * {@link org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor}
  * {@link org.springframework.context.annotation.CommonAnnotationBeanPostProcessor}
- * */
+ */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"test-application-context.xml"})
 @Category(QuickTest.class)
@@ -54,12 +53,9 @@ public class TestAutoWire {
         Hazelcast.shutdownAll();
     }
 
-
     @Test
-    public void smoke() throws InterruptedException {
-        final SomeBeanHazelcastInjected bean = context.getBean(SomeBeanHazelcastInjected.class);
+    public void smoke() {
+        SomeBeanHazelcastInjected bean = context.getBean(SomeBeanHazelcastInjected.class);
         assertNotNull(bean.getInstance());
     }
-
-
 }

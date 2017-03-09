@@ -23,6 +23,5 @@ public class DummyQuorumListener implements QuorumListener {
 
     @Override
     public void onChange(QuorumEvent quorumEvent) {
-
     }
 }

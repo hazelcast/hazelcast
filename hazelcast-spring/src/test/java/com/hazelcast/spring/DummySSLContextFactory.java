@@ -22,9 +22,12 @@ import javax.net.ssl.SSLContext;
 import java.util.Properties;
 
 public class DummySSLContextFactory implements SSLContextFactory {
-    public void init(final Properties properties) throws Exception {
+
+    @Override
+    public void init(Properties properties) throws Exception {
     }
 
+    @Override
     public SSLContext getSSLContext() {
         return null;
     }

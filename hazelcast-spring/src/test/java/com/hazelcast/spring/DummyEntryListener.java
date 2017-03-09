@@ -22,29 +22,31 @@ import com.hazelcast.core.MapEvent;
 
 public class DummyEntryListener implements EntryListener {
 
+    @Override
     public void entryAdded(EntryEvent event) {
-//        System.err.println("Added: " + event);
+        //System.err.println("Added: " + event);
     }
 
+    @Override
     public void entryRemoved(EntryEvent event) {
-//        System.err.println("Removed: " + event);
+        //System.err.println("Removed: " + event);
     }
 
+    @Override
     public void entryUpdated(EntryEvent event) {
-//        System.err.println("Updated: " + event);
+        //System.err.println("Updated: " + event);
     }
 
+    @Override
     public void entryEvicted(EntryEvent event) {
-//        System.err.println("Evicted: " + event);
+        //System.err.println("Evicted: " + event);
     }
 
     @Override
     public void mapEvicted(MapEvent event) {
-
     }
 
     @Override
     public void mapCleared(MapEvent event) {
-
     }
 }

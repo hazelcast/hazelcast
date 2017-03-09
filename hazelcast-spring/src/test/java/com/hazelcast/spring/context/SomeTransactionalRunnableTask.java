@@ -20,14 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 
-/**
- * @leimer 8/15/12
- */
 @SpringAware
 public class SomeTransactionalRunnableTask implements Runnable, Serializable {
 
     @Transactional
     public void run() {
     }
-
 }

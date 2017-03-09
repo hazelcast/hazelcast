@@ -70,13 +70,11 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.getAllHazelcastClients().iterator().next();
         assertNull(client.getClientConfig().getManagedContext());
 
-
         HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
         assertNull(instance.getConfig().getManagedContext());
     }
-
 
     @Test
     public void testPlaceHolder() {
@@ -85,9 +83,8 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         Config config = instance.getConfig();
         assertEquals("spring-group", config.getGroupConfig().getName());
         assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
-        assertEquals(6,config.getMapConfig("map1").getBackupCount());
+        assertEquals(6, config.getMapConfig("map1").getBackupCount());
         assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
         assertEquals(64, config.getNativeMemoryConfig().getSize().getValue());
     }
-
 }

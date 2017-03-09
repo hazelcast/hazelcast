@@ -22,16 +22,17 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Properties;
 
-/**
- *
- */
 public class DummySocketInterceptor implements MemberSocketInterceptor {
-    public void init(final Properties properties) {
+
+    @Override
+    public void init(Properties properties) {
     }
 
-    public void onAccept(final Socket acceptedSocket) throws IOException {
+    @Override
+    public void onAccept(Socket acceptedSocket) throws IOException {
     }
 
-    public void onConnect(final Socket connectedSocket) throws IOException {
+    @Override
+    public void onConnect(Socket connectedSocket) throws IOException {
     }
 }

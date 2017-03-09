@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -50,9 +49,9 @@ public class TestClientNetworkConfig {
 
     @BeforeClass
     @AfterClass
-    public static void start() throws IOException {
-        final String keyStoreFilePath = TestKeyStoreUtil.getKeyStoreFilePath();
-        final String trustStoreFilePath = TestKeyStoreUtil.getTrustStoreFilePath();
+    public static void start() throws Exception {
+        String keyStoreFilePath = TestKeyStoreUtil.getKeyStoreFilePath();
+        String trustStoreFilePath = TestKeyStoreUtil.getTrustStoreFilePath();
 
         System.setProperty("test.keyStore", keyStoreFilePath);
         System.setProperty("test.trustStore", trustStoreFilePath);
@@ -62,34 +61,32 @@ public class TestClientNetworkConfig {
     }
 
     @Test
-    public void smokeMember() throws IOException {
-        final int memberCountInConfigurationXml = 2;
+    public void smokeMember() {
+        int memberCountInConfigurationXml = 2;
         ClientConfig config = client.getClientConfig();
-        assertEquals(memberCountInConfigurationXml
-                , config.getNetworkConfig().getAddresses().size());
+        assertEquals(memberCountInConfigurationXml, config.getNetworkConfig().getAddresses().size());
     }
 
     @Test
-    public void smokeSocketOptions() throws IOException {
-        final int bufferSizeInConfigurationXml = 32;
+    public void smokeSocketOptions() {
+        int bufferSizeInConfigurationXml = 32;
         ClientConfig config = client.getClientConfig();
-        assertEquals(bufferSizeInConfigurationXml
-                , config.getNetworkConfig().getSocketOptions().getBufferSize());
+        assertEquals(bufferSizeInConfigurationXml, config.getNetworkConfig().getSocketOptions().getBufferSize());
     }
 
     @Test
-    public void smokeSocketInterceptor() throws IOException {
+    public void smokeSocketInterceptor() {
         ClientConfig config = client.getClientConfig();
-        final SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
+        SocketInterceptorConfig socketInterceptorConfig = config.getNetworkConfig().getSocketInterceptorConfig();
         assertEquals(false, socketInterceptorConfig.isEnabled());
         assertEquals(DummySocketInterceptor.class.getName(), socketInterceptorConfig.getClassName());
     }
 
     @Test
-    public void smokeSSLConfig() throws IOException {
+    public void smokeSSLConfig() {
         ClientConfig config = client.getClientConfig();
-        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory"
-                , config.getNetworkConfig().getSSLConfig().getFactoryClassName());
+        assertEquals("com.hazelcast.nio.ssl.BasicSSLContextFactory",
+                config.getNetworkConfig().getSSLConfig().getFactoryClassName());
     }
 
     @Test
@@ -118,6 +115,4 @@ public class TestClientNetworkConfig {
         DiscoveryStrategyConfig discoveryStrategyConfig4 = discoveryStrategyConfigs.get(3);
         assertTrue(discoveryStrategyConfig4.getDiscoveryStrategyFactory() instanceof DummyDiscoveryStrategyFactory);
     }
-
-
 }

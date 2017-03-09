@@ -40,7 +40,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +49,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests for jcache parser
+ * Tests for JCache parser.
  */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"test-jcache-application-context.xml"})
@@ -70,7 +69,7 @@ public class TestJCache {
     }
 
     @Test
-    public void testContextInitiazedSuccessfully() {
+    public void testContextInitializedSuccessfully() {
         assertNotNull(context);
     }
 
@@ -103,7 +102,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_TimedCreatedExpiryPolicyFactory() throws IOException {
+    public void cacheConfigXmlTest_TimedCreatedExpiryPolicyFactory() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithTimedCreatedExpiryPolicyFactoryConfig =
@@ -125,7 +124,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_TimedAccessedExpiryPolicyFactory() throws IOException {
+    public void cacheConfigXmlTest_TimedAccessedExpiryPolicyFactory() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithTimedAccessedExpiryPolicyFactoryConfig =
@@ -147,7 +146,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_TimedModifiedExpiryPolicyFactory() throws IOException {
+    public void cacheConfigXmlTest_TimedModifiedExpiryPolicyFactory() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithTimedModifiedExpiryPolicyFactoryConfig =
@@ -169,7 +168,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_TimedModifiedTouchedPolicyFactory() throws IOException {
+    public void cacheConfigXmlTest_TimedModifiedTouchedPolicyFactory() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithTimedTouchedExpiryPolicyFactoryConfig =
@@ -191,7 +190,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_TimedEternalTouchedPolicyFactory() throws IOException {
+    public void cacheConfigXmlTest_TimedEternalTouchedPolicyFactory() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithTimedEternalExpiryPolicyFactoryConfig =
@@ -209,9 +208,9 @@ public class TestJCache {
 
         assertEquals(ExpiryPolicyType.ETERNAL, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
     }
-    
+
     @Test
-    public void cacheConfigXmlTest_PartitionLostListener() throws IOException {
+    public void cacheConfigXmlTest_PartitionLostListener() {
         Config config = instance1.getConfig();
 
         CacheSimpleConfig cacheWithPartitionLostListenerConfig =
@@ -221,11 +220,11 @@ public class TestJCache {
 
         assertNotNull(partitionLostListenerConfigs);
         assertEquals(1, partitionLostListenerConfigs.size());
-        assertEquals(partitionLostListenerConfigs.get(0).getClassName(),"DummyCachePartitionLostListenerImpl");
+        assertEquals(partitionLostListenerConfigs.get(0).getClassName(), "DummyCachePartitionLostListenerImpl");
         assertNotNull(partitionLostListenerConfigs);
         assertEquals(1, partitionLostListenerConfigs.size());
-        assertEquals(partitionLostListenerConfigs.get(0).getClassName(),"DummyCachePartitionLostListenerImpl");
-    }    
+        assertEquals(partitionLostListenerConfigs.get(0).getClassName(), "DummyCachePartitionLostListenerImpl");
+    }
 
     @Test
     public void cacheConfigXmlTest_ClusterQuorum() {
@@ -239,7 +238,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_DefaultMergePolicy() throws IOException {
+    public void cacheConfigXmlTest_DefaultMergePolicy() {
         assertNotNull(instance1);
 
         CacheSimpleConfig cacheWithDefaultMergePolicyConfig =
@@ -250,7 +249,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_CustomMergePolicy() throws IOException {
+    public void cacheConfigXmlTest_CustomMergePolicy() {
         assertNotNull(instance1);
 
         CacheSimpleConfig cacheWithCustomMergePolicyConfig =
@@ -261,7 +260,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_ComparatorClassName() throws IOException {
+    public void cacheConfigXmlTest_ComparatorClassName() {
         assertNotNull(instance1);
 
         CacheSimpleConfig cacheConfigWithComparatorClassName =
@@ -275,7 +274,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_ComparatorBean() throws IOException {
+    public void cacheConfigXmlTest_ComparatorBean() {
         assertNotNull(instance1);
 
         CacheSimpleConfig cacheConfigWithComparatorClassName =
@@ -289,7 +288,7 @@ public class TestJCache {
     }
 
     @Test
-    public void cacheConfigXmlTest_SimpleWriterLoader() throws IOException {
+    public void cacheConfigXmlTest_SimpleWriterLoader() {
         assertNotNull(instance1);
 
         CacheSimpleConfig config =

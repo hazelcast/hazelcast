@@ -22,7 +22,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.ExceptionUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,17 +35,14 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author mdogan 4/6/12
- */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
@@ -74,93 +70,91 @@ public class TestManagedContext {
     }
 
     @Test
-    public void testSerialization() throws InterruptedException {
+    public void testSerialization() {
         instance1.getMap("test").put(1L, new SomeValue());
-        SomeValue v = (SomeValue) instance1.getMap("test").get(1L);
-        Assert.assertNotNull(v.context);
-        Assert.assertNotNull(v.someBean);
-        assertEquals(context, v.context);
-        assertEquals(bean, v.someBean);
-        assertTrue(v.init);
+        SomeValue value = (SomeValue) instance1.getMap("test").get(1L);
+        Assert.assertNotNull(value.context);
+        Assert.assertNotNull(value.someBean);
+        assertEquals(context, value.context);
+        assertEquals(bean, value.someBean);
+        assertTrue(value.init);
     }
 
     @Test
-    public void testDistributedTask() throws ExecutionException, InterruptedException {
+    public void testDistributedTask() throws Exception {
         SomeTask task = (SomeTask) context.getBean("someTask");
-        Future<Long> f = instance1.getExecutorService("test").submit(task);
-        assertEquals(bean.value, f.get().longValue());
+        Future<Long> future1 = instance1.getExecutorService("test").submit(task);
+        assertEquals(bean.value, future1.get().longValue());
 
-        Future<Long> f2 = instance1.getExecutorService("test").submitToMember(new SomeTask(),
+        Future<Long> future2 = instance1.getExecutorService("test").submitToMember(new SomeTask(),
                 instance2.getCluster().getLocalMember());
-        assertEquals(bean.value, f2.get().longValue());
+        assertEquals(bean.value, future2.get().longValue());
     }
 
     @Test
-    public void testTransactionalTask() throws ExecutionException, InterruptedException {
-        Future f = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
+    public void testTransactionalTask() throws Exception {
+        Future future = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
                 instance2.getCluster().getLocalMember());
-        f.get();
-        assertTrue("transaction manager could not proxy the submitted task.",
-                transactionManager.isCommitted());
+        future.get();
+        assertTrue("transaction manager could not proxy the submitted task.", transactionManager.isCommitted());
     }
 
     @Test
-    public void testRunnableTask() throws ExecutionException, InterruptedException {
+    public void testRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
 
         instance1.getExecutorService("test").submitToMember(new SomeRunnableTask(),
                 instance2.getCluster().getLocalMember(), new ExecutionCallback() {
-            public void onResponse(Object response) {
-                latch.countDown();
-            }
+                    public void onResponse(Object response) {
+                        latch.countDown();
+                    }
 
-            public void onFailure(Throwable t) {
-                error.set(t);
-                latch.countDown();
-            }
-        });
+                    public void onFailure(Throwable t) {
+                        error.set(t);
+                        latch.countDown();
+                    }
+                });
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
-        Throwable t = error.get();
-        if (t != null) {
-            ExceptionUtil.sneakyThrow(t);
+        Throwable throwable = error.get();
+        if (throwable != null) {
+            sneakyThrow(throwable);
         }
     }
 
     @Test
-    public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
+    public void testTransactionalRunnableTask() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         instance1.getExecutorService("test").submitToMember(new SomeTransactionalRunnableTask(),
                 instance2.getCluster().getLocalMember(), new ExecutionCallback() {
-            public void onResponse(Object response) {
-                latch.countDown();
-            }
+                    public void onResponse(Object response) {
+                        latch.countDown();
+                    }
 
-            public void onFailure(Throwable t) {
-            }
-        });
+                    public void onFailure(Throwable t) {
+                    }
+                });
         latch.await(1, TimeUnit.MINUTES);
-        assertTrue("transaction manager could not proxy the submitted task.",
-                transactionManager.isCommitted());
+        assertTrue("transaction manager could not proxy the submitted task.", transactionManager.isCommitted());
     }
 
     @Test
     public void testEntryProcessor() {
-        final IMap<Object,Object> map = instance1.getMap("testEntryProcessor");
+        IMap<Object, Object> map = instance1.getMap("testEntryProcessor");
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
         map.put("key4", "value4");
         map.put("key5", "value5");
 
-        final Map<Object,Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
+        Map<Object, Object> objectMap = map.executeOnEntries(new SomeEntryProcessor());
         assertEquals(5, objectMap.size());
         for (Object o : objectMap.values()) {
             assertEquals("notNull", o);
         }
 
-        final Object result = map.executeOnKey("key8", new SomeEntryProcessor());
+        Object result = map.executeOnKey("key8", new SomeEntryProcessor());
         assertEquals("notNull", result);
     }
 }

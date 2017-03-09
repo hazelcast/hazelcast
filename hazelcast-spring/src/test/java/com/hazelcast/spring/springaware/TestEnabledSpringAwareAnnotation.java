@@ -57,5 +57,4 @@ public class TestEnabledSpringAwareAnnotation {
         HazelcastClientProxy client = (HazelcastClientProxy) context.getBean("client");
         assertTrue(client.getClientConfig().getManagedContext() instanceof SpringManagedContext);
     }
-
 }

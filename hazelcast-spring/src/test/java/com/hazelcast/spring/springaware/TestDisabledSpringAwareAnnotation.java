@@ -56,5 +56,4 @@ public class TestDisabledSpringAwareAnnotation {
         HazelcastClientProxy client = (HazelcastClientProxy) context.getBean("client");
         assertNull(client.getClientConfig().getManagedContext());
     }
-
 }

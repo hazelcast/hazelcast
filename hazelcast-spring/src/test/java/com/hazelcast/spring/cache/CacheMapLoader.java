@@ -39,12 +39,12 @@ public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
     }
 
     @Override
-    public Object load(final Object key) {
+    public Object load(Object key) {
         return type + ":" + key;
     }
 
     @Override
-    public Map loadAll(final Collection keys) {
+    public Map loadAll(Collection keys) {
         return null;
     }
 

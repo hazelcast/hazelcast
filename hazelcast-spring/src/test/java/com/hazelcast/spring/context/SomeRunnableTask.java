@@ -26,10 +26,6 @@ import java.io.Serializable;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-
-/**
- * @leimer 8/15/12
- */
 @SpringAware
 public class SomeRunnableTask implements Runnable, Serializable, ApplicationContextAware {
 
@@ -40,6 +36,7 @@ public class SomeRunnableTask implements Runnable, Serializable, ApplicationCont
     @Autowired
     private transient SomeBean someBean;
 
+    @Override
     public void run() {
         assertNotNull(someBean);
         assertNotNull(context);
@@ -48,8 +45,8 @@ public class SomeRunnableTask implements Runnable, Serializable, ApplicationCont
         assertEquals(someBean, bean);
     }
 
-    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
-
 }

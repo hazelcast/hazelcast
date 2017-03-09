@@ -21,9 +21,6 @@ import com.hazelcast.test.TestLoggingUtils;
 import org.junit.runners.model.InitializationError;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-/**
- * @author mdogan 7/19/12
- */
 public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
     static {
