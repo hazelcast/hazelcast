@@ -22,6 +22,7 @@ import com.hazelcast.quorum.QuorumFunction;
 import java.util.Collection;
 
 public class DummyQuorumFunction implements QuorumFunction {
+
     @Override
     public boolean apply(Collection<Member> members) {
         return false;

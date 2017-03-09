@@ -24,13 +24,16 @@ import java.util.Properties;
 
 public class DummyCredentialsFactory implements ICredentialsFactory {
 
+    @Override
     public void configure(GroupConfig groupConfig, Properties properties) {
     }
 
+    @Override
     public Credentials newCredentials() {
         return null;
     }
 
+    @Override
     public void destroy() {
     }
 }

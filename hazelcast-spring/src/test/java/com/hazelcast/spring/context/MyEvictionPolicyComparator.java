@@ -25,5 +25,4 @@ public class MyEvictionPolicyComparator extends EvictionPolicyComparator {
     public int compare(EvictableEntryView e1, EvictableEntryView e2) {
         return BOTH_OF_ENTRIES_HAVE_SAME_PRIORITY_TO_BE_EVICTED;
     }
-
 }

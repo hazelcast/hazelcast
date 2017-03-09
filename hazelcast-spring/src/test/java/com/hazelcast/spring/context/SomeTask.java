@@ -31,9 +31,6 @@ import java.util.concurrent.Callable;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @author mdogan 4/6/12
- */
 @SpringAware(beanName = "someTask")
 @Component("someTask")
 @Scope("prototype")
@@ -43,39 +40,47 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
 
     private transient SomeBean someBean;
 
+    @Override
     public Long call() throws Exception {
         SomeBean bean = (SomeBean) context.getBean("someBean");
         assertEquals(bean, someBean);
         return bean.value;
     }
 
-    public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         context = applicationContext;
     }
 
     @Autowired
-    public void setSomeBean(final SomeBean someBean) {
+    public void setSomeBean(SomeBean someBean) {
         this.someBean = someBean;
     }
 
-    public void writeData(final ObjectDataOutput out) throws IOException {
-
-    }
-
-    public void readData(final ObjectDataInput in) throws IOException {
-
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
     }
 
     @Override
-    public boolean equals(final Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SomeTask)) return false;
+    public void readData(ObjectDataInput in) throws IOException {
+    }
 
-        final SomeTask someTask = (SomeTask) o;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SomeTask)) {
+            return false;
+        }
 
-        if (context != null ? !context.equals(someTask.context) : someTask.context != null) return false;
-        if (someBean != null ? !someBean.equals(someTask.someBean) : someTask.someBean != null) return false;
-
+        SomeTask someTask = (SomeTask) o;
+        if (context != null ? !context.equals(someTask.context) : someTask.context != null) {
+            return false;
+        }
+        if (someBean != null ? !someBean.equals(someTask.someBean) : someTask.someBean != null) {
+            return false;
+        }
         return true;
     }
 
@@ -86,13 +91,10 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
         return result;
     }
 
-
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("SomeTask{");
-        sb.append("context=").append(context);
-        sb.append(", someBean=").append(someBean);
-        sb.append('}');
-        return sb.toString();
+        return "SomeTask{" + "context=" + context
+                + ", someBean=" + someBean
+                + '}';
     }
 }

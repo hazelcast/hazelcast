@@ -157,12 +157,12 @@ public class TestSecureApplicationContext {
 
     @Test
     public void testSecurityInterceptors() {
-        final List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
+        List<SecurityInterceptorConfig> interceptorConfigs = securityConfig.getSecurityInterceptorConfigs();
         assertEquals(1, interceptorConfigs.size());
-        final SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
-        final String className = interceptorConfig.getClassName();
+        SecurityInterceptorConfig interceptorConfig = interceptorConfigs.get(0);
+        String className = interceptorConfig.getClassName();
         assertEquals(DummySecurityInterceptor.class.getName(), className);
-        final SecurityInterceptor securityInterceptor = interceptorConfig.getImplementation();
+        SecurityInterceptor securityInterceptor = interceptorConfig.getImplementation();
         assertTrue(securityInterceptor instanceof DummySecurityInterceptor);
     }
 }

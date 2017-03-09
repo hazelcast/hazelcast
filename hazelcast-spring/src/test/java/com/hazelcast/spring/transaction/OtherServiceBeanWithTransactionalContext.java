@@ -26,11 +26,9 @@ public class OtherServiceBeanWithTransactionalContext {
 
     TransactionalTaskContext transactionalContext;
 
-
     public OtherServiceBeanWithTransactionalContext(TransactionalTaskContext transactionalContext) {
         this.transactionalContext = transactionalContext;
     }
-
 
     @Transactional
     public void put(DummyObject object) {

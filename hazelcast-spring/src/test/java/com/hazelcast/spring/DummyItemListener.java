@@ -20,9 +20,12 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 public class DummyItemListener implements ItemListener {
-    public void itemAdded(final ItemEvent item) {
+
+    @Override
+    public void itemAdded(ItemEvent item) {
     }
 
-    public void itemRemoved(final ItemEvent item) {
+    @Override
+    public void itemRemoved(ItemEvent item) {
     }
 }

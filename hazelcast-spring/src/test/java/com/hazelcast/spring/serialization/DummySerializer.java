@@ -22,9 +22,6 @@ import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.IOException;
 
-/**
- * @author mdogan 02/12/13
- */
 public class DummySerializer implements StreamSerializer<DummySerializableObject1> {
 
     @Override

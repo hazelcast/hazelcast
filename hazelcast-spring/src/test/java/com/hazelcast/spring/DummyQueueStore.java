@@ -23,19 +23,17 @@ import java.util.Map;
 import java.util.Set;
 
 public class DummyQueueStore implements QueueStore {
+
     @Override
     public void store(Long key, Object value) {
-
     }
 
     @Override
     public void storeAll(Map map) {
-
     }
 
     @Override
     public void delete(Long key) {
-
     }
 
     @Override
@@ -55,6 +53,5 @@ public class DummyQueueStore implements QueueStore {
 
     @Override
     public void deleteAll(Collection keys) {
-
     }
 }

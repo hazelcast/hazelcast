@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.core.RingbufferStore;
 
 public class DummyRingbufferStore implements RingbufferStore {
+
     @Override
     public void store(long sequence, Object data) {
     }

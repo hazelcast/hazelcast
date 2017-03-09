@@ -63,10 +63,10 @@ public class TestHibernateApplicationContext {
     @Test
     public void testInstance() {
         assertNotNull(instance);
-        final Set<Member> members = instance.getCluster().getMembers();
+        Set<Member> members = instance.getCluster().getMembers();
         assertEquals(1, members.size());
-        final Member member = members.iterator().next();
-        final InetSocketAddress inetSocketAddress = member.getSocketAddress();
+        Member member = members.iterator().next();
+        InetSocketAddress inetSocketAddress = member.getSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
     }
 

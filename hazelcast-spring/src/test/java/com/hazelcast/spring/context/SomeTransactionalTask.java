@@ -21,9 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 
-/**
- * @leimer 8/14/12
- */
 @SpringAware
 public class SomeTransactionalTask implements Callable<Void>, Serializable {
 
@@ -31,5 +28,4 @@ public class SomeTransactionalTask implements Callable<Void>, Serializable {
     public Void call() throws Exception {
         return null;
     }
-
 }

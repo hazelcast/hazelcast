@@ -23,6 +23,7 @@ import java.util.Properties;
 
 public class DummyStoreFactory implements MapStoreFactory {
 
+    @Override
     public MapLoader newMapStore(String mapName, Properties properties) {
         return new DummyStore();
     }

@@ -23,32 +23,40 @@ import java.util.Map;
 import java.util.Set;
 
 public class DummyStore implements MapStore {
-    public void store(final Object key, final Object value) {
+
+    @Override
+    public void store(Object key, Object value) {
         // not implemented
     }
 
-    public void storeAll(final Map map) {
+    @Override
+    public void storeAll(Map map) {
         // not implemented
     }
 
-    public void delete(final Object key) {
+    @Override
+    public void delete(Object key) {
         // not implemented
     }
 
-    public void deleteAll(final Collection keys) {
+    @Override
+    public void deleteAll(Collection keys) {
         // not implemented
     }
 
-    public Object load(final Object key) {
+    @Override
+    public Object load(Object key) {
         // not implemented
         return null;
     }
 
-    public Map loadAll(final Collection keys) {
+    @Override
+    public Map loadAll(Collection keys) {
         // not implemented
         return null;
     }
 
+    @Override
     public Set loadAllKeys() {
         // not implemented
         return null;

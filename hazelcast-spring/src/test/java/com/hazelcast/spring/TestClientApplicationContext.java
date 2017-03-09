@@ -165,12 +165,12 @@ public class TestClientApplicationContext {
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
 
-        final IMap<Object, Object> map = instance.getMap("default");
+        IMap<Object, Object> map = instance.getMap("default");
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
 
         ClientConfig config3 = client3.getClientConfig();
-        final SerializationConfig serConf = config3.getSerializationConfig();
+        SerializationConfig serConf = config3.getSerializationConfig();
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
         assertEquals(false, serConf.isAllowUnsafe());
@@ -180,39 +180,36 @@ public class TestClientApplicationContext {
         assertEquals(false, serConf.isUseNativeByteOrder());
         assertEquals(10, serConf.getPortableVersion());
 
-        final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
+        Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
         assertNotNull(map1);
         assertTrue(map1.containsKey(1));
         assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
 
-        final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
+        Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
         assertNotNull(portableFactoryClasses);
         assertTrue(portableFactoryClasses.containsKey(2));
         assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
 
-        final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
-
+        Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
         assertNotNull(serializerConfigs);
 
-        final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
+        SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertNotNull(serializerConfig);
         assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
         assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
 
-        final List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
+        List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
         assertNotNull(proxyFactoryConfigs);
-        final ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
+        ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
         assertNotNull(proxyFactoryConfig);
         assertEquals("com.hazelcast.spring.DummyProxyFactory", proxyFactoryConfig.getClassName());
         assertEquals("MyService", proxyFactoryConfig.getService());
 
-        final LoadBalancer loadBalancer = config3.getLoadBalancer();
+        LoadBalancer loadBalancer = config3.getLoadBalancer();
         assertNotNull(loadBalancer);
-
         assertTrue(loadBalancer instanceof RoundRobinLB);
 
-        final NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
-
+        NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
         assertNotNull(nearCacheConfig);
 
         assertEquals(1, nearCacheConfig.getTimeToLiveSeconds());
@@ -227,9 +224,9 @@ public class TestClientApplicationContext {
     public void testAwsClientConfig() {
         assertNotNull(client4);
         ClientConfig config = client4.getClientConfig();
-        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
+        ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
         assertFalse(awsConfig.isEnabled());
         assertTrue(awsConfig.isInsideAws());
         assertEquals("sample-access-key", awsConfig.getAccessKey());
@@ -243,10 +240,9 @@ public class TestClientApplicationContext {
     @Test
     public void testUnlimitedConnectionAttempt() {
         assertNotNull(client5);
-        ClientConfig config = client5.getClientConfig();
-        final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        assertEquals(0, networkConfig.getConnectionAttemptLimit());
+        ClientConfig config = client5.getClientConfig();
+        assertEquals(0, config.getNetworkConfig().getConnectionAttemptLimit());
     }
 
     @Test
@@ -281,7 +277,7 @@ public class TestClientApplicationContext {
     @Test
     public void testDefaultSerializationConfig() {
         ClientConfig config7 = client7.getClientConfig();
-        final SerializationConfig serConf = config7.getSerializationConfig();
+        SerializationConfig serConf = config7.getSerializationConfig();
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
         assertEquals(false, serConf.isAllowUnsafe());
@@ -318,7 +314,7 @@ public class TestClientApplicationContext {
         assertEquals(111, queryCacheConfig.getEvictionConfig().getSize());
     }
 
-    private QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
+    private static QueryCacheConfig getQueryCacheConfig(ClientConfig config) {
         Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs = config.getQueryCacheConfigs();
         Collection<Map<String, QueryCacheConfig>> values = queryCacheConfigs.values();
         for (Map<String, QueryCacheConfig> value : values) {

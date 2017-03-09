@@ -26,14 +26,16 @@ import java.util.Properties;
 
 public class DummyPermissionPolicy implements IPermissionPolicy {
 
+    @Override
     public void configure(Config config, Properties properties) {
     }
 
-    public PermissionCollection getPermissions(Subject subject,
-                                               Class<? extends Permission> type) {
+    @Override
+    public PermissionCollection getPermissions(Subject subject, Class<? extends Permission> type) {
         return null;
     }
 
+    @Override
     public void destroy() {
     }
 }

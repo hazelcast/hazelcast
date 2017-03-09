@@ -49,7 +49,7 @@ public class TestClientConfigAndSpringDefaults {
     }
 
     @Before
-    public void before() throws IllegalAccessException {
+    public void before() {
         clientConfig = client.getClientConfig();
     }
 

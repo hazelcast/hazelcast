@@ -48,8 +48,7 @@ public class TestIssue2676 {
     }
 
     @Test
-    public void testContextInitiazedSuccessfully() {
+    public void testContextInitializedSuccessfully() {
         assertNotNull(context);
     }
-
 }

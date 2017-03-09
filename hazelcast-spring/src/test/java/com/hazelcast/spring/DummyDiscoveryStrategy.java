@@ -24,9 +24,9 @@ import java.util.Collections;
 import java.util.Map;
 
 public class DummyDiscoveryStrategy implements DiscoveryStrategy {
+
     @Override
     public void start() {
-
     }
 
     @Override
@@ -36,7 +36,6 @@ public class DummyDiscoveryStrategy implements DiscoveryStrategy {
 
     @Override
     public void destroy() {
-
     }
 
     @Override

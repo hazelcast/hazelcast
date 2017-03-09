@@ -23,7 +23,6 @@ public class DummyObject implements Serializable {
     private Long id;
     private String string;
 
-
     public DummyObject() {
     }
 
@@ -31,7 +30,6 @@ public class DummyObject implements Serializable {
         this.id = id;
         this.string = string;
     }
-
 
     public Long getId() {
         return id;

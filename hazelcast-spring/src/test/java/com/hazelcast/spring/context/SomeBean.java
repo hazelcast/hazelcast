@@ -21,10 +21,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
-/**
- * @author mdogan 4/6/12
- */
-
 @Component("someBean")
 @Scope("singleton")
 public class SomeBean {
@@ -35,5 +31,4 @@ public class SomeBean {
     void init() {
         value = System.currentTimeMillis();
     }
-
 }

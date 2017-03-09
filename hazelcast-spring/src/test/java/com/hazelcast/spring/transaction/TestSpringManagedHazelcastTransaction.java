@@ -16,7 +16,6 @@
 
 package com.hazelcast.spring.transaction;
 
-
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -25,7 +24,6 @@ import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -38,6 +36,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.NoTransactionException;
 import org.springframework.transaction.TransactionSuspensionNotSupportedException;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"transaction-applicationContext-hazelcast.xml"})
@@ -53,8 +54,7 @@ public class TestSpringManagedHazelcastTransaction {
 
     @Before
     public void setUp() {
-        //Clear all items from the dummyObjectMap used
-        //to test transactional object insertion
+        // clear all items from the dummyObjectMap used to test transactional object insertion
         instance.getMap("dummyObjectMap").clear();
     }
 
@@ -92,7 +92,7 @@ public class TestSpringManagedHazelcastTransaction {
         TransactionalMap<Object, Object> magic = transactionalContext.getMap("magic");
 
         // then
-        Assert.assertNotNull(magic);
+        assertNotNull(magic);
     }
 
     /**
@@ -104,7 +104,7 @@ public class TestSpringManagedHazelcastTransaction {
         service.put(new DummyObject(1L, "magic"));
 
         // then
-        Assert.assertEquals(1L, instance.getMap("dummyObjectMap").size());
+        assertEquals(1L, instance.getMap("dummyObjectMap").size());
     }
 
     /**
@@ -121,13 +121,13 @@ public class TestSpringManagedHazelcastTransaction {
             expectedEx = ex;
         } finally {
             // then
-            Assert.assertNotNull(expectedEx);
-            Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
+            assertNotNull(expectedEx);
+            assertEquals(0L, instance.getMap("dummyObjectMap").size());
         }
     }
 
     /**
-     * Tests that transaction will be rollbacked when putting one object each 
+     * Tests that transaction will be rollbacked when putting one object each
      * via two beans, one nested within the other,
      * if there is an exception in the nested bean, but no exception in our own bean.
      */
@@ -143,13 +143,13 @@ public class TestSpringManagedHazelcastTransaction {
             expectedEx = ex;
         } finally {
             // then
-            Assert.assertNotNull(expectedEx);
-            Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
+            assertNotNull(expectedEx);
+            assertEquals(0L, instance.getMap("dummyObjectMap").size());
         }
     }
 
     /**
-     * Tests that transaction will be rollbacked when putting one object each 
+     * Tests that transaction will be rollbacked when putting one object each
      * via two beans, one nested within the other,
      * if there is an exception in our own bean, but no exception in the other bean.
      */
@@ -165,8 +165,8 @@ public class TestSpringManagedHazelcastTransaction {
             expectedEx = ex;
         } finally {
             // then
-            Assert.assertNotNull(expectedEx);
-            Assert.assertEquals(0L, instance.getMap("dummyObjectMap").size());
+            assertNotNull(expectedEx);
+            assertEquals(0L, instance.getMap("dummyObjectMap").size());
         }
     }
 
@@ -180,7 +180,7 @@ public class TestSpringManagedHazelcastTransaction {
         service.putUsingOtherBean_sameTransaction(new DummyObject(1L, "magic"));
 
         // then
-        Assert.assertEquals(1L, instance.getMap("dummyObjectMap").size());
+        assertEquals(1L, instance.getMap("dummyObjectMap").size());
     }
 
     /**

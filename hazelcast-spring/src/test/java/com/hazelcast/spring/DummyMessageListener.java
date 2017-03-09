@@ -19,12 +19,10 @@ package com.hazelcast.spring;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
-/**
- * @author mdogan 7/11/12
- */
 public class DummyMessageListener implements MessageListener {
 
-    public void onMessage(final Message message) {
+    @Override
+    public void onMessage(Message message) {
         System.out.println(message);
     }
 }
