@@ -154,6 +154,14 @@
                        max-size="4000"
                        invalidate-on-change="true" local-update-policy="CACHE_ON_UPDATE"/>
 
+        <hz:near-cache name="lfuNearCacheEviction" eviction-policy="LFU" />
+        <hz:near-cache name="lruNearCacheEviction"
+                       eviction-policy="LRU" />
+        <hz:near-cache name="noneNearCacheEviction"
+                       eviction-policy="NONE" />
+        <hz:near-cache name="randomNearCacheEviction"
+                       eviction-policy="RANDOM" />
+
 
     </hz:client>
 
