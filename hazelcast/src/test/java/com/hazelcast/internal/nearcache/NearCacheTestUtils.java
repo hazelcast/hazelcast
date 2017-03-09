@@ -96,7 +96,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context       the {@link NearCacheTestContext} to retrieve the owned entry count from
      * @param nearCacheSize the expected owned entry count
      */
-    public static void waitForNearCacheSize(final NearCacheTestContext<Integer, String, ?, ?> context,
+    public static void waitForNearCacheSize(final NearCacheTestContext<?, ?, ?, ?> context,
                                             final int nearCacheSize) {
         assertTrueEventually(new AssertTask() {
             public void run() {
@@ -114,7 +114,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param context       the {@link NearCacheTestContext} to retrieve the eviction count from
      * @param evictionCount the expected eviction count to wait for
      */
-    public static void waitForNearCacheEvictions(final NearCacheTestContext<Integer, String, ?, ?> context,
+    public static void waitForNearCacheEvictions(final NearCacheTestContext<?, ?, ?, ?> context,
                                                  final int evictionCount) {
         assertTrueEventually(new AssertTask() {
             public void run() {
@@ -134,7 +134,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param expectedHits            the expected Near Cache hits
      * @param expectedMisses          the expected Near Cache misses
      */
-    public static void assertNearCacheStats(NearCacheTestContext<Integer, String, ?, ?> context,
+    public static void assertNearCacheStats(NearCacheTestContext<?, ?, ?, ?> context,
                                             long expectedOwnedEntryCount, long expectedHits, long expectedMisses) {
         assertNearCacheStats(context, expectedOwnedEntryCount, expectedHits, expectedMisses, 0, 0);
     }
@@ -149,7 +149,7 @@ public final class NearCacheTestUtils extends HazelcastTestSupport {
      * @param expectedEvictions       the expected Near Cache evictions
      * @param expectedExpirations     the expected Near Cache expirations
      */
-    public static void assertNearCacheStats(NearCacheTestContext<Integer, String, ?, ?> context,
+    public static void assertNearCacheStats(NearCacheTestContext<?, ?, ?, ?> context,
                                             long expectedOwnedEntryCount, long expectedHits, long expectedMisses,
                                             long expectedEvictions, long expectedExpirations) {
         NearCacheStats stats = context.stats;
