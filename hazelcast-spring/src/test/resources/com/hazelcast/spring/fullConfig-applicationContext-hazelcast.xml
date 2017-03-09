@@ -264,6 +264,24 @@
                 </hz:entry-listeners>
             </hz:map>
 
+            <hz:map name="lfuEvictionMap" eviction-policy="LFU" />
+            <hz:map name="lruEvictionMap" eviction-policy="LRU" />
+            <hz:map name="noneEvictionMap" eviction-policy="NONE" />
+            <hz:map name="randomEvictionMap" eviction-policy="RANDOM" />
+
+            <hz:map name="lfuNearCacheEvictionMap">
+                <hz:near-cache eviction-policy="LFU" />
+            </hz:map>
+            <hz:map name="lruNearCacheEvictionMap">
+                <hz:near-cache eviction-policy="LRU" />
+            </hz:map>
+            <hz:map name="noneNearCacheEvictionMap">
+                <hz:near-cache eviction-policy="NONE" />
+            </hz:map>
+            <hz:map name="randomNearCacheEvictionMap">
+                <hz:near-cache eviction-policy="RANDOM" />
+            </hz:map>
+
             <hz:map name="testMap3"
                     backup-count="2"
                     max-size="0"

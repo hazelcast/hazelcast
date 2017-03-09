@@ -293,6 +293,19 @@ public class TestClientApplicationContext {
     }
 
     @Test
+    public void testClientNearCacheEvictionPolicies() {
+        ClientConfig config = client3.getClientConfig();
+        assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCacheEviction", config));
+        assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEviction", config));
+        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEviction", config));
+    }
+
+    private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
+        return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
+    }
+
+    @Test
     public void testFullQueryCacheConfig() throws Exception {
         ClientConfig config = client6.getClientConfig();
 
