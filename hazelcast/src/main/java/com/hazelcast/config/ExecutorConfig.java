@@ -61,19 +61,6 @@ public class ExecutorConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public ExecutorConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ExecutorConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Gets the name of the executor task.
      *
      * @return The name of the executor task.
@@ -163,5 +150,39 @@ public class ExecutorConfig {
                 + ", poolSize=" + poolSize
                 + ", queueCapacity=" + queueCapacity
                 + '}';
+    }
+
+    ExecutorConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ExecutorConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class ExecutorConfigReadOnly extends ExecutorConfig {
+
+        ExecutorConfigReadOnly(ExecutorConfig config) {
+            super(config);
+        }
+
+        @Override
+        public ExecutorConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        @Override
+        public ExecutorConfig setPoolSize(int poolSize) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        @Override
+        public ExecutorConfig setQueueCapacity(int queueCapacity) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
+
+        @Override
+        public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
+            throw new UnsupportedOperationException("This config is read-only executor: " + getName());
+        }
     }
 }

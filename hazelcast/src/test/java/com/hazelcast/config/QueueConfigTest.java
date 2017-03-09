@@ -49,13 +49,9 @@ public class QueueConfigTest {
         assertEquals(name, queueConfig.getName());
     }
 
-    /**
-     * Test method for {@link com.hazelcast.config.QueueConfig#setName(java.lang.String)}.
-     */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlySetName() {
-        String name = "a test name";
-        QueueConfig queueConfig = new QueueConfigReadOnly(new QueueConfig()).setName(name);
+        QueueConfig queueConfig = new QueueConfig().getAsReadOnly().setName("myName");
     }
 
     @Test(expected = IllegalArgumentException.class)

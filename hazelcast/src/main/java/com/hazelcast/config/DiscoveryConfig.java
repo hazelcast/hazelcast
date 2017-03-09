@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
@@ -46,20 +47,6 @@ public class DiscoveryConfig {
         this.nodeFilter = nodeFilter;
         this.nodeFilterClass = nodeFilterClass;
         this.discoveryStrategyConfigs.addAll(discoveryStrategyConfigs);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public DiscoveryConfig getAsReadOnly() {
-        if (readonly != null) {
-            return readonly;
-        }
-        readonly = new DiscoveryConfigReadOnly(this);
-        return readonly;
     }
 
     public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
@@ -118,5 +105,47 @@ public class DiscoveryConfig {
      */
     public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
         discoveryStrategyConfigs.add(discoveryStrategyConfig);
+    }
+
+    @PrivateApi
+    public DiscoveryConfig getAsReadOnly() {
+        if (readonly != null) {
+            return readonly;
+        }
+        readonly = new DiscoveryConfigReadOnly(this);
+        return readonly;
+    }
+
+    private static class DiscoveryConfigReadOnly extends DiscoveryConfig {
+
+        DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
+            super(discoveryConfig.getDiscoveryServiceProvider(), discoveryConfig.getNodeFilter(),
+                    discoveryConfig.getNodeFilterClass(), discoveryConfig.getDiscoveryStrategyConfigs());
+        }
+
+        @Override
+        public void setDiscoveryServiceProvider(DiscoveryServiceProvider discoveryServiceProvider) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void setNodeFilter(NodeFilter nodeFilter) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void setNodeFilterClass(String nodeFilterClass) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void addDiscoveryStrategyConfig(DiscoveryStrategyConfig discoveryStrategyConfig) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
+
+        @Override
+        public void setDiscoveryStrategyConfigs(List<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+            throw new UnsupportedOperationException("Configuration is readonly");
+        }
     }
 }

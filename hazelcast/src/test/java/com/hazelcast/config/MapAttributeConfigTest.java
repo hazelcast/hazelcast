@@ -25,7 +25,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -119,16 +118,4 @@ public class MapAttributeConfigTest {
         assertThat(toString, containsString("iq"));
         assertThat(toString, containsString("com.test.IqExtractor"));
     }
-
-    @Test
-    public void validReadOnly() {
-        MapAttributeConfig config = new MapAttributeConfig("iq", "com.test.IqExtractor");
-
-        MapAttributeConfigReadOnly readOnlyConfig = config.getAsReadOnly();
-
-        assertThat(readOnlyConfig, instanceOf(MapAttributeConfigReadOnly.class));
-        assertEquals("iq", readOnlyConfig.getName());
-        assertEquals("com.test.IqExtractor", readOnlyConfig.getExtractor());
-    }
-
 }

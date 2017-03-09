@@ -65,19 +65,6 @@ public class ListenerConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public ListenerConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new ListenerConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Returns the name of the class of the EventListener. If no class is specified, null is returned.
      *
      * @return the class name of the EventListener.
@@ -165,5 +152,29 @@ public class ListenerConfig {
     @Override
     public int hashCode() {
         return className != null ? className.hashCode() : 0;
+    }
+
+    ListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new ListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class ListenerConfigReadOnly extends ListenerConfig {
+
+        ListenerConfigReadOnly(ListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

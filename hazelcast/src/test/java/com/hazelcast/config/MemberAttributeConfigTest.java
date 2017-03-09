@@ -29,11 +29,8 @@ import java.util.HashMap;
 @Category({QuickTest.class, ParallelTest.class})
 public class MemberAttributeConfigTest {
 
-    /**
-     * Test method for {@link com.hazelcast.config.MemberAttributeConfigReadOnly#setAttributes(java.util.Map)} .
-     */
     @Test(expected = java.lang.UnsupportedOperationException.class)
     public void testReadOnlyMemberAttributeConfigSetAttributes() {
-        new MemberAttributeConfigReadOnly(new MemberAttributeConfig()).setAttributes(new HashMap<String, Object>());
+        new MemberAttributeConfig().getAsReadOnly().setAttributes(new HashMap<String, Object>());
     }
 }

@@ -314,20 +314,10 @@ public class RingbufferConfig {
         return this;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public RingbufferConfig getAsReadOnly() {
+    RingbufferConfig getAsReadOnly() {
         return new RingbufferConfigReadonly(this);
     }
 
-    /**
-     * A readonly version of the {@link RingbufferConfig}.
-     */
-    @Beta
     private static class RingbufferConfigReadonly extends RingbufferConfig {
 
         RingbufferConfigReadonly(RingbufferConfig config) {

@@ -38,19 +38,6 @@ public class CacheSimpleEntryListenerConfig {
     public CacheSimpleEntryListenerConfig() {
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public CacheSimpleEntryListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String getCacheEntryListenerFactory() {
         return cacheEntryListenerFactory;
     }
@@ -108,5 +95,39 @@ public class CacheSimpleEntryListenerConfig {
      */
     public void setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;
+    }
+
+    CacheSimpleEntryListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new CacheSimpleEntryListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class CacheSimpleEntryListenerConfigReadOnly extends CacheSimpleEntryListenerConfig {
+
+        CacheSimpleEntryListenerConfigReadOnly(CacheSimpleEntryListenerConfig listenerConfig) {
+            super(listenerConfig);
+        }
+
+        @Override
+        public void setSynchronous(boolean synchronous) {
+            super.setSynchronous(synchronous);
+        }
+
+        @Override
+        public void setOldValueRequired(boolean oldValueRequired) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setCacheEntryEventFilterFactory(String cacheEntryEventFilterFactory) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setCacheEntryListenerFactory(String cacheEntryListenerFactory) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

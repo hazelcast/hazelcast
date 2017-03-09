@@ -70,19 +70,6 @@ public class PredicateConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public PredicateConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new PredicateConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Returns the name of the class of the Predicate. If no class is specified, null is returned.
      *
      * @return the class name of the Predicate.
@@ -199,5 +186,39 @@ public class PredicateConfig {
                 + ", sql='" + sql + '\''
                 + ", implementation=" + implementation
                 + '}';
+    }
+
+    PredicateConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new PredicateConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class PredicateConfigReadOnly extends PredicateConfig {
+
+        PredicateConfigReadOnly(PredicateConfig config) {
+            super(config);
+        }
+
+        @Override
+        public PredicateConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public PredicateConfig setImplementation(Predicate implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public void setSql(String sql) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public String toString() {
+            return "PredicateConfigReadOnly{} " + super.toString();
+        }
     }
 }

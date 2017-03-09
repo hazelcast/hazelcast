@@ -56,19 +56,6 @@ public class WanReplicationRef implements DataSerializable, Serializable {
         republishingEnabled = ref.republishingEnabled;
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public WanReplicationRefReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new WanReplicationRefReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public String getName() {
         return name;
     }
@@ -163,5 +150,45 @@ public class WanReplicationRef implements DataSerializable, Serializable {
                 + ", republishingEnabled='" + republishingEnabled
                 + '\''
                 + '}';
+    }
+
+    WanReplicationRef getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new WanReplicationRefReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    @BinaryInterface
+    private static class WanReplicationRefReadOnly extends WanReplicationRef {
+
+        WanReplicationRefReadOnly(WanReplicationRef ref) {
+            super(ref);
+        }
+
+        @Override
+        public WanReplicationRef setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public WanReplicationRef setMergePolicy(String mergePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public WanReplicationRef setFilters(List<String> filters) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public WanReplicationRef addFilter(String filter) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public WanReplicationRef setRepublishingEnabled(boolean republishingEnabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

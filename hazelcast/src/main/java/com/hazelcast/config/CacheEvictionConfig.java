@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.eviction.EvictionPolicyComparator;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -63,20 +64,6 @@ public class CacheEvictionConfig extends EvictionConfig {
 
     public CacheEvictionConfig(EvictionConfig config) {
         super(config);
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    @Override
-    public CacheEvictionConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new CacheEvictionConfigReadOnly(this);
-        }
-        return (CacheEvictionConfig) readOnly;
     }
 
     /**
@@ -205,5 +192,52 @@ public class CacheEvictionConfig extends EvictionConfig {
                 + ", comparatorClassName=" + comparatorClassName
                 + ", comparator=" + comparator
                 + '}';
+    }
+
+    @Override
+    @PrivateApi
+    public CacheEvictionConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new CacheEvictionConfigReadOnly(this);
+        }
+        return (CacheEvictionConfig) readOnly;
+    }
+
+    @BinaryInterface
+    private static class CacheEvictionConfigReadOnly extends CacheEvictionConfig {
+
+        CacheEvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setComparatorClassName(String comparatorClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public CacheEvictionConfig setComparator(EvictionPolicyComparator comparator) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

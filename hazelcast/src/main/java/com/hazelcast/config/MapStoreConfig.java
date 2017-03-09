@@ -82,19 +82,6 @@ public class MapStoreConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public MapStoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapStoreConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Returns the name of the MapStore implementation class
      *
      * @return the name of the MapStore implementation class
@@ -392,5 +379,74 @@ public class MapStoreConfig {
         result = prime * result + properties.hashCode();
         result = prime * result + (initialLoadMode != null ? initialLoadMode.hashCode() : 0);
         return result;
+    }
+
+    MapStoreConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapStoreConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class MapStoreConfigReadOnly extends MapStoreConfig {
+
+        MapStoreConfigReadOnly(MapStoreConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapStoreConfig setClassName(String className) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setFactoryClassName(String factoryClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setWriteDelaySeconds(int writeDelaySeconds) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setWriteBatchSize(int writeBatchSize) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setEnabled(boolean enabled) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setImplementation(Object implementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setInitialLoadMode(InitialLoadMode initialLoadMode) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setProperty(String name, String value) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setProperties(Properties properties) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

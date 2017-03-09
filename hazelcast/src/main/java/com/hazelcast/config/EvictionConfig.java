@@ -168,19 +168,6 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
         FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public EvictionConfig getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new EvictionConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
     public int getSize() {
         return size;
     }
@@ -276,5 +263,45 @@ public class EvictionConfig implements EvictionConfiguration, DataSerializable, 
                 + ", comparatorClassName=" + comparatorClassName
                 + ", comparator=" + comparator
                 + '}';
+    }
+
+    EvictionConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new EvictionConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    @BinaryInterface
+    private static class EvictionConfigReadOnly extends EvictionConfig {
+
+        EvictionConfigReadOnly(EvictionConfig config) {
+            super(config);
+        }
+
+        @Override
+        public EvictionConfigReadOnly setSize(int size) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfigReadOnly setMaximumSizePolicy(MaxSizePolicy maxSizePolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfigReadOnly setEvictionPolicy(EvictionPolicy evictionPolicy) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfig setComparatorClassName(String comparatorClassName) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
+
+        @Override
+        public EvictionConfig setComparator(EvictionPolicyComparator comparator) {
+            throw new UnsupportedOperationException("This config is read-only");
+        }
     }
 }

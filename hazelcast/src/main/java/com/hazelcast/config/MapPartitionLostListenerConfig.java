@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.map.listener.MapPartitionLostListener;
 
+import java.util.EventListener;
+
 /**
  * Configuration for MapPartitionLostListener
  *
@@ -41,20 +43,6 @@ public class MapPartitionLostListenerConfig extends ListenerConfig {
     public MapPartitionLostListenerConfig(MapPartitionLostListenerConfig config) {
         implementation = config.getImplementation();
         className = config.getClassName();
-    }
-
-    /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    @Override
-    public MapPartitionLostListenerConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new MapPartitionLostListenerConfigReadOnly(this);
-        }
-        return readOnly;
     }
 
     @Override
@@ -94,5 +82,40 @@ public class MapPartitionLostListenerConfig extends ListenerConfig {
         result = 31 * result + (className != null ? className.hashCode() : 0);
         result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    MapPartitionLostListenerConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new MapPartitionLostListenerConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class MapPartitionLostListenerConfigReadOnly extends MapPartitionLostListenerConfig {
+
+        MapPartitionLostListenerConfigReadOnly(MapPartitionLostListenerConfig config) {
+            super(config);
+        }
+
+        @Override
+        public MapPartitionLostListener getImplementation() {
+            return (MapPartitionLostListener) implementation;
+        }
+
+        @Override
+        public ListenerConfig setClassName(String className) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public ListenerConfig setImplementation(EventListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
+
+        @Override
+        public MapPartitionLostListenerConfig setImplementation(MapPartitionLostListener implementation) {
+            throw new UnsupportedOperationException("this config is read-only");
+        }
     }
 }

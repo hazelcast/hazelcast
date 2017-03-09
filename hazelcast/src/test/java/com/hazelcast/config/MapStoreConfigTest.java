@@ -45,11 +45,11 @@ public class MapStoreConfigTest extends HazelcastTestSupport {
 
     @Test
     public void getAsReadOnly() {
-        MapStoreConfigReadOnly readOnlyCfg = cfgNonNullClassName.getAsReadOnly();
-        assertEquals("some.class", readOnlyCfg.getClassName());
-        assertEquals(cfgNonNullClassName, readOnlyCfg);
+        MapStoreConfig config = cfgNonNullClassName.getAsReadOnly();
+        assertEquals("some.class", config.getClassName());
+        assertEquals(cfgNonNullClassName, config);
         // also test returning cached read only instance
-        assertEquals(readOnlyCfg, cfgNonNullClassName.getAsReadOnly());
+        assertEquals(config, cfgNonNullClassName.getAsReadOnly());
     }
 
     @Test

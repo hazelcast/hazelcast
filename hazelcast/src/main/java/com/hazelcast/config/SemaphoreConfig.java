@@ -62,19 +62,6 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Gets immutable version of this configuration.
-     *
-     * @return Immutable version of this configuration.
-     * @deprecated this method will be removed in 4.0; it is meant for internal usage only.
-     */
-    public SemaphoreConfigReadOnly getAsReadOnly() {
-        if (readOnly == null) {
-            readOnly = new SemaphoreConfigReadOnly(this);
-        }
-        return readOnly;
-    }
-
-    /**
      * Gets the name of the semaphore. If no name has been configured, null is returned.
      *
      * @return the name of the semaphore.
@@ -188,5 +175,39 @@ public class SemaphoreConfig {
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
                 + '}';
+    }
+
+    SemaphoreConfig getAsReadOnly() {
+        if (readOnly == null) {
+            readOnly = new SemaphoreConfigReadOnly(this);
+        }
+        return readOnly;
+    }
+
+    private static class SemaphoreConfigReadOnly extends SemaphoreConfig {
+
+        SemaphoreConfigReadOnly(SemaphoreConfig config) {
+            super(config);
+        }
+
+        @Override
+        public SemaphoreConfig setName(String name) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setInitialPermits(int initialPermits) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setBackupCount(int backupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
+
+        @Override
+        public SemaphoreConfig setAsyncBackupCount(int asyncBackupCount) {
+            throw new UnsupportedOperationException("This config is read-only semaphore: " + getName());
+        }
     }
 }
