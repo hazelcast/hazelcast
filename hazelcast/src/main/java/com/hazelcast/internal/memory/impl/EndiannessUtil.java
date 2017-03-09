@@ -32,10 +32,14 @@ import java.io.UTFDataFormatException;
 @SuppressWarnings({"checkstyle:magicnumber", "MagicNumber", "checkstyle:methodcount", "checkstyle:booleanexpressioncomplexity"})
 public final class EndiannessUtil {
 
-    /** Accesses bytes in a Java byte array */
+    /**
+     * Accesses bytes in a Java byte array
+     */
     public static final ByteAccessStrategy<byte[]> BYTE_ARRAY_ACCESS = ByteArrayAccessStrategy.INSTANCE;
 
-    /** Accesses bytes in CPU's native address space */
+    /**
+     * Accesses bytes in CPU's native address space
+     */
     public static final ByteAccessStrategy<Object> NATIVE_ACCESS = GlobalMemoryAccessorRegistry.MEM;
 
     public static final ByteAccessStrategy<MemoryAccessor> CUSTOM_ACCESS = CustomByteAccessStrategy.INSTANCE;
@@ -116,9 +120,7 @@ public final class EndiannessUtil {
         strategy.putByte(resource, offset + 1, (byte) ((v >>> 8) & 0xFF));
     }
 
-
     //////////////////////////////////////////////////////////////////////////////////////////
-
 
     public static <R> int readInt(ByteAccessStrategy<R> strategy, R resource, long offset, boolean useBigEndian) {
         return useBigEndian ? readIntB(strategy, resource, offset) : readIntL(strategy, resource, offset);
@@ -163,12 +165,12 @@ public final class EndiannessUtil {
         strategy.putByte(resource, offset + 3, (byte) ((v >>> 24) & 0xFF));
     }
 
-
     //////////////////////////////////////////////////////////////////////////////////////////
 
     public static <R> float readFloat(ByteAccessStrategy<R> strategy, R resource, long offset, boolean useBigEndian) {
         return useBigEndian ? readFloatB(strategy, resource, offset) : readFloatL(strategy, resource, offset);
     }
+
     public static <R> float readFloatB(ByteAccessStrategy<R> strategy, R resource, long offset) {
         return Float.intBitsToFloat(readIntB(strategy, resource, offset));
     }
@@ -193,7 +195,6 @@ public final class EndiannessUtil {
     public static <R> void writeFloatL(ByteAccessStrategy<R> strategy, R resource, long offset, float v) {
         writeIntL(strategy, resource, offset, Float.floatToRawIntBits(v));
     }
-
 
     //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -256,13 +257,13 @@ public final class EndiannessUtil {
         strategy.putByte(resource, offset + 7, (byte) (v >>> 56));
     }
 
-
     //////////////////////////////////////////////////////////////////////////////////////////
 
     public static <R> double readDouble(
             ByteAccessStrategy<R> strategy, R resource, long offset, boolean useBigEndian) {
         return useBigEndian ? readDoubleB(strategy, resource, offset) : readDoubleL(strategy, resource, offset);
     }
+
     public static <R> double readDoubleB(ByteAccessStrategy<R> strategy, R resource, long offset) {
         return Double.longBitsToDouble(readLongB(strategy, resource, offset));
     }
@@ -289,7 +290,6 @@ public final class EndiannessUtil {
             ByteAccessStrategy<R> memoryAccessStrategy, R resource, long offset, double v) {
         writeLongL(memoryAccessStrategy, resource, offset, Double.doubleToRawLongBits(v));
     }
-
 
     //////////////////////////////////////////////////////////////////
 

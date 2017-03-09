@@ -56,7 +56,6 @@ public final class AlignmentAwareMemoryAccessor extends UnsafeBasedMemoryAccesso
         }
     }
 
-
     // Address-based access
 
     @Override
@@ -189,8 +188,6 @@ public final class AlignmentAwareMemoryAccessor extends UnsafeBasedMemoryAccesso
         UNSAFE.setMemory(address, lengthBytes, value);
     }
 
-
-
     // Address-based concurrent operations
 
     @Override
@@ -320,9 +317,6 @@ public final class AlignmentAwareMemoryAccessor extends UnsafeBasedMemoryAccesso
         AlignmentUtil.checkReferenceAligned(address);
         return UNSAFE.compareAndSwapObject(null, address, expected, x);
     }
-
-
-
 
     // Object-based access
 
@@ -467,7 +461,6 @@ public final class AlignmentAwareMemoryAccessor extends UnsafeBasedMemoryAccesso
             EndiannessUtil.writeDouble(EndiannessUtil.NATIVE_ACCESS, base, offset, x, AlignmentUtil.IS_PLATFORM_BIG_ENDIAN);
         }
     }
-
 
     // Object-based concurrent operations
 

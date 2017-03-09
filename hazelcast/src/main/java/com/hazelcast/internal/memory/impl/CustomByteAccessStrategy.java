@@ -26,7 +26,8 @@ public final class CustomByteAccessStrategy implements ByteAccessStrategy<Memory
 
     public static final CustomByteAccessStrategy INSTANCE = new CustomByteAccessStrategy();
 
-    private CustomByteAccessStrategy() { }
+    private CustomByteAccessStrategy() {
+    }
 
     @Override
     public byte getByte(MemoryAccessor mem, long offset) {

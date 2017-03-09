@@ -22,9 +22,11 @@ import com.hazelcast.internal.memory.ByteAccessStrategy;
  * Implementation of {@link ByteAccessStrategy} for Java byte arrays.
  */
 public final class ByteArrayAccessStrategy implements ByteAccessStrategy<byte[]> {
+
     public static final ByteArrayAccessStrategy INSTANCE = new ByteArrayAccessStrategy();
 
-    private ByteArrayAccessStrategy() { }
+    private ByteArrayAccessStrategy() {
+    }
 
     @Override
     public byte getByte(byte[] array, long offset) {
