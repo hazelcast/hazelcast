@@ -23,9 +23,9 @@ import javax.management.ObjectName;
 import javax.management.openmbean.CompositeDataSupport;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE;
+import static com.hazelcast.internal.memory.impl.UnsafeUtil.UNSAFE_AVAILABLE;
 import static com.hazelcast.logging.Logger.getLogger;
-import static com.hazelcast.nio.UnsafeHelper.UNSAFE;
-import static com.hazelcast.nio.UnsafeHelper.UNSAFE_AVAILABLE;
 import static java.lang.Math.abs;
 
 /**
@@ -45,7 +45,7 @@ public final class JVMUtil {
     static boolean is32bitJVM() {
         // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
         String architecture = System.getProperty("sun.arch.data.model");
-        return (architecture != null && architecture.equals("32")) ? true : false;
+        return architecture != null && architecture.equals("32");
     }
 
     // not private for testing
@@ -81,7 +81,6 @@ public final class JVMUtil {
         } catch (Exception e) {
             getLogger(JVMUtil.class).fine("Failed to read HotSpot specific configuration: " + e.getMessage());
         }
-
         return null;
     }
 
@@ -94,26 +93,32 @@ public final class JVMUtil {
             return null;
         }
 
-        // We can't rely on Unsafe to get a real reference size when oops compression is enabled.
-        // Hence we have to do a simple experiment: Let's have an object with 2 references.
-        // The difference between address offsets is a reference size in bytes.
-        // It is not bullet-proof, it assume certain object layout, but this happens
-        // to works for all JVMs tested.
         Integer referenceSize = ReferenceSizeEstimator.getReferenceSizeOrNull();
         if (referenceSize == null) {
             return null;
         }
 
-        // When reference size does not equal address size then it's safe to assume references are compressed
+        // when reference size does not equal address size then it's safe to assume references are compressed
         return referenceSize != UNSAFE.addressSize();
     }
 
+    /**
+     * Estimates the reference by comparing the address offset of two fields.
+     *
+     * We can't rely on Unsafe to get a real reference size when oops compression is enabled.
+     * Hence we have to do a simple experiment: Let's have a class with 2 references.
+     * The difference between address offsets is the reference size in bytes.
+     *
+     * It is not bullet-proof, it assumes a certain object layout, but this happens
+     * to work for all JVMs tested.
+     */
     @SuppressWarnings({"unused", "checkstyle:visibilitymodifier"})
-    private static class ReferenceSizeEstimator {
+    private static final class ReferenceSizeEstimator {
+
         public Object firstField;
         public Object secondField;
 
-        public static final Integer getReferenceSizeOrNull() {
+        static Integer getReferenceSizeOrNull() {
             Integer referenceSize = null;
             try {
                 long firstFieldOffset = UNSAFE.objectFieldOffset(ReferenceSizeEstimator.class.getField("firstField"));
