@@ -521,6 +521,31 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapConfig_evictions() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"lruMap\">" +
+                "        <eviction-policy>LRU</eviction-policy>\n" +
+                "    </map>\n"
+                + "<map name=\"lfuMap\">" +
+                "        <eviction-policy>LFU</eviction-policy>\n" +
+                "    </map>\n"
+                + "<map name=\"noneMap\">" +
+                "        <eviction-policy>NONE</eviction-policy>\n" +
+                "    </map>\n"
+                + "<map name=\"randomMap\">" +
+                "        <eviction-policy>RANDOM</eviction-policy>\n" +
+                "    </map>\n"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionPolicy());
+        assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionPolicy());
+    }
+
+    @Test
     public void testMapConfig_optimizeQueries() {
         String xml1 = HAZELCAST_START_TAG
                 + "<map name=\"mymap1\">"
@@ -683,6 +708,42 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         NearCacheConfig ncConfig = mapConfig.getNearCacheConfig();
 
         assertEquals(InMemoryFormat.OBJECT, ncConfig.getInMemoryFormat());
+    }
+
+    @Test
+    public void testNearCacheEvictionPolicy() {
+        String xml = HAZELCAST_START_TAG
+                + "  <map name=\"lfuNearCache\">"
+                + "    <near-cache>"
+                + "      <eviction eviction-policy=\"LFU\"/>"
+                + "    </near-cache>"
+                + "  </map>"
+                + "  <map name=\"lruNearCache\">"
+                + "    <near-cache>"
+                + "      <eviction eviction-policy=\"LRU\"/>"
+                + "    </near-cache>"
+                + "  </map>"
+                + "  <map name=\"noneNearCache\">"
+                + "    <near-cache>"
+                + "      <eviction eviction-policy=\"NONE\"/>"
+                + "    </near-cache>"
+                + "  </map>"
+                + "  <map name=\"randomNearCache\">"
+                + "    <near-cache>"
+                + "      <eviction eviction-policy=\"RANDOM\"/>"
+                + "    </near-cache>"
+                + "  </map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+        assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCache", config));
+        assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCache", config));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCache", config));
+        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCache", config));
+    }
+
+    private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {
+        return config.getMapConfig(mapName).getNearCacheConfig().getEvictionConfig().getEvictionPolicy();
     }
 
     @Test

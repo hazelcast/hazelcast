@@ -78,6 +78,8 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     static final String HAZELCAST_CLIENT_START_TAG =
             "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n";
 
+    static final String HAZELCAST_CLIENT_END_TAG = "</hazelcast-client>";
+
     private ClientConfig clientConfig;
 
     @Before
@@ -354,6 +356,33 @@ public class XmlClientConfigBuilderTest extends HazelcastTestSupport {
     public void testHazelcastClientTagAppearsTwice() {
         String xml = HAZELCAST_CLIENT_START_TAG + "<hazelcast-client/></<hazelcast-client>";
         buildConfig(xml);
+    }
+
+    @Test
+    public void testNearCacheEvictionPolicy() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<near-cache name=\"lfu\">"
+                + "  <eviction eviction-policy=\"LFU\"/>"
+                + "</near-cache>"
+                + "<near-cache name=\"lru\">"
+                + "  <eviction eviction-policy=\"LRU\"/>"
+                + "</near-cache>"
+                + "<near-cache name=\"none\">"
+                + "  <eviction eviction-policy=\"NONE\"/>"
+                + "</near-cache>"
+                + "<near-cache name=\"random\">"
+                + "  <eviction eviction-policy=\"RANDOM\"/>"
+                + "</near-cache>"
+                + HAZELCAST_CLIENT_END_TAG;
+        ClientConfig clientConfig = buildConfig(xml);
+        assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfu", clientConfig));
+        assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lru", clientConfig));
+        assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("none", clientConfig));
+        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("random", clientConfig));
+    }
+
+    private EvictionPolicy getNearCacheEvictionPolicy(String mapName, ClientConfig clientConfig) {
+        return clientConfig.getNearCacheConfig(mapName).getEvictionConfig().getEvictionPolicy();
     }
 
     static ClientConfig buildConfig(String xml, Properties properties) {
