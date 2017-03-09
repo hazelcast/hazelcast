@@ -27,8 +27,11 @@ public class IdentifiedFactory implements DataSerializableFactory {
 
     @Override
     public IdentifiedDataSerializable create(int typeId) {
-        if(typeId == IdentifiedEntryProcessor.CLASS_ID) {
-                return new IdentifiedEntryProcessor();
+        if (typeId == IdentifiedEntryProcessor.CLASS_ID) {
+            return new IdentifiedEntryProcessor();
+        }
+        if (typeId == CustomComparator.CLASS_ID) {
+            return new CustomComparator();
         }
         return null;
     }
