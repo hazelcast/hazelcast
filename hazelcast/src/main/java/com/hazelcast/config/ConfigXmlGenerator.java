@@ -46,6 +46,8 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class ConfigXmlGenerator {
 
+    protected static final String MASK_FOR_SESITIVE_DATA = "****";
+
     private static final ILogger LOGGER = Logger.getLogger(ConfigXmlGenerator.class);
 
     private static final int INDENT = 5;
@@ -85,10 +87,10 @@ public class ConfigXmlGenerator {
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.7.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
-        xml.append("<password>").append("****").append("</password>");
+        xml.append("<password>").append(MASK_FOR_SESITIVE_DATA).append("</password>");
         xml.append("</group>");
         if (config.getLicenseKey() != null) {
-            xml.append("<license-key>").append(config.getLicenseKey()).append("</license-key>");
+            xml.append("<license-key>").append(MASK_FOR_SESITIVE_DATA).append("</license-key>");
         }
         if (config.getManagementCenterConfig() != null) {
             ManagementCenterConfig mcConfig = config.getManagementCenterConfig();
@@ -726,7 +728,14 @@ public class ConfigXmlGenerator {
                     ? ssl.getFactoryImplementation().getClass().getName()
                     : ssl.getFactoryClassName();
             xml.append("<factory-class-name>").append(className).append("</factory-class-name>");
-            appendProperties(xml, ssl.getProperties());
+
+            Properties props = new Properties();
+            props.putAll(ssl.getProperties());
+
+            if (props.containsKey("keyStorePassword")) {
+                props.setProperty("keyStorePassword", MASK_FOR_SESITIVE_DATA);
+            }
+            appendProperties(xml, props);
         }
         xml.append("</ssl>");
     }
@@ -748,8 +757,8 @@ public class ConfigXmlGenerator {
         if (sec != null) {
             xml.append("<symmetric-encryption enabled=\"").append(sec.isEnabled()).append("\">");
             xml.append("<algorithm>").append(sec.getAlgorithm()).append("</algorithm>");
-            xml.append("<salt>").append(sec.getSalt()).append("</salt>");
-            xml.append("<password>").append(sec.getPassword()).append("</password>");
+            xml.append("<salt>").append(MASK_FOR_SESITIVE_DATA).append("</salt>");
+            xml.append("<password>").append(MASK_FOR_SESITIVE_DATA).append("</password>");
             xml.append("<iteration-count>").append(sec.getIterationCount()).append("</iteration-count>");
             xml.append("</symmetric-encryption>");
         }
