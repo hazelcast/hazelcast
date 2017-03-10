@@ -23,6 +23,7 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.SSLConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -116,7 +117,7 @@ public class TimedMemberStateFactory {
         createMemberState(timedMemberState, memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
-        if (timedMemberState.getMaster()) {
+        if (timedMemberState.isMaster()) {
             Set<Member> memberSet = instance.getCluster().getMembers();
             for (Member member : memberSet) {
                 MemberImpl memberImpl = (MemberImpl) member;
@@ -127,6 +128,8 @@ public class TimedMemberStateFactory {
         timedMemberState.setMemberState(memberState);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         timedMemberState.setClusterName(groupConfig.getName());
+        SSLConfig sslConfig = instance.getConfig().getNetworkConfig().getSSLConfig();
+        timedMemberState.setSslEnabled(sslConfig != null && sslConfig.isEnabled());
 
         return timedMemberState;
     }
