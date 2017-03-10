@@ -147,7 +147,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
             return new CompletedFuture<V>(getContext().getSerializationService(),
-                    value, getContext().getExecutionService().getAsyncExecutor());
+                    value, getContext().getExecutionService().getUserExecutor());
         }
 
         final long reservationId = nearCache.tryReserveForUpdate(key);
@@ -169,7 +169,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             public void onFailure(Throwable t) {
                 invalidateNearCache(key);
             }
-        });
+        }, false);
 
         return future;
     }

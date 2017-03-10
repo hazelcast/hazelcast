@@ -36,7 +36,6 @@ import com.hazelcast.util.HashUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +53,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private final ExecutionCallback<ClientMessage> refreshTaskCallback = new RefreshTaskCallback();
     private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
     private final AtomicBoolean updating = new AtomicBoolean(false);
-
+    private final ClientExecutionServiceImpl clientExecutionService ;
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
 
@@ -63,21 +62,19 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     public ClientPartitionServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger(ClientPartitionService.class);
+        clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
     }
 
     public void start() {
-        ClientExecutionServiceImpl clientExecutionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         // use internal execution service for all partition refresh process (do not use the user executor thread)
-        ExecutorService internalExecutor = clientExecutionService.getInternalExecutor();
-        clientExecutionService.scheduleWithRepetition(new RefreshTask(internalExecutor), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
+        clientExecutionService.scheduleWithRepetition(new RefreshTask(), INITIAL_DELAY, PERIOD, TimeUnit.SECONDS);
     }
 
     public void refreshPartitions() {
         ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         try {
             // use internal execution service for all partition refresh process (do not use the user executor thread)
-            ExecutorService internalExecutor = executionService.getInternalExecutor();
-            executionService.submitInternal(new RefreshTask(internalExecutor));
+            executionService.execute(new RefreshTask());
         } catch (RejectedExecutionException ignored) {
             EmptyStatement.ignore(ignored);
         }
@@ -226,10 +223,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private final class RefreshTask implements Runnable {
 
-        private final ExecutorService executionService;
-
-        private RefreshTask(ExecutorService service) {
-            this.executionService = service;
+        private RefreshTask() {
         }
 
         @Override
@@ -246,7 +240,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
             try {
                 ClientInvocationFuture clientInvocationFuture = getPartitionsFrom(connection);
-                clientInvocationFuture.andThen(refreshTaskCallback, executionService);
+                clientInvocationFuture.andThen(refreshTaskCallback);
             } catch (Exception e) {
                 if (client.getLifecycleService().isRunning()) {
                     logger.warning("Error while fetching cluster partition table!", e);
