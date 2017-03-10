@@ -42,8 +42,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * Contains the logic code for unified Near Cache preloader tests.
+ *
+ * @param <NK> key type of the tested Near Cache
+ * @param <NV> value type of the tested Near Cache
+ */
 public abstract class AbstractNearCachePreloaderTest<NK, NV> extends HazelcastTestSupport {
 
+    /**
+     * The type of the key of the used {@link com.hazelcast.internal.adapter.DataStructureAdapter}.
+     */
     public enum KeyType {
         INTEGER,
         STRING,
