@@ -146,8 +146,8 @@ public final class UnsafeHelper {
                 unsafe.putLong(buffer, normalize(arrayBaseOffset, Bits.LONG_SIZE_IN_BYTES), 4L);
                 unsafe.putDouble(buffer, normalize(arrayBaseOffset, Bits.DOUBLE_SIZE_IN_BYTES), 5d);
                 unsafe.copyMemory(new byte[buffer.length], arrayBaseOffset,
-                                  buffer, arrayBaseOffset,
-                                  buffer.length);
+                        buffer, arrayBaseOffset,
+                        buffer.length);
 
                 unsafeAvailable = true;
             }
