@@ -256,11 +256,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public boolean containsKey(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        return containsKeyInternal(keyData);
+        return containsKeyInternal(key);
     }
 
-    protected boolean containsKeyInternal(Data keyData) {
+    protected boolean containsKeyInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage message = MapContainsKeyCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage result = invoke(message, keyData);
         MapContainsKeyCodec.ResponseParameters resultParameters = MapContainsKeyCodec.decodeResponse(result);
@@ -282,11 +282,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public V get(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        return toObject(getInternal(keyData));
+        return toObject(getInternal(key));
     }
 
-    protected Object getInternal(Data keyData) {
+    protected Object getInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapGetCodec.ResponseParameters resultParameters = MapGetCodec.decodeResponse(response);
@@ -301,13 +301,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public V remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
 
-        MapRemoveCodec.ResponseParameters resultParameters = removeInternal(keyData);
+        MapRemoveCodec.ResponseParameters resultParameters = removeInternal(key);
         return toObject(resultParameters.response);
     }
 
-    protected MapRemoveCodec.ResponseParameters removeInternal(Data keyData) {
+    protected MapRemoveCodec.ResponseParameters removeInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         return MapRemoveCodec.decodeResponse(response);
@@ -318,12 +318,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        Data valueData = toData(value);
-        return removeInternal(keyData, valueData);
+        return removeInternal(key, value);
     }
 
-    protected boolean removeInternal(Data keyData, Data valueData) {
+    protected boolean removeInternal(Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         ClientMessage request = MapRemoveIfSameCodec.encodeRequest(name, keyData, valueData, getThreadId());
 
         ClientMessage response = invoke(request, keyData);
@@ -347,11 +347,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public void delete(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        deleteInternal(keyData);
+        deleteInternal(key);
     }
 
-    protected void deleteInternal(Data keyData) {
+    protected void deleteInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapDeleteCodec.encodeRequest(name, keyData, getThreadId());
         invoke(request, keyData);
     }
@@ -365,12 +365,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public ICompletableFuture<V> getAsync(final K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
 
-        return getAsyncInternal(keyData);
+        return getAsyncInternal(key);
     }
 
-    protected ICompletableFuture<V> getAsyncInternal(Data keyData) {
+    protected ICompletableFuture<V> getAsyncInternal(Object key) {
+        Data keyData = toData(key);
         SerializationService serializationService = getContext().getSerializationService();
 
         ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
@@ -399,18 +399,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
-        return putAsyncInternal(ttl, timeunit, keyData, valueData);
+        return putAsyncInternal(ttl, timeunit, key, value);
     }
 
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapPutCodec.encodeRequest(name, keyData,
-                valueData, getThreadId(), getTimeInMillis(ttl, timeunit));
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
         try {
+            Data keyData = toData(key);
+            Data valueData = toData(value);
+            long timeInMillis = getTimeInMillis(ttl, timeunit);
+            ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),
-                    PUT_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(), PUT_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -426,18 +425,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
-        return setAsyncInternal(ttl, timeunit, keyData, valueData);
+        return setAsyncInternal(ttl, timeunit, key, value);
     }
 
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapSetCodec.encodeRequest(name, keyData,
-                valueData, getThreadId(), getTimeInMillis(ttl, timeunit));
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
         try {
+            Data keyData = toData(key);
+            Data valueData = toData(value);
+            long timeInMillis = getTimeInMillis(ttl, timeunit);
+            ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<Void>(future, getContext().getSerializationService(),
-                    SET_ASYNC_RESPONSE_DECODER);
+            return new ClientDelegatingFuture<Void>(future, getContext().getSerializationService(), SET_ASYNC_RESPONSE_DECODER);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -446,11 +444,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public ICompletableFuture<V> removeAsync(final K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return removeAsyncInternal(keyData);
+        return removeAsyncInternal(key);
     }
 
-    protected ICompletableFuture<V> removeAsyncInternal(Data keyData) {
+    protected ICompletableFuture<V> removeAsyncInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapRemoveCodec.encodeRequest(name, keyData, getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
@@ -464,11 +462,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return tryRemoveInternal(timeout, timeunit, keyData);
+        return tryRemoveInternal(timeout, timeunit, key);
     }
 
-    protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Data keyData) {
+    protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapTryRemoveCodec.encodeRequest(name, keyData, getThreadId(), timeunit.toMillis(timeout));
         ClientMessage response = invoke(request, keyData);
         MapTryRemoveCodec.ResponseParameters resultParameters = MapTryRemoveCodec.decodeResponse(response);
@@ -479,13 +477,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
 
-        return tryPutInternal(timeout, timeunit, keyData, valueData);
+        return tryPutInternal(timeout, timeunit, key, value);
     }
 
-    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Data keyData, Data valueData) {
+    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         ClientMessage request = MapTryPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeunit.toMillis(timeout));
         ClientMessage response = invoke(request, keyData);
         MapTryPutCodec.ResponseParameters resultParameters = MapTryPutCodec.decodeResponse(response);
@@ -496,15 +494,15 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public V put(K key, V value, long ttl, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
-        final Data keyData = toData(key);
-        final Data valueData = toData(value);
 
-        return putInternal(ttl, timeunit, keyData, valueData);
+        return putInternal(ttl, timeunit, key, value);
     }
 
-    protected V putInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(),
-                getTimeInMillis(ttl, timeunit));
+    protected V putInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        ClientMessage request = MapPutCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
         ClientMessage response = invoke(request, keyData);
         MapPutCodec.ResponseParameters resultParameters = MapPutCodec.decodeResponse(response);
         return toObject(resultParameters.response);
@@ -515,15 +513,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        Data valueData = toData(value);
-
-        putTransientInternal(ttl, timeunit, keyData, valueData);
+        putTransientInternal(ttl, timeunit, key, value);
     }
 
-    protected void putTransientInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapPutTransientCodec.encodeRequest(name, keyData, valueData, getThreadId(),
-                getTimeInMillis(ttl, timeunit));
+    protected void putTransientInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        ClientMessage request = MapPutTransientCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
         invoke(request, keyData);
     }
 
@@ -537,14 +534,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        Data valueData = toData(value);
-        return putIfAbsentInternal(ttl, timeunit, keyData, valueData);
+        return putIfAbsentInternal(ttl, timeunit, key, value);
     }
 
-    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData, getThreadId(),
-                getTimeInMillis(ttl, timeunit));
+    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        ClientMessage request = MapPutIfAbsentCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
         ClientMessage result = invoke(request, keyData);
         MapPutIfAbsentCodec.ResponseParameters resultParameters = MapPutIfAbsentCodec.decodeResponse(result);
         return toObject(resultParameters.response);
@@ -556,14 +553,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(oldValue, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(newValue, NULL_VALUE_IS_NOT_ALLOWED);
 
+        return replaceIfSameInternal(key, oldValue, newValue);
+    }
+
+    protected boolean replaceIfSameInternal(Object key, Object oldValue, Object newValue) {
         Data keyData = toData(key);
         Data oldValueData = toData(oldValue);
         Data newValueData = toData(newValue);
-
-        return replaceIfSameInternal(keyData, oldValueData, newValueData);
-    }
-
-    protected boolean replaceIfSameInternal(Data keyData, Data oldValueData, Data newValueData) {
         ClientMessage request = MapReplaceIfSameCodec.encodeRequest(name, keyData, oldValueData, newValueData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapReplaceIfSameCodec.ResponseParameters resultParameters = MapReplaceIfSameCodec.decodeResponse(response);
@@ -575,13 +571,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        Data valueData = toData(value);
-
-        return replaceInternal(keyData, valueData);
+        return replaceInternal(key, value);
     }
 
-    protected V replaceInternal(Data keyData, Data valueData) {
+    protected V replaceInternal(Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
         ClientMessage request = MapReplaceCodec.encodeRequest(name, keyData, valueData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapReplaceCodec.ResponseParameters resultParameters = MapReplaceCodec.decodeResponse(response);
@@ -593,15 +588,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-        Data valueData = toData(value);
-
-        setInternal(ttl, timeunit, keyData, valueData);
+        setInternal(ttl, timeunit, key, value);
     }
 
-    protected void setInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(),
-                getTimeInMillis(ttl, timeunit));
+    protected void setInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        Data keyData = toData(key);
+        Data valueData = toData(value);
+        long timeInMillis = getTimeInMillis(ttl, timeunit);
+        ClientMessage request = MapSetCodec.encodeRequest(name, keyData, valueData, getThreadId(), timeInMillis);
 
         invoke(request, keyData);
     }
@@ -994,12 +988,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public boolean evict(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        Data keyData = toData(key);
-
-        return evictInternal(keyData);
+        return evictInternal(key);
     }
 
-    protected boolean evictInternal(Data keyData) {
+    protected boolean evictInternal(Object key) {
+        Data keyData = toData(key);
         ClientMessage request = MapEvictCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapEvictCodec.ResponseParameters resultParameters = MapEvictCodec.decodeResponse(response);
@@ -1025,11 +1018,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return;
         }
 
-        Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
-        loadAllInternal(replaceExistingValues, dataKeys);
+        loadAllInternal(replaceExistingValues, (Set<Object>) keys);
     }
 
-    protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
+    protected void loadAllInternal(boolean replaceExistingValues, Set<Object> keys) {
+        Collection<Data> dataKeys = CollectionUtil.objectToDataCollection(keys, getSerializationService());
         ClientMessage request = MapLoadGivenKeysCodec.encodeRequest(name, dataKeys, replaceExistingValues);
         invoke(request);
     }
@@ -1262,11 +1255,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return executeOnKeyInternal(keyData, entryProcessor);
+        return executeOnKeyInternal(key, entryProcessor);
     }
 
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
+    public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+        Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
@@ -1276,13 +1269,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        submitToKeyInternal(keyData, entryProcessor, callback);
+        submitToKeyInternal(key, entryProcessor, callback);
     }
 
-    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, final ExecutionCallback callback) {
-        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
+    public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
+        Data keyData = toData(key);
         try {
+            ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             SerializationService serializationService = getContext().getSerializationService();
             ClientDelegatingFuture clientDelegatingFuture = new ClientDelegatingFuture(future, serializationService,
@@ -1296,13 +1289,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public ICompletableFuture submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-        Data keyData = toData(key);
-        return submitToKeyInternal(keyData, entryProcessor);
+        return submitToKeyInternal(key, entryProcessor);
     }
 
-    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
-        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
+    public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
         try {
+            Data keyData = toData(key);
+            ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, getThreadId());
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
             return new ClientDelegatingFuture(future, getContext().getSerializationService(), SUBMIT_TO_KEY_RESPONSE_DECODER);
         } catch (Exception e) {

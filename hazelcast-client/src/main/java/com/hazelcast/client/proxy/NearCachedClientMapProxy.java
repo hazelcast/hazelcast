@@ -41,7 +41,6 @@ import com.hazelcast.internal.nearcache.impl.invalidation.RepairingTask;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -56,6 +55,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -81,7 +81,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
     // Eventually consistent near cache can only be used with server versions >= 3.8.
     private final int minConsistentNearCacheSupportingServerVersion = calculateVersion("3.8");
-    private boolean invalidateOnChange;
+
     private NearCache<Object, Object> nearCache;
     private ILogger logger;
 
@@ -101,26 +101,23 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         NearCacheManager nearCacheManager = context.getNearCacheManager();
         IMapDataStructureAdapter<K, V> adapter = new IMapDataStructureAdapter<K, V>(this);
         nearCache = nearCacheManager.getOrCreateNearCache(name, nearCacheConfig, adapter);
-        invalidateOnChange = nearCache.isInvalidatedOnChange();
-
-        if (invalidateOnChange) {
+        if (nearCache.isInvalidatedOnChange()) {
             addNearCacheInvalidationListener(new ConnectedServerVersionAwareNearCacheEventHandler());
         }
     }
 
     @Override
-    protected boolean containsKeyInternal(Data keyData) {
-        Object cached = getCachedValue(keyData, false);
+    protected boolean containsKeyInternal(Object key) {
+        Object cached = getCachedValue(key, false);
         if (cached != NOT_CACHED) {
             return true;
         }
-
-        return super.containsKeyInternal(keyData);
+        return super.containsKeyInternal(key);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected V getInternal(final Data key) {
+    protected V getInternal(final Object key) {
         Object value = getCachedValue(key, true);
         if (value != NOT_CACHED) {
             return (V) value;
@@ -143,7 +140,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    public ICompletableFuture<V> getAsyncInternal(final Data key) {
+    public ICompletableFuture<V> getAsyncInternal(final Object key) {
         Object value = getCachedValue(key, false);
         if (value != NOT_CACHED) {
             return new CompletedFuture<V>(getContext().getSerializationService(),
@@ -159,9 +156,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             throw rethrow(t);
         }
 
-        ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Data>() {
+        ((ClientDelegatingFuture) future).andThenInternal(new ExecutionCallback<Object>() {
             @Override
-            public void onResponse(Data value) {
+            public void onResponse(Object value) {
                 nearCache.tryPublishReserved(key, value, reservationId, false);
             }
 
@@ -175,16 +172,16 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected MapRemoveCodec.ResponseParameters removeInternal(Data keyData) {
-        MapRemoveCodec.ResponseParameters responseParameters = super.removeInternal(keyData);
-        invalidateNearCache(keyData);
+    protected MapRemoveCodec.ResponseParameters removeInternal(Object key) {
+        MapRemoveCodec.ResponseParameters responseParameters = super.removeInternal(key);
+        invalidateNearCache(key);
         return responseParameters;
     }
 
     @Override
-    protected boolean removeInternal(Data keyData, Data valueData) {
-        boolean removed = super.removeInternal(keyData, valueData);
-        invalidateNearCache(keyData);
+    protected boolean removeInternal(Object key, Object value) {
+        boolean removed = super.removeInternal(key, value);
+        invalidateNearCache(key);
         return removed;
     }
 
@@ -195,90 +192,90 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected void deleteInternal(Data keyData) {
-        super.deleteInternal(keyData);
-        invalidateNearCache(keyData);
+    protected void deleteInternal(Object key) {
+        super.deleteInternal(key);
+        invalidateNearCache(key);
     }
 
     @Override
-    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ICompletableFuture<V> future = super.putAsyncInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected ICompletableFuture<V> putAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        ICompletableFuture<V> future = super.putAsyncInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
         return future;
     }
 
     @Override
-    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        ICompletableFuture<Void> future = super.setAsyncInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected ICompletableFuture<Void> setAsyncInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        ICompletableFuture<Void> future = super.setAsyncInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
         return future;
     }
 
     @Override
-    protected ICompletableFuture<V> removeAsyncInternal(Data keyData) {
-        ICompletableFuture<V> future = super.removeAsyncInternal(keyData);
-        invalidateNearCache(keyData);
+    protected ICompletableFuture<V> removeAsyncInternal(Object key) {
+        ICompletableFuture<V> future = super.removeAsyncInternal(key);
+        invalidateNearCache(key);
         return future;
     }
 
     @Override
-    protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Data keyData) {
-        boolean removed = super.tryRemoveInternal(timeout, timeunit, keyData);
-        invalidateNearCache(keyData);
+    protected boolean tryRemoveInternal(long timeout, TimeUnit timeunit, Object key) {
+        boolean removed = super.tryRemoveInternal(timeout, timeunit, key);
+        invalidateNearCache(key);
         return removed;
     }
 
     @Override
-    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Data keyData, Data valueData) {
-        boolean putInternal = super.tryPutInternal(timeout, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected boolean tryPutInternal(long timeout, TimeUnit timeunit, Object key, Object value) {
+        boolean putInternal = super.tryPutInternal(timeout, timeunit, key, value);
+        invalidateNearCache(key);
         return putInternal;
     }
 
     @Override
-    protected V putInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        V previousValue = super.putInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected V putInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        V previousValue = super.putInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
         return previousValue;
     }
 
     @Override
-    protected void putTransientInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        super.putTransientInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected void putTransientInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        super.putTransientInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
     }
 
     @Override
-    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        V previousValue = super.putIfAbsentInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected V putIfAbsentInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        V previousValue = super.putIfAbsentInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
         return previousValue;
     }
 
     @Override
-    protected boolean replaceIfSameInternal(Data keyData, Data oldValueData, Data newValueData) {
-        boolean replaceIfSame = super.replaceIfSameInternal(keyData, oldValueData, newValueData);
-        invalidateNearCache(keyData);
+    protected boolean replaceIfSameInternal(Object key, Object oldValue, Object newValue) {
+        boolean replaceIfSame = super.replaceIfSameInternal(key, oldValue, newValue);
+        invalidateNearCache(key);
         return replaceIfSame;
     }
 
     @Override
-    protected V replaceInternal(Data keyData, Data valueData) {
-        V v = super.replaceInternal(keyData, valueData);
-        invalidateNearCache(keyData);
+    protected V replaceInternal(Object key, Object value) {
+        V v = super.replaceInternal(key, value);
+        invalidateNearCache(key);
         return v;
     }
 
     @Override
-    protected void setInternal(long ttl, TimeUnit timeunit, Data keyData, Data valueData) {
-        super.setInternal(ttl, timeunit, keyData, valueData);
-        invalidateNearCache(keyData);
+    protected void setInternal(long ttl, TimeUnit timeunit, Object key, Object value) {
+        super.setInternal(ttl, timeunit, key, value);
+        invalidateNearCache(key);
     }
 
     @Override
-    protected boolean evictInternal(Data keyData) {
-        boolean evicted = super.evictInternal(keyData);
-        invalidateNearCache(keyData);
+    protected boolean evictInternal(Object key) {
+        boolean evicted = super.evictInternal(key);
+        invalidateNearCache(key);
         return evicted;
     }
 
@@ -291,43 +288,40 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     @Override
     public void loadAll(boolean replaceExistingValues) {
         super.loadAll(replaceExistingValues);
-
         if (replaceExistingValues) {
             nearCache.clear();
         }
     }
 
     @Override
-    protected void loadAllInternal(boolean replaceExistingValues, Collection<Data> dataKeys) {
-        super.loadAllInternal(replaceExistingValues, dataKeys);
-        invalidateNearCache(dataKeys);
+    protected void loadAllInternal(boolean replaceExistingValues, Set<Object> keys) {
+        super.loadAllInternal(replaceExistingValues, keys);
+        invalidateNearCache(keys);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     protected List<MapGetAllCodec.ResponseParameters> getAllInternal(Map<Integer, List<Data>> pIdToKeyData, Map<K, V> result) {
-        Map<Data, Long> reservations = new HashMap<Data, Long>();
+        Map<Object, Long> reservations = new HashMap<Object, Long>();
         List<MapGetAllCodec.ResponseParameters> responses;
         try {
-
             for (Entry<Integer, List<Data>> partitionKeyEntry : pIdToKeyData.entrySet()) {
                 List<Data> keyList = partitionKeyEntry.getValue();
                 Iterator<Data> iterator = keyList.iterator();
                 while (iterator.hasNext()) {
-                    Data key = iterator.next();
+                    Data dataKey = iterator.next();
+                    Object key = toObject(dataKey);
                     Object value = getCachedValue(key, true);
 
                     if (value == null || value == NOT_CACHED) {
-
                         long reservationId = nearCache.tryReserveForUpdate(key);
                         if (reservationId != NOT_RESERVED) {
                             reservations.put(key, reservationId);
                         }
-
                         continue;
                     }
 
-                    result.put((K) toObject(key), (V) toObject(value));
+                    result.put((K) key, (V) toObject(value));
                     iterator.remove();
                 }
             }
@@ -336,13 +330,14 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
             for (MapGetAllCodec.ResponseParameters resultParameters : responses) {
                 for (Entry<Data, Data> entry : resultParameters.response) {
-                    Data key = entry.getKey();
-                    Data value = entry.getValue();
+                    Data dataKey = entry.getKey();
+                    Data dataValue = entry.getValue();
+                    Object key = toObject(dataKey);
 
                     Long reservationId = reservations.get(key);
                     if (reservationId != null) {
-                        Object cachedValue = tryPublishReserved(key, value, reservationId);
-                        result.put((K) toObject(key), (V) toObject(cachedValue));
+                        Object cachedValue = tryPublishReserved(key, dataValue, reservationId);
+                        result.put((K) key, (V) toObject(cachedValue));
                         reservations.remove(key);
                     }
                 }
@@ -353,38 +348,37 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return responses;
     }
 
-    private void releaseRemainingReservedKeys(Map<Data, Long> reservedKeys) {
-        for (Entry<Data, Long> entry : reservedKeys.entrySet()) {
+    private void releaseRemainingReservedKeys(Map<Object, Long> reservedKeys) {
+        for (Entry<Object, Long> entry : reservedKeys.entrySet()) {
             invalidateNearCache(entry.getKey());
         }
     }
 
     @Override
     public LocalMapStats getLocalMapStats() {
-        LocalMapStats localMapStats = super.getLocalMapStats();
-        NearCacheStats nearCacheStats = nearCache.getNearCacheStats();
-        ((LocalMapStatsImpl) localMapStats).setNearCacheStats(nearCacheStats);
+        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) super.getLocalMapStats();
+        localMapStats.setNearCacheStats(nearCache.getNearCacheStats());
         return localMapStats;
     }
 
     @Override
-    public Object executeOnKeyInternal(Data keyData, EntryProcessor entryProcessor) {
-        Object response = super.executeOnKeyInternal(keyData, entryProcessor);
-        invalidateNearCache(keyData);
+    public Object executeOnKeyInternal(Object key, EntryProcessor entryProcessor) {
+        Object response = super.executeOnKeyInternal(key, entryProcessor);
+        invalidateNearCache(key);
         return response;
     }
 
     @Override
-    public ICompletableFuture submitToKeyInternal(Data keyData, EntryProcessor entryProcessor) {
-        ICompletableFuture future = super.submitToKeyInternal(keyData, entryProcessor);
-        invalidateNearCache(keyData);
+    public ICompletableFuture submitToKeyInternal(Object key, EntryProcessor entryProcessor) {
+        ICompletableFuture future = super.submitToKeyInternal(key, entryProcessor);
+        invalidateNearCache(key);
         return future;
     }
 
     @Override
-    public void submitToKeyInternal(Data keyData, EntryProcessor entryProcessor, ExecutionCallback callback) {
-        super.submitToKeyInternal(keyData, entryProcessor, callback);
-        invalidateNearCache(keyData);
+    public void submitToKeyInternal(Object key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        super.submitToKeyInternal(key, entryProcessor, callback);
+        invalidateNearCache(key);
     }
 
     @Override
@@ -396,9 +390,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         Map<K, Object> result = MapUtil.createHashMap(entrySet.size());
         for (Entry<Data, Data> entry : entrySet) {
             Data dataKey = entry.getKey();
-            invalidateNearCache(dataKey);
-
             K key = toObject(dataKey);
+
+            invalidateNearCache(key);
             Object value = toObject(entry.getValue());
             result.put(key, value);
         }
@@ -411,7 +405,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
 
         for (List<Entry<Data, Data>> entries : entryMap.values()) {
             for (Entry<Data, Data> entry : entries) {
-                invalidateNearCache(entry.getKey());
+                invalidateNearCache(toObject(entry.getKey()));
             }
         }
     }
@@ -438,24 +432,21 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         super.onShutdown();
     }
 
-    private Object tryPublishReserved(Data key, Object value, long reservationId) {
+    private Object tryPublishReserved(Object key, Object value, long reservationId) {
         assert value != NOT_CACHED;
 
         Object cachedValue = nearCache.tryPublishReserved(key, value, reservationId, true);
         return cachedValue != null ? cachedValue : value;
     }
 
-    private Object getCachedValue(Data key, boolean deserializeValue) {
+    private Object getCachedValue(Object key, boolean deserializeValue) {
         Object value = nearCache.get(key);
-
         if (value == null) {
             return NOT_CACHED;
         }
-
         if (value == CACHED_AS_NULL) {
             return null;
         }
-
         return deserializeValue ? toObject(value) : value;
     }
 
@@ -463,15 +454,15 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         return nearCache;
     }
 
-    private void invalidateNearCache(Data key) {
+    private void invalidateNearCache(Object key) {
         nearCache.remove(key);
     }
 
-    private void invalidateNearCache(Collection<Data> keys) {
+    private void invalidateNearCache(Collection<Object> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        for (Data key : keys) {
+        for (Object key : keys) {
             nearCache.remove(key);
         }
     }

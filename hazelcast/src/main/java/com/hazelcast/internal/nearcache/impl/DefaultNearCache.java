@@ -124,6 +124,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     public boolean remove(K key) {
         checkNotNull(key, "key cannot be null on remove!");
 
+        // this deserialization is needed for incoming removes due to invalidations
+        key = serializationService.toObject(key);
         return nearCacheRecordStore.remove(key);
     }
 
