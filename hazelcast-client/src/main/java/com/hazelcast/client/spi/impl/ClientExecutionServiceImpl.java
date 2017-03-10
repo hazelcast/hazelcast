@@ -23,7 +23,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.executor.CompletableFutureTask;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.LoggingScheduledExecutor;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -76,41 +75,11 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                 new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
-                        String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
+                        String message = "User executor rejected task: " + r + ", because client is shutting down...";
                         logger.finest(message);
                         throw new RejectedExecutionException(message);
                     }
                 });
-    }
-
-    public void executeInternal(Runnable runnable) {
-        internalExecutor.execute(runnable);
-    }
-
-    public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
-        CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(runnable, null, internalExecutor);
-        internalExecutor.submit(futureTask);
-        return futureTask;
-    }
-
-    @Override
-    public void execute(Runnable command) {
-        userExecutor.execute(command);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public ICompletableFuture<?> submit(Runnable task) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
-        userExecutor.submit(futureTask);
-        return futureTask;
-    }
-
-    @Override
-    public <T> ICompletableFuture<T> submit(Callable<T> task) {
-        CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor());
-        userExecutor.submit(futureTask);
-        return futureTask;
     }
 
     @Override
@@ -135,25 +104,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     @Override
     public Future<?> submit(String name, Runnable task) {
-        return submit(task);
+        return internalExecutor.submit(task);
     }
 
     @Override
     public <T> Future<T> submit(String name, Callable<T> task) {
-        return submit(task);
+        return internalExecutor.submit(task);
     }
 
-    /**
-     * Utilized when given command needs to make a remote call.
-     * <p>
-     * The response of the remote call is not handled in the {@link Runnable} itself, but rather
-     * in the execution callback so that executor is not blocked because of a remote operation.
-     *
-     * @param command the {@link Runnable} to schedule
-     * @param delay   the delay for the scheduled execution
-     * @param unit    the {@link TimeUnit} of the delay
-     * @return scheduledFuture
-     */
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return internalExecutor.schedule(command, delay, unit);
@@ -191,12 +149,13 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
-    public ExecutorService getAsyncExecutor() {
+    public ExecutorService getUserExecutor() {
         return userExecutor;
     }
 
-    public ExecutorService getInternalExecutor() {
-        return internalExecutor;
+    @Override
+    public void execute(Runnable command) {
+        internalExecutor.execute(command);
     }
 
     public void shutdown() {

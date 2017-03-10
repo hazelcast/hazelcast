@@ -329,16 +329,15 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), GET_AND_REMOVE_RESPONSE_DECODER);
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<T>() {
-                public void onResponse(T responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
+            delegatingFuture.andThenInternal(new ExecutionCallback<T>() {
+                public void onResponse(T response) {
                     handleStatisticsOnRemove(true, start, response);
                 }
 
                 public void onFailure(Throwable t) {
 
                 }
-            });
+            }, true);
         }
         return delegatingFuture;
     }
@@ -368,15 +367,14 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), REMOVE_RESPONSE_DECODER);
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<T>() {
-                public void onResponse(T responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
+            delegatingFuture.andThenInternal(new ExecutionCallback<T>() {
+                public void onResponse(T response) {
                     handleStatisticsOnRemove(false, start, response);
                 }
 
                 public void onFailure(Throwable t) {
                 }
-            });
+            }, true);
         }
         return delegatingFuture;
     }
@@ -429,15 +427,14 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), REPLACE_RESPONSE_DECODER);
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<T>() {
-                public void onResponse(T responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
+            delegatingFuture.andThenInternal(new ExecutionCallback<T>() {
+                public void onResponse(T response) {
                     handleStatisticsOnReplace(false, start, response);
                 }
 
                 public void onFailure(Throwable t) {
                 }
-            });
+            }, true);
         }
         return delegatingFuture;
     }
@@ -472,15 +469,14 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), GET_AND_REPLACE_RESPONSE_DECODER);
         if (async && statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<T>() {
-                public void onResponse(T responseData) {
-                    Object response = clientContext.getSerializationService().toObject(responseData);
+            delegatingFuture.andThenInternal(new ExecutionCallback<T>() {
+                public void onResponse(T response) {
                     handleStatisticsOnReplace(true, start, response);
                 }
 
                 public void onFailure(Throwable t) {
                 }
-            });
+            }, true);
         }
         return delegatingFuture;
     }
@@ -581,7 +577,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
         }
         ClientDelegatingFuture<V> delegatingFuture = new CallbackAwareClientDelegatingFuture<V>(future,
                 serializationService, PUT_RESPONSE_DECODER, oneShotExecutionCallback);
-        delegatingFuture.andThen(oneShotExecutionCallback);
+        delegatingFuture.andThenInternal(oneShotExecutionCallback, true);
         return delegatingFuture;
     }
 
@@ -653,7 +649,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
     private Object putIfAbsentInternalAsync(final V value, final long start, final Data keyData, final Data valueData,
                                             ClientDelegatingFuture<Boolean> delegatingFuture) {
         if (nearCache != null || statisticsEnabled) {
-            delegatingFuture.andThen(new ExecutionCallback<Boolean>() {
+            delegatingFuture.andThenInternal(new ExecutionCallback<Boolean>() {
                 @Override
                 public void onResponse(Boolean responseData) {
                     if (nearCache != null) {
@@ -672,7 +668,7 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 @Override
                 public void onFailure(Throwable t) {
                 }
-            });
+            }, true);
         }
         return delegatingFuture;
     }

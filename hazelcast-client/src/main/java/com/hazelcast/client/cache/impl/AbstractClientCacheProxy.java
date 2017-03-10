@@ -142,7 +142,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
                     public void onFailure(Throwable t) {
                         invalidateNearCache(keyData);
                     }
-                });
+                }, false);
             }
             return delegatingFuture;
         } else {
@@ -166,7 +166,7 @@ abstract class AbstractClientCacheProxy<K, V> extends AbstractClientInternalCach
     private Object asCompletedFutureOrValue(Object value, boolean async) {
         if (async) {
             return new CompletedFuture(clientContext.getSerializationService(), value,
-                    clientContext.getExecutionService().getAsyncExecutor());
+                    clientContext.getExecutionService().getUserExecutor());
         }
 
         return value;
