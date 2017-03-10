@@ -40,8 +40,9 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     MemberStateImpl memberState;
     Set<String> instanceNames;
     List<String> memberList;
-    Boolean master;
+    boolean master;
     String clusterName;
+    boolean sslEnabled;
 
     public List<String> getMemberList() {
         return memberList;
@@ -51,11 +52,11 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.memberList = memberList;
     }
 
-    public Boolean getMaster() {
+    public boolean isMaster() {
         return master;
     }
 
-    public void setMaster(Boolean master) {
+    public void setMaster(boolean master) {
         this.master = master;
     }
 
@@ -91,6 +92,14 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         this.memberState = memberState;
     }
 
+    public boolean isSslEnabled() {
+        return sslEnabled;
+    }
+
+    public void setSslEnabled(boolean sslEnabled) {
+        this.sslEnabled = sslEnabled;
+    }
+
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
         TimedMemberState state = (TimedMemberState) super.clone();
@@ -100,6 +109,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         state.setMemberList(memberList);
         state.setMaster(master);
         state.setClusterName(clusterName);
+        state.setSslEnabled(sslEnabled);
         return state;
     }
 
@@ -122,6 +132,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
             root.add("memberList", members);
         }
         root.add("memberState", memberState.toJson());
+        root.add("sslEnabled", sslEnabled);
         return root;
     }
 
@@ -143,6 +154,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         final JsonObject jsonMemberState = getObject(json, "memberState");
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
+        sslEnabled = getBoolean(json, "sslEnabled", false);
     }
 
     @Override
