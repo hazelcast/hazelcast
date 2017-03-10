@@ -24,15 +24,17 @@ import com.hazelcast.instance.FirewallingNodeContext;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+
 import static com.hazelcast.instance.HazelcastInstanceFactory.createInstanceName;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class})
+@Category({SlowTest.class})
 public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @After
@@ -47,12 +49,17 @@ public class MembershipFailureTest_withTCP extends MembershipFailureTest {
 
     @Override
     HazelcastInstance newHazelcastInstance(Config config) {
-        initConfig(new Config());
+        initConfig(config);
         return HazelcastInstanceFactory.newHazelcastInstance(config, createInstanceName(config), new FirewallingNodeContext());
     }
 
+    @Override
+    Collection<HazelcastInstance> getAllHazelcastInstances() {
+        return HazelcastInstanceFactory.getAllHazelcastInstances();
+    }
+
     private static Config initConfig(Config config) {
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "1");
         
         JoinConfig join = config.getNetworkConfig().getJoin();
         join.getMulticastConfig().setEnabled(false);

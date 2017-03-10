@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.SplitBrainJoinMessage;
@@ -101,7 +102,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         Address caller = getCallerAddress();
         ClusterServiceImpl service = getService();
 
-        if (node.isMaster()) {
+        if (service.isMaster()) {
             if (service.getMember(caller) != null) {
                 logger.info("Removing " + caller + ", since it thinks it's already split from this cluster "
                         + "and looking to merge.");
@@ -131,7 +132,8 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
 
     private boolean preCheck(Node node) {
         ILogger logger = getLogger();
-        if (!node.joined()) {
+        ClusterService clusterService = node.getClusterService();
+        if (!clusterService.isJoined()) {
             logger.info("Ignoring join check from " + getCallerAddress()
                     + ", because this node is not joined to a cluster yet...");
             return false;
@@ -142,7 +144,7 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
             return false;
         }
 
-        final ClusterState clusterState = node.clusterService.getClusterState();
+        final ClusterState clusterState = clusterService.getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             logger.info("Ignoring join check from " + getCallerAddress() + ", because cluster is in "
                     + clusterState + " state ...");

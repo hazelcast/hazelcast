@@ -29,10 +29,10 @@ import com.hazelcast.internal.cluster.impl.operations.ConfigMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
-import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOp;
+import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOp;
-import com.hazelcast.internal.cluster.impl.operations.SetMasterOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 import com.hazelcast.logging.ILogger;
@@ -106,7 +106,6 @@ public class ClusterJoinManager {
         if (joinInProgress) {
             return true;
         }
-        
         clusterServiceLock.lock();
         try {
             return joinInProgress || !joiningMembers.isEmpty();
@@ -125,7 +124,7 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Handle a {@link JoinRequestOp}. If this node is not master, reply with a {@link SetMasterOp} to let the
+     * Handle a {@link JoinRequestOp}. If this node is not master, reply with a {@link MasterResponseOp} to let the
      * joining node know the current master. Otherwise, if no other join is in progress, execute the {@link JoinRequest}
      *
      * @param joinRequest the join request
@@ -141,17 +140,18 @@ public class ClusterJoinManager {
         }
 
         Address target = joinRequest.getAddress();
-        boolean isRequestFromCurrentMaster = target.equals(node.getMasterAddress());
+        boolean isRequestFromCurrentMaster = target.equals(clusterService.getMasterAddress());
         // if the join request from current master, do not send a master answer,
         // because master can somehow dropped its connection and wants to join back
-        if (!node.isMaster() && !isRequestFromCurrentMaster) {
+        if (!clusterService.isMaster() && !isRequestFromCurrentMaster) {
             sendMasterAnswer(target);
             return;
         }
 
         if (joinInProgress) {
             if (logger.isFineEnabled()) {
-                logger.fine(format("Join is in progress, cannot handle join request from %s at the moment", target));
+                logger.fine(format("Join or membership claim is in progress, cannot handle join request from %s at the moment",
+                        target));
             }
             return;
         }
@@ -160,7 +160,7 @@ public class ClusterJoinManager {
     }
 
     private boolean ensureNodeIsReady() {
-        if (node.joined() && node.isRunning()) {
+        if (clusterService.isJoined() && node.isRunning()) {
             return true;
         }
         if (logger.isFineEnabled()) {
@@ -370,7 +370,7 @@ public class ClusterJoinManager {
      * {@link com.hazelcast.instance.NodeExtension#validateJoinRequest(JoinMessage)}
      */
     private boolean validateJoinRequest(JoinRequest joinRequest, Address target) {
-        if (node.isMaster()) {
+        if (clusterService.isMaster()) {
             try {
                 node.getNodeExtension().validateJoinRequest(joinRequest);
             } catch (Exception e) {
@@ -431,66 +431,16 @@ public class ClusterJoinManager {
      */
     public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
         if (toAddress == null) {
-            toAddress = node.getMasterAddress();
+            toAddress = clusterService.getMasterAddress();
         }
         JoinRequestOp joinRequest = new JoinRequestOp(node.createJoinRequest(withCredentials));
         return nodeEngine.getOperationService().send(joinRequest, toAddress);
     }
 
-    /**
-     * Set master address, if required.
-     *
-     * @param masterAddress address of cluster's master, as provided in {@link SetMasterOp}
-     * @param callerAddress address of node that sent the {@link SetMasterOp}
-     * @see SetMasterOp
-     */
-    public void setMaster(Address masterAddress, Address callerAddress) {
-        if (node.joined()) {
-            if (logger.isFineEnabled()) {
-                logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                        masterAddress, callerAddress));
-            }
-            return;
-        }
-
-        if (node.getThisAddress().equals(masterAddress)) {
-            if (node.isMaster()) {
-                logger.fine(format("Ignoring master response %s from %s, this node is already master",
-                        masterAddress, callerAddress));
-            } else {
-                setAsMaster();
-            }
-            return;
-        }
-
-        handleMasterResponse(masterAddress, callerAddress);
-    }
-
-    public boolean setMasterAddress(final Address master) {
+    public boolean setThisMemberAsMaster() {
         clusterServiceLock.lock();
         try {
-            if (node.joined()) {
-                Address currentMasterAddress = node.getMasterAddress();
-                if (!master.equals(currentMasterAddress)) {
-                    logger.warning("Cannot set master address to " + master
-                            + " because node is already joined! Current master: " + currentMasterAddress);
-                } else {
-                    logger.fine("Master address is already set to " + master);
-                }
-                return false;
-            }
-
-            node.setMasterAddress(master);
-            return true;
-        } finally {
-            clusterServiceLock.unlock();
-        }
-    }
-
-    public boolean setAsMaster() {
-        clusterServiceLock.lock();
-        try {
-            if (node.joined()) {
+            if (clusterService.isJoined()) {
                 logger.warning("Cannot set as master because node is already joined!");
                 return false;
             }
@@ -499,7 +449,7 @@ public class ClusterJoinManager {
             Address thisAddress = node.getThisAddress();
             MemberVersion version = node.getVersion();
 
-            node.setMasterAddress(thisAddress);
+            clusterService.setMasterAddress(thisAddress);
 
             if (clusterService.getClusterVersion().isUnknown()) {
                 clusterService.getClusterStateManager().setClusterVersion(version.asVersion());
@@ -507,7 +457,7 @@ public class ClusterJoinManager {
 
             clusterService.getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
             clusterService.setClusterId(UuidUtil.createClusterUuid());
-            node.setJoined();
+            clusterService.setJoined(true);
 
             return true;
         } finally {
@@ -516,20 +466,39 @@ public class ClusterJoinManager {
 
     }
 
-    private void handleMasterResponse(Address masterAddress, Address callerAddress) {
+    /**
+     * Set master address, if required.
+     *
+     * @param masterAddress address of cluster's master, as provided in {@link MasterResponseOp}
+     * @param callerAddress address of node that sent the {@link MasterResponseOp}
+     * @see MasterResponseOp
+     */
+    public void handleMasterResponse(Address masterAddress, Address callerAddress) {
         clusterServiceLock.lock();
         try {
             if (logger.isFineEnabled()) {
                 logger.fine(format("Handling master response %s from %s", masterAddress, callerAddress));
             }
 
-            Address currentMaster = node.getMasterAddress();
+            if (clusterService.isJoined()) {
+                if (logger.isFineEnabled()) {
+                    logger.fine(format("Ignoring master response %s from %s, this node is already joined",
+                            masterAddress, callerAddress));
+                }
+                return;
+            }
+
+            assert !node.getThisAddress().equals(masterAddress) : "Received my address as master address from " + callerAddress;
+
+            Address currentMaster = clusterService.getMasterAddress();
             if (currentMaster == null || currentMaster.equals(masterAddress)) {
                 setMasterAndJoin(masterAddress);
                 return;
             }
+
             if (currentMaster.equals(callerAddress)) {
-                logger.info(format("Setting master to %s since %s says it is not master anymore", masterAddress, currentMaster));
+                logger.warning(format("Setting master to %s since %s says it is not master anymore", masterAddress,
+                        currentMaster));
                 setMasterAndJoin(masterAddress);
                 return;
             }
@@ -543,7 +512,7 @@ public class ClusterJoinManager {
                 logger.warning(format("Ambiguous master response: This node has a master %s, but does not have a connection"
                                 + " to %s. Sent master response as %s. Master field will be unset now...",
                         currentMaster, callerAddress, masterAddress));
-                setMasterAddress(null);
+                clusterService.setMasterAddress(null);
             }
         } finally {
             clusterServiceLock.unlock();
@@ -551,7 +520,7 @@ public class ClusterJoinManager {
     }
 
     private void setMasterAndJoin(Address masterAddress) {
-        setMasterAddress(masterAddress);
+        clusterService.setMasterAddress(masterAddress);
         node.connectionManager.getOrConnect(masterAddress);
         if (!sendJoinRequest(masterAddress, true)) {
             logger.warning("Could not create connection to possible master " + masterAddress);
@@ -559,7 +528,7 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Send a {@link MasterDiscoveryOp} to designated address.
+     * Send a {@link WhoisMasterOp} to designated address.
      *
      * @param toAddress the address to which the operation will be sent.
      * @return {@code true} if the operation was sent, otherwise {@code false}.
@@ -571,22 +540,22 @@ public class ClusterJoinManager {
         final Address thisAddress = node.getThisAddress();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), node.getVersion(),
                 thisAddress, node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
-        return nodeEngine.getOperationService().send(new MasterDiscoveryOp(joinMessage), toAddress);
+        return nodeEngine.getOperationService().send(new WhoisMasterOp(joinMessage), toAddress);
     }
 
     /**
-     * Respond to a {@link MasterDiscoveryOp}.
+     * Respond to a {@link WhoisMasterOp}.
      *
      * @param joinMessage the {@code JoinMessage} from the request.
      * @param connection  the connection to operation caller, to which response will be sent.
-     * @see MasterDiscoveryOp
+     * @see WhoisMasterOp
      */
-    public void answerMasterQuestion(JoinMessage joinMessage, Connection connection) {
+    public void answerWhoisMasterQuestion(JoinMessage joinMessage, Connection connection) {
         if (!ensureValidConfiguration(joinMessage)) {
             return;
         }
 
-        if (node.getMasterAddress() != null) {
+        if (clusterService.getMasterAddress() != null) {
             if (!checkIfJoinRequestFromAnExistingMember(joinMessage, connection)) {
                 sendMasterAnswer(joinMessage.getAddress());
             }
@@ -599,13 +568,13 @@ public class ClusterJoinManager {
     }
 
     /**
-     * Respond to a join request by sending the master address in a {@link SetMasterOp}. This happens when current node
+     * Respond to a join request by sending the master address in a {@link MasterResponseOp}. This happens when current node
      * receives a join request but is not the cluster's master.
      *
      * @param target the node receiving the master answer
      */
     private void sendMasterAnswer(Address target) {
-        Address masterAddress = node.getMasterAddress();
+        Address masterAddress = clusterService.getMasterAddress();
         if (masterAddress == null) {
             logger.info(format("Cannot send master answer to %s since master node is not known yet", target));
             return;
@@ -618,7 +587,7 @@ public class ClusterJoinManager {
             return;
         }
 
-        SetMasterOp op = new SetMasterOp(masterAddress);
+        MasterResponseOp op = new MasterResponseOp(masterAddress);
         nodeEngine.getOperationService().send(op, target);
     }
 
@@ -632,7 +601,7 @@ public class ClusterJoinManager {
         if (joinMessage.getUuid().equals(member.getUuid())) {
             sendMasterAnswer(target);
 
-            if (node.isMaster()) {
+            if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 if (logger.isFineEnabled()) {
                     logger.fine(format("Ignoring join request, member already exists: %s", joinMessage));
                 }
@@ -643,12 +612,13 @@ public class ClusterJoinManager {
                 PostJoinOp postJoinOp = isPostJoinOperation ? new PostJoinOp(postJoinOps) : null;
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
 
-                Operation operation = new FinalizeJoinOp(member.getUuid(),
+                Operation op = new FinalizeJoinOp(member.getUuid(),
                         clusterService.getMembershipManager().createMembersView(), postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
                         clusterService.getClusterVersion(), partitionRuntimeState, false);
-                nodeEngine.getOperationService().send(operation, target);
+                op.setCallerUuid(node.getThisUuid());
+                nodeEngine.getOperationService().send(op, target);
             }
             return true;
         }
@@ -657,7 +627,7 @@ public class ClusterJoinManager {
         // - if this node is master OR
         // - if requesting address is equal to master node's address, that means the master node somehow disconnected
         //   and wants to join back, so drop old member and process join request if this node becomes master
-        if (node.isMaster() || target.equals(node.getMasterAddress())) {
+        if (clusterService.isMaster() || target.equals(clusterService.getMasterAddress())) {
             String msg = format("New join request has been received from an existing endpoint %s."
                     + " Removing old member and processing join request...", member);
             logger.warning(msg);
@@ -679,7 +649,7 @@ public class ClusterJoinManager {
         Member member = clusterService.getMember(joinMessage.getUuid());
         Address target = joinMessage.getAddress();
         if (member != null && !member.getAddress().equals(joinMessage.getAddress())) {
-            if (node.isMaster()) {
+            if (clusterService.isMaster() && !isMastershipClaimInProgress()) {
                 String message = "There's already an existing member " + member + " with the same UUID. "
                         + target + " is not allowed to join.";
                 logger.warning(message);
@@ -725,15 +695,17 @@ public class ClusterJoinManager {
                 boolean createPostJoinOperation = (postJoinOps != null && postJoinOps.length > 0);
                 PostJoinOp postJoinOp = (createPostJoinOperation ? new PostJoinOp(postJoinOps) : null);
 
-                clusterService.updateMembers(newMembersView, node.getThisAddress());
+                if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), node.getThisUuid())) {
+                    return;
+                }
 
-                int count = newMembersView.size() - 1;
                 PartitionRuntimeState partitionRuntimeState = partitionService.createPartitionState();
                 for (MemberInfo member : joiningMembers.values()) {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
                             clusterService.getClusterVersion(), partitionRuntimeState, true);
+                    op.setCallerUuid(node.getThisUuid());
                     invokeClusterOp(op, member.getAddress());
                 }
                 for (MemberImpl member : memberMap.getMembers()) {
@@ -742,6 +714,7 @@ public class ClusterJoinManager {
                     }
                     Operation op = new MembersUpdateOp(member.getUuid(), newMembersView, time,
                             partitionRuntimeState, true);
+                    op.setCallerUuid(node.getThisUuid());
                     invokeClusterOp(op, member.getAddress());
                 }
 

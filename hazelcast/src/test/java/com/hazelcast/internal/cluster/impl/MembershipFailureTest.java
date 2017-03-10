@@ -22,6 +22,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
@@ -35,12 +36,18 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FETCH_MEMBER_LIST_STATE;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT;
+import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.HEARTBEAT_COMPLAINT;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MASTER_CONFIRM;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.MembershipUpdateTest.assertMemberViewsAreSame;
@@ -56,8 +63,10 @@ import static com.hazelcast.spi.properties.GroupProperty.MEMBER_LIST_PUBLISH_INT
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static java.util.Arrays.asList;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -70,22 +79,6 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     public void init() {
         factory = createHazelcastInstanceFactory();
     }
-
-    // TODO: add membership failure tests
-    // ✔ graceful slave shutdown
-    // ✔ graceful master shutdown
-    // ✔ master removes slave because of heartbeat timeout
-    // ✔ slaves remove master because of heartbeat timeout
-    // ✔ master removes slave because of master confirm timeout
-    // ✔ slave member failure detected by master
-    // - slave member suspected by others and its failure eventually detected by master
-    // ✔ master member failure detected by others
-    // ✔ master and master-candidate fail simultaneously
-    // ✔ master fails when master-candidate doesn't have the most recent member list
-    // ✔ partial network failure: multiple master claims
-    // ✔ member failures during mastership claim
-    // ✔ partial split: 3 members [A, B, C] partially split into [A, B, C] and [C], then eventually merge
-    // - so on...
 
     @Test
     public void slave_shutdown() {
@@ -305,6 +298,10 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         dropOperationsFrom(master, HEARTBEAT);
 
+        dropOperationsFrom(master, HEARTBEAT);
+        dropOperationsFrom(slave1, HEARTBEAT_COMPLAINT);
+        dropOperationsFrom(slave2, HEARTBEAT_COMPLAINT);
+
         assertClusterSizeEventually(1, master);
         assertClusterSizeEventually(2, slave1);
         assertClusterSizeEventually(2, slave2);
@@ -394,11 +391,11 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         HazelcastInstance slave1 = newHazelcastInstance(config);
         HazelcastInstance slave2 = newHazelcastInstance(config);
 
-        dropOperationsFrom(slave2, MASTER_CONFIRM);
-
         assertClusterSizeEventually(3, master);
         assertClusterSizeEventually(3, slave1);
         assertClusterSizeEventually(3, slave2);
+
+        dropOperationsFrom(slave2, MASTER_CONFIRM);
 
         assertClusterSizeEventually(2, master);
         assertClusterSizeEventually(2, slave1);
@@ -414,9 +411,7 @@ public class MembershipFailureTest extends HazelcastTestSupport {
 
         String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
         Config config2 = new Config().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)
-                                     .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), infiniteTimeout)
-                                     .setProperty(MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), infiniteTimeout)
-                                     .setProperty(MASTER_CONFIRMATION_INTERVAL_SECONDS.getName(), infiniteTimeout);
+                                     .setProperty(MAX_NO_MASTER_CONFIRMATION_SECONDS.getName(), infiniteTimeout);
 
         HazelcastInstance master = newHazelcastInstance(config1);
         HazelcastInstance slave1 = newHazelcastInstance(config1);
@@ -427,10 +422,12 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, slave2);
 
         dropOperationsBetween(master, slave2, MEMBER_INFO_UPDATE);
+        dropOperationsFrom(slave2, MASTER_CONFIRM, HEARTBEAT);
 
         assertClusterSizeEventually(2, master);
         assertClusterSizeEventually(2, slave1);
 
+        dropOperationsFrom(slave2, HEARTBEAT);
         ClusterServiceImpl clusterService = (ClusterServiceImpl) getClusterService(slave2);
         clusterService.getClusterHeartbeatManager().sendMasterConfirmation();
 
@@ -595,41 +592,6 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void multiple_master_claims() {
-        Config config = new Config();
-        HazelcastInstance member1 = newHazelcastInstance(config);
-        final HazelcastInstance member2 = newHazelcastInstance(config);
-        final HazelcastInstance member3 = newHazelcastInstance(config);
-        final HazelcastInstance member4 = newHazelcastInstance(config);
-        final HazelcastInstance member5 = newHazelcastInstance(config);
-
-        assertClusterSizeEventually(5, member1);
-        assertClusterSizeEventually(5, member2);
-        assertClusterSizeEventually(5, member3);
-        assertClusterSizeEventually(5, member4);
-        assertClusterSizeEventually(5, member5);
-
-        suspectMember(member3, member2);
-        suspectMember(member5, member2);
-
-        member1.getLifecycleService().terminate();
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertClusterSize(2, member2);
-                assertClusterSize(2, member4);
-                assertMemberViewsAreSame(getMemberMap(member2), getMemberMap(member4));
-
-                assertClusterSize(2, member3);
-                assertClusterSize(2, member5);
-                assertMemberViewsAreSame(getMemberMap(member3), getMemberMap(member5));
-            }
-        });
-    }
-
-    @Test
     public void slave_splits_and_eventually_merges_back() {
         Config config = new Config();
         config.setProperty(MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "15")
@@ -701,12 +663,169 @@ public class MembershipFailureTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, slave);
     }
 
+    @Test
+    public void secondMastershipClaimByYounger_shouldRetry_when_firstMastershipClaimByElder_accepted() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+
+        HazelcastInstance member1 = newHazelcastInstance(config);
+        final HazelcastInstance member2 = newHazelcastInstance(config);
+        HazelcastInstance member3 = newHazelcastInstance(new Config()
+                .setProperty(GroupProperty.MASTERSHIP_CLAIM_TIMEOUT_SECONDS.getName(), "10"));
+        final HazelcastInstance member4 = newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, member1);
+        assertClusterSizeEventually(4, member2);
+        assertClusterSizeEventually(4, member3);
+        assertClusterSizeEventually(4, member4);
+
+        dropOperationsFrom(member1, MEMBER_INFO_UPDATE, HEARTBEAT);
+        dropOperationsFrom(member2, FETCH_MEMBER_LIST_STATE);
+        dropOperationsFrom(member3, FETCH_MEMBER_LIST_STATE);
+
+        suspectMember(member2, member3);
+        suspectMember(member3, member2);
+        suspectMember(member3, member1);
+        suspectMember(member2, member1);
+
+        suspectMember(member4, member1);
+        suspectMember(member4, member2);
+
+        // member2 will complete mastership claim, but member4 won't learn new member list
+        dropOperationsFrom(member2, MEMBER_INFO_UPDATE);
+        // member4 should accept member2 as master during mastership claim
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMaster(getAddress(member2), member4);
+            }
+        });
+        resetPacketFiltersFrom(member3);
+        // member3 will be split when master claim timeouts
+        assertClusterSizeEventually(1, member3);
+
+        // member4 will learn member list
+        resetPacketFiltersFrom(member2);
+        assertClusterSizeEventually(2, member2);
+        assertClusterSizeEventually(2, member4);
+        assertMemberViewsAreSame(getMemberMap(member2), getMemberMap(member4));
+
+        resetPacketFiltersFrom(member1);
+        assertClusterSizeEventually(1, member1);
+    }
+
+    @Test
+    public void secondMastershipClaimByElder_shouldFail_when_firstMastershipClaimByYounger_accepted() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+
+        HazelcastInstance member1 = newHazelcastInstance(config);
+        final HazelcastInstance member2 = newHazelcastInstance(config);
+        final HazelcastInstance member3 = newHazelcastInstance(config);
+        final HazelcastInstance member4 = newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, member1);
+        assertClusterSizeEventually(4, member2);
+        assertClusterSizeEventually(4, member3);
+        assertClusterSizeEventually(4, member4);
+
+        dropOperationsFrom(member1, MEMBER_INFO_UPDATE, HEARTBEAT);
+        dropOperationsFrom(member2, FETCH_MEMBER_LIST_STATE, HEARTBEAT);
+        dropOperationsFrom(member3, FETCH_MEMBER_LIST_STATE);
+
+        suspectMember(member2, member3);
+        suspectMember(member3, member2);
+        suspectMember(member3, member1);
+        suspectMember(member2, member1);
+
+        suspectMember(member4, member1);
+        suspectMember(member4, member2);
+
+        // member3 will complete mastership claim, but member4 won't learn new member list
+        dropOperationsFrom(member3, MEMBER_INFO_UPDATE);
+        // member4 should accept member3 as master during mastership claim
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMaster(getAddress(member3), member4);
+            }
+        });
+        resetPacketFiltersFrom(member2);
+        // member2 will be split when master claim timeouts
+        assertClusterSizeEventually(1, member2);
+
+        // member4 will learn member list
+        resetPacketFiltersFrom(member3);
+        assertClusterSizeEventually(2, member3);
+        assertClusterSizeEventually(2, member4);
+        assertMemberViewsAreSame(getMemberMap(member3), getMemberMap(member4));
+
+        resetPacketFiltersFrom(member1);
+        assertClusterSizeEventually(1, member1);
+    }
+
+    @Test
+    public void test_whenNodesStartedTerminatedConcurrently() throws InterruptedException {
+        Config config = new Config();
+
+        newHazelcastInstance(config);
+
+        for (int i = 0; i < 3; i++) {
+            startInstancesConcurrently(config, 4);
+            terminateRandomInstancesConcurrently(3);
+
+            HazelcastInstance[] instances = getAllHazelcastInstances().toArray(new HazelcastInstance[0]);
+            assertEquals(i + 2, instances.length);
+
+            for (HazelcastInstance instance : instances) {
+                assertClusterSizeEventually(instances.length, instance);
+                assertMemberViewsAreSame(getMemberMap(instances[0]), getMemberMap(instance));
+            }
+        }
+    }
+
+    private void startInstancesConcurrently(final Config config, int count) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            new Thread() {
+                public void run() {
+                    newHazelcastInstance(config);
+                    latch.countDown();
+                }
+            }.start();
+        }
+        assertTrue(latch.await(2, TimeUnit.MINUTES));
+    }
+
+    private void terminateRandomInstancesConcurrently(int count) throws InterruptedException {
+        List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(getAllHazelcastInstances());
+        assertThat(instances.size(), greaterThanOrEqualTo(count));
+
+        Collections.shuffle(instances);
+        instances = instances.subList(0, count);
+
+        final CountDownLatch latch = new CountDownLatch(count);
+        for (final HazelcastInstance hz : instances) {
+            new Thread() {
+                public void run() {
+                    TestUtil.terminateInstance(hz);
+                    latch.countDown();
+                }
+            }.start();
+        }
+        assertTrue(latch.await(2, TimeUnit.MINUTES));
+    }
+
     HazelcastInstance newHazelcastInstance() {
         return factory.newHazelcastInstance();
     }
 
     HazelcastInstance newHazelcastInstance(Config config) {
         return factory.newHazelcastInstance(config);
+    }
+
+    Collection<HazelcastInstance> getAllHazelcastInstances() {
+        return factory.getAllHazelcastInstances();
     }
 
     private static void assertMaster(Address masterAddress, HazelcastInstance instance) {

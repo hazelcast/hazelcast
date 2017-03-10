@@ -41,6 +41,7 @@ public class SplitBrainJoinMessage extends JoinMessage implements Versioned {
     public SplitBrainJoinMessage() {
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public SplitBrainJoinMessage(byte packetVersion, int buildNumber, MemberVersion version, Address address, String uuid,
                                  boolean liteMember, ConfigCheck configCheck, Collection<Address> memberAddresses,
                                  int dataMemberCount, Version clusterVersion, int memberListVersion) {

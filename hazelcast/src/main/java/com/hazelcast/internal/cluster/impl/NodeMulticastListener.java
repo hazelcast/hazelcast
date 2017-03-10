@@ -23,8 +23,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 
-import java.util.Set;
-
 import static java.lang.String.format;
 
 public class NodeMulticastListener implements MulticastListener {
@@ -47,7 +45,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         JoinMessage joinMessage = (JoinMessage) msg;
-        if (node.isRunning() && node.joined()) {
+        if (node.isRunning() && node.getClusterService().isJoined()) {
             handleActiveAndJoined(joinMessage);
         } else {
             handleNotActiveOrNotJoined(joinMessage);
@@ -66,16 +64,17 @@ public class NodeMulticastListener implements MulticastListener {
             return;
         }
 
-        if (node.isMaster()) {
+        ClusterServiceImpl clusterService = node.getClusterService();
+        Address masterAddress = clusterService.getMasterAddress();
+        if (clusterService.isMaster()) {
             JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(), node.getVersion(),
                     node.getThisAddress(), node.getThisUuid(), node.isLiteMember(), node.createConfigCheck());
             node.multicastService.send(response);
-        } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
-            String message = "New join request has been received from current master. "
-                    + "Removing " + node.getMasterAddress();
+        } else if (joinMessage.getAddress().equals(masterAddress) && !checkMasterUuid(masterAddress, joinMessage.getUuid())) {
+            String message = "New join request has been received from current master. Suspecting " + masterAddress;
             logger.warning(message);
             // I just make a local suspicion. Probably other nodes will eventually suspect as well.
-            node.getClusterService().suspectMember(node.getMasterAddress(), message, false);
+            clusterService.suspectMember(masterAddress, message, false);
         }
     }
 
@@ -95,11 +94,9 @@ public class NodeMulticastListener implements MulticastListener {
                 return;
             }
 
-            if (!node.joined() && node.getMasterAddress() == null) {
-                ClusterJoinManager clusterJoinManager = node.getClusterService().getClusterJoinManager();
-                //todo: why are we making a copy here of address?
-                Address masterAddress = new Address(joinMessage.getAddress());
-                clusterJoinManager.setMasterAddress(masterAddress);
+            ClusterServiceImpl clusterService = node.getClusterService();
+            if (!clusterService.isJoined() && clusterService.getMasterAddress() == null) {
+                clusterService.setMasterAddressToJoin(joinMessage.getAddress());
             } else {
                 logDroppedMessage(joinMessage);
             }
@@ -144,20 +141,8 @@ public class NodeMulticastListener implements MulticastListener {
         return thisAddress == null || thisAddress.equals(joinMessage.getAddress());
     }
 
-    private boolean isMasterNode(Address address) {
-        return address.equals(node.getMasterAddress());
-    }
-
-    private boolean checkMasterUuid(String uuid) {
-        Member masterMember = getMasterMember(node.getClusterService().getMembers());
+    private boolean checkMasterUuid(Address masterAddress, String uuid) {
+        Member masterMember = node.getClusterService().getMember(masterAddress);
         return masterMember == null || masterMember.getUuid().equals(uuid);
-    }
-
-    private Member getMasterMember(Set<Member> members) {
-        if (members.isEmpty()) {
-            return null;
-        }
-
-        return members.iterator().next();
     }
 }

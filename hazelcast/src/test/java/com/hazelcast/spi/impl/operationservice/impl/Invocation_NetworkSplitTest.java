@@ -62,14 +62,8 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testWaitingInvocations_whenNodePartiallySplitFromCluster_scenario1() throws Exception {
+    public void testWaitingInvocations_whenNodePartiallySplitFromCluster() throws Exception {
         SplitAction action = new PartialSplitAction();
-        testWaitingInvocations_whenNodeSplitFromCluster(action);
-    }
-
-    @Test
-    public void testWaitingInvocations_whenNodePartiallySplitFromCluster_scenario2() throws Exception {
-        SplitAction action = new HalfPartialSplitAction();
         testWaitingInvocations_whenNodeSplitFromCluster(action);
     }
 
@@ -254,27 +248,6 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
             // node1 and node2 will be split from node3
             // but node 3 will not be able to detect that.
             node1.clusterService.suspectMember(node3.address, null, true);
-
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    assertEquals(2, node1.getClusterService().getSize());
-                    assertEquals(2, node2.getClusterService().getSize());
-                    assertEquals(1, node3.getClusterService().getSize());
-                }
-            }, 10);
-        }
-    }
-
-    private static class HalfPartialSplitAction implements SplitAction {
-
-        @Override
-        public void run(final Node node1, final Node node2, final Node node3) {
-            // Artificially create a partial network-split;
-            // node1 and node2 will be split from node3
-            // but node 3 will not be able to detect that.
-            node1.clusterService.suspectMember(node3.address, null, true);
-            node3.clusterService.suspectMember(node1.address, null, true);
 
             assertTrueEventually(new AssertTask() {
                 @Override

@@ -80,6 +80,13 @@ public interface ClusterService extends CoreService, Cluster {
     boolean isMaster();
 
     /**
+     * Returns whether this member joined to a cluster.
+     *
+     * @return true if this member is joined to a cluster, false otherwise
+     */
+    boolean isJoined();
+
+    /**
      * Gets the address of this member.
      *
      * @return the address of this member. The returned value will never be null.
@@ -122,5 +129,4 @@ public interface ClusterService extends CoreService, Cluster {
      * @return unique Id for cluster
      */
     String getClusterId();
-
 }

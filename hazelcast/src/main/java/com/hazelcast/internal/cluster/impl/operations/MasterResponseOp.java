@@ -25,21 +25,21 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /** Operation sent by any node to set the master address on the receiver */
-public class SetMasterOp extends AbstractClusterOperation {
+public class MasterResponseOp extends AbstractClusterOperation {
 
     protected Address masterAddress;
 
-    public SetMasterOp() {
+    public MasterResponseOp() {
     }
 
-    public SetMasterOp(Address originAddress) {
+    public MasterResponseOp(Address originAddress) {
         this.masterAddress = originAddress;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl clusterService = getService();
-        clusterService.getClusterJoinManager().setMaster(masterAddress, getCallerAddress());
+        clusterService.getClusterJoinManager().handleMasterResponse(masterAddress, getCallerAddress());
     }
 
     public Address getMasterAddress() {
@@ -65,6 +65,6 @@ public class SetMasterOp extends AbstractClusterOperation {
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.SET_MASTER;
+        return ClusterDataSerializerHook.MASTER_RESPONSE;
     }
 }

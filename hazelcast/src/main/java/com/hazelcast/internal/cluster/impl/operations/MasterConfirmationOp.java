@@ -18,22 +18,28 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MasterConfirmationOp extends VersionedClusterOperation {
+import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
+
+public class MasterConfirmationOp extends AbstractClusterOperation {
+
+    private static final String NON_AVAILABLE_UUID = "n/a";
+
+    private MembersViewMetadata membersViewMetadata;
 
     private long timestamp;
 
     public MasterConfirmationOp() {
-        super(0);
     }
 
-    public MasterConfirmationOp(int memberListVersion, long timestamp) {
-        super(memberListVersion);
+    public MasterConfirmationOp(MembersViewMetadata membersViewMetadata, long timestamp) {
+        this.membersViewMetadata = membersViewMetadata;
         this.timestamp = timestamp;
     }
 
@@ -44,19 +50,34 @@ public class MasterConfirmationOp extends VersionedClusterOperation {
             return;
         }
 
+        if (membersViewMetadata == null) {
+            // 3.8
+            String callerUuid = getCallerUuid();
+            if (callerUuid == null) {
+                callerUuid = NON_AVAILABLE_UUID;
+            }
+            membersViewMetadata = new MembersViewMetadata(endpoint, callerUuid, getNodeEngine().getThisAddress(), 0);
+        }
+
         final ClusterServiceImpl clusterService = getService();
-        clusterService.handleMasterConfirmation(endpoint, getMemberListVersion(), timestamp);
+        clusterService.handleMasterConfirmation(membersViewMetadata, timestamp);
     }
 
     @Override
-    void writeInternalImpl(ObjectDataOutput out)
-            throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        if (isGreaterOrEqualV39(out.getVersion())) {
+            out.writeObject(membersViewMetadata);
+        }
         out.writeLong(timestamp);
     }
 
     @Override
-    void readInternalImpl(ObjectDataInput in)
-            throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        if (isGreaterOrEqualV39(in.getVersion())) {
+            membersViewMetadata = in.readObject();
+        }
         timestamp = in.readLong();
     }
 

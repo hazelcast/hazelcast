@@ -67,7 +67,7 @@ public class MemberHazelcastInstanceInfoPlugin extends DiagnosticsPlugin {
         writer.writeKeyValueEntry("thisAddress", nodeEngine.getNode().getThisAddress().toString());
         writer.writeKeyValueEntry("isRunning", nodeEngine.getNode().isRunning());
         writer.writeKeyValueEntry("isLite", nodeEngine.getNode().isLiteMember());
-        writer.writeKeyValueEntry("joined", nodeEngine.getNode().joined());
+        writer.writeKeyValueEntry("joined", nodeEngine.getNode().getClusterService().isJoined());
         NodeState state = nodeEngine.getNode().getState();
         writer.writeKeyValueEntry("nodeState", state == null ? "null" : state.toString());
 

@@ -17,18 +17,19 @@
 package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 import java.util.Arrays;
 
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.Preconditions.checkNegative;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -54,24 +55,11 @@ public class PostJoinOp
         if (operations != null && operations.length > 0) {
             final NodeEngine nodeEngine = getNodeEngine();
             final int len = operations.length;
+            OperationResponseHandler responseHandler = createErrorLoggingResponseHandler(getLogger());
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine);
-                op.setOperationResponseHandler(new OperationResponseHandler() {
-                    @Override
-                    public void sendResponse(Operation op, Object obj) {
-                        if (obj instanceof Throwable) {
-                            Throwable t = (Throwable) obj;
-                            ILogger logger = nodeEngine.getLogger(op.getClass());
-                            logger.warning("Error while running post-join operation: "
-                                    + t.getClass().getSimpleName() + ": " + t.getMessage());
-
-                            if (logger.isFineEnabled()) {
-                                logger.fine("Error while running post-join operation: ", t);
-                            }
-                        }
-                    }
-                });
+                op.setOperationResponseHandler(responseHandler);
 
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 OperationAccessor.setConnection(op, getConnection());
@@ -83,10 +71,10 @@ public class PostJoinOp
     @Override
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            for (final Operation op : operations) {
-                op.beforeRun();
-                op.run();
-                op.afterRun();
+            NodeEngine nodeEngine = getNodeEngine();
+            OperationService operationService = nodeEngine.getOperationService();
+            for (Operation op : operations) {
+                operationService.run(op);
             }
         }
     }

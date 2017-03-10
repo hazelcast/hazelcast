@@ -22,11 +22,13 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore
 public class MembershipUpdateCompatibilityTest extends HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
@@ -37,5 +39,4 @@ public class MembershipUpdateCompatibilityTest extends HazelcastTestSupport {
     }
 
     // TODO: add membership update v3.8 compatibility tests
-
 }

@@ -18,7 +18,6 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.InitialMembershipEvent;
@@ -28,20 +27,17 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EventObject;
 import java.util.HashSet;
@@ -49,8 +45,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -67,14 +61,7 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClusterMembershipTest extends HazelcastTestSupport {
-
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(10);
-
-    @AfterClass
-    public static void tearDown() throws Exception {
-        executorService.shutdown();
-    }
+public class ClusterMembershipListenerTest extends HazelcastTestSupport {
 
     @Test(expected = NullPointerException.class)
     public void testAddMembershipListener_whenNullListener() {
@@ -171,34 +158,6 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testNodesAbleToJoinFromMultipleThreads_whenPostJoinOperationPresent() throws InterruptedException {
-        final int instanceCount = 6;
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        final Config config = new Config();
-        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
-        final String mapName = randomMapName();
-        // index config is added since it was blocking post join operations.
-        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
-
-        final CountDownLatch latch = new CountDownLatch(instanceCount);
-        for (int i = 0; i < instanceCount; i++) {
-            executorService.execute(new Runnable() {
-                public void run() {
-                    HazelcastInstance hz = factory.newHazelcastInstance(config);
-                    hz.getMap(mapName);
-                    latch.countDown();
-                }
-            });
-        }
-        assertOpenEventually(latch);
-
-        Collection<HazelcastInstance> instances = factory.getAllHazelcastInstances();
-        for (HazelcastInstance instance : instances) {
-            assertClusterSize(instanceCount, instance);
-        }
-    }
-
-    @Test
     public void testMembershipListenerSequentialInvocation() throws Exception {
 
         final int nodeCount = 10;
@@ -215,7 +174,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         factory.newHazelcastInstance(config);
 
         for (int i = 1; i < nodeCount; i++) {
-            executorService.execute(new Runnable() {
+            spawn(new Runnable() {
                 public void run() {
                     factory.newHazelcastInstance(new Config());
                     nodeLatch.countDown();

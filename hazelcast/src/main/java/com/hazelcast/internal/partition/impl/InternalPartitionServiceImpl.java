@@ -248,11 +248,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return;
         }
 
-        if (!node.joined()) {
+        ClusterServiceImpl clusterService = node.getClusterService();
+        if (!clusterService.isJoined()) {
             return;
         }
 
-        ClusterState clusterState = node.getClusterService().getClusterState();
+        ClusterState clusterState = clusterService.getClusterState();
         if (clusterState != ClusterState.ACTIVE) {
             logger.warning("Partitions can't be assigned since cluster-state= " + clusterState);
             return;
@@ -263,7 +264,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
 
         try {
-            final Address masterAddress = node.getMasterAddress();
+            final Address masterAddress = clusterService.getMasterAddress();
             if (masterAddress != null && !masterAddress.equals(node.getThisAddress())) {
                 Future f = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new AssignPartitions(),
                         masterAddress).setTryCount(1).invoke();
@@ -340,7 +341,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             if (!member.localMember()) {
                 partitionStateManager.updateMemberGroupsSize();
             }
-            lastMaster = node.getMasterAddress();
+            lastMaster = node.getClusterService().getMasterAddress();
 
             if (node.isMaster()) {
                 if (partitionStateManager.isInitialized()) {
@@ -372,7 +373,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 shouldFetchPartitionTables = true;
             }
 
-            lastMaster = node.getMasterAddress();
+            lastMaster = node.getClusterService().getMasterAddress();
 
             migrationManager.pauseMigration();
 
@@ -590,7 +591,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             return false;
         }
 
-        final Address master = node.getMasterAddress();
+        final Address master = node.getClusterService().getMasterAddress();
         if (node.isMaster() && !node.getThisAddress().equals(sender)) {
             logger.warning("This is the master node and received a PartitionRuntimeState from "
                     + sender + ". Ignoring incoming state! ");
@@ -679,7 +680,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         logUnknownAddressesInPartitionTable(sender, unknownAddresses);
 
         if (!unknownAddresses.isEmpty()) {
-            Address masterAddress = node.getMasterAddress();
+            Address masterAddress = node.getClusterService().getMasterAddress();
             // If node is shutting down, master can be null.
             if (masterAddress != null && !masterAddress.equals(node.getThisAddress())) {
                 // unknown addresses found in partition table, request a new member-list from master
@@ -752,7 +753,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
-        if (!node.joined()) {
+        if (!node.getClusterService().isJoined()) {
             return true;
         }
 

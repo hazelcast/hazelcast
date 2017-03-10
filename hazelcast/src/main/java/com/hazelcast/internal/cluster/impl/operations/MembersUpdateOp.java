@@ -65,7 +65,8 @@ public class MembersUpdateOp extends VersionedClusterOperation {
 
         ClusterServiceImpl clusterService = getService();
         Address callerAddress = getConnectionEndpointOrThisAddress();
-        if (clusterService.updateMembers(getMembersView(), callerAddress)) {
+        String callerUuid = getCallerUuid();
+        if (clusterService.updateMembers(getMembersView(), callerAddress, callerUuid)) {
             processPartitionState();
         }
     }

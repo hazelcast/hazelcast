@@ -18,6 +18,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,8 +44,10 @@ public class MergeClustersOp extends AbstractClusterOperation {
         final Address caller = getCallerAddress();
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
-        final Address masterAddress = node.getMasterAddress();
+        final ClusterServiceImpl clusterService = node.getClusterService();
+        final Address masterAddress = clusterService.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
+
         boolean local = caller == null;
         if (!local && !caller.equals(masterAddress)) {
             logger.warning("Ignoring merge instruction sent from non-master endpoint: " + caller);
@@ -57,7 +60,7 @@ public class MergeClustersOp extends AbstractClusterOperation {
         nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
             @Override
             public void run() {
-                node.getClusterService().merge(newTargetAddress);
+                clusterService.merge(newTargetAddress);
             }
         });
     }

@@ -59,16 +59,16 @@ public class MulticastJoiner extends AbstractJoiner {
         while (shouldRetry() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
 
             // clear master node
-            clusterJoinManager.setMasterAddress(null);
+            clusterService.setMasterAddressToJoin(null);
 
             Address masterAddress = getTargetAddress();
             if (masterAddress == null) {
                 masterAddress = findMasterWithMulticast();
             }
-            clusterJoinManager.setMasterAddress(masterAddress);
+            clusterService.setMasterAddressToJoin(masterAddress);
 
             if (masterAddress == null || thisAddress.equals(masterAddress)) {
-                clusterJoinManager.setAsMaster();
+                clusterJoinManager.setThisMemberAsMaster();
                 return;
             }
 
@@ -83,7 +83,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
         while (shouldRetry() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
 
-            Address master = node.getMasterAddress();
+            Address master = clusterService.getMasterAddress();
             if (master != null) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Joining to master " + master);
@@ -100,7 +100,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
 
             if (isBlacklisted(master)) {
-                clusterJoinManager.setMasterAddress(null);
+                clusterService.setMasterAddressToJoin(null);
                 return;
             }
         }
@@ -163,11 +163,12 @@ public class MulticastJoiner extends AbstractJoiner {
             while (node.isRunning() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());
                 node.multicastService.send(joinRequest);
-                if (node.getMasterAddress() == null) {
+                Address masterAddress = clusterService.getMasterAddress();
+                if (masterAddress == null) {
                     //noinspection BusyWait
                     Thread.sleep(getPublishInterval());
                 } else {
-                    return node.getMasterAddress();
+                    return masterAddress;
                 }
             }
         } catch (final Exception e) {

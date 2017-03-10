@@ -50,7 +50,7 @@ public class BeforeJoinCheckFailureOp extends AbstractClusterOperation {
     public void run() {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final Node node = nodeEngine.getNode();
-        if (node.joined()) {
+        if (node.getClusterService().isJoined()) {
             throw new IllegalStateException("Node is already joined but received a termination message! "
                 + "Reason: " + failReasonMsg);
         }

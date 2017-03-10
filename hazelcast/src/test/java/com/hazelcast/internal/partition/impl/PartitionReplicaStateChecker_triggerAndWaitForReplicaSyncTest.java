@@ -127,7 +127,7 @@ public class PartitionReplicaStateChecker_triggerAndWaitForReplicaSyncTest exten
     @Test
     public void whenHasOngoingMigration_withMigrationOnMaster_thenWaitForOngoingMigrations() {
         when(node.getMasterAddress()).thenReturn(null);
-        when(node.joined()).thenReturn(true);
+        when(node.getClusterService().isJoined()).thenReturn(true);
 
         assertEquals(MIGRATION_ON_MASTER, replicaStateChecker.getPartitionServiceState());
         assertFalse(replicaStateChecker.triggerAndWaitForReplicaSync(10, TimeUnit.MILLISECONDS, 5));

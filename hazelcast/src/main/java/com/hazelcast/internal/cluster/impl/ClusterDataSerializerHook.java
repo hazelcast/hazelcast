@@ -27,19 +27,20 @@ import com.hazelcast.internal.cluster.impl.operations.ExplicitSuspicionOp;
 import com.hazelcast.internal.cluster.impl.operations.FetchMembersViewOp;
 import com.hazelcast.internal.cluster.impl.operations.FinalizeJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.GroupMismatchOp;
+import com.hazelcast.internal.cluster.impl.operations.HeartbeatComplaintOp;
 import com.hazelcast.internal.cluster.impl.operations.HeartbeatOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinRequestOp;
 import com.hazelcast.internal.cluster.impl.operations.LockClusterStateOp;
 import com.hazelcast.internal.cluster.impl.operations.JoinMastershipClaimOp;
 import com.hazelcast.internal.cluster.impl.operations.MasterConfirmationOp;
-import com.hazelcast.internal.cluster.impl.operations.MasterDiscoveryOp;
+import com.hazelcast.internal.cluster.impl.operations.WhoisMasterOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberAttributeChangedOp;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.internal.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.internal.cluster.impl.operations.MergeClustersOp;
 import com.hazelcast.internal.cluster.impl.operations.PostJoinOp;
 import com.hazelcast.internal.cluster.impl.operations.RollbackClusterStateOp;
-import com.hazelcast.internal.cluster.impl.operations.SetMasterOp;
+import com.hazelcast.internal.cluster.impl.operations.MasterResponseOp;
 import com.hazelcast.internal.cluster.impl.operations.ShutdownNodeOp;
 import com.hazelcast.internal.cluster.impl.operations.SplitBrainMergeValidationOp;
 import com.hazelcast.internal.cluster.impl.operations.TriggerExplicitSuspicionOp;
@@ -77,13 +78,13 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int LOCK_CLUSTER_STATE = 15;
     public static final int MASTER_CLAIM = 16;
     public static final int MASTER_CONFIRM = 17;
-    public static final int MASTER_DISCOVERY = 18;
+    public static final int WHOIS_MASTER = 18;
     public static final int MEMBER_ATTR_CHANGED = 19;
     public static final int MEMBER_REMOVE = 20;
     public static final int MERGE_CLUSTERS = 21;
     public static final int POST_JOIN = 22;
     public static final int ROLLBACK_CLUSTER_STATE = 23;
-    public static final int SET_MASTER = 24;
+    public static final int MASTER_RESPONSE = 24;
     public static final int SHUTDOWN_NODE = 25;
     public static final int TRIGGER_MEMBER_LIST_PUBLISH = 26;
     public static final int CLUSTER_STATE_TRANSACTION_LOG_RECORD = 27;
@@ -99,8 +100,10 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int EXPLICIT_SUSPICION = 37;
     public static final int MEMBERS_VIEW = 38;
     public static final int TRIGGER_EXPLICIT_SUSPICION = 39;
+    public static final int MEMBERS_VIEW_METADATA = 40;
+    public static final int HEARTBEAT_COMPLAINT = 41;
 
-    public static final int LEN = TRIGGER_EXPLICIT_SUSPICION + 1;
+    public static final int LEN = HEARTBEAT_COMPLAINT + 1;
 
     @Override
     public int getFactoryId() {
@@ -201,9 +204,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new MasterConfirmationOp();
             }
         };
-        constructors[MASTER_DISCOVERY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[WHOIS_MASTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MasterDiscoveryOp();
+                return new WhoisMasterOp();
             }
         };
         constructors[MEMBER_ATTR_CHANGED] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -231,9 +234,9 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
                 return new RollbackClusterStateOp();
             }
         };
-        constructors[SET_MASTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MASTER_RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetMasterOp();
+                return new MasterResponseOp();
             }
         };
         constructors[SHUTDOWN_NODE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -314,6 +317,18 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TriggerExplicitSuspicionOp();
+            }
+        };
+        constructors[MEMBERS_VIEW_METADATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MembersViewMetadata();
+            }
+        };
+        constructors[HEARTBEAT_COMPLAINT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            @Override
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HeartbeatComplaintOp();
             }
         };
 

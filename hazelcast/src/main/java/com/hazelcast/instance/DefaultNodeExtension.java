@@ -118,7 +118,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public boolean isStartCompleted() {
-        return node.joined();
+        return node.getClusterService().isJoined();
     }
 
     @Override

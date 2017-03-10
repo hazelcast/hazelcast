@@ -61,9 +61,6 @@ public final class TestUtil {
     }
 
     public static void terminateInstance(HazelcastInstance hz) {
-        final Node node = getNode(hz);
-        node.getConnectionManager().shutdown();
-        node.shutdown(true);
         hz.getLifecycleService().terminate();
     }
 

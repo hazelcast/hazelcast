@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -28,7 +27,7 @@ import static com.hazelcast.internal.cluster.impl.Versions.V3_9;
 
 
 /**
- * TODO: Javadoc Pending...
+ * Base class for {@link Versioned} cluster operations.
  *
  * @since 3.9
  */
@@ -48,7 +47,7 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
     protected final void writeInternal(ObjectDataOutput out) throws IOException {
         writeInternalImpl(out);
 
-        if (isGreaterOrEqual_V3_9(out.getVersion())) {
+        if (isGreaterOrEqualV39(out.getVersion())) {
             out.writeInt(memberListVersion);
         }
     }
@@ -59,15 +58,14 @@ abstract class VersionedClusterOperation extends AbstractClusterOperation implem
     protected final void readInternal(ObjectDataInput in) throws IOException {
         readInternalImpl(in);
 
-        if (isGreaterOrEqual_V3_9(in.getVersion())) {
+        if (isGreaterOrEqualV39(in.getVersion())) {
             memberListVersion = in.readInt();
         }
     }
 
     abstract void readInternalImpl(ObjectDataInput in) throws IOException;
 
-    final boolean isGreaterOrEqual_V3_9(Version version) {
-        // in OSS, version is unknown
-        return !BuildInfoProvider.BUILD_INFO.isEnterprise() || version.isGreaterOrEqual(V3_9);
+    static boolean isGreaterOrEqualV39(Version version) {
+        return version.isGreaterOrEqual(V3_9);
     }
 }

@@ -131,7 +131,7 @@ public abstract class AbstractJoiner implements Joiner {
     public final void join() {
         blacklistedAddresses.clear();
         doJoin();
-        if (!node.joined() && shouldResetHotRestartData()) {
+        if (!clusterService.isJoined() && shouldResetHotRestartData()) {
             logger.warning("Could not join to the cluster because hot restart data must be reset.");
             node.getNodeExtension().getInternalHotRestartService().resetHotRestartData();
             reset();
@@ -141,7 +141,7 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected final boolean shouldRetry() {
-        return node.isRunning() && !node.joined() && !shouldResetHotRestartData();
+        return node.isRunning() && !clusterService.isJoined() && !shouldResetHotRestartData();
     }
 
     private boolean shouldResetHotRestartData() {
@@ -154,18 +154,18 @@ public abstract class AbstractJoiner implements Joiner {
         blacklistedAddresses.clear();
 
         if (logger.isFineEnabled()) {
-            logger.fine("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
+            logger.fine("PostJoin master: " + clusterService.getMasterAddress() + ", isMaster: " + clusterService.isMaster());
         }
         if (!node.isRunning()) {
             return;
         }
         if (tryCount.incrementAndGet() == JOIN_TRY_COUNT) {
             logger.warning("Join try count exceed limit, setting this node as master!");
-            clusterJoinManager.setAsMaster();
+            clusterJoinManager.setThisMemberAsMaster();
         }
 
-        if (node.joined()) {
-            if (!node.isMaster()) {
+        if (clusterService.isJoined()) {
+            if (!clusterService.isMaster()) {
                 ensureConnectionToAllMembers();
             }
 
@@ -177,7 +177,7 @@ public abstract class AbstractJoiner implements Joiner {
 
     private void ensureConnectionToAllMembers() {
         boolean allConnected = false;
-        if (node.joined()) {
+        if (clusterService.isJoined()) {
             logger.fine("Waiting for all connections");
             int connectAllWaitSeconds = node.getProperties().getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
@@ -330,7 +330,9 @@ public abstract class AbstractJoiner implements Joiner {
             // Join request is coming from master of the split and it thinks that I am its member.
             // This is partial split case and we want to convert it to a full split.
             // So it should remove me from its cluster.
-            clusterService.sendExplicitSuspicion(joinMessageAddress, joinMessageAddress, joinMessage.getMemberListVersion());
+            MembersViewMetadata membersViewMetadata = new MembersViewMetadata(joinMessageAddress, joinMessage.getUuid(),
+                    joinMessageAddress, joinMessage.getMemberListVersion());
+            clusterService.sendExplicitSuspicion(membersViewMetadata);
             logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessageAddress
                     + ", because it thinks this-node as its member.");
             return false;

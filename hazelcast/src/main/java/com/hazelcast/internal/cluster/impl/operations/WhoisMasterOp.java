@@ -24,21 +24,21 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class MasterDiscoveryOp extends AbstractClusterOperation {
+public class WhoisMasterOp extends AbstractClusterOperation {
 
     private JoinMessage joinMessage;
 
-    public MasterDiscoveryOp() {
+    public WhoisMasterOp() {
     }
 
-    public MasterDiscoveryOp(JoinMessage joinMessage) {
+    public WhoisMasterOp(JoinMessage joinMessage) {
         this.joinMessage = joinMessage;
     }
 
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.getClusterJoinManager().answerMasterQuestion(joinMessage, getConnection());
+        cm.getClusterJoinManager().answerWhoisMasterQuestion(joinMessage, getConnection());
     }
 
     @Override
@@ -60,6 +60,6 @@ public class MasterDiscoveryOp extends AbstractClusterOperation {
 
     @Override
     public int getId() {
-        return ClusterDataSerializerHook.MASTER_DISCOVERY;
+        return ClusterDataSerializerHook.WHOIS_MASTER;
     }
 }

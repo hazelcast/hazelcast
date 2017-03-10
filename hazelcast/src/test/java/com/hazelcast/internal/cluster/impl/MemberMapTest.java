@@ -319,7 +319,47 @@ public class MemberMapTest {
         }
     }
 
-    private MemberImpl[] newMembers(int count) {
+    @Test
+    public void isBeforeThan_success() {
+        MemberImpl[] members = newMembers(5);
+        MemberMap map = MemberMap.createNew(members);
+
+        assertTrue(map.isBeforeThan(members[1].getAddress(), members[3].getAddress()));
+    }
+
+    @Test
+    public void isBeforeThan_fail() {
+        MemberImpl[] members = newMembers(5);
+        MemberMap map = MemberMap.createNew(members);
+
+        assertFalse(map.isBeforeThan(members[4].getAddress(), members[1].getAddress()));
+    }
+
+    @Test
+    public void isBeforeThan_whenFirstAddressNotExist() {
+        MemberImpl[] members = newMembers(5);
+        MemberMap map = MemberMap.createNew(members);
+
+        map.isBeforeThan(newAddress(6000), members[0].getAddress());
+    }
+
+    @Test
+    public void isBeforeThan_whenSecondAddressNotExist() {
+        MemberImpl[] members = newMembers(5);
+        MemberMap map = MemberMap.createNew(members);
+
+        map.isBeforeThan(members[0].getAddress(), newAddress(6000));
+    }
+
+    @Test
+    public void isBeforeThan_whenAddressesNotExist() {
+        MemberImpl[] members = newMembers(5);
+        MemberMap map = MemberMap.createNew(members);
+
+        map.isBeforeThan(newAddress(6000), newAddress(7000));
+    }
+
+    static MemberImpl[] newMembers(int count) {
         MemberImpl[] members = new MemberImpl[count];
         for (int i = 0; i < members.length; i++) {
             members[i] = newMember(5000 + i);
@@ -327,7 +367,7 @@ public class MemberMapTest {
         return members;
     }
 
-    private static MemberImpl newMember(int port) {
+    static MemberImpl newMember(int port) {
         return new MemberImpl(newAddress(port), VERSION, false, newUnsecureUuidString());
     }
 

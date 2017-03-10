@@ -16,30 +16,31 @@
 
 package com.hazelcast.internal.cluster.impl.operations;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterHeartbeatManager;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.MembersViewMetadata;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.version.Version;
 
 import java.io.IOException;
 
-/** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
-public final class HeartbeatOp extends VersionedClusterOperation {
+import static com.hazelcast.internal.cluster.impl.operations.VersionedClusterOperation.isGreaterOrEqualV39;
 
+/** A heartbeat sent from one cluster member to another. The sent timestamp is the cluster clock time of the sending member */
+public final class HeartbeatOp extends AbstractClusterOperation {
+
+    private MembersViewMetadata senderMembersViewMetadata;
     private String targetUuid;
     private long timestamp;
 
     public HeartbeatOp() {
-        super(0);
     }
 
-    public HeartbeatOp(String targetUuid, int version, long timestamp) {
-        super(version);
+    public HeartbeatOp(MembersViewMetadata senderMembersViewMetadata, String targetUuid, long timestamp) {
+        this.senderMembersViewMetadata = senderMembersViewMetadata;
         this.targetUuid = targetUuid;
         this.timestamp = timestamp;
     }
@@ -47,82 +48,25 @@ public final class HeartbeatOp extends VersionedClusterOperation {
     @Override
     public void run() {
         ClusterServiceImpl service = getService();
-        if (!wasSentToThisMember(service)) {
-            getLogger().warning("Heartbeat was sent to " + targetUuid + ", but this is not our UUID anymore.");
-            return;
-        }
+        ClusterHeartbeatManager heartbeatManager = service.getClusterHeartbeatManager();
 
-        MemberImpl member = getHeartBeatingMember(service);
-        if (member != null) {
-            checkMemberListVersion(service);
-            service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
-        }
-    }
-
-    private boolean wasSentToThisMember(ClusterServiceImpl service) {
-        Version clusterVersion = service.getClusterVersion();
-        if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
-            return true;
-        }
-        
-        Member localMember = service.getLocalMember();
-        return localMember.getUuid().equals(targetUuid);
-    }
-
-    private void checkMemberListVersion(ClusterServiceImpl service) {
-        Version clusterVersion = service.getClusterVersion();
-        if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
-            return;
-        }
-
-        int localMemberListVersion = service.getMembershipManager().getMemberListVersion();
-
-        ILogger logger = getLogger();
-        if (service.isMaster()) {
-            if (localMemberListVersion < getMemberListVersion()) {
-                logger.severe("Master member list version must not be smaller than sender's version! Master: "
-                        + localMemberListVersion + ", Sender: " + getMemberListVersion());
-            }
-
-            if (localMemberListVersion - getMemberListVersion() > 1) {
-                logger.warning("Sender member list version is lagging behind master's version! "
-                        + "Master: " + localMemberListVersion + ", Sender: " + getMemberListVersion());
-            }
-
-        } else if (getCallerAddress().equals(service.getMasterAddress())) {
-            if (localMemberListVersion > getMemberListVersion()) {
-                logger.severe("Local member list version must not be greater than master's version! Master: "
-                        + getMemberListVersion() + ", Local: " + localMemberListVersion);
-            }
-
-            if (getMemberListVersion() - localMemberListVersion > 1) {
-                logger.warning("Local member list version is lagging behind master's version! "
-                        + "Master: " + getMemberListVersion() + ", Local: " + localMemberListVersion);
+        if (senderMembersViewMetadata != null) {
+            heartbeatManager.handleHeartbeat(senderMembersViewMetadata, targetUuid, timestamp);
+        } else {
+            // version 3.8
+            MemberImpl member = getHeartBeatingMember(service);
+            if (member != null) {
+                heartbeatManager.onHeartbeat(member, timestamp);
             }
         }
     }
 
-    // TODO [basri] If I am the master and I receive a heartbeat from a non-member address, I can tell it to suspect me
     private MemberImpl getHeartBeatingMember(ClusterServiceImpl service) {
         MemberImpl member = service.getMember(getCallerAddress());
         ILogger logger = getLogger();
         if (member == null) {
             if (logger.isFineEnabled()) {
                 logger.fine("Heartbeat received from an unknown endpoint: " + getCallerAddress());
-            }
-            return null;
-        }
-
-        Version clusterVersion = service.getClusterVersion();
-        if (clusterVersion.isUnknown() || clusterVersion.isLessThan(Versions.V3_9)) {
-            // uuid is not send explicitly pre-3.9
-            return member;
-        }
-
-        if (!member.getUuid().equals(getCallerUuid())) {
-            if (logger.isFineEnabled()) {
-                logger.fine("Heartbeat received from an unknown endpoint. Address: "
-                        + getCallerAddress() + ", Uuid: " + getCallerUuid());
             }
             return null;
         }
@@ -135,20 +79,23 @@ public final class HeartbeatOp extends VersionedClusterOperation {
     }
 
     @Override
-    void writeInternalImpl(ObjectDataOutput out) throws IOException {
-        if (isGreaterOrEqual_V3_9(out.getVersion())) {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        if (isGreaterOrEqualV39(out.getVersion())) {
+            out.writeObject(senderMembersViewMetadata);
             out.writeUTF(targetUuid);
         }
-
         out.writeLong(timestamp);
     }
 
     @Override
-    void readInternalImpl(ObjectDataInput in) throws IOException {
-        if (isGreaterOrEqual_V3_9(in.getVersion())) {
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        if (isGreaterOrEqualV39(in.getVersion())) {
+            senderMembersViewMetadata = in.readObject();
             targetUuid = in.readUTF();
         }
-
         timestamp = in.readLong();
     }
+
 }

@@ -40,7 +40,6 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         this.address = address;
     }
 
-    // used only in ClusterServiceImpl.sendMemberRemoveOperation(memberListVersion, deadMember)
     public MemberRemoveOperation(Address address, String uuid) {
         this.address = address;
         this.memberUuid = uuid;

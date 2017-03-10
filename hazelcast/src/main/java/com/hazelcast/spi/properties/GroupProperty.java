@@ -302,6 +302,11 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.max.join.merge.target.seconds", 20, SECONDS);
     public static final HazelcastProperty HEARTBEAT_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.heartbeat.interval.seconds", 5, SECONDS);
+
+    /**
+     * The timeout which defines when master candidate gives up waiting for response to its mastership claim.
+     * After timeout happens, non-responding member will be removed from member list.
+     */
     public static final HazelcastProperty MASTERSHIP_CLAIM_TIMEOUT_SECONDS
             = new HazelcastProperty("hazelcast.mastership.claim.timeout.seconds", 120, SECONDS);
     /**
@@ -403,8 +408,6 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.partition.migration.interval", 0, SECONDS);
     public static final HazelcastProperty PARTITION_MIGRATION_TIMEOUT
             = new HazelcastProperty("hazelcast.partition.migration.timeout", 300, SECONDS);
-    public static final HazelcastProperty PARTITION_MIGRATION_ZIP_ENABLED
-            = new HazelcastProperty("hazelcast.partition.migration.zip.enabled", true);
     public static final HazelcastProperty DISABLE_STALE_READ_ON_PARTITION_MIGRATION
             = new HazelcastProperty("hazelcast.partition.migration.stale.read.disabled", false);
 
@@ -419,9 +422,6 @@ public final class GroupProperty {
 
     public static final HazelcastProperty GRACEFUL_SHUTDOWN_MAX_WAIT
             = new HazelcastProperty("hazelcast.graceful.shutdown.max.wait", 600, SECONDS);
-
-    public static final HazelcastProperty SYSTEM_LOG_ENABLED
-            = new HazelcastProperty("hazelcast.system.log.enabled", true);
 
     /**
      * Enables or disables the {@link com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperationDetector}.
@@ -712,7 +712,8 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.init.cluster.version");
 
     /**
-     * TODO: javadoc
+     * Enables legacy (pre-3.9) member list format which is printed in logs. New format is introduced by 3.9
+     * includes member list version.
      */
     public static final HazelcastProperty USE_LEGACY_MEMBER_LIST_FORMAT
             = new HazelcastProperty("hazelcast.legacy.memberlist.format.enabled", false);

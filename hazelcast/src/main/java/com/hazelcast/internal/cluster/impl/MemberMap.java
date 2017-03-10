@@ -214,7 +214,6 @@ final class MemberMap {
 
         Set<MemberImpl> result = new LinkedHashSet<MemberImpl>();
         boolean found = false;
-        
         for (MemberImpl m : members) {
             if (!found && m.equals(member)) {
                 found = true;
@@ -251,6 +250,31 @@ final class MemberMap {
         }
 
         return result;
+    }
+
+    boolean isBeforeThan(Address address1, Address address2) {
+        if (address1.equals(address2)) {
+            return false;
+        }
+
+        if (!addressToMemberMap.containsKey(address1)) {
+            return false;
+        }
+
+        if (!addressToMemberMap.containsKey(address2)) {
+            return false;
+        }
+
+        for (MemberImpl member : members) {
+            if (member.getAddress().equals(address1)) {
+                return true;
+            }
+            if (member.getAddress().equals(address2)) {
+                return false;
+            }
+        }
+
+        throw new AssertionError("Unreachable!");
     }
 
     private void ensureMemberExist(Member member) {

@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -33,12 +34,13 @@ public class JoinMastershipClaimOp extends AbstractJoinOperation {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         Node node = nodeEngine.getNode();
         Joiner joiner = node.getJoiner();
+        ClusterServiceImpl clusterService = node.getClusterService();
         final ILogger logger = node.getLogger(getClass().getName());
         if (joiner instanceof TcpIpJoiner) {
             TcpIpJoiner tcpIpJoiner = (TcpIpJoiner) joiner;
             final Address endpoint = getCallerAddress();
-            final Address masterAddress = node.getMasterAddress();
-            approvedAsMaster = !tcpIpJoiner.isClaimingMaster() && !node.isMaster()
+            final Address masterAddress = clusterService.getMasterAddress();
+            approvedAsMaster = !tcpIpJoiner.isClaimingMaster() && !clusterService.isMaster()
                     && (masterAddress == null || masterAddress.equals(endpoint));
         } else {
             approvedAsMaster = false;

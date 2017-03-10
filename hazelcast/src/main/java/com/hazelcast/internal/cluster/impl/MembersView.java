@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,14 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
 
 /**
- * TODO
+ * MembersView is a container object to carry member list and version together.
  */
 public final class MembersView implements IdentifiedDataSerializable {
 
@@ -51,42 +49,6 @@ public final class MembersView implements IdentifiedDataSerializable {
     }
 
     /**
-     * Creates an empty {@code MemberMap}.
-     *
-     * @return empty {@code MemberMap}
-     */
-    static MembersView empty() {
-        return new MembersView(0, Collections.<MemberInfo>emptyList());
-    }
-
-    /**
-     * Creates a singleton {@code MemberMap} including only specified member.
-     *
-     * @param member sole member in map
-     * @return singleton {@code MemberMap}
-     */
-    static MembersView singleton(MemberImpl member) {
-        return new MembersView(1, singletonList(new MemberInfo(member)));
-    }
-
-//    /**
-//     * Creates clone of source {@link MembersView} additionally including new members.
-//     *
-//     * @param source     source map
-//     * @param newMembers new members to add
-//     * @return clone map
-//     */
-//    static MembersView cloneAdding(MembersView source, MemberImpl... newMembers) {
-//        List<MemberInfo> list = new ArrayList<MemberInfo>(source.size() + newMembers.length);
-//        list.addAll(source.getMembers());
-//
-//        for (MemberImpl member : newMembers) {
-//            list.add(new MemberInfo(member));
-//        }
-//        return new MembersView(source.version + 1, list);
-//    }
-
-    /**
      * Creates clone of source {@link MembersView} additionally including new members.
      *
      * @param source     source map
@@ -99,16 +61,6 @@ public final class MembersView implements IdentifiedDataSerializable {
         list.addAll(newMembers);
 
         return new MembersView(source.version + 1, unmodifiableList(list));
-    }
-
-    /**
-     * Creates a new {@code MemberMap} including given members.
-     *
-     * @param members members
-     * @return a new {@code MemberMap}
-     */
-    static MembersView createNew(Collection<MemberImpl> members) {
-        return createNew(0, members);
     }
 
     /**
@@ -159,7 +111,7 @@ public final class MembersView implements IdentifiedDataSerializable {
         return false;
     }
 
-    public boolean containsAddress(Address address, String uuid) {
+    public boolean containsMember(Address address, String uuid) {
         for (MemberInfo member : members) {
             if (member.getAddress().equals(address)) {
                 return member.getUuid().equals(uuid);

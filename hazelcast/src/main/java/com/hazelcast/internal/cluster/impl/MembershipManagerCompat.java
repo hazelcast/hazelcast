@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008 - 2017, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2017, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ public class MembershipManagerCompat {
         this.logger = node.getLogger(getClass());
     }
 
+    @SuppressWarnings("checkstyle:npathcomplexity")
     public void removeMember(Address deadAddress, String uuid, String reason) {
         if (clusterService.getClusterVersion().isGreaterOrEqual(Versions.V3_9)) {
             throw new IllegalStateException("Should not be called on versions 3.9+");
@@ -74,17 +75,17 @@ public class MembershipManagerCompat {
                 return;
             }
 
-            if (deadAddress.equals(node.getMasterAddress())) {
+            if (deadAddress.equals(clusterService.getMasterAddress())) {
                 assignNewMaster();
             }
-            if (node.isMaster()) {
+            if (clusterService.isMaster()) {
                 clusterService.getClusterJoinManager().removeJoin(deadAddress);
             }
             Connection conn = node.connectionManager.getConnection(deadAddress);
             if (conn != null) {
                 conn.close(reason, null);
             }
-            
+
             removeMember(member);
             clusterService.printMemberList();
 
@@ -94,8 +95,8 @@ public class MembershipManagerCompat {
     }
 
     private void assignNewMaster() {
-        Address oldMasterAddress = node.getMasterAddress();
-        if (node.joined()) {
+        Address oldMasterAddress = clusterService.getMasterAddress();
+        if (clusterService.isJoined()) {
             Collection<MemberImpl> members = membershipManager.getMembers();
             Member newMaster = null;
             int size = members.size();
@@ -115,20 +116,20 @@ public class MembershipManagerCompat {
             }
             logger.info(format("Old master %s left the cluster, assigning new master %s", oldMasterAddress, newMaster));
             if (newMaster != null) {
-                node.setMasterAddress(newMaster.getAddress());
+                clusterService.setMasterAddress(newMaster.getAddress());
             } else {
-                node.setMasterAddress(null);
+                clusterService.setMasterAddress(null);
             }
         } else {
-            node.setMasterAddress(null);
+            clusterService.setMasterAddress(null);
         }
 
         if (logger.isFineEnabled()) {
-            logger.fine(format("Old master: %s, new master: %s ", oldMasterAddress, node.getMasterAddress()));
+            logger.fine(format("Old master: %s, new master: %s ", oldMasterAddress, clusterService.getMasterAddress()));
         }
 
         ClusterHeartbeatManager clusterHeartbeatManager = clusterService.getClusterHeartbeatManager();
-        if (node.isMaster()) {
+        if (clusterService.isMaster()) {
             clusterHeartbeatManager.resetMemberMasterConfirmations();
         } else {
             clusterHeartbeatManager.sendMasterConfirmation();
@@ -148,7 +149,7 @@ public class MembershipManagerCompat {
                 MemberMap newMembers = MemberMap.cloneExcluding(currentMembers, deadMember);
                 membershipManager.setMembers(newMembers);
 
-                if (node.isMaster()) {
+                if (clusterService.isMaster()) {
                     if (logger.isFineEnabled()) {
                         logger.fine(deadMember + " is dead, sending remove to all other members...");
                     }
@@ -175,7 +176,7 @@ public class MembershipManagerCompat {
     }
 
     private boolean ensureMemberIsRemovable(Address deadAddress) {
-        return node.joined() && !deadAddress.equals(node.getThisAddress());
+        return clusterService.isJoined() && !deadAddress.equals(node.getThisAddress());
     }
-    
+
 }

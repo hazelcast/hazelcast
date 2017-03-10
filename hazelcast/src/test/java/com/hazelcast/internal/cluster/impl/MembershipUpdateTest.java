@@ -16,15 +16,24 @@
 
 package com.hazelcast.internal.cluster.impl;
 
+import com.hazelcast.cluster.Joiner;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.MembersUpdateOp;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -37,12 +46,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Set;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.FINALIZE_JOIN;
 import static com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook.MEMBER_INFO_UPDATE;
 import static com.hazelcast.internal.cluster.impl.PacketFiltersUtil.delayOperationsFrom;
@@ -66,23 +79,6 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     public void init() {
         factory = createHazelcastInstanceFactory();
     }
-
-    // TODO: add membership update tests
-    // ✔ sequential member join
-    // ✔ concurrent member join
-    // ✔ sequential member join and removal
-    // ✔ concurrent member join and removal
-    // ✔ existing members missing member updates (join), convergence
-    // ✔ existing member missing member removal, then receives periodic member publish
-    // ✔ existing member missing member removal, then receives new member join update
-    // ✔ existing member receiving out-of-order member updates
-    // ✔ new member receiving out-of-order finalize join & member updates
-    // ✔ existing member receiving a member list that's not containing itself
-    // - new member receiving a finalize join that's not containing itself
-    // ✔ existing member receives member update from non-master
-    // - new member receives finalize join from non-master
-    // - byzantine member updates published
-    // - so on...
 
     @Test
     public void sequential_member_join() {
@@ -138,6 +134,41 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
             MemberMap memberMap = getMemberMap(instance);
             assertMemberViewsAreSame(referenceMemberMap, memberMap);
         }
+    }
+
+    @Test
+    public void parallel_member_join_whenPostJoinOperationPresent() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        final Config config = new Config();
+        config.getServicesConfig().addServiceConfig(new ServiceConfig().setEnabled(true).setName("post-join-service")
+                        .setImplementation(new PostJoinAwareServiceImpl(latch)));
+
+        final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(6);
+        for (int i = 0; i < instances.length(); i++) {
+            final int ix = i;
+            spawn(new Runnable() {
+                @Override
+                public void run() {
+                    instances.set(ix, factory.newHazelcastInstance(config));
+                }
+            });
+        }
+
+        // just a random latency
+        sleepSeconds(3);
+        latch.countDown();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < instances.length(); i++) {
+                    HazelcastInstance instance = instances.get(i);
+                    assertNotNull(instance);
+                    assertClusterSize(instances.length(), instance);
+                }
+            }
+        });
     }
 
     @Test
@@ -454,6 +485,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
                 membersView, clusterService.getClusterTime(), null, true);
+        memberUpdate.setCallerUuid(node.getThisUuid());
 
         Future<Object> future =
                 node.getNodeEngine().getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
@@ -486,8 +518,8 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
 
         Operation memberUpdate = new MembersUpdateOp(membershipManager.getMember(getAddress(hz3)).getUuid(),
                 membersView, clusterService.getClusterTime(), null, true);
-
         NodeEngineImpl nonMasterNodeEngine = getNodeEngineImpl(hz2);
+        memberUpdate.setCallerUuid(nonMasterNodeEngine.getNode().getThisUuid());
         Future<Object> future =
                 nonMasterNodeEngine.getOperationService().invokeOnTarget(null, memberUpdate, getAddress(hz3));
         future.get();
@@ -501,12 +533,54 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
     }
 
+    @Test
+    public void memberListOrder_shouldBeSame_whenMemberRestartedWithSameIdentity() {
+        Config config = new Config();
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getName(), "5");
+
+        final HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz3 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz4 = factory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(4, hz2);
+        assertClusterSizeEventually(4, hz3);
+
+        dropOperationsBetween(hz1, hz2, MEMBER_INFO_UPDATE);
+
+        final MemberImpl member3 = getNode(hz3).getLocalMember();
+        hz3.getLifecycleService().terminate();
+
+        assertClusterSizeEventually(3, hz1);
+        assertClusterSizeEventually(3, hz4);
+        assertClusterSize(4, hz2);
+
+        hz3 = newHazelcastInstance(config, "test-instance", new StaticMemberNodeContext(member3));
+
+        assertClusterSizeEventually(4, hz1);
+        assertClusterSizeEventually(4, hz4);
+
+        resetPacketFiltersFrom(hz1);
+
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz3));
+        assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz4));
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertMemberViewsAreSame(getMemberMap(hz1), getMemberMap(hz2));
+            }
+        });
+    }
+
     static void assertMemberViewsAreSame(MemberMap expectedMemberMap, MemberMap actualMemberMap) {
         assertEquals(expectedMemberMap.getVersion(), actualMemberMap.getVersion());
         assertEquals(expectedMemberMap.size(), actualMemberMap.size());
 
-        Set<MemberImpl> expectedMembers = expectedMemberMap.getMembers();
-        Set<MemberImpl> actualMembers = actualMemberMap.getMembers();
+        // order is important
+        List<MemberImpl> expectedMembers = new ArrayList<MemberImpl>(expectedMemberMap.getMembers());
+        List<MemberImpl> actualMembers = new ArrayList<MemberImpl>(actualMemberMap.getMembers());
+        
         assertEquals(expectedMembers, actualMembers);
     }
 
@@ -515,4 +589,66 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         return clusterService.getMembershipManager().getMemberMap();
     }
 
+    private class StaticMemberNodeContext implements NodeContext {
+        final NodeContext delegate;
+        private final MemberImpl member;
+
+        StaticMemberNodeContext(MemberImpl member) {
+            this.member = member;
+            delegate = factory.getRegistry().createNodeContext(member.getAddress());
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return new DefaultNodeExtension(node) {
+                @Override
+                public String createMemberUuid(Address address) {
+                    return member.getUuid();
+                }
+            };
+        }
+
+        @Override
+        public AddressPicker createAddressPicker(Node node) {
+            return delegate.createAddressPicker(node);
+        }
+
+        @Override
+        public Joiner createJoiner(Node node) {
+            return delegate.createJoiner(node);
+        }
+
+        @Override
+        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
+            return delegate.createConnectionManager(node, serverSocketChannel);
+        }
+    }
+
+    private static class PostJoinAwareServiceImpl implements PostJoinAwareService {
+        static final String SERVICE_NAME = "post-join-service";
+
+        final CountDownLatch latch;
+
+        private PostJoinAwareServiceImpl(CountDownLatch latch) {
+            this.latch = latch;
+        }
+
+        @Override
+        public Operation getPostJoinOperation() {
+            return new TimeConsumingPostJoinOperation();
+        }
+    }
+
+    private static class TimeConsumingPostJoinOperation extends Operation {
+        @Override
+        public void run() throws Exception {
+            PostJoinAwareServiceImpl service = getService();
+            service.latch.await();
+        }
+
+        @Override
+        public String getServiceName() {
+            return PostJoinAwareServiceImpl.SERVICE_NAME;
+        }
+    }
 }
