@@ -78,7 +78,8 @@ public class ClientInvocation implements Runnable {
         this.connection = connection;
         this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
-        this.clientInvocationFuture = new ClientInvocationFuture(this, executionService, clientMessage, logger);
+        this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
+                clientMessage, logger, client.getCallIdSequence());
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
