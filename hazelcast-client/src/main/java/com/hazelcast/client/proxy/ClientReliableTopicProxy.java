@@ -88,7 +88,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     private Executor getExecutor(ClientReliableTopicConfig config, HazelcastClientInstanceImpl client) {
         Executor executor = config.getExecutor();
         if (executor == null) {
-            executor = client.getClientExecutionService();
+            executor = client.getClientExecutionService().getUserExecutor();
         }
         return executor;
     }
