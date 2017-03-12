@@ -23,6 +23,7 @@ import org.junit.After;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.Future;
@@ -45,12 +46,17 @@ public class KafkaTestSupport extends JetTestSupport {
     @After
     public void shutdownKafkaCluster() {
         if (kafkaServer != null) {
-            kafkaServer.shutdown();
-            zkUtils.close();
-            zkServer.shutdown();
             if (producer != null) {
                 producer.close();
             }
+            kafkaServer.shutdown();
+            zkUtils.close();
+            zkServer.shutdown();
+
+            producer = null;
+            kafkaServer = null;
+            zkUtils = null;
+            zkServer = null;
         }
     }
 
@@ -92,16 +98,16 @@ public class KafkaTestSupport extends JetTestSupport {
         return producer;
     }
 
-    protected KafkaConsumer<String, String> createConsumer(String brokerConnectionString, String topic) {
+    protected KafkaConsumer<String, String> createConsumer(String brokerConnectionString, String... topicIds) {
         Properties consumerProps = new Properties();
         consumerProps.setProperty("bootstrap.servers", brokerConnectionString);
-        consumerProps.setProperty("group.id", "group0");
+        consumerProps.setProperty("group.id", randomString());
         consumerProps.setProperty("client.id", "consumer0");
         consumerProps.setProperty("key.deserializer", StringDeserializer.class.getCanonicalName());
         consumerProps.setProperty("value.deserializer", StringDeserializer.class.getCanonicalName());
         consumerProps.put("auto.offset.reset", "earliest");  // to make sure the consumer starts from the beginning of the topic
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerProps);
-        consumer.subscribe(Collections.singleton(topic));
+        consumer.subscribe(Arrays.asList(topicIds));
         return consumer;
     }
 

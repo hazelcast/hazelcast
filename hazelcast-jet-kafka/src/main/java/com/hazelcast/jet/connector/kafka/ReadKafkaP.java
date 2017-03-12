@@ -26,17 +26,16 @@ import com.hazelcast.nio.Address;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
 import java.util.AbstractMap;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
-import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
@@ -76,6 +75,9 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
      *                   broker address and key/value deserializers
      */
     public static <K, V> ProcessorMetaSupplier readKafka(Properties properties, String... topicIds) {
+        if (!properties.containsKey("group.id")) {
+            throw new IllegalArgumentException("Properties should contain `group.id`");
+        }
         return new MetaSupplier<>(topicIds, properties);
     }
 
@@ -97,27 +99,34 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
         if (records.isEmpty()) {
             return false;
         }
-        for (TopicPartition topicPartition : records.partitions()) {
+        Iterator<TopicPartition> iterator = records.partitions().iterator();
+        while (iterator.hasNext()) {
+            TopicPartition topicPartition = iterator.next();
             List<ConsumerRecord<K, V>> partitionRecords = records.records(topicPartition);
-            long latestOffset = -1;
             for (ConsumerRecord<K, V> record : partitionRecords) {
                 K key = record.key();
                 V value = record.value();
                 emit(new AbstractMap.SimpleImmutableEntry<>(key, value));
-                latestOffset = record.offset();
                 if (getOutbox().isHighWater()) {
-                    commitPartition(topicPartition, latestOffset);
+                    consumer.seek(topicPartition, record.offset() + 1);
+                    seekToTheBeginning(records, iterator);
+                    consumer.commitSync();
                     return false;
                 }
             }
-            commitPartition(topicPartition, latestOffset);
         }
+        consumer.commitSync();
         return false;
     }
 
-    private void commitPartition(TopicPartition topicPartition, long latestOffset) {
-        if (latestOffset != -1) {
-            consumer.commitSync(singletonMap(topicPartition, new OffsetAndMetadata(latestOffset + 1)));
+    private void seekToTheBeginning(ConsumerRecords<K, V> records, Iterator<TopicPartition> iterator) {
+        while (iterator.hasNext()) {
+            TopicPartition topicPartition = iterator.next();
+            List<ConsumerRecord<K, V>> partitionRecords = records.records(topicPartition);
+            if (!partitionRecords.isEmpty()) {
+                long offset = partitionRecords.get(0).offset();
+                consumer.seek(topicPartition, offset);
+            }
         }
     }
 

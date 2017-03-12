@@ -86,7 +86,7 @@ public class ReadKafkaPTest extends KafkaTestSupport {
 
     private Properties getProperties(String brokerConnectionString, Class keyDeserializer, Class valueDeserializer) {
         Properties properties = new Properties();
-        properties.setProperty("group.id", "group0");
+        properties.setProperty("group.id", randomString());
         properties.setProperty("bootstrap.servers", brokerConnectionString);
         properties.setProperty("key.deserializer", keyDeserializer.getCanonicalName());
         properties.setProperty("value.deserializer", valueDeserializer.getCanonicalName());
