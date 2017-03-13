@@ -118,7 +118,8 @@ public class ProxyFactoryTest {
         }
     }
 
-    private static class ExpectedError extends Error {}
+    private static class ExpectedError extends Error {
+    }
 
     private static class CustomService implements RemoteService {
         @Override

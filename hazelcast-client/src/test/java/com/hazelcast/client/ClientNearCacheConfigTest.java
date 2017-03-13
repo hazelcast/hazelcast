@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 public class ClientNearCacheConfigTest {
 
     @Test
-    public void testSpecificNearCacheConfig_whenAsteriskAtTheEnd(){
+    public void testSpecificNearCacheConfig_whenAsteriskAtTheEnd() {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("map*");
@@ -50,7 +50,7 @@ public class ClientNearCacheConfigTest {
     }
 
     @Test
-    public void testSpecificNearCacheConfig_whenAsteriskAtTheBeginning(){
+    public void testSpecificNearCacheConfig_whenAsteriskAtTheBeginning() {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("*Map");
@@ -68,7 +68,7 @@ public class ClientNearCacheConfigTest {
     }
 
     @Test
-    public void testSpecificNearCacheConfig_whenAsteriskInTheMiddle(){
+    public void testSpecificNearCacheConfig_whenAsteriskInTheMiddle() {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("map*Bar");

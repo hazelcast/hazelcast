@@ -80,9 +80,9 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
         final ICache iCache = cache.unwrap(ICache.class);
 
         iCache.addPartitionLostListener(new CachePartitionLostListener() {
-           @Override
-           public void partitionLost(CachePartitionLostEvent event) {
-           }
+            @Override
+            public void partitionLost(CachePartitionLostEvent event) {
+            }
         });
 
         assertRegistrationsSizeEventually(instance, cacheName, 1);
@@ -177,7 +177,7 @@ public class ClientCachePartitionLostListenerTest extends HazelcastTestSupport {
     }
 
     private void assertCachePartitionLostEventEventually(final EventCollectingCachePartitionLostListener listener,
-                                                       final int partitionId) {
+                                                         final int partitionId) {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run()

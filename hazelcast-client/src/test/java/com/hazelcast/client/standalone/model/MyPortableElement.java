@@ -62,12 +62,18 @@ public class MyPortableElement implements Portable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         MyPortableElement that = (MyPortableElement) o;
 
-        if (id != that.id) return false;
+        if (id != that.id) {
+            return false;
+        }
         return date != null ? date.equals(that.date) : that.date == null;
 
     }

@@ -83,7 +83,7 @@ public class AtomicLongUpdateStressTest extends StressTestSupport {
         test(true);
     }
 
-    @Test(timeout=600000)
+    @Test(timeout = 600000)
     public void testFixedCluster() {
         test(false);
     }

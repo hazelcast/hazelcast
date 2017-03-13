@@ -39,8 +39,8 @@ public class ClientDriverFactory implements DriverFactory {
             case CLIENT:
                 HazelcastInstance[] drivers = new HazelcastInstance[testConfiguration.getDriverCount()];
                 for (int i = 0; i < drivers.length; i++) {
-                    drivers[i] = ((TestHazelcastFactory)rule.getFactory())
-                                                             .newHazelcastClient(getClientConfig(rule.getSteadyMember()));
+                    drivers[i] = ((TestHazelcastFactory) rule.getFactory())
+                            .newHazelcastClient(getClientConfig(rule.getSteadyMember()));
                 }
                 waitAllForSafeState(drivers);
                 return drivers;

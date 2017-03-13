@@ -45,7 +45,7 @@ public class MapPutRunnable implements Runnable, DataSerializable, HazelcastInst
         Member member = instance.getCluster().getLocalMember();
 
         IMap<String, String> map = instance.getMap(mapName);
-        map.put(member.getUuid(), member.getUuid()+"value");
+        map.put(member.getUuid(), member.getUuid() + "value");
     }
 
     @Override

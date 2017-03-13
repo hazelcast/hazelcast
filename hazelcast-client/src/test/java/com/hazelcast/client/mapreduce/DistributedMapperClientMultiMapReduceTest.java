@@ -126,7 +126,7 @@ public class DistributedMapperClientMultiMapReduceTest
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
         MultiMap<Integer, Integer> m1 = client.getMultiMap(randomString());
         for (int i = 0; i < 100; i++) {
-            m1.put(i/2, i);
+            m1.put(i / 2, i);
         }
 
         JobTracker tracker = client.getJobTracker("default");
@@ -219,7 +219,7 @@ public class DistributedMapperClientMultiMapReduceTest
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
         MultiMap<Integer, Integer> m1 = client.getMultiMap(randomString());
         for (int i = 0; i < 100; i++) {
-            m1.put(i/2, i);
+            m1.put(i / 2, i);
         }
 
         final int[] result = new int[1];

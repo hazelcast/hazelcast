@@ -129,9 +129,9 @@ public class CallbackAwareClientDelegatingFutureTest extends HazelcastTestSuppor
 
         CallbackAwareClientDelegatingFuture callbackAwareInvocationFuture =
                 new CallbackAwareClientDelegatingFuture(invocationFuture,
-                                                        client.getSerializationService(),
-                                                        decoder,
-                                                        callback);
+                        client.getSerializationService(),
+                        decoder,
+                        callback);
 
         if (timeoutMillis > 0) {
             try {

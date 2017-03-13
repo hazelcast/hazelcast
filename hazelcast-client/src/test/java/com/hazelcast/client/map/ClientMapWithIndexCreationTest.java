@@ -74,7 +74,7 @@ public class ClientMapWithIndexCreationTest extends HazelcastTestSupport {
         clientConfig.getNetworkConfig().setSmartRouting(false);
         // the client only connects to member hz2.
         clientConfig.getNetworkConfig().addAddress(
-                        hz2.getCluster().getLocalMember().getAddress().getHost() + ":" +
+                hz2.getCluster().getLocalMember().getAddress().getHost() + ":" +
                         hz2.getCluster().getLocalMember().getAddress().getPort());
 
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);

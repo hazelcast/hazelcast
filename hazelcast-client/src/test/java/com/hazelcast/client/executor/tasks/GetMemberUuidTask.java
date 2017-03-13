@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-public class GetMemberUuidTask implements Callable<String>, DataSerializable, HazelcastInstanceAware{
+public class GetMemberUuidTask implements Callable<String>, DataSerializable, HazelcastInstanceAware {
 
     private HazelcastInstance node;
 

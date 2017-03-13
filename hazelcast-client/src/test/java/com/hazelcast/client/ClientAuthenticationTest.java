@@ -109,7 +109,7 @@ public class ClientAuthenticationTest extends HazelcastTestSupport {
         // ensure client opens a connection to all nodes
         IMap<Integer, Integer> map = hazelcastInstance.getMap(randomName());
         for (int i = 0; i < 100; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
     }
 

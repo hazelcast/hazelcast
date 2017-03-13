@@ -77,7 +77,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         test(true);
     }
 
-    @Test(timeout=600000)
+    @Test(timeout = 600000)
     public void testFixedCluster() {
         test(false);
     }
@@ -99,7 +99,7 @@ public class MapStableReadStressTest extends StressTestSupport {
         for (int k = 0; k < MAP_SIZE; k++) {
             map.put(k, k);
             if (k % 10000 == 0) {
-                System.out.println("Inserted data: "+k);
+                System.out.println("Inserted data: " + k);
             }
         }
 

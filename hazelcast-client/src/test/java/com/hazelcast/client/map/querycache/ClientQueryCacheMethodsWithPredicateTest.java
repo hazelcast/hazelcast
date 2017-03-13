@@ -281,19 +281,19 @@ public class ClientQueryCacheMethodsWithPredicateTest extends HazelcastTestSuppo
     }
 
     @Test
-    public void test_values_withoutIndex_whenIncludeValueFalse()  {
+    public void test_values_withoutIndex_whenIncludeValueFalse() {
         String mapName = randomString();
         String cacheName = randomString();
 
         HazelcastInstance instance = getInstance();
         IMap<Integer, Employee> map = instance.getMap(mapName);
 
-         int count = 111;
+        int count = 111;
         for (int i = 0; i < count; i++) {
             map.put(i, new Employee(i));
         }
 
-         QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
+        QueryCache<Integer, Employee> cache = map.getQueryCache(cacheName, TRUE_PREDICATE, false);
 
         for (int i = 17; i < count; i++) {
             map.remove(i);

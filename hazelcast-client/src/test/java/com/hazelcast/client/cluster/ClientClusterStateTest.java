@@ -176,8 +176,8 @@ public class ClientClusterStateTest {
                             map.putAll(values);
                             Thread.sleep(100);
                         } catch (IllegalStateException e) {
-                           logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
-                           break;
+                            logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
+                            break;
                         } catch (TargetDisconnectedException e) {
                             logger.warning("Expected exception for Map putAll during cluster shutdown:", e);
                             break;

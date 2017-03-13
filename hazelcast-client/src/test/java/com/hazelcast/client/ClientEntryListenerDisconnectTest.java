@@ -64,8 +64,11 @@ public class ClientEntryListenerDisconnectTest {
             public void entryAdded(EntryEvent<Integer, GenericEvent> event) {
                 adds++;
             }
+
             public void entryEvicted(EntryEvent<Integer, GenericEvent> event) {
-                if (event.getValue() == null) evictionsNull++;
+                if (event.getValue() == null) {
+                    evictionsNull++;
+                }
             }
         }, true);
 

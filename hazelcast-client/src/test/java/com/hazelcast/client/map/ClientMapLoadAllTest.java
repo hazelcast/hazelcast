@@ -103,7 +103,7 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void givenSpecificKeysWereReloaded_whenLoadAllIsCalled_thenAllEntriesAreLoadedFromTheStore()  {
+    public void givenSpecificKeysWereReloaded_whenLoadAllIsCalled_thenAllEntriesAreLoadedFromTheStore() {
         String name = randomString();
         int keysInMapStore = 10000;
 
