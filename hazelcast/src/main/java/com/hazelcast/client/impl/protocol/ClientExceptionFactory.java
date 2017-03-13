@@ -75,10 +75,12 @@ import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.AccessControlException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CancellationException;
@@ -686,37 +688,20 @@ public class ClientExceptionFactory {
         int errorCode = getErrorCode(throwable);
         String message = throwable.getMessage();
 
-        // combine the stack traces of causes recursively into one long stack trace
-        // first, count total number of stack trace elements
-        StackTraceElement[] combinedStackTrace;
-        int stackTraceElementsTotal = 0;
+        // Combine the stack traces of causes recursively into one long stack trace.
+        List<StackTraceElement> combinedStackTrace = new ArrayList<StackTraceElement>();
         Throwable t = throwable;
         while (t != null) {
-            // +1 for separator
-            stackTraceElementsTotal += t.getStackTrace().length + 1;
-            t = t.getCause();
-        }
-        // -1 for last separator
-        stackTraceElementsTotal--;
-
-        // then copy arrays and separators
-        combinedStackTrace = new StackTraceElement[stackTraceElementsTotal];
-        t = throwable;
-        int pos = 0;
-        while (t != null) {
-            StackTraceElement[] stackTrace = t.getStackTrace();
-            System.arraycopy(stackTrace, 0, combinedStackTrace, pos, stackTrace.length);
-            pos += stackTrace.length;
+            combinedStackTrace.addAll(Arrays.asList(t.getStackTrace()));
             t = t.getCause();
             // add separator, if there is one more cause
             if (t != null) {
                 // don't rely on Throwable.toString(), which contains the same logic, but rather use our own, as it might be overridden
                 String throwableToString = t.getClass().getName() + (t.getLocalizedMessage() != null ? ": " + t.getLocalizedMessage() : "");
 
-                combinedStackTrace[pos] = new StackTraceElement(CAUSED_BY_STACKTRACE_MARKER
+                combinedStackTrace.add(new StackTraceElement(CAUSED_BY_STACKTRACE_MARKER
                         + " (" + getErrorCode(t) + ") " + throwableToString
-                        + " ------", "", null, -1);
-                pos++;
+                        + " ------", "", null, -1));
             }
         }
 
@@ -732,7 +717,8 @@ public class ClientExceptionFactory {
             causeClassName = null;
         }
 
-        return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTrace,
+        StackTraceElement[] combinedStackTraceArray = combinedStackTrace.toArray(new StackTraceElement[combinedStackTrace.size()]);
+        return ErrorCodec.encode(errorCode, throwable.getClass().getName(), message, combinedStackTraceArray,
                 causeErrorCode, causeClassName);
     }
 
