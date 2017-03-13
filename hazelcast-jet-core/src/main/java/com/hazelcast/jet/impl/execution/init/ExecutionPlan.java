@@ -186,8 +186,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 // Also populates instance fields: senderMap, receiverMap, tasklets.
                 final List<OutboundEdgeStream> outboundStreams = createOutboundEdgeStreams(srcVertex, processorIdx);
                 final List<InboundEdgeStream> inboundStreams = createInboundEdgeStreams(srcVertex, processorIdx);
-                ILogger logger = nodeEngine.getLogger(
-                        srcVertex.name() + '(' + p.getClass().getSimpleName() + ")#" + processorIdx);
+                ILogger logger = nodeEngine.getLogger(p.getClass().getName() + '.'
+                        + srcVertex.name() + '(' + p.getClass().getSimpleName() + ")#" + processorIdx);
                 ProcCtx context = new ProcCtx(instance, logger, srcVertex.name(), processorIdx);
                 tasklets.add(new ProcessorTasklet(srcVertex.name(), context, p, inboundStreams, outboundStreams));
             }
