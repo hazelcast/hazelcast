@@ -201,7 +201,7 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
     }
 
     @Override
-    public final void andThen(ExecutionCallback<V> callback) {
+    public void andThen(ExecutionCallback<V> callback) {
         andThen(callback, defaultExecutor);
     }
 
@@ -359,10 +359,15 @@ public abstract class AbstractInvocationFuture<V> implements InternalCompletable
                 return false;
             }
             if (compareAndSetState(oldState, value)) {
+                onComplete();
                 unblockAll(oldState, defaultExecutor);
                 return true;
             }
         }
+    }
+
+    protected void onComplete() {
+
     }
 
     // it can be that this future is already completed, e.g. when an invocation already
