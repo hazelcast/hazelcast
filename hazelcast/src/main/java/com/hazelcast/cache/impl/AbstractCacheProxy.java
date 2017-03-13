@@ -26,7 +26,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.partition.IPartitionService;
-import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
 import javax.cache.expiry.ExpiryPolicy;
@@ -40,10 +39,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
+import static com.hazelcast.util.ExceptionUtil.rethrowAllowedTypeFirst;
 
 /**
  * <p>Hazelcast provides extension functionality to default spec interface {@link javax.cache.Cache}.
@@ -59,7 +59,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 abstract class AbstractCacheProxy<K, V>
         extends AbstractInternalCacheProxy<K, V> {
 
-    protected AbstractCacheProxy(CacheConfig cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
+    AbstractCacheProxy(CacheConfig<K, V> cacheConfig, NodeEngine nodeEngine, ICacheService cacheService) {
         super(cacheConfig, nodeEngine, cacheService);
     }
 
@@ -72,8 +72,8 @@ abstract class AbstractCacheProxy<K, V>
     public InternalCompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
         ensureOpen();
         validateNotNull(key);
-        final Data keyData = serializationService.toData(key);
-        final Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
+        Data keyData = serializationService.toData(key);
+        Operation op = operationProvider.createGetOperation(keyData, expiryPolicy);
         return invoke(op, keyData, false);
     }
 
@@ -154,11 +154,11 @@ abstract class AbstractCacheProxy<K, V>
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key, expiryPolicy);
         try {
-            return f.get();
+            Future<V> future = getAsync(key, expiryPolicy);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -169,13 +169,13 @@ abstract class AbstractCacheProxy<K, V>
         if (keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        final Set<Data> ks = new HashSet(keys.size());
+        Set<Data> ks = new HashSet<Data>(keys.size());
         for (K key : keys) {
-            final Data k = serializationService.toData(key);
-            ks.add(k);
+            Data dataKey = serializationService.toData(key);
+            ks.add(dataKey);
         }
-        final Map<K, V> result = new HashMap<K, V>();
-        final Collection<Integer> partitions = getPartitionsForKeys(ks);
+        Map<K, V> result = new HashMap<K, V>();
+        Collection<Integer> partitions = getPartitionsForKeys(ks);
         try {
             OperationFactory factory = operationProvider.createGetAllOperationFactory(ks, expiryPolicy);
             OperationService operationService = getNodeEngine().getOperationService();
@@ -185,28 +185,28 @@ abstract class AbstractCacheProxy<K, V>
                 mapEntries.putAllToMap(serializationService, result);
             }
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
         return result;
     }
 
     @Override
     public void put(K key, V value, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<Object> f = putAsyncInternal(key, value, expiryPolicy, false, true);
         try {
-            f.get();
+            InternalCompletableFuture<Object> future = putAsyncInternal(key, value, expiryPolicy, false, true);
+            future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public V getAndPut(K key, V value, ExpiryPolicy expiryPolicy) {
-        final InternalCompletableFuture<V> f = putAsyncInternal(key, value, expiryPolicy, true, true);
         try {
-            return f.get();
+            InternalCompletableFuture<V> future = putAsyncInternal(key, value, expiryPolicy, true, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -215,21 +215,20 @@ abstract class AbstractCacheProxy<K, V>
         ensureOpen();
         validateNotNull(map);
 
-        int partitionCount = partitionService.getPartitionCount();
-
         try {
-            // First we fill entry set per partition
+            // first we fill entry set per partition
+            int partitionCount = partitionService.getPartitionCount();
             List<Map.Entry<Data, Data>>[] entriesPerPartition = groupDataToPartitions(map, partitionCount);
 
-            // Then we invoke the operations and sync on completion of these operations
+            // then we invoke the operations and sync on completion of these operations
             putToAllPartitionsAndWaitForCompletion(entriesPerPartition, expiryPolicy);
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
-    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map,
-                                                                int partitionCount) {
+    @SuppressWarnings("unchecked")
+    private List<Map.Entry<Data, Data>>[] groupDataToPartitions(Map<? extends K, ? extends V> map, int partitionCount) {
         List<Map.Entry<Data, Data>>[] entriesPerPartition = new List[partitionCount];
 
         for (Map.Entry<? extends K, ? extends V> entry : map.entrySet()) {
@@ -254,16 +253,15 @@ abstract class AbstractCacheProxy<K, V>
     }
 
     private void putToAllPartitionsAndWaitForCompletion(List<Map.Entry<Data, Data>>[] entriesPerPartition,
-                                                        ExpiryPolicy expiryPolicy)
-            throws ExecutionException, InterruptedException {
+                                                        ExpiryPolicy expiryPolicy) throws Exception {
         List<Future> futures = new ArrayList<Future>(entriesPerPartition.length);
         for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
             List<Map.Entry<Data, Data>> entries = entriesPerPartition[partitionId];
             if (entries != null) {
-                // TODO If there is a single entry, we could make use of a put operation since that is a bit cheaper
+                // TODO: if there is a single entry, we could make use of a put operation since that is a bit cheaper
                 Operation operation = operationProvider.createPutAllOperation(entries, expiryPolicy, partitionId);
-                Future f = invoke(operation, partitionId, true);
-                futures.add(f);
+                Future future = invoke(operation, partitionId, true);
+                futures.add(future);
             }
         }
 
@@ -293,47 +291,47 @@ abstract class AbstractCacheProxy<K, V>
              *        In this test exception is thrown at `CacheWriter` and caller side expects this exception.
              * So as a result, we only throw the first exception and others are suppressed by only logging.
              */
-            ExceptionUtil.rethrow(error);
+            throw rethrow(error);
         }
     }
 
     @Override
     public boolean putIfAbsent(K key, V value, ExpiryPolicy expiryPolicy) {
-        final Future<Boolean> f = putIfAbsentAsyncInternal(key, value, expiryPolicy, true);
         try {
-            return f.get();
+            Future<Boolean> future = putIfAbsentAsyncInternal(key, value, expiryPolicy, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public boolean replace(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy) {
-        final Future<Boolean> f = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
         try {
-            return f.get();
+            Future<Boolean> future = replaceAsyncInternal(key, oldValue, newValue, expiryPolicy, true, false, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public boolean replace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final Future<Boolean> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
         try {
-            return f.get();
+            Future<Boolean> future = replaceAsyncInternal(key, null, value, expiryPolicy, false, false, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
     @Override
     public V getAndReplace(K key, V value, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true);
         try {
-            return f.get();
+            Future<V> future = replaceAsyncInternal(key, null, value, expiryPolicy, false, true, true);
+            return future.get();
         } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            throw rethrowAllowedTypeFirst(e, CacheException.class);
         }
     }
 
@@ -342,30 +340,30 @@ abstract class AbstractCacheProxy<K, V>
         ensureOpen();
         try {
             OperationFactory operationFactory = operationProvider.createSizeOperationFactory();
-            final Map<Integer, Object> results = getNodeEngine().getOperationService()
+            Map<Integer, Object> results = getNodeEngine().getOperationService()
                     .invokeOnAllPartitions(getServiceName(), operationFactory);
             int total = 0;
             for (Object result : results.values()) {
+                //noinspection RedundantCast
                 total += (Integer) getNodeEngine().toObject(result);
             }
             return total;
         } catch (Throwable t) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
+            throw rethrowAllowedTypeFirst(t, CacheException.class);
         }
     }
 
     private Set<Integer> getPartitionsForKeys(Set<Data> keys) {
-        final IPartitionService partitionService = getNodeEngine().getPartitionService();
-        final int partitions = partitionService.getPartitionCount();
-        final int capacity = Math.min(partitions, keys.size());
-        final Set<Integer> partitionIds = new HashSet<Integer>(capacity);
+        IPartitionService partitionService = getNodeEngine().getPartitionService();
+        int partitions = partitionService.getPartitionCount();
+        int capacity = Math.min(partitions, keys.size());
+        Set<Integer> partitionIds = new HashSet<Integer>(capacity);
 
-        final Iterator<Data> iterator = keys.iterator();
+        Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext() && partitionIds.size() < partitions) {
-            final Data key = iterator.next();
+            Data key = iterator.next();
             partitionIds.add(partitionService.getPartitionId(key));
         }
         return partitionIds;
     }
-
 }
