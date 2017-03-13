@@ -16,9 +16,12 @@
 
 package com.hazelcast.jet.impl.config;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.util.Util;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -29,10 +32,17 @@ import java.util.Properties;
 
 import static com.hazelcast.jet.config.InstanceConfig.DEFAULT_FLOW_CONTROL_PERIOD_MS;
 import static junit.framework.Assert.assertEquals;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
 
 public class XmlConfigTest {
 
     private static final String TEST_XML_1 = "hazelcast-jet-test.xml";
+    private static final String TEST_XML_2 = "hazelcast-jet-member-test.xml";
+    private static final String TEST_XML_2_GROUP_NAME = "imdg";
+    private static final String WORLDS_MOST_COMMON_PASSWORD = "123456";
 
     @Test
     public void when_noConfigSpecified_usesDefaultConfig() {
@@ -42,6 +52,7 @@ public class XmlConfigTest {
         // Then
         assertEquals(Runtime.getRuntime().availableProcessors(), jetConfig.getInstanceConfig().getCooperativeThreadCount());
         assertEquals(DEFAULT_FLOW_CONTROL_PERIOD_MS, jetConfig.getInstanceConfig().getFlowControlPeriodMs());
+        assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
     }
 
 
@@ -62,6 +73,26 @@ public class XmlConfigTest {
 
         // Then
         assertConfig(jetConfig);
+        assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
+    }
+
+    @Test
+    public void when_filePathMemberSpecified_usesSpecifiedFile() throws IOException {
+        // Given
+        File tempFile = File.createTempFile("imdg", ".xml");
+        try (FileOutputStream os = new FileOutputStream(tempFile)) {
+            InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream(TEST_XML_2);
+            os.write(Util.read(resourceAsStream));
+        }
+
+        Properties properties = new Properties();
+        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, tempFile.getAbsolutePath());
+
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
+        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
     }
 
     @Test
@@ -75,6 +106,20 @@ public class XmlConfigTest {
 
         // Then
         assertConfig(jetConfig);
+        assertDefaultMemberConfig(jetConfig.getHazelcastConfig());
+    }
+
+    @Test
+    public void when_classpathMemberSpecified_usesSpecifiedResource() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:" + TEST_XML_2);
+
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
+        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
     }
 
     @Test
@@ -92,6 +137,23 @@ public class XmlConfigTest {
 
         // Then
         assertConfig(jetConfig);
+    }
+
+    @Ignore("To confirm if substitution in Jet should be visible to IMDG")
+    @Test
+    public void when_configMemberHasVariable_variablesAreReplaced() {
+        // Given
+        Properties properties = new Properties();
+        properties.put(XmlJetConfigLocator.HAZELCAST_MEMBER_CONFIG_PROPERTY, "classpath:${my.filename}");
+        properties.put("my.filename", TEST_XML_2);
+        properties.put("imdg.pass", WORLDS_MOST_COMMON_PASSWORD);
+
+        // When
+        JetConfig jetConfig = XmlJetConfigBuilder.getConfig(properties);
+
+        // Then
+        assertXmlMemberConfig(jetConfig.getHazelcastConfig());
+        assertThat(jetConfig.getHazelcastConfig().getGroupConfig().getPassword(), equalTo(WORLDS_MOST_COMMON_PASSWORD));
     }
 
     @Test
@@ -117,5 +179,14 @@ public class XmlConfigTest {
 
         assertEquals("value1", jetConfig.getProperties().getProperty("property1"));
         assertEquals("value2", jetConfig.getProperties().getProperty("property2"));
+    }
+    
+    private static void assertDefaultMemberConfig(Config config) {
+        assertThat(config, not(nullValue()));
+    	assertThat(config.getGroupConfig().getName(), not(equalTo(TEST_XML_2_GROUP_NAME)));
+    }
+    private static void assertXmlMemberConfig(Config config) {
+        assertThat(config, not(nullValue()));
+    	assertThat(config.getGroupConfig().getName(), equalTo(TEST_XML_2_GROUP_NAME));
     }
 }

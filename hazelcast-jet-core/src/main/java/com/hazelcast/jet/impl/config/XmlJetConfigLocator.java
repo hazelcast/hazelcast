@@ -109,11 +109,11 @@ final class XmlJetConfigLocator {
             return null;
         }
 
-        LOGGER.info("Loading " + HAZELCAST_JET_XML + " from classpath.");
+        LOGGER.info("Loading " + xmlName + " from classpath.");
 
-        InputStream in = Config.class.getClassLoader().getResourceAsStream(HAZELCAST_JET_XML);
+        InputStream in = Config.class.getClassLoader().getResourceAsStream(xmlName);
         if (in == null) {
-            throw new IOException("Could not load " + HAZELCAST_JET_XML + " from classpath");
+            throw new IOException("Could not load " + xmlName + " from classpath");
         }
         return in;
     }
