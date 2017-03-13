@@ -23,6 +23,7 @@ import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.Address;
+import com.hazelcast.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -41,7 +42,7 @@ import static java.util.stream.IntStream.range;
 
 
 /**
- * Kafka Consumer for Jet, emits records read from Kafka as {@code Map.Entry}.
+ * Kafka reader for Jet, emits records read from Kafka as {@code Map.Entry}.
  *
  * @param <K> type of the message key
  * @param <V> type of the message value
@@ -51,7 +52,7 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
     private static final int POLL_TIMEOUT_MS = 100;
     private final Properties properties;
     private final String[] topicIds;
-    private KafkaConsumer<K, V> consumer;
+    private KafkaConsumer consumer;
 
     private ReadKafkaP(String[] topicIds, Properties properties) {
         this.topicIds = topicIds;
@@ -60,25 +61,23 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
     }
 
     /**
-     * Returns a meta-supplier of processors that consume a kafka topic and emit
+     * Returns a meta-supplier of processors that consume one or more Kafka topics and emit
      * items from it as {@code Map.Entry} instances.
      * <p>
-     * <p>
-     * You can specify a partition to offset mapper to mark the start offset of each partition.
-     * Any negative value as an offset will throw {@code IllegalArgumentException}
-     * </p>
+     * A {@code KafkaConsumer} is created per {@code Processor} instance using the
+     * supplied properties. All processors must be in the same consumer group
+     * supplied by the {@code group.id} property.
+     * The supplied properties will be passed on to the {@code KafkaConsumer} instance.
+     * These processors are only terminated in case of an error or if the underlying job is cancelled.
      *
-     * @param <K>        type of keys read
-     * @param <V>        type of values read
-     * @param topicIds   kafka topic names
+     * @param topics     the list of topics
      * @param properties consumer properties which should contain consumer group name,
      *                   broker address and key/value deserializers
      */
-    public static <K, V> ProcessorMetaSupplier readKafka(Properties properties, String... topicIds) {
-        if (!properties.containsKey("group.id")) {
-            throw new IllegalArgumentException("Properties should contain `group.id`");
-        }
-        return new MetaSupplier<>(topicIds, properties);
+    public static ProcessorMetaSupplier readKafka(Properties properties, String... topics) {
+        Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
+        Preconditions.checkTrue(properties.containsKey("group.id"), "Properties should contain `group.id`");
+        return new MetaSupplier<>(topics, properties);
     }
 
     @Override

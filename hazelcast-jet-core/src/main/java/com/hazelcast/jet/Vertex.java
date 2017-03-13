@@ -127,7 +127,7 @@ public class Vertex implements IdentifiedDataSerializable {
      * Returns the number of processors corresponding to this vertex that will
      * be created on each member. A value of {@code -1} means that this
      * property is not set; in that case the default configured on the Jet
-     * engine will be used.
+     * instance will be used.
      */
     public int getLocalParallelism() {
         return localParallelism;

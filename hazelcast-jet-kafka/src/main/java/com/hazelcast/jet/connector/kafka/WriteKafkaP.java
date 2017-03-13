@@ -32,7 +32,8 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 /**
- * Kafka Writer for Jet
+ * Kafka writer for Jet. Receives records of type {@code Map.Entry} and publishes
+ * them to a Kafka topic.
  *
  * @param <K> type of keys written
  * @param <V> type of values written
@@ -48,16 +49,19 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
     }
 
     /**
-     * Returns a meta-supplier of processors that publish messages to kafka topics.
-     * It expects items of type {@code Map.Entry}.
+     * Returns a meta-supplier of processors that publish messages to a Kafka topic.
+     * It receives items of type {@code Map.Entry<K,V>} and publishes them to Kafka.
+     *
+     * A single {@code KafkaProducer} is created per node using the supplies properties file.
+     * The producer instance is shared across all {@code Processor} instances on that node.
      *
      * @param <K>        type of keys written
      * @param <V>        type of values written
-     * @param topicId    kafka topic name
+     * @param topic      kafka topic name to publish to
      * @param properties producer properties which should contain broker address and key/value serializers
      */
-    public static <K, V> ProcessorMetaSupplier writeKafka(String topicId, Properties properties) {
-        return ProcessorMetaSupplier.of(new Supplier<K, V>(topicId, properties));
+    public static <K, V> ProcessorMetaSupplier writeKafka(String topic, Properties properties) {
+        return ProcessorMetaSupplier.of(new Supplier<K, V>(topic, properties));
     }
 
     @Override

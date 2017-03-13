@@ -15,6 +15,6 @@
  */
 
 /**
- * Kafka producer/consumer support for Hazelcast Jet
+ * Kafka reader/writer support for Hazelcast Jet
  */
 package com.hazelcast.jet.connector.kafka;
