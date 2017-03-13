@@ -393,7 +393,7 @@ public class MapConfig {
     /**
      * The maximum number of seconds for each entry to stay in the map. Entries that are
      * older than timeToLiveSeconds will be automatically evicted from the map.
-     * Updates on the entry do not change the eviction time.
+     * Updates on the entry will change the eviction time.
      * Any integer between 0 and Integer.MAX_VALUE.
      * 0 means infinite. Default is 0.
      *
