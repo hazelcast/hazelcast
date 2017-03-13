@@ -19,7 +19,7 @@ package com.hazelcast.internal.nearcache.impl.invalidation;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.impl.DefaultNearCache;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
@@ -68,7 +68,7 @@ public final class RepairingTask implements Runnable {
     private final int partitionCount;
     private final String localUuid;
     private final ILogger logger;
-    private final ExecutionService executionService;
+    private final TaskScheduler scheduler;
     private final AtomicReferenceArray<UUID> partitionUuids;
     private final MinimalPartitionService partitionService;
     private final MetaDataFetcher metaDataFetcher;
@@ -77,7 +77,7 @@ public final class RepairingTask implements Runnable {
 
     private volatile long lastAntiEntropyRunNanos;
 
-    public RepairingTask(MetaDataFetcher metaDataFetcher, ExecutionService executionService,
+    public RepairingTask(MetaDataFetcher metaDataFetcher, TaskScheduler scheduler,
                          MinimalPartitionService partitionService, HazelcastProperties properties,
                          String localUuid, ILogger logger) {
         this.logger = logger;
@@ -85,7 +85,7 @@ public final class RepairingTask implements Runnable {
         this.partitionCount = partitionService.getPartitionCount();
         this.maxToleratedMissCount = checkMaxToleratedMissCount(properties);
         this.metaDataFetcher = metaDataFetcher;
-        this.executionService = executionService;
+        this.scheduler = scheduler;
         this.partitionService = partitionService;
         this.partitionUuids = new AtomicReferenceArray<UUID>(partitionCount);
         this.localUuid = localUuid;
@@ -151,7 +151,7 @@ public final class RepairingTask implements Runnable {
 
     private void scheduleNextRun() {
         try {
-            executionService.schedule(this, 1, SECONDS);
+            scheduler.schedule(this, 1, SECONDS);
         } catch (RejectedExecutionException e) {
             if (logger.isFinestEnabled()) {
                 logger.finest(e.getMessage());
@@ -223,7 +223,7 @@ public final class RepairingTask implements Runnable {
      * This is the fallback operation when {@link #assignAndGetUuids} is failed.
      */
     private void assignAndGetUuidsAsync() {
-        executionService.schedule(new Runnable() {
+        scheduler.schedule(new Runnable() {
             private final AtomicInteger round = new AtomicInteger();
 
             @Override
@@ -247,7 +247,7 @@ public final class RepairingTask implements Runnable {
                             round.set(0);
                         }
 
-                        executionService.schedule(this, delay, MILLISECONDS);
+                        scheduler.schedule(this, delay, MILLISECONDS);
                     }
                 }
             }

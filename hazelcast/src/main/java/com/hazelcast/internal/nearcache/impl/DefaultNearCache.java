@@ -26,7 +26,7 @@ import com.hazelcast.internal.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.internal.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
@@ -41,7 +41,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     protected final String name;
     protected final NearCacheConfig nearCacheConfig;
     protected final SerializationService serializationService;
-    protected final ExecutionService executionService;
+    protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;
 
     protected NearCacheRecordStore<K, V> nearCacheRecordStore;
@@ -50,19 +50,19 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     private volatile boolean preloadDone;
 
     public DefaultNearCache(String name, NearCacheConfig nearCacheConfig,
-                            SerializationService serializationService, ExecutionService executionService,
+                            SerializationService serializationService, TaskScheduler scheduler,
                             ClassLoader classLoader) {
-        this(name, nearCacheConfig, null, serializationService, executionService, classLoader);
+        this(name, nearCacheConfig, null, serializationService, scheduler, classLoader);
     }
 
     public DefaultNearCache(String name, NearCacheConfig nearCacheConfig, NearCacheRecordStore<K, V> nearCacheRecordStore,
-                            SerializationService serializationService, ExecutionService executionService,
+                            SerializationService serializationService, TaskScheduler scheduler,
                             ClassLoader classLoader) {
         this.name = name;
         this.nearCacheConfig = nearCacheConfig;
         this.serializationService = serializationService;
         this.classLoader = classLoader;
-        this.executionService = executionService;
+        this.scheduler = scheduler;
         this.nearCacheRecordStore = nearCacheRecordStore;
     }
 
@@ -94,7 +94,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     private ScheduledFuture createAndScheduleExpirationTask() {
         if (nearCacheConfig.getMaxIdleSeconds() > 0L || nearCacheConfig.getTimeToLiveSeconds() > 0L) {
             ExpirationTask expirationTask = new ExpirationTask();
-            return expirationTask.schedule(executionService);
+            return expirationTask.schedule(scheduler);
         }
         return null;
     }
@@ -229,8 +229,8 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
             }
         }
 
-        private ScheduledFuture schedule(ExecutionService executionService) {
-            return executionService.scheduleWithRepetition(this,
+        private ScheduledFuture schedule(TaskScheduler scheduler) {
+            return scheduler.scheduleWithRepetition(this,
                     DEFAULT_EXPIRATION_TASK_INITIAL_DELAY_IN_SECONDS,
                     DEFAULT_EXPIRATION_TASK_DELAY_IN_SECONDS,
                     TimeUnit.SECONDS);
