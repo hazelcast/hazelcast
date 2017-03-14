@@ -36,12 +36,12 @@ public final class UnsafeUtil {
     /**
      * If this constant is {@code true}, then {@link #UNSAFE} refers to a usable {@link sun.misc.Unsafe} instance.
      */
-    static final boolean UNSAFE_AVAILABLE;
+    public static final boolean UNSAFE_AVAILABLE;
 
     /**
      * The {@link sun.misc.Unsafe} instance which is available and ready to use.
      */
-    static final Unsafe UNSAFE;
+    public static final Unsafe UNSAFE;
 
     private static final ILogger LOGGER = Logger.getLogger(UnsafeUtil.class);
 
