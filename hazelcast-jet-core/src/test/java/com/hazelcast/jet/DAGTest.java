@@ -31,6 +31,8 @@ import java.util.Set;
 import static com.hazelcast.jet.Edge.between;
 import static com.hazelcast.jet.Edge.from;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -321,6 +323,38 @@ public class DAGTest {
 
         // When
         dag.edge(from(a, 1).to(b, 1));
+    }
+
+    @Test
+    public void when_betweenUsedDuplicitly_then_errorMessageContainsEdgeFromTo() {
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(between(a, c));
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("Edge.from().to()");
+
+        // When
+        dag.edge(between(b, c));
+    }
+
+    @Test
+    public void when_duplicateNonZeroOrdinal_then_errorMessageNotContainingEdgeFromTo() {
+        DAG dag = new DAG();
+        Vertex a = dag.newVertex("a", PROCESSOR_SUPPLIER);
+        Vertex b = dag.newVertex("b", PROCESSOR_SUPPLIER);
+        Vertex c = dag.newVertex("c", PROCESSOR_SUPPLIER);
+        dag.edge(from(a).to(c, 1));
+
+        // Then
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(not(containsString("Edge.from().to()")));
+
+        // When
+        dag.edge(from(b).to(c, 1));
     }
 
     private static class TestProcessor extends AbstractProcessor {

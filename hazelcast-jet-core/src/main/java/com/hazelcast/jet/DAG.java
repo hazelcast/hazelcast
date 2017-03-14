@@ -157,12 +157,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         if (getInboundEdges(edge.getDestName())
                 .stream().anyMatch(e -> e.getDestOrdinal() == edge.getDestOrdinal())) {
             throw new IllegalArgumentException("Vertex '" + edge.getDestName()
-                    + "' already has an inbound edge at ordinal " + edge.getDestOrdinal());
+                    + "' already has an inbound edge at ordinal " + edge.getDestOrdinal()
+                    + (edge.getSourceOrdinal() == 0 && edge.getDestOrdinal() == 0
+                            ? ", use Edge.from().to() to specify another ordinal" : ""));
         }
         if (getOutboundEdges(edge.getSourceName())
                 .stream().anyMatch(e -> e.getSourceOrdinal() == edge.getSourceOrdinal())) {
             throw new IllegalArgumentException("Vertex '" + edge.getSourceName()
-                    + "' already has an outbound edge at ordinal " + edge.getSourceOrdinal());
+                    + "' already has an outbound edge at ordinal " + edge.getSourceOrdinal()
+                    + (edge.getSourceOrdinal() == 0 && edge.getDestOrdinal() == 0
+                            ? ", use Edge.from().to() to specify another ordinal" : ""));
         }
         edges.add(edge);
         return this;
