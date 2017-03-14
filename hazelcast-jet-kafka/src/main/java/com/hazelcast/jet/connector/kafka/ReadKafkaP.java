@@ -21,22 +21,21 @@ import com.hazelcast.jet.Distributed.Function;
 import com.hazelcast.jet.Processor;
 import com.hazelcast.jet.ProcessorMetaSupplier;
 import com.hazelcast.jet.ProcessorSupplier;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Preconditions;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 
 import javax.annotation.Nonnull;
 import java.io.Closeable;
-import java.util.AbstractMap;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Properties;
 
+import static com.hazelcast.jet.Traversers.traverseIterable;
+import static com.hazelcast.jet.Util.entry;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 
@@ -52,7 +51,8 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
     private static final int POLL_TIMEOUT_MS = 100;
     private final Properties properties;
     private final String[] topicIds;
-    private KafkaConsumer consumer;
+    private KafkaConsumer<K, V> consumer;
+    private Traverser<Entry<K, V>> traverser;
 
     private ReadKafkaP(String[] topicIds, Properties properties) {
         this.topicIds = topicIds;
@@ -85,6 +85,7 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
         properties.put("enable.auto.commit", false);
         consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Arrays.asList(topicIds));
+        traverser = () -> null;
     }
 
     @Override
@@ -94,39 +95,11 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
 
     @Override
     public boolean complete() {
-        ConsumerRecords<K, V> records = consumer.poll(POLL_TIMEOUT_MS);
-        if (records.isEmpty()) {
-            return false;
+        if (emitCooperatively(traverser)) {
+            consumer.commitSync();
+            traverser = traverseIterable(consumer.poll(POLL_TIMEOUT_MS)).map(r -> entry(r.key(), r.value()));
         }
-        Iterator<TopicPartition> iterator = records.partitions().iterator();
-        while (iterator.hasNext()) {
-            TopicPartition topicPartition = iterator.next();
-            List<ConsumerRecord<K, V>> partitionRecords = records.records(topicPartition);
-            for (ConsumerRecord<K, V> record : partitionRecords) {
-                K key = record.key();
-                V value = record.value();
-                emit(new AbstractMap.SimpleImmutableEntry<>(key, value));
-                if (getOutbox().isHighWater()) {
-                    consumer.seek(topicPartition, record.offset() + 1);
-                    seekToTheBeginning(records, iterator);
-                    consumer.commitSync();
-                    return false;
-                }
-            }
-        }
-        consumer.commitSync();
         return false;
-    }
-
-    private void seekToTheBeginning(ConsumerRecords<K, V> records, Iterator<TopicPartition> iterator) {
-        while (iterator.hasNext()) {
-            TopicPartition topicPartition = iterator.next();
-            List<ConsumerRecord<K, V>> partitionRecords = records.records(topicPartition);
-            if (!partitionRecords.isEmpty()) {
-                long offset = partitionRecords.get(0).offset();
-                consumer.seek(topicPartition, offset);
-            }
-        }
     }
 
     @Override
@@ -144,10 +117,6 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
             this.topicIds = topicIds;
             this.properties = properties;
             this.properties.put("enable.auto.commit", false);
-        }
-
-        @Override
-        public void init(@Nonnull Context context) {
         }
 
         @Override @Nonnull
