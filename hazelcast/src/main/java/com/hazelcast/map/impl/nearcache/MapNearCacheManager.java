@@ -63,7 +63,7 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
     public MapNearCacheManager(MapServiceContext mapServiceContext) {
         super(mapServiceContext.getNodeEngine().getSerializationService(),
-                mapServiceContext.getNodeEngine().getExecutionService(), null);
+                mapServiceContext.getNodeEngine().getExecutionService().getGlobalTaskScheduler(), null);
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.partitionService = new MemberMinimalPartitionService(nodeEngine.getPartitionService());
         this.mapServiceContext = mapServiceContext;
@@ -115,7 +115,8 @@ public class MapNearCacheManager extends DefaultNearCacheManager {
 
         MetaDataFetcher metaDataFetcher = new MemberMapMetaDataFetcher(clusterService, operationService, logger);
         String localUuid = nodeEngine.getLocalMember().getUuid();
-        return new RepairingTask(metaDataFetcher, executionService, partitionService, properties, localUuid, logger);
+        return new RepairingTask(metaDataFetcher, executionService.getGlobalTaskScheduler(),
+                partitionService, properties, localUuid, logger);
     }
 
     /**

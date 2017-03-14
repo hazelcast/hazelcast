@@ -22,7 +22,7 @@ import com.hazelcast.internal.adapter.DataStructureAdapter;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.monitor.NearCacheStats;
-import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.serialization.SerializationService;
 
 import java.util.Collection;
@@ -39,7 +39,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public class DefaultNearCacheManager implements NearCacheManager {
 
     protected final SerializationService serializationService;
-    protected final ExecutionService executionService;
+    protected final TaskScheduler scheduler;
     protected final ClassLoader classLoader;
 
     private final Queue<ScheduledFuture> preloadTaskFutures = new ConcurrentLinkedQueue<ScheduledFuture>();
@@ -48,12 +48,12 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     private volatile ScheduledFuture storageTaskFuture;
 
-    public DefaultNearCacheManager(SerializationService ss, ExecutionService es, ClassLoader classLoader) {
+    public DefaultNearCacheManager(SerializationService ss, TaskScheduler es, ClassLoader classLoader) {
         assert ss != null;
         assert es != null;
 
         this.serializationService = ss;
-        this.executionService = es;
+        this.scheduler = es;
         this.classLoader = classLoader;
     }
 
@@ -94,7 +94,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
     }
 
     protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig) {
-        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService, executionService, classLoader);
+        return new DefaultNearCache<K, V>(name, nearCacheConfig, serializationService, scheduler, classLoader);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
     private void createAndSchedulePreloadTask(NearCache nearCache, DataStructureAdapter adapter) {
         if (adapter != null) {
             PreloadTask preloadTask = new PreloadTask(nearCache, adapter);
-            ScheduledFuture<?> scheduledFuture = executionService.schedule(preloadTask, 3, SECONDS);
+            ScheduledFuture<?> scheduledFuture = scheduler.schedule(preloadTask, 3, SECONDS);
             preloadTask.scheduledFuture = scheduledFuture;
 
             preloadTaskFutures.add(scheduledFuture);
@@ -155,7 +155,7 @@ public class DefaultNearCacheManager implements NearCacheManager {
     private void createAndScheduleStorageTask() {
         if (storageTaskFuture == null) {
             StorageTask storageTask = new StorageTask();
-            storageTaskFuture = executionService.scheduleWithRepetition(storageTask, 0, 1, SECONDS);
+            storageTaskFuture = scheduler.scheduleWithRepetition(storageTask, 0, 1, SECONDS);
         }
     }
 
@@ -221,8 +221,8 @@ public class DefaultNearCacheManager implements NearCacheManager {
         return serializationService;
     }
 
-    protected ExecutionService getExecutionService() {
-        return executionService;
+    protected TaskScheduler getScheduler() {
+        return scheduler;
     }
 
     protected ClassLoader getClassLoader() {

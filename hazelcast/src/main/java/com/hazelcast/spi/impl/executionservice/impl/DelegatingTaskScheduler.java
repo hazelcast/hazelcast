@@ -18,16 +18,12 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.spi.TaskScheduler;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -44,21 +40,6 @@ public final class DelegatingTaskScheduler implements TaskScheduler {
     @Override
     public void execute(Runnable command) {
         executor.execute(command);
-    }
-
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        return executor.submit(task);
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        return executor.submit(task, result);
-    }
-
-    @Override
-    public Future<?> submit(Runnable task) {
-        return executor.submit(task);
     }
 
     @Override
@@ -80,55 +61,6 @@ public final class DelegatingTaskScheduler implements TaskScheduler {
         checkNotNull(command);
         Runnable decoratedTask = new DelegateAndSkipOnConcurrentExecutionDecorator(command, executor);
         return scheduledExecutorService.scheduleAtFixedRate(decoratedTask, initialDelay, period, unit);
-    }
-
-    @Override
-    public void shutdown() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<Runnable> shutdownNow() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean isShutdown() {
-        return false;
-    }
-
-    @Override
-    public boolean isTerminated() {
-        return false;
-    }
-
-    @Override
-    public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
-            throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
     }
 
 }
