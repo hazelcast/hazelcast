@@ -52,7 +52,7 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
      * Returns a meta-supplier of processors that publish messages to a Kafka topic.
      * It receives items of type {@code Map.Entry<K,V>} and publishes them to Kafka.
      *
-     * A single {@code KafkaProducer} is created per node using the supplies properties file.
+     * A single {@code KafkaProducer} is created per node using the supplied properties file.
      * The producer instance is shared across all {@code Processor} instances on that node.
      *
      * @param <K>        type of keys written
@@ -108,7 +108,8 @@ public final class WriteKafkaP<K, V> extends AbstractProcessor {
                          .collect(toList());
         }
 
-        @Override public void complete(Throwable error) {
+        @Override
+        public void complete(Throwable error) {
             producer.close();
         }
     }

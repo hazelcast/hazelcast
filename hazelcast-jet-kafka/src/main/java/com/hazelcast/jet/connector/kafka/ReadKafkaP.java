@@ -77,12 +77,13 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
     public static ProcessorMetaSupplier readKafka(Properties properties, String... topics) {
         Preconditions.checkPositive(topics.length, "At least one topic must be supplied");
         Preconditions.checkTrue(properties.containsKey("group.id"), "Properties should contain `group.id`");
+        properties.put("enable.auto.commit", false);
+
         return new MetaSupplier<>(topics, properties);
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        properties.put("enable.auto.commit", false);
         consumer = new KafkaConsumer<>(properties);
         consumer.subscribe(Arrays.asList(topicIds));
         traverser = () -> null;
@@ -116,7 +117,6 @@ public final class ReadKafkaP<K, V> extends AbstractProcessor implements Closeab
         private MetaSupplier(String[] topicIds, Properties properties) {
             this.topicIds = topicIds;
             this.properties = properties;
-            this.properties.put("enable.auto.commit", false);
         }
 
         @Override @Nonnull
