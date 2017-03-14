@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.AbstractInvocationFuture;
 
@@ -25,19 +26,26 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.ExceptionUtil.fixAsyncStackTrace;
+import static com.hazelcast.util.ExceptionUtil.peel;
+import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessage> {
 
-    protected final ClientMessage request;
+    private final ClientMessage request;
     private final ClientInvocation invocation;
+    private final CallIdSequence callIdSequence;
+    private final AtomicInteger completeCount = new AtomicInteger(1);
 
     public ClientInvocationFuture(ClientInvocation invocation, Executor internalExecutor,
-                                  ClientMessage request, ILogger logger) {
+                                  ClientMessage request, ILogger logger,
+                                  CallIdSequence callIdSequence) {
         super(internalExecutor, logger);
         this.request = request;
         this.invocation = invocation;
+        this.callIdSequence = callIdSequence;
     }
 
     @Override
@@ -69,6 +77,33 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
     }
 
     @Override
+    public void andThen(ExecutionCallback<ClientMessage> callback) {
+        isNotNull(callback, "callback");
+
+        if (completeCount.get() == 0) {
+            try {
+                callback.onResponse(get());
+            } catch (Exception e) {
+                callback.onFailure(peel(e));
+            }
+            return;
+        }
+        super.andThen(new InternalDelegatingExecutionCallback(callback));
+    }
+
+
+    @Override
+    protected void onComplete() {
+        complete();
+    }
+
+    private void complete() {
+        if (completeCount.decrementAndGet() == 0) {
+            callIdSequence.complete();
+        }
+    }
+
+    @Override
     public ClientMessage resolveAndThrowIfException(Object response) throws ExecutionException, InterruptedException {
         if (response instanceof Throwable) {
             fixAsyncStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
@@ -91,6 +126,34 @@ public class ClientInvocationFuture extends AbstractInvocationFuture<ClientMessa
 
     public ClientInvocation getInvocation() {
         return invocation;
+    }
+
+    class InternalDelegatingExecutionCallback implements ExecutionCallback<ClientMessage> {
+
+        private final ExecutionCallback<ClientMessage> callback;
+
+        InternalDelegatingExecutionCallback(ExecutionCallback<ClientMessage> callback) {
+            this.callback = callback;
+            completeCount.incrementAndGet();
+        }
+
+        @Override
+        public void onResponse(ClientMessage message) {
+            try {
+                callback.onResponse(message);
+            } finally {
+                complete();
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            try {
+                callback.onFailure(t);
+            } finally {
+                complete();
+            }
+        }
     }
 }
 

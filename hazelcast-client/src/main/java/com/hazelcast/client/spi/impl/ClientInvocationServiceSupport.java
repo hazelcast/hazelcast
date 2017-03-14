@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.client.spi.properties.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
-import static com.hazelcast.client.spi.properties.ClientProperty.MAX_CONCURRENT_INVOCATIONS;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.onOutOfMemory;
 import static com.hazelcast.spi.impl.operationservice.impl.AsyncInboundResponseHandler.getIdleStrategy;
 
@@ -75,13 +74,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private final long invocationTimeoutMillis;
 
     public ClientInvocationServiceSupport(HazelcastClientInstanceImpl client) {
-        int maxAllowedConcurrentInvocations = client.getProperties().getInteger(MAX_CONCURRENT_INVOCATIONS);
-
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
-        this.callIdSequence = new CallIdSequence.CallIdSequenceFailFast(maxAllowedConcurrentInvocations);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
-
+        this.callIdSequence = client.getCallIdSequence();
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
@@ -344,7 +340,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 invocationLogger.warning("No call for callId: " + correlationId + ", response: " + clientMessage);
                 return;
             }
-            callIdSequence.complete();
             if (ErrorCodec.TYPE == clientMessage.getMessageType()) {
                 Throwable exception = client.getClientExceptionFactory().createException(clientMessage);
                 future.notifyException(exception);
