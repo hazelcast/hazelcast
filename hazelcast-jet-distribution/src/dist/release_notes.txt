@@ -12,17 +12,18 @@ The label in the brackets refer to the respective module.
 - [core] Improved DAG.toString [310] 
 - [core] Convenience to make any processor non-cooperative [321] 
 - [core] Update Hazelcast version to 3.8 [323] 
-- [core] Update the Distributed class with missing functional interfaces [324] 
-- [core] Updated Hazelcast version to 3.8
-- [java.util.stream] Simplified code that builds a DistributedStream pipeline 
+- [core] Add missing functional interfaces to the Distributed class [324] 
 - [java.util.stream] Refactor of Jet collectors into a new type called Reducer [313]
 - [java.util.stream] Allow branching of the j.u.s pipeline [318]
 - [hadoop] Added support for reading and writing non-text data from or to HDFS. Please refer to the  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop) for details.
-- [hadoop] Added key/value mappers for WriteHdfsP [328]
-- [kafka] Kafka connector extended. Please refer to (hazelcast-jet-kafka documentation) [https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka] 
+- [hadoop] Added key/value mappers for ReadHdfsP and WriteHdfsP [328]
+- [kafka] Kafka connector now makes use consumer groups. Please refer to (hazelcast-jet-kafka documentation) [https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka] 
 - [code-samples] Jet vs java.util.stream benchmark added to code samples
+- [code-samples] New hadoop word count example added
+- [code-samples] Kafka consumer example added
 
 3. Fixes
 - [core] Remove dead and potentially racy code from async operations [320] 
-- [core] ReadSocketTextStreamP doesn’t emit immediately items after reading [335] 
+- [core] ReadSocketTextStreamP should emit items immediately after reading [335]
+- [core] Wrong configuration file is used for IMDG when Jet config file present in classpath [345]
 - [java.util.stream] Do not require forEach action to be serializable [340, 341] 
