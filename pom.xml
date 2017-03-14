@@ -59,6 +59,7 @@
     </repositories>
 
     <properties>
+        <argLine></argLine> <!-- to be filled by JaCoCo -->
         <main.basedir>${project.basedir}</main.basedir>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
@@ -85,8 +86,8 @@
         <maven.surefire.plugin.version>2.19.1</maven.surefire.plugin.version>
         <maven.findbugs.plugin.version>3.0.4</maven.findbugs.plugin.version>
         <maven.checkstyle.plugin.version>2.17</maven.checkstyle.plugin.version>
-        <maven.sonar.plugin.version>2.7.1</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.7.9</maven.jacoco.plugin.version>
+        <maven.sonar.plugin.version>2.6</maven.sonar.plugin.version>
+        <maven.jacoco.plugin.version>0.7.4.201502262128</maven.jacoco.plugin.version>
 
         <log4j.version>1.2.12</log4j.version>
         <junit.version>4.12</junit.version>
@@ -281,7 +282,9 @@
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>failedfirst</runOrder>
                     <forkCount>0.5C</forkCount>
+                    <failIfNoTests>false</failIfNoTests>
                     <argLine>
+                        @{argLine}
                         -Xmx2G
                         -Dhazelcast.phone.home.enabled=false
                         -Dhazelcast.mancenter.enabled=false
@@ -376,9 +379,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
-                    <configuration>
-                        <failIfNoTests>false</failIfNoTests>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -386,16 +386,6 @@
     <profiles>
         <profile>
             <id>nightly</id>
-            <properties>
-                <argLine>
-                    -Xmx2G
-                    -Dhazelcast.phone.home.enabled=false
-                    -Dhazelcast.mancenter.enabled=false
-                    -Dhazelcast.logging.type=log4j
-                    -Dhazelcast.test.use.network=false
-                    -Djava.net.preferIPv4Stack=true
-                </argLine>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -411,15 +401,6 @@
         </profile>
         <profile>
             <id>test-coverage</id>
-            <properties>
-                <argLine>
-                    -Xmx2G
-                    -Dhazelcast.phone.home.enabled=false
-                    -Dhazelcast.mancenter.enabled=false
-                    -Dhazelcast.logging.type=none
-                    -Dhazelcast.test.use.network=false
-                </argLine>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -434,7 +415,6 @@
                             </execution>
                         </executions>
                     </plugin>
-
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
