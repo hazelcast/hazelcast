@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map.impl.nearcache;
+package com.hazelcast.map.impl.nearcache;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.internal.adapter.IMapDataStructureAdapter;
@@ -30,6 +29,7 @@ import com.hazelcast.internal.nearcache.NearCacheManager;
 import com.hazelcast.internal.nearcache.NearCacheTestContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParametersRunnerFactory;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -39,22 +39,22 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
-import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.Collection;
 
 import static com.hazelcast.config.InMemoryFormat.BINARY;
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.NearCacheTestUtils.createNearCacheConfig;
+import static com.hazelcast.internal.nearcache.NearCacheTestUtils.getMapNearCacheManager;
 import static java.util.Arrays.asList;
 
 /**
- * Near Cache serialization count tests for {@link IMap} on Hazelcast clients.
+ * Near Cache serialization count tests for {@link IMap} on Hazelcast Lite members.
  */
 @RunWith(Parameterized.class)
-@UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
+public class LiteMemberMapNearCacheSerializationCountTest extends AbstractNearCacheSerializationCountTest<Data, String> {
 
     @Parameter
     public int[] expectedSerializationCounts;
@@ -68,18 +68,18 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
     @Parameter(value = 3)
     public InMemoryFormat nearCacheInMemoryFormat;
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastInstanceFactory hazelcastFactory = createHazelcastInstanceFactory(2);
 
     @Parameters(name = "mapFormat:{2} nearCacheFormat:{3}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY,},
-                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT,},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, null},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 1}, BINARY, BINARY},
+                {new int[]{1, 0, 0}, new int[]{0, 1, 0}, BINARY, OBJECT},
 
-                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY,},
-                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT,},
+                {new int[]{1, 1, 1}, new int[]{1, 1, 1}, OBJECT, null},
+                {new int[]{1, 1, 0}, new int[]{1, 1, 1}, OBJECT, BINARY},
+                {new int[]{1, 1, 0}, new int[]{1, 1, 0}, OBJECT, OBJECT},
         });
     }
 
@@ -107,38 +107,35 @@ public class ClientMapNearCacheSerializationCountTest extends AbstractNearCacheS
 
     @Override
     protected <K, V> NearCacheTestContext<K, V, Data, String> createContext() {
-        Config config = getConfig();
-        config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
-                .setInMemoryFormat(mapInMemoryFormat);
-        prepareSerializationConfig(config.getSerializationConfig());
-
-        ClientConfig clientConfig = getClientConfig();
-        if (nearCacheConfig != null) {
-            clientConfig.addNearCacheConfig(nearCacheConfig);
-        }
-        prepareSerializationConfig(clientConfig.getSerializationConfig());
-
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, false));
+        HazelcastInstance liteMember = hazelcastFactory.newHazelcastInstance(createConfig(nearCacheConfig, true));
 
         IMap<K, V> memberMap = member.getMap(DEFAULT_NEAR_CACHE_NAME);
-        IMap<K, V> clientMap = client.getMap(DEFAULT_NEAR_CACHE_NAME);
+        IMap<K, V> liteMemberMap = liteMember.getMap(DEFAULT_NEAR_CACHE_NAME);
 
-        NearCacheManager nearCacheManager = client.client.getNearCacheManager();
+        NearCacheManager nearCacheManager = getMapNearCacheManager(liteMember);
         NearCache<Data, String> nearCache = nearCacheManager.getNearCache(DEFAULT_NEAR_CACHE_NAME);
 
         return new NearCacheTestContext<K, V, Data, String>(
-                client.getSerializationService(),
-                client,
+                getSerializationService(member),
+                liteMember,
                 member,
-                new IMapDataStructureAdapter<K, V>(clientMap),
+                new IMapDataStructureAdapter<K, V>(liteMemberMap),
                 new IMapDataStructureAdapter<K, V>(memberMap),
-                false,
+                true,
                 nearCache,
                 nearCacheManager);
     }
 
-    protected ClientConfig getClientConfig() {
-        return new ClientConfig();
+    protected Config createConfig(NearCacheConfig nearCacheConfig, boolean liteMember) {
+        Config config = getConfig()
+                .setLiteMember(liteMember);
+        MapConfig mapConfig = config.getMapConfig(DEFAULT_NEAR_CACHE_NAME)
+                .setInMemoryFormat(mapInMemoryFormat);
+        if (nearCacheConfig != null) {
+            mapConfig.setNearCacheConfig(nearCacheConfig);
+        }
+        prepareSerializationConfig(config.getSerializationConfig());
+        return config;
     }
 }
