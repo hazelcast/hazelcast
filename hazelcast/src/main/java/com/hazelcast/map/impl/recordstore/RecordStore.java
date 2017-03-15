@@ -125,7 +125,7 @@ public interface RecordStore<R extends Record> extends LocalRecordStoreStats {
      */
     boolean replace(Data dataKey, Object expect, Object update);
 
-    void putTransient(Data dataKey, Object value, long ttl);
+    Object putTransient(Data dataKey, Object value, long ttl);
 
     /**
      * Puts key-value pair to map which is the result of a load from map store operation.
