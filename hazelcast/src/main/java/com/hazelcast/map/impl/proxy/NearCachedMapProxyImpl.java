@@ -169,8 +169,8 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
 
     @Override
     protected void putTransientInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
-        invalidateCache(key);
         super.putTransientInternal(key, value, ttl, timeunit);
+        invalidateCache(key);
     }
 
     @Override
