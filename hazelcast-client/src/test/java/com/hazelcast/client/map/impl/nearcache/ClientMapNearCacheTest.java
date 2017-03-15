@@ -969,7 +969,7 @@ public class ClientMapNearCacheTest extends NearCacheTestSupport {
     @Test
     public void receives_one_clearEvent_after_mapClear_call_from_member() {
         // 1. Start new member and populate map.
-        HazelcastInstance member = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance member = hazelcastFactory.newHazelcastInstance(newConfig());
         IMap memberMap = member.getMap("test");
         populateMap(memberMap, 1000);
 
