@@ -84,7 +84,6 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.scheduledexecutor.impl.DistributedScheduledExecutorService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -330,8 +329,7 @@ public final class ProxyManager {
     }
 
     private boolean isRetryable(final Throwable t) {
-        return t instanceof RetryableException
-                || ClientInvocation.isRetryable(t);
+        return ClientInvocation.isRetrySafeException(t);
     }
 
     private void sleepForProxyInitRetry() {
