@@ -252,6 +252,18 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     }
 
+    static class EchoTask implements Runnable, Serializable {
+
+        public EchoTask() {
+        }
+
+        @Override
+        public void run() {
+            System.out.println("Echo ...cho ...oo ..o");
+        }
+
+    }
+    
     static class ErroneousCallableTask
             implements Callable<Double>, Serializable, HazelcastInstanceAware {
 
