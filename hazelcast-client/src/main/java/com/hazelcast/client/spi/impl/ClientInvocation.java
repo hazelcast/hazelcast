@@ -54,7 +54,7 @@ public class ClientInvocation implements Runnable {
     private final ClientInvocationServiceSupport invocationService;
     private final ClientExecutionService executionService;
     private final ClientMessage clientMessage;
-
+    private final CallIdSequence callIdSequence;
     private final Address address;
     private final int partitionId;
     private final Connection connection;
@@ -78,8 +78,9 @@ public class ClientInvocation implements Runnable {
         this.connection = connection;
         this.retryTimeoutPointInMillis = System.currentTimeMillis() + invocationService.getInvocationTimeoutMillis();
         this.logger = invocationService.invocationLogger;
+        this.callIdSequence = client.getCallIdSequence();
         this.clientInvocationFuture = new ClientInvocationFuture(this, executionService,
-                clientMessage, logger, client.getCallIdSequence());
+                clientMessage, logger, callIdSequence);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
@@ -113,6 +114,11 @@ public class ClientInvocation implements Runnable {
         assert (clientMessage != null);
 
         try {
+            if (urgent) {
+                clientMessage.setCorrelationId(callIdSequence.renew());
+            } else {
+                clientMessage.setCorrelationId(callIdSequence.next());
+            }
             invokeOnSelection();
         } catch (Exception e) {
             if (e instanceof HazelcastOverloadException) {
@@ -143,6 +149,8 @@ public class ClientInvocation implements Runnable {
     @Override
     public void run() {
         try {
+            //Retrying, finished with old call id, will try to receive new one in invoke
+            callIdSequence.complete();
             invoke();
         } catch (Throwable e) {
             clientInvocationFuture.complete(e);
@@ -219,10 +227,6 @@ public class ClientInvocation implements Runnable {
 
     public boolean shouldBypassHeartbeatCheck() {
         return bypassHeartbeatCheck;
-    }
-
-    public boolean isUrgent() {
-        return urgent;
     }
 
     public void setBypassHeartbeatCheck(boolean bypassHeartbeatCheck) {

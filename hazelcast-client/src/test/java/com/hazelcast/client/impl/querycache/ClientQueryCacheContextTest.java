@@ -31,7 +31,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.RootCauseMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -41,12 +40,13 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -130,19 +130,18 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testInvokerWrapper_invokeOnAllPartitions_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
         ClientMessage request = mock(ClientMessage.class);
-
+        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
         context.getInvokerWrapper().invokeOnAllPartitions(request);
     }
 
-    @Test
-    public void testInvokerWrapper_invokeOnTarget_whenExceptionOccurs_thenFutureReturnsException() throws Exception {
+    @Test(expected = NullPointerException.class)
+    public void testInvokerWrapper_invokeOnTarget_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
         ClientMessage request = mock(ClientMessage.class);
+        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
+
         Address address = new Address();
 
-        Future future = context.getInvokerWrapper().invokeOnTarget(request, address);
-
-        expectedException.expect(new RootCauseMatcher(NullPointerException.class));
-        future.get();
+        context.getInvokerWrapper().invokeOnTarget(request, address);
     }
 
     @Test(expected = NullPointerException.class)
@@ -160,6 +159,7 @@ public class ClientQueryCacheContextTest extends HazelcastTestSupport {
     @Test(expected = NullPointerException.class)
     public void testInvokerWrapper_invoke_whenExceptionOccurs_thenExceptionIsRethrown() throws Exception {
         ClientMessage request = mock(ClientMessage.class);
+        when(request.setCorrelationId((Long) any())).thenThrow(NullPointerException.class);
 
         context.getInvokerWrapper().invoke(request);
     }
