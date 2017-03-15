@@ -872,7 +872,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void putTransient(Data key, Object value, long ttl) {
+    public Object putTransient(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
         markRecordStoreExpirable(ttl);
@@ -891,6 +891,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
         saveIndex(record, oldValue);
         mapDataStore.addTransient(key, now);
+        return oldValue;
     }
 
     @Override
