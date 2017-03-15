@@ -2,5 +2,5 @@
 
 * The Jet cluster can be scaled up without affecting running jobs. Please refer to the [elasticity](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Introduction.md#elasticity) section in the user guide for details. 
 * Added support for reading and writing non-text data from or to HDFS. Please refer to the  [hazelcast-jet-hadoop documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-hadoop) for details.
-* Kafka Connector extended. Please refer to thje [hazelcast-jet-kafka documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka) for details.
+* Kafka Connector extended. Please refer to the [hazelcast-jet-kafka documentation](https://github.com/hazelcast/hazelcast-jet-reference-manual/blob/master/src/Modules.md#hazelcast-jet-kafka) for details.
 * Hazelcast version updated to 3.8
