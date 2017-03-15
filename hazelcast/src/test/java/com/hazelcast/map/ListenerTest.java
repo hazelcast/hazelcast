@@ -551,7 +551,7 @@ public class ListenerTest extends HazelcastTestSupport {
         int key = 1;
         String initialValue = "foo";
         String newValue = "bar";
-        HazelcastInstance instance = createHazelcastInstance();
+        HazelcastInstance instance = createHazelcastInstance(getConfig());
         IMap<Integer, String> map = instance.getMap(randomMapName());
 
         map.put(key, initialValue);
@@ -582,7 +582,7 @@ public class ListenerTest extends HazelcastTestSupport {
     public void test_ListenerShouldNotCauseDeserialization_withIncludeValueFalse() throws InterruptedException {
         String name = randomString();
         String key = randomString();
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(name).setInMemoryFormat(InMemoryFormat.OBJECT);
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap<Object, Object> map = instance.getMap(name);
@@ -637,6 +637,23 @@ public class ListenerTest extends HazelcastTestSupport {
         assertNotNull(new MapPartitionEventData().toString());
     }
 
+    @Test
+    public void updates_with_putTransient_triggers_entryUpdatedListener() throws Exception {
+        HazelcastInstance hz = createHazelcastInstance(getConfig());
+        IMap<String, String> map = hz.getMap("updates_with_putTransient_triggers_entryUpdatedListener");
+        final CountDownLatch updateEventCounterLatch = new CountDownLatch(1);
+        map.addEntryListener(new EntryUpdatedListener<String, String>() {
+            @Override
+            public void entryUpdated(EntryEvent<String, String> event) {
+                updateEventCounterLatch.countDown();
+            }
+        }, true);
+
+        map.putTransient("hello", "world", 0, TimeUnit.SECONDS);
+        map.putTransient("hello", "another world", 0, TimeUnit.SECONDS);
+
+        assertOpenEventually(updateEventCounterLatch);
+    }
 
     private <K, V> Map<K, V> createMapWithEntry(K key, V newValue) {
         Map<K, V> map = new HashMap<K, V>();
@@ -698,7 +715,7 @@ public class ListenerTest extends HazelcastTestSupport {
 
     private void hazelcastAwareEntryListener_injectHazelcastInstance(EntryListenerConfig listenerConfig) {
         String pingMapName = randomMapName();
-        Config config = new Config();
+        Config config = getConfig();
         config.getMapConfig(pingMapName).getEntryListenerConfigs().add(listenerConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
 
