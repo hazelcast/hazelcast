@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.HazelcastCachingProvider;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
@@ -29,6 +28,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Properties;
+
+import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION;
+import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF;
+import static com.hazelcast.cache.HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME;
+import static com.hazelcast.util.StringUtil.isNullOrEmptyAfterTrim;
 
 /**
  * Provides server cachingProvider implementation. <p>This implementation is used by {@link
@@ -56,57 +60,29 @@ public final class HazelcastServerCachingProvider
     }
 
     @Override
-    protected HazelcastServerCacheManager createHazelcastCacheManager(URI uri, ClassLoader classLoader,
-                                                                      Properties properties) {
-        final boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
-        final HazelcastInstance instance;
-        try {
-            instance = getOrCreateInstance(classLoader, properties, isDefaultURI);
-            if (instance == null) {
-                throw new IllegalArgumentException(INVALID_HZ_INSTANCE_SPECIFICATION_MESSAGE);
-            }
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+    protected HazelcastServerCacheManager createCacheManager(HazelcastInstance instance,
+                                                             URI uri, ClassLoader classLoader,
+                                                             Properties properties) {
         return new HazelcastServerCacheManager(this, instance, uri, classLoader, properties);
     }
 
-    private HazelcastInstance getOrCreateInstance(ClassLoader classLoader, Properties properties, boolean isDefaultURI)
+    @Override
+    protected HazelcastInstance getOrCreateInstance(URI uri, ClassLoader classLoader, Properties properties)
             throws URISyntaxException, IOException {
-        HazelcastInstance instanceItself =
-                (HazelcastInstance) properties.get(HazelcastCachingProvider.HAZELCAST_INSTANCE_ITSELF);
+        HazelcastInstance instanceItself = (HazelcastInstance) properties.get(HAZELCAST_INSTANCE_ITSELF);
 
         // If instance itself is specified via properties, get instance through it.
         if (instanceItself != null) {
             return instanceItself;
         }
 
-        String location = properties.getProperty(HazelcastCachingProvider.HAZELCAST_CONFIG_LOCATION);
-        String instanceName = properties.getProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME);
+        String location = properties.getProperty(HAZELCAST_CONFIG_LOCATION);
+        String instanceName = properties.getProperty(HAZELCAST_INSTANCE_NAME);
 
         // If config location is specified via properties, get instance through it.
         if (location != null) {
-            URI uri = new URI(location);
-            String scheme = uri.getScheme();
-            if (scheme == null) {
-                // It is a place holder
-                uri = new URI(System.getProperty(uri.getRawSchemeSpecificPart()));
-            }
-            ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
-            final URL configURL;
-            if ("classpath".equals(scheme)) {
-                configURL = theClassLoader.getResource(uri.getRawSchemeSpecificPart());
-            } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme)) {
-                configURL = uri.toURL();
-            } else {
-                throw new URISyntaxException(location, "Unsupported protocol in configuration location URL");
-            }
-            try {
-                Config config = getConfig(configURL, theClassLoader, instanceName);
-                return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
+            Config config = getConfigFromLocation(location, classLoader, instanceName);
+            return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
         }
 
         // If instance name is specified via properties, get instance through it.
@@ -114,25 +90,74 @@ public final class HazelcastServerCachingProvider
             return Hazelcast.getHazelcastInstanceByName(instanceName);
         }
 
-        return getInstanceThroughDefaultInstanceIfItIsDefault(isDefaultURI);
+        // resolving HazelcastInstance via properties failed, try with URI as XML configuration file location
+        final boolean isDefaultURI = (uri == null || uri.equals(getDefaultURI()));
+        if (!isDefaultURI) {
+            try {
+                // try locating a Hazelcast config at CacheManager URI
+                Config config = getConfigFromLocation(uri, classLoader, null);
+                return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
+            } catch (Exception e) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Could not get or create hazelcast instance from URI " + uri.toString(), e);
+                }
+            }
+
+            try {
+                // try again, this time interpreting CacheManager URI as hazelcast instance name
+                return Hazelcast.getHazelcastInstanceByName(uri.toString());
+            } catch (Exception e) {
+                if (LOGGER.isFinestEnabled()) {
+                    LOGGER.finest("Could not get hazelcast instance from instance name" + uri.toString(), e);
+                }
+            }
+            // could not locate hazelcast instance, return null and an exception will be thrown from invoker
+            return null;
+        } else {
+            return getDefaultInstance();
+        }
     }
 
-    private HazelcastInstance getInstanceThroughDefaultInstanceIfItIsDefault(boolean isDefaultURI) {
-        HazelcastInstance instance = null;
-        // No instance specified with name or config location,
-        // so we are going on with the default one if the URI is the default.
-        if (isDefaultURI) {
-            if (hazelcastInstance == null) {
-                // If there is no default instance in use (not created yet and not specified), create a new one.
-                instance = Hazelcast.newHazelcastInstance();
-                // Since there is no default instance in use, set new instance as default one.
-                hazelcastInstance = instance;
+    protected HazelcastInstance getDefaultInstance() {
+        if (hazelcastInstance == null) {
+            // Since there is no default instance in use, get-or-create by instance name in default config or create new
+            Config config = new XmlConfigBuilder().build();
+            if (isNullOrEmptyAfterTrim(config.getInstanceName())) {
+                hazelcastInstance = Hazelcast.newHazelcastInstance();
             } else {
-                // Use the existing default instance.
-                instance = hazelcastInstance;
+                hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(config);
             }
         }
-        return instance;
+        return hazelcastInstance;
+    }
+
+    private Config getConfigFromLocation(String location, ClassLoader classLoader, String instanceName)
+            throws URISyntaxException, IOException {
+        URI configUri = new URI(location);
+        return getConfigFromLocation(configUri, classLoader, instanceName);
+    }
+
+    private Config getConfigFromLocation(URI location, ClassLoader classLoader, String instanceName)
+            throws URISyntaxException, IOException {
+        String scheme = location.getScheme();
+        if (scheme == null) {
+            // It may be a place holder
+            location = new URI(System.getProperty(location.getRawSchemeSpecificPart()));
+        }
+        ClassLoader theClassLoader = classLoader == null ? getDefaultClassLoader() : classLoader;
+        final URL configURL;
+        if ("classpath".equals(scheme)) {
+            configURL = theClassLoader.getResource(location.getRawSchemeSpecificPart());
+        } else if ("file".equals(scheme) || "http".equals(scheme) || "https".equals(scheme)) {
+            configURL = location.toURL();
+        } else {
+            throw new URISyntaxException(location.toString(), "Unsupported protocol in configuration location URL");
+        }
+        try {
+            return getConfig(configURL, theClassLoader, instanceName);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     private Config getConfig(URL configURL, ClassLoader theClassLoader, String instanceName)

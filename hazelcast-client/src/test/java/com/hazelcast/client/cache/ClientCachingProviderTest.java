@@ -19,16 +19,20 @@ package com.hazelcast.client.cache;
 import com.hazelcast.cache.CachingProviderTest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -39,21 +43,39 @@ public class ClientCachingProviderTest extends CachingProviderTest {
 
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
-    @Override
-    protected TestHazelcastInstanceFactory createTestHazelcastInstanceFactory(int count) {
-        // Since `HazelcastClient.getHazelcastClientByName(instanceName);` doesn't work on mock client,
-        // we are using real instances.
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    @Before
+    public void setup() {
+        // start a member
+        Config config = new Config();
+        config.getGroupConfig().setName("test-group1");
+        config.getGroupConfig().setPassword("test-pass1");
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         instances.add(instance);
-        // Since we are using real instances, no need to mock instance factory.
-        return null;
+        // start two client instances
+        instance1 = createHazelcastInstance(INSTANCE_1_NAME);
+        instance2 = createHazelcastInstance(INSTANCE_2_NAME);
+        try {
+            instance3 = HazelcastClient.newHazelcastClient(
+                    new XmlClientConfigBuilder(CONFIG_CLASSPATH_LOCATION).build());
+        } catch (IOException e) {
+            throw new AssertionError("Could not construct named hazelcast client instance: " +
+                    e.getMessage());
+        }
+        instances.add(instance1);
+        instances.add(instance2);
+        instances.add(instance3);
+        cachingProvider = createCachingProvider(instance1);
     }
 
     @Override
-    protected HazelcastInstance createCacheInstance() {
+    protected HazelcastInstance createHazelcastInstance(String instanceName) {
         // Since `HazelcastClient.getHazelcastClientByName(instanceName);` doesn't work on mock client,
         // we are using real instances.
-        HazelcastInstance instance = HazelcastClient.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setInstanceName(instanceName);
+        clientConfig.getGroupConfig().setName("test-group1");
+        clientConfig.getGroupConfig().setPassword("test-pass1");
+        HazelcastInstance instance = HazelcastClient.newHazelcastClient(clientConfig);
         instances.add(instance);
         return instance;
     }
