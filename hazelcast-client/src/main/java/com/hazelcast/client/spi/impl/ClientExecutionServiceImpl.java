@@ -17,15 +17,11 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.spi.TaskScheduler;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.LoggingScheduledExecutor;
-import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
 import java.util.concurrent.Callable;
@@ -83,43 +79,13 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
-    public ManagedExecutorService register(String name, int poolSize, int queueCapacity, ExecutorType type) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ManagedExecutorService getExecutor(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void shutdownExecutor(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void execute(String name, Runnable command) {
-        execute(command);
-    }
-
-    @Override
-    public Future<?> submit(String name, Runnable task) {
-        return internalExecutor.submit(task);
-    }
-
-    @Override
-    public <T> Future<T> submit(String name, Callable<T> task) {
-        return internalExecutor.submit(task);
-    }
-
-    @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
         return internalExecutor.schedule(command, delay, unit);
     }
 
     @Override
-    public ScheduledFuture<?> schedule(String name, Runnable command, long delay, TimeUnit unit) {
-        return schedule(command, delay, unit);
+    public <V> ScheduledFuture<Future<V>> schedule(Callable<V> command, long delay, TimeUnit unit) {
+        return (ScheduledFuture<Future<V>>) internalExecutor.schedule(command, delay, unit);
     }
 
     @Override
@@ -128,34 +94,13 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     @Override
-    public ScheduledFuture<?> scheduleWithRepetition(String name, Runnable command, long initialDelay, long period,
-                                                     TimeUnit unit) {
-        return scheduleWithRepetition(command, initialDelay, period, unit);
-    }
-
-    @Override
-    public TaskScheduler getGlobalTaskScheduler() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public TaskScheduler getTaskScheduler(String name) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <V> ICompletableFuture<V> asCompletableFuture(Future<V> future) {
-        throw new UnsupportedOperationException();
+    public void execute(Runnable command) {
+        internalExecutor.execute(command);
     }
 
     @Override
     public ExecutorService getUserExecutor() {
         return userExecutor;
-    }
-
-    @Override
-    public void execute(Runnable command) {
-        internalExecutor.execute(command);
     }
 
     public void shutdown() {

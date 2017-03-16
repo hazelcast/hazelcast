@@ -403,7 +403,7 @@ public class JobSupervisor {
     private void asyncCancelRemoteOperations(final Set<Address> addresses) {
         final NodeEngine nodeEngine = mapReduceService.getNodeEngine();
         TaskScheduler taskScheduler = nodeEngine.getExecutionService().getGlobalTaskScheduler();
-        taskScheduler.submit(new Runnable() {
+        taskScheduler.execute(new Runnable() {
 
             @Override
             public void run() {

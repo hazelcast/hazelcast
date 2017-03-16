@@ -134,7 +134,8 @@ public final class ExpirationManager {
         }
 
         ClearExpiredRecordsTask task = new ClearExpiredRecordsTask();
-        expirationTask = executionService.scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
+        expirationTask = executionService.getGlobalTaskScheduler().
+                scheduleWithRepetition(task, taskPeriodSeconds, taskPeriodSeconds, SECONDS);
     }
 
     public synchronized void stop() {
