@@ -256,6 +256,10 @@ public class ScheduledExecutorContainer {
     void promoteStash() {
         for (ScheduledTaskDescriptor descriptor : tasks.values()) {
             try {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("[Partition: " + partitionId + "] " + "Attempt to promote stashed " + descriptor);
+                }
+
                 if (descriptor.shouldSchedule()) {
                     doSchedule(descriptor);
                 }
@@ -285,9 +289,11 @@ public class ScheduledExecutorContainer {
                     // Best effort to cancel & interrupt the task.
                     // In the case of Runnable the DelegateAndSkipOnConcurrentExecutionDecorator is not exposing access
                     // to the Executor's Future, hence, we have no access on the runner thread to interrupt. In this case
-                    // the line below is only cancelling future scheduling attempts.
+                    // the line below is only cancelling future runs.
                     try {
                         descriptor.cancel(true);
+                        descriptor.setScheduledFuture(null);
+                        descriptor.setTaskOwner(false);
                     } catch (Exception ex) {
                         throw rethrow(ex);
                     }
