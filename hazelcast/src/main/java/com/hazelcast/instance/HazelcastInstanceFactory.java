@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.util.Preconditions.checkHasText;
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -83,7 +82,9 @@ public final class HazelcastInstanceFactory {
     }
 
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
-        checkNotNull(config, "config can't be null");
+        if (config == null) {
+            config = new XmlConfigBuilder().build();
+        }
 
         String name = config.getInstanceName();
         checkHasText(name, "instanceName must contain text");

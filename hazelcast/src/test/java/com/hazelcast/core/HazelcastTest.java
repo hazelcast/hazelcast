@@ -37,6 +37,8 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class HazelcastTest extends HazelcastTestSupport {
 
+    public static final String HAZELCAST_CONFIG = "hazelcast.config";
+
     @Before
     @After
     public void cleanup() {
@@ -44,9 +46,27 @@ public class HazelcastTest extends HazelcastTestSupport {
         assertEquals(emptySet(), getAllHazelcastInstances());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void getOrCreateHazelcastInstance_nullConfig() {
         Hazelcast.getOrCreateHazelcastInstance(null);
+    }
+
+    @Test
+    public void getOrCreateDefaultHazelcastInstance() {
+        String hzConfigProperty = System.getProperty(HAZELCAST_CONFIG);
+        try {
+            System.setProperty(HAZELCAST_CONFIG, "classpath:test-hazelcast-jcache.xml");
+            HazelcastInstance hz1 = Hazelcast.getOrCreateHazelcastInstance();
+            HazelcastInstance hz2 = Hazelcast.getOrCreateHazelcastInstance();
+            assertEquals("Calling two times getOrCreateHazelcastInstance should return same instance", hz1,
+                    hz2);
+        } finally {
+            if (hzConfigProperty == null) {
+                System.clearProperty(HAZELCAST_CONFIG);
+            } else {
+                System.setProperty(HAZELCAST_CONFIG, hzConfigProperty);
+            }
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
