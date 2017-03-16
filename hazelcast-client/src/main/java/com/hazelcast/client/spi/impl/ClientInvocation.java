@@ -28,7 +28,8 @@ import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -37,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Handles the routing of a request from a Hazelcast client.
- *
+ * <p>
  * 1) Where should request be send?
  * 2) Should it be retried?
  * 3) How many times it is retried?
@@ -170,47 +171,28 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (isRetryable(exception)) {
-            if (handleRetry()) {
-                return;
-            }
+        if ((isBindToSingleConnection() && exception instanceof IOException)
+                || System.currentTimeMillis() > retryTimeoutPointInMillis) {
+            clientInvocationFuture.complete(exception);
+            return;
         }
-        if (exception instanceof RetryableHazelcastException) {
-            if (clientMessage.isRetryable() || invocationService.isRedoOperation()) {
-                if (handleRetry()) {
-                    return;
+
+        if (isRetrySafeException(exception)
+                || invocationService.isRedoOperation()
+                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable())) {
+            try {
+                ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
+                executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+            } catch (RejectedExecutionException e) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Retry could not be scheduled ", e);
                 }
+                clientInvocationFuture.complete(exception);
             }
+            return;
         }
+
         clientInvocationFuture.complete(exception);
-    }
-
-    private boolean handleRetry() {
-        if (isBindToSingleConnection()) {
-            return false;
-        }
-
-        if (!shouldRetry()) {
-            return false;
-        }
-
-        try {
-            rescheduleInvocation();
-        } catch (RejectedExecutionException e) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Retry could not be scheduled ", e);
-            }
-            notifyException(e);
-        }
-        return true;
-    }
-
-    private void rescheduleInvocation() {
-        executionService.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
-    }
-
-    private boolean shouldRetry() {
-        return System.currentTimeMillis() < retryTimeoutPointInMillis;
     }
 
     private boolean isBindToSingleConnection() {
@@ -248,8 +230,10 @@ public class ClientInvocation implements Runnable {
         return sendConnection;
     }
 
-    public static boolean isRetryable(Throwable t) {
-        return t instanceof IOException || t instanceof HazelcastInstanceNotActiveException;
+    public static boolean isRetrySafeException(Throwable t) {
+        return t instanceof IOException
+                || t instanceof HazelcastInstanceNotActiveException
+                || t instanceof RetryableException;
     }
 
     public Executor getUserExecutor() {
