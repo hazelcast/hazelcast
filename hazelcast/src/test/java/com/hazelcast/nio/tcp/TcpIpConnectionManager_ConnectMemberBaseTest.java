@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.test.AssertTask;
@@ -120,6 +121,25 @@ public abstract class TcpIpConnectionManager_ConnectMemberBaseTest extends TcpIp
         startAllConnectionManagers();
 
         TcpIpConnection connAB = connect(connManagerA, addressB);
+        assertTrue(connAB.isAlive());
+        assertEquals(ConnectionType.MEMBER, connAB.getType());
+        assertEquals(1, connManagerA.getActiveConnectionCount());
+
+        TcpIpConnection connBA = (TcpIpConnection) connManagerB.getConnection(addressA);
+        assertTrue(connBA.isAlive());
+        assertEquals(ConnectionType.MEMBER, connBA.getType());
+        assertEquals(1, connManagerB.getActiveConnectionCount());
+
+        assertEquals(connManagerA.getIoService().getThisAddress(), connBA.getEndPoint());
+        assertEquals(connManagerB.getIoService().getThisAddress(), connAB.getEndPoint());
+    }
+
+    @Test
+    public void connect_withTranslatedAddress() throws UnknownHostException {
+        startAllConnectionManagers();
+
+        Address testAddress = new Address("localhost", 5702);
+        TcpIpConnection connAB = connect(connManagerA, testAddress);
         assertTrue(connAB.isAlive());
         assertEquals(ConnectionType.MEMBER, connAB.getType());
         assertEquals(1, connManagerA.getActiveConnectionCount());

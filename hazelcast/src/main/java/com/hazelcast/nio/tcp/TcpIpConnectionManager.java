@@ -87,6 +87,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe(name = "count", level = MANDATORY)
     private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
 
+    private final ConcurrentHashMap<Address, Address> connectionsTranslationMap = new ConcurrentHashMap<Address, Address>(100);
+
     @Probe(name = "monitorCount")
     private final ConcurrentHashMap<Address, TcpIpConnectionMonitor> monitors =
             new ConcurrentHashMap<Address, TcpIpConnectionMonitor>(100);
@@ -225,18 +227,21 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         assert packet.getPacketType() == Packet.Type.BIND;
 
         BindMessage bind = ioService.getSerializationService().toObject(packet);
-        bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
+        bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(),
+                bind.getTranslatedAddress(), bind.shouldReply());
     }
 
     /**
      * Binding completes the connection and makes it available to be used with the ConnectionManager.
      */
-    private synchronized boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
+    private synchronized boolean bind(TcpIpConnection connection, Address remoteEndPoint,
+                                      Address localEndpoint, Address translatedAddress, boolean reply) {
         if (logger.isFinestEnabled()) {
             logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
         final Address thisAddress = ioService.getThisAddress();
-        if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
+        if (ioService.isSocketBindAny() && !connection.isClient()
+                && !ioService.isSocketAllowAnyPublicAddress() && !thisAddress.equals(localEndpoint)) {
             String msg = "Wrong bind request from " + remoteEndPoint
                     + "! This node is not requested endpoint: " + localEndpoint;
             logger.warning(msg);
@@ -246,12 +251,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
         if (reply) {
-            sendBindRequest(connection, remoteEndPoint, false);
+            sendBindRequest(connection,  remoteEndPoint, false, localEndpoint);
         }
         if (checkAlreadyConnected(connection, remoteEndPoint)) {
             return false;
         }
-        return registerConnection(remoteEndPoint, connection);
+        boolean registered = registerConnection(remoteEndPoint, connection);
+        if (translatedAddress != null && registered) {
+            connectionsTranslationMap.put(translatedAddress, remoteEndPoint);
+        }
+        return registered;
     }
 
     @Override
@@ -283,7 +292,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 }
             }
             connectionsMap.put(remoteEndPoint, connection);
-
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {
@@ -319,13 +327,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack) {
+        sendBindRequest(connection, remoteEndPoint, replyBack, null);
+    }
+    void sendBindRequest(TcpIpConnection connection, Address remoteEndPoint, boolean replyBack, Address localEndpoint) {
         connection.setEndPoint(remoteEndPoint);
         ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
             logger.finest("Sending bind packet to " + remoteEndPoint);
         }
-        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
+        BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, localEndpoint, replyBack);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
         Packet packet = new Packet(bytes).setPacketType(Packet.Type.BIND);
         connection.write(packet);
@@ -377,6 +388,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public Connection getConnection(Address address) {
+        if (connectionsTranslationMap.get(address) != null) {
+            address = connectionsTranslationMap.get(address);
+        }
         return connectionsMap.get(address);
     }
 
@@ -387,7 +401,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public Connection getOrConnect(final Address address, final boolean silent) {
-        Connection connection = connectionsMap.get(address);
+        final Address test =  connectionsTranslationMap.get(address);
+        Connection connection = connectionsMap.get(test != null ? test : address);
         if (connection == null && live) {
             if (connectionsInProgress.add(address)) {
                 ioService.shouldConnectTo(address);

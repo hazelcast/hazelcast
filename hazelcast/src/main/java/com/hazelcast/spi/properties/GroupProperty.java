@@ -226,6 +226,14 @@ public final class GroupProperty {
             = new HazelcastProperty("hazelcast.socket.send.buffer.size", 32);
 
     /**
+     * Allows connections to a member when members public address is different than the target address of
+     * incoming connection. Useful especially in containerized environments where public address of a container
+     * and binded (private) address of a member differs.
+     */
+    public static final HazelcastProperty SOCKET_ALLOW_ANY_PUBLIC_ADDRESS
+            = new HazelcastProperty("hazelcast.socket.allow.any.public.address", false);
+
+    /**
      * If the bytebuffers used in the socket should be a direct bytebuffer (true) or a regular bytebuffer (false).
      */
     public static final HazelcastProperty SOCKET_BUFFER_DIRECT
