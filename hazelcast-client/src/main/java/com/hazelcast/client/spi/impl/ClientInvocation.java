@@ -29,6 +29,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 
 import java.io.IOException;
 import java.util.concurrent.Executor;
@@ -176,7 +177,9 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (isRetrySafeException(exception) || invocationService.isRedoOperation()) {
+        if (isRetrySafeException(exception)
+                || invocationService.isRedoOperation()
+                || (exception instanceof TargetDisconnectedException && clientMessage.isRetryable())) {
             try {
                 ClientExecutionServiceImpl executionServiceImpl = (ClientExecutionServiceImpl) this.executionService;
                 executionServiceImpl.schedule(this, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
