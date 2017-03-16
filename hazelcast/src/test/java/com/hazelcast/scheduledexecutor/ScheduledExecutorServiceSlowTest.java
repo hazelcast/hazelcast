@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({SlowTest.class, ParallelTest.class})
@@ -49,7 +51,7 @@ public class ScheduledExecutorServiceSlowTest
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture<Double> future = executorService.schedule(
-                new ScheduledExecutorServiceBasicTest.ICountdownLatchCallableTask("runsCountLatchName", 15000), delay, SECONDS);
+                new ICountdownLatchCallableTask("runsCountLatchName", 15000), delay, SECONDS);
 
         double result = future.get();
 
@@ -74,7 +76,7 @@ public class ScheduledExecutorServiceSlowTest
         latch.trySetCount(1);
 
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ScheduledExecutorServiceBasicTest.StatefulRunnableTask("latch", "runC", "loadC"),
+                new StatefulRunnableTask("latch", "runC", "loadC"),
                 key, 10, 10, SECONDS);
 
         // Wait for task to get scheduled and start
@@ -106,7 +108,7 @@ public class ScheduledExecutorServiceSlowTest
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
-                new ScheduledExecutorServiceBasicTest.ICountdownLatchRunnableTask("latch"), key, 0, 10, SECONDS);
+                new ICountdownLatchRunnableTask("latch"), key, 0, 10, SECONDS);
 
         Thread.sleep(12000);
 
@@ -130,7 +132,7 @@ public class ScheduledExecutorServiceSlowTest
 
         IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
         IScheduledFuture future = executorService.scheduleAtFixedRate(
-                new ScheduledExecutorServiceBasicTest.ICountdownLatchRunnableTask("latch"), 0, 10, SECONDS);
+                new ICountdownLatchRunnableTask("latch"), 0, 10, SECONDS);
 
 
         latch.await(120, SECONDS);
@@ -292,4 +294,77 @@ public class ScheduledExecutorServiceSlowTest
 
         assertEquals(expectedTotal, actualTotal, 0);
     }
+
+    @Test
+    public void cancelUninterruptedTask_waitUntilRunCompleted_checkStatusIsCancelled()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(1);
+
+        String runFinishedLatchName = "runFinishedLatch";
+        ICountDownLatch latch = instances[0].getCountDownLatch(runFinishedLatchName);
+        latch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture future = executorService.scheduleAtFixedRate(
+                new HotLoopBusyTask(runFinishedLatchName), 0, 1, SECONDS);
+
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        future.cancel(false);
+
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+
+        // Even though we cancelled the task is current task is still running.
+        // Wait till the task is actually done
+        latch.await(60, SECONDS);
+
+        // Make sure SyncState goes through
+        sleepSeconds(10);
+
+        // Check once more that the task status is consistent
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
+    @Test
+    public void cancelUninterruptedTask_waitUntilRunCompleted_killMember_checkStatusIsCancelled()
+            throws ExecutionException, InterruptedException {
+
+        HazelcastInstance[] instances = createClusterWithCount(2);
+
+        String key = generateKeyOwnedBy(instances[1]);
+
+        String runFinishedLatchName = "runFinishedLatch";
+        ICountDownLatch latch = instances[0].getCountDownLatch(runFinishedLatchName);
+        latch.trySetCount(1);
+
+        IScheduledExecutorService executorService = getScheduledExecutor(instances, "s");
+        IScheduledFuture future = executorService.scheduleOnKeyOwnerAtFixedRate(
+                new HotLoopBusyTask(runFinishedLatchName), key, 0, 1, SECONDS);
+
+        assertFalse(future.isCancelled());
+        assertFalse(future.isDone());
+
+        future.cancel(false);
+
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+
+        // Even though we cancelled the task is current task is still running.
+        // Wait till the task is actually done
+        latch.await(60, SECONDS);
+
+        // Make sure SyncState goes through
+        sleepSeconds(10);
+
+        instances[1].getLifecycleService().terminate();
+
+        // Check once more that the task status is consistent
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+    }
+
 }
