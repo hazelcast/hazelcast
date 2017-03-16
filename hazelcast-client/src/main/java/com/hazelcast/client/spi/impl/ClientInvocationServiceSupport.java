@@ -63,8 +63,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     protected ClientPartitionService partitionService;
     private ClientListenerServiceImpl clientListenerService;
 
-    private final CallIdSequence callIdSequence;
-
     @Probe(name = "pendingCalls", level = ProbeLevel.MANDATORY)
     private ConcurrentMap<Long, ClientInvocation> callIdMap = new ConcurrentHashMap<Long, ClientInvocation>();
 
@@ -77,7 +75,6 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         this.client = client;
         this.invocationLogger = client.getLoggingService().getLogger(ClientInvocationService.class);
         this.invocationTimeoutMillis = initInvocationTimeoutMillis();
-        this.callIdSequence = client.getCallIdSequence();
         client.getMetricsRegistry().scanAndRegister(this, "invocations");
     }
 
@@ -114,12 +111,12 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             final long callId = clientMessage.getCorrelationId();
             ClientInvocation clientInvocation = deRegisterCallId(callId);
             if (clientInvocation != null) {
-                callIdSequence.complete();
                 throw new IOException("Packet not send to " + connection.getEndPoint());
             } else {
                 if (invocationLogger.isFinestEnabled()) {
                     invocationLogger.finest("Invocation not found to deregister for call id " + callId);
                 }
+                return;
             }
         }
 
@@ -149,13 +146,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     private void registerInvocation(ClientInvocation clientInvocation) {
         short protocolVersion = client.getProtocolVersion();
-        long correlationId;
-        if (clientInvocation.isUrgent()) {
-            correlationId = callIdSequence.renew();
-        } else {
-            correlationId = callIdSequence.next();
-        }
-        clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
+
+        ClientMessage clientMessage = clientInvocation.getClientMessage();
+        clientMessage.setVersion(protocolVersion);
+        long correlationId = clientMessage.getCorrelationId();
         callIdMap.put(correlationId, clientInvocation);
         EventHandler handler = clientInvocation.getEventHandler();
         if (handler != null) {
