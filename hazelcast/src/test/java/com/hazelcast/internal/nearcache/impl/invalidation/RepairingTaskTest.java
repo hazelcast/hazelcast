@@ -87,6 +87,7 @@ public class RepairingTaskTest extends HazelcastTestSupport {
         String uuid = UuidUtil.newUnsecureUUID().toString();
         ILogger logger = Logger.getLogger(RepairingTask.class);
         HazelcastProperties hazelcastProperties = new HazelcastProperties(config);
-        return new RepairingTask(metaDataFetcher, executionService, minimalPartitionService, hazelcastProperties, uuid, logger);
+        return new RepairingTask(metaDataFetcher, executionService.getGlobalTaskScheduler(),
+                minimalPartitionService, hazelcastProperties, uuid, logger);
     }
 }

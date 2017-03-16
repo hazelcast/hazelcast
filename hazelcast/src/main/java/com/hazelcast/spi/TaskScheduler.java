@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * {@link java.util.concurrent.ScheduledExecutorService#scheduleWithFixedDelay(Runnable, long, long, TimeUnit)}
  *
  */
-public interface TaskScheduler extends ExecutorService {
+public interface TaskScheduler extends Executor {
 
     /**
      * Creates and executes a one-shot action that becomes enabled
