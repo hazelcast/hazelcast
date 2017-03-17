@@ -481,7 +481,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             invalidationListenerId = registerListener(createNearCacheEntryListenerCodec(), handler);
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(getClass());
-            logger.severe("-----------------\n Near Cache is not initialized! \n-----------------", e);
+            logger.severe("-----------------\nNear Cache is not initialized!\n-----------------", e);
         }
     }
 
