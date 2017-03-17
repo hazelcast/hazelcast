@@ -397,9 +397,9 @@ abstract class AbstractInternalCacheProxy<K, V>
                 if (!getNodeEngine().isRunning()) {
                     throw new HazelcastInstanceNotActiveException();
                 } else if (isClosed()) {
-                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed !");
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed!");
                 } else if (isDestroyed()) {
-                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed !");
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed!");
                 }
 
             }

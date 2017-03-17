@@ -69,8 +69,8 @@ public enum CacheDeserializedValues {
         } else if ("ALWAYS".equals(upperCase)) {
             return ALWAYS;
         } else {
-            throw new IllegalArgumentException("Unknown CacheDeserializedValues option '" + string + ". "
-                    + "Possible options: " + Arrays.toString(CacheDeserializedValues.values()) + " .");
+            throw new IllegalArgumentException("Unknown CacheDeserializedValues option '" + string + "'. "
+                    + "Possible options: " + Arrays.toString(CacheDeserializedValues.values()));
         }
     }
 }

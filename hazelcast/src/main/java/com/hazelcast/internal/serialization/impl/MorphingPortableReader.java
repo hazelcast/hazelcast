@@ -321,6 +321,6 @@ public class MorphingPortableReader extends DefaultPortableReader {
 
     private IncompatibleClassChangeError createIncompatibleClassChangeError(FieldDefinition fd, FieldType expectedType) {
         return new IncompatibleClassChangeError("Incompatible to read " + expectedType + " from " + fd.getType()
-                + " while reading field :" + fd.getName() + " on " + cd);
+                + " while reading field: " + fd.getName() + " on " + cd);
     }
 }

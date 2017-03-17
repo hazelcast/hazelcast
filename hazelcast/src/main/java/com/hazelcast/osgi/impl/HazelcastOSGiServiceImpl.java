@@ -176,7 +176,7 @@ class HazelcastOSGiServiceImpl
             if (ownerBundle.getState() == Bundle.STARTING) {
                 try {
                     if (hazelcastInstance != null) {
-                        LOGGER.warning("Default Hazelcast instance should be null while activating service !");
+                        LOGGER.warning("Default Hazelcast instance should be null while activating service!");
                         shutdownDefaultHazelcastInstanceIfActive();
                     }
                     if (Boolean.getBoolean(HAZELCAST_OSGI_START)) {

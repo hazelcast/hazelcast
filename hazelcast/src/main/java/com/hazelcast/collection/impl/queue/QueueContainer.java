@@ -314,7 +314,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public boolean txnCommitOffer(long itemId, Data data, boolean backup) {
         QueueItem item = txMap.remove(itemId);
         if (item == null && !backup) {
-            throw new TransactionException("No reserve :" + itemId);
+            throw new TransactionException("No reserve: " + itemId);
         } else if (item == null) {
             item = new QueueItem(this, itemId, data);
         }

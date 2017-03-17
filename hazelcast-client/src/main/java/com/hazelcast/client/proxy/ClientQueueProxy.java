@@ -147,7 +147,7 @@ public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy impl
 
     @Override
     public LocalQueueStats getLocalQueueStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override

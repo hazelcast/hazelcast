@@ -42,7 +42,7 @@ abstract class AbstractCacheAllPartitionsTask<P>
         ICacheService service = getService(CacheService.SERVICE_NAME);
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache config for cache " + name + " has not been created yet !");
+            throw new CacheNotExistsException("Cache config for cache " + name + " has not been created yet!");
         }
         return service.getCacheOperationProvider(name, cacheConfig.getInMemoryFormat());
     }

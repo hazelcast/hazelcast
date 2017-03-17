@@ -64,7 +64,7 @@ public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements
 
     @Override
     public LocalTopicStats getLocalTopicStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override

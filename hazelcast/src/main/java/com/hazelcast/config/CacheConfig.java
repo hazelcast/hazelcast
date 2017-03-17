@@ -451,7 +451,7 @@ public class CacheConfig<K, V> extends AbstractCacheConfig<K, V> {
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public CacheConfig<K, V> setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
         return this;
     }
 

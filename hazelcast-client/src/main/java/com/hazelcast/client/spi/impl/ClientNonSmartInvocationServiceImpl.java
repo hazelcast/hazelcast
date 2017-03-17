@@ -73,7 +73,7 @@ public class ClientNonSmartInvocationServiceImpl extends ClientInvocationService
         }
         Connection conn = connectionManager.getConnection(ownerConnectionAddress);
         if (conn == null) {
-            throw new IOException("Packet is not send to owner address :" + ownerConnectionAddress);
+            throw new IOException("Packet is not sent to owner address: " + ownerConnectionAddress);
         }
         send(invocation, (ClientConnection) conn);
     }
