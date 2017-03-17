@@ -31,6 +31,8 @@ public class NetworkConfig {
      */
     public static final int DEFAULT_PORT = 5701;
 
+    private static final int PORT_MAX = 0xFFFF;
+
     private static final int PORT_AUTO_INCREMENT = 100;
 
     private int port = DEFAULT_PORT;
@@ -64,6 +66,7 @@ public class NetworkConfig {
 
     /**
      * Returns the port the Hazelcast member will try to bind on.
+     * A port number of 0 will let the system pick up an ephemeral port.
      *
      * @return the port the Hazelcast member will try to bind on
      * @see #setPort(int)
@@ -75,12 +78,18 @@ public class NetworkConfig {
     /**
      * Sets the port the Hazelcast member will try to bind on.
      *
+     * A valid port value is between 0 and 65535.
+     * A port number of 0 will let the system pick up an ephemeral port.
+     *
      * @param port the port the Hazelcast member will try to bind on
      * @return NetworkConfig the updated NetworkConfig
      * @see #getPort()
      * @see #setPortAutoIncrement(boolean) for more information.
      */
     public NetworkConfig setPort(int port) {
+        if (port < 0 || port > PORT_MAX) {
+            throw new IllegalArgumentException("Port out of range: " + port + ". Allowed range [0,65535]");
+        }
         this.port = port;
         return this;
     }
