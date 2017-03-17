@@ -309,6 +309,7 @@ https://hazelcast.org/documentation/.
 			<property name="keyManagerAlgorithm">SunX509</property>
 			<property name="trustManagerAlgorithm">SunX509</property>
 			<property name="protocol">TLS</property>
+			<property name="mutualAuthentication">REQUIRED</property>
 		</properties>
 	</ssl>
     * <socket-interceptor>:
