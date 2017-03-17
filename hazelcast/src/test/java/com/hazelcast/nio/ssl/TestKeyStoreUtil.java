@@ -34,9 +34,12 @@ public class TestKeyStoreUtil {
     public static final String JAVAX_NET_SSL_TRUST_STORE = "javax.net.ssl.trustStore";
     public static final String JAVAX_NET_SSL_KEY_STORE_PASSWORD = "javax.net.ssl.keyStorePassword";
     public static final String JAVAX_NET_SSL_TRUST_STORE_PASSWORD = "javax.net.ssl.trustStorePassword";
+    public static final String JAVAX_NET_SSL_MUTUAL_AUTHENTICATION = "javax.net.ssl.mutualAuthentication";
 
     private static String keyStore;
     private static String trustStore;
+    private static String wrongKeyStore;
+    private static String malformedKeystore;
     private static ILogger logger = Logger.getLogger(TestKeyStoreUtil.class.getName());
 
     private TestKeyStoreUtil() {
@@ -47,6 +50,20 @@ public class TestKeyStoreUtil {
             keyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast.keystore").getAbsolutePath();
         }
         return keyStore;
+    }
+
+    public static synchronized String getWrongKeyStoreFilePath() throws IOException {
+        if (wrongKeyStore == null || !new File(wrongKeyStore).exists()) {
+            wrongKeyStore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_wrong.keystore").getAbsolutePath();
+        }
+        return wrongKeyStore;
+    }
+
+    public static synchronized String getMalformedKeyStoreFilePath() throws IOException {
+        if (malformedKeystore == null || !new File(malformedKeystore).exists()) {
+            malformedKeystore = createTempKeyStoreFile("com/hazelcast/nio/ssl/hazelcast_malformed.keystore").getAbsolutePath();
+        }
+        return malformedKeystore;
     }
 
     public static synchronized String getTrustStoreFilePath() throws IOException {
