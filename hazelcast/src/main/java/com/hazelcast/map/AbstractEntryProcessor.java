@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.serialization.impl.BinaryInterface;
 
 import java.util.Map;
@@ -65,10 +67,21 @@ public abstract class AbstractEntryProcessor<K, V> implements EntryProcessor<K, 
         return entryBackupProcessor;
     }
 
-    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V> {
+    private class EntryBackupProcessorImpl implements EntryBackupProcessor<K, V>, HazelcastInstanceAware {
+        // generated for EntryBackupProcessorImpl which doesn't implement HazelcastInstanceAware
+        static final long serialVersionUID = -5081502753526394129L;
+
         @Override
         public void processBackup(Map.Entry<K, V> entry) {
             process(entry);
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            final AbstractEntryProcessor<K, V> outer = AbstractEntryProcessor.this;
+            if (outer instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) outer).setHazelcastInstance(hazelcastInstance);
+            }
         }
     }
 }
