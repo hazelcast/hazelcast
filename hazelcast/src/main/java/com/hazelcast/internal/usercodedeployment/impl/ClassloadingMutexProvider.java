@@ -16,9 +16,12 @@
 
 package com.hazelcast.internal.usercodedeployment.impl;
 
+import com.hazelcast.internal.util.JavaVersion;
 import com.hazelcast.util.ContextMutexFactory;
 
 import java.io.Closeable;
+
+import static com.hazelcast.internal.util.JavaVersion.JAVA_1_7;
 
 /**
  * Java 7+ onwards allows parallel classloading. Therefore we can define use a lock with per-class granularity.
@@ -30,7 +33,6 @@ import java.io.Closeable;
  */
 public class ClassloadingMutexProvider {
 
-    private static final String JAVA_VERSION_WHERE_PARALLEL_CLASSLOADING_IS_NOT_POSSIBLE = "1.6";
     private static final boolean USE_PARALLEL_LOADING = isParallelClassLoadingPossible();
 
     private final ContextMutexFactory mutexFactory = new ContextMutexFactory();
@@ -45,7 +47,6 @@ public class ClassloadingMutexProvider {
     }
 
     private static boolean isParallelClassLoadingPossible() {
-        String implVersion = Runtime.class.getPackage().getImplementationVersion();
-        return !implVersion.startsWith(JAVA_VERSION_WHERE_PARALLEL_CLASSLOADING_IS_NOT_POSSIBLE);
+        return JavaVersion.isAtLeast(JAVA_1_7);
     }
 }
