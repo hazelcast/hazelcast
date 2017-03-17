@@ -43,7 +43,7 @@ public final class NodeExtensionFactory {
                         Logger.getLogger(NodeExtensionFactory.class).warning(
                                 "DefaultNodeExtension class has been loaded by two different class-loaders. "
                                         + "Classloader 1: " + NodeExtensionFactory.class.getClassLoader() + ", "
-                                        + "Classloader 2: " + clazz.getClassLoader() + " ."
+                                        + "Classloader 2: " + clazz.getClassLoader() + ". "
                                         + "Are you running Hazelcast in an OSGi environment? "
                                         + "If so, set the bundle class-loader in the Config using the setClassloader() method");
                     }

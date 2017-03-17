@@ -278,7 +278,7 @@ public final class ClientDurableExecutorServiceProxy extends ClientProxy impleme
 
         @Override
         public long getTaskId() {
-            throw new IllegalStateException("Task failed to execute!!!");
+            throw new IllegalStateException("Task failed to execute!");
         }
 
         @Override

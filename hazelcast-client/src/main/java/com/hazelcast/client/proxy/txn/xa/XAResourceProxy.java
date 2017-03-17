@@ -88,7 +88,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
                 }
                 break;
             default:
-                throw new XAException("Unknown flag!!! " + flags);
+                throw new XAException("Unknown flag!" + flags);
         }
     }
 

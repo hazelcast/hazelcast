@@ -340,7 +340,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public LocalExecutorStats getLocalExecutorStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override
@@ -656,7 +656,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private Address getMemberAddress(Member member) {
         Member m = getContext().getClusterService().getMember(member.getUuid());
         if (m == null) {
-            throw new HazelcastException(member + " is not available!!!");
+            throw new HazelcastException(member + " is not available!");
         }
         return m.getAddress();
     }

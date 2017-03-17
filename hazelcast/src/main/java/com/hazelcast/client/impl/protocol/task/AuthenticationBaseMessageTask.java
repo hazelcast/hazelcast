@@ -147,7 +147,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMultiTarg
                 sendClientMessage(prepareSerializationVersionMismatchClientMessage());
                 break;
             default:
-                sendClientMessage(new IllegalStateException("Unsupported authentication status :" + authenticationStatus));
+                sendClientMessage(new IllegalStateException("Unsupported authentication status: " + authenticationStatus));
         }
     }
 

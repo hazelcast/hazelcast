@@ -410,7 +410,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        throw new UnsupportedOperationException("Locality is ambiguous for client!");
     }
 
     @Override

@@ -77,7 +77,7 @@ class ClientMembershipListener extends ClientAddMembershipListenerCodec.Abstract
                 memberRemoved(member);
                 break;
             default:
-                logger.warning("Unknown event type :" + eventType);
+                logger.warning("Unknown event type: " + eventType);
         }
         partitionService.refreshPartitions();
     }

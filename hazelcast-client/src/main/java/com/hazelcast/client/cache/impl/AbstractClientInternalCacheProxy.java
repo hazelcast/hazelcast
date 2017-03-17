@@ -910,9 +910,9 @@ abstract class AbstractClientInternalCacheProxy<K, V> extends AbstractClientCach
                 if (!clientContext.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
                 } else if (isClosed()) {
-                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed !");
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is closed!");
                 } else if (isDestroyed()) {
-                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed !");
+                    throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed!");
                 }
             }
             if (countDownLatch.getCount() > 0) {

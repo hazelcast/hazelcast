@@ -102,7 +102,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
      */
     public PagingPredicate(int pageSize) {
         if (pageSize <= 0) {
-            throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
+            throw new IllegalArgumentException("pageSize should be greater than 0!");
         }
         this.pageSize = pageSize;
         anchorList = new ArrayList<Map.Entry<Integer, Map.Entry<K, V>>>();
@@ -163,7 +163,7 @@ public class PagingPredicate<K, V> implements IndexAwarePredicate<K, V>, Identif
 
     private void setInnerPredicate(Predicate<K, V> predicate) {
         if (predicate instanceof PagingPredicate) {
-            throw new IllegalArgumentException("Nested PagingPredicate is not supported!!!");
+            throw new IllegalArgumentException("Nested PagingPredicate is not supported!");
         }
         this.predicate = predicate;
     }

@@ -380,7 +380,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public LocalReplicatedMapStats getReplicatedMapStats() {
-        throw new UnsupportedOperationException("Replicated Map statistics are not available for client !");
+        throw new UnsupportedOperationException("Replicated Map statistics are not available for client!");
     }
 
     @Override
@@ -422,7 +422,7 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
             invalidationListenerId = registerListener(createNearCacheInvalidationListenerCodec(), handler);
         } catch (Exception e) {
             ILogger logger = getContext().getLoggingService().getLogger(ClientReplicatedMapProxy.class);
-            logger.severe("-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+            logger.severe("-----------------\n Near Cache is not initialized! \n-----------------", e);
         }
     }
 

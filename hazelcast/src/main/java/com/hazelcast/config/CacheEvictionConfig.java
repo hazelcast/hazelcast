@@ -161,7 +161,7 @@ public class CacheEvictionConfig extends EvictionConfig {
      * @deprecated Use {@link com.hazelcast.config.EvictionConfig#setMaximumSizePolicy(MaxSizePolicy)} instead of this
      */
     public CacheEvictionConfig setMaxSizePolicy(CacheMaxSizePolicy cacheMaxSizePolicy) {
-        checkNotNull(cacheMaxSizePolicy, "Cache Max-Size policy cannot be null !");
+        checkNotNull(cacheMaxSizePolicy, "Cache Max-Size policy cannot be null!");
         setMaximumSizePolicy(cacheMaxSizePolicy.toMaxSizePolicy());
         return this;
     }

@@ -55,17 +55,17 @@ public class XATransactionContextImpl implements TransactionContext {
 
     @Override
     public void beginTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be started manually!!!");
+        throw new UnsupportedOperationException("XA Transaction cannot be started manually!");
     }
 
     @Override
     public void commitTransaction() throws TransactionException {
-        throw new UnsupportedOperationException("XA Transaction cannot be committed manually!!!");
+        throw new UnsupportedOperationException("XA Transaction cannot be committed manually!");
     }
 
     @Override
     public void rollbackTransaction() {
-        throw new UnsupportedOperationException("XA Transaction cannot be rollbacked manually!!!");
+        throw new UnsupportedOperationException("XA Transaction cannot be rolled back manually!");
     }
 
     @Override
@@ -133,6 +133,6 @@ public class XATransactionContextImpl implements TransactionContext {
 
     @Override
     public XAResource getXaResource() {
-        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!!!");
+        throw new UnsupportedOperationException("Use HazelcastInstance.getXAResource() instead!");
     }
 }

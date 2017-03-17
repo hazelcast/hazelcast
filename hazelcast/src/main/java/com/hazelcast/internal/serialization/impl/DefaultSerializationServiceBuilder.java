@@ -91,7 +91,7 @@ public class DefaultSerializationServiceBuilder
         byte maxVersion = BuildInfoProvider.getBuildInfo().getSerializationVersion();
         if (version > maxVersion) {
             throw new IllegalArgumentException(
-                    "Configured serialization version is higher than the max supported version :" + maxVersion);
+                    "Configured serialization version is higher than the max supported version: " + maxVersion);
         }
         this.version = version;
         return this;
@@ -252,7 +252,7 @@ public class DefaultSerializationServiceBuilder
             byte maxVersion = Byte.parseByte(defaultVal);
             if (versionCandidate > maxVersion) {
                 throw new IllegalArgumentException(
-                        "Configured serialization version is higher than the max supported version :" + maxVersion);
+                        "Configured serialization version is higher than the max supported version: " + maxVersion);
             }
             version = versionCandidate;
         }

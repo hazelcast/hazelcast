@@ -335,7 +335,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private AuthenticationFuture triggerConnect(Address target, boolean asOwner) {
         if (!alive) {
-            throw new HazelcastException("ConnectionManager is not active!!!");
+            throw new HazelcastException("ConnectionManager is not active!");
         }
 
         AuthenticationFuture callback = new AuthenticationFuture();
@@ -355,7 +355,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected ClientConnection createSocketConnection(final Address address) throws IOException {
         if (!alive) {
-            throw new HazelcastException("ConnectionManager is not active!!!");
+            throw new HazelcastException("ConnectionManager is not active!");
         }
         SocketChannel socketChannel = null;
         try {
@@ -560,10 +560,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                         callback.onSuccess(connection, asOwner);
                         break;
                     case CREDENTIALS_FAILED:
-                        onFailure(new AuthenticationException("Invalid credentials! Principal :" + principal));
+                        onFailure(new AuthenticationException("Invalid credentials! Principal: " + principal));
                         break;
                     default:
-                        onFailure(new AuthenticationException("Authentication status code not supported. status:"
+                        onFailure(new AuthenticationException("Authentication status code not supported. status: "
                                 + authenticationStatus));
                 }
             }

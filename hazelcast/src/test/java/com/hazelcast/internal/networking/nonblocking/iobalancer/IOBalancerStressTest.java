@@ -105,7 +105,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");
         for (NonBlockingIOThread in : threadingModel.getInputThreads()) {
-            sb.append(in + " :" + in.getEventCount() + "\n");
+            sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
@@ -116,7 +116,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         }
         sb.append("out selectors\n");
         for (NonBlockingIOThread in : threadingModel.getOutputThreads()) {
-            sb.append(in + " :" + in.getEventCount() + "\n");
+            sb.append(in + ": " + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();

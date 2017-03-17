@@ -527,7 +527,7 @@ public class CacheSimpleConfig {
      * @return the updated CacheSimpleConfig.
      */
     public CacheSimpleConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null !");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "In-Memory format cannot be null!");
         return this;
     }
 

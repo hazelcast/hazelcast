@@ -320,7 +320,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             try {
                 handleClientMessage(packet.getClientMessage());
             } catch (Exception e) {
-                invocationLogger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);
+                invocationLogger.severe("Failed to process task: " + packet + " on responseThread: " + getName(), e);
             } finally {
                 conn.decrementPendingPacketCount();
             }

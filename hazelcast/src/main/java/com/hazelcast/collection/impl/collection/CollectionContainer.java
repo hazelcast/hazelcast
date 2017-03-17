@@ -269,7 +269,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         final TxCollectionItem txItem = txMap.remove(itemId);
         if (txItem == null) {
             throw new TransactionException("Transaction log cannot be found for committing 'add()' operation."
-                    + " Missing log item id :" + itemId);
+                    + " Missing log item id: " + itemId);
         }
         CollectionItem item = new CollectionItem(itemId, value);
         getCollection().add(item);
@@ -285,7 +285,7 @@ public abstract class CollectionContainer implements IdentifiedDataSerializable 
         final CollectionItem item = txMap.remove(itemId);
         if (item == null) {
             logger.warning("Transaction log cannot be found for committing 'remove()' operation."
-                    + " Missing log item id " + itemId);
+                    + " Missing log item id: " + itemId);
         }
         return item;
     }
