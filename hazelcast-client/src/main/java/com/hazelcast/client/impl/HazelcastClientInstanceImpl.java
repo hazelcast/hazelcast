@@ -207,7 +207,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         GroupConfig groupConfig = config.getGroupConfig();
         String loggingType = config.getProperty(GroupProperty.LOGGING_TYPE.getName());
         loggingService = new ClientLoggingService(groupConfig.getName(),
-                loggingType, BuildInfoProvider.getBuildInfo(), instanceName);
+                loggingType, BuildInfoProvider.BUILD_INFO, instanceName);
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 

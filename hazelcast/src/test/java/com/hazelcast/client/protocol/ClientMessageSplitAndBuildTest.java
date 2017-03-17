@@ -48,7 +48,7 @@ public class ClientMessageSplitAndBuildTest {
         int FRAME_SIZE = 50;
         String s = UUID.randomUUID().toString();
         final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
+                BuildInfoProvider.BUILD_INFO.getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, expectedClientMessage);
         ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,
@@ -69,7 +69,7 @@ public class ClientMessageSplitAndBuildTest {
         int FRAME_SIZE = 50;
         String s = UUID.randomUUID().toString();
         ClientMessage clientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
+                BuildInfoProvider.BUILD_INFO.getVersion());
         clientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(FRAME_SIZE, clientMessage);
 
@@ -90,7 +90,7 @@ public class ClientMessageSplitAndBuildTest {
         for (int id = 0; id < NUMBER_OF_MESSAGES; id++) {
             String s = UUID.randomUUID().toString();
             ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                    BuildInfoProvider.getBuildInfo().getVersion());
+                    BuildInfoProvider.BUILD_INFO.getVersion());
             expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
             expectedClientMessage.setCorrelationId(id);
 
@@ -128,7 +128,7 @@ public class ClientMessageSplitAndBuildTest {
     public void splitAndBuild_whenMessageIsAlreadySmallerThanFrameSize() throws Exception {
         String s = UUID.randomUUID().toString();
         final ClientMessage expectedClientMessage = ClientAuthenticationCodec.encodeRequest(s, s, s, s, true, s, (byte) 1,
-                BuildInfoProvider.getBuildInfo().getVersion());
+                BuildInfoProvider.BUILD_INFO.getVersion());
         expectedClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         List<ClientMessage> subFrames = ClientMessageSplitter.getSubFrames(expectedClientMessage.getFrameLength() + 1, expectedClientMessage);
         ClientMessageReadHandler clientMessageReadHandler = new ClientMessageReadHandler(readCounter,

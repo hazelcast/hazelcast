@@ -21,7 +21,6 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.cluster.ClusterService;
@@ -283,7 +282,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 res = response(ResponseType.FORBIDDEN);
             } else {
                 final String responseTxt = clusterService.getMembers().toString() + "\n"
-                        + BuildInfoProvider.getBuildInfo().getVersion() + "\n"
+                        + node.getBuildInfo().getVersion() + "\n"
                         + System.getProperty("java.version");
                 res = response(ResponseType.SUCCESS, "response", responseTxt);
                 sendResponse(command, res);
