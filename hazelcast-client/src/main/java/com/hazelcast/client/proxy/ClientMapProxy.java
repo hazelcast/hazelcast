@@ -46,6 +46,7 @@ import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
 import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetWithProjectionCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
 import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapIsLockedCodec;
@@ -183,6 +184,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_AGGREGATOR_IS_NOT_ALLOWED = "Aggregator should not be null!";
+    protected static final String NULL_PROJECTION_IS_NOT_ALLOWED = "Projection should not be null!";
 
     @SuppressWarnings("unchecked")
     private static final ClientMessageDecoder GET_ASYNC_RESPONSE_DECODER = new ClientMessageDecoder() {
@@ -290,6 +292,23 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapGetCodec.encodeRequest(name, keyData, getThreadId());
         ClientMessage response = invoke(request, keyData);
         MapGetCodec.ResponseParameters resultParameters = MapGetCodec.decodeResponse(response);
+        return resultParameters.response;
+    }
+
+    @Override
+    public <O> O get(Object key, Projection<V, O> projection) {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(projection, NULL_PROJECTION_IS_NOT_ALLOWED);
+
+        Data keyData = toData(key);
+        Data projectionData = toData(projection);
+        return toObject(getInternalWithProjection(keyData, projectionData));
+    }
+
+    protected Object getInternalWithProjection(Data keyData, Data projection) {
+        ClientMessage request = MapGetWithProjectionCodec.encodeRequest(name, keyData, projection, getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        MapGetWithProjectionCodec.ResponseParameters resultParameters = MapGetWithProjectionCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
