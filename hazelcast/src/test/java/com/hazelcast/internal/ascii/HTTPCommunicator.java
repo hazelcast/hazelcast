@@ -73,6 +73,12 @@ public class HTTPCommunicator {
         return doGet(url);
     }
 
+    public String getFailingClusterHealthWithTrailingGarbage() throws IOException {
+        String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
+        String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL + "garbage";
+        return doGet(url);
+    }
+
     public String getClusterHealth() throws IOException {
         String baseAddress = instance.getCluster().getLocalMember().getSocketAddress().toString();
         String url = "http:/" + baseAddress + HttpCommandProcessor.URI_HEALTH_URL;

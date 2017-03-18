@@ -47,7 +47,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             handleQueue(command, uri);
         } else if (uri.startsWith(URI_CLUSTER)) {
             handleCluster(command);
-        } else if (uri.startsWith(URI_HEALTH_URL)) {
+        } else if (uri.equals(URI_HEALTH_URL)) {
             handleHealthcheck(command);
         } else if (uri.startsWith(URI_CLUSTER_VERSION_URL)) {
             handleGetClusterVersion(command);

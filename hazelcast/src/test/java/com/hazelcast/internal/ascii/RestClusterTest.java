@@ -255,4 +255,11 @@ public class RestClusterTest extends HazelcastTestSupport {
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         communicator.getClusterHealth();
     }
+
+    @Test(expected = IOException.class)
+    public void fail_on_healthcheck_url_with_garbage() throws Exception {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HTTPCommunicator communicator = new HTTPCommunicator(instance);
+        communicator.getFailingClusterHealthWithTrailingGarbage();
+    }
 }
