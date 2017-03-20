@@ -33,6 +33,8 @@ public interface LockResource {
 
     boolean isTransactional();
 
+    boolean isLocal();
+
     boolean shouldBlockReads();
 
     long getThreadId();
