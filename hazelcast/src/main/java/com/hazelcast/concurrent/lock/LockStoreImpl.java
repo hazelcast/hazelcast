@@ -82,7 +82,7 @@ public final class LockStoreImpl implements IdentifiedDataSerializable, LockStor
 
     @Override
     public boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
-        leaseTime = getLeaseTime(leaseTime);
+        // local locks can observe max lease time since they are used internally for EntryProcessor write Offloading
         LockResourceImpl lock = getLock(key);
         return lock.lock(caller, threadId, referenceId, leaseTime, false, false, true);
     }

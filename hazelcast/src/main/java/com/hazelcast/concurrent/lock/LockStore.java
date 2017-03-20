@@ -38,7 +38,9 @@ public interface LockStore {
     boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
     /**
-     * Lock a specific key on a local partition only
+     * Lock a specific key on a local partition only. Does not observe LOCK_MAX_LEASE_TIME_SECONDS
+     *
+     * @see com.hazelcast.spi.properties.GroupProperty#LOCK_MAX_LEASE_TIME_SECONDS
      *
      * @param key         the key to lock
      * @param caller      the identifier for the caller

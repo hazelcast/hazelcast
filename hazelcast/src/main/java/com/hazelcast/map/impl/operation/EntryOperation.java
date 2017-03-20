@@ -249,7 +249,7 @@ public class EntryOperation extends MutatingKeyBasedMapOperation implements Back
 
         // The off-loading uses local locks, since the locking is used only on primary-replica.
         // The locks are not supposed to be migrated on partition migration or partition promotion & downgrade.
-        recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, Long.MAX_VALUE);
+        recordStore.localLock(finalDataKey, finalCaller, finalThreadId, finalCallId, -1);
 
         ops.onStartAsyncOperation(this);
         getNodeEngine().getExecutionService().execute(executorName, new Runnable() {

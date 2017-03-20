@@ -54,11 +54,9 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
  */
 public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    protected String name;
     protected Data value;
     protected Data oldValue;
     protected String caller;
-    protected long threadId;
     protected long begin;
     protected EntryEventType modificationType;
     protected EntryBackupProcessor entryBackupProcessor;
@@ -70,14 +68,13 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
                                               Data value, String caller, long threadId, long begin,
                                               EntryBackupProcessor entryBackupProcessor) {
         super(name, key, value);
-        this.name = name;
         this.value = value;
         this.oldValue = oldValue;
         this.caller = caller;
         this.begin = begin;
-        this.threadId = threadId;
         this.modificationType = modificationType;
         this.entryBackupProcessor = entryBackupProcessor;
+        this.setThreadId(threadId);
     }
 
     @Override
@@ -234,12 +231,10 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
         out.writeUTF(modificationType != null ? modificationType.name() : "");
         out.writeData(oldValue);
         out.writeData(value);
         out.writeUTF(caller);
-        out.writeLong(threadId);
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
     }
@@ -247,13 +242,11 @@ public class EntryOffloadableSetUnlockOperation extends MutatingKeyBasedMapOpera
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         String modificationTypeName = in.readUTF();
         modificationType = modificationTypeName.equals("") ? null : EntryEventType.valueOf(modificationTypeName);
         oldValue = in.readData();
         value = in.readData();
         caller = in.readUTF();
-        threadId = in.readLong();
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
     }
