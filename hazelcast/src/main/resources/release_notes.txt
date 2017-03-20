@@ -62,6 +62,10 @@ The following are the other improvements performed to solve the enhancement issu
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
 
+*3.8.1 Enhancements*
+
+- Mutual authentication with TLS certificates: It allows the clients also to have their keyStores and members to have their trustStores so that the members can know which clients they can trust.
+
 *3.8.1 Fixes*
 
 - Updates performed with IMap's putTransient method should trigger EntryUpdatedListener. [10077]
