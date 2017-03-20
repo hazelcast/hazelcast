@@ -36,13 +36,14 @@ import java.util.Set;
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class TimedMemberStateTest extends HazelcastTestSupport {
 
     private TimedMemberState timedMemberState;
-    HazelcastInstance hz;
+    private HazelcastInstance hz;
 
     @Before
     public void setUp() {
@@ -56,6 +57,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         timedMemberState.setClusterName("ClusterName");
         timedMemberState.setTime(1827731);
         timedMemberState.setInstanceNames(instanceNames);
+        timedMemberState.setSslEnabled(true);
     }
 
     @Test
@@ -69,6 +71,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertEquals(1, cloned.getInstanceNames().size());
         assertContains(cloned.getInstanceNames(), "topicStats");
         assertNotNull(cloned.getMemberState());
+        assertTrue(cloned.isSslEnabled());
         assertNotNull(cloned.toString());
     }
 
@@ -85,6 +88,7 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         assertEquals(1, deserialized.getInstanceNames().size());
         assertContains(deserialized.getInstanceNames(), "topicStats");
         assertNotNull(deserialized.getMemberState());
+        assertTrue(deserialized.isSslEnabled());
         assertNotNull(deserialized.toString());
     }
 
