@@ -115,6 +115,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
+    public <O> O get(Object k, Projection<V, O> p) {
+        checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
+        checkNotNull(p, NULL_PROJECTION_IS_NOT_ALLOWED);
+
+        Data key = toData(k, partitionStrategy);
+        Data projection = toData(p);
+        return toObject(getInternalWithProjection(key, projection));
+    }
+
+    @Override
     public V put(K k, V v) {
         return put(k, v, -1, TimeUnit.MILLISECONDS);
     }
@@ -930,7 +940,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     private QueryCache<K, V> getQueryCacheInternal(String name, MapListener listener, Predicate<K, V> predicate,
-                                             Boolean includeValue, IMap<K, V> map) {
+                                                   Boolean includeValue, IMap<K, V> map) {
         QueryCacheContext queryCacheContext = mapServiceContext.getQueryCacheContext();
 
         QueryCacheRequest request = newQueryCacheRequest()

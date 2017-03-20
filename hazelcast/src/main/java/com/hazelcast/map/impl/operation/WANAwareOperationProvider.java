@@ -119,6 +119,12 @@ public class WANAwareOperationProvider extends MapOperationProviderDelegator {
     }
 
     @Override
+    public MapOperation createGetWithProjectionOperation(String name, Data dataKey, Data projection) {
+        checkWanReplicationQueues(name);
+        return getDelegate().createGetWithProjectionOperation(name, dataKey, projection);
+    }
+
+    @Override
     public MapOperation createPutAllOperation(String name, MapEntries mapEntries) {
         checkWanReplicationQueues(name);
         return getDelegate().createPutAllOperation(name, mapEntries);

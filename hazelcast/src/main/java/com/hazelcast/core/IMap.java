@@ -80,6 +80,18 @@ import java.util.concurrent.TimeUnit;
 public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
 
     /**
+     * Gets the object stored under the given key, applies the given projection to it and returns output of the projection.
+     * The object fetching will happen on the partition-thread, the projection will be applied on a generic thread.
+     * Return a clone of the value.
+     *
+     * @param k   key to fetch the value from
+     * @param p   projection to apply
+     * @param <O> type of the output object
+     * @return result of the projection that is applied to the object fetch from the given k.
+     */
+    <O> O get(Object k, Projection<V, O> p);
+
+    /**
      * {@inheritDoc}
      * <p>
      * No atomicity guarantees are given. It could be that in case of failure some of the key/value-pairs get written, while
@@ -187,7 +199,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, LegacyAsyncMap<K, V> {
     /**
      * Removes all entries which match with the supplied predicate.
      * If this map has index, matching entries will be found via index search, otherwise they will be found by full-scan.
-     *
+     * <p>
      * Note that calling this method also removes all entries from callers near cache.
      *
      * @param predicate matching entries with this predicate will be removed from this map

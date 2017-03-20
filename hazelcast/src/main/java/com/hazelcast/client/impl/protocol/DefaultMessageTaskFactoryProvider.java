@@ -1560,6 +1560,11 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 return new com.hazelcast.client.impl.protocol.task.map.MapGetMessageTask(clientMessage, node, connection);
             }
         };
+        factories[com.hazelcast.client.impl.protocol.codec.MapGetWithProjectionCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
+            public MessageTask create(ClientMessage clientMessage, Connection connection) {
+                return new com.hazelcast.client.impl.protocol.task.map.MapGetWithProjectionMessageTask(clientMessage, node, connection);
+            }
+        };
         factories[com.hazelcast.client.impl.protocol.codec.MapKeySetCodec.RequestParameters.TYPE.id()] = new MessageTaskFactory() {
             public MessageTask create(ClientMessage clientMessage, Connection connection) {
                 return new com.hazelcast.client.impl.protocol.task.map.MapKeySetMessageTask(clientMessage, node, connection);

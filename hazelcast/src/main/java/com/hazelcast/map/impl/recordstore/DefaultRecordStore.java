@@ -368,6 +368,13 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
+    public boolean lock(Data key, String caller, long threadId, long referenceId, long ttl) {
+        checkIfLoaded();
+        return lockStore != null && lockStore.lock(key, caller, threadId, referenceId, ttl);
+    }
+
+
+    @Override
     public boolean forceUnlock(Data dataKey) {
         return lockStore != null && lockStore.forceUnlock(dataKey);
     }
