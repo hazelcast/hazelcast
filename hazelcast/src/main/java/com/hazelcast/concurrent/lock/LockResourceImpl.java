@@ -48,6 +48,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     private long acquireTime = -1L;
     private boolean transactional;
     private boolean blockReads;
+    private boolean local;
     private Map<String, WaitersInfo> waiters;
     private Set<ConditionKey> conditionKeys;
     private List<AwaitOperation> expiredAwaitOps;
@@ -80,7 +81,8 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional, boolean blockReads) {
+    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional,
+                 boolean blockReads, boolean local) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
@@ -90,6 +92,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
             setExpirationTime(leaseTime);
             this.transactional = transactional;
             this.blockReads = blockReads;
+            this.local = local;
             return true;
         } else if (isLockedBy(owner, threadId)) {
             if (!transactional && this.referenceId == referenceId) {
@@ -100,6 +103,7 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
             setExpirationTime(leaseTime);
             this.transactional = transactional;
             this.blockReads = blockReads;
+            this.local = local;
             return true;
         }
         return false;
@@ -314,6 +318,17 @@ final class LockResourceImpl implements IdentifiedDataSerializable, LockResource
     @Override
     public boolean isTransactional() {
         return transactional;
+    }
+
+    /**
+     * Local locks are local to the partition and replicaIndex where they have been acquired.
+     * That is the reason they are removed on any partition migration on the destination.
+     *
+     * @returns true if the lock is local, false otherwise
+     */
+    @Override
+    public boolean isLocal() {
+        return local;
     }
 
     @Override

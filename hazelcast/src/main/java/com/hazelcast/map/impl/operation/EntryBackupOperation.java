@@ -20,9 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.event.MapEventPublisher;
@@ -39,6 +37,9 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 
+/**
+ * @see EntryOffloadableOperation for Offloadable support.
+ */
 public class EntryBackupOperation extends MutatingKeyBasedMapOperation implements BackupOperation {
 
     protected transient Object oldValue;
@@ -73,7 +74,7 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
 
         entryProcessor.processBackup(entry);
 
-        if (noOpBackup(entry)) {
+        if (noOp(entry, oldValue)) {
             return;
         }
 
@@ -123,22 +124,6 @@ public class EntryBackupOperation extends MutatingKeyBasedMapOperation implement
         Object value = entry.getValue();
         recordStore.putBackup(dataKey, value);
         publishWanReplicationEvent(EntryEventType.UPDATED);
-    }
-
-    /**
-     * noOpBackup in two cases:
-     * - setValue not called on entry
-     * - or entry does not exist and no add operation is done.
-     */
-    private boolean noOpBackup(Map.Entry entry) {
-        final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
-        return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
-    }
-
-    private Map.Entry createMapEntry(Data key, Object value) {
-        InternalSerializationService serializationService
-                = ((InternalSerializationService) getNodeEngine().getSerializationService());
-        return new LazyMapEntry(key, value, serializationService, mapContainer.getExtractors());
     }
 
     @Override

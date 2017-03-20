@@ -32,15 +32,20 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.partition.impl.PartitionServiceState;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.map.impl.operation.DefaultMapOperationProvider;
+import com.hazelcast.map.impl.operation.MapOperation;
+import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.partition.IPartition;
+import com.hazelcast.spi.serialization.SerializationService;
 import com.hazelcast.test.jitter.JitterRule;
 import org.junit.After;
 import org.junit.ComparisonFailure;
@@ -1083,5 +1088,33 @@ public abstract class HazelcastTestSupport {
         public Object call() throws Exception {
             return null;
         }
+    }
+
+    // ############################################
+    // ########## read from backup utils ##########
+    // ############################################
+
+    protected Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key) {
+        return readFromMapBackup(instance, mapName, key, 1);
+    }
+
+    protected Object readFromMapBackup(HazelcastInstance instance, String mapName, Object key, int replicaIndex) {
+        try {
+            NodeEngine nodeEngine = getNode(instance).getNodeEngine();
+            SerializationService ss = getNode(instance).getSerializationService();
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+
+            MapOperation get = getMapOperationProvider().createGetOperation(mapName, ss.toData(key));
+            get.setPartitionId(partitionId);
+            get.setReplicaIndex(replicaIndex);
+
+            return getNode(instance).getNodeEngine().getOperationService().invokeOnPartition(get).get();
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    protected MapOperationProvider getMapOperationProvider() {
+        return new DefaultMapOperationProvider();
     }
 }

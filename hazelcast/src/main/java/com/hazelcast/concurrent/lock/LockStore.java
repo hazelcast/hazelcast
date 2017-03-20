@@ -38,6 +38,18 @@ public interface LockStore {
     boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime);
 
     /**
+     * Lock a specific key on a local partition only
+     *
+     * @param key         the key to lock
+     * @param caller      the identifier for the caller
+     * @param threadId    the identifier for the thread on the caller
+     * @param referenceId the identifier for the invocation of the caller (e.g. operation call ID)
+     * @param leaseTime   the lease duration in milliseconds
+     * @return if the lock was successfully acquired
+     */
+    boolean localLock(Data key, String caller, long threadId, long referenceId, long leaseTime);
+
+    /**
      * Lock a specific key for use inside a transaction.
      *
      * @param key         the key to lock

@@ -103,9 +103,9 @@ public final class GroupProperty {
     public static final HazelcastProperty CLIENT_ENGINE_QUERY_THREAD_COUNT
             = new HazelcastProperty("hazelcast.clientengine.query.thread.count", -1);
     /**
-     *  Client connection is removed or owner node of a client is removed from cluster
-     *  ClientDisconnectedOperation runs and clean all resources of client(listeners are removed, locks/txn are released)
-     *  With this property, client has a window to connect back and prevent cleaning up its resources.
+     * Client connection is removed or owner node of a client is removed from cluster
+     * ClientDisconnectedOperation runs and clean all resources of client(listeners are removed, locks/txn are released)
+     * With this property, client has a window to connect back and prevent cleaning up its resources.
      */
     public static final HazelcastProperty CLIENT_ENDPOINT_REMOVE_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.client.endpoint.remove.delay.seconds", 10);
@@ -186,11 +186,15 @@ public final class GroupProperty {
     public static final HazelcastProperty MAP_LOAD_CHUNK_SIZE
             = new HazelcastProperty("hazelcast.map.load.chunk.size", 1000);
 
-    /** The delay until the first run of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler} */
+    /**
+     * The delay until the first run of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     */
     public static final HazelcastProperty MERGE_FIRST_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.first.run.delay.seconds", 300, SECONDS);
 
-    /** The interval between invocations of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler} */
+    /**
+     * The interval between invocations of the {@link com.hazelcast.internal.cluster.impl.SplitBrainHandler}
+     */
     public static final HazelcastProperty MERGE_NEXT_RUN_DELAY_SECONDS
             = new HazelcastProperty("hazelcast.merge.next.run.delay.seconds", 120, SECONDS);
 
@@ -277,13 +281,12 @@ public final class GroupProperty {
      * Possible values:
      * TERMINATE: Terminate Hazelcast immediately
      * GRACEFUL:  Initiate graceful shutdown. This can significantly slow-down JVM exit process, but it's tries to
-     *            retain data safety.
+     * retain data safety.
      *
      * Default: TERMINATE
      *
      * You should always shutdown Hazelcast explicitly via {@link HazelcastInstance#shutdown()}
      * It's not recommended to rely on shutdown hook, this is a last-effort measure.
-     *
      */
     public static final HazelcastProperty SHUTDOWNHOOK_POLICY
             = new HazelcastProperty("hazelcast.shutdownhook.policy", "TERMINATE");
@@ -305,7 +308,9 @@ public final class GroupProperty {
     public static final HazelcastProperty MAX_NO_HEARTBEAT_SECONDS
             = new HazelcastProperty("hazelcast.max.no.heartbeat.seconds", 300, SECONDS);
 
-    /** The interval at which master confirmations are sent from non-master nodes to the master node */
+    /**
+     * The interval at which master confirmations are sent from non-master nodes to the master node
+     */
     public static final HazelcastProperty MASTER_CONFIRMATION_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.master.confirmation.interval.seconds", 30, SECONDS);
     /**
@@ -314,7 +319,9 @@ public final class GroupProperty {
     public static final HazelcastProperty MAX_NO_MASTER_CONFIRMATION_SECONDS
             = new HazelcastProperty("hazelcast.max.no.master.confirmation.seconds", 350, SECONDS);
 
-    /** The interval at which the master sends the member lists are sent to other non-master members */
+    /**
+     * The interval at which the master sends the member lists are sent to other non-master members
+     */
     public static final HazelcastProperty MEMBER_LIST_PUBLISH_INTERVAL_SECONDS
             = new HazelcastProperty("hazelcast.member.list.publish.interval.seconds", 300, SECONDS);
 
@@ -331,7 +338,9 @@ public final class GroupProperty {
     public static final HazelcastProperty ICMP_ENABLED
             = new HazelcastProperty("hazelcast.icmp.enabled", false);
 
-    /** Ping timeout in milliseconds. */
+    /**
+     * Ping timeout in milliseconds.
+     */
     public static final HazelcastProperty ICMP_TIMEOUT
             = new HazelcastProperty("hazelcast.icmp.timeout", 1000, MILLISECONDS);
     /**
@@ -601,7 +610,6 @@ public final class GroupProperty {
      */
     public static final HazelcastProperty AGGREGATION_ACCUMULATION_PARALLEL_EVALUATION
             = new HazelcastProperty("hazelcast.aggregation.accumulation.parallel.evaluation", true);
-
 
     /**
      * Result size limit for query operations on maps.

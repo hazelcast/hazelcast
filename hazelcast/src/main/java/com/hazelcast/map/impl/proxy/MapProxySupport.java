@@ -32,6 +32,8 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.core.ReadOnly;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -999,6 +1001,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionId = partitionService.getPartitionId(key);
         MapOperation operation = operationProvider.createEntryOperation(name, key, entryProcessor);
         operation.setThreadId(ThreadUtil.getThreadId());
+        validateEntryProcessorForSingleKeyProcessing(entryProcessor);
         try {
             Future future = operationService
                     .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -1007,6 +1010,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return (Data) future.get();
         } catch (Throwable t) {
             throw rethrow(t);
+        }
+    }
+
+    private static void validateEntryProcessorForSingleKeyProcessing(EntryProcessor entryProcessor) {
+        if (entryProcessor instanceof ReadOnly) {
+            EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+            if (backupProcessor != null) {
+                throw new IllegalArgumentException(
+                        "EntryProcessor.getBackupProcessor() should be null for a ReadOnly EntryProcessor");
+            }
         }
     }
 
