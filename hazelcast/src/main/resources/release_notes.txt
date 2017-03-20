@@ -21,7 +21,13 @@ Hazelcast Open Source Features
 
 2. Enhancements
 
-This section lists the enhancements performed for Hazelcast 3.8 release.
+This section lists the enhancements performed for Hazelcast 3.8 and 3.8x releases.
+
+*3.8.1 Enhancements*
+
+- Mutual authentication with TLS certificates: It allows the clients also to have their keyStores and members to have their trustStores so that the members can know which clients they can trust.
+
+*3.8 Enhancements*
 
 - Fast Aggregations for Queries: Please refer to Fast Aggregations section.
 - Projections for Queries: Please refer to Projections section.
@@ -61,10 +67,6 @@ The following are the other improvements performed to solve the enhancement issu
 3. Fixes
 
 This section lists the fixed issues for Hazelcast 3.8 and 3.8.x releases.
-
-*3.8.1 Enhancements*
-
-- Mutual authentication with TLS certificates: It allows the clients also to have their keyStores and members to have their trustStores so that the members can know which clients they can trust.
 
 *3.8.1 Fixes*
 
